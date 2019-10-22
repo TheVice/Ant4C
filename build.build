@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<project name="build">
+	<description>Build the project https://github.com/TheVice/Ant4C</description>
+
+	<property name="nant.onfailure" value="note_nant_users" />
+
+	<property name="cmake" value="cmake" overwrite="false" />
+
+	<property name="cmake_arch"
+			  value="Win32"
+			  if="${platform::is-windows()}"
+			  unless="${string::equal(platform::is-windows(),
+						environment::is64bit-operating-system()))}"
+			  overwrite="false" />
+	<property name="cmake_arch"
+			  value="Win64"
+			  if="${string::equal(platform::is-windows(),
+					environment::is64bit-operating-system())}"
+			  unless="${platform::is-unix()}"
+			  overwrite="false" />
+	<property name="cmake_arch"
+			  value="Win32"
+			  if="${platform::is-windows()}"
+			  unless="${property::exists('cmake_arch')}" />
+
+	<property name="cmake_generator"
+			  value="${string::quote('Visual Studio 16 2019')} -A ${property::get-value('cmake_arch')}"
+			  if="${property::exists('VS2019')}"
+			  unless="${property::exists('MinGW')}"
+			  overwrite="false" />
+	<property name="cmake_generator"
+			  value="${string::quote('Visual Studio 15 2017')} ${property::get-value('cmake_arch')}"
+			  if="${property::exists('VS2017')}"
+			  unless="${property::exists('MinGW')}"
+			  overwrite="false" />
+	<property name="cmake_generator"
+			  value="${string::quote('Visual Studio 14 2015')} ${property::get-value('cmake_arch')}"
+			  if="${environment::variable-exists('VS140COMNTOOLS')}"
+			  unless="${property::exists('MinGW')}"
+			  overwrite="false" />
+	<property name="cmake_generator"
+			  value="${string::quote('Visual Studio 12 2013')} ${property::get-value('cmake_arch')}"
+			  if="${environment::variable-exists('VS120COMNTOOLS')}"
+			  unless="${property::exists('MinGW')}"
+			  overwrite="false" />
+	<property name="cmake_generator"
+			  value="${string::quote('Eclipse CDT4 - MinGW Makefiles')}"
+			  if="${platform::is-windows()}"
+			  unless="${property::exists('cmake_generator')}" />
+	<property name="cmake_generator"
+			  value="${string::quote('Eclipse CDT4 - Unix Makefiles')}"
+			  if="${platform::is-unix()}"
+			  unless="${property::exists('cmake_generator')}" />
+
+	<property name="cmake_arguments"
+			  value="-G ${property::get-value('cmake_generator')}" />
+	<property name="cmake_arguments"
+			  value="${property::get-value('cmake_arguments')} -T ${property::get-value('cmake_toolset')}"
+			  if="${property::exists('cmake_toolset')}" />
+	<property name="cmake_arguments"
+			  value="${property::get-value('cmake_arguments')} -DCMAKE_BUILD_TYPE=${string::quote('Release')} -DCMAKE_ECLIPSE_MAKE_ARGUMENTS=${string::quote('-j2 -s')}"
+			  if="${property::exists('cmake_arguments')}"
+			  unless="${string::starts-with(property::get-value('cmake_generator'), 'Visual')}" />
+	<property name="cmake_arguments"
+			  value="${property::get-value('cmake_arguments')} ${project::get-base-directory()}" />
+
+	<property name="cmake_working_dir"
+			  value="${path::get-temp-path()}"
+			  overwrite="false" />
+
+	<echo message="${property::get-value('cmake')} ${property::get-value('cmake_arguments')}"
+		  level="Verbose" />
+
+	<echo message="Working directorty - '${property::get-value('cmake_working_dir')}'"
+		  level="Verbose" />
+
+	<exec program="${property::get-value('cmake')}"
+		  commandline="${property::get-value('cmake_arguments')}"
+		  workingdir="${property::get-value('cmake_working_dir')}" />
+
+	<property name="cmake_arguments"
+			  value="--build ${string::quote(property::get-value('cmake_working_dir'))} --config Release" />
+
+	<echo message="${property::get-value('cmake')} ${property::get-value('cmake_arguments')}"
+		  level="Verbose" />
+
+	<exec program="${property::get-value('cmake')}"
+		  commandline="${property::get-value('cmake_arguments')}" />
+
+	<target name="note_nant_users">
+		<echo level="Error">
+			This script not design to run at NAnt environment.
+			You can get tool, that accept this script, here https://github.com/TheVice/Ant4C
+		</echo>
+	</target>
+</project>
