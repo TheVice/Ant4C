@@ -1,7 +1,7 @@
 # Ant4C
 Tool that interprets scenarios. Similar to Apache Ant and NAnt. Written in C.
 
-#Overview
+# Overview
 Ant for C is C-based script tool. Source of script should be written in XML-based code.
 For understanding why tools with such vision was written read [Apache Ant Introduction](http://jakarta.apache.org/ant/manual/) or/and [NAnt help](http://nant.sourceforge.net/).
 
@@ -11,15 +11,21 @@ For first initial release echo and exec tasks support. Targets are not support. 
 
 Developing was started in August of 2019 and first present to the public in October of 2019.
 
-#Downloads
+# Downloads
 Binaries for Windows, Ubuntu 16.04, OpenBSD 6.5 and FreeBSD 12.0 are available on [release page](https://github.com/TheVice/Ant4C/releases).
 Also library available to use ant4c with other C/C++ projects.
 For Windows binaries present after compiled with MinGW and Visual Studio 2019.
 
-#Differences from NAnt
+# Differences from NAnt
 Some name space have addition functions (like is64bit-operating-system from environment) and addition version (like substring with two arguments from string addition to version with three arguments) comparing to NAnt implementation. Some functions are missed.
 
-#Building
+# Developing
+Tests written in C++ and required [Google Test](https://github.com/google/googletest) and [pugixml](https://github.com/zeux/pugixml/) libraries.
+On systems with missed this libraries in packages repositories or if unable to install it, PUGIXML_PATH and GTEST_PATH definition can be used while configure project with CMake.
+For example:
+* cmake -DCMAKE_BUILD_TYPE=Debug -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_ECLIPSE_MAKE_ARGUMENTS="-j$(nproc) -s" -DPUGIXML_PATH=/home/user/Downloads/pugixml-1.9/ -DGTEST_PATH=/home/user/Downloads/googletest-release-1.8.1/ /home/user/Downloads/Ant4C
+
+# Building
 Build can be done by one of C compilers - MSVC, MinGW, GCC or CLang, after configuring with [CMake](http://www.cmake.org/download/).
 For release configuration, without version information, Ant4C script can be used.
 * ant4c_app -buildfile:build.build -D:cmake=cmake
@@ -32,7 +38,7 @@ For release configuration, without version information, Ant4C script can be used
 
 Of course full path to cmake (for example -D:cmake=/usr/local/bin/cmake or -D:cmake="C:\Program Files\cmake\bin\cmake.exe") and build file should be provided.
 
-#List of functions
+# List of functions
 ```
 bool::parse
 bool::to-string

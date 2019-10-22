@@ -1,0 +1,3187 @@
+<?xml version="1.0"?>
+<Tests>
+  <TestArgumentParser>
+    <argument_parser_at_all>
+      <input></input>
+      <return></return>
+      <!--build_file></build_file-->
+      <pause></pause>
+      <verbose></verbose>
+      <debug></debug>
+      <quiet></quiet>
+      <indent></indent>
+      <!--properties>
+        <property name="property_name" value="property value" /--> <!-- dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" /-->
+      <!--/properties-->
+      <log_file></log_file>
+      <project_help></project_help>
+      <no_logo></no_logo>
+      <help></help>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-indent:</input>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-indent:1</input>
+      <return>1</return>
+      <indent>1</indent>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-indent:-1</input>
+      <return>1</return>
+      <indent>1</indent>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-indent:21</input>
+      <return>1</return>
+      <indent>21</indent>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-buildfile:sample.build</input>
+      <return>1</return>
+      <build_file>sample.build</build_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>/f:sample.build</input>
+      <return>1</return>
+      <build_file>sample.build</build_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-buildfile:sample_1.build /f:sample_2.build</input>
+      <return>1</return>
+      <build_file>sample_1.build</build_file>
+      <build_file>sample_2.build</build_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-buildfile:/tmp/a/b/c/sample.build</input>
+      <return>1</return>
+      <build_file>/tmp/a/b/c/sample.build</build_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-buildfile:/tmp/a/b/c/sample_1.build /f:sample_2.build</input>
+      <return>1</return>
+      <build_file>/tmp/a/b/c/sample_1.build</build_file>
+      <build_file>sample_2.build</build_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-logfile:</input>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-l:</input>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-logfile:program_log.txt</input>
+      <return>1</return>
+      <log_file>program_log.txt</log_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-l:program_log.txt</input>
+      <return>1</return>
+      <log_file>program_log.txt</log_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-logfile:program_log_1.txt -l:program_log_2.txt</input>
+      <return>1</return>
+      <log_file>program_log_1.txt</log_file>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-pause</input>
+      <return>1</return>
+      <pause>1</pause>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-verbose</input>
+      <return>1</return>
+      <verbose>1</verbose>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-v</input>
+      <verbose>1</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-debug</input>
+      <return>1</return>
+      <debug>1</debug>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-quiet</input>
+      <return>1</return>
+      <quiet>1</quiet>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-q</input>
+      <return>1</return>
+      <quiet>1</quiet>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-D:</input>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-D:property_name=property_value</input>
+      <return>1</return>
+      <properties>
+        <property name="property_name" value="property_value" dynamic="true" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+      </properties>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-projecthelp</input>
+      <return>1</return>
+      <project_help>1</project_help>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-nologo</input>
+      <return>1</return>
+      <no_logo>1</no_logo>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-help</input>
+      <return>1</return>
+      <help>1</help>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-h</input>
+      <return>1</return>
+      <help>1</help>
+    </argument_parser_at_all>
+    <argument_append_arguments>
+      <argument></argument>
+      <output></output>
+      <output_length></output_length>
+      <return></return>
+    </argument_append_arguments>
+    <argument_append_arguments>
+      <argument>1</argument>
+      <argument>2</argument>
+      <argument>3</argument>
+      <argument>4</argument>
+      <argument>5</argument>
+      <argument>6</argument>
+      <argument>7</argument>
+      <argument>8</argument>
+      <argument>9</argument>
+      <argument>0</argument>
+      <output>1&#00;2&#00;3&#00;4&#00;5&#00;6&#00;7&#00;8&#00;9&#00;0&#00;</output><!-- FIXME: not all XML parsers support '\0' for char in this form. -->
+      <output_length>20</output_length>
+      <return>1</return>
+    </argument_append_arguments>
+    <argument_append_arguments>
+      <argument>"a b c"</argument>
+      <argument>2</argument>
+      <argument>3</argument>
+      <argument>4</argument>
+      <argument>5</argument>
+      <argument>6</argument>
+      <argument>7</argument>
+      <argument>8</argument>
+      <argument>9</argument>
+      <argument>0</argument>
+      <output>a b c&#00;2&#00;3&#00;4&#00;5&#00;6&#00;7&#00;8&#00;9&#00;0&#00;</output><!-- FIXME: not all XML parsers support '\0' for char in this form. -->
+      <output_length>24</output_length>
+      <return>1</return>
+    </argument_append_arguments>
+  </TestArgumentParser>
+  <TestConversion>
+    <bool_parse>
+      <input></input>
+      <output></output>
+      <return>0</return>
+    </bool_parse>
+    <bool_parse>
+      <input>True</input>
+      <output>1</output>
+      <return>1</return>
+    </bool_parse>
+    <bool_parse>
+      <input>False</input>
+      <output>0</output>
+      <return>1</return>
+    </bool_parse>
+    <bool_parse>
+      <input>true</input>
+      <output>1</output>
+      <return>1</return>
+    </bool_parse>
+    <bool_parse>
+      <input>false</input>
+      <output></output>
+      <return>1</return>
+    </bool_parse>
+    <bool_to_string>
+      <input></input>
+      <output>False</output>
+      <return>1</return>
+    </bool_to_string>
+    <bool_to_string>
+      <input>0</input>
+      <output>False</output>
+      <return>1</return>
+    </bool_to_string>
+    <bool_to_string>
+      <input>1</input>
+      <output>True</output>
+      <return>1</return>
+    </bool_to_string>
+    <bool_to_string>
+      <input>2</input>
+      <output></output>
+      <return>0</return>
+    </bool_to_string>
+  </TestConversion>
+  <TestDateTime>
+    <datetime_format_to_string>
+      <year>2019</year>
+      <month>09</month>
+      <day>01</day>
+      <hour>02</hour>
+      <minute>03</minute>
+      <second>04</second>
+      <return>1</return>
+      <format>%A %c</format>
+      <output>Sunday Sun Sep  1 02:03:04 2019</output>
+      <mingw_output>Sunday 09/01/19 02:03:04</mingw_output>
+    </datetime_format_to_string>
+    <datetime_parse>
+      <input></input>
+      <return></return>
+      <year></year>
+      <month></month>
+      <day></day>
+      <hour></hour>
+      <minute></minute>
+      <second></second>
+    </datetime_parse>
+    <datetime_parse>
+      <input>01.09.2019 2:03:04</input>
+      <return>1</return>
+      <year>2019</year>
+      <month>09</month>
+      <day>01</day>
+      <hour>02</hour>
+      <minute>03</minute>
+      <second>04</second>
+    </datetime_parse>
+    <datetime_to_string>
+      <year>2019</year>
+      <month>09</month>
+      <day>01</day>
+      <hour>02</hour>
+      <minute>03</minute>
+      <second>04</second>
+      <output>01.09.2019 2:03:04</output>
+    </datetime_to_string>
+    <datetime_get_day>
+      <input>1</input>
+    </datetime_get_day>
+    <datetime_get_day>
+      <input>15</input>
+    </datetime_get_day>
+    <datetime_get_day>
+      <input>31</input>
+    </datetime_get_day>
+    <datetime_get_days_in_month>
+      <year></year>
+      <month></month>
+      <return></return>
+    </datetime_get_days_in_month>
+    <datetime_get_days_in_month>
+      <year>2019</year>
+      <month>09</month>
+      <return>30</return>
+    </datetime_get_days_in_month>
+    <datetime_get_days_in_month>
+      <year>2019</year>
+      <month>02</month>
+      <return>28</return>
+    </datetime_get_days_in_month>
+    <datetime_get_days_in_month>
+      <year>2016</year>
+      <month>02</month>
+      <return>29</return>
+    </datetime_get_days_in_month>
+    <datetime_get_hour>
+      <input>0</input>
+    </datetime_get_hour>
+    <datetime_get_hour>
+      <input>21</input>
+    </datetime_get_hour>
+    <datetime_get_hour>
+      <input>23</input>
+    </datetime_get_hour>
+    <datetime_get_minute>
+      <input>1</input>
+    </datetime_get_minute>
+    <datetime_get_minute>
+      <input>30</input>
+    </datetime_get_minute>
+    <datetime_get_minute>
+      <input>59</input>
+    </datetime_get_minute>
+    <datetime_get_month>
+      <input>1</input>
+    </datetime_get_month>
+    <datetime_get_month>
+      <input>6</input>
+    </datetime_get_month>
+    <datetime_get_month>
+      <input>12</input>
+    </datetime_get_month>
+    <datetime_get_second>
+      <input>0</input>
+    </datetime_get_second>
+    <datetime_get_second>
+      <input>30</input>
+    </datetime_get_second>
+    <datetime_get_second>
+      <input>59</input>
+    </datetime_get_second>
+    <datetime_get_year>
+      <input>1970</input>
+    </datetime_get_year>
+    <datetime_get_year>
+      <input>2000</input>
+    </datetime_get_year>
+    <datetime_get_year>
+      <input>2019</input>
+    </datetime_get_year>
+    <datetime_is_leap_year>
+      <input>1700</input>
+      <return>0</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>1800</input>
+      <return>0</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>1900</input>
+      <return>0</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>1600</input>
+      <return>1</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>2000</input>
+      <return>1</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>2016</input>
+      <return>1</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>2019</input>
+      <return>0</return>
+    </datetime_is_leap_year>
+    <datetime_is_leap_year>
+      <input>2020</input>
+      <return>1</return>
+    </datetime_is_leap_year>
+    <datetime_decode>
+      <input>1569840495</input>
+      <return>1</return>
+      <year>2019</year>
+      <month>09</month>
+      <day>30</day>
+      <hour>10</hour>
+      <minute>48</minute>
+      <second>15</second>
+      <year_day>273</year_day>
+    </datetime_decode>
+  </TestDateTime>
+  <TestEnvironment>
+    <environment_variable_exists>
+      <variable_name>PATH</variable_name>
+      <variable_name_length>4</variable_name_length>
+      <return>1</return>
+    </environment_variable_exists>
+    <environment_variable_exists>
+      <variable_name>PATH!@#</variable_name>
+      <variable_name_length>7</variable_name_length>
+      <return>0</return>
+    </environment_variable_exists>
+  </TestEnvironment>
+  <TestExec>
+    <exec_at_all>
+      <append></append>
+      <program></program>
+      <base_dir></base_dir>
+      <command_line></command_line>
+      <pid_property></pid_property>
+      <result_property></result_property>
+      <working_dir></working_dir>
+      <environment_variables></environment_variables>
+      <spawn></spawn>
+      <time_out></time_out>
+      <verbose></verbose>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all><!-- command_line -->
+      <command_line>1 2 3 4 5</command_line>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-windows()}"><!-- working_dir -->
+      <working_dir>C:\</working_dir>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-unix()}"><!-- working_dir -->
+      <working_dir>/home/</working_dir>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all><!-- environment_variables -->
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all><!-- command_line environment_variables -->
+      <command_line>1 2 3 4 5</command_line>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-windows()}"><!-- working_dir environment_variables -->
+      <working_dir>C:\</working_dir>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-unix()}"><!-- working_dir environment_variables -->
+      <working_dir>/home/</working_dir>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-windows()}"><!-- command_line working_dir -->
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>C:\</working_dir>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-unix()}"><!-- command_line working_dir -->
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>/home/</working_dir>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-windows()}"><!-- command_line working_dir environment_variables -->
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>C:\</working_dir>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all if="${platform::is-unix()}"><!-- command_line working_dir environment_variables -->
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>/home/</working_dir>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all>
+      <environment_variables>var1=value1 var2=value2</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all>
+      <environment_variables>"var 1"="value 1"</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_at_all>
+      <environment_variables>"var 1"="value 1" "var 2"="value 2"</environment_variables>
+      <return>1</return>
+    </exec_at_all>
+    <exec_with_redirect_to_tmp_file>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <command_line>1 2 3 4 5</command_line>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <command_line>"a b c" "d e f" "g h" 4 5</command_line>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+  </TestExec>
+  <TestFileSystem>
+    <directory_exists>
+      <input></input>
+      <return></return>
+    </directory_exists>
+    <directory_exists if="${platform::is-windows()}">
+      <input>C:\Windows</input>
+      <return>1</return>
+    </directory_exists>
+    <directory_exists if="${platform::is-windows()}">
+      <input>C:\Windows!</input>
+      <return>0</return>
+    </directory_exists>
+    <directory_exists if="${platform::is-windows()}">
+      <input>C:\Windows\regedit.exe</input>
+      <return>0</return>
+    </directory_exists>
+    <directory_exists if="${platform::is-unix()}">
+      <input>/home</input>
+      <return>1</return>
+    </directory_exists>
+    <directory_exists if="${platform::is-unix()}">
+      <input>/home!</input>
+      <return>0</return>
+    </directory_exists>
+    <directory_exists if="${platform::is-unix()}">
+      <input>/bin/ls</input>
+      <return>0</return>
+    </directory_exists>
+    <file_exists>
+      <input></input>
+      <return></return>
+    </file_exists>
+    <file_exists if="${platform::is-windows()}">
+      <input>C:\Windows</input>
+      <return>0</return>
+    </file_exists>
+    <file_exists if="${platform::is-windows()}">
+      <input>C:\Windows!</input>
+      <return>0</return>
+    </file_exists>
+    <file_exists if="${platform::is-windows()}">
+      <input>C:\Windows\regedit.exe</input>
+      <return>1</return>
+    </file_exists>
+    <file_exists if="${platform::is-windows()}">
+      <input>C:\Windows\regedit.exe1</input>
+      <return>0</return>
+    </file_exists>
+    <file_exists if="${platform::is-unix()}">
+      <input>/home</input>
+      <return>0</return>
+    </file_exists>
+    <file_exists if="${platform::is-unix()}">
+      <input>/home!</input>
+      <return>0</return>
+    </file_exists>
+    <file_exists if="${platform::is-unix()}">
+      <input>/bin/ls</input>
+      <return>1</return>
+    </file_exists>
+    <file_exists if="${platform::is-unix()}">
+      <input>/bin/ls1</input>
+      <return>0</return>
+    </file_exists>
+  </TestFileSystem>
+  <TestInterpreter>
+    <interpreter_disassemble_function>
+      <input></input>
+      <name_space></name_space>
+      <name></name>
+      <arguments_area></arguments_area>
+      <return></return>
+    </interpreter_disassemble_function>
+    <interpreter_disassemble_function>
+      <input>
+        <![CDATA[string::substring('project.name', string::last-index-of('project.name', '.'), string::get-length('project.name') - string::last-index-of('project.name', '.'))]]>
+      </input>
+      <input></input>
+      <name_space>string</name_space>
+      <name>substring</name>
+      <arguments_area>
+        <![CDATA['project.name', string::last-index-of('project.name', '.'), string::get-length('project.name') - string::last-index-of('project.name', '.')]]>
+      </arguments_area>
+      <return>1</return>
+    </interpreter_disassemble_function>
+    <interpreter_get_values_for_arguments>
+      <arguments></arguments>
+      <return></return>
+    </interpreter_get_values_for_arguments>
+    <interpreter_get_values_for_arguments>
+      <arguments>'Abc', 'a'</arguments>
+      <return>2</return>
+      <output>Abc</output>
+      <output>a</output>
+    </interpreter_get_values_for_arguments>
+    <interpreter_get_values_for_arguments>
+      <arguments><![CDATA['project.name', string::last-index-of('project.name', '.'), '5']]></arguments>
+      <return>3</return>
+      <output>project.name</output>
+      <output>7</output>
+      <output>5</output>
+    </interpreter_get_values_for_arguments>
+    <interpreter_get_values_for_arguments>
+      <arguments><![CDATA[string::get-length('project.name') - string::last-index-of('project.name', '.')]]></arguments>
+      <return>1</return>
+      <output>12 - 7</output>
+    </interpreter_get_values_for_arguments>
+    <interpreter_get_values_for_arguments>
+      <arguments><![CDATA['project.name', string::last-index-of('project.name', '.'), string::get-length('project.name') - string::last-index-of('project.name', '.')]]></arguments>
+      <return>3</return>
+      <output>project.name</output>
+      <output>7</output>
+      <output>12 - 7</output>
+    </interpreter_get_values_for_arguments>
+    <interpreter_evaluate_code>
+      <code></code>
+      <output></output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>Just a string.</code>
+      <output>Just a string.</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(environment::get-machine-name())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(environment::get-operating-system())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::substring(environment::get-operating-system(), '0', '20')}</code>
+      <output>Microsoft Windows NT</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(environment::get-user-name())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(environment::get-variable('SystemRoot'))}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>newline() -> ${environment::newline()} </code>
+      <output>newline() -> &#13;&#10; </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>newline() -> ${environment::newline()} </code>
+      <output>newline() -> &#10; </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>variable-exists('PATH') -> ${environment::variable-exists('PATH')} </code>
+      <output>variable-exists('PATH') -> True </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>variable-exists('PATH!@#') -> ${environment::variable-exists('PATH!@#')} </code>
+      <output>variable-exists('PATH!@#') -> False </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(environment::is64bit-process())} </code>
+      <output>False </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(environment::is64bit-operating-system())} </code>
+      <output>False </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>contains('Abc', 'a') -> ${string::contains('Abc', 'a')}</code>
+      <output>contains('Abc', 'a') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>contains('Abc', 'A') -> ${string::contains('Abc', 'A')}</code>
+      <output>contains('Abc', 'A') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>ends-with('', '') -> ${string::ends-with('', '')}</code>
+      <output>ends-with('', '') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>ends-with('', 'A') -> ${string::ends-with('', 'A')}</code>
+      <output>ends-with('', 'A') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>ends-with(' ', ' ') -> ${string::ends-with(' ', ' ')}</code>
+      <output>ends-with(' ', ' ') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>ends-with('AB', 'CD') -> ${string::ends-with('AB', 'CD')}</code>
+      <output>ends-with('AB', 'CD') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>ends-with('ABCD', 'CD') -> ${string::ends-with('ABCD', 'CD')}</code>
+      <output>ends-with('ABCD', 'CD') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-length('') -> ${string::get-length('')}</code>
+      <output>get-length('') -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-length(' ') -> ${string::get-length(' ')}</code>
+      <output>get-length(' ') -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>empty() -> ${string::empty('')}, </code>
+      <code>empty( ) -> ${string::empty(' ')}</code>
+      <output>empty() -> True, </output>
+      <output>empty( ) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-length('ABCDE') -> ${string::get-length('ABCDE')}</code>
+      <output>get-length('ABCDE') -> 5</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of('', '') -> ${string::index-of('', '')}</code>
+      <output>index-of('', '') -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of(' ', ' ') -> ${string::index-of(' ', ' ')}</code>
+      <output>index-of(' ', ' ') -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of(' ', 'A') -> ${string::index-of(' ', 'A')}</code>
+      <output>index-of(' ', 'A') -> -1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of('AB', 'B') -> ${string::index-of('AB', 'B')}</code>
+      <output>index-of('AB', 'B') -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of('ABAB', 'B') -> ${string::index-of('ABAB', 'B')}</code>
+      <output>index-of('ABAB', 'B') -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of('AB', 'C') -> ${string::index-of('AB', 'C')}</code>
+      <output>index-of('AB', 'C') -> -1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>last-index-of('AB', 'B') -> ${string::last-index-of('AB', 'B')}</code>
+      <output>last-index-of('AB', 'B') -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>last-index-of('ABAB', 'B') -> ${string::last-index-of('ABAB', 'B')}</code>
+      <output>last-index-of('ABAB', 'B') -> 3</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>last-index-of('AB', 'C') -> ${string::last-index-of('AB', 'C')}</code>
+      <output>last-index-of('AB', 'C') -> -1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>replace('', '', '') -> ${string::replace('', '', '')}</code>
+      <output>replace('', '', '') -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>replace('abc', 'b', 'ABC') -> ${string::replace('abc', 'b', 'ABC')}</code>
+      <output>replace('abc', 'b', 'ABC') -> aABCc</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>replace('abc123', 'bc1', '') -> ${string::replace('abc123', 'bc1', '')}</code>
+      <output>replace('abc123', 'bc1', '') -> a23</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>starts-with('', '') -> ${string::starts-with('', '')}</code>
+      <output>starts-with('', '') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>starts-with('', 'A') -> ${string::starts-with('', 'A')}</code>
+      <output>starts-with('', 'A') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>starts-with(' ', ' ') -> ${string::starts-with(' ', ' ')}</code>
+      <output>starts-with(' ', ' ') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>starts-with('AB', 'CD') -> ${string::starts-with('AB', 'CD')}</code>
+      <output>starts-with('AB', 'CD') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>starts-with('ABCD', 'AB') -> ${string::starts-with('ABCD', 'AB')}</code>
+      <output>starts-with('ABCD', 'AB') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>substring('ABCD', '2', '1') -> ${string::substring('ABCD', '2', '1')}</code>
+      <output>substring('ABCD', '2', '1') -> C</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>substring('ABCD', '2', '3') -> ${string::substring('ABCD', '2', '3')}</code>
+      <output>substring('ABCD', '2', '3') -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>substring('ABCD', '2', '4') -> ${string::substring('ABCD', '2', '4')}</code>
+      <output>substring('ABCD', '2', '4') -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>substring('ABCD', '2') -> ${string::substring('ABCD', '2')}</code>
+      <output>substring('ABCD', '2') -> CD</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>substring('ABCD', '4') -> ${string::substring('ABCD', '4')}</code>
+      <output>substring('ABCD', '4') -> </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>substring('ABCD', '5') -> ${string::substring('ABCD', '5')}</code>
+      <output>substring('ABCD', '5') -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-lower('') -> ${string::to-lower('')}</code>
+      <output>to-lower('') -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-lower('ABCD') -> ${string::to-lower('ABCD')}</code>
+      <output>to-lower('ABCD') -> abcd</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-lower('abcd') -> ${string::to-lower('abcd')}</code>
+      <output>to-lower('abcd') -> abcd</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-upper('') -> ${string::to-upper('')}</code>
+      <output>to-upper('') -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-upper('ABCD') -> ${string::to-upper('ABCD')}</code>
+      <output>to-upper('ABCD') -> ABCD</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-upper('abcd') -> ${string::to-upper('abcd')}</code>
+      <output>to-upper('abcd') -> ABCD</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>trim(' abc ') -> ${string::trim(' abc ')}</code>
+      <output>trim(' abc ') -> abc</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>trim-end(' abc ') -> ${string::trim-end(' abc ')}</code>
+      <output>trim-end(' abc ') ->  abc</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>trim-start(' abc ') -> ${string::trim-start(' abc ')}</code>
+      <output>trim-start(' abc ') -> abc </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>quote() -> ${string::quote('')}</code>
+      <output>quote() -> ""</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>quote(a b c) -> ${string::quote('a b c')}</code>
+      <output>quote(a b c) -> "a b c"</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>un-quote() -> ${string::un-quote('')}</code>
+      <output>un-quote() -> </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>un-quote(") -> ${string::un-quote('"')}</code>
+      <output>un-quote(") -> </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>un-quote("a b c") -> ${string::un-quote('"a b c"')}</code>
+      <output>un-quote("a b c") -> a b c</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>un-quote(""a b c"") -> ${string::un-quote('""a b c""')}</code>
+      <output>un-quote(""a b c"") -> a b c</output>
+      <return>1</return>
+    </interpreter_evaluate_code>    
+    <interpreter_evaluate_code>
+      <code>equal('', '') -> ${string::equal('', '')}</code>
+      <output>equal('', '') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>equal(' ', ' ') -> ${string::equal(' ', ' ')}</code>
+      <output>equal(' ', ' ') -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>equal('A', 'B') -> ${string::equal('A', 'B')}</code>
+      <output>equal('A', 'B') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${property::exists('My_property')}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${property::get_value('My_property')}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${property::is_dynamic('My_property')}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${property::is_readonly('My_property')}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::equal(platform::is-unix(), platform::is-windows())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::parse('1.2.3.4')}</code>
+      <output>1.2.3.4</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::to-string('1.2.3.4')}</code>
+      <output>1.2.3.4</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::get-major('1.2.3.4')}</code>
+      <output>1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::get-minor('1.2.3.4')}</code>
+      <output>2</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::get-build('1.2.3.4')}</code>
+      <output>3</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::get-revision('1.2.3.4')}</code>
+      <output>4</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${project::get-base-directory()}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${project::get-buildfile-path()}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${project::get-buildfile-uri()}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${project::get-default-target()}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${project::get-name()}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${program::version()}</code>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>path::change-extension('1.txt', '.exe') => ${path::change-extension('1.txt', '.exe')}</code>
+      <output>path::change-extension('1.txt', '.exe') => 1.exe</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>path::combine('C:\', '\Windows') => ${path::combine('C:\', '\Windows')}</code>
+      <output>path::combine('C:\', '\Windows') => C:\Windows</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>path::combine('/tmp/', '/file') => ${path::combine('/tmp/', '/file')}</code>
+      <output>path::combine('/tmp/', '/file') => /tmp/file</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>path::get-directory-name('C:\Windows\System32\cmd.exe') => ${path::get-directory-name('C:\Windows\System32\cmd.exe')}</code>
+      <output>path::get-directory-name('C:\Windows\System32\cmd.exe') => C:\Windows\System32</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>path::get-directory-name('/tmp/file') => ${path::get-directory-name('/tmp/file')}</code>
+      <output>path::get-directory-name('/tmp/file') => /tmp</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>get-file-name('C:\Windows\System32\cmd.exe') => ${path::get-file-name('C:\Windows\System32\cmd.exe')}</code>
+      <output>get-file-name('C:\Windows\System32\cmd.exe') => cmd.exe</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>get-file-name('/tmp/file') => ${path::get-file-name('/tmp/file')}</code>
+      <output>get-file-name('/tmp/file') => file</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-file-name-without-extension('1.txt') => ${path::get-file-name-without-extension('1.txt')}</code>
+      <output>get-file-name-without-extension('1.txt') => 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-file-name-without-extension('abc.txt') => ${path::get-file-name-without-extension('abc.txt')}</code>
+      <output>get-file-name-without-extension('abc.txt') => abc</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>get-path-root('C:\Windows\System32\cmd.exe') => ${path::get-path-root('C:\Windows\System32\cmd.exe')}</code>
+      <output>get-path-root('C:\Windows\System32\cmd.exe') => C:\</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>get-path-root('/tmp/file') => ${path::get-path-root('/tmp/file')}</code>
+      <output>get-path-root('/tmp/file') => /</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>is-path-rooted(get-temp-file-name()) => ${path::is-path-rooted(path::get-temp-file-name())}</code>
+      <output>is-path-rooted(get-temp-file-name()) => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>is-path-rooted(get-temp-path()) => ${path::is-path-rooted(path::get-temp-path())}</code>
+      <output>is-path-rooted(get-temp-path()) => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>has-extension('abc.txt') => ${path::has-extension('abc.txt')}</code>
+      <output>has-extension('abc.txt') => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>has-extension('abc') => ${path::has-extension('abc')}</code>
+      <output>has-extension('abc') => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>is-path-rooted('abc') => ${path::is-path-rooted('abc')}</code>
+      <output>is-path-rooted('abc') => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>is-path-rooted('C:\') => ${path::is-path-rooted('C:\')}</code>
+      <output>is-path-rooted('C:\') => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>is-path-rooted('/') => ${path::is-path-rooted('/')}</code>
+      <output>is-path-rooted('/') => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>less('1', string::get-length(get-full-path('.'))) => ${math::less('1', string::get-length(path::get-full-path('.')))}</code>
+      <output>less('1', string::get-length(get-full-path('.'))) => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => ${cygpath::get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection')}</code>
+      <output>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => C:\PROGRA~1\WIF4A9~1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-unix()}">
+      <code>get-dos-path('\') => ${cygpath::get-dos-path('\')}</code>
+      <output>get-dos-path('\') => </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-unix-path('C:\Windows\System32') => ${cygpath::get-unix-path('C:\Windows\System32')}</code>
+      <output>get-unix-path('C:\Windows\System32') => C:/Windows/System32</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-unix-path('/usr/lib/') => ${cygpath::get-unix-path('/usr/lib/')}</code>
+      <output>get-unix-path('/usr/lib/') => /usr/lib/</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-windows-path('C:\Windows\System32') => ${cygpath::get-windows-path('C:\Windows\System32')}</code>
+      <output>get-windows-path('C:\Windows\System32') => C:\Windows\System32</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-windows-path('/usr/lib/') => ${cygpath::get-windows-path('/usr/lib/')}</code>
+      <output>get-windows-path('/usr/lib/') => \usr\lib\</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>empty(get-directory-name(get-temp-path())) -> ${string::empty(path::get-directory-name(path::get-temp-path()))}</code>
+      <output>empty(get-directory-name(get-temp-path())) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>empty(current-directory()) => ${string::empty(program::current-directory())}</code>
+      <output>empty(current-directory()) => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>parse('True') => ${bool::parse('True')}</code>
+      <output>parse('True') => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>parse('False') => ${bool::parse('False')}</code>
+      <output>parse('False') => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string('True') => ${bool::to-string('True')}</code>
+      <output>to-string('True') => True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string('False') => ${bool::to-string('False')}</code>
+      <output>to-string('False') => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <!--interpreter_evaluate_code>
+      <code>parse('0.5') => ${double::parse('0.5')}</code>
+      <output>parse('0.5') => 0.5</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string('0.5') => ${double::to-string('0.5')}</code>
+      <output>to-string('0.5') => 0.5</output>
+      <return>1</return>
+    </interpreter_evaluate_code-->
+    <interpreter_evaluate_code>
+      <code>parse('2') => ${int::parse('2')}</code>
+      <output>parse('2') => 2</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string('2') => ${int::to-string('2')}</code>
+      <output>to-string('2') => 2</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>parse('2147483647') => ${long::parse('2147483647')}</code>
+      <output>parse('2147483647') => 2147483647</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string('2147483647') => ${long::to-string('2147483647')}</code>
+      <output>to-string('2147483647') => 2147483647</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>parse('9223372036854775807') => ${int64::parse('9223372036854775807')}</code>
+      <output>parse('9223372036854775807') => 9223372036854775807</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string('9223372036854775807') => ${int64::to-string('9223372036854775807')}</code>
+      <output>to-string('9223372036854775807') => 9223372036854775807</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(abs('-1')) -> ${math::truncate(math::abs('-1'))}, truncate(abs('1')) -> ${math::truncate(math::abs('1'))}</code>
+      <output>truncate(abs('-1')) -> 1, truncate(abs('1')) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(ceiling('-1.75')) -> ${math::truncate(math::ceiling('-1.75'))}, </code>
+      <code>truncate(ceiling('-1.5')) -> ${math::truncate(math::ceiling('-1.5'))}, </code>
+      <code>truncate(ceiling('-1.25')) -> ${math::truncate(math::ceiling('-1.25'))}, </code>
+      <code>truncate(ceiling('-1')) -> ${math::truncate(math::ceiling('-1'))}, </code>
+      <code>truncate(ceiling('-0.75')) -> ${math::truncate(math::ceiling('-0.75'))}, </code>
+      <code>truncate(ceiling('-0.5')) -> ${math::truncate(math::ceiling('-0.5'))}, </code>
+      <code>truncate(ceiling('-0.25')) -> ${math::truncate(math::ceiling('-0.25'))}, </code>
+      <code>truncate(ceiling('0')) -> ${math::truncate(math::ceiling('0'))}, </code>
+      <code>truncate(ceiling('0.25')) -> ${math::truncate(math::ceiling('0.25'))}, </code>
+      <code>truncate(ceiling('0.5')) -> ${math::truncate(math::ceiling('0.5'))}, </code>
+      <code>truncate(ceiling('0.75')) -> ${math::truncate(math::ceiling('0.75'))}, </code>
+      <code>truncate(ceiling('1')) -> ${math::truncate(math::ceiling('1'))}, </code>
+      <code>truncate(ceiling('1.25')) -> ${math::truncate(math::ceiling('1.25'))}, </code>
+      <code>truncate(ceiling('1.5')) -> ${math::truncate(math::ceiling('1.5'))}, </code>
+      <code>truncate(ceiling('1.75')) -> ${math::truncate(math::ceiling('1.75'))}</code>
+      <output>truncate(ceiling('-1.75')) -> -1, </output>
+      <output>truncate(ceiling('-1.5')) -> -1, </output>
+      <output>truncate(ceiling('-1.25')) -> -1, </output>
+      <output>truncate(ceiling('-1')) -> -1, </output>
+      <output>truncate(ceiling('-0.75')) -> 0, </output>
+      <output>truncate(ceiling('-0.5')) -> 0, </output>
+      <output>truncate(ceiling('-0.25')) -> 0, </output>
+      <output>truncate(ceiling('0')) -> 0, </output>
+      <output>truncate(ceiling('0.25')) -> 1, </output>
+      <output>truncate(ceiling('0.5')) -> 1, </output>
+      <output>truncate(ceiling('0.75')) -> 1, </output>
+      <output>truncate(ceiling('1')) -> 1, </output>
+      <output>truncate(ceiling('1.25')) -> 2, </output>
+      <output>truncate(ceiling('1.5')) -> 2, </output>
+      <output>truncate(ceiling('1.75')) -> 2</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(floor('-1.75')) -> ${math::truncate(math::floor('-1.75'))}, </code>
+      <code>truncate(floor('-1.5')) -> ${math::truncate(math::floor('-1.5'))}, </code>
+      <code>truncate(floor('-1.25')) -> ${math::truncate(math::floor('-1.25'))}, </code>
+      <code>truncate(floor('-1')) -> ${math::truncate(math::floor('-1'))}, </code>
+      <code>truncate(floor('-0.75')) -> ${math::truncate(math::floor('-0.75'))}, </code>
+      <code>truncate(floor('-0.5')) -> ${math::truncate(math::floor('-0.5'))}, </code>
+      <code>truncate(floor('-0.25')) -> ${math::truncate(math::floor('-0.25'))}, </code>
+      <code>truncate(floor('0')) -> ${math::truncate(math::floor('0'))}, </code>
+      <code>truncate(floor('0.25')) -> ${math::truncate(math::floor('0.25'))}, </code>
+      <code>truncate(floor('0.5')) -> ${math::truncate(math::floor('0.5'))}, </code>
+      <code>truncate(floor('0.75')) -> ${math::truncate(math::floor('0.75'))}, </code>
+      <code>truncate(floor('1')) -> ${math::truncate(math::floor('1'))}, </code>
+      <code>truncate(floor('1.25')) -> ${math::truncate(math::floor('1.25'))}, </code>
+      <code>truncate(floor('1.5')) -> ${math::truncate(math::floor('1.5'))}, </code>
+      <code>truncate(floor('1.75')) -> ${math::truncate(math::floor('1.75'))}</code>
+      <output>truncate(floor('-1.75')) -> -2, </output>
+      <output>truncate(floor('-1.5')) -> -2, </output>
+      <output>truncate(floor('-1.25')) -> -2, </output>
+      <output>truncate(floor('-1')) -> -1, </output>
+      <output>truncate(floor('-0.75')) -> -1, </output>
+      <output>truncate(floor('-0.5')) -> -1, </output>
+      <output>truncate(floor('-0.25')) -> -1, </output>
+      <output>truncate(floor('0')) -> 0, </output>
+      <output>truncate(floor('0.25')) -> 0, </output>
+      <output>truncate(floor('0.5')) -> 0, </output>
+      <output>truncate(floor('0.75')) -> 0, </output>
+      <output>truncate(floor('1')) -> 1, </output>
+      <output>truncate(floor('1.25')) -> 1, </output>
+      <output>truncate(floor('1.5')) -> 1, </output>
+      <output>truncate(floor('1.75')) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(round('-1.75')) -> ${math::truncate(math::round('-1.75'))}, </code>
+      <code>truncate(round('-1.5')) -> ${math::truncate(math::round('-1.5'))}, </code>
+      <code>truncate(round('-1.25')) -> ${math::truncate(math::round('-1.25'))}, </code>
+      <code>truncate(round('-1')) -> ${math::truncate(math::round('-1'))}, </code>
+      <code>truncate(round('-0.75')) -> ${math::truncate(math::round('-0.75'))}, </code>
+      <code>truncate(round('-0.5')) -> ${math::truncate(math::round('-0.5'))}, </code>
+      <code>truncate(round('-0.25')) -> ${math::truncate(math::round('-0.25'))}, </code>
+      <code>truncate(round('0')) -> ${math::truncate(math::round('0'))}, </code>
+      <code>truncate(round('0.25')) -> ${math::truncate(math::round('0.25'))}, </code>
+      <code>truncate(round('0.5')) -> ${math::truncate(math::round('0.5'))}, </code>
+      <code>truncate(round('0.75')) -> ${math::truncate(math::round('0.75'))}, </code>
+      <code>truncate(round('1')) -> ${math::truncate(math::round('1'))}, </code>
+      <code>truncate(round('1.25')) -> ${math::truncate(math::round('1.25'))}, </code>
+      <code>truncate(round('1.5')) -> ${math::truncate(math::round('1.5'))}, </code>
+      <code>truncate(round('1.75')) -> ${math::truncate(math::round('1.75'))}</code>
+      <output>truncate(round('-1.75')) -> -2, </output>
+      <output>truncate(round('-1.5')) -> -2, </output>
+      <output>truncate(round('-1.25')) -> -1, </output>
+      <output>truncate(round('-1')) -> -1, </output>
+      <output>truncate(round('-0.75')) -> -1, </output>
+      <output>truncate(round('-0.5')) -> 0, </output>
+      <output>truncate(round('-0.25')) -> 0, </output>
+      <output>truncate(round('0')) -> 0, </output>
+      <output>truncate(round('0.25')) -> 0, </output>
+      <output>truncate(round('0.5')) -> 0, </output>
+      <output>truncate(round('0.75')) -> 1, </output>
+      <output>truncate(round('1')) -> 1, </output>
+      <output>truncate(round('1.25')) -> 1, </output>
+      <output>truncate(round('1.5')) -> 2, </output>
+      <output>truncate(round('1.75')) -> 2</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, acos(-1))) -> ${math::truncate(math::multiplication('100000', math::acos('-1')))}, </code>
+      <code>truncate(multiplication(100000, acos(-0.75))) -> ${math::truncate(math::multiplication('100000', math::acos('-0.75')))}, </code>
+      <code>truncate(multiplication(100000, acos(-0.5))) -> ${math::truncate(math::multiplication('100000', math::acos('-0.5')))}, </code>
+      <code>truncate(multiplication(100000, acos(-0.25))) -> ${math::truncate(math::multiplication('100000', math::acos('-0.25')))}, </code>
+      <code>truncate(multiplication(100000, acos(0))) -> ${math::truncate(math::multiplication('100000', math::acos('0')))}, </code>
+      <code>truncate(multiplication(100000, acos(0.25))) -> ${math::truncate(math::multiplication('100000', math::acos('0.25')))}, </code>
+      <code>truncate(multiplication(100000, acos(0.5))) -> ${math::truncate(math::multiplication('100000', math::acos('0.5')))}, </code>
+      <code>truncate(multiplication(100000, acos(0.75))) -> ${math::truncate(math::multiplication('100000', math::acos('0.75')))}, </code>
+      <code>truncate(multiplication(100000, acos(1))) -> ${math::truncate(math::multiplication('100000', math::acos('1')))}</code>
+      <output>truncate(multiplication(100000, acos(-1))) -> 314159, </output>
+      <output>truncate(multiplication(100000, acos(-0.75))) -> 241885, </output>
+      <output>truncate(multiplication(100000, acos(-0.5))) -> 209439, </output>
+      <output>truncate(multiplication(100000, acos(-0.25))) -> 182347, </output>
+      <output>truncate(multiplication(100000, acos(0))) -> 157079, </output>
+      <output>truncate(multiplication(100000, acos(0.25))) -> 131811, </output>
+      <output>truncate(multiplication(100000, acos(0.5))) -> 104719, </output>
+      <output>truncate(multiplication(100000, acos(0.75))) -> 72273, </output>
+      <output>truncate(multiplication(100000, acos(1))) -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, asin(-1))) -> ${math::truncate(math::multiplication('100000', math::asin('-1')))}, </code>
+      <code>truncate(multiplication(100000, asin(-0.75))) -> ${math::truncate(math::multiplication('100000', math::asin('-0.75')))}, </code>
+      <code>truncate(multiplication(100000, asin(-0.5))) -> ${math::truncate(math::multiplication('100000', math::asin('-0.5')))}, </code>
+      <code>truncate(multiplication(100000, asin(-0.25))) -> ${math::truncate(math::multiplication('100000', math::asin('-0.25')))}, </code>
+      <code>truncate(multiplication(100000, asin(0))) -> ${math::truncate(math::multiplication('100000', math::asin('0')))}, </code>
+      <code>truncate(multiplication(100000, asin(0.25))) -> ${math::truncate(math::multiplication('100000', math::asin('0.25')))}, </code>
+      <code>truncate(multiplication(100000, asin(0.5))) -> ${math::truncate(math::multiplication('100000', math::asin('0.5')))}, </code>
+      <code>truncate(multiplication(100000, asin(0.75))) -> ${math::truncate(math::multiplication('100000', math::asin('0.75')))}, </code>
+      <code>truncate(multiplication(100000, asin(1))) -> ${math::truncate(math::multiplication('100000', math::asin('1')))}</code>
+      <output>truncate(multiplication(100000, asin(-1))) -> -157079, </output>
+      <output>truncate(multiplication(100000, asin(-0.75))) -> -84806, </output>
+      <output>truncate(multiplication(100000, asin(-0.5))) -> -52359, </output>
+      <output>truncate(multiplication(100000, asin(-0.25))) -> -25268, </output>
+      <output>truncate(multiplication(100000, asin(0))) -> 0, </output>
+      <output>truncate(multiplication(100000, asin(0.25))) -> 25268, </output>
+      <output>truncate(multiplication(100000, asin(0.5))) -> 52359, </output>
+      <output>truncate(multiplication(100000, asin(0.75))) -> 84806, </output>
+      <output>truncate(multiplication(100000, asin(1))) -> 157079</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, atan(-1))) -> ${math::truncate(math::multiplication('100000', math::atan('-1')))}, </code>
+      <code>truncate(multiplication(100000, atan(-0.75))) -> ${math::truncate(math::multiplication('100000', math::atan('-0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan(-0.5))) -> ${math::truncate(math::multiplication('100000', math::atan('-0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan(-0.25))) -> ${math::truncate(math::multiplication('100000', math::atan('-0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan(0))) -> ${math::truncate(math::multiplication('100000', math::atan('0')))}, </code>
+      <code>truncate(multiplication(100000, atan(0.25))) -> ${math::truncate(math::multiplication('100000', math::atan('0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan(0.5))) -> ${math::truncate(math::multiplication('100000', math::atan('0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan(0.75))) -> ${math::truncate(math::multiplication('100000', math::atan('0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan(1))) -> ${math::truncate(math::multiplication('100000', math::atan('1')))}</code>
+      <output>truncate(multiplication(100000, atan(-1))) -> -78539, </output>
+      <output>truncate(multiplication(100000, atan(-0.75))) -> -64350, </output>
+      <output>truncate(multiplication(100000, atan(-0.5))) -> -46364, </output>
+      <output>truncate(multiplication(100000, atan(-0.25))) -> -24497, </output>
+      <output>truncate(multiplication(100000, atan(0))) -> 0, </output>
+      <output>truncate(multiplication(100000, atan(0.25))) -> 24497, </output>
+      <output>truncate(multiplication(100000, atan(0.5))) -> 46364, </output>
+      <output>truncate(multiplication(100000, atan(0.75))) -> 64350, </output>
+      <output>truncate(multiplication(100000, atan(1))) -> 78539</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, atan2(0.5, -1))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '-1')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, -0.75))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '-0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, -0.5))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '-0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, -0.25))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '-0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, 0))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '0')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, 0.25))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, 0.5))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, 0.75))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan2(0.5, 1))) -> ${math::truncate(math::multiplication('100000', math::atan2('0.5', '1')))}</code>
+      <output>truncate(multiplication(100000, atan2(0.5, -1))) -> -110714, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, -0.75))) -> -98279, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, -0.5))) -> -78539, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, -0.25))) -> -46364, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, 0))) -> 0, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, 0.25))) -> 46364, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, 0.5))) -> 78539, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, 0.75))) -> 98279, </output>
+      <output>truncate(multiplication(100000, atan2(0.5, 1))) -> 110714</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, atan2(1, -1))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '-1')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, -0.75))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '-0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, -0.5))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '-0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, -0.25))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '-0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, 0))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '0')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, 0.25))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, 0.5))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, 0.75))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan2(1, 1))) -> ${math::truncate(math::multiplication('100000', math::atan2('1', '1')))}</code>
+      <output>truncate(multiplication(100000, atan2(1, -1))) -> -78539, </output>
+      <output>truncate(multiplication(100000, atan2(1, -0.75))) -> -64350, </output>
+      <output>truncate(multiplication(100000, atan2(1, -0.5))) -> -46364, </output>
+      <output>truncate(multiplication(100000, atan2(1, -0.25))) -> -24497, </output>
+      <output>truncate(multiplication(100000, atan2(1, 0))) -> 0, </output>
+      <output>truncate(multiplication(100000, atan2(1, 0.25))) -> 24497, </output>
+      <output>truncate(multiplication(100000, atan2(1, 0.5))) -> 46364, </output>
+      <output>truncate(multiplication(100000, atan2(1, 0.75))) -> 64350, </output>
+      <output>truncate(multiplication(100000, atan2(1, 1))) -> 78539</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, atan2(2, -1))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '-1')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, -0.75))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '-0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, -0.5))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '-0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, -0.25))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '-0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, 0))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '0')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, 0.25))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '0.25')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, 0.5))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '0.5')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, 0.75))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '0.75')))}, </code>
+      <code>truncate(multiplication(100000, atan2(2, 1))) -> ${math::truncate(math::multiplication('100000', math::atan2('2', '1')))}</code>
+      <output>truncate(multiplication(100000, atan2(2, -1))) -> -46364, </output>
+      <output>truncate(multiplication(100000, atan2(2, -0.75))) -> -35877, </output>
+      <output>truncate(multiplication(100000, atan2(2, -0.5))) -> -24497, </output>
+      <output>truncate(multiplication(100000, atan2(2, -0.25))) -> -12435, </output>
+      <output>truncate(multiplication(100000, atan2(2, 0))) -> 0, </output>
+      <output>truncate(multiplication(100000, atan2(2, 0.25))) -> 12435, </output>
+      <output>truncate(multiplication(100000, atan2(2, 0.5))) -> 24497, </output>
+      <output>truncate(multiplication(100000, atan2(2, 0.75))) -> 35877, </output>
+      <output>truncate(multiplication(100000, atan2(2, 1))) -> 46364</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, cos(-6.28318531))) -> ${math::truncate(math::multiplication('100000', math::cos('-6.28318531')))}, </code>
+      <code>truncate(multiplication(100000, cos(-5.49778714))) -> ${math::truncate(math::multiplication('100000', math::cos('-5.49778714')))}, </code>
+      <code>truncate(multiplication(100000, cos(-4.71238898))) -> ${math::truncate(math::multiplication('100000', math::cos('-4.71238898')))}, </code>
+      <code>truncate(multiplication(100000, cos(-3.92699082))) -> ${math::truncate(math::multiplication('100000', math::cos('-3.92699082')))}, </code>
+      <code>truncate(multiplication(100000, cos(-3.14159265))) -> ${math::truncate(math::multiplication('100000', math::cos('-3.14159265')))}, </code>
+      <code>truncate(multiplication(100000, cos(-2.35619449))) -> ${math::truncate(math::multiplication('100000', math::cos('-2.35619449')))}, </code>
+      <code>truncate(multiplication(100000, cos(-1.57079633))) -> ${math::truncate(math::multiplication('100000', math::cos('-1.57079633')))}, </code>
+      <code>truncate(multiplication(100000, cos(-0.78539816))) -> ${math::truncate(math::multiplication('100000', math::cos('-0.78539816')))}, </code>
+      <code>truncate(multiplication(100000, cos(0))) -> ${math::truncate(math::multiplication('100000', math::cos('0')))}, </code>
+      <code>truncate(multiplication(100000, cos(0.78539816))) -> ${math::truncate(math::multiplication('100000', math::cos('0.78539816')))}, </code>
+      <code>truncate(multiplication(100000, cos(1.57079633))) -> ${math::truncate(math::multiplication('100000', math::cos('1.57079633')))}, </code>
+      <code>truncate(multiplication(100000, cos(2.35619449))) -> ${math::truncate(math::multiplication('100000', math::cos('2.35619449')))}, </code>
+      <code>truncate(multiplication(100000, cos(3.14159265))) -> ${math::truncate(math::multiplication('100000', math::cos('3.14159265')))}, </code>
+      <code>truncate(multiplication(100000, cos(3.92699082))) -> ${math::truncate(math::multiplication('100000', math::cos('3.92699082')))}, </code>
+      <code>truncate(multiplication(100000, cos(4.71238898))) -> ${math::truncate(math::multiplication('100000', math::cos('4.71238898')))}, </code>
+      <code>truncate(multiplication(100000, cos(5.49778714))) -> ${math::truncate(math::multiplication('100000', math::cos('5.49778714')))}, </code>
+      <code>truncate(multiplication(100000, cos(6.28318531))) -> ${math::truncate(math::multiplication('100000', math::cos('6.28318531')))}</code>
+      <output>truncate(multiplication(100000, cos(-6.28318531))) -> 100000, </output>
+      <output>truncate(multiplication(100000, cos(-5.49778714))) -> 70710, </output>
+      <output>truncate(multiplication(100000, cos(-4.71238898))) -> 0, </output>
+      <output>truncate(multiplication(100000, cos(-3.92699082))) -> -70710, </output>
+      <output>truncate(multiplication(100000, cos(-3.14159265))) -> -100000, </output>
+      <output>truncate(multiplication(100000, cos(-2.35619449))) -> -70710, </output>
+      <output>truncate(multiplication(100000, cos(-1.57079633))) -> 0, </output>
+      <output>truncate(multiplication(100000, cos(-0.78539816))) -> 70710, </output>
+      <output>truncate(multiplication(100000, cos(0))) -> 100000, </output>
+      <output>truncate(multiplication(100000, cos(0.78539816))) -> 70710, </output>
+      <output>truncate(multiplication(100000, cos(1.57079633))) -> 0, </output>
+      <output>truncate(multiplication(100000, cos(2.35619449))) -> -70710, </output>
+      <output>truncate(multiplication(100000, cos(3.14159265))) -> -100000, </output>
+      <output>truncate(multiplication(100000, cos(3.92699082))) -> -70710, </output>
+      <output>truncate(multiplication(100000, cos(4.71238898))) -> 0, </output>
+      <output>truncate(multiplication(100000, cos(5.49778714))) -> 70710, </output>
+      <output>truncate(multiplication(100000, cos(6.28318531))) -> 100000</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(cosh(-6.28318531)) -> ${math::truncate(math::cosh('-6.28318531'))}, </code>
+      <code>truncate(cosh(-5.49778714)) -> ${math::truncate(math::cosh('-5.49778714'))}, </code>
+      <code>truncate(cosh(-4.71238898)) -> ${math::truncate(math::cosh('-4.71238898'))}, </code>
+      <code>truncate(cosh(-3.92699082)) -> ${math::truncate(math::cosh('-3.92699082'))}, </code>
+      <code>truncate(cosh(-3.14159265)) -> ${math::truncate(math::cosh('-3.14159265'))}, </code>
+      <code>truncate(cosh(-2.35619449)) -> ${math::truncate(math::cosh('-2.35619449'))}, </code>
+      <code>truncate(cosh(-1.57079633)) -> ${math::truncate(math::cosh('-1.57079633'))}, </code>
+      <code>truncate(cosh(-0.78539816)) -> ${math::truncate(math::cosh('-0.78539816'))}, </code>
+      <code>truncate(cosh(0)) -> ${math::truncate(math::cosh('0'))}, </code>
+      <code>truncate(cosh(0.78539816)) -> ${math::truncate(math::cosh('0.78539816'))}, </code>
+      <code>truncate(cosh(1.57079633)) -> ${math::truncate(math::cosh('1.57079633'))}, </code>
+      <code>truncate(cosh(2.35619449)) -> ${math::truncate(math::cosh('2.35619449'))}, </code>
+      <code>truncate(cosh(3.14159265)) -> ${math::truncate(math::cosh('3.14159265'))}, </code>
+      <code>truncate(cosh(3.92699082)) -> ${math::truncate(math::cosh('3.92699082'))}, </code>
+      <code>truncate(cosh(4.71238898)) -> ${math::truncate(math::cosh('4.71238898'))}, </code>
+      <code>truncate(cosh(5.49778714)) -> ${math::truncate(math::cosh('5.49778714'))}, </code>
+      <code>truncate(cosh(6.28318531)) -> ${math::truncate(math::cosh('6.28318531'))}</code>
+      <output>truncate(cosh(-6.28318531)) -> 267, </output>
+      <output>truncate(cosh(-5.49778714)) -> 122, </output>
+      <output>truncate(cosh(-4.71238898)) -> 55, </output>
+      <output>truncate(cosh(-3.92699082)) -> 25, </output>
+      <output>truncate(cosh(-3.14159265)) -> 11, </output>
+      <output>truncate(cosh(-2.35619449)) -> 5, </output>
+      <output>truncate(cosh(-1.57079633)) -> 2, </output>
+      <output>truncate(cosh(-0.78539816)) -> 1, </output>
+      <output>truncate(cosh(0)) -> 1, </output>
+      <output>truncate(cosh(0.78539816)) -> 1, </output>
+      <output>truncate(cosh(1.57079633)) -> 2, </output>
+      <output>truncate(cosh(2.35619449)) -> 5, </output>
+      <output>truncate(cosh(3.14159265)) -> 11, </output>
+      <output>truncate(cosh(3.92699082)) -> 25, </output>
+      <output>truncate(cosh(4.71238898)) -> 55, </output>
+      <output>truncate(cosh(5.49778714)) -> 122, </output>
+      <output>truncate(cosh(6.28318531)) -> 267</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, exp(-3))) -> ${math::truncate(math::multiplication('100000', math::exp('-3')))}, </code>
+      <code>truncate(multiplication(100000, exp(-2.75))) -> ${math::truncate(math::multiplication('100000', math::exp('-2.75')))}, </code>
+      <code>truncate(multiplication(100000, exp(-2.5))) -> ${math::truncate(math::multiplication('100000', math::exp('-2.5')))}, </code>
+      <code>truncate(multiplication(100000, exp(-2.25))) -> ${math::truncate(math::multiplication('100000', math::exp('-2.25')))}, </code>
+      <code>truncate(multiplication(100000, exp(-2))) -> ${math::truncate(math::multiplication('100000', math::exp('-2')))}, </code>
+      <code>truncate(multiplication(100000, exp(-1.75))) -> ${math::truncate(math::multiplication('100000', math::exp('-1.75')))}, </code>
+      <code>truncate(multiplication(100000, exp(-1.5))) -> ${math::truncate(math::multiplication('100000', math::exp('-1.5')))}, </code>
+      <code>truncate(multiplication(100000, exp(-1.25))) -> ${math::truncate(math::multiplication('100000', math::exp('-1.25')))}, </code>
+      <code>truncate(multiplication(100000, exp(-1))) -> ${math::truncate(math::multiplication('100000', math::exp('-1')))}, </code>
+      <code>truncate(multiplication(100000, exp(-0.75))) -> ${math::truncate(math::multiplication('100000', math::exp('-0.75')))}, </code>
+      <code>truncate(multiplication(100000, exp(-0.5))) -> ${math::truncate(math::multiplication('100000', math::exp('-0.5')))}, </code>
+      <code>truncate(multiplication(100000, exp(-0.25))) -> ${math::truncate(math::multiplication('100000', math::exp('-0.25')))}, </code>
+      <code>truncate(multiplication(100000, exp(0))) -> ${math::truncate(math::multiplication('100000', math::exp('0')))}, </code>
+      <code>truncate(multiplication(100000, exp(0.25))) -> ${math::truncate(math::multiplication('100000', math::exp('0.25')))}, </code>
+      <code>truncate(multiplication(100000, exp(0.5))) -> ${math::truncate(math::multiplication('100000', math::exp('0.5')))}, </code>
+      <code>truncate(multiplication(100000, exp(0.75))) -> ${math::truncate(math::multiplication('100000', math::exp('0.75')))}, </code>
+      <code>truncate(multiplication(100000, exp(1))) -> ${math::truncate(math::multiplication('100000', math::exp('1')))}, </code>
+      <code>truncate(multiplication(100000, exp(1.25))) -> ${math::truncate(math::multiplication('100000', math::exp('1.25')))}, </code>
+      <code>truncate(multiplication(100000, exp(1.5))) -> ${math::truncate(math::multiplication('100000', math::exp('1.5')))}, </code>
+      <code>truncate(multiplication(100000, exp(1.75))) -> ${math::truncate(math::multiplication('100000', math::exp('1.75')))}, </code>
+      <code>truncate(multiplication(100000, exp(2))) -> ${math::truncate(math::multiplication('100000', math::exp('2')))}, </code>
+      <code>truncate(multiplication(100000, exp(2.25))) -> ${math::truncate(math::multiplication('100000', math::exp('2.25')))}, </code>
+      <code>truncate(multiplication(100000, exp(2.5))) -> ${math::truncate(math::multiplication('100000', math::exp('2.5')))}, </code>
+      <code>truncate(multiplication(100000, exp(2.75))) -> ${math::truncate(math::multiplication('100000', math::exp('2.75')))}, </code>
+      <code>truncate(multiplication(100000, exp(3))) -> ${math::truncate(math::multiplication('100000', math::exp('3')))}</code>
+      <output>truncate(multiplication(100000, exp(-3))) -> 4978, </output>
+      <output>truncate(multiplication(100000, exp(-2.75))) -> 6392, </output>
+      <output>truncate(multiplication(100000, exp(-2.5))) -> 8208, </output>
+      <output>truncate(multiplication(100000, exp(-2.25))) -> 10539, </output>
+      <output>truncate(multiplication(100000, exp(-2))) -> 13533, </output>
+      <output>truncate(multiplication(100000, exp(-1.75))) -> 17377, </output>
+      <output>truncate(multiplication(100000, exp(-1.5))) -> 22313, </output>
+      <output>truncate(multiplication(100000, exp(-1.25))) -> 28650, </output>
+      <output>truncate(multiplication(100000, exp(-1))) -> 36787, </output>
+      <output>truncate(multiplication(100000, exp(-0.75))) -> 47236, </output>
+      <output>truncate(multiplication(100000, exp(-0.5))) -> 60653, </output>
+      <output>truncate(multiplication(100000, exp(-0.25))) -> 77880, </output>
+      <output>truncate(multiplication(100000, exp(0))) -> 100000, </output>
+      <output>truncate(multiplication(100000, exp(0.25))) -> 128402, </output>
+      <output>truncate(multiplication(100000, exp(0.5))) -> 164872, </output>
+      <output>truncate(multiplication(100000, exp(0.75))) -> 211700, </output>
+      <output>truncate(multiplication(100000, exp(1))) -> 271828, </output>
+      <output>truncate(multiplication(100000, exp(1.25))) -> 349034, </output>
+      <output>truncate(multiplication(100000, exp(1.5))) -> 448168, </output>
+      <output>truncate(multiplication(100000, exp(1.75))) -> 575460, </output>
+      <output>truncate(multiplication(100000, exp(2))) -> 738905, </output>
+      <output>truncate(multiplication(100000, exp(2.25))) -> 948773, </output>
+      <output>truncate(multiplication(100000, exp(2.5))) -> 1218249, </output>
+      <output>truncate(multiplication(100000, exp(2.75))) -> 1564263, </output>
+      <output>truncate(multiplication(100000, exp(3))) -> 2008553</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, log(0.25))) -> ${math::truncate(math::multiplication('100000', math::log('0.25')))}, </code>
+      <code>truncate(multiplication(100000, log(0.5))) -> ${math::truncate(math::multiplication('100000', math::log('0.5')))}, </code>
+      <code>truncate(multiplication(100000, log(0.75))) -> ${math::truncate(math::multiplication('100000', math::log('0.75')))}, </code>
+      <code>truncate(multiplication(100000, log(1))) -> ${math::truncate(math::multiplication('100000', math::log('1')))}, </code>
+      <code>truncate(multiplication(100000, log(1.25))) -> ${math::truncate(math::multiplication('100000', math::log('1.25')))}, </code>
+      <code>truncate(multiplication(100000, log(1.5))) -> ${math::truncate(math::multiplication('100000', math::log('1.5')))}, </code>
+      <code>truncate(multiplication(100000, log(1.75))) -> ${math::truncate(math::multiplication('100000', math::log('1.75')))}, </code>
+      <code>truncate(multiplication(100000, log(2))) -> ${math::truncate(math::multiplication('100000', math::log('2')))}, </code>
+      <code>truncate(multiplication(100000, log(2.25))) -> ${math::truncate(math::multiplication('100000', math::log('2.25')))}, </code>
+      <code>truncate(multiplication(100000, log(2.5))) -> ${math::truncate(math::multiplication('100000', math::log('2.5')))}, </code>
+      <code>truncate(multiplication(100000, log(2.75))) -> ${math::truncate(math::multiplication('100000', math::log('2.75')))}, </code>
+      <code>truncate(multiplication(100000, log(3))) -> ${math::truncate(math::multiplication('100000', math::log('3')))}, </code>
+      <code>truncate(multiplication(100000, log(3.25))) -> ${math::truncate(math::multiplication('100000', math::log('3.25')))}, </code>
+      <code>truncate(multiplication(100000, log(3.5))) -> ${math::truncate(math::multiplication('100000', math::log('3.5')))}, </code>
+      <code>truncate(multiplication(100000, log(3.75))) -> ${math::truncate(math::multiplication('100000', math::log('3.75')))}, </code>
+      <code>truncate(multiplication(100000, log(4))) -> ${math::truncate(math::multiplication('100000', math::log('4')))}</code>
+      <output>truncate(multiplication(100000, log(0.25))) -> -138629, </output>
+      <output>truncate(multiplication(100000, log(0.5))) -> -69314, </output>
+      <output>truncate(multiplication(100000, log(0.75))) -> -28768, </output>
+      <output>truncate(multiplication(100000, log(1))) -> 0, </output>
+      <output>truncate(multiplication(100000, log(1.25))) -> 22314, </output>
+      <output>truncate(multiplication(100000, log(1.5))) -> 40546, </output>
+      <output>truncate(multiplication(100000, log(1.75))) -> 55961, </output>
+      <output>truncate(multiplication(100000, log(2))) -> 69314, </output>
+      <output>truncate(multiplication(100000, log(2.25))) -> 81093, </output>
+      <output>truncate(multiplication(100000, log(2.5))) -> 91629, </output>
+      <output>truncate(multiplication(100000, log(2.75))) -> 101160, </output>
+      <output>truncate(multiplication(100000, log(3))) -> 109861, </output>
+      <output>truncate(multiplication(100000, log(3.25))) -> 117865, </output>
+      <output>truncate(multiplication(100000, log(3.5))) -> 125276, </output>
+      <output>truncate(multiplication(100000, log(3.75))) -> 132175, </output>
+      <output>truncate(multiplication(100000, log(4))) -> 138629</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, log10(0.25))) -> ${math::truncate(math::multiplication('100000', math::log10('0.25')))}, </code>
+      <code>truncate(multiplication(100000, log10(0.5))) -> ${math::truncate(math::multiplication('100000', math::log10('0.5')))}, </code>
+      <code>truncate(multiplication(100000, log10(0.75))) -> ${math::truncate(math::multiplication('100000', math::log10('0.75')))}, </code>
+      <code>truncate(multiplication(100000, log10(1))) -> ${math::truncate(math::multiplication('100000', math::log10('1')))}, </code>
+      <code>truncate(multiplication(100000, log10(1.25))) -> ${math::truncate(math::multiplication('100000', math::log10('1.25')))}, </code>
+      <code>truncate(multiplication(100000, log10(1.5))) -> ${math::truncate(math::multiplication('100000', math::log10('1.5')))}, </code>
+      <code>truncate(multiplication(100000, log10(1.75))) -> ${math::truncate(math::multiplication('100000', math::log10('1.75')))}, </code>
+      <code>truncate(multiplication(100000, log10(2))) -> ${math::truncate(math::multiplication('100000', math::log10('2')))}, </code>
+      <code>truncate(multiplication(100000, log10(2.25))) -> ${math::truncate(math::multiplication('100000', math::log10('2.25')))}, </code>
+      <code>truncate(multiplication(100000, log10(2.5))) -> ${math::truncate(math::multiplication('100000', math::log10('2.5')))}, </code>
+      <code>truncate(multiplication(100000, log10(2.75))) -> ${math::truncate(math::multiplication('100000', math::log10('2.75')))}, </code>
+      <code>truncate(multiplication(100000, log10(3))) -> ${math::truncate(math::multiplication('100000', math::log10('3')))}, </code>
+      <code>truncate(multiplication(100000, log10(3.25))) -> ${math::truncate(math::multiplication('100000', math::log10('3.25')))}, </code>
+      <code>truncate(multiplication(100000, log10(3.5))) -> ${math::truncate(math::multiplication('100000', math::log10('3.5')))}, </code>
+      <code>truncate(multiplication(100000, log10(3.75))) -> ${math::truncate(math::multiplication('100000', math::log10('3.75')))}, </code>
+      <code>truncate(multiplication(100000, log10(4))) -> ${math::truncate(math::multiplication('100000', math::log10('4')))}</code>
+      <output>truncate(multiplication(100000, log10(0.25))) -> -60205, </output>
+      <output>truncate(multiplication(100000, log10(0.5))) -> -30102, </output>
+      <output>truncate(multiplication(100000, log10(0.75))) -> -12493, </output>
+      <output>truncate(multiplication(100000, log10(1))) -> 0, </output>
+      <output>truncate(multiplication(100000, log10(1.25))) -> 9691, </output>
+      <output>truncate(multiplication(100000, log10(1.5))) -> 17609, </output>
+      <output>truncate(multiplication(100000, log10(1.75))) -> 24303, </output>
+      <output>truncate(multiplication(100000, log10(2))) -> 30102, </output>
+      <output>truncate(multiplication(100000, log10(2.25))) -> 35218, </output>
+      <output>truncate(multiplication(100000, log10(2.5))) -> 39794, </output>
+      <output>truncate(multiplication(100000, log10(2.75))) -> 43933, </output>
+      <output>truncate(multiplication(100000, log10(3))) -> 47712, </output>
+      <output>truncate(multiplication(100000, log10(3.25))) -> 51188, </output>
+      <output>truncate(multiplication(100000, log10(3.5))) -> 54406, </output>
+      <output>truncate(multiplication(100000, log10(3.75))) -> 57403, </output>
+      <output>truncate(multiplication(100000, log10(4))) -> 60205</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(max(-1, -2)) -> ${math::truncate(math::max('-1', '-2'))}, </code>
+      <code>truncate(min(-1, -2)) -> ${math::truncate(math::min('-1', '-2'))}, </code>
+      <code>truncate(max(1, 2)) -> ${math::truncate(math::max('1', '2'))}, </code>
+      <code>truncate(min(1, 2)) -> ${math::truncate(math::min('1', '2'))}</code>
+      <output>truncate(max(-1, -2)) -> -1, </output>
+      <output>truncate(min(-1, -2)) -> -2, </output>
+      <output>truncate(max(1, 2)) -> 2, </output>
+      <output>truncate(min(1, 2)) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(10000, pow(-3, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-3', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-2.75, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-2.75', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-2.5, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-2.5', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-2.25, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-2.25', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-2, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-2', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-1.75, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-1.75', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-1.5, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-1.5', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-1.25, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-1.25', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-1, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-1', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-0.75, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-0.75', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-0.5, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-0.5', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(-0.25, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('-0.25', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(0, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('0', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(0.25, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('0.25', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(0.5, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('0.5', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(0.75, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('0.75', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(1, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('1', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(1.25, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('1.25', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(1.5, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('1.5', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(1.75, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('1.75', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(2, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('2', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(2.25, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('2.25', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(2.5, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('2.5', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(2.75, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('2.75', '2')))}, </code>
+      <code>truncate(multiplication(10000, pow(3, 2))) -> ${math::truncate(math::multiplication('10000', math::pow('3', '2')))}</code>
+      <output>truncate(multiplication(10000, pow(-3, 2))) -> 90000, </output>
+      <output>truncate(multiplication(10000, pow(-2.75, 2))) -> 75625, </output>
+      <output>truncate(multiplication(10000, pow(-2.5, 2))) -> 62500, </output>
+      <output>truncate(multiplication(10000, pow(-2.25, 2))) -> 50625, </output>
+      <output>truncate(multiplication(10000, pow(-2, 2))) -> 40000, </output>
+      <output>truncate(multiplication(10000, pow(-1.75, 2))) -> 30625, </output>
+      <output>truncate(multiplication(10000, pow(-1.5, 2))) -> 22500, </output>
+      <output>truncate(multiplication(10000, pow(-1.25, 2))) -> 15625, </output>
+      <output>truncate(multiplication(10000, pow(-1, 2))) -> 10000, </output>
+      <output>truncate(multiplication(10000, pow(-0.75, 2))) -> 5625, </output>
+      <output>truncate(multiplication(10000, pow(-0.5, 2))) -> 2500, </output>
+      <output>truncate(multiplication(10000, pow(-0.25, 2))) -> 625, </output>
+      <output>truncate(multiplication(10000, pow(0, 2))) -> 0, </output>
+      <output>truncate(multiplication(10000, pow(0.25, 2))) -> 625, </output>
+      <output>truncate(multiplication(10000, pow(0.5, 2))) -> 2500, </output>
+      <output>truncate(multiplication(10000, pow(0.75, 2))) -> 5625, </output>
+      <output>truncate(multiplication(10000, pow(1, 2))) -> 10000, </output>
+      <output>truncate(multiplication(10000, pow(1.25, 2))) -> 15625, </output>
+      <output>truncate(multiplication(10000, pow(1.5, 2))) -> 22500, </output>
+      <output>truncate(multiplication(10000, pow(1.75, 2))) -> 30625, </output>
+      <output>truncate(multiplication(10000, pow(2, 2))) -> 40000, </output>
+      <output>truncate(multiplication(10000, pow(2.25, 2))) -> 50625, </output>
+      <output>truncate(multiplication(10000, pow(2.5, 2))) -> 62500, </output>
+      <output>truncate(multiplication(10000, pow(2.75, 2))) -> 75625, </output>
+      <output>truncate(multiplication(10000, pow(3, 2))) -> 90000</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${math::sign('-2')} ${math::sign('-1.5')} ${math::sign('-1')} ${math::sign('-0.5')} </code>
+      <code>${math::sign('0')} ${math::sign('0.5')} ${math::sign('1')} ${math::sign('1.5')} ${math::sign('2')}</code>
+      <output>-1 -1 -1 -1 1 1 1 1 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(100000, sin(-6.28318531))) -> ${math::truncate(math::multiplication('100000', math::sin('-6.28318531')))}, </code>
+      <code>truncate(multiplication(100000, sin(-5.49778714))) -> ${math::truncate(math::multiplication('100000', math::sin('-5.49778714')))}, </code>
+      <code>truncate(multiplication(100000, sin(-4.71238898))) -> ${math::truncate(math::multiplication('100000', math::sin('-4.71238898')))}, </code>
+      <code>truncate(multiplication(100000, sin(-3.92699082))) -> ${math::truncate(math::multiplication('100000', math::sin('-3.92699082')))}, </code>
+      <code>truncate(multiplication(100000, sin(-3.14159265))) -> ${math::truncate(math::multiplication('100000', math::sin('-3.14159265')))}, </code>
+      <code>truncate(multiplication(100000, sin(-2.35619449))) -> ${math::truncate(math::multiplication('100000', math::sin('-2.35619449')))}, </code>
+      <code>truncate(multiplication(100000, sin(-1.57079633))) -> ${math::truncate(math::multiplication('100000', math::sin('-1.57079633')))}, </code>
+      <code>truncate(multiplication(100000, sin(-0.78539816))) -> ${math::truncate(math::multiplication('100000', math::sin('-0.78539816')))}, </code>
+      <code>truncate(multiplication(100000, sin(0))) -> ${math::truncate(math::multiplication('100000', math::sin('0')))}, </code>
+      <code>truncate(multiplication(100000, sin(0.78539816))) -> ${math::truncate(math::multiplication('100000', math::sin('0.78539816')))}, </code>
+      <code>truncate(multiplication(100000, sin(1.57079633))) -> ${math::truncate(math::multiplication('100000', math::sin('1.57079633')))}, </code>
+      <code>truncate(multiplication(100000, sin(2.35619449))) -> ${math::truncate(math::multiplication('100000', math::sin('2.35619449')))}, </code>
+      <code>truncate(multiplication(100000, sin(3.14159265))) -> ${math::truncate(math::multiplication('100000', math::sin('3.14159265')))}, </code>
+      <code>truncate(multiplication(100000, sin(3.92699082))) -> ${math::truncate(math::multiplication('100000', math::sin('3.92699082')))}, </code>
+      <code>truncate(multiplication(100000, sin(4.71238898))) -> ${math::truncate(math::multiplication('100000', math::sin('4.71238898')))}, </code>
+      <code>truncate(multiplication(100000, sin(5.49778714))) -> ${math::truncate(math::multiplication('100000', math::sin('5.49778714')))}, </code>
+      <code>truncate(multiplication(100000, sin(6.28318531))) -> ${math::truncate(math::multiplication('100000', math::sin('6.28318531')))}</code>
+      <output>truncate(multiplication(100000, sin(-6.28318531))) -> 0, </output>
+      <output>truncate(multiplication(100000, sin(-5.49778714))) -> 70710, </output>
+      <output>truncate(multiplication(100000, sin(-4.71238898))) -> 100000, </output>
+      <output>truncate(multiplication(100000, sin(-3.92699082))) -> 70710, </output>
+      <output>truncate(multiplication(100000, sin(-3.14159265))) -> 0, </output>
+      <output>truncate(multiplication(100000, sin(-2.35619449))) -> -70710, </output>
+      <output>truncate(multiplication(100000, sin(-1.57079633))) -> -100000, </output>
+      <output>truncate(multiplication(100000, sin(-0.78539816))) -> -70710, </output>
+      <output>truncate(multiplication(100000, sin(0))) -> 0, </output>
+      <output>truncate(multiplication(100000, sin(0.78539816))) -> 70710, </output>
+      <output>truncate(multiplication(100000, sin(1.57079633))) -> 100000, </output>
+      <output>truncate(multiplication(100000, sin(2.35619449))) -> 70710, </output>
+      <output>truncate(multiplication(100000, sin(3.14159265))) -> 0, </output>
+      <output>truncate(multiplication(100000, sin(3.92699082))) -> -70710, </output>
+      <output>truncate(multiplication(100000, sin(4.71238898))) -> -100000, </output>
+      <output>truncate(multiplication(100000, sin(5.49778714))) -> -70710, </output>
+      <output>truncate(multiplication(100000, sin(6.28318531))) -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(sinh(-6.28318531)) -> ${math::truncate(math::sinh('-6.28318531'))}, </code>
+      <code>truncate(sinh(-5.49778714)) -> ${math::truncate(math::sinh('-5.49778714'))}, </code>
+      <code>truncate(sinh(-4.71238898)) -> ${math::truncate(math::sinh('-4.71238898'))}, </code>
+      <code>truncate(sinh(-3.92699082)) -> ${math::truncate(math::sinh('-3.92699082'))}, </code>
+      <code>truncate(sinh(-3.14159265)) -> ${math::truncate(math::sinh('-3.14159265'))}, </code>
+      <code>truncate(sinh(-2.35619449)) -> ${math::truncate(math::sinh('-2.35619449'))}, </code>
+      <code>truncate(sinh(-1.57079633)) -> ${math::truncate(math::sinh('-1.57079633'))}, </code>
+      <code>truncate(sinh(-0.78539816)) -> ${math::truncate(math::sinh('-0.78539816'))}, </code>
+      <code>truncate(sinh(0)) -> ${math::truncate(math::sinh('0'))}, </code>
+      <code>truncate(sinh(0.78539816)) -> ${math::truncate(math::sinh('0.78539816'))}, </code>
+      <code>truncate(sinh(1.57079633)) -> ${math::truncate(math::sinh('1.57079633'))}, </code>
+      <code>truncate(sinh(2.35619449)) -> ${math::truncate(math::sinh('2.35619449'))}, </code>
+      <code>truncate(sinh(3.14159265)) -> ${math::truncate(math::sinh('3.14159265'))}, </code>
+      <code>truncate(sinh(3.92699082)) -> ${math::truncate(math::sinh('3.92699082'))}, </code>
+      <code>truncate(sinh(4.71238898)) -> ${math::truncate(math::sinh('4.71238898'))}, </code>
+      <code>truncate(sinh(5.49778714)) -> ${math::truncate(math::sinh('5.49778714'))}, </code>
+      <code>truncate(sinh(6.28318531)) -> ${math::truncate(math::sinh('6.28318531'))}</code>
+      <output>truncate(sinh(-6.28318531)) -> -267, </output>
+      <output>truncate(sinh(-5.49778714)) -> -122, </output>
+      <output>truncate(sinh(-4.71238898)) -> -55, </output>
+      <output>truncate(sinh(-3.92699082)) -> -25, </output>
+      <output>truncate(sinh(-3.14159265)) -> -11, </output>
+      <output>truncate(sinh(-2.35619449)) -> -5, </output>
+      <output>truncate(sinh(-1.57079633)) -> -2, </output>
+      <output>truncate(sinh(-0.78539816)) -> 0, </output>
+      <output>truncate(sinh(0)) -> 0, </output>
+      <output>truncate(sinh(0.78539816)) -> 0, </output>
+      <output>truncate(sinh(1.57079633)) -> 2, </output>
+      <output>truncate(sinh(2.35619449)) -> 5, </output>
+      <output>truncate(sinh(3.14159265)) -> 11, </output>
+      <output>truncate(sinh(3.92699082)) -> 25, </output>
+      <output>truncate(sinh(4.71238898)) -> 55, </output>
+      <output>truncate(sinh(5.49778714)) -> 122, </output>
+      <output>truncate(sinh(6.28318531)) -> 267</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(10, sqrt(0))) -> ${math::truncate(math::multiplication('10', math::sqrt('0')))}, </code>
+      <code>truncate(multiplication(10, sqrt(0.25))) -> ${math::truncate(math::multiplication('10', math::sqrt('0.25')))}, </code>
+      <code>truncate(multiplication(10, sqrt(1))) -> ${math::truncate(math::multiplication('10', math::sqrt('1')))}, </code>
+      <code>truncate(multiplication(10, sqrt(2.25))) -> ${math::truncate(math::multiplication('10', math::sqrt('2.25')))}, </code>
+      <code>truncate(multiplication(10, sqrt(4))) -> ${math::truncate(math::multiplication('10', math::sqrt('4')))}</code>
+      <output>truncate(multiplication(10, sqrt(0))) -> 0, </output>
+      <output>truncate(multiplication(10, sqrt(0.25))) -> 5, </output>
+      <output>truncate(multiplication(10, sqrt(1))) -> 10, </output>
+      <output>truncate(multiplication(10, sqrt(2.25))) -> 15, </output>
+      <output>truncate(multiplication(10, sqrt(4))) -> 20</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(10, tan(0))) -> ${math::truncate(math::multiplication('10', math::tan('0')))}, </code>
+      <code>truncate(multiplication(10, tan(PI / 6))) -> ${math::truncate(math::multiplication('10', math::tan(math::division(math::PI(), '6'))))}, </code>
+      <code>truncate(multiplication(10, tan(PI / 4))) -> ${math::truncate(math::multiplication('10', math::tan(math::division(math::PI(), '4'))))}, </code>
+      <code>truncate(multiplication(10, tan(PI / 3))) -> ${math::truncate(math::multiplication('10', math::tan(math::division(math::PI(), '3'))))}, </code>
+      <code>truncate(multiplication(10, tan(PI))) -> ${math::truncate(math::multiplication('10', math::tan(math::PI())))}, </code>
+      <code>truncate(multiplication(10, tan(2 * PI))) -> ${math::truncate(math::multiplication('10', math::tan(math::multiplication('2', math::PI()))))}</code>
+      <output>truncate(multiplication(10, tan(0))) -> 0, </output>
+      <output>truncate(multiplication(10, tan(PI / 6))) -> 5, </output>
+      <output>truncate(multiplication(10, tan(PI / 4))) -> 9, </output>
+      <output>truncate(multiplication(10, tan(PI / 3))) -> 17, </output>
+      <output>truncate(multiplication(10, tan(PI))) -> 0, </output>
+      <output>truncate(multiplication(10, tan(2 * PI))) -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(10, tanh(-5))) -> ${math::truncate(math::multiplication('10', math::tanh('-5')))}, </code>
+      <code>truncate(multiplication(10, tanh(-4))) -> ${math::truncate(math::multiplication('10', math::tanh('-4')))}, </code>
+      <code>truncate(multiplication(10, tanh(-3))) -> ${math::truncate(math::multiplication('10', math::tanh('-3')))}, </code>
+      <code>truncate(multiplication(10, tanh(-2))) -> ${math::truncate(math::multiplication('10', math::tanh('-2')))}, </code>
+      <code>truncate(multiplication(10, tanh(-1))) -> ${math::truncate(math::multiplication('10', math::tanh('-1')))}, </code>
+      <code>truncate(multiplication(10, tanh(0))) -> ${math::truncate(math::multiplication('10', math::tanh('0')))}, </code>
+      <code>truncate(multiplication(10, tanh(1))) -> ${math::truncate(math::multiplication('10', math::tanh('1')))}, </code>
+      <code>truncate(multiplication(10, tanh(2))) -> ${math::truncate(math::multiplication('10', math::tanh('2')))}, </code>
+      <code>truncate(multiplication(10, tanh(3))) -> ${math::truncate(math::multiplication('10', math::tanh('3')))}, </code>
+      <code>truncate(multiplication(10, tanh(4))) -> ${math::truncate(math::multiplication('10', math::tanh('4')))}, </code>
+      <code>truncate(multiplication(10, tanh(5))) -> ${math::truncate(math::multiplication('10', math::tanh('5')))}</code>
+      <output>truncate(multiplication(10, tanh(-5))) -> -9, </output>
+      <output>truncate(multiplication(10, tanh(-4))) -> -9, </output>
+      <output>truncate(multiplication(10, tanh(-3))) -> -9, </output>
+      <output>truncate(multiplication(10, tanh(-2))) -> -9, </output>
+      <output>truncate(multiplication(10, tanh(-1))) -> -7, </output>
+      <output>truncate(multiplication(10, tanh(0))) -> 0, </output>
+      <output>truncate(multiplication(10, tanh(1))) -> 7, </output>
+      <output>truncate(multiplication(10, tanh(2))) -> 9, </output>
+      <output>truncate(multiplication(10, tanh(3))) -> 9, </output>
+      <output>truncate(multiplication(10, tanh(4))) -> 9, </output>
+      <output>truncate(multiplication(10, tanh(5))) -> 9</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(10, cot(PI / 6))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '6'))))}, </code>
+      <code>truncate(multiplication(10, cot(PI / 4))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '4'))))}, </code>
+      <code>truncate(multiplication(10, cot(PI / 3))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '3'))))}, </code>
+      <code>truncate(multiplication(10, cot(PI / 2))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '2'))))}, </code>
+      <code>truncate(multiplication(10, cot(3 * PI / 2))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::multiplication('3', math::PI()), '2'))))}</code>
+      <output>truncate(multiplication(10, cot(PI / 6))) -> 17, </output>
+      <output>truncate(multiplication(10, cot(PI / 4))) -> 10, </output>
+      <output>truncate(multiplication(10, cot(PI / 3))) -> 5, </output>
+      <output>truncate(multiplication(10, cot(PI / 2))) -> 0, </output>
+      <output>truncate(multiplication(10, cot(3 * PI / 2))) -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(multiplication(10, coth(-5))) -> ${math::truncate(math::multiplication('10', math::coth('-5')))}, </code>
+      <code>truncate(multiplication(10, coth(-4))) -> ${math::truncate(math::multiplication('10', math::coth('-4')))}, </code>
+      <code>truncate(multiplication(10, coth(-3))) -> ${math::truncate(math::multiplication('10', math::coth('-3')))}, </code>
+      <code>truncate(multiplication(10, coth(-2))) -> ${math::truncate(math::multiplication('10', math::coth('-2')))}, </code>
+      <code>truncate(multiplication(10, coth(-1))) -> ${math::truncate(math::multiplication('10', math::coth('-1')))}, </code>
+      <code>truncate(multiplication(10, coth(1))) -> ${math::truncate(math::multiplication('10', math::coth('1')))}, </code>
+      <code>truncate(multiplication(10, coth(2))) -> ${math::truncate(math::multiplication('10', math::coth('2')))}, </code>
+      <code>truncate(multiplication(10, coth(3))) -> ${math::truncate(math::multiplication('10', math::coth('3')))}, </code>
+      <code>truncate(multiplication(10, coth(4))) -> ${math::truncate(math::multiplication('10', math::coth('4')))}, </code>
+      <code>truncate(multiplication(10, coth(5))) -> ${math::truncate(math::multiplication('10', math::coth('5')))}</code>
+      <output>truncate(multiplication(10, coth(-5))) -> -10, </output>
+      <output>truncate(multiplication(10, coth(-4))) -> -10, </output>
+      <output>truncate(multiplication(10, coth(-3))) -> -10, </output>
+      <output>truncate(multiplication(10, coth(-2))) -> -10, </output>
+      <output>truncate(multiplication(10, coth(-1))) -> -13, </output>
+      <output>truncate(multiplication(10, coth(1))) -> 13, </output>
+      <output>truncate(multiplication(10, coth(2))) -> 10, </output>
+      <output>truncate(multiplication(10, coth(3))) -> 10, </output>
+      <output>truncate(multiplication(10, coth(4))) -> 10, </output>
+      <output>truncate(multiplication(10, coth(5))) -> 10</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>truncate(-1) -> ${math::truncate('-1')}, </code>
+      <code>truncate(-1.5) -> ${math::truncate('-1.5')}, </code>
+      <code>truncate(0) -> ${math::truncate('0')}, </code>
+      <code>truncate(0.0) -> ${math::truncate('0.0')}, </code>
+      <code>truncate(1) -> ${math::truncate('1')}, </code>
+      <code>truncate(1.5) -> ${math::truncate('1.5')}</code>
+      <output>truncate(-1) -> -1, </output>
+      <output>truncate(-1.5) -> -1, </output>
+      <output>truncate(0) -> 0, </output>
+      <output>truncate(0.0) -> 0, </output>
+      <output>truncate(1) -> 1, </output>
+      <output>truncate(1.5) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>PI -> ${math::PI()}, </code>
+      <code>E -> ${math::E()}</code>
+      <output>PI -> 3.1415926535897931, </output>
+      <output>E -> 2.7182818284590451</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>-2 * PI -> ${math::truncate(math::degrees(math::multiplication('-2', math::PI())))}, </code>
+      <code>-PI - 3 * PI/4 -> ${math::truncate(math::degrees(math::subtraction(math::multiplication('-1', math::PI()), math::division(math::multiplication('3', math::PI()), '4'))))}, </code>
+      <code>-PI - PI/2 -> ${math::truncate(math::degrees(math::subtraction(math::multiplication('-1', math::PI()), math::division(math::PI(), '2'))))}, </code>
+      <code>-PI - PI/4 -> ${math::truncate(math::degrees(math::subtraction(math::multiplication('-1', math::PI()), math::division(math::PI(), '4'))))}, </code>
+      <code>-PI -> ${math::truncate(math::degrees(math::multiplication('-1', math::PI())))}, </code>
+      <code>-3 * PI/4 -> ${math::truncate(math::degrees(math::multiplication('-1', math::division(math::multiplication('3', math::PI()), '4'))))}, </code>
+      <code>-PI/2 -> ${math::truncate(math::degrees(math::multiplication('-1', math::division(math::PI(), '2'))))}, </code>
+      <code>-PI/4 -> ${math::truncate(math::degrees(math::multiplication('-1', math::division(math::PI(), '4'))))}, </code>
+      <code>0 -> ${math::truncate(math::degrees('0'))}, </code>
+      <code>PI/4 -> ${math::truncate(math::degrees(math::division(math::PI(), '4')))}, </code>
+      <code>PI/2 -> ${math::truncate(math::degrees(math::division(math::PI(), '2')))}, </code>
+      <code>3 * PI/4 -> ${math::truncate(math::degrees(math::division(math::multiplication('3', math::PI()), '4')))}, </code>
+      <code>PI -> ${math::truncate(math::degrees(math::PI()))}, </code>
+      <code>PI + PI/4 -> ${math::truncate(math::degrees(math::addition(math::PI(), math::division(math::PI(), '4'))))}, </code>
+      <code>PI + PI/2 -> ${math::truncate(math::degrees(math::addition(math::PI(), math::division(math::PI(), '2'))))}, </code>
+      <code>PI + 3 * PI/4 -> ${math::truncate(math::degrees(math::addition(math::PI(), math::division(math::multiplication('3', math::PI()), '4'))))}, </code>
+      <code>2 * PI -> ${math::truncate(math::degrees(math::multiplication('2', math::PI())))}</code>
+      <output>-2 * PI -> -360, </output>
+      <output>-PI - 3 * PI/4 -> -315, </output>
+      <output>-PI - PI/2 -> -270, </output>
+      <output>-PI - PI/4 -> -225, </output>
+      <output>-PI -> -180, </output>
+      <output>-3 * PI/4 -> -135, </output>
+      <output>-PI/2 -> -90, </output>
+      <output>-PI/4 -> -45, </output>
+      <output>0 -> 0, </output>
+      <output>PI/4 -> 45, </output>
+      <output>PI/2 -> 90, </output>
+      <output>3 * PI/4 -> 135, </output>
+      <output>PI -> 180, </output>
+      <output>PI + PI/4 -> 225, </output>
+      <output>PI + PI/2 -> 270, </output>
+      <output>PI + 3 * PI/4 -> 315, </output>
+      <output>2 * PI -> 360</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>-360 -> ${math::truncate(math::multiplication('100000', math::radians('-360')))}, </code>
+      <code>-315 -> ${math::truncate(math::multiplication('100000', math::radians('-315')))}, </code>
+      <code>-270 -> ${math::truncate(math::multiplication('100000', math::radians('-270')))}, </code>
+      <code>-225 -> ${math::truncate(math::multiplication('100000', math::radians('-225')))}, </code>
+      <code>-180 -> ${math::truncate(math::multiplication('100000', math::radians('-180')))}, </code>
+      <code>-135 -> ${math::truncate(math::multiplication('100000', math::radians('-135')))}, </code>
+      <code>-90 -> ${math::truncate(math::multiplication('100000', math::radians('-90')))}, </code>
+      <code>-45 -> ${math::truncate(math::multiplication('100000', math::radians('-45')))}, </code>
+      <code>0 -> ${math::truncate(math::multiplication('100000', math::radians('0')))}, </code>
+      <code>45 -> ${math::truncate(math::multiplication('100000', math::radians('45')))}, </code>
+      <code>90 -> ${math::truncate(math::multiplication('100000', math::radians('90')))}, </code>
+      <code>135 -> ${math::truncate(math::multiplication('100000', math::radians('135')))}, </code>
+      <code>180 -> ${math::truncate(math::multiplication('100000', math::radians('180')))}, </code>
+      <code>225 -> ${math::truncate(math::multiplication('100000', math::radians('225')))}, </code>
+      <code>270 -> ${math::truncate(math::multiplication('100000', math::radians('270')))}, </code>
+      <code>315 -> ${math::truncate(math::multiplication('100000', math::radians('315')))}, </code>
+      <code>360 -> ${math::truncate(math::multiplication('100000', math::radians('360')))}</code>
+      <output>-360 -> -628318, </output>
+      <output>-315 -> -549778, </output>
+      <output>-270 -> -471238, </output>
+      <output>-225 -> -392699, </output>
+      <output>-180 -> -314159, </output>
+      <output>-135 -> -235619, </output>
+      <output>-90 -> -157079, </output>
+      <output>-45 -> -78539, </output>
+      <output>0 -> 0, </output>
+      <output>45 -> 78539, </output>
+      <output>90 -> 157079, </output>
+      <output>135 -> 235619, </output>
+      <output>180 -> 314159, </output>
+      <output>225 -> 392699, </output>
+      <output>270 -> 471238, </output>
+      <output>315 -> 549778, </output>
+      <output>360 -> 628318</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>3 + 4 -> ${math::truncate(math::addition('3', '4'))}, </code>
+      <code>3 - 4 -> ${math::truncate(math::addition('3', '-4'))}</code>
+      <output>3 + 4 -> 7, </output>
+      <output>3 - 4 -> -1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>3 - 4 -> ${math::truncate(math::subtraction('3', '4'))}, </code>
+      <code>3 + 4 -> ${math::truncate(math::subtraction('3', '-4'))}</code>
+      <output>3 - 4 -> -1, </output>
+      <output>3 + 4 -> 7</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>3 * 4 -> ${math::truncate(math::multiplication('3', '4'))}, </code>
+      <code>3 * -4 -> ${math::truncate(math::multiplication('3', '-4'))}</code>
+      <output>3 * 4 -> 12, </output>
+      <output>3 * -4 -> -12</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>9 / 3 -> ${math::truncate(math::division('9', '3'))}, </code>
+      <code>9 / -3 -> ${math::truncate(math::division('9', '-3'))}</code>
+      <output>9 / 3 -> 3, </output>
+      <output>9 / -3 -> -3</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>near(1, 2) -> ${math::near('1', '2')}, </code>
+      <code>less(1, 2) -> ${math::less('1', '2')}, </code>
+      <code>greater(1, 2) -> ${math::greater('1', '2')}</code>
+      <output>near(1, 2) -> False, </output>
+      <output>less(1, 2) -> True, </output>
+      <output>greater(1, 2) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>The quadratic polynomial </code>
+      <code>x^2 - 16 = 0 </code>
+      <code>have next solution(s) </code>
+      <code>X1 -> </code>
+      <code>${math::truncate(math::division(math::addition(math::multiplication('-1', '0'), </code>
+      <code>math::sqrt(math::subtraction(math::pow('0', '2'), math::multiplication('4', math::multiplication('1', '-16'))))), math::multiplication('2', '1'))))}</code>
+      <code> X2 -> </code>
+      <code>${math::truncate(math::division(math::subtraction(math::multiplication('-1', '0'), </code>
+      <code>math::sqrt(math::subtraction(math::pow('0', '2'), math::multiplication('4', math::multiplication('1', '-16'))))), math::multiplication('2', '1'))))}</code>
+      <output>The quadratic polynomial </output>
+      <output>x^2 - 16 = 0 </output>
+      <output>have next solution(s) </output>
+      <output>X1 -> 4 </output>
+      <output>X2 -> -4</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>format-to-string -> ${string::empty(datetime::format-to-string('0', '%A %c'))}</code>
+      <output>format-to-string -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>to-string(01.09.2019 2:03:04) -> ${datetime::to-string('01.09.2019 2:03:04')}</code>
+      <output>to-string(01.09.2019 2:03:04) -> 01.09.2019 2:03:04</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>parse(01.09.2019 2:03:04) -> ${datetime::parse('01.09.2019 2:03:04')}</code>
+      <output>parse(01.09.2019 2:03:04) -> 01.09.2019 2:03:04</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-day(1569840495) -> ${datetime::get-day('1569840495')}</code>
+      <output>get-day(1569840495) -> 30</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-day-of-year(1569840495) -> ${datetime::get-day-of-year('1569840495')}</code>
+      <output>get-day-of-year(1569840495) -> 273</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-days-in-month(2016, 2) -> ${datetime::get-days-in-month('2016', '2')}, </code>
+      <code>get-days-in-month(2019, 2) -> ${datetime::get-days-in-month('2019', '2')}</code>
+      <output>get-days-in-month(2016, 2) -> 29, </output>
+      <output>get-days-in-month(2019, 2) -> 28</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-hour(1569840495) -> ${datetime::get-hour('1569840495')}</code>
+      <output>get-hour(1569840495) -> 10</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-minute(1569840495) -> ${datetime::get-minute('1569840495')}</code>
+      <output>get-minute(1569840495) -> 48</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-month(1569840495) -> ${datetime::get-month('1569840495')}</code>
+      <output>get-month(1569840495) -> 9</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-second(1569840495) -> ${datetime::get-second('1569840495')}</code>
+      <output>get-second(1569840495) -> 15</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-year(1569840495) -> ${datetime::get-year('1569840495')}</code>
+      <output>get-year(1569840495) -> 2019</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>is-leap-year(2016) -> ${datetime::is-leap-year('2016')}, </code>
+      <code>is-leap-year(2019) -> ${datetime::is-leap-year('2019')}</code>
+      <output>is-leap-year(2016) -> True, </output>
+      <output>is-leap-year(2019) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>empty(now()) -> ${string::empty(datetime::now())}</code>
+      <output>empty(now()) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>from-input(30.09.2019 10:48:15) -> ${datetime::from-input('30.09.2019 10:48:15')}</code>
+      <output>from-input(30.09.2019 10:48:15) -> 1569840495</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>from-days(1) -> ${timespan::from-days('1')}</code>
+      <output>from-days(1) -> 86400</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>from-hours(1) -> ${timespan::from-hours('1')}</code>
+      <output>from-hours(1) -> 3600</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>from-minutes(1) -> ${timespan::from-minutes('1')}</code>
+      <output>from-minutes(1) -> 60</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>from-seconds(1) -> ${timespan::from-seconds('1')}</code>
+      <output>from-seconds(1) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-days(86400) -> ${timespan::get-days('86400')}</code>
+      <output>get-days(86400) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-hours(3600) -> ${timespan::get-hours('3600')}</code>
+      <output>get-hours(3600) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-minutes(60) -> ${timespan::get-minutes('60')}</code>
+      <output>get-minutes(60) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>parse(60) -> ${timespan::parse('60')}</code>
+      <output>parse(60) -> 60</output>
+      <return>1</return>
+    </interpreter_evaluate_code>    
+    <interpreter_evaluate_code>
+      <code>to-string(60) -> ${timespan::to-string('60')}</code>
+      <output>to-string(60) -> 60</output>
+      <return>1</return>
+    </interpreter_evaluate_code>    
+    <interpreter_evaluate_code>
+      <code>get-seconds(60) -> ${timespan::get-seconds('60')}</code>
+      <output>get-seconds(60) -> 60</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-total-seconds(60) -> ${timespan::get-total-seconds('60')}</code>
+      <output>get-total-seconds(60) -> 60</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-total-days(86400) -> ${math::truncate(timespan::get-total-days('86400'))}</code>
+      <output>get-total-days(86400) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-total-hours(3600) -> ${math::truncate(timespan::get-total-hours('3600'))}</code>
+      <output>get-total-hours(3600) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-total-minutes(60) -> ${math::truncate(timespan::get-total-minutes('60'))}</code>
+      <output>get-total-minutes(60) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${long::to-string('0')} == ${int64::to-string('0')}</code>
+      <output>0 == 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${long::to-string('9223372036854775807')} == ${int64::to-string('9223372036854775807')}</code>
+      <output>9223372036854775807 == 9223372036854775807</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${long::to-string('-9223372036854775808')} == ${int64::to-string('-9223372036854775808')}</code>
+      <output>-9223372036854775808 == -9223372036854775808</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::less('1.0', '2.0')}</code>
+      <output>True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::less('2.0', '2.0')}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::greater('2.0', '2.0')}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${version::greater('2.0', '1.0')}</code>
+      <output>True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+  </TestInterpreter>
+  <TestMathUnit>
+    <math_abs>
+      <input>-1.5</input>
+      <output>1.5</output>
+    </math_abs>
+    <math_abs>
+      <input>-1</input>
+      <output>1</output>
+    </math_abs>
+    <math_abs>
+      <input>-0.5</input>
+      <output>0.5</output>
+    </math_abs>
+    <math_abs>
+      <input>0</input>
+      <output>0</output>
+    </math_abs>
+    <math_abs>
+      <input>0.5</input>
+      <output>0.5</output>
+    </math_abs>
+    <math_abs>
+      <input>1</input>
+      <output>1</output>
+    </math_abs>
+    <math_abs>
+      <input>1.5</input>
+      <output>1.5</output>
+    </math_abs>
+    <math_ceiling>
+      <input>-1.75</input>
+      <output>-1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>-1.5</input>
+      <output>-1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>-1.25</input>
+      <output>-1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>-1</input>
+      <output>-1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>-0.75</input>
+      <output>0</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>-0.5</input>
+      <output>0</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>-0.25</input>
+      <output>0</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>0</input>
+      <output>0</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>0.25</input>
+      <output>1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>0.5</input>
+      <output>1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>0.75</input>
+      <output>1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>1</input>
+      <output>1</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>1.25</input>
+      <output>2</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>1.5</input>
+      <output>2</output>
+    </math_ceiling>
+    <math_ceiling>
+      <input>1.75</input>
+      <output>2</output>
+    </math_ceiling>
+    <math_floor>
+      <input>-1.75</input>
+      <output>-2</output>
+    </math_floor>
+    <math_floor>
+      <input>-1.5</input>
+      <output>-2</output>
+    </math_floor>
+    <math_floor>
+      <input>-1.25</input>
+      <output>-2</output>
+    </math_floor>
+    <math_floor>
+      <input>-1</input>
+      <output>-1</output>
+    </math_floor>
+    <math_floor>
+      <input>-0.75</input>
+      <output>-1</output>
+    </math_floor>
+    <math_floor>
+      <input>-0.5</input>
+      <output>-1</output>
+    </math_floor>
+    <math_floor>
+      <input>-0.25</input>
+      <output>-1</output>
+    </math_floor>
+    <math_floor>
+      <input>0</input>
+      <output>0</output>
+    </math_floor>
+    <math_floor>
+      <input>0.25</input>
+      <output>0</output>
+    </math_floor>
+    <math_floor>
+      <input>0.5</input>
+      <output>0</output>
+    </math_floor>
+    <math_floor>
+      <input>0.75</input>
+      <output>0</output>
+    </math_floor>
+    <math_floor>
+      <input>1</input>
+      <output>1</output>
+    </math_floor>
+    <math_floor>
+      <input>1.25</input>
+      <output>1</output>
+    </math_floor>
+    <math_floor>
+      <input>1.5</input>
+      <output>1</output>
+    </math_floor>
+    <math_floor>
+      <input>1.75</input>
+      <output>1</output>
+    </math_floor>
+    <math_round>
+      <input>-1.75</input>
+      <output>-2</output>
+    </math_round>
+    <math_round>
+      <input>-1.5</input>
+      <output>-2</output>
+    </math_round>
+    <math_round>
+      <input>-1.25</input>
+      <output>-1</output>
+    </math_round>
+    <math_round>
+      <input>-1</input>
+      <output>-1</output>
+    </math_round>
+    <math_round>
+      <input>-0.75</input>
+      <output>-1</output>
+    </math_round>
+    <math_round>
+      <input>-0.5</input>
+      <output>0</output>
+    </math_round>
+    <math_round>
+      <input>-0.25</input>
+      <output>0</output>
+    </math_round>
+    <math_round>
+      <input>0</input>
+      <output>0</output>
+    </math_round>
+    <math_round>
+      <input>0.25</input>
+      <output>0</output>
+    </math_round>
+    <math_round>
+      <input>0.5</input>
+      <output>0</output>
+    </math_round>
+    <math_round>
+      <input>0.75</input>
+      <output>1</output>
+    </math_round>
+    <math_round>
+      <input>1</input>
+      <output>1</output>
+    </math_round>
+    <math_round>
+      <input>1.25</input>
+      <output>1</output>
+    </math_round>
+    <math_round>
+      <input>1.5</input>
+      <output>2</output>
+    </math_round>
+    <math_round>
+      <input>1.75</input>
+      <output>2</output>
+    </math_round>
+  </TestMathUnit>
+  <TestPath>
+    <path_change_extension>
+      <input></input>
+      <ext></ext>
+      <output></output>
+      <return></return>
+    </path_change_extension>
+    <path_change_extension>
+      <input>C:\1.txt</input>
+      <ext>.txt</ext>
+      <output>C:\1.txt</output>
+      <return>1</return>
+    </path_change_extension>
+    <path_change_extension>
+      <input>C:\1.txt</input>
+      <ext>.exe</ext>
+      <output>C:\1.exe</output>
+      <return>1</return>
+    </path_change_extension>
+    <path_combine if="${platform::is-windows()}">
+      <path1></path1>
+      <path2></path2>
+      <output></output>
+      <return></return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1>C:\</path1>
+      <path2>\Windows</path2>
+      <output>C:\Windows</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1></path1>
+      <path2></path2>
+      <output></output>
+      <return></return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1>/tmp/</path1>
+      <path2>/file</path2>
+      <output>/tmp/file</output>
+      <return>1</return>
+    </path_combine>
+    <path_get_directory_name>
+      <path></path>
+      <return></return>
+      <directory></directory>
+    </path_get_directory_name>
+    <path_get_directory_name if="${platform::is-windows()}">
+      <path>C:\Windows\System32\cmd.exe</path>
+      <directory>C:\Windows\System32</directory>
+      <return>1</return>
+    </path_get_directory_name>
+    <path_get_directory_name if="${platform::is-unix()}">
+      <path>/tmp/file</path>
+      <directory>/tmp</directory>
+      <return>1</return>
+    </path_get_directory_name>
+    <path_get_directory_name if="${platform::is-windows()}">
+      <path>C:\Temp</path>
+      <directory>C:</directory>
+      <return>1</return>
+    </path_get_directory_name>
+    <path_get_directory_name if="${platform::is-unix()}">
+      <path>/tmp</path>
+      <directory>/</directory>
+      <return>1</return>
+    </path_get_directory_name>
+    <path_get_extension>
+      <path></path>
+      <ext></ext>
+      <return></return>
+    </path_get_extension>
+    <path_get_extension>
+      <path>1.txt</path>
+      <ext>.txt</ext>
+      <return>1</return>
+    </path_get_extension>
+    <path_get_extension>
+      <path>1.</path>
+      <ext></ext>
+      <return></return>
+    </path_get_extension>
+    <path_get_file_name>
+      <path></path>
+      <file_name></file_name>
+      <return></return>
+    </path_get_file_name>
+    <path_get_file_name if="${platform::is-windows()}">
+      <path>C:\Windows\System32\cmd.exe</path>
+      <file_name>cmd.exe</file_name>
+      <return>1</return>
+    </path_get_file_name>
+    <path_get_file_name if="${platform::is-unix()}">
+      <path>/tmp/file</path>
+      <file_name>file</file_name>
+      <return>1</return>
+    </path_get_file_name>
+    <path_get_file_name_without_extension>
+      <path></path>
+      <file_name></file_name>
+      <return></return>
+    </path_get_file_name_without_extension>
+    <path_get_file_name_without_extension>
+      <path>1.txt</path>
+      <file_name>1</file_name>
+      <return>1</return>
+    </path_get_file_name_without_extension>
+    <path_get_file_name_without_extension>
+      <path>abc.txt</path>
+      <file_name>abc</file_name>
+      <return>1</return>
+    </path_get_file_name_without_extension>
+    <path_get_full_path>
+      <root_path></root_path>
+      <path></path>
+      <full_path></full_path>
+      <return></return>
+    </path_get_full_path>
+    <path_get_full_path if="${platform::is-windows()}">
+      <root_path>C:\</root_path>
+      <path>C:\Windows\System32</path>
+      <full_path>C:\Windows\System32</full_path>
+      <return>1</return>
+    </path_get_full_path>
+    <path_get_full_path if="${platform::is-windows()}">
+      <root_path>C:\Windows\System32</root_path>
+      <path>..\..\</path>
+      <full_path>C:\</full_path>
+      <return>1</return>
+    </path_get_full_path>
+    <path_get_full_path if="${platform::is-windows()}">
+      <root_path>C:\</root_path>
+      <path>..\..\</path>
+      <full_path></full_path>
+      <return>0</return>
+    </path_get_full_path>
+    <path_get_full_path if="${platform::is-unix()}">
+      <root_path>/tmp</root_path>
+      <path>../</path>
+      <full_path>/</full_path>
+      <return>1</return>
+    </path_get_full_path>
+    <!--path_get_full_path if="${platform::is-unix()}">
+      <root_path>/tmp</root_path>
+      <root_path_length>4</root_path_length>
+      <path>/..</path>
+      <path_length>3</path_length>
+      <full_path>/</full_path>
+      <return>1</return>
+    </path_get_full_path-->
+    <path_get_full_path if="${platform::is-windows()}">
+      <root_path>C:\</root_path>
+      <root_path_length>3</root_path_length>
+      <path>sample.build</path>
+      <path_length>12</path_length>
+      <full_path>C:\sample.build</full_path>
+      <return>1</return>
+    </path_get_full_path>
+  </TestPath>
+  <TestProject>
+    <project_load_from_content>
+      <content><![CDATA[]]></content>
+      <return></return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content>
+        <![CDATA[
+        <project name = "Example project." default="Say hello.">
+          <description>This is a sample project for a test case.</description>
+          <target name="Say hello." if="${string::contains('Abc', 'A')}">
+            <echo message="Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('ABAB', 'B')}?" />
+          </target>
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>Example project.</name>
+      <default>Say hello.</default>
+      <target>Say hello.</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content>
+        <![CDATA[
+        <project name="property_test-110-issuecomment-68567200">
+          <echo message="Message one - '${property.one}'." if="${property::exists('property.one')}"/>
+          <echo message="Second message. Only this message will be displayed if no property set." level="None"/>
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>property_test-110-issuecomment-68567200</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content>
+        <![CDATA[
+        <project name="discriminant">
+          <description>Calculate 'real' solution(s) of quadratic polynomial.</description>
+
+          <!--property name="a" value="2" overwrite="false" readonly="true" />
+          <property name="b" value="0" overwrite="false" readonly="true" />
+          <property name="c" value="-64" overwrite="false" readonly="true" /-->
+
+          <property name="a" value="1" overwrite="false" readonly="true" />
+          <property name="b" value="0" overwrite="false" readonly="true" />
+          <property name="c" value="-16" overwrite="false" readonly="true" />
+
+          <!--property name="a" value="6" overwrite="false" readonly="true" />
+          <property name="b" value="11" overwrite="false" readonly="true" />
+          <property name="c" value="-35" overwrite="false" readonly="true" /-->
+
+          <!--property name="a" value="2" overwrite="false" readonly="true" />
+          <property name="b" value="-4" overwrite="false" readonly="true" />
+          <property name="c" value="-2" overwrite="false" readonly="true" /-->
+
+          <!--property name="a" value="-4" overwrite="false" readonly="true" />
+          <property name="b" value="-7" overwrite="false" readonly="true" />
+          <property name="c" value="12" overwrite="false" readonly="true" /-->
+
+          <!--property name="a" value="20" overwrite="false" readonly="true" />
+          <property name="b" value="-15" overwrite="false" readonly="true" />
+          <property name="c" value="-10" overwrite="false" readonly="true" /-->
+
+          <!--property name="a" value="1" overwrite="false" readonly="true" />
+          <property name="b" value="-1" overwrite="false" readonly="true" />
+          <property name="c" value="-3" overwrite="false" readonly="true" /-->
+
+          <!-- D = b * b -->
+          <property
+            name="D" value="${math::subtraction(math::pow(property::get-value('b'), '2'), math::multiplication('4', math::multiplication(property::get-value('a'), property::get-value('c'))))}"
+            dynamic="true" overwrite="true" readonly="true" />
+
+          <!--echo message="${property::get-value('D')}" /-->
+
+          <!--property name="X1" value="${math::division(
+                                                        math::addition(-property::get-value('b'), math::sqrt(property::get-value('D')),
+                                                        math::multiplication('2', property::get-value('a'))
+                                                     )}"
+            dynamic="true" overwrite="true" readonly="true" /-->
+
+          <property name="X1" value="${math::division(math::addition(math::multiplication('-1', property::get-value('b')), math::sqrt(property::get-value('D'))), math::multiplication('2', property::get-value('a')))}"
+            dynamic="true" overwrite="true" readonly="true" />
+          <property name="X2" value="${math::division(math::subtraction(math::multiplication('-1', property::get-value('b')), math::sqrt(property::get-value('D'))), math::multiplication('2', property::get-value('a')))}"
+            dynamic="true" overwrite="true" readonly="true" />
+
+          <echo message="The quadratic polynomial ${property::get-value('a')}x^2 + ${property::get-value('b')}x + ${property::get-value('c')} = 0 have next solution(s) X1 -> ${property::get-value('X1')} X2 -> ${property::get-value('X2')}"
+                level="None" />
+          <echo message="The quadratic polynomial ${property::get-value('a')}x^2 + ${property::get-value('b')}x + ${property::get-value('c')} = 0 have next solution(s) X1 -> ${math::truncate(property::get-value('X1'))} X2 -> ${math::truncate(property::get-value('X2'))}"
+                level="None" />
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>discriminant</name>
+      <description>Calculate 'real' solution(s) of quadratic polynomial.</description>
+    </project_load_from_content>
+    <project><!-- project_load_from_content -->
+      <content>
+        <![CDATA[
+        <project name="discriminant">
+          <property name="a" value="1" overwrite="false" readonly="true" />
+          <property name="b" value="0" overwrite="false" readonly="true" />
+          <property name="c" value="-16" overwrite="false" readonly="true" />
+
+          <property name="D" value="${math::subtraction(math::pow(b, '2'), math::multiplication('4', math::multiplication(a, c)))}" dynamic="true" overwrite="true" readonly="true" />
+          <property name="X1" value="${math::division(math::addition(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}" dynamic="true" overwrite="true" readonly="true" />
+          <property name="X2" value="${math::division(math::subtraction(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}" dynamic="true" overwrite="true" readonly="true" />
+
+          <echo message="The quadratic polynomial ${property::get-value('a')}x^2 + ${property::get-value('b')}x + ${property::get-value('c')} = 0 have next solution(s) X1 -> ${math::truncate(X1)} X2 -> ${math::truncate(X2)}" level="None" />
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>discriminant</name>
+    </project>
+    <!--project_load_from_build_file>
+      <content>
+        <![CDATA[
+        ]]>
+      </content>
+      <return>0</return>
+    </project_load_from_build_file-->
+    <project_load_from_build_file>
+      <content>
+        <![CDATA[
+        <project>
+          <property name="property" value="A" />
+          <property name="property" value="${property::get-value('property')} B C" />
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+    </project_load_from_build_file>
+  </TestProject>
+  <TestProperty>
+    <property_set_from_xml_tag_record>
+      <properties>
+        <property name="property_name" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+      </properties>
+      <record><![CDATA[name="debug" value="true"]]></record>
+      <return>1</return>
+      <output_properties>
+        <property name="property_name" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+        <property name="debug" value="true" dynamic="false" overwrite="true" readonly="false" failonerror="true" verbose="false" />
+      </output_properties>
+    </property_set_from_xml_tag_record>
+  </TestProperty>
+  <TestStringUnit>
+    <string_index_of_any>
+      <input></input>
+      <value></value>
+      <step>1</step>
+      <return>-1</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>""</input>
+      <value>""</value>
+      <step>1</step>
+      <return>0</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>123</input>
+      <value>3</value>
+      <step>1</step>
+      <return>2</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input></input>
+      <value></value>
+      <step>-1</step>
+      <return>-1</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>""</input>
+      <value>""</value>
+      <step>-1</step>
+      <return>0</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>123</input>
+      <value>3</value>
+      <step>-1</step>
+      <return>2</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>123</input>
+      <value>1</value>
+      <step>-1</step>
+      <return>0</return>
+    </string_index_of_any>
+    <string_replace>
+      <input></input>
+      <to_be_replaced></to_be_replaced>
+      <by_replacement></by_replacement>
+      <output></output>
+      <return>0</return>
+    </string_replace>
+    <string_replace>
+      <input>abc</input>
+      <to_be_replaced>b</to_be_replaced>
+      <by_replacement>ABC</by_replacement>
+      <output>aABCc</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>bc1</to_be_replaced>
+      <by_replacement></by_replacement>
+      <output>a23</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>bc1</to_be_replaced>
+      <by_replacement>b01</by_replacement>
+      <output>ab0123</output>
+      <return>1</return>
+    </string_replace>    
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>bc1</to_be_replaced>
+      <by_replacement>01</by_replacement>
+      <output>a0123</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>123</to_be_replaced>
+      <by_replacement></by_replacement>
+      <output>abc</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>123</to_be_replaced>
+      <by_replacement>4</by_replacement>
+      <output>abc4</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>123</to_be_replaced>
+      <by_replacement>456</by_replacement>
+      <output>abc456</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>123</to_be_replaced>
+      <by_replacement>123</by_replacement>
+      <output>abc123</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>123</to_be_replaced>
+      <by_replacement>123456</by_replacement>
+      <output>abc123456</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>3</to_be_replaced>
+      <by_replacement>1</by_replacement>
+      <output>abc121</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc123</input>
+      <to_be_replaced>3</to_be_replaced>
+      <by_replacement>3</by_replacement>
+      <output>abc123</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc</input>
+      <to_be_replaced>abc</to_be_replaced>
+      <by_replacement>123</by_replacement>
+      <output>123</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc</input>
+      <to_be_replaced>a</to_be_replaced>
+      <by_replacement>1</by_replacement>
+      <output>1bc</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc</input>
+      <to_be_replaced>a</to_be_replaced>
+      <by_replacement></by_replacement>
+      <output>bc</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc</input>
+      <to_be_replaced>a</to_be_replaced>
+      <by_replacement>ABCa</by_replacement>
+      <output>ABCabc</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>abc</input>
+      <to_be_replaced>a</to_be_replaced>
+      <by_replacement>a</by_replacement>
+      <output>abc</output>
+      <return>1</return>
+    </string_replace>
+    <string_replace>
+      <input>
+        <![CDATA[
+Pinging 127.0.0.1 with 32 bytes of data:
+Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+
+Ping statistics for 127.0.0.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+        ]]>
+      </input>
+      <to_be_replaced>&#xA;</to_be_replaced>
+      <by_replacement>&#xA;[Info]: </by_replacement>
+      <output>
+        <![CDATA[
+[Info]: Pinging 127.0.0.1 with 32 bytes of data:
+[Info]: Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+[Info]: Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+[Info]: Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+[Info]: Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
+[Info]: 
+[Info]: Ping statistics for 127.0.0.1:
+[Info]:     Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+[Info]: Approximate round trip times in milli-seconds:
+[Info]:     Minimum = 0ms, Maximum = 0ms, Average = 0ms
+[Info]:         ]]>  
+      </output>
+      <return>1</return>
+    </string_replace>
+    <string_starts_with input="" value="" return="false" />
+    <string_starts_with input="" value="A" return="false" />
+    <string_starts_with input=" " value=" " return="true" />
+    <string_starts_with input="AB" value="CD" return="false" />
+    <string_starts_with input="ABCD" value="AB" return="true" />
+    <string_trim>
+      <input></input>
+      <input_length></input_length>
+      <mode>12</mode><!-- string_trim_mode_all -->
+      <output></output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> </input>
+      <input_length>1</input_length>
+      <mode>12</mode><!-- string_trim_mode_all -->
+      <output></output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> abc </input>
+      <input_length>5</input_length>
+      <mode>12</mode><!-- string_trim_mode_all -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> abc</input>
+      <input_length>4</input_length>
+      <mode>12</mode><!-- string_trim_mode_all -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc </input>
+      <input_length>4</input_length>
+      <mode>12</mode><!-- string_trim_mode_all -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc</input>
+      <input_length>3</input_length>
+      <mode>12</mode><!-- string_trim_mode_all -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>.txt</input>
+      <input_length>4</input_length>
+      <mode>12</mode><!-- string_trim_mode_end -->
+      <output>.txt</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> abc </input>
+      <input_length>5</input_length>
+      <mode>14</mode><!-- string_trim_mode_start -->
+      <output>abc </output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> abc</input>
+      <input_length>4</input_length>
+      <mode>14</mode><!-- string_trim_mode_start -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc </input>
+      <input_length>4</input_length>
+      <mode>14</mode><!-- string_trim_mode_start -->
+      <output>abc </output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc</input>
+      <input_length>3</input_length>
+      <mode>14</mode><!-- string_trim_mode_start -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> </input>
+      <input_length>1</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output></output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>.txt</input>
+      <input_length>4</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output>.txt</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> abc </input>
+      <input_length>5</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output> abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input> abc</input>
+      <input_length>4</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output> abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc </input>
+      <input_length>4</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc</input>
+      <input_length>3</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abcd</input>
+      <input_length>3</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_trim>
+      <input>abc d</input>
+      <input_length>4</input_length>
+      <mode>13</mode><!-- string_trim_mode_end -->
+      <output>abc</output>
+      <return>1</return>
+    </string_trim>
+    <string_quote>
+      <input></input>
+      <return>1</return>
+      <output>""</output>
+    </string_quote>
+    <string_quote>
+      <input>a b c</input>
+      <return>1</return>
+      <output>"a b c"</output>
+    </string_quote>
+    <string_un_quote>
+      <input></input>
+      <return>1</return>
+      <output></output>
+    </string_un_quote>
+    <string_un_quote>
+      <input>"</input>
+      <return>1</return>
+      <output></output>
+    </string_un_quote>
+    <string_un_quote>
+      <input>"a b c"</input>
+      <return>1</return>
+      <output>a b c</output>
+    </string_un_quote>
+    <string_un_quote>
+      <input>""a b c""</input>
+      <return>1</return>
+      <output>a b c</output>
+    </string_un_quote>
+    <string_equal>
+      <input_1></input_1>
+      <input_2></input_2>
+      <return>1</return>
+    </string_equal>
+    <string_equal>
+      <input_1>a</input_1>
+      <input_2>b</input_2>
+      <return>0</return>
+    </string_equal>
+    <string_equal>
+      <input_1>c</input_1>
+      <input_2>c</input_2>
+      <return>1</return>
+    </string_equal>
+  </TestStringUnit>
+  <TestXml>
+    <xml_get_tag_finish_pos>
+      <input></input>
+      <output></output>
+    </xml_get_tag_finish_pos>
+    <xml_get_tag_finish_pos>
+      <input><![CDATA[<tag></tag>]]></input>
+      <output><![CDATA[></tag>]]></output>
+    </xml_get_tag_finish_pos>
+    <xml_get_tag_finish_pos>
+      <input><![CDATA[<tag comment="just some tag"></tag>]]></input>
+      <output><![CDATA[></tag>]]></output>
+    </xml_get_tag_finish_pos>
+    <xml_get_tag_finish_pos>
+      <input><![CDATA[<tag comment="just some tag" desription="read the comment"></tag>]]></input>
+      <output><![CDATA[></tag>]]></output>
+    </xml_get_tag_finish_pos>
+    <xml_get_sub_nodes_elements>
+      <input></input>
+      <return></return>
+    </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<project></project>]]></input>
+      <return>1</return>
+      <output><![CDATA[project></project]]></output>
+    </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<project><!-- A --></project>]]></input>
+      <return>1</return>
+      <output><![CDATA[project><!-- A --></project]]></output>
+    </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<project><!-- A --> <tag comment="Hello! Look -> here."></tag> </project>]]></input>
+      <return>1</return>
+      <output><![CDATA[project><!-- A --> <tag comment="Hello! Look -> here."></tag> </project]]></output>
+    </xml_get_sub_nodes_elements>
+    <xml_get_tag_name>
+      <input></input>
+      <output></output>
+      <return></return>
+    </xml_get_tag_name>
+    <xml_get_tag_name>
+      <input><![CDATA[<tag></tag>]]></input>
+      <output>tag</output>
+      <return>1</return>
+    </xml_get_tag_name>
+    <xml_get_attribute_value>
+      <input></input>
+      <attribute></attribute>
+      <output></output>
+      <return></return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<project name = "example" default="hello">]]></input>
+      <attribute>name</attribute>
+      <output>example</output>
+      <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<project name="example" default="hello">]]></input>
+      <attribute>name</attribute>
+      <output>example</output>
+      <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_element_value>
+      <input></input>
+      <output></output>
+      <return></return>
+    </xml_get_element_value>
+    <xml_get_element_value>
+      <input><![CDATA[<project></project>]]></input>
+      <output></output>
+      <return>1</return>
+    </xml_get_element_value>
+    <xml_get_element_value>
+      <input><![CDATA[<project />]]></input>
+      <output></output>
+      <return>1</return>
+    </xml_get_element_value>
+    <xml_get_element_value>
+      <input><![CDATA[<project /><abc>123</abc>]]></input>
+      <output></output>
+      <return>1</return>
+    </xml_get_element_value>
+    <xml_get_element_value>
+      <input><![CDATA[<abc>123</abc>]]></input>
+      <output>123</output>
+      <return>1</return>
+    </xml_get_element_value>
+  </TestXml>
+</Tests>

@@ -69,6 +69,131 @@ if(NOT MSVC)
   target_link_libraries(ant4c_app m)
 endif()
 
+# tests_exec_app
+
+add_executable(tests_exec_app
+            "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
+
+# tests
+
+set(SOURCES_OF_TESTS
+            "${CMAKE_SOURCE_DIR}/tests_argument_parser.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_base_xml.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
+            "${CMAKE_SOURCE_DIR}/tests_conversion.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_date_time.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_environment.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_exec.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_file_system.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_interpreter.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_math_unit.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_path.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_project.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_property.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_string_unit.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_xml.cpp")
+
+set(pugixml_FOUND 0)
+set(GTest_FOUND False)
+
+find_package(pugixml)
+find_package(GTest)
+
+if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
+  add_executable(ant4c_tests ${SOURCES_OF_TESTS})
+  target_link_libraries(ant4c_tests ant4c pugixml GTest::GTest)# GTest::Main)
+  if(NOT MSVC)
+    target_link_libraries(ant4c_tests m)
+  endif()
+  if((NOT MSVC) AND (${CMAKE_VERSION} GREATER 3.0))
+    set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
+  endif()
+  add_dependencies(ant4c_tests tests_exec_app)
+  if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
+    add_custom_command(TARGET ant4c_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
+  endif()
+  add_custom_command(TARGET ant4c_tests POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
+else()
+  message(STATUS "Search pugixml and GTest via defined PUGIXML_PATH and/or GTEST_PATH if such exists.")
+  if(DEFINED ENV{PUGIXML_PATH})
+    string(REPLACE "\\" "/" pugixml_Path $ENV{PUGIXML_PATH})
+  elseif(DEFINED PUGIXML_PATH)
+    string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_PATH})
+  else()
+    message(WARNING "PUGIXML_PATH not set. Targets that use pugixml will not be avaliable.")
+  endif()
+
+  if(pugixml_Path)
+    if (EXISTS ${pugixml_Path}/CMakeLists.txt)
+      add_subdirectory(${pugixml_Path} ${CMAKE_BINARY_DIR}/pugixml)
+    else()
+      add_subdirectory(${pugixml_Path}/scripts ${CMAKE_BINARY_DIR}/pugixml)
+    endif()
+
+    # tests
+
+    if(DEFINED ENV{GTEST_PATH})
+      string(REPLACE "\\" "/" gtest_Path $ENV{GTEST_PATH})
+    elseif(DEFINED GTEST_PATH)
+      string(REPLACE "\\" "/" gtest_Path ${GTEST_PATH})
+    else()
+      message(WARNING "GTEST_PATH not set. Tests will not be avaliable.")
+    endif()
+
+    if(gtest_Path)
+      set(GTEST_MAIN_LIBRARY gtest)
+
+      if (EXISTS ${gtest_Path}/include)
+        set(GTEST_INCLUDE_DIR ${gtest_Path}/include)
+        set(GTEST_INCLUDE_DIRS ${gtest_Path} ${GTEST_INCLUDE_DIR})
+      else()
+        set(GTEST_INCLUDE_DIR ${gtest_Path}/googletest/include)
+        set(GTEST_INCLUDE_DIRS ${gtest_Path}/googletest ${GTEST_INCLUDE_DIR})
+      endif()
+
+      if((EXISTS ${gtest_Path}/src/gtest-all.cc) AND (EXISTS ${gtest_Path}/src/gtest_main.cc))
+        set(GTEST_FILES ${gtest_Path}/src/gtest-all.cc)# ${gtest_Path}/src/gtest_main.cc)
+      elseif((EXISTS ${gtest_Path}/gtest/gtest-all.cc) AND (EXISTS ${gtest_Path}/gtest/gtest_main.cc))
+        set(GTEST_FILES ${gtest_Path}/gtest/gtest-all.cc)# ${gtest_Path}/gtest/gtest_main.cc)
+      elseif((EXISTS ${gtest_Path}/googletest/src/gtest-all.cc) AND (EXISTS ${gtest_Path}/googletest/src/gtest_main.cc))
+        set(GTEST_FILES ${gtest_Path}/googletest/src/gtest-all.cc)# ${gtest_Path}/googletest/src/gtest_main.cc)
+      else()
+        message(FATAL_ERROR "Could not find Google Test library at ${gtest_Path}, please check it at https://github.com/google/googletest/releases")
+      endif()
+
+      add_library(${GTEST_MAIN_LIBRARY} STATIC ${GTEST_FILES})
+      target_include_directories(${GTEST_MAIN_LIBRARY} SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
+      target_compile_definitions(${GTEST_MAIN_LIBRARY} PRIVATE GTEST_HAS_PTHREAD=0)
+
+      # ant4c_tests
+
+      add_executable(ant4c_tests ${SOURCES_OF_TESTS})
+      target_include_directories(ant4c_tests SYSTEM PRIVATE ${pugixml_Path}/src ${GTEST_INCLUDE_DIR})
+      target_link_libraries(ant4c_tests ant4c pugixml ${GTEST_MAIN_LIBRARY})
+
+      if(NOT MSVC)
+        target_link_libraries(ant4c_tests m)
+      endif()
+
+      if((NOT MSVC) AND (${CMAKE_VERSION} GREATER 3.0))
+        set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES CXX_STANDARD 11)
+        set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
+      endif()
+
+      add_dependencies(ant4c_tests tests_exec_app)
+      if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
+        add_custom_command(TARGET ant4c_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
+      endif()
+      add_custom_command(TARGET ant4c_tests POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
+      message(STATUS "pugixml and GTest was found.")
+    endif()
+  endif()
+endif()
+
 if(MSVC)
   # (${MSVC_VERSION} LESS 1901)
   # (${MSVC_TOOLSET_VERSION} LESS 141(142))
