@@ -7,7 +7,7 @@ For understanding why tools with such vision was written read [Apache Ant Introd
 
 Name of program just reference to language on which source was written.
 
-For first initial release echo and exec tasks support. Targets are not support. Functions from name spaces bool, cygpath, datetime, double, environment, int, int64, long, math, operating_system, path, platform, program, project, property, string, timespan and version are available.
+For first initial release echo and exec tasks support. Targets are not support. Functions from name spaces bool, cygpath, datetime, double, environment, int, int64, long, math, operating-system, path, platform, program, project, property, string, timespan and version are available.
 
 Developing was started in August of 2019 and first present to the public in October of 2019.
 
@@ -188,8 +188,8 @@ string::equal
 string::get-length
 string::index-of
 string::last-index-of
-string::pad-left
-string::pad-right
+~~string::pad-left~~
+~~string::pad-right~~
 string::quote
 string::replace
 string::starts-with
