@@ -54,6 +54,41 @@ std::string buffer_to_string(const buffer* input)
 	return output;
 }
 
+std::wstring buffer_to_u16string(const buffer* input)
+{
+	std::wstring output((NULL != input &&
+						 0 < buffer_size(input)) ? buffer_size(input) / sizeof(uint16_t) : 0, L'\0');
+	output.clear();
+	const uint16_t* ptr = NULL;
+
+	if (NULL != input && NULL != (ptr = buffer_uint16_data(input, 0)))
+	{
+		switch (sizeof(wchar_t))
+		{
+			case 2:
+				output.append((const wchar_t*)ptr, buffer_size(input) / sizeof(uint16_t));
+				break;
+
+			case 4:
+			{
+				ptrdiff_t i = 0;
+
+				while (NULL != (ptr = buffer_uint16_data(input, i++)))
+				{
+					uint16_t value = *ptr;
+					output.push_back(value);
+				}
+			}
+			break;
+
+			default:
+				break;
+		}
+	}
+
+	return output;
+}
+
 range buffer_to_range(const buffer* input)
 {
 	range output;

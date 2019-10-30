@@ -45,6 +45,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/string_unit.h"
             "${CMAKE_SOURCE_DIR}/target.c"
             "${CMAKE_SOURCE_DIR}/target.h"
+            "${CMAKE_SOURCE_DIR}/text_encoding.c"
+            "${CMAKE_SOURCE_DIR}/text_encoding.h"
             "${CMAKE_SOURCE_DIR}/version.c"
             "${CMAKE_SOURCE_DIR}/version.h"
             "${CMAKE_SOURCE_DIR}/xml.c"
@@ -69,12 +71,7 @@ if(NOT MSVC)
   target_link_libraries(ant4c_app m)
 endif()
 
-# tests_exec_app
-
-add_executable(tests_exec_app
-            "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
-
-# tests
+set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
 
 set(SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_argument_parser.cpp"
@@ -91,6 +88,7 @@ set(SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_project.cpp"
             "${CMAKE_SOURCE_DIR}/tests_property.cpp"
             "${CMAKE_SOURCE_DIR}/tests_string_unit.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_text_encoding.cpp"
             "${CMAKE_SOURCE_DIR}/tests_xml.cpp")
 
 set(pugixml_FOUND 0)
@@ -100,6 +98,7 @@ find_package(pugixml)
 find_package(GTest)
 
 if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
+  add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
   add_executable(ant4c_tests ${SOURCES_OF_TESTS})
   target_link_libraries(ant4c_tests ant4c pugixml GTest::GTest)# GTest::Main)
   if(NOT MSVC)
@@ -131,8 +130,6 @@ else()
     else()
       add_subdirectory(${pugixml_Path}/scripts ${CMAKE_BINARY_DIR}/pugixml)
     endif()
-
-    # tests
 
     if(DEFINED ENV{GTEST_PATH})
       string(REPLACE "\\" "/" gtest_Path $ENV{GTEST_PATH})
@@ -167,8 +164,7 @@ else()
       target_include_directories(${GTEST_MAIN_LIBRARY} SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
       target_compile_definitions(${GTEST_MAIN_LIBRARY} PRIVATE GTEST_HAS_PTHREAD=0)
 
-      # ant4c_tests
-
+      add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
       add_executable(ant4c_tests ${SOURCES_OF_TESTS})
       target_include_directories(ant4c_tests SYSTEM PRIVATE ${pugixml_Path}/src ${GTEST_INCLUDE_DIR})
       target_link_libraries(ant4c_tests ant4c pugixml ${GTEST_MAIN_LIBRARY})

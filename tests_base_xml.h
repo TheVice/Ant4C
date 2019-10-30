@@ -32,6 +32,7 @@ extern "C" {
 struct buffer;
 
 std::string buffer_to_string(const buffer* input);
+std::wstring buffer_to_u16string(const buffer* input);
 range buffer_to_range(const buffer* input);
 
 uint8_t string_to_buffer(const std::string& input, buffer* output);
