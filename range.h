@@ -15,13 +15,13 @@ struct buffer;
 
 struct range
 {
-	const char* start;
-	const char* finish;
+	const uint8_t* start;
+	const uint8_t* finish;
 };
 
 ptrdiff_t range_size(const struct range* range);
 uint8_t range_is_null_or_empty(const struct range* range);
-uint8_t range_in_parts_is_null_or_empty(const char* range_start, const char* range_finish);
+uint8_t range_in_parts_is_null_or_empty(const uint8_t* range_start, const uint8_t* range_finish);
 
 uint8_t buffer_append_data_from_range(struct buffer* storage, const struct range* data);
 

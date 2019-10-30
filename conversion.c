@@ -11,7 +11,6 @@
 #include "range.h"
 
 #include <stdio.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
@@ -26,26 +25,25 @@ static const char* True = "True";
 #define FALSE_LENGTH 5
 #define TRUE_LENGTH  4
 
-uint8_t bool_parse(const char* input_string_start, const char* input_string_finish, uint8_t* bool_value)
+uint8_t bool_parse(const uint8_t* input, ptrdiff_t input_length, uint8_t* bool_value)
 {
-	if (range_in_parts_is_null_or_empty(input_string_start, input_string_finish) ||
+	if (NULL == input ||
+		0 == input_length ||
 		NULL == bool_value)
 	{
 		return 0;
 	}
 
-	const ptrdiff_t length = input_string_finish - input_string_start;
-
-	if (FALSE_LENGTH == length &&
-		(0 == memcmp(False, input_string_start, length) ||
-		 0 == memcmp("false", input_string_start, length)))
+	if (FALSE_LENGTH == input_length &&
+		(0 == memcmp(False, input, input_length) ||
+		 0 == memcmp("false", input, input_length)))
 	{
 		*bool_value = 0;
 		return 1;
 	}
-	else if (TRUE_LENGTH == length &&
-			 (0 == memcmp(True, input_string_start, length) ||
-			  0 == memcmp("true", input_string_start, length)))
+	else if (TRUE_LENGTH == input_length &&
+			 (0 == memcmp(True, input, input_length) ||
+			  0 == memcmp("true", input, input_length)))
 	{
 		*bool_value = 1;
 		return 1;
@@ -91,9 +89,9 @@ uint8_t bool_to_string(uint8_t bool_value, struct buffer* output_string)
 	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))						\
 	return buffer_resize((OUTPUT), size + sprintf_s(ptr, (EXPECTED_SIZE), (FORMAT), (VALUE)));
 
-double double_parse(const char* value)
+double double_parse(const uint8_t* value)
 {
-	return atof(value);
+	return atof((const char*)value);
 }
 
 uint8_t double_to_string(double double_value, struct buffer* output_string)
@@ -105,9 +103,9 @@ uint8_t double_to_string(double double_value, struct buffer* output_string)
 #endif
 }
 
-int32_t int_parse(const char* value)
+int32_t int_parse(const uint8_t* value)
 {
-	return atoi(value);
+	return atoi((const char*)value);
 }
 
 uint8_t int_to_string(int32_t int_value, struct buffer* output_string)
@@ -119,9 +117,9 @@ uint8_t int_to_string(int32_t int_value, struct buffer* output_string)
 #endif
 }
 
-long long_parse(const char* value)
+long long_parse(const uint8_t* value)
 {
-	return atol(value);
+	return atol((const char*)value);
 }
 
 long long_parse_wchar_t(const wchar_t* value)
@@ -139,9 +137,9 @@ uint8_t long_to_string(long long_value, struct buffer* output_string)
 #endif
 }
 
-int64_t int64_parse(const char* value)
+int64_t int64_parse(const uint8_t* value)
 {
-	return atoll(value);
+	return atoll((const char*)value);
 }
 
 int64_t int64_parse_wchar_t(const wchar_t* value)
@@ -159,9 +157,10 @@ uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 #endif
 }
 
-static const char* conversion_str[] =
+static const uint8_t* conversion_str[] =
 {
-	"parse", "to-string"
+	(const uint8_t*)"parse",
+	(const uint8_t*)"to-string"
 };
 
 enum conversion_function
@@ -170,7 +169,7 @@ enum conversion_function
 	UNKNOWN_CONVERSION
 };
 
-uint8_t conversion_get_function(const char* name_start, const char* name_finish)
+uint8_t conversion_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, conversion_str, UNKNOWN_CONVERSION);
 }
@@ -197,7 +196,7 @@ uint8_t bool_exec_function(uint8_t function, const struct buffer* arguments, uin
 		{
 			uint8_t bool_value = 0;
 
-			if (!bool_parse(argument.start, argument.finish, &bool_value))
+			if (!bool_parse(argument.start, range_size(&argument), &bool_value))
 			{
 				break;
 			}

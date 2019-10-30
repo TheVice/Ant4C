@@ -20,10 +20,12 @@
 #include "range.h"
 #include "string_unit.h"
 #include "xml.h"
-
+#if 0
 #if defined(_WIN32)
 
 #include <windows.h>
+
+static const uint8_t space = ' ';
 
 uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 				   wchar_t* env, const wchar_t* working_dir,
@@ -81,7 +83,7 @@ uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 
 uint8_t exec_win32_with_redirect(
 	const wchar_t* program, wchar_t* cmd, wchar_t* env, const wchar_t* working_dir,
-	const char* file, struct buffer* tmp, uint32_t time_out, uint8_t verbose)
+	const uint8_t* file, struct buffer* tmp, uint32_t time_out, uint8_t verbose)
 {
 	if (NULL == tmp)
 	{
@@ -119,16 +121,12 @@ uint8_t exec_win32_with_redirect(
 	while (1)
 	{
 		DWORD numberOfBytesRead = (DWORD)(buffer_size(tmp) - 1);
-		BOOL ret = ReadFile(hReadPipe, buffer_char_data(tmp, 0),
+		BOOL ret = ReadFile(hReadPipe, buffer_data(tmp, 0),
 							numberOfBytesRead, &numberOfBytesRead, 0);
-		/*
-		static const char* new_line = "\n";
-		static const char* new_line_with_info = "\n[Info]: ";*/
 
 		if (ret && 0 < numberOfBytesRead)
 		{
-			if (/*!string_replace_in_buffer(tmp, new_line, 1, new_line_with_info, 9) ||*/
-				!echo(1, Default, file, NoLevel, buffer_char_data(tmp, 0), numberOfBytesRead, 0, verbose))
+			if (!echo(1, Default, file, NoLevel, buffer_data(tmp, 0), numberOfBytesRead, 0, verbose))
 			{
 				CloseHandle(hReadPipe);
 				return 0;
@@ -165,7 +163,7 @@ uint8_t exec(
 		return 0;
 	}
 
-	const char* file = range_is_null_or_empty(output_file) ? NULL : output_file->start;
+	const uint8_t* file = range_is_null_or_empty(output_file) ? NULL : output_file->start;
 
 	if (!spawn && !append && NULL != file)
 	{
@@ -195,7 +193,7 @@ uint8_t exec(
 			return 0;
 		}
 
-		if (!file_exists(buffer_char_data(&application, 0)))
+		if (!file_exists(buffer_data(&application, 0)))
 		{
 			buffer_release(&application);
 			return 0;
@@ -219,22 +217,22 @@ uint8_t exec(
 
 	if (!range_is_null_or_empty(command_line))
 	{
-		static const char space = ' ';
-		const char* ptr = buffer_char_data(&application, 0);
+		const uint8_t* ptr = buffer_data(&application, 0);
 		ptrdiff_t size_ = buffer_size(&application);
 		const uint8_t contains = string_contains(ptr, ptr + size_, &space, &space + 1);
 
-		if (!buffer_append_char(&application, NULL, size_ + 3) ||
+		if (!buffer_append(&application, NULL, size_ + 3) ||
 			!buffer_resize(&application, size_))
 		{
 			buffer_release(&application);
 			return 0;
 		}
 
-		ptr = buffer_char_data(&application, 0);
+		ptr = buffer_data(&application, 0);
 
+		/*TODO: use string_quote.*/
 		if ((contains && !buffer_push_back(&application, '"')) ||
-			!buffer_append_char(&application, ptr, size_ - 1) ||
+			!buffer_append(&application, ptr, size_ - 1) ||
 			(contains && !buffer_push_back(&application, '"')))
 		{
 			buffer_release(&application);
@@ -288,7 +286,7 @@ uint8_t exec(
 		return 0;
 	}
 
-	char* m = buffer_char_data(&application, 0);
+	uint8_t* m = buffer_data(&application, 0);
 	wchar_t* programW = (wchar_t*)buffer_data(&application, size);
 
 	if (NULL == programW ||
@@ -465,7 +463,7 @@ uint8_t exec_posix_with_redirect(
 
 	while (1)
 	{
-		const ssize_t count = read(file_des[0], buffer_char_data(tmp, 0), 4096);
+		const ssize_t count = read(file_des[0], buffer_data(tmp, 0), 4096);
 
 		if (count == -1)
 		{
@@ -1148,7 +1146,7 @@ uint8_t exec_get_arguments_for_task(
 			return 0;
 		}
 
-		int64_t data = int64_parse(buffer_char_data(argument_value, 0));
+		int64_t data = int64_parse(buffer_data(argument_value, 0));
 
 		if (!buffer_resize(argument_value, 0))
 		{
@@ -1175,8 +1173,8 @@ uint8_t exec_get_arguments_for_task(
 }
 
 uint8_t exec_evaluate_task(void* project, const void* target,
-						   const char* attributes_start, const char* attributes_finish,
-						   const char* element_finish)
+						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
+						   const uint8_t* element_finish)
 {
 	struct buffer arguments;
 	SET_NULL_TO_BUFFER(arguments);
@@ -1293,3 +1291,47 @@ uint8_t exec_evaluate_task(void* project, const void* target,
 	return fail_on_error ? spawn : 1;*/
 	return spawn;
 }
+#else
+
+uint8_t exec(
+	uint8_t append,
+	const struct range* program,
+	const struct range* base_dir,
+	const struct range* command_line,
+	const struct range* output_file,
+	void* pid_property,
+	void* result_property,
+	const struct range* working_dir,
+	const struct range* environment_variables,
+	uint8_t spawn,
+	uint32_t time_out,
+	uint8_t verbose)
+{
+	(void)append;
+	(void)program;
+	(void)base_dir;
+	(void)command_line;
+	(void)output_file;
+	(void)pid_property;
+	(void)result_property;
+	(void)working_dir;
+	(void)environment_variables;
+	(void)spawn;
+	(void)time_out;
+	(void)verbose;
+	return 0;
+}
+
+uint8_t exec_evaluate_task(void* project, const void* target,
+						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
+						   const uint8_t* element_finish)
+{
+	(void)project;
+	(void)target;
+	(void)attributes_start;
+	(void)attributes_finish;
+	(void)element_finish;
+	return 0;
+}
+
+#endif

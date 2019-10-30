@@ -95,7 +95,7 @@ range buffer_to_range(const buffer* input)
 	output.start = output.finish = NULL;
 
 	if (NULL == input ||
-		NULL == (output.start = buffer_char_data(input, 0)))
+		NULL == (output.start = buffer_data(input, 0)))
 	{
 		return output;
 	}
@@ -112,23 +112,21 @@ uint8_t string_to_buffer(const std::string& input, buffer* output)
 range string_to_range(const std::string& input)
 {
 	range output;
-	output.start = input.empty() ? NULL : input.data();
-	output.finish = input.empty() ? NULL : input.data() + input.size();
+	output.start = input.empty() ? NULL : (uint8_t*)input.data();
+	output.finish = input.empty() ? NULL : output.start + input.size();
 	return output;
 }
 
-std::string range_to_string(const char* start_of_range, const char* finish_of_range)
+std::string range_to_string(const uint8_t* start_of_range, const uint8_t* finish_of_range)
 {
 	static const std::string empty;
 
-	if (NULL == start_of_range ||
-		NULL == finish_of_range ||
-		finish_of_range <= start_of_range)
+	if (range_in_parts_is_null_or_empty(start_of_range, finish_of_range))
 	{
 		return empty;
 	}
 
-	return std::string(start_of_range, finish_of_range - start_of_range);
+	return std::string((const char*)start_of_range, finish_of_range - start_of_range);
 }
 
 std::string range_to_string(const range& input)
@@ -190,7 +188,7 @@ uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* 
 		}
 
 		code = buffer_to_range(tmp);
-		return bool_parse(code.start, code.finish, condition);
+		return bool_parse(code.start, range_size(&code), condition);
 	}
 
 	(*condition) = 1;
@@ -231,8 +229,8 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 		/**/
 		const uint8_t returned = property_set_by_name(
 									 NULL, NULL, properties,
-									 name.c_str(), (uint8_t)name.size(),
-									 value.c_str(), value.size(),
+									 (const uint8_t*)name.c_str(), (uint8_t)name.size(),
+									 (const uint8_t*)value.c_str(), value.size(),
 									 property_value_is_char_array,
 									 dynamic, overwrite, readonly, verbose);
 
@@ -246,7 +244,8 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 			static const std::string
 			warn_about_failonerror("Failed to set property. Continue as demanded at 'fail on error' option.");
 
-			if (!echo(0, Default, NULL, Warning, warn_about_failonerror.c_str(), warn_about_failonerror.size(), 1, 0))
+			if (!echo(0, Default, NULL, Warning, (const uint8_t*)warn_about_failonerror.c_str(),
+					  warn_about_failonerror.size(), 1, 0))
 			{
 				return 0;
 			}

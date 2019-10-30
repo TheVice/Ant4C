@@ -24,14 +24,14 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target,
 uint8_t interpreter_evaluate_code(const void* project, const void* target,
 								  const struct range* code, struct buffer* output);
 uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, const void* target,
-		const char* tag_start, const char* tag_finish,
+		const uint8_t* tag_start, const uint8_t* tag_finish,
 		uint8_t* skip);
 uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const void* target,
-		const char* start_of_attributes, const char* finish_of_attributes,
-		const char** attributes, const uint8_t* attributes_lengths,
+		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
+		const uint8_t** attributes, const uint8_t* attributes_lengths,
 		uint8_t attributes_count, struct buffer* output);
-uint8_t interpreter_get_task(const char* task_name_start, const char* task_name_finish);
+uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish);
 uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
-								  const char* attributes_start, const char* element_finish);
+								  const uint8_t* attributes_start, const uint8_t* element_finish);
 
 #endif

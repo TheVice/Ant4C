@@ -24,7 +24,7 @@ uint8_t directory_exists_by_wchar_path(const wchar_t* path);
 uint8_t file_exists_by_wchar_path(const wchar_t* path);
 #endif
 
-uint8_t directory_exists(const char* path);
+uint8_t directory_exists(const uint8_t* path);
 #if 0
 directory_get_creation_time
 #endif
@@ -35,15 +35,16 @@ directory_get_last_access_time
 directory_get_last_write_time
 #endif
 uint8_t directory_get_logical_drives(struct buffer* drives);
-uint8_t directory_get_parent_directory(const char* path_start, const char* path_finish, struct range* parent);
+uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t* path_finish,
+									   struct range* parent);
 
-uint8_t file_exists(const char* path);
+uint8_t file_exists(const uint8_t* path);
 #if 0
 file_get_creation_time
 file_get_last_access_time
 file_get_last_write_time
 #endif
-uint64_t file_get_length(const char* path);
+uint64_t file_get_length(const uint8_t* path);
 #if 0
 file_is_assembly
 file_up_to_date

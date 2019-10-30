@@ -27,14 +27,14 @@ struct Version
 
 struct buffer;
 
-uint8_t version_parse(const char* input_start, const char* input_finish, struct Version* version);
-uint8_t version_to_char_array(const struct Version* version, char* output);
+uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, struct Version* version);
+uint8_t version_to_byte_array(const struct Version* version, uint8_t* output);
 uint8_t version_to_string(const struct Version* version, struct buffer* output);
 
 uint8_t version_less(const struct Version* a, const struct Version* b);
 uint8_t version_greater(const struct Version* a, const struct Version* b);
 
-uint8_t version_get_function(const char* name_start, const char* name_finish);
+uint8_t version_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t version_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							  struct buffer* output);
 

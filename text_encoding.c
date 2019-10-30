@@ -9,9 +9,6 @@
 #include "buffer.h"
 
 #include <string.h>
-#ifdef UCHAR_EXISTS
-#include <uchar.h>
-#endif
 
 static const uint8_t UTF8_BOM[] = { 0xEF, 0xBB, 0xBF };
 static const uint8_t UTF16BE_BOM[] = { 0xFE, 0xFF };
@@ -425,24 +422,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 	return 1;
 }
-#if _USE_BIT_FIELD_
-union uint32_t_data
-{
-	uint32_t data;
-	uint8_t _data;
-	struct two
-	{
-		unsigned a1 : 6;
-		unsigned b1 : 5;
-	} _two;
-	struct three
-	{
-		unsigned a2 : 6;
-		unsigned b2 : 6;
-		unsigned c2 : 5;
-	} _three;
-};
-#endif
+
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	struct buffer* output)
@@ -465,7 +445,6 @@ uint8_t text_encoding_encode_UTF8(
 
 	while (data_start < data_finish)
 	{
-#ifndef _USE_BIT_FIELD_
 		uint32_t input_code = *data_start;
 
 		if (input_code < 0x80)
@@ -514,49 +493,6 @@ uint8_t text_encoding_encode_UTF8(
 				return 0;
 			}
 		}
-
-#else
-		union uint32_t_data code;
-		code.data = *data_start;
-
-		if (code.data < 0x80)
-		{
-			if (!buffer_push_back(output, code._data))
-			{
-				return 0;
-			}
-		}
-		else if (code.data < 0x800)
-		{
-			if (!buffer_push_back(output, 0xC0 + (uint8_t)code._two.b1))
-			{
-				return 0;
-			}
-
-			if (!buffer_push_back(output, 0x80 + (uint8_t)code._two.a1))
-			{
-				return 0;
-			}
-		}
-		else if (code.data < 0xFFFF + 1 && (code.data < 0xD800 || 0xDFFF < code.data))
-		{
-			if (!buffer_push_back(output, 0xE0 + (uint8_t)code._three.c2))
-			{
-				return 0;
-			}
-
-			if (!buffer_push_back(output, 0x80 + (uint8_t)code._three.b2))
-			{
-				return 0;
-			}
-
-			if (!buffer_push_back(output, 0x80 + (uint8_t)code._three.a2))
-			{
-				return 0;
-			}
-		}
-
-#endif
 		else
 		{
 			if (!buffer_append(output, UTF8_UNKNOWN_CHAR, 3))
@@ -570,11 +506,6 @@ uint8_t text_encoding_encode_UTF8(
 
 	return 1;
 }
-
-/*uint8_t is_valid_octet(uint8_t input)
-{
-	return 0x7F < input && input < 0xC0;
-}*/
 
 uint8_t text_encoding_is_valid_octet_(uint8_t input)
 {
@@ -601,30 +532,8 @@ uint8_t text_encoding_decode_UTF8(
 		return 0;
 	}
 
-#ifdef UCHAR_EXISTS
-	mbstate_t state;
-	memset(&state, 0, sizeof(mbstate_t));
-#endif
-
 	while (data_start < data_finish)
 	{
-#ifdef UCHAR_EXISTS
-		uint32_t code_ = 0;
-		const ptrdiff_t length = data_finish - data_start;
-		const size_t rc = mbrtoc32(&code_, (const char*)data_start, length, &state);
-
-		if (sizeof(uint32_t) < rc)
-		{
-			return 0;
-		}
-
-		if (!buffer_push_back_uint32(output, code_))
-		{
-			return 0;
-		}
-
-		data_start += 0 == rc ? 1 : rc;
-#else
 		uint32_t output_code = 0xFFFD;
 		const uint8_t octet_1 = *data_start;
 
@@ -694,74 +603,6 @@ uint8_t text_encoding_decode_UTF8(
 		{
 			return 0;
 		}
-
-#if 0
-		else if (0xDF < code && code < 0xF0)
-		{
-			const uint8_t octet_1 = code < 0xE1;
-			uint32_t code_ = 0x1000 * (code & 0x1F);
-			++data_start;
-			code = *data_start;
-
-			if ((octet_1 && !is_valid_octet_(code)) || !is_valid_octet(code))
-			{
-				code_ = 0xFFFD;
-				data_start += 2;
-
-				if (!buffer_push_back_uint32(output, code_))
-				{
-					return 0;
-				}
-
-				continue;
-			}
-
-			code_ += 0x40 * (code & 0x3F);
-			/**/
-			++data_start;
-			code = *data_start;
-
-			if (!is_valid_octet(code))
-			{
-				code_ = 0xFFFD;
-			}
-			else
-			{
-				code_ += code & 0x3F;
-			}
-
-			if (!buffer_push_back_uint32(output, code_))
-			{
-				return 0;
-			}
-
-			++data_start;
-		}
-		else if (0xC0 < code && code < 0xE0)
-		{
-			uint32_t code_ = 0x40 * (code & 0x1F);
-			++data_start;
-			code = *data_start;
-
-			if (!is_valid_octet(code))
-			{
-				code_ = 0xFFFD;
-			}
-			else
-			{
-				code_ += code & 0x3F;
-			}
-
-			if (!buffer_push_back_uint32(output, code_))
-			{
-				return 0;
-			}
-
-			++data_start;
-		}
-
-#endif
-#endif
 	}
 
 	return 1;

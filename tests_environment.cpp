@@ -138,7 +138,8 @@ TEST(TestEnvironment_, environment_get_folder_path)
 			std::string data(buffer_to_string(&path));
 			ASSERT_FALSE(data.empty()) << (uint32_t)i << std::endl << buffer_free(&path);
 			ASSERT_EQ(2 * size, path.size) << (uint32_t)i << " '" << data << "'" << std::endl << buffer_free(&path);
-			ASSERT_TRUE(string_to_lower(data.c_str(), data.c_str() + data.size(), &data[0])) << buffer_free(&path);
+			ASSERT_TRUE(string_to_lower((const uint8_t*)data.c_str(), (const uint8_t*)data.c_str() + data.size(),
+										(uint8_t*)&data[0])) << buffer_free(&path);
 			ASSERT_EQ(data.substr(size), data.substr(0, size)) << (uint32_t)i << std::endl << buffer_free(&path);
 		}
 		else
@@ -187,7 +188,8 @@ TEST(TestEnvironment_, environment_at_all)
 
 		const std::string result_str(buffer_to_string(&result));
 		const uint8_t variable_name_length = (uint8_t)strlen(variable_name[i]);
-		ASSERT_TRUE(environment_get_variable(variable_name[i], variable_name_length, &expected_result))
+		ASSERT_TRUE(environment_get_variable((const uint8_t*)variable_name[i], variable_name_length,
+											 &expected_result))
 				<< variable_name[i] << std::endl
 				<< "Expected value for variable is '" << result_str << "'" << std::endl
 				<< buffer_free(&expected_result) << buffer_free(&result);
@@ -198,7 +200,7 @@ TEST(TestEnvironment_, environment_at_all)
 	buffer_release(&expected_result);
 	buffer_release(&result);
 }
-
+#if 0
 TEST(TestEnvironment_, environment_get_operating_system)
 {
 	const OperatingSystem* os = environment_get_operating_system();
@@ -210,7 +212,7 @@ TEST(TestEnvironment_, environment_get_operating_system)
 #endif
 	ASSERT_LT((size_t)0, strlen(os->VersionString));
 }
-
+#endif
 TEST(TestEnvironment_, environment_newline)
 {
 	buffer newline;
@@ -244,17 +246,17 @@ TEST_F(TestEnvironment, environment_variable_exists)
 	for (const auto& node : nodes)
 	{
 		const char* variable_name = node.node().select_node("variable_name").node().child_value();
-		const uint8_t variable_name_length = (uint8_t)int_parse(
+		const uint8_t variable_name_length = (uint8_t)INT_PARSE(
 				node.node().select_node("variable_name_length").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
-		const uint8_t returned = environment_variable_exists(variable_name, variable_name_length);
+		const uint8_t returned = environment_variable_exists((const uint8_t*)variable_name, variable_name_length);
 		ASSERT_EQ(expected_return, returned) << "'" << variable_name << "'" << std::endl;
 		//
 		--node_count;
 	}
 }
-
+#if 0
 TEST(TestOperatingSystem, operating_system_at_all)
 {
 	buffer input;
@@ -269,9 +271,9 @@ TEST(TestOperatingSystem, operating_system_at_all)
 	const PlatformID expected_platforms[] = { Win32, Unix };
 	const Version expected_versions[] = { {6, 2, 9200, 0}, {6, 5, 0, 0} };
 	//
-	const char* start = buffer_char_data(&input, 0);
-	const char* finish = start + buffer_size(&input);
-	const char* pos = start;
+	const uint8_t* start = buffer_data(&input, 0);
+	const uint8_t* finish = start + buffer_size(&input);
+	const uint8_t* pos = start;
 	uint8_t i = 0;
 
 	while (finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, "\0", 1, 1, 1)))
@@ -298,7 +300,7 @@ TEST(TestOperatingSystem, operating_system_at_all)
 
 	buffer_release(&input);
 }
-
+#endif
 TEST(TestPlatform, platform_at_all)
 {
 	ASSERT_NE(nullptr, platform_get_name());

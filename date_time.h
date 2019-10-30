@@ -12,8 +12,8 @@
 
 struct buffer;
 
-uint8_t datetime_format_to_string(int64_t input, const char* format, struct buffer* output);
-uint8_t datetime_parse(const char* input_start, const char* input_finish,
+uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct buffer* output);
+uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 					   uint32_t* year, uint8_t* month, uint8_t* day,
 					   uint8_t* hour, uint8_t* minute, uint8_t* second);
 uint8_t datetime_to_string(uint32_t year, uint8_t month, uint8_t day,
@@ -54,11 +54,11 @@ double timespan_get_total_days(int64_t input);
 double timespan_get_total_hours(int64_t input);
 double timespan_get_total_minutes(int64_t input);
 
-uint8_t datetime_get_function(const char* name_start, const char* name_finish);
+uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							   struct buffer* output);
 
-uint8_t timespan_get_function(const char* name_start, const char* name_finish);
+uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							   struct buffer* output);
 

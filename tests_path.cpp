@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "interpreter.h"
 #include "path.h"
@@ -33,7 +34,7 @@ TEST_F(TestPath, path_change_extension)
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string ext(node.node().select_node("ext").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
 		const range input_in_range = string_to_range(input);
@@ -72,7 +73,7 @@ TEST_F(TestPath, path_combine)
 		const std::string path1(node.node().select_node("path1").node().child_value());
 		const std::string path2(node.node().select_node("path2").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
 		const range path1_in_range = string_to_range(path1);
@@ -109,7 +110,7 @@ TEST_F(TestPath, path_get_directory_name)
 
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_directory(node.node().select_node("directory").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range path_in_range = string_to_range(path);
 		//
@@ -131,7 +132,7 @@ TEST_F(TestPath, path_get_extension)
 	{
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_ext(node.node().select_node("ext").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range path_in_range = string_to_range(path);
 		//
@@ -163,7 +164,7 @@ TEST_F(TestPath, path_get_file_name)
 
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_file_name(node.node().select_node("file_name").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range path_in_range = string_to_range(path);
 		//
@@ -185,7 +186,7 @@ TEST_F(TestPath, path_get_file_name_without_extension)
 	{
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_file_name(node.node().select_node("file_name").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range path_in_range = string_to_range(path);
 		//
@@ -219,7 +220,7 @@ TEST_F(TestPath, path_get_full_path)
 		const std::string root_path(node.node().select_node("root_path").node().child_value());
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_full_path(node.node().select_node("full_path").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range root_path_in_range(string_to_range(root_path));
 		const range path_in_range(string_to_range(path));
@@ -272,7 +273,7 @@ TEST(TestPath_, path_get_path_root)
 		ASSERT_EQ(NULL != expected_root[i] ? std::string(expected_root[i]) : std::string(), range_to_string(root));
 	}
 }
-
+#if !defined(_WIN32)
 TEST(TestPath_, path_get_temp_file_name)
 {
 	buffer temp_file_name;
@@ -311,20 +312,25 @@ TEST(TestPath_, path_get_temp_path)
 	buffer_release(&temp_path);
 	//
 	ASSERT_TRUE(path_is_path_rooted(temp_in_range.start, temp_in_range.finish));
-	static const char del = path_delimiter();
+	static const uint8_t del = path_delimiter();
 	ASSERT_FALSE(string_ends_with(temp_in_range.start, temp_in_range.finish, &del, &del + 1));
 	//
 	ASSERT_FALSE(path_get_temp_path(NULL));
 }
-
+#endif
 TEST(TestPath_, path_has_extension)
 {
-	const char* input[] = { "a.txt", "b.exe", "c" };
+	const uint8_t* input[] =
+	{
+		(const uint8_t*)"a.txt",
+		(const uint8_t*)"b.exe",
+		(const uint8_t*)"c"
+	};
 	const uint8_t expected_return[] = { 1, 1, 0 };
 
 	for (uint8_t i = 0, count = sizeof(input) / sizeof(*input); i < count; ++i)
 	{
-		const uint8_t returned = path_has_extension(input[i], input[i] + strlen(input[i]));
+		const uint8_t returned = path_has_extension(input[i], input[i] + common_count_bytes_until(input[i], 0));
 		ASSERT_EQ(expected_return[i], returned);
 	}
 
@@ -336,16 +342,30 @@ TEST(TestPath_, path_has_extension)
 TEST(TestPath_, path_is_path_rooted)
 {
 #if defined(_WIN32)
-	const char* input[] = { "C:", "C:\\", "C:/", "C:\\Windows", "C:/Windows", "Windows" };
+	const uint8_t* input[] =
+	{
+		(const uint8_t*)"C:",
+		(const uint8_t*)"C:\\",
+		(const uint8_t*)"C:/",
+		(const uint8_t*)"C:\\Windows",
+		(const uint8_t*)"C:/Windows",
+		(const uint8_t*)"Windows"
+	};
 	const uint8_t expect_return[] = { 1, 1, 1, 1, 1, 0 };
 #else
-	const char* input[] = { "\\", "/", "/tmp", "\tmp" };
+	const uint8_t* input[] =
+	{
+		(const uint8_t*)"\\",
+		(const uint8_t*)"/",
+		(const uint8_t*)"/tmp",
+		(const uint8_t*)"\tmp"
+	};
 	const uint8_t expect_return[] = { 0, 1, 1, 0 };
 #endif
 
 	for (uint8_t i = 0, count = sizeof(input) / sizeof(*input); i < count; ++i)
 	{
-		const uint8_t returned = path_is_path_rooted(input[i], input[i] + strlen(input[i]));
+		const uint8_t returned = path_is_path_rooted(input[i], input[i] + common_count_bytes_until(input[i], 0));
 		ASSERT_EQ(expect_return[i], returned);
 	}
 }
@@ -366,11 +386,11 @@ TEST(TestPath_, path_exec_function_get_full_path)
 	buffer arguments;
 	SET_NULL_TO_BUFFER(arguments);
 	//
-	const char* folder_name = "abcdef";
+	const uint8_t* folder_name = (const uint8_t*)"abcdef";
 	const ptrdiff_t folder_name_length = 6;
 	//
-	ASSERT_TRUE(buffer_append_char(&arguments, folder_name,
-								   folder_name_length)) << buffer_free(&arguments) << buffer_free(&output);
+	ASSERT_TRUE(buffer_append(&arguments, folder_name,
+							  folder_name_length)) << buffer_free(&arguments) << buffer_free(&output);
 	ASSERT_TRUE(buffer_append_buffer(&output, &arguments, 1)) << buffer_free(&arguments) << buffer_free(&output);
 	//
 	const ptrdiff_t size_ = buffer_size(&output);
@@ -382,7 +402,7 @@ TEST(TestPath_, path_exec_function_get_full_path)
 								   &output)) << buffer_free(&arguments) << buffer_free(&output);
 	ASSERT_TRUE(buffer_size(&output)) << buffer_free(&arguments) << buffer_free(&output);
 	//
-	const char* path = (const char*)buffer_data(&output, size_);
+	const uint8_t* path = buffer_data(&output, size_);
 	const ptrdiff_t path_length = (buffer_size(&output) - size_);
 	ASSERT_TRUE(string_ends_with(path, path + path_length,
 								 folder_name, folder_name + folder_name_length)) << buffer_free(&arguments) << buffer_free(&output);

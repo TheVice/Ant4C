@@ -13,7 +13,7 @@
 #include "property.h"
 #include "range.h"
 #include "string_unit.h"
-
+#if 0
 #include <string.h>
 
 #if defined(_WIN32)
@@ -931,3 +931,5 @@ uint8_t argument_parser_get_help()
 {
 	return is_argument_init ? argument.help : 0;
 }
+#else
+#endif

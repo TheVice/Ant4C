@@ -29,6 +29,9 @@ extern "C" {
 #include <string>
 #include <cstdint>
 
+#define DOUBLE_PARSE(A) double_parse((const uint8_t*)(A))
+#define INT_PARSE(A) int_parse((const uint8_t*)(A))
+
 struct buffer;
 
 std::string buffer_to_string(const buffer* input);
@@ -38,7 +41,7 @@ range buffer_to_range(const buffer* input);
 uint8_t string_to_buffer(const std::string& input, buffer* output);
 range string_to_range(const std::string& input);
 
-std::string range_to_string(const char* start_of_range, const char* finish_of_range);
+std::string range_to_string(const uint8_t* start_of_range, const uint8_t* finish_of_range);
 std::string range_to_string(const range& input);
 std::string range_to_string(const range* input);
 

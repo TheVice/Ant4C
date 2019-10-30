@@ -19,7 +19,7 @@ uint8_t range_is_null_or_empty(const struct range* range)
 		   range_in_parts_is_null_or_empty(range->start, range->finish);
 }
 
-uint8_t range_in_parts_is_null_or_empty(const char* range_start, const char* range_finish)
+uint8_t range_in_parts_is_null_or_empty(const uint8_t* range_start, const uint8_t* range_finish)
 {
 	return NULL == range_start ||
 		   NULL == range_finish ||
@@ -30,7 +30,7 @@ uint8_t buffer_append_data_from_range(struct buffer* storage, const struct range
 {
 	return NULL != data && NULL != data->start && NULL != data->finish &&
 		   data->start <= data->finish &&
-		   buffer_append_char(storage, data->start, range_size(data));
+		   buffer_append(storage, data->start, range_size(data));
 }
 
 uint8_t buffer_append_range(struct buffer* ranges, const struct range* data, ptrdiff_t data_count)

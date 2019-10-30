@@ -52,7 +52,7 @@ int64_t math_truncate(double value);
 double math_degrees(double r);
 double math_radians(double d);
 
-uint8_t math_get_function(const char* name_start, const char* name_finish);
+uint8_t math_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 						   uint8_t arguments_count, struct buffer* output);
 

@@ -18,8 +18,10 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-ptrdiff_t string_index_of_any(const char* input_start, const char* input_finish,
-							  const char* value_start, const char* value_finish, int8_t step)
+static const uint8_t quote_symbol = '"';
+
+ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
+							  const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
 {
 	if (NULL == input_start || NULL == input_finish ||
 		input_finish < input_start ||
@@ -77,14 +79,14 @@ ptrdiff_t string_index_of_any(const char* input_start, const char* input_finish,
 	return -1;
 }
 
-uint8_t string_contains(const char* input_start, const char* input_finish,
-						const char* value_start, const char* value_finish)
+uint8_t string_contains(const uint8_t* input_start, const uint8_t* input_finish,
+						const uint8_t* value_start, const uint8_t* value_finish)
 {
 	return -1 != string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
 }
 
-uint8_t string_ends_with(const char* input_start, const char* input_finish,
-						 const char* value_start, const char* value_finish)
+uint8_t string_ends_with(const uint8_t* input_start, const uint8_t* input_finish,
+						 const uint8_t* value_start, const uint8_t* value_finish)
 {
 	ptrdiff_t index = 0;
 
@@ -97,7 +99,7 @@ uint8_t string_ends_with(const char* input_start, const char* input_finish,
 	return expected_index == index;
 }
 
-ptrdiff_t string_get_length(const char* input_start, const char* input_finish)
+ptrdiff_t string_get_length(const uint8_t* input_start, const uint8_t* input_finish)
 {
 	if (input_start == input_finish)
 	{
@@ -109,238 +111,26 @@ ptrdiff_t string_get_length(const char* input_start, const char* input_finish)
 		return -1;
 	}
 
+	/*FIXME: encode from bytes into string and calculate string length. Current form correct for ASCII.*/
 	return input_finish - input_start;
 }
 
-ptrdiff_t string_index_of(const char* input_start, const char* input_finish,
-						  const char* value_start, const char* value_finish)
+ptrdiff_t string_index_of(const uint8_t* input_start, const uint8_t* input_finish,
+						  const uint8_t* value_start, const uint8_t* value_finish)
 {
 	return string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
 }
 
-ptrdiff_t string_last_index_of(const char* input_start, const char* input_finish,
-							   const char* value_start, const char* value_finish)
+ptrdiff_t string_last_index_of(const uint8_t* input_start, const uint8_t* input_finish,
+							   const uint8_t* value_start, const uint8_t* value_finish)
 {
 	return string_index_of_any(input_start, input_finish, value_start, value_finish, -1);
 }
 /*TODO:string_pad_left
 string_pad_right*/
-ptrdiff_t string_get_index_of_first_non_equal_symbol(const char* input_a, ptrdiff_t a_length,
-		const char* input_b, ptrdiff_t b_length)
-{
-	if (NULL == input_a ||
-		NULL == input_b ||
-		a_length < 1 ||
-		b_length < 1)
-	{
-		return 0;
-	}
-
-	ptrdiff_t i = 0;
-
-	for (; i < a_length && i < b_length; ++i)
-	{
-		if (input_a[i] != input_b[i])
-		{
-			break;
-		}
-	}
-
-	return i;
-}
-#if 0
-uint8_t string_replace_in_buffer(struct buffer* input_output,
-								 const char* to_be_replaced, ptrdiff_t to_be_replaced_length,
-								 const char* by_replacement, ptrdiff_t by_replacement_length)
-{
-	if (NULL == input_output ||
-		NULL == to_be_replaced ||
-		to_be_replaced_length < 1 ||
-		(0 < by_replacement_length && NULL == by_replacement) ||
-		(NULL != by_replacement && by_replacement_length < 0))
-	{
-		return 0;
-	}
-
-	ptrdiff_t size = buffer_size(input_output);
-
-	if (!size)
-	{
-		return 1;
-	}
-	else if (to_be_replaced_length < by_replacement_length)
-	{
-		const ptrdiff_t delta = by_replacement_length - to_be_replaced_length;
-		const ptrdiff_t offset = string_get_index_of_first_non_equal_symbol(
-									 to_be_replaced, to_be_replaced_length,
-									 by_replacement, by_replacement_length);
-		/**/
-		ptrdiff_t index = 0;
-		ptrdiff_t previous_index = -1;
-		char* start = buffer_char_data(input_output, 0);
-		char* finish = 1 + buffer_char_data(input_output, size - 1);
-
-		while (previous_index < (index += string_index_of_any(start + index, finish,
-										  to_be_replaced, to_be_replaced + to_be_replaced_length, 1)))
-		{
-			if (!buffer_append_char(input_output, NULL, delta))
-			{
-				return 0;
-			}
-
-			size = buffer_size(input_output);
-			start = buffer_char_data(input_output, 0);
-			finish = 1 + buffer_char_data(input_output, size - 1);
-#if 0
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(&start[index + by_replacement_length], size - (index + by_replacement_length),
-							  &start[index + to_be_replaced_length], size - delta - (index + to_be_replaced_length)))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(&start[index + by_replacement_length], &start[index + to_be_replaced_length],
-				   size - delta - (index + to_be_replaced_length));
-#endif
-#else
-			char* dst = finish - 1;
-			const char* src = dst - delta;
-
-			for (; start + index + to_be_replaced_length - 1 < src; --src, --dst)
-			{
-				dst[0] = src[0];
-			}
-
-#endif
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(&start[index + offset], to_be_replaced_length + delta - offset,
-							  by_replacement + offset, by_replacement_length - offset))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(&start[index + offset], by_replacement + offset, by_replacement_length - offset);
-#endif
-			index += by_replacement_length;
-			previous_index = index - 1;
-		}
-	}
-	else if (1 == to_be_replaced_length &&
-			 to_be_replaced_length == by_replacement_length)
-	{
-		if (to_be_replaced[0] == by_replacement[0])
-		{
-			return 1;
-		}
-
-		char* ptr = buffer_char_data(input_output, 0);
-
-		for (ptrdiff_t i = 0; i < size; ++i)
-		{
-			if (to_be_replaced[0] == ptr[i])
-			{
-				ptr[i] = by_replacement[0];
-			}
-		}
-	}
-	else if (to_be_replaced_length == by_replacement_length)
-	{
-		if (string_equal(to_be_replaced, to_be_replaced + to_be_replaced_length,
-						 by_replacement, by_replacement + by_replacement_length))
-		{
-			return 1;
-		}
-
-		const ptrdiff_t offset = string_get_index_of_first_non_equal_symbol(
-									 to_be_replaced, to_be_replaced_length,
-									 by_replacement, by_replacement_length);
-		ptrdiff_t index = 0;
-		ptrdiff_t previous_index = -1;
-		char* start = buffer_char_data(input_output, 0);
-		char* finish = 1 + buffer_char_data(input_output, size - 1);
-
-		while (previous_index < (index += string_index_of_any(start + index, finish,
-										  to_be_replaced, to_be_replaced + to_be_replaced_length, 1)))
-		{
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(&start[index + offset], to_be_replaced_length - offset,
-							  by_replacement + offset, by_replacement_length - offset))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(&start[index + offset], by_replacement + offset, by_replacement_length - offset);
-#endif
-			index += to_be_replaced_length;
-			previous_index = index - 1;
-		}
-
-		start += to_be_replaced_length;
-	}
-	else /*if (to_be_replaced_length > by_replacement_length)*/
-	{
-		const ptrdiff_t delta = to_be_replaced_length - by_replacement_length;
-		const ptrdiff_t offset = string_get_index_of_first_non_equal_symbol(
-									 to_be_replaced, to_be_replaced_length,
-									 by_replacement, by_replacement_length);
-		ptrdiff_t index = 0;
-		ptrdiff_t previous_index = -1;
-		char* start = buffer_char_data(input_output, 0);
-		char* finish = 1 + buffer_char_data(input_output, size - 1);
-
-		while (previous_index < (index += string_index_of_any(start + index, finish,
-										  to_be_replaced, to_be_replaced + to_be_replaced_length, 1)))
-		{
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(&start[index + offset], to_be_replaced_length - offset,
-							  by_replacement, by_replacement_length - offset))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(&start[index + offset], by_replacement, by_replacement_length - offset);
-#endif
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(&start[index + by_replacement_length], size - (index + by_replacement_length),
-							  &start[index + to_be_replaced_length], size - (index + to_be_replaced_length)))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(&start[index + by_replacement_length], &start[index + to_be_replaced_length],
-				   size - (index + to_be_replaced_length));
-#endif
-
-			if (!buffer_resize(input_output, size - delta))
-			{
-				return 0;
-			}
-
-			size = buffer_size(input_output);
-			start = buffer_char_data(input_output, 0);
-			finish = 1 + buffer_char_data(input_output, size - 1);
-			/**/
-			index += to_be_replaced_length;
-			previous_index = index - 1;
-		}
-	}
-
-	return 1;
-}
-#endif
-uint8_t string_replace(const char* input_start, const char* input_finish,
-					   const char* to_be_replaced_start, const char* to_be_replaced_finish,
-					   const char* by_replacement_start, const char* by_replacement_finish,
+uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
+					   const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
+					   const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
 					   struct buffer* output)
 {
 	if (NULL == input_start || NULL == input_finish ||
@@ -354,7 +144,7 @@ uint8_t string_replace(const char* input_start, const char* input_finish,
 	const ptrdiff_t input_length = input_finish - input_start;
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append_char(output, input_start, input_length))
+	if (!buffer_append(output, input_start, input_length))
 	{
 		return 0;
 	}
@@ -372,9 +162,9 @@ uint8_t string_replace(const char* input_start, const char* input_finish,
 
 		for (ptrdiff_t i = 0; i < input_length; ++i)
 		{
-			if (to_be_replaced_start[0] == *((char*)buffer_data(output, size + i)))
+			if (to_be_replaced_start[0] == *(buffer_data(output, size + i)))
 			{
-				*((char*)buffer_data(output, size + i)) = by_replacement_start[0];
+				*(buffer_data(output, size + i)) = by_replacement_start[0];
 			}
 		}
 
@@ -386,20 +176,20 @@ uint8_t string_replace(const char* input_start, const char* input_finish,
 		return 0;
 	}
 
-	const char* previous_position = input_start;
+	const uint8_t* previous_position = input_start;
 	ptrdiff_t index = -1;
 
 	while (-1 != (index = string_index_of_any(
 							  previous_position, input_finish, to_be_replaced_start, to_be_replaced_finish, 1)))
 	{
-		if (!buffer_append_char(output, previous_position, index))
+		if (!buffer_append(output, previous_position, index))
 		{
 			return 0;
 		}
 
 		if (-1 != by_replacement_length)
 		{
-			if (!buffer_append_char(output, by_replacement_start, by_replacement_length))
+			if (!buffer_append(output, by_replacement_start, by_replacement_length))
 			{
 				return 0;
 			}
@@ -408,7 +198,7 @@ uint8_t string_replace(const char* input_start, const char* input_finish,
 		previous_position += index + to_be_replaced_length;
 	}
 
-	if (!buffer_append_char(output, previous_position, input_finish - previous_position))
+	if (!buffer_append(output, previous_position, input_finish - previous_position))
 	{
 		return 0;
 	}
@@ -416,13 +206,13 @@ uint8_t string_replace(const char* input_start, const char* input_finish,
 	return 1;
 }
 
-uint8_t string_starts_with(const char* input_start, const char* input_finish,
-						   const char* value_start, const char* value_finish)
+uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_finish,
+						   const uint8_t* value_start, const uint8_t* value_finish)
 {
 	return 0 == string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
 }
 
-uint8_t string_substring(const char* input, ptrdiff_t input_length,
+uint8_t string_substring(const uint8_t* input, ptrdiff_t input_length,
 						 ptrdiff_t index, ptrdiff_t length, struct buffer* output)
 {
 	if (NULL == input || NULL == output ||
@@ -434,10 +224,11 @@ uint8_t string_substring(const char* input, ptrdiff_t input_length,
 		return 0;
 	}
 
-	return buffer_append_char(output, &input[index], length);
+	/*FIXME: encode from bytes into string and substring string. Current form correct for ASCII.*/
+	return buffer_append(output, &input[index], length);
 }
 
-uint8_t string_to_lower(const char* input_start, const char* input_finish, char* output)
+uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output)
 {
 	if (NULL == input_start || NULL == input_finish || NULL == output ||
 		input_finish <= input_start)
@@ -445,11 +236,12 @@ uint8_t string_to_lower(const char* input_start, const char* input_finish, char*
 		return 0;
 	}
 
-	const char* pos = input_start;
+	const uint8_t* pos = input_start;
+	/*TODO: encode may required.*/
 
 	while (input_finish != pos)
 	{
-		*output = (char)tolower(*pos);
+		*output = (uint8_t)tolower(*pos);
 		++pos;
 		++output;
 	}
@@ -457,7 +249,7 @@ uint8_t string_to_lower(const char* input_start, const char* input_finish, char*
 	return 1;
 }
 
-uint8_t string_to_upper(const char* input_start, const char* input_finish, char* output)
+uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output)
 {
 	if (NULL == input_start || NULL == input_finish || NULL == output ||
 		input_finish <= input_start)
@@ -465,11 +257,12 @@ uint8_t string_to_upper(const char* input_start, const char* input_finish, char*
 		return 0;
 	}
 
-	const char* pos = input_start;
+	const uint8_t* pos = input_start;
+	/*TODO: encode may required.*/
 
 	while (input_finish != pos)
 	{
-		*output = (char)toupper(*pos);
+		*output = (uint8_t)toupper(*pos);
 		++pos;
 		++output;
 	}
@@ -490,14 +283,17 @@ enum string_trim_mode { string_trim_mode_all = trim, string_trim_mode_end = trim
 
 uint8_t string_trim_any(struct range* input_output, enum string_trim_mode mode)
 {
-	static const char chars_to_trim[] = { '\0', '\t', ' ', '\n' };
+	static const uint8_t trim_symbols[] = { '\0', '\t', ' ', '\n' };
 
 	if (NULL != input_output && input_output->start == input_output->finish)
 	{
 		return 1;
 	}
 
-	if (range_is_null_or_empty(input_output) ||
+	if (NULL == input_output ||
+		NULL == input_output->start ||
+		NULL == input_output->finish ||
+		input_output->finish < input_output->start ||
 		(string_trim_mode_all != mode && string_trim_mode_end != mode && string_trim_mode_start != mode))
 	{
 		return 0;
@@ -505,18 +301,18 @@ uint8_t string_trim_any(struct range* input_output, enum string_trim_mode mode)
 
 	if (string_trim_mode_all == mode || string_trim_mode_start == mode)
 	{
-		input_output->start = find_any_symbol_like_or_not_like_that(input_output->start, input_output->finish,
-							  chars_to_trim, 4, 0, 1);
+		input_output->start = find_any_symbol_like_or_not_like_that(
+								  input_output->start, input_output->finish, trim_symbols, 4, 0, 1);
 	}
 
 	if (input_output->start < input_output->finish &&
 		(string_trim_mode_all == mode || string_trim_mode_end == mode))
 	{
-		const char* pos = input_output->start;
-		const char* prev_pos = pos;
+		const uint8_t* pos = input_output->start;
+		const uint8_t* prev_pos = pos;
 
 		while (input_output->finish > (pos = find_any_symbol_like_or_not_like_that(
-				pos, input_output->finish, chars_to_trim, 4, 0, 1)))
+				pos, input_output->finish, trim_symbols, 4, 0, 1)))
 		{
 			prev_pos = pos;
 			++pos;
@@ -526,7 +322,7 @@ uint8_t string_trim_any(struct range* input_output, enum string_trim_mode mode)
 
 		for (uint8_t i = 0; i < 4; ++i)
 		{
-			if (chars_to_trim[i] == (*prev_pos))
+			if (trim_symbols[i] == (*prev_pos))
 			{
 				shift = 0;
 				break;
@@ -554,7 +350,7 @@ uint8_t string_trim_start(struct range* input_output)
 	return string_trim_any(input_output, string_trim_mode_start);
 }
 
-uint8_t string_quote(const char* input_start, const char* input_finish,
+uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
 					 struct buffer* output)
 {
 	if (NULL == output)
@@ -564,12 +360,12 @@ uint8_t string_quote(const char* input_start, const char* input_finish,
 
 	if (range_in_parts_is_null_or_empty(input_start, input_finish))
 	{
-		return buffer_push_back(output, '"') && buffer_push_back(output, '"');
+		return buffer_push_back(output, quote_symbol) && buffer_push_back(output, quote_symbol);
 	}
 
-	return buffer_push_back(output, '"') &&
-		   buffer_append_char(output, input_start, input_finish - input_start) &&
-		   buffer_push_back(output, '"');
+	return buffer_push_back(output, quote_symbol) &&
+		   buffer_append(output, input_start, input_finish - input_start) &&
+		   buffer_push_back(output, quote_symbol);
 }
 
 uint8_t string_un_quote(struct range* input_output)
@@ -583,9 +379,9 @@ uint8_t string_un_quote(struct range* input_output)
 	}
 
 	input_output->start = find_any_symbol_like_or_not_like_that(
-							  input_output->start, input_output->finish, "\"", 1, 0, 1);
+							  input_output->start, input_output->finish, &quote_symbol, 1, 0, 1);
 	input_output->finish = find_any_symbol_like_or_not_like_that(
-							   input_output->finish - 1, input_output->start, "\"", 1, 0, -1);
+							   input_output->finish - 1, input_output->start, &quote_symbol, 1, 0, -1);
 
 	if (input_output->start < input_output->finish)
 	{
@@ -595,8 +391,8 @@ uint8_t string_un_quote(struct range* input_output)
 	return 1;
 }
 
-uint8_t string_equal(const char* input_1_start, const char* input_1_finish,
-					 const char* input_2_start, const char* input_2_finish)
+uint8_t string_equal(const uint8_t* input_1_start, const uint8_t* input_1_finish,
+					 const uint8_t* input_2_start, const uint8_t* input_2_finish)
 {
 	if (NULL == input_1_start || NULL == input_1_finish ||
 		NULL == input_2_start || NULL == input_2_finish ||
@@ -619,15 +415,30 @@ uint8_t string_equal(const char* input_1_start, const char* input_1_finish,
 	return (0 == memcmp(input_1_start, input_2_start, input_1_finish - input_1_start));
 }
 
-static const char* string_function_str[] =
+static const uint8_t* string_function_str[] =
 {
-	"contains", "ends-with", "get-length", "index-of", "last-index-of",
-	"pad-left", "pad-right", "replace", "starts-with", "substring",
-	"to-lower", "to-upper", "trim", "trim-end", "trim-start",
-	"quote", "un-quote", "equal", "empty"
+	(const uint8_t*)"contains",
+	(const uint8_t*)"ends-with",
+	(const uint8_t*)"get-length",
+	(const uint8_t*)"index-of",
+	(const uint8_t*)"last-index-of",
+	(const uint8_t*)"pad-left",
+	(const uint8_t*)"pad-right",
+	(const uint8_t*)"replace",
+	(const uint8_t*)"starts-with",
+	(const uint8_t*)"substring",
+	(const uint8_t*)"to-lower",
+	(const uint8_t*)"to-upper",
+	(const uint8_t*)"trim",
+	(const uint8_t*)"trim-end",
+	(const uint8_t*)"trim-start",
+	(const uint8_t*)"quote",
+	(const uint8_t*)"un-quote",
+	(const uint8_t*)"equal",
+	(const uint8_t*)"empty"
 };
 
-uint8_t string_get_function(const char* name_start, const char* name_finish)
+uint8_t string_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, string_function_str, UNKNOWN_STRING_FUNCTION);
 }
@@ -656,7 +467,7 @@ uint8_t string_exec_function(uint8_t function,
 			if (!common_get_one_argument(arguments, &argument1, 0))
 			{
 				/*NOTE: allowed to string unit, where empty string can be as input.*/
-				argument1.start = argument1.finish = (const char*)&argument1;
+				argument1.start = argument1.finish = (const uint8_t*)&argument1;
 			}
 
 			break;
@@ -666,12 +477,12 @@ uint8_t string_exec_function(uint8_t function,
 			{
 				if (NULL == argument1.start)
 				{
-					argument1.start = argument1.finish = (const char*)&argument1;
+					argument1.start = argument1.finish = (const uint8_t*)&argument1;
 				}
 
 				if (NULL == argument2.start)
 				{
-					argument2.start = argument2.finish = (const char*)&argument2;
+					argument2.start = argument2.finish = (const uint8_t*)&argument2;
 				}
 			}
 
@@ -682,17 +493,17 @@ uint8_t string_exec_function(uint8_t function,
 			{
 				if (NULL == argument1.start)
 				{
-					argument1.start = argument1.finish = (const char*)&argument1;
+					argument1.start = argument1.finish = (const uint8_t*)&argument1;
 				}
 
 				if (NULL == argument2.start)
 				{
-					argument2.start = argument2.finish = (const char*)&argument2;
+					argument2.start = argument2.finish = (const uint8_t*)&argument2;
 				}
 
 				if (NULL == argument3.start)
 				{
-					argument3.start = argument3.finish = (const char*)&argument3;
+					argument3.start = argument3.finish = (const uint8_t*)&argument3;
 				}
 			}
 
@@ -777,28 +588,28 @@ uint8_t string_exec_function(uint8_t function,
 
 		case to_lower:
 			if (1 != arguments_count || (argument1.start != argument1.finish &&
-										 !buffer_append_char(output, NULL, range_size(&argument1))))
+										 !buffer_append(output, NULL, range_size(&argument1))))
 			{
 				break;
 			}
 
-			return string_to_lower(argument1.start, argument1.finish, (char*)buffer_data(output, current_output_size));
+			return string_to_lower(argument1.start, argument1.finish, buffer_data(output, current_output_size));
 
 		case to_upper:
 			if (1 != arguments_count || (argument1.start != argument1.finish &&
-										 !buffer_append_char(output, NULL, range_size(&argument1))))
+										 !buffer_append(output, NULL, range_size(&argument1))))
 			{
 				break;
 			}
 
-			return string_to_upper(argument1.start, argument1.finish, (char*)buffer_data(output, current_output_size));
+			return string_to_upper(argument1.start, argument1.finish, buffer_data(output, current_output_size));
 
 		case trim:
 		case trim_end:
 		case trim_start:
 			return (1 == arguments_count) &&
 				   string_trim_any(&argument1, function) &&
-				   buffer_append_char(output, argument1.start, range_size(&argument1));
+				   buffer_append(output, argument1.start, range_size(&argument1));
 
 		case quote:
 			return (1 == arguments_count) &&

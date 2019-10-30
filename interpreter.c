@@ -24,13 +24,54 @@
 #include "version.h"
 #include "xml.h"
 
-static const char* interpreter_string_enumeration_unit[] =
+static const uint8_t arguments_delimiter = ',';
+static const uint8_t quote_single_symbol = '\'';
+static const uint8_t start_of_function_arguments_area = '(';
+static const uint8_t finish_of_function_arguments_area = ')';
+
+static const uint8_t* namespace_border = (const uint8_t*)"::";
+static const uint8_t namespace_border_length = 2;
+
+static const uint8_t* if_str = (const uint8_t*)"if";
+static const uint8_t if_length = 2;
+
+static const uint8_t* unless_str = (const uint8_t*)"unless";
+static const uint8_t unless_length = 6;
+
+static const uint8_t* function_call_start = (const uint8_t*)"${";
+static const uint8_t function_call_start_length = 2;
+
+static const uint8_t function_call_finish = '}';
+
+static const uint8_t* space_and_tab = (const uint8_t*)" \t";
+static const uint8_t space_and_tab_length = 2;
+
+static const uint8_t* interpreter_string_enumeration_unit[] =
 {
-	"bool", "cygpath", "datetime", "directory", "dns",
-	"double", "environment", "file", "fileversioninfo",
-	"int", "long", "int64", "math", "operating-system",
-	"path", "platform", "program", "project", "property",
-	"string", "target", "task", "timespan", "version"
+	(const uint8_t*)"bool",
+	(const uint8_t*)"cygpath",
+	(const uint8_t*)"datetime",
+	(const uint8_t*)"directory",
+	(const uint8_t*)"dns",
+	(const uint8_t*)"double",
+	(const uint8_t*)"environment",
+	(const uint8_t*)"file",
+	(const uint8_t*)"fileversioninfo",
+	(const uint8_t*)"int",
+	(const uint8_t*)"long",
+	(const uint8_t*)"int64",
+	(const uint8_t*)"math",
+	(const uint8_t*)"operating-system",
+	(const uint8_t*)"path",
+	(const uint8_t*)"platform",
+	(const uint8_t*)"program",
+	(const uint8_t*)"project",
+	(const uint8_t*)"property",
+	(const uint8_t*)"string",
+	(const uint8_t*)"target",
+	(const uint8_t*)"task",
+	(const uint8_t*)"timespan",
+	(const uint8_t*)"version"
 };
 
 enum interpreter_enumeration_unit
@@ -42,7 +83,7 @@ enum interpreter_enumeration_unit
 	string_, target_, task_, timespan_, version_, UNKNOWN_UNIT
 };
 
-uint8_t interpreter_get_unit(const char* name_space_start, const char* name_space_finish)
+uint8_t interpreter_get_unit(const uint8_t* name_space_start, const uint8_t* name_space_finish)
 {
 	return common_string_to_enum(name_space_start, name_space_finish, interpreter_string_enumeration_unit,
 								 UNKNOWN_UNIT);
@@ -56,18 +97,16 @@ uint8_t interpreter_get_value_from_quote(const struct range* quote, struct range
 	}
 
 	if (quote->finish == (value->start = find_any_symbol_like_or_not_like_that(
-			quote->start, quote->finish, "'", 1, 1, 1)))
+			quote->start, quote->finish, &quote_single_symbol, 1, 1, 1)))
 	{
 		return 0;
 	}
 
 	++value->start;
-	value->finish = find_any_symbol_like_or_not_like_that(value->start, quote->finish, "'", 1, 1, 1);
-	return '\'' == *value->finish;
+	value->finish = find_any_symbol_like_or_not_like_that(value->start, quote->finish, &quote_single_symbol, 1, 1,
+					1);
+	return quote_single_symbol == *value->finish;
 }
-
-static const char* namespace_border = "::";
-static const ptrdiff_t namespace_border_length = 2;
 
 uint8_t interpreter_disassemble_function(
 	const struct range* function,
@@ -98,7 +137,7 @@ uint8_t interpreter_disassemble_function(
 	/**/
 	name->start = name_space->finish + namespace_border_length;
 	name->finish = find_any_symbol_like_or_not_like_that(
-					   name->start, function->finish, "(", 1, 1, 1);
+					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
 
 	if (function->finish == name->finish)
 	{
@@ -107,9 +146,9 @@ uint8_t interpreter_disassemble_function(
 
 	arguments_area->start = name->finish + 1;
 	arguments_area->finish = find_any_symbol_like_or_not_like_that(
-								 function->finish, arguments_area->start, ")", 1, 1, -1);
+								 function->finish, arguments_area->start, &finish_of_function_arguments_area, 1, 1, -1);
 	/**/
-	return ')' == *arguments_area->finish;
+	return finish_of_function_arguments_area == *arguments_area->finish;
 }
 
 uint8_t interpreter_get_function_from_argument(
@@ -120,16 +159,16 @@ uint8_t interpreter_get_function_from_argument(
 		return 0;
 	}
 
-	const char* finish = argument_area->finish;
+	const uint8_t* finish = argument_area->finish;
 	argument_area->finish = find_any_symbol_like_or_not_like_that(argument_area->start, argument_area->finish,
-							"(", 1, 1, 1);
+							&start_of_function_arguments_area, 1, 1, 1);
 
 	if (finish == argument_area->finish)
 	{
 		return 0;
 	}
 
-	char ch = '\0';
+	uint8_t ch = 0;
 	uint8_t depth = 0;
 
 	while (argument_area->finish < finish)
@@ -137,7 +176,7 @@ uint8_t interpreter_get_function_from_argument(
 		++argument_area->finish;
 		ch = *argument_area->finish;
 
-		if (')' == ch)
+		if (finish_of_function_arguments_area == ch)
 		{
 			if (0 == depth)
 			{
@@ -148,13 +187,13 @@ uint8_t interpreter_get_function_from_argument(
 			--depth;
 		}
 
-		if ('(' == ch)
+		if (start_of_function_arguments_area == ch)
 		{
 			++depth;
 		}
 	}
 
-	if (')' != ch || 0 != depth)
+	if (finish_of_function_arguments_area != ch || 0 != depth)
 	{
 		return 0;
 	}
@@ -167,19 +206,20 @@ uint8_t interpreter_evaluate_argument_area(
 	const struct range* argument_area, struct buffer* output)
 {
 	ptrdiff_t index = 0;
-	const char* pos = argument_area->start;
+	const uint8_t* pos = argument_area->start;
 
 	while (-1 != (index = string_index_of(pos, argument_area->finish,
 										  namespace_border,
 										  namespace_border + namespace_border_length)))
 	{
 		struct range function;
-		function.start = find_any_symbol_like_or_not_like_that(pos + index, pos, " \t", 2, 1, -1);
+		function.start = find_any_symbol_like_or_not_like_that(pos + index, pos, space_and_tab, space_and_tab_length,
+						 1, -1);
 		function.finish = argument_area->finish;
 
 		if (!string_trim(&function) ||
 			!interpreter_get_function_from_argument(&function) ||
-			!buffer_append_char(output, pos, function.start - pos) ||
+			!buffer_append(output, pos, function.start - pos) ||
 			!interpreter_evaluate_function(project, target, &function, output))
 		{
 			return 0;
@@ -188,7 +228,7 @@ uint8_t interpreter_evaluate_argument_area(
 		pos = function.finish;
 	}
 
-	return (pos != argument_area->start) ? buffer_append_char(output, pos, argument_area->finish - pos) : 1;
+	return (pos != argument_area->start) ? buffer_append(output, pos, argument_area->finish - pos) : 1;
 }
 
 uint8_t interpreter_get_value_for_argument(
@@ -248,11 +288,11 @@ uint8_t interpreter_get_values_for_arguments(
 
 	while (argument_area.finish < arguments_area->finish)
 	{
-		const char ch = *argument_area.finish;
+		const uint8_t ch = *argument_area.finish;
 
-		if (',' == ch && 0 == depth)
+		if (arguments_delimiter == ch && 0 == depth)
 		{
-			const char* pos = argument_area.finish + 1;/*TODO: MIN(pos, arguments_area->finish)*/
+			const uint8_t* pos = argument_area.finish + 1;/*TODO: MIN(pos, arguments_area->finish)*/
 
 			if (!interpreter_get_value_for_argument(project, target, &argument_area, values))
 			{
@@ -263,7 +303,7 @@ uint8_t interpreter_get_values_for_arguments(
 			argument_area.start = pos;
 			argument_area.finish = pos + 1;
 		}
-		else if ('(' == ch)
+		else if (start_of_function_arguments_area == ch)
 		{
 			if (UINT8_MAX == depth)
 			{
@@ -273,7 +313,7 @@ uint8_t interpreter_get_values_for_arguments(
 
 			++depth;
 		}
-		else if (')' == ch)
+		else if (finish_of_function_arguments_area == ch)
 		{
 			if (0 == depth)
 			{
@@ -541,9 +581,6 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 uint8_t interpreter_evaluate_code(const void* project, const void* target,
 								  const struct range* code, struct buffer* output)
 {
-	static const char* function_call_start = "${";
-	static const char* function_call_finish = "}";
-
 	if (range_is_null_or_empty(code) || NULL == output)
 	{
 		return 0;
@@ -556,10 +593,12 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 	struct range function;
 	function.start = code->start;
 	function.finish = code->start;
-	const char* previous_pos = code->start;
+	const uint8_t* previous_pos = code->start;
 
-	while (-1 != (index = string_index_of(function.start, code->finish,
-										  function_call_start, function_call_start + 2)))
+	while (-1 != (index = string_index_of(function.start,
+										  code->finish,
+										  function_call_start,
+										  function_call_start + function_call_start_length)))
 	{
 		if (!buffer_resize(&return_of_function, 0))
 		{
@@ -570,15 +609,15 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 		function.start += index;
 		function.finish = find_any_symbol_like_or_not_like_that(
 							  function.start, code->finish,
-							  function_call_finish, 1, 1, 1);
+							  &function_call_finish, 1, 1, 1);
 
-		if (function.finish == code->finish && function_call_finish[0] != *function.finish)
+		if (function.finish == code->finish && function_call_finish != *function.finish)
 		{
 			buffer_release(&return_of_function);
 			return 0;
 		}
 
-		if (previous_pos < function.start && !buffer_append_char(output, previous_pos, function.start - previous_pos))
+		if (previous_pos < function.start && !buffer_append(output, previous_pos, function.start - previous_pos))
 		{
 			buffer_release(&return_of_function);
 			return 0;
@@ -603,18 +642,12 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 	}
 
 	buffer_release(&return_of_function);
-	return buffer_append_char(output, previous_pos, code_length - (previous_pos - code->start));
+	return buffer_append(output, previous_pos, code_length - (previous_pos - code->start));
 }
 
 uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, const void* target,
-		const char* tag_start, const char* tag_finish, uint8_t* skip)
+		const uint8_t* tag_start, const uint8_t* tag_finish, uint8_t* skip)
 {
-	static const char* if_str = "if";
-	static const char* unless_str = "unless";
-	/**/
-	static const uint8_t if_length = 2;
-	static const uint8_t unless_length = 6;
-
 	if (range_in_parts_is_null_or_empty(tag_start, tag_finish) || NULL == skip)
 	{
 		return 0;
@@ -628,7 +661,7 @@ uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, 
 	SET_NULL_TO_BUFFER(output_of_code);
 
 	/**/
-	const char* if_and_unless_strings[2];
+	const uint8_t* if_and_unless_strings[2];
 
 	if_and_unless_strings[0] = if_str;
 
@@ -657,7 +690,7 @@ uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, 
 				return 0;
 			}
 
-			const char* start = buffer_char_data(&output_of_code, 0);
+			const uint8_t* start = buffer_data(&output_of_code, 0);
 
 			if (NULL == start)
 			{
@@ -665,7 +698,7 @@ uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, 
 				return 0;
 			}
 
-			const char* finish = buffer_char_data(&output_of_code, buffer_size(&output_of_code) - 1);
+			const uint8_t* finish = buffer_data(&output_of_code, buffer_size(&output_of_code) - 1);
 
 			if (NULL == finish)
 			{
@@ -673,7 +706,7 @@ uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, 
 				return 0;
 			}
 
-			if (!bool_parse(start, 1 + finish, &bool_value))
+			if (!bool_parse(start, (1 + finish) - start, &bool_value))
 			{
 				buffer_release(&output_of_code);
 				return 0;
@@ -702,8 +735,8 @@ uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, 
 }
 
 uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const void* target,
-		const char* start_of_attributes, const char* finish_of_attributes,
-		const char** attributes, const uint8_t* attributes_lengths,
+		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
+		const uint8_t** attributes, const uint8_t* attributes_lengths,
 		uint8_t attributes_count, struct buffer* output)
 {
 	for (uint8_t i = 0; i < attributes_count; ++i)
@@ -734,15 +767,71 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 	return 1;
 }
 
-static const char* interpreter_task_str[] =
+static const uint8_t* interpreter_task_str[] =
 {
-	"al", "asminfo", "attrib", "aximp", "call", "choose", "cl", "copy", "csc",
-	"delay-sign", "delete", "description", "echo", "exec", "fail", "foreach", "get", "gunzip", "if",
-	"ilasm", "ildasm", "include", "jsc", "lib", "license", "link", "loadfile", "loadtasks", "mail", "mc", "midl",
-	"mkdir", "move", "ndoc", "nunit2", "property", "rc", "readregistry", "regasm",
-	"regex", "regsvcs", "resgen", "script", "servicecontroller", "setenv", "sleep", "solution", "style",
-	"sysinfo", "tar", "tlbexp", "tlbimp", "touch", "trycatch", "tstamp", "untar", "unzip", "uptodate", "vbc",
-	"vjc", "xmlpeek", "xmlpoke", "zip"
+	(const uint8_t*)"al",
+	(const uint8_t*)"asminfo",
+	(const uint8_t*)"attrib",
+	(const uint8_t*)"aximp",
+	(const uint8_t*)"call",
+	(const uint8_t*)"choose",
+	(const uint8_t*)"cl",
+	(const uint8_t*)"copy",
+	(const uint8_t*)"csc",
+	(const uint8_t*)"delay-sign",
+	(const uint8_t*)"delete",
+	(const uint8_t*)"description",
+	(const uint8_t*)"echo",
+	(const uint8_t*)"exec",
+	(const uint8_t*)"fail",
+	(const uint8_t*)"foreach",
+	(const uint8_t*)"get",
+	(const uint8_t*)"gunzip",
+	(const uint8_t*)"if",
+	(const uint8_t*)"ilasm",
+	(const uint8_t*)"ildasm",
+	(const uint8_t*)"include",
+	(const uint8_t*)"jsc",
+	(const uint8_t*)"lib",
+	(const uint8_t*)"license",
+	(const uint8_t*)"link",
+	(const uint8_t*)"loadfile",
+	(const uint8_t*)"loadtasks",
+	(const uint8_t*)"mail",
+	(const uint8_t*)"mc",
+	(const uint8_t*)"midl",
+	(const uint8_t*)"mkdir",
+	(const uint8_t*)"move",
+	(const uint8_t*)"ndoc",
+	(const uint8_t*)"nunit2",
+	(const uint8_t*)"property",
+	(const uint8_t*)"rc",
+	(const uint8_t*)"readregistry",
+	(const uint8_t*)"regasm",
+	(const uint8_t*)"regex",
+	(const uint8_t*)"regsvcs",
+	(const uint8_t*)"resgen",
+	(const uint8_t*)"script",
+	(const uint8_t*)"servicecontroller",
+	(const uint8_t*)"setenv",
+	(const uint8_t*)"sleep",
+	(const uint8_t*)"solution",
+	(const uint8_t*)"style",
+	(const uint8_t*)"sysinfo",
+	(const uint8_t*)"tar",
+	(const uint8_t*)"tlbexp",
+	(const uint8_t*)"tlbimp",
+	(const uint8_t*)"touch",
+	(const uint8_t*)"trycatch",
+	(const uint8_t*)"tstamp",
+	(const uint8_t*)"untar",
+	(const uint8_t*)"unzip",
+	(const uint8_t*)"uptodate",
+	(const uint8_t*)"vbc",
+	(const uint8_t*)"vjc",
+	(const uint8_t*)"xmlpeek",
+	(const uint8_t*)"xmlpoke",
+	(const uint8_t*)"zip"
 };
 
 enum interpreter_task
@@ -756,21 +845,21 @@ enum interpreter_task
 	vjc_, xmlpeek_, xmlpoke_, zip_, UNKNOWN_TASK
 };
 
-uint8_t interpreter_get_task(const char* task_name_start, const char* task_name_finish)
+uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish)
 {
 	return common_string_to_enum(task_name_start, task_name_finish,
 								 interpreter_task_str, UNKNOWN_TASK);
 }
 
 uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
-								  const char* attributes_start, const char* element_finish)
+								  const uint8_t* attributes_start, const uint8_t* element_finish)
 {
 	if (UNKNOWN_TASK < command || range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
 		return 0;
 	}
 
-	const char* attributes_finish = xml_get_tag_finish_pos(attributes_start, element_finish);
+	const uint8_t* attributes_finish = xml_get_tag_finish_pos(attributes_start, element_finish);
 
 	switch (command)
 	{

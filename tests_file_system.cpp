@@ -19,7 +19,7 @@ extern "C" {
 class TestFileSystem : public TestsBaseXml
 {
 };
-
+#if !defined(_WIN32)
 TEST_F(TestFileSystem, directory_exists)
 {
 	buffer tmp;
@@ -37,11 +37,11 @@ TEST_F(TestFileSystem, directory_exists)
 		}
 
 		const std::string input(node.node().select_node("input").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
-		const uint8_t returned = directory_exists(input.c_str());
-		ASSERT_EQ(expected_return, returned) << input;
+		const uint8_t returned = directory_exists((const uint8_t*)input.c_str());
+		ASSERT_EQ(expected_return, returned) << input << buffer_free(&tmp);
 		//
 		--node_count;
 	}
@@ -68,15 +68,16 @@ TEST_F(TestFileSystem, file_exists)
 		}
 
 		const std::string input(node.node().select_node("input").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
-		const uint8_t returned = file_exists(input.c_str());
-		ASSERT_EQ(expected_return, returned) << input;
+		const uint8_t returned = file_exists((const uint8_t*)input.c_str());
+		ASSERT_EQ(expected_return, returned) << input << buffer_free(&tmp);
 		//
 		--node_count;
 	}
 
 	buffer_release(&tmp);
 }
+#endif
 //file_get_length

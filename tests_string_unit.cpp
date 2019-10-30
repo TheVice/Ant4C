@@ -24,7 +24,7 @@ void null_range_to_empty(range& input)
 	if (NULL == input.start ||
 		NULL == input.finish)
 	{
-		input.start = input.finish = (const char*)&input;
+		input.start = input.finish = (const uint8_t*)&input;
 	}
 }
 
@@ -37,8 +37,8 @@ TEST_F(TestStringUnit, string_index_of_any)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string value(node.node().select_node("value").node().child_value());
-		const int8_t step = (int8_t)int_parse(node.node().select_node("step").node().child_value());
-		const ptrdiff_t expected_return = (ptrdiff_t)int_parse(
+		const int8_t step = (int8_t)INT_PARSE(node.node().select_node("step").node().child_value());
+		const ptrdiff_t expected_return = (ptrdiff_t)INT_PARSE(
 											  node.node().select_node("return").node().child_value());
 		//
 		const range input_in_range = string_to_range(input);
@@ -69,7 +69,7 @@ TEST_F(TestStringUnit, string_replace)
 		const std::string to_be_replaced(node.node().select_node("to_be_replaced").node().child_value());
 		const std::string by_replacement(node.node().select_node("by_replacement").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
 		const range input_in_range = string_to_range(input);
@@ -131,17 +131,17 @@ TEST_F(TestStringUnit, string_trim)
 {
 	for (const auto& node : nodes)
 	{
-		const uint8_t mode = (uint8_t)int_parse(node.node().select_node("mode").node().child_value());
+		const uint8_t mode = (uint8_t)INT_PARSE(node.node().select_node("mode").node().child_value());
 		ASSERT_LE(12, mode);
 		ASSERT_GE(14, mode);
 		const char* input = node.node().select_node("input").node().child_value();
-		ptrdiff_t input_length = int_parse(node.node().select_node("input_length").node().child_value());
+		ptrdiff_t input_length = INT_PARSE(node.node().select_node("input_length").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		range input_in_range;
-		input_in_range.start = input;
-		input_in_range.finish = input + input_length;
+		input_in_range.start = (const uint8_t*)input;
+		input_in_range.finish = input_in_range.start + input_length;
 		uint8_t returned = 0;
 
 		switch (mode)
@@ -179,7 +179,7 @@ TEST_F(TestStringUnit, string_quote)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range input_in_range(string_to_range(input));
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
@@ -201,7 +201,7 @@ TEST_F(TestStringUnit, string_un_quote)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		range input_in_range(string_to_range(input));
 		null_range_to_empty(input_in_range);
@@ -220,7 +220,7 @@ TEST_F(TestStringUnit, string_equal)
 	{
 		const std::string input_1(node.node().select_node("input_1").node().child_value());
 		const std::string input_2(node.node().select_node("input_2").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		range input_1_in_range(string_to_range(input_1));
 		range input_2_in_range(string_to_range(input_2));

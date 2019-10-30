@@ -13,7 +13,7 @@
 #endif
 #include <stddef.h>
 #include <stdint.h>
-
+#if 0
 struct buffer;
 struct range;
 
@@ -49,5 +49,5 @@ const struct range* argument_parser_get_log_file();
 uint8_t argument_parser_get_project_help();
 uint8_t argument_parser_get_no_logo();
 uint8_t argument_parser_get_help();
-
+#endif
 #endif

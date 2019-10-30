@@ -58,15 +58,15 @@ TEST(TestProject_, project_new)
 	buffer_release(&output);
 	//
 	void* the_property = NULL;
-	ASSERT_FALSE(project_property_get_pointer(project, "program.version", 15, &the_property));
+	ASSERT_FALSE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15, &the_property));
 	ASSERT_EQ(nullptr, the_property);
 	//
 	ASSERT_TRUE(project_property_set_value(project, NULL,
-										   "program.version", 15,
-										   "YYYY.MM.DD.?", 12,
+										   (const uint8_t*)"program.version", 15,
+										   (const uint8_t*)"YYYY.MM.DD.?", 12,
 										   0, 0, 1, verbose));
 	//
-	ASSERT_TRUE(project_property_get_pointer(project, "program.version", 15, &the_property));
+	ASSERT_TRUE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15, &the_property));
 	ASSERT_NE(nullptr, the_property);
 	the_property = NULL;
 	//
@@ -94,12 +94,13 @@ TEST(TestProject_, project_property_set_value)
 	uint8_t verbose = 0;
 	//
 	ASSERT_TRUE(project_property_set_value(project, NULL,
-										   "my_property", 11, "${math::truncate(math::addition('3', '4'))}", 43,
+										   (const uint8_t*)"my_property", 11,
+										   (const uint8_t*)"${math::truncate(math::addition('3', '4'))}", 43,
 										   0, 0, 0, verbose)) <<
 												   buffer_free(&output) << project_free(project);
 	//
 	void* the_property = NULL;
-	ASSERT_TRUE(project_property_get_pointer(project, "my_property", 11, &the_property)) <<
+	ASSERT_TRUE(project_property_get_pointer(project, (const uint8_t*)"my_property", 11, &the_property)) <<
 			buffer_free(&output) << project_free(project);
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) <<
@@ -111,7 +112,7 @@ TEST(TestProject_, project_property_set_value)
 			buffer_free(&output) << project_free(project);
 	//
 	ASSERT_TRUE(property_set_by_pointer(project, NULL, the_property,
-										"${property::get-value('my_property')} ${math::truncate(math::addition('3', '-4'))}", 82,
+										(const uint8_t*)"${property::get-value('my_property')} ${math::truncate(math::addition('3', '-4'))}", 82,
 										property_value_is_char_array, 0, 0, verbose)) <<
 												buffer_free(&output) << project_free(project);
 	//
@@ -145,7 +146,7 @@ TEST_F(TestProject, project_load_from_content)
 	for (const auto& node : nodes)
 	{
 		const std::string content(node.node().select_node("content").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
@@ -209,7 +210,7 @@ TEST_F(TestProject, project_load_from_content)
 		for (const auto& target : targets)
 		{
 			const std::string target_name(target.node().child_value());
-			ASSERT_TRUE(project_target_exists(project, target_name.c_str(), (uint8_t)target_name.size()))
+			ASSERT_TRUE(project_target_exists(project, (const uint8_t*)target_name.c_str(), (uint8_t)target_name.size()))
 					<< buffer_free(&output) << project_free(project) << std::endl
 					<< "Target name - '" << target_name << "'." << std::endl;
 		}
@@ -222,7 +223,7 @@ TEST_F(TestProject, project_load_from_content)
 
 	buffer_release(&output);
 }
-
+#if !defined(_WIN32)
 TEST_F(TestProject, project_load_from_build_file)
 {
 	struct buffer tmp;
@@ -231,7 +232,7 @@ TEST_F(TestProject, project_load_from_build_file)
 	for (const auto& node : nodes)
 	{
 		const std::string content(node.node().select_node("content").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		uint8_t verbose = 0;
 		//
@@ -239,15 +240,15 @@ TEST_F(TestProject, project_load_from_build_file)
 		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
 		const std::string tmp_path(buffer_to_string(&tmp));
 		//
-		ASSERT_TRUE(echo(0, Default, buffer_char_data(&tmp, 0), Info,
-						 content.c_str(), content.size(), 0, verbose))
+		ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), Info,
+						 (const uint8_t*)content.c_str(), content.size(), 0, verbose))
 				<< tmp_path << std::endl << buffer_free(&tmp);
 		//
 		void* project = NULL;
 		ASSERT_TRUE(project_new(&project)) << buffer_free(&tmp);
 		//
 		const uint8_t returned = project_load_from_build_file(
-									 buffer_char_data(&tmp, 0), project, verbose);
+									 buffer_data(&tmp, 0), project, verbose);
 		ASSERT_EQ(expected_return, returned)
 				<< tmp_path << std::endl << buffer_free(&tmp);
 		//
@@ -258,6 +259,7 @@ TEST_F(TestProject, project_load_from_build_file)
 
 	buffer_release(&tmp);
 }
+#endif
 #if 0
 project_add_properties
 project_exec_function

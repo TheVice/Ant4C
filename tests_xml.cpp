@@ -26,7 +26,7 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 		//
 		const range input_in_range = string_to_range(input);
-		const char* finish = xml_get_tag_finish_pos(input_in_range.start, input_in_range.finish);
+		const uint8_t* finish = xml_get_tag_finish_pos(input_in_range.start, input_in_range.finish);
 		//
 		ASSERT_LE(finish, input_in_range.finish) << input;
 
@@ -36,7 +36,7 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 		}
 		else
 		{
-			const std::string output(finish, input_in_range.finish - finish);
+			const std::string output(range_to_string(finish, input_in_range.finish));
 			ASSERT_EQ(expected_output, output) << input;
 		}
 
@@ -67,7 +67,7 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 					buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
 		}
 
-		const uint16_t expected_return = (uint16_t)int_parse(
+		const uint16_t expected_return = (uint16_t)INT_PARSE(
 											 node.node().select_node("return").node().child_value());
 		//
 		const range input_in_range = string_to_range(input);
@@ -110,15 +110,16 @@ TEST_F(TestXml, xml_get_tag_name)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
-		const char* start = input.empty() ? NULL : input.data() + 1; //"NOTE: '+ 1' provided for skip '<' symbol."
-		const char* finish = input.empty() ? NULL : input.data() + input.size();
+		range input_in_range = string_to_range(input);
+		input_in_range.start = input.empty() ? NULL : input_in_range.start +
+							   1; //"NOTE: '+ 1' provided for skip '<' symbol."
 		//
 		range name;
 		name.start = name.finish = NULL;
-		const uint8_t returned = xml_get_tag_name(start, finish, &name);
+		const uint8_t returned = xml_get_tag_name(input_in_range.start, input_in_range.finish, &name);
 		//
 		ASSERT_EQ(expected_return, returned) << "'" << input << "'" << std::endl;
 		ASSERT_EQ(returned, !range_is_null_or_empty(&name)) << "'" << input << "'" << std::endl;
@@ -136,7 +137,7 @@ TEST_F(TestXml, xml_get_attribute_value)
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string attribute(node.node().select_node("attribute").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
 		const range input_in_range = string_to_range(input);
@@ -144,14 +145,14 @@ TEST_F(TestXml, xml_get_attribute_value)
 		range value;
 		value.start = value.finish = NULL;
 		const uint8_t returned = xml_get_attribute_value(input_in_range.start, input_in_range.finish,
-								 attribute.empty() ? NULL : attribute.data(), attribute.size(), &value);
+								 attribute.empty() ? NULL : (const uint8_t*)attribute.data(), attribute.size(), &value);
 		//
 		ASSERT_EQ(expected_return, returned) << "input - '" << input << "'" << std::endl <<
 											 "attribute - '" << attribute << "'" << std::endl;
 		ASSERT_EQ(returned, !range_is_null_or_empty(&value)) << "input - '" << input << "'" << std::endl <<
 				"attribute - '" << attribute << "'" << std::endl;
 		ASSERT_EQ(returned, xml_is_attribute_exists(input_in_range.start, input_in_range.finish,
-				  attribute.empty() ? NULL : attribute.data(), attribute.size()));
+				  attribute.empty() ? NULL : (const uint8_t*)attribute.data(), attribute.size()));
 		const std::string output(range_to_string(value));
 		ASSERT_EQ(expected_output, output) << "input - '" << input << "'" << std::endl <<
 										   "attribute - '" << attribute << "'" << std::endl;
@@ -166,7 +167,7 @@ TEST_F(TestXml, xml_get_element_value)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const range element = string_to_range(input);
 		//
 		range value;

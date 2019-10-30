@@ -43,8 +43,12 @@ uint8_t directory_exists_by_wchar_path(const wchar_t* path)
 	return close_return && is_directory;
 }
 
-uint8_t path_to_pathW(const char* path, struct buffer* pathW)
+uint8_t path_to_pathW(const uint8_t* path, struct buffer* pathW)
 {
+	(void)path;
+	(void)pathW;
+#if 0
+
 	if (NULL == path ||
 		'\0' == *path ||
 		NULL == pathW)
@@ -52,7 +56,7 @@ uint8_t path_to_pathW(const char* path, struct buffer* pathW)
 		return 0;
 	}
 
-	int32_t length = (int32_t)strlen(path);
+	int32_t length = common_count_bytes_until(path, 0);
 
 	if (path_is_path_rooted(path, path + length) &&
 		!buffer_append_wchar_t((pathW), L"\\\\?\\", 4))
@@ -71,6 +75,8 @@ uint8_t path_to_pathW(const char* path, struct buffer* pathW)
 	wchar_t* w = (wchar_t*)buffer_data(pathW, size);
 	MULTI2WIDE(path, w, length)
 	return 0 < length;
+#endif
+	return 0;
 }
 #else
 
@@ -78,7 +84,7 @@ uint8_t path_to_pathW(const char* path, struct buffer* pathW)
 
 #include <dirent.h>
 #endif
-uint8_t directory_exists(const char* path)
+uint8_t directory_exists(const uint8_t* path)
 {
 	if (NULL == path || '\0' == *path)
 	{
@@ -99,7 +105,7 @@ uint8_t directory_exists(const char* path)
 	buffer_release(&pathW);
 	return is_exists;
 #else
-	DIR* dir = opendir(path);
+	DIR* dir = opendir((const char*)path);
 
 	if (NULL == dir)
 	{
@@ -162,16 +168,17 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 #endif
 }
 
-uint8_t directory_get_parent_directory(const char* path_start, const char* path_finish, struct range* parent)
+uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t* path_finish,
+									   struct range* parent)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) || NULL == parent)
 	{
 		return 0;
 	}
 
-	const char del = path_delimiter();
+	const uint8_t delimiter = path_delimiter();
 	parent->start = path_start;
-	parent->finish = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start, &del, 1, 1, -1);
+	parent->finish = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start, &delimiter, 1, 1, -1);
 
 	if (!string_trim(parent))
 	{
@@ -197,7 +204,7 @@ uint8_t file_exists_by_wchar_path(const wchar_t* path)
 #else
 #include <sys/stat.h>
 #endif
-uint8_t file_exists(const char* path)
+uint8_t file_exists(const uint8_t* path)
 {
 	if (NULL == path || '\0' == *path)
 	{
@@ -220,11 +227,11 @@ uint8_t file_exists(const char* path)
 #else
 	struct stat file_status;
 	file_status.st_mode = 0;
-	return -1 != stat(path, &file_status) && (S_IFDIR != (file_status.st_mode & S_IFDIR));
+	return -1 != stat((const char*)path, &file_status) && (S_IFDIR != (file_status.st_mode & S_IFDIR));
 #endif
 }
 
-uint64_t file_get_length(const char* path)
+uint64_t file_get_length(const uint8_t* path)
 {
 	if (NULL == path || '\0' == *path)
 	{
@@ -270,7 +277,7 @@ uint64_t file_get_length(const char* path)
 	struct stat file_status;
 	file_status.st_size = 0;
 
-	if (stat(path, &file_status) ||
+	if (stat((const char*)path, &file_status) ||
 		!(S_IFDIR != (file_status.st_mode & S_IFDIR)))
 	{
 		return 0;

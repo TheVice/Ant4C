@@ -22,8 +22,8 @@ TEST_F(TestMathUnit, math_abs)
 {
 	for (const auto& node : nodes)
 	{
-		const double input = double_parse(node.node().select_node("input").node().child_value());
-		const double expected_output = double_parse(node.node().select_node("output").node().child_value());
+		const double input = DOUBLE_PARSE(node.node().select_node("input").node().child_value());
+		const double expected_output = DOUBLE_PARSE(node.node().select_node("output").node().child_value());
 		const double returned = math_abs(input);
 		//
 		ASSERT_NEAR(expected_output, returned, 50 * DBL_EPSILON) << input;
@@ -36,8 +36,8 @@ TEST_F(TestMathUnit, math_ceiling)
 {
 	for (const auto& node : nodes)
 	{
-		const double input = double_parse(node.node().select_node("input").node().child_value());
-		const double expected_output = double_parse(node.node().select_node("output").node().child_value());
+		const double input = DOUBLE_PARSE(node.node().select_node("input").node().child_value());
+		const double expected_output = DOUBLE_PARSE(node.node().select_node("output").node().child_value());
 		const double returned = math_ceiling(input);
 		//
 		ASSERT_NEAR(expected_output, returned, 50 * DBL_EPSILON) << input;
@@ -50,8 +50,8 @@ TEST_F(TestMathUnit, math_floor)
 {
 	for (const auto& node : nodes)
 	{
-		const double input = double_parse(node.node().select_node("input").node().child_value());
-		const double expected_output = double_parse(node.node().select_node("output").node().child_value());
+		const double input = DOUBLE_PARSE(node.node().select_node("input").node().child_value());
+		const double expected_output = DOUBLE_PARSE(node.node().select_node("output").node().child_value());
 		const double returned = math_floor(input);
 		//
 		ASSERT_NEAR(expected_output, returned, 50 * DBL_EPSILON) << input;
@@ -64,8 +64,8 @@ TEST_F(TestMathUnit, math_round)
 {
 	for (const auto& node : nodes)
 	{
-		const double input = double_parse(node.node().select_node("input").node().child_value());
-		const double expected_output = double_parse(node.node().select_node("output").node().child_value());
+		const double input = DOUBLE_PARSE(node.node().select_node("input").node().child_value());
+		const double expected_output = DOUBLE_PARSE(node.node().select_node("output").node().child_value());
 		const double returned = math_round(input);
 		//
 		ASSERT_NEAR(expected_output, returned, 50 * DBL_EPSILON) << input;

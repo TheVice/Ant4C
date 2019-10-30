@@ -124,7 +124,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 	return 1;
 }
 
-uint8_t datetime_format_to_string(int64_t input, const char* format, struct buffer* output)
+uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct buffer* output)
 {
 	struct tm tm_;
 
@@ -142,7 +142,7 @@ uint8_t datetime_format_to_string(int64_t input, const char* format, struct buff
 
 	tm_.tm_year -= 1900;
 	tm_.tm_mon -= 1;
-	const ptrdiff_t new_size = strftime((char*)buffer_data(output, size), INT8_MAX, format, &tm_);
+	const ptrdiff_t new_size = strftime((char*)buffer_data(output, size), INT8_MAX, (const char*)format, &tm_);
 
 	if (!new_size)
 	{
@@ -152,10 +152,13 @@ uint8_t datetime_format_to_string(int64_t input, const char* format, struct buff
 	return buffer_resize(output, size + new_size);
 }
 
-uint8_t datetime_parse(const char* input_start, const char* input_finish,
+uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 					   uint32_t* year, uint8_t* month, uint8_t* day,
 					   uint8_t* hour, uint8_t* minute, uint8_t* second)
 {
+	static const uint8_t* digits = (const uint8_t*)"0123456789";
+	static const uint8_t count_of_digits = 10;
+
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		NULL == year || NULL == month || NULL == day ||
 		NULL == hour || NULL == minute || NULL == second)
@@ -174,7 +177,7 @@ uint8_t datetime_parse(const char* input_start, const char* input_finish,
 
 	while (input_start != input_finish && step < 6)
 	{
-		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, "0123456789", 10, 1, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits, 1, 1);
 
 		if (input_start == input_finish)
 		{
@@ -193,7 +196,8 @@ uint8_t datetime_parse(const char* input_start, const char* input_finish,
 		}
 
 		++step;
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, "0123456789", 10, 0, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, digits, count_of_digits, 0,
+					  1);
 	}
 
 	return (0 < *day && *day < 32 && 1 < *month && *month < 31 && *hour < 24 && *minute < 60 && *second < 60);
@@ -578,12 +582,25 @@ double timespan_get_total_minutes(int64_t input)
 	return (double)input / seconds_per_minute;
 }
 
-static const char* datetime_function_str[] =
+static const uint8_t* datetime_function_str[] =
 {
-	"format-to-string", "parse", "to-string", "get-day", "get-day-of-week",
-	"get-day-of-year", "get-days-in-month",	"get-hour", "get-millisecond",
-	"get-minute", "get-month", "get-second", "get-ticks", "get-year",
-	"is-leap-year", "now", "from-input"
+	(uint8_t*)"format-to-string",
+	(uint8_t*)"parse",
+	(uint8_t*)"to-string",
+	(uint8_t*)"get-day",
+	(uint8_t*)"get-day-of-week",
+	(uint8_t*)"get-day-of-year",
+	(uint8_t*)"get-days-in-month",
+	(uint8_t*)"get-hour",
+	(uint8_t*)"get-millisecond",
+	(uint8_t*)"get-minute",
+	(uint8_t*)"get-month",
+	(uint8_t*)"get-second",
+	(uint8_t*)"get-ticks",
+	(uint8_t*)"get-year",
+	(uint8_t*)"is-leap-year",
+	(uint8_t*)"now",
+	(uint8_t*)"from-input"
 };
 
 enum datetime_function
@@ -595,7 +612,7 @@ enum datetime_function
 	UNKNOWN_DATETIME_FUNCTION
 };
 
-uint8_t datetime_get_function(const char* name_start, const char* name_finish)
+uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, datetime_function_str, UNKNOWN_DATETIME_FUNCTION);
 }
@@ -729,15 +746,27 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 	return 0;
 }
 
-static const char* timespan_function_str[] =
+static const uint8_t* timespan_function_str[] =
 {
-	"parse", "to-string", "from-days", "from-hours",
-	"from-milliseconds", "from-minutes", "from-seconds",
-	"from-ticks", "get-days", "get-hours",
-	"get-milliseconds", "get-minutes", "get-seconds",
-	"get-ticks", "get-total-days", "get-total-hours",
-	"get-total-milliseconds", "get-total-minutes",
-	"get-total-seconds"
+	(uint8_t*)"parse",
+	(uint8_t*)"to-string",
+	(uint8_t*)"from-days",
+	(uint8_t*)"from-hours",
+	(uint8_t*)"from-milliseconds",
+	(uint8_t*)"from-minutes",
+	(uint8_t*)"from-seconds",
+	(uint8_t*)"from-ticks",
+	(uint8_t*)"get-days",
+	(uint8_t*)"get-hours",
+	(uint8_t*)"get-milliseconds",
+	(uint8_t*)"get-minutes",
+	(uint8_t*)"get-seconds",
+	(uint8_t*)"get-ticks",
+	(uint8_t*)"get-total-days",
+	(uint8_t*)"get-total-hours",
+	(uint8_t*)"get-total-milliseconds",
+	(uint8_t*)"get-total-minutes",
+	(uint8_t*)"get-total-seconds"
 };
 
 enum timespan_function
@@ -751,7 +780,7 @@ enum timespan_function
 	ts_get_total_seconds_, UNKNOWN_TIMESPAN_FUNCTION
 };
 
-uint8_t timespan_get_function(const char* name_start, const char* name_finish)
+uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, timespan_function_str, UNKNOWN_TIMESPAN_FUNCTION);
 }

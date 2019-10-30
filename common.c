@@ -12,7 +12,6 @@
 #include "string_unit.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
@@ -52,8 +51,8 @@
 	\
 	return start;
 
-const char* find_any_symbol_like_or_not_like_that(
-	const char* start, const char* finish, const char* that,
+const uint8_t* find_any_symbol_like_or_not_like_that(
+	const uint8_t* start, const uint8_t* finish, const uint8_t* that,
 	ptrdiff_t that_length, uint8_t like, int8_t step)
 {
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
@@ -66,7 +65,7 @@ const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
 }
 
-void replace_double_char_by_single(char* string, ptrdiff_t* length, char to_be_replaced)
+void replace_double_char_by_single(uint8_t* string, ptrdiff_t* length, uint8_t to_be_replaced)
 {
 	if (NULL == string || NULL == length || 0 == (*length))
 	{
@@ -101,20 +100,62 @@ void replace_double_char_by_single(char* string, ptrdiff_t* length, char to_be_r
 	}
 }
 
-uint8_t common_string_to_enum(const char* string_start, const char* string_finish,
-							  const char** reference_strings, uint8_t max_enum_value)
+/*uint8_t common_string_to_enum_(const uint8_t* string_start, const uint8_t* string_finish,
+							   const uint8_t** reference_strings,
+							   const ptrdiff_t* reference_strings_lengths,
+							   uint8_t max_enum_value)
 {
-	if (NULL == string_start || NULL == string_finish ||
+	if (range_in_parts_is_null_or_empty(string_start, string_finish) ||
 		NULL == reference_strings ||
-		0 == max_enum_value ||
-		string_finish <= string_start)
+		NULL == reference_strings_lengths ||
+		0 == max_enum_value)
 	{
 		return max_enum_value;
 	}
 
 	for (uint8_t i = 0; i < max_enum_value; ++i)
 	{
-		const size_t length = strlen(reference_strings[i]);
+		if (string_equal(string_start, string_finish,
+			reference_strings[i], reference_strings[i] + reference_strings_lengths[i]))
+		{
+			return i;
+		}
+	}
+
+	return max_enum_value;
+}*/
+
+ptrdiff_t common_count_bytes_until(const uint8_t* bytes, uint8_t until)
+{
+	if (NULL == bytes)
+	{
+		return 0;
+	}
+
+	ptrdiff_t count = 0;
+
+	while (until != *bytes)
+	{
+		++count;
+		++bytes;
+	}
+
+	return count;
+}
+
+uint8_t common_string_to_enum(const uint8_t* string_start, const uint8_t* string_finish,
+							  const uint8_t** reference_strings, uint8_t max_enum_value)
+{
+	if (range_in_parts_is_null_or_empty(string_start, string_finish) ||
+		NULL == reference_strings ||
+		0 == max_enum_value)
+	{
+		return max_enum_value;
+	}
+
+	for (uint8_t i = 0; i < max_enum_value; ++i)
+	{
+		const size_t length = common_count_bytes_until(reference_strings[i], 0);
 
 		if (string_equal(string_start, string_finish,
 						 reference_strings[i], reference_strings[i] + length))
@@ -126,14 +167,14 @@ uint8_t common_string_to_enum(const char* string_start, const char* string_finis
 	return max_enum_value;
 }
 
-uint8_t common_append_string_to_buffer(const char* input, struct buffer* output)
+uint8_t common_append_string_to_buffer(const uint8_t* input, struct buffer* output)
 {
 	if (NULL == input || NULL == output)
 	{
 		return 0;
 	}
 
-	return buffer_append_char(output, input, (ptrdiff_t)strlen(input));
+	return buffer_append(output, input, common_count_bytes_until(input, 0));
 }
 
 uint8_t common_unbox_char_data(const struct buffer* box_with_data, uint8_t i, uint8_t j,
@@ -155,13 +196,13 @@ uint8_t common_unbox_char_data(const struct buffer* box_with_data, uint8_t i, ui
 
 	if (buffer_size(boxed_data))
 	{
-		if (terminate && !buffer_push_back(boxed_data, '\0'))
+		if (terminate && !buffer_push_back(boxed_data, 0))
 		{
 			return 0;
 		}
 	}
 
-	if (NULL == (data->start = buffer_char_data(boxed_data, j)))
+	if (NULL == (data->start = buffer_data(boxed_data, j)))
 	{
 		return 0;
 	}
@@ -216,7 +257,7 @@ uint8_t common_unbox_bool_data(const struct buffer* box_with_data, uint8_t i, ui
 		return 0;
 	}
 
-	return bool_parse(char_data.start, char_data.finish, data);
+	return bool_parse(char_data.start, range_size(&char_data), data);
 }
 
 int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, uint8_t j)
@@ -232,7 +273,7 @@ int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, u
 	return 0;
 }
 
-uint8_t read_file(const char* file_path, struct buffer* content)
+uint8_t read_file(const uint8_t* file_path, struct buffer* content)
 {
 	if (NULL == file_path || NULL == content)
 	{
@@ -242,9 +283,9 @@ uint8_t read_file(const char* file_path, struct buffer* content)
 	FILE* file_stream = NULL;
 #if __STDC_SEC_API__
 
-	if (0 != fopen_s(&file_stream, file_path, "rb") || NULL == file_stream)
+	if (0 != fopen_s(&file_stream, (const char*)file_path, "rb") || NULL == file_stream)
 #else
-	if (NULL == (file_stream = fopen(file_path, "rb")))
+	if (NULL == (file_stream = fopen((const char*)file_path, "rb")))
 #endif
 	{
 		return 0;

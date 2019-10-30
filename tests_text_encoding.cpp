@@ -93,16 +93,16 @@ TEST(TestTextEncoding_, text_encoding_UTF16_from_ASCII)
 		if (a)
 		{
 			ASSERT_TRUE(
-				text_encoding_UTF16BE_from_ASCII((const uint8_t*)input_in_range.start,
-												 (const uint8_t*)input_in_range.finish,
+				text_encoding_UTF16BE_from_ASCII(input_in_range.start,
+												 input_in_range.finish,
 												 &output))
 					<< buffer_free(&output) << buffer_free(&input);
 		}
 		else
 		{
 			ASSERT_TRUE(
-				text_encoding_UTF16LE_from_ASCII((const uint8_t*)input_in_range.start,
-												 (const uint8_t*)input_in_range.finish,
+				text_encoding_UTF16LE_from_ASCII(input_in_range.start,
+												 input_in_range.finish,
 												 &output))
 					<< buffer_free(&output) << buffer_free(&input);
 		}
@@ -194,7 +194,7 @@ TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
 		//
 		const std::string input_hex(get_data_from_nodes(node, "input"));
 		const std::string input(string_hex_to_string(input_hex.c_str()));
-		const uint16_t code_page = (uint16_t)int_parse(
+		const uint16_t code_page = (uint16_t)INT_PARSE(
 									   node.node().select_node("code_page").node().child_value());
 		const std::string output_hex(get_data_from_nodes(node, "output"));
 		const std::wstring expected_output(string_hex_to_wstring(output_hex.c_str()));
@@ -202,8 +202,8 @@ TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
 		const range input_in_range = string_to_range(input);
 		//
 		ASSERT_TRUE(text_encoding_UTF16LE_from_code_page(
-						(const uint8_t*)input_in_range.start,
-						(const uint8_t*)input_in_range.finish,
+						input_in_range.start,
+						input_in_range.finish,
 						code_page,
 						&output)) << buffer_free(&output);
 		//

@@ -517,6 +517,8 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 #define _POSIXSOURCE 1
 
+#include "string_unit.h"
+
 #include <pwd.h>
 #include <unistd.h>
 #include <sys/utsname.h>
@@ -532,7 +534,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case DesktopDirectory:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Desktop", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Desktop", path);
 			}
 
 			break;
@@ -541,7 +543,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case MyDocuments:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Documents", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Documents", path);
 			}
 
 			break;
@@ -549,7 +551,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case MyMusic:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Music", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Music", path);
 			}
 
 			break;
@@ -557,7 +559,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case MyVideos:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Videos", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Videos", path);
 			}
 
 			break;
@@ -565,7 +567,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case Templates:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Templates", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Templates", path);
 			}
 
 			break;
@@ -573,7 +575,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case ApplicationData:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/.config", path);
+				return common_append_string_to_buffer((const uint8_t*)"/.config", path);
 			}
 
 			break;
@@ -581,18 +583,18 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case LocalApplicationData:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/.local/share", path);
+				return common_append_string_to_buffer((const uint8_t*)"/.local/share", path);
 			}
 
 			break;
 
 		case CommonApplicationData:
-			return common_append_string_to_buffer("/usr/share", path);
+			return common_append_string_to_buffer((const uint8_t*)"/usr/share", path);
 
 		case MyPictures:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Pictures", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Pictures", path);
 			}
 
 			break;
@@ -607,7 +609,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 				break;
 			}
 
-			return common_append_string_to_buffer(user_info->pw_dir, path);
+			return common_append_string_to_buffer((const uint8_t*)user_info->pw_dir, path);
 		}
 
 		default:
@@ -743,18 +745,19 @@ const struct OperatingSystem* environment_get_operating_system()
 		operating_system.Platform = Win32;
 		operating_system.Version = GetWindowsVersion();
 #if __STDC_SEC_API__
-		is_data_of_operating_system_filled = (0 == strcpy_s(operating_system.VersionString, INT8_MAX, Win32NT_str));
+		is_data_of_operating_system_filled = (0 == memcpy_s(operating_system.VersionString, INT8_MAX, Win32NT_str,
+											  Win32NT_str_length));
 #else
-		strcpy(operating_system.VersionString, Win32NT_str);
+		memcpy(operating_system.VersionString, Win32NT_str, Win32NT_str_length);
 		is_data_of_operating_system_filled = 1;
 #endif
 
 		if (is_data_of_operating_system_filled)
 		{
-			char* ptr = operating_system.VersionString + strlen(operating_system.VersionString);
+			uint8_t* ptr = operating_system.VersionString + Win32NT_str_length;
 			*ptr = ' ';
 			++ptr;
-			is_data_of_operating_system_filled = 0 < version_to_char_array(&operating_system.Version, ptr);
+			is_data_of_operating_system_filled = 0 < version_to_byte_array(&operating_system.Version, ptr);
 		}
 	}
 
@@ -775,7 +778,8 @@ const struct OperatingSystem* environment_get_operating_system()
 			return NULL;
 		}
 
-		if (!version_parse(uname_data.version, uname_data.version + strlen(uname_data.version),
+		if (!version_parse((const uint8_t*)uname_data.version,
+						   (const uint8_t*)uname_data.version + strlen(uname_data.version),
 						   &operating_system.Version))
 		{
 			/*TODO: call echo with verbose or debug level.*/
@@ -790,7 +794,7 @@ const struct OperatingSystem* environment_get_operating_system()
 			return NULL;
 		}
 
-		sprintf(operating_system.VersionString, "%s %s %s %s",
+		sprintf((char* const)operating_system.VersionString, "%s %s %s %s",
 				uname_data.sysname, uname_data.release,
 				uname_data.version, uname_data.machine);
 		is_data_of_operating_system_filled = 1;
@@ -847,13 +851,13 @@ uint8_t environment_get_user_name(struct buffer* name)
 		return 0;
 	}
 
-	return common_append_string_to_buffer(user_info->pw_name, name);
+	return common_append_string_to_buffer((const uint8_t*)user_info->pw_name, name);
 }
 
 #endif
 #if defined(_WIN32)
 
-uint8_t environment_get_variable(const char* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name, uint8_t variable_name_length,
 								 struct buffer* variable)
 {
 	if (NULL == variable_name || 0 == variable_name_length)
@@ -934,7 +938,7 @@ uint8_t environment_get_variable(const char* variable_name, uint8_t variable_nam
 
 #else
 
-uint8_t environment_get_variable(const char* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name, uint8_t variable_name_length,
 								 struct buffer* variable)
 {
 	if (NULL == variable_name ||
@@ -947,8 +951,8 @@ uint8_t environment_get_variable(const char* variable_name, uint8_t variable_nam
 
 	SET_NULL_TO_BUFFER(variable_name_);
 
-	if (!buffer_append_char(&variable_name_, variable_name, variable_name_length) ||
-		!buffer_push_back(&variable_name_, '\0'))
+	if (!buffer_append(&variable_name_, variable_name, variable_name_length) ||
+		!buffer_push_back(&variable_name_, 0))
 	{
 		buffer_release(&variable_name_);
 		return 0;
@@ -967,7 +971,7 @@ uint8_t environment_get_variable(const char* variable_name, uint8_t variable_nam
 		return 1;
 	}
 
-	return common_append_string_to_buffer(value, variable);
+	return common_append_string_to_buffer((const uint8_t*)value, variable);
 }
 
 #endif
@@ -987,7 +991,7 @@ uint8_t environment_newline(struct buffer* newline)
 #endif
 }
 
-uint8_t environment_variable_exists(const char* variable_name, uint8_t variable_name_length)
+uint8_t environment_variable_exists(const uint8_t* variable_name, uint8_t variable_name_length)
 {
 	return environment_get_variable(variable_name, variable_name_length, NULL);
 }
@@ -1062,16 +1066,27 @@ uint8_t environment_is64bit_operating_system()
 	}
 
 #else
+	static const uint8_t* x86_64 = (const uint8_t*)"x86_64";
+	static const uint8_t* amd64 = (const uint8_t*)"amd64";
 	const struct OperatingSystem* os = environment_get_operating_system();
-	return NULL != strstr(os->VersionString, "x86_64") || NULL != strstr(os->VersionString, "amd64");
+	return string_contains(os->VersionString, os->VersionString + common_count_bytes_until(os->VersionString, 0),
+						   x86_64, x86_64 + 6) ||
+		   string_contains(os->VersionString, os->VersionString + common_count_bytes_until(os->VersionString, 0),
+						   amd64, amd64 + 5);
 #endif
 }
 
-static const char* environment_str[] =
+static const uint8_t* environment_str[] =
 {
-	"get-folder-path", "get-machine-name", "get-operating-system",
-	"get-user-name", "get-variable", "newline", "variable-exists",
-	"is64bit-process", "is64bit-operating-system"
+	(const uint8_t*)"get-folder-path",
+	(const uint8_t*)"get-machine-name",
+	(const uint8_t*)"get-operating-system",
+	(const uint8_t*)"get-user-name",
+	(const uint8_t*)"get-variable",
+	(const uint8_t*)"newline",
+	(const uint8_t*)"variable-exists",
+	(const uint8_t*)"is64bit-process",
+	(const uint8_t*)"is64bit-operating-system"
 };
 
 enum environment_function
@@ -1082,25 +1097,60 @@ enum environment_function
 	UNKNOWN_ENVIRONMENT
 };
 
-uint8_t environment_get_function(const char* name_start, const char* name_finish)
+uint8_t environment_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, environment_str, UNKNOWN_ENVIRONMENT);
 }
 
-static const char* special_folder_str[] =
+static const uint8_t* special_folder_str[] =
 {
-	"Desktop", "Programs", "Personal", "MyDocuments", "Favorites",
-	"Startup", "Recent", "SendTo", "StartMenu",	"MyMusic", "MyVideos",
-	"DesktopDirectory",	"MyComputer", "NetworkShortcuts", "Fonts",
-	"Templates", "CommonStartMenu", "CommonPrograms", "CommonStartup",
-	"CommonDesktopDirectory", "ApplicationData", "PrinterShortcuts",
-	"LocalApplicationData", "InternetCache", "Cookies", "History",
-	"CommonApplicationData", "Windows", "System", "ProgramFiles",
-	"MyPictures", "UserProfile", "SystemX86", "ProgramFilesX86",
-	"CommonProgramFiles", "CommonProgramFilesX86", "CommonTemplates",
-	"CommonDocuments", "CommonAdminTools", "AdminTools", "CommonMusic",
-	"CommonPictures", "CommonVideos", "Resources", "LocalizedResources",
-	"CommonOemLinks", "CDBurning"
+	(const uint8_t*)"Desktop",
+	(const uint8_t*)"Programs",
+	(const uint8_t*)"Personal",
+	(const uint8_t*)"MyDocuments",
+	(const uint8_t*)"Favorites",
+	(const uint8_t*)"Startup",
+	(const uint8_t*)"Recent",
+	(const uint8_t*)"SendTo",
+	(const uint8_t*)"StartMenu",
+	(const uint8_t*)"MyMusic",
+	(const uint8_t*)"MyVideos",
+	(const uint8_t*)"DesktopDirectory",
+	(const uint8_t*)"MyComputer",
+	(const uint8_t*)"NetworkShortcuts",
+	(const uint8_t*)"Fonts",
+	(const uint8_t*)"Templates",
+	(const uint8_t*)"CommonStartMenu",
+	(const uint8_t*)"CommonPrograms",
+	(const uint8_t*)"CommonStartup",
+	(const uint8_t*)"CommonDesktopDirectory",
+	(const uint8_t*)"ApplicationData",
+	(const uint8_t*)"PrinterShortcuts",
+	(const uint8_t*)"LocalApplicationData",
+	(const uint8_t*)"InternetCache",
+	(const uint8_t*)"Cookies",
+	(const uint8_t*)"History",
+	(const uint8_t*)"CommonApplicationData",
+	(const uint8_t*)"Windows",
+	(const uint8_t*)"System",
+	(const uint8_t*)"ProgramFiles",
+	(const uint8_t*)"MyPictures",
+	(const uint8_t*)"UserProfile",
+	(const uint8_t*)"SystemX86",
+	(const uint8_t*)"ProgramFilesX86",
+	(const uint8_t*)"CommonProgramFiles",
+	(const uint8_t*)"CommonProgramFilesX86",
+	(const uint8_t*)"CommonTemplates",
+	(const uint8_t*)"CommonDocuments",
+	(const uint8_t*)"CommonAdminTools",
+	(const uint8_t*)"AdminTools",
+	(const uint8_t*)"CommonMusic",
+	(const uint8_t*)"CommonPictures",
+	(const uint8_t*)"CommonVideos",
+	(const uint8_t*)"Resources",
+	(const uint8_t*)"LocalizedResources",
+	(const uint8_t*)"CommonOemLinks",
+	(const uint8_t*)"CDBurning"
 };
 
 uint8_t environment_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,

@@ -31,8 +31,8 @@
 #define VERBOSE_LENGTH			11
 #define WARNING_LENGTH			11
 
-uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
-			 uint8_t level, const char* message, ptrdiff_t message_length,
+uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
+			 uint8_t level, const uint8_t* message, ptrdiff_t message_length,
 			 uint8_t new_line, uint8_t verbose)
 {
 	uint8_t result = 0;
@@ -49,9 +49,9 @@ uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
 	if (NULL != file)
 	{
 #if __STDC_SEC_API__
-		result = (0 == fopen_s(&file_stream, file, append ? "ab" : "wb") && NULL != file_stream);
+		result = (0 == fopen_s(&file_stream, (const char*)file, append ? "ab" : "wb") && NULL != file_stream);
 #else
-		file_stream = fopen(file, append ? "ab" : "wb");
+		file_stream = fopen((const char*)file, append ? "ab" : "wb");
 		result = (NULL != file_stream);
 #endif
 	}
@@ -63,27 +63,27 @@ uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
 		switch (level)
 		{
 			case Error:
-				was_written = fwrite(ERROR_LABEL, sizeof(char), ERROR_LENGTH, file_stream);
+				was_written = fwrite(ERROR_LABEL, sizeof(uint8_t), ERROR_LENGTH, file_stream);
 				result = (ERROR_LENGTH == was_written);
 				break;
 
 			case Debug:
-				was_written = fwrite(DEBUG_LABEL, sizeof(char), DEBUG_LENGTH, file_stream);
+				was_written = fwrite(DEBUG_LABEL, sizeof(uint8_t), DEBUG_LENGTH, file_stream);
 				result = (DEBUG_LENGTH == was_written);
 				break;
 
 			case Info:
-				was_written = fwrite(INFO_LABEL, sizeof(char), INFO_LENGTH, file_stream);
+				was_written = fwrite(INFO_LABEL, sizeof(uint8_t), INFO_LENGTH, file_stream);
 				result = (INFO_LENGTH == was_written);
 				break;
 
 			case Verbose:
-				was_written = fwrite(VERBOSE_LABEL, sizeof(char), VERBOSE_LENGTH, file_stream);
+				was_written = fwrite(VERBOSE_LABEL, sizeof(uint8_t), VERBOSE_LENGTH, file_stream);
 				result = (VERBOSE_LENGTH == was_written);
 				break;
 
 			case Warning:
-				was_written = fwrite(WARNING_LABEL, sizeof(char), WARNING_LENGTH, file_stream);
+				was_written = fwrite(WARNING_LABEL, sizeof(uint8_t), WARNING_LENGTH, file_stream);
 				result = (WARNING_LENGTH == was_written);
 				break;
 
@@ -101,7 +101,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
 		if (NULL != message &&
 			0 < message_length)
 		{
-			result = (message_length == (ptrdiff_t)fwrite(message, sizeof(char), message_length, file_stream));
+			result = (message_length == (ptrdiff_t)fwrite(message, sizeof(uint8_t), message_length, file_stream));
 		}
 	}
 	else
@@ -115,7 +115,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
 	}
 	else if (result && new_line)
 	{
-		result = result && (1 == fwrite("\n", sizeof(char), 1, file_stream));
+		result = result && (1 == fwrite("\n", sizeof(uint8_t), 1, file_stream));
 	}
 
 	file_stream = NULL;
@@ -133,9 +133,9 @@ uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
 uint8_t echo_get_arguments_for_task(
 	const void* project,
 	const void* target,
-	const char* attributes_start,
-	const char* attributes_finish,
-	const char* element_finish,
+	const uint8_t* attributes_start,
+	const uint8_t* attributes_finish,
+	const uint8_t* element_finish,
 	struct buffer* arguments)
 {
 	if (range_in_parts_is_null_or_empty(attributes_start, attributes_finish) ||
@@ -145,16 +145,25 @@ uint8_t echo_get_arguments_for_task(
 		return 0;
 	}
 
-	static const char* attributes[] = { "append", "encoding", "file", "level", "message", "failonerror", "verbose" };
+	static const uint8_t* attributes[] =
+	{
+		(const uint8_t*)"append",
+		(const uint8_t*)"encoding",
+		(const uint8_t*)"file",
+		(const uint8_t*)"level",
+		(const uint8_t*)"message",
+		(const uint8_t*)"failonerror",
+		(const uint8_t*)"verbose"
+	};
 	static const uint8_t attributes_lengths[] = { 6, 8, 4, 5, 7, 11, 7 };
 	/**/
 	static const uint8_t default_append_value = 0;
-	static const char* default_encoding_value = "UTF8";
+	static const uint8_t* default_encoding_value = (const uint8_t*)"UTF8";
 	static const uint8_t default_encoding_value_length = 4;
-	static const char* default_file_value = NULL;
-	static const char* defalut_level_value = "Info";
+	static const uint8_t* default_file_value = NULL;
+	static const uint8_t* defalut_level_value = (const uint8_t*)"Info";
 	static const uint8_t defalut_level_value_length = 4;
-	static const char* default_message_value = NULL;
+	static const uint8_t* default_message_value = NULL;
 	static const uint8_t default_fail_on_error_value = 1;
 	static const uint8_t default_verbose_value = 0;
 	/**/
@@ -169,7 +178,7 @@ uint8_t echo_get_arguments_for_task(
 
 	SET_NULL_TO_BUFFER(argument);
 
-	if (!buffer_append_char(&argument, default_encoding_value, default_encoding_value_length) ||
+	if (!buffer_append(&argument, default_encoding_value, default_encoding_value_length) ||
 		!buffer_append_buffer(arguments, &argument, 1))
 	{
 		buffer_release(&argument);
@@ -178,7 +187,7 @@ uint8_t echo_get_arguments_for_task(
 
 	SET_NULL_TO_BUFFER(argument);
 
-	if (!buffer_append_char(&argument, default_file_value, 0) || !buffer_append_buffer(arguments, &argument, 1))
+	if (!buffer_append(&argument, default_file_value, 0) || !buffer_append_buffer(arguments, &argument, 1))
 	{
 		buffer_release(&argument);
 		return 0;
@@ -186,7 +195,7 @@ uint8_t echo_get_arguments_for_task(
 
 	SET_NULL_TO_BUFFER(argument);
 
-	if (!buffer_append_char(&argument, defalut_level_value, defalut_level_value_length) ||
+	if (!buffer_append(&argument, defalut_level_value, defalut_level_value_length) ||
 		!buffer_append_buffer(arguments, &argument, 1))
 	{
 		buffer_release(&argument);
@@ -195,7 +204,7 @@ uint8_t echo_get_arguments_for_task(
 
 	SET_NULL_TO_BUFFER(argument);
 
-	if (!buffer_append_char(&argument, default_message_value, 0) ||
+	if (!buffer_append(&argument, default_message_value, 0) ||
 		!buffer_append_buffer(arguments, &argument, 1))
 	{
 		buffer_release(&argument);
@@ -231,7 +240,7 @@ uint8_t echo_get_arguments_for_task(
 		return 0;
 	}
 
-	if (default_message_value == buffer_char_data(message, 0))
+	if (default_message_value == buffer_data(message, 0))
 	{
 		struct range value;
 
@@ -250,25 +259,43 @@ uint8_t echo_get_arguments_for_task(
 	return 1;
 }
 
-static const char* echo_encoding_str[] = { "UTF7", "BigEndianUnicode", "Unicode", "Default", "ASCII", "UTF8", "UTF32" };
+static const uint8_t* echo_encoding_str[] =
+{
+	(const uint8_t*)"UTF7",
+	(const uint8_t*)"BigEndianUnicode",
+	(const uint8_t*)"Unicode",
+	(const uint8_t*)"Default",
+	(const uint8_t*)"ASCII",
+	(const uint8_t*)"UTF8",
+	(const uint8_t*)"UTF32"
+};
 #define ECHO_UNKNOWN_ENCODING (UTF32 + 1)
 
-uint8_t echo_get_encoding(const char* encoding_start, const char* encoding_finish)
+uint8_t echo_get_encoding(const uint8_t* encoding_start, const uint8_t* encoding_finish)
 {
 	return common_string_to_enum(encoding_start, encoding_finish, echo_encoding_str, ECHO_UNKNOWN_ENCODING);
 }
 
-static const char* echo_level_str[] = { "Debug", "Error", "Info", "None", "Verbose", "Warning", "NoLevel" };
+static const uint8_t* echo_level_str[] =
+{
+	(const uint8_t*)"Debug",
+	(const uint8_t*)"Error",
+	(const uint8_t*)"Info",
+	(const uint8_t*)"None",
+	(const uint8_t*)"Verbose",
+	(const uint8_t*)"Warning",
+	(const uint8_t*)"NoLevel"
+};
 #define ECHO_UNKNOWN_LEVEL (NoLevel + 1)
 
-uint8_t echo_get_level(const char* level_start, const char* level_finish)
+uint8_t echo_get_level(const uint8_t* level_start, const uint8_t* level_finish)
 {
 	return common_string_to_enum(level_start, level_finish, echo_level_str, ECHO_UNKNOWN_LEVEL);
 }
 
 uint8_t echo_evaluate_task(const void* project, const void* target,
-						   const char* attributes_start, const char* attributes_finish,
-						   const char* element_finish)
+						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
+						   const uint8_t* element_finish)
 {
 	struct buffer arguments;
 	SET_NULL_TO_BUFFER(arguments);
@@ -312,7 +339,7 @@ uint8_t echo_evaluate_task(const void* project, const void* target,
 		return 0;
 	}
 
-	const char* file = NULL;
+	const uint8_t* file = NULL;
 
 	if (common_unbox_char_data(&arguments, FILE_POSITION, 0, &value, 1))
 	{
@@ -339,7 +366,7 @@ uint8_t echo_evaluate_task(const void* project, const void* target,
 		return 0;
 	}
 
-	const char* message = value.start;
+	const uint8_t* message = value.start;
 	const ptrdiff_t message_length = range_size(&value);
 	/**/
 	uint8_t fail_on_error = 1;

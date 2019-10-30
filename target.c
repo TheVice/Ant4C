@@ -21,7 +21,7 @@
 
 struct target
 {
-	char name[INT8_MAX + 1];
+	uint8_t name[UINT8_MAX + 1];
 	uint8_t name_length;
 	/**/
 	struct buffer description;
@@ -34,9 +34,11 @@ struct target
 struct depend
 {
 	const struct target* target;
-	char name[INT8_MAX + 1];
+	uint8_t name[UINT8_MAX + 1];
 	uint8_t name_length;
 };
+
+static const uint8_t depends_delimiter = ',';
 
 uint8_t buffer_append_target(struct buffer* targets, const struct target* data, ptrdiff_t data_count)
 {
@@ -49,13 +51,13 @@ struct target* buffer_target_data(const struct buffer* targets, ptrdiff_t data_p
 }
 
 uint8_t target_exists(const struct buffer* targets,
-					  const char* name, uint8_t name_length)
+					  const uint8_t* name, uint8_t name_length)
 {
 	void* trg = NULL;
 	return target_get(targets, name, name_length, &trg);
 }
 
-uint8_t target_get_current_target(const void* target, const char** name, ptrdiff_t* name_length)
+uint8_t target_get_current_target(const void* target, const uint8_t** name, ptrdiff_t* name_length)
 {
 	if (NULL == target)
 	{
@@ -69,7 +71,7 @@ uint8_t target_get_current_target(const void* target, const char** name, ptrdiff
 }
 
 uint8_t target_has_executed(const struct buffer* targets,
-							const char* name, uint8_t name_length)
+							const uint8_t* name, uint8_t name_length)
 {
 	void* trg = NULL;
 
@@ -81,7 +83,7 @@ uint8_t target_has_executed(const struct buffer* targets,
 	return 0 < ((struct target*)trg)->has_executed;
 }
 
-uint8_t target_get(const struct buffer* targets, const char* name,
+uint8_t target_get(const struct buffer* targets, const uint8_t* name,
 				   uint8_t name_length, void** target)
 {
 	if (NULL == targets ||  NULL == name || 0 == name_length || NULL == target)
@@ -119,18 +121,12 @@ uint8_t target_add_depend(const struct range* depend_name, struct buffer* depend
 	depend_.name_length = (uint8_t)range_size(depend_name);
 
 #if __STDC_SEC_API__
-	if (0 != memcpy_s(depend_.name, INT8_MAX, depend_name->start, depend_.name_length))
+	if (0 != memcpy_s(depend_.name, UINT8_MAX, depend_name->start, depend_.name_length))
 	{
 		return 0;
 	}
 
 #else
-
-	if (INT8_MAX < depend_.name_length)
-	{
-		return 0;
-	}
-
 	memcpy(depend_.name, depend_name->start, depend_.name_length);
 #endif
 	return buffer_append(depends, (const uint8_t*)&depend_, sizeof(struct depend));
@@ -162,26 +158,20 @@ uint8_t target_add(struct buffer* targets,
 
 #if __STDC_SEC_API__
 
-	if (0 != memcpy_s(new_target.name, INT8_MAX, name->start, new_target.name_length))
+	if (0 != memcpy_s(new_target.name, UINT8_MAX, name->start, new_target.name_length))
 	{
 		return 0;
 	}
 
 #else
-
-	if (INT8_MAX < new_target.name_length)
-	{
-		return 0;
-	}
-
 	memcpy(new_target.name, name->start, new_target.name_length);
 #endif
 	new_target.name[new_target.name_length] = '\0';
 
 	if (!range_is_null_or_empty(description))
 	{
-		if (!buffer_append_char(&new_target.description, description->start,
-								description->finish - description->start))
+		if (!buffer_append(&new_target.description, description->start,
+						   description->finish - description->start))
 		{
 			return 0;
 		}
@@ -194,9 +184,9 @@ uint8_t target_add(struct buffer* targets,
 		depend_.finish = depends->finish;
 
 		while (depends->finish != (depend_.finish = find_any_symbol_like_or_not_like_that(depend_.finish,
-								   depends->finish, ",", 1, 1, 1)))
+								   depends->finish, &depends_delimiter, 1, 1, 1)))
 		{
-			const char* pos = depend_.finish + 1;
+			const uint8_t* pos = depend_.finish + 1;
 
 			if (!string_trim(&depend_) || !target_add_depend(&depend_, &new_target.depends))
 			{
@@ -213,7 +203,7 @@ uint8_t target_add(struct buffer* targets,
 		}
 	}
 
-	if (!buffer_append_char(&new_target.content, content->start, content->finish - content->start))
+	if (!buffer_append(&new_target.content, content->start, content->finish - content->start))
 	{
 		return 0;
 	}
@@ -223,14 +213,14 @@ uint8_t target_add(struct buffer* targets,
 }
 
 uint8_t target_add_from_xml_tag_record(struct buffer* targets,
-									   const char* record_start, const char* record_finish)
+									   const uint8_t* record_start, const uint8_t* record_finish)
 {
 	struct range name;
 	struct range description;
 	struct range depends;
 	struct range content;
 	/**/
-	const char* target_attributes[] = { "name", "description", "depends" };
+	const uint8_t* target_attributes[] = { (const uint8_t*)"name", (const uint8_t*)"description", (const uint8_t*)"depends" };
 	const uint8_t target_attributes_lengths[] = { 4, 11, 7 };
 	/**/
 	struct range* attribute_values[3];

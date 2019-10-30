@@ -26,7 +26,7 @@ TEST_F(TestInterpreter, interpreter_disassemble_function)
 		const std::string expected_name_space(node.node().select_node("name_space").node().child_value());
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_arguments_area(node.node().select_node("arguments_area").node().child_value());
-		const uint8_t expected_return = (uint8_t)int_parse(node.node().select_node("return").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range function_in_range = string_to_range(input);
 		//
@@ -61,7 +61,7 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 	{
 		const std::string arguments(node.node().select_node("arguments").node().child_value());
 		pugi::xpath_node_set expected_outputs = node.node().select_nodes("output");
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
 		const range arguments_in_range = string_to_range(arguments);
@@ -113,7 +113,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 
 		const std::string code(get_data_from_nodes(node, "code"));
 		const std::string expected_output(get_data_from_nodes(node, ("output")));
-		const uint8_t expected_return = (uint8_t)int_parse(
+		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		//
 		const range code_in_range = string_to_range(code);

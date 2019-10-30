@@ -26,7 +26,7 @@ uint8_t exec(
 	uint32_t time_out,
 	uint8_t verbose);
 uint8_t exec_evaluate_task(void* project, const void* target,
-						   const char* attributes_start, const char* attributes_finish,
-						   const char* element_finish);
+						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
+						   const uint8_t* element_finish);
 
 #endif

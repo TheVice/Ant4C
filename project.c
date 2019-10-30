@@ -21,20 +21,20 @@
 
 #include <string.h>
 
-#define PROJECT_NAME					"project.name"
+#define PROJECT_NAME					(const uint8_t*)"project.name"
 #define PROJECT_NAME_LENGTH				12
-#define PROJECT_DEFAULT					"project.default"
+#define PROJECT_DEFAULT					(const uint8_t*)"project.default"
 #define PROJECT_DEFAULT_LENGTH			15
-#define PROJECT_BASE_DIR				"project.basedir"
+#define PROJECT_BASE_DIR				(const uint8_t*)"project.basedir"
 #define PROJECT_BASE_DIR_LENGTH			15
-#define PROJECT_BUILD_FILE				"project.buildfile"
+#define PROJECT_BUILD_FILE				(const uint8_t*)"project.buildfile"
 #define PROJECT_BUILD_FILE_LENGTH		17
 
-#define PROJECT_NAME_TAG				"name"
+#define PROJECT_NAME_TAG				(const uint8_t*)"name"
 #define PROJECT_NAME_TAG_LENGTH			4
-#define PROJECT_DEFAULT_TAG				"default"
+#define PROJECT_DEFAULT_TAG				(const uint8_t*)"default"
 #define PROJECT_DEFAULT_TAG_LENGTH		7
-#define PROJECT_BASE_DIR_TAG			"basedir"
+#define PROJECT_BASE_DIR_TAG			(const uint8_t*)"basedir"
 #define PROJECT_BASE_DIR_TAG_LENGTH		7
 
 struct project
@@ -45,7 +45,7 @@ struct project
 };
 
 uint8_t project_property_get_pointer(const void* project,
-									 const char* property_name, uint8_t property_name_length,
+									 const uint8_t* property_name, uint8_t property_name_length,
 									 void** the_property)
 {
 	if (NULL == project || NULL == property_name || 0 == property_name_length)
@@ -59,8 +59,8 @@ uint8_t project_property_get_pointer(const void* project,
 }
 
 uint8_t project_property_set_value(void* project, const void* target,
-								   const char* property_name, uint8_t property_name_length,
-								   const char* property_value, ptrdiff_t property_value_length,
+								   const uint8_t* property_name, uint8_t property_name_length,
+								   const uint8_t* property_value, ptrdiff_t property_value_length,
 								   uint8_t dynamic, uint8_t overwrite,
 								   uint8_t readonly, uint8_t verbose)
 {
@@ -76,7 +76,7 @@ uint8_t project_property_set_value(void* project, const void* target,
 								dynamic, overwrite, readonly, verbose);
 }
 
-uint8_t project_target_exists(const void* project, const char* name, uint8_t name_length)
+uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t name_length)
 {
 	if (NULL == project || NULL == name || 0 == name_length)
 	{
@@ -106,7 +106,7 @@ uint8_t project_get_buildfile_uri(const void* project, const void* target, struc
 
 	const ptrdiff_t size = buffer_size(build_file_uri);
 
-	if (!common_append_string_to_buffer("file:///", build_file_uri))
+	if (!common_append_string_to_buffer((const uint8_t*)"file:///", build_file_uri))
 	{
 		return 0;
 	}
@@ -116,8 +116,8 @@ uint8_t project_get_buildfile_uri(const void* project, const void* target, struc
 		return 0;
 	}
 
-	char* path_start = (char*)buffer_data(build_file_uri, size);
-	char* path_finish = (char*)(buffer_data(build_file_uri, 0) + buffer_size(build_file_uri));
+	uint8_t* path_start = buffer_data(build_file_uri, size);
+	uint8_t* path_finish = (buffer_data(build_file_uri, 0) + buffer_size(build_file_uri));
 
 	if (path_delimiter() != path_posix_delimiter())
 	{
@@ -171,9 +171,9 @@ uint8_t project_add_properties(void* project, const void* target, const void* pr
 
 uint8_t project_set_property_from_attribute_if_such_exists(
 	struct project* project, const void* target,
-	const char* attributes_start, const char* attributes_finish,
-	const char* property_name, uint8_t property_name_length,
-	const char* attribute_name, uint8_t attribute_name_length,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	const uint8_t* property_name, uint8_t property_name_length,
+	const uint8_t* attribute_name, uint8_t attribute_name_length,
 	uint8_t verbose)
 {
 	if (NULL == project ||
@@ -209,9 +209,9 @@ uint8_t project_set_property_from_attribute_if_such_exists(
 	return 1;
 }
 
-const char* project_is_in_element(const struct range* element)
+const uint8_t* project_is_in_element(const struct range* element)
 {
-	static const char* project_str = "project";
+	static const uint8_t* project_str = (const uint8_t*)"project";
 	static const uint8_t project_length = 7;
 	/**/
 	struct range tag_name;
@@ -227,8 +227,8 @@ const char* project_is_in_element(const struct range* element)
 }
 
 uint8_t project_set_base_directory(struct project* project, void* tatget,
-								   const char* attributes_start,
-								   const char* attributes_finish, uint8_t verbose)
+								   const uint8_t* attributes_start,
+								   const uint8_t* attributes_finish, uint8_t verbose)
 {
 	return project_set_property_from_attribute_if_such_exists(
 			   project, tatget,
@@ -238,15 +238,15 @@ uint8_t project_set_base_directory(struct project* project, void* tatget,
 }
 
 uint8_t project_set_buildfile_path(void* project, const void* target,
-								   const char* build_file, ptrdiff_t build_file_length, uint8_t verbose)
+								   const uint8_t* build_file, ptrdiff_t build_file_length, uint8_t verbose)
 {
 	return project_property_set_value(project, target, PROJECT_BUILD_FILE, PROJECT_BUILD_FILE_LENGTH,
 									  build_file, build_file_length, 0, 1, 1, verbose);
 }
 
 uint8_t project_set_default_target(struct project* project, void* tatget,
-								   const char* attributes_start,
-								   const char* attributes_finish, uint8_t verbose)
+								   const uint8_t* attributes_start,
+								   const uint8_t* attributes_finish, uint8_t verbose)
 {
 	return project_set_property_from_attribute_if_such_exists(
 			   project, tatget,
@@ -256,8 +256,8 @@ uint8_t project_set_default_target(struct project* project, void* tatget,
 }
 
 uint8_t project_set_name(struct project* project, void* tatget,
-						 const char* attributes_start,
-						 const char* attributes_finish, uint8_t verbose)
+						 const uint8_t* attributes_start,
+						 const uint8_t* attributes_finish, uint8_t verbose)
 {
 	return project_set_property_from_attribute_if_such_exists(
 			   project, tatget,
@@ -268,9 +268,9 @@ uint8_t project_set_name(struct project* project, void* tatget,
 
 uint8_t project_load_properties_and_targets(struct project* project, struct buffer* elements, uint8_t verbose)
 {
-	static const char* description_str = "description";
-	static const char* property_str = "property";
-	static const char* target_str = "target";
+	static const uint8_t* description_str = (const uint8_t*)"description";
+	static const uint8_t* property_str = (const uint8_t*)"property";
+	static const uint8_t* target_str = (const uint8_t*)"target";
 	/**/
 	static const uint8_t description_length = 11;
 	static const uint8_t property_length = 8;
@@ -293,9 +293,9 @@ uint8_t project_load_properties_and_targets(struct project* project, struct buff
 						 description_str, description_str + description_length))
 		{
 			if (xml_get_element_value(element, &tag_name_or_content) &&
-				!buffer_append_char(&project->description,
-									tag_name_or_content.start,
-									range_size(&tag_name_or_content)))
+				!buffer_append(&project->description,
+							   tag_name_or_content.start,
+							   range_size(&tag_name_or_content)))
 			{
 				i = 0;
 				break;
@@ -358,8 +358,8 @@ uint8_t project_load_properties_and_targets(struct project* project, struct buff
 	return 0 < i;
 }
 
-uint8_t project_load_from_content(const char* content_start, const char* content_finish,
-								  const char* base_dir, ptrdiff_t base_dir_length,
+uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
+								  const uint8_t* base_dir, ptrdiff_t base_dir_length,
 								  void* project, uint8_t verbose)
 {
 	if (range_in_parts_is_null_or_empty(content_start, content_finish) ||
@@ -386,7 +386,7 @@ uint8_t project_load_from_content(const char* content_start, const char* content
 		return 0;
 	}
 
-	const char* tag_name_finish = NULL;
+	const uint8_t* tag_name_finish = NULL;
 
 	if (NULL == (tag_name_finish = project_is_in_element(element)))
 	{
@@ -396,9 +396,9 @@ uint8_t project_load_from_content(const char* content_start, const char* content
 
 	struct project* pro = (struct project*)project;
 
-	const char* element_finish = element->finish;
+	const uint8_t* element_finish = element->finish;
 
-	const char* attributes_finish = xml_get_tag_finish_pos(tag_name_finish, element_finish);
+	const uint8_t* attributes_finish = xml_get_tag_finish_pos(tag_name_finish, element_finish);
 
 	if (!project_set_name(pro, NULL, tag_name_finish, attributes_finish, verbose))
 	{
@@ -451,13 +451,13 @@ uint8_t project_load_from_content(const char* content_start, const char* content
 	return 1;
 }
 
-uint8_t project_load_from_build_file(const char* path_to_build_file, void* project, uint8_t verbose)
+uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* project, uint8_t verbose)
 {
 	ptrdiff_t path_length = 0;
 
 	if (NULL == path_to_build_file ||
 		NULL == project ||
-		0 == (path_length = strlen(path_to_build_file)))
+		0 == (path_length = common_count_bytes_until(path_to_build_file, 0)))
 	{
 		return 0;
 	}
@@ -481,7 +481,7 @@ uint8_t project_load_from_build_file(const char* path_to_build_file, void* proje
 		return 0;
 	}
 
-	if (!path_get_full_path(buffer_char_data(&content, 0), buffer_char_data(&content, 0) + addition_path_length,
+	if (!path_get_full_path(buffer_data(&content, 0), buffer_data(&content, 0) + addition_path_length,
 							path_to_build_file, path_to_build_file + path_length, &content))
 	{
 		buffer_release(&content);
@@ -490,8 +490,8 @@ uint8_t project_load_from_build_file(const char* path_to_build_file, void* proje
 
 	path_length = buffer_size(&content) - addition_path_length;
 	/**/
-	char* dst = buffer_char_data(&content, 0);
-	char* src = buffer_char_data(&content, addition_path_length);
+	uint8_t* dst = buffer_data(&content, 0);
+	uint8_t* src = buffer_data(&content, addition_path_length);
 
 	for (addition_path_length = 0; addition_path_length < path_length; ++addition_path_length)
 	{
@@ -507,7 +507,7 @@ uint8_t project_load_from_build_file(const char* path_to_build_file, void* proje
 		return 0;
 	}
 
-	if (!file_exists(buffer_char_data(&content, 0)))
+	if (!file_exists(buffer_data(&content, 0)))
 	{
 		buffer_release(&content);
 		return 0;
@@ -516,14 +516,14 @@ uint8_t project_load_from_build_file(const char* path_to_build_file, void* proje
 	path_length = buffer_size(&content);
 
 	if (!project_set_buildfile_path(project, NULL,
-									buffer_char_data(&content, 0),
+									buffer_data(&content, 0),
 									path_length, verbose))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	if (!read_file(buffer_char_data(&content, 0), &content))
+	if (!read_file(buffer_data(&content, 0), &content))
 	{
 		buffer_release(&content);
 		return 0;
@@ -536,15 +536,15 @@ uint8_t project_load_from_build_file(const char* path_to_build_file, void* proje
 	}*/
 	struct range directory;
 
-	if (!path_get_directory_name(buffer_char_data(&content, 0),
-								 buffer_char_data(&content, 0) + path_length, &directory))
+	if (!path_get_directory_name(buffer_data(&content, 0),
+								 buffer_data(&content, 0) + path_length, &directory))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	if (!project_load_from_content(buffer_char_data(&content, 0) + path_length,
-								   buffer_char_data(&content, 0) + buffer_size(&content),
+	if (!project_load_from_content(buffer_data(&content, 0) + path_length,
+								   buffer_data(&content, 0) + buffer_size(&content),
 								   directory.start, range_size(&directory), project, verbose))
 	{
 		buffer_release(&content);
@@ -571,11 +571,15 @@ void project_unload(void* project)
 	target_clear(&pro->targets);
 }
 
-static const char* project_function_str[] =
+static const uint8_t* project_function_str[] =
 {
-	"get-base-directory", "get-buildfile-path",
-	"get-buildfile-uri", "get-default-target",
-	"get-name", "version", "current-directory"
+	(const uint8_t*)"get-base-directory",
+	(const uint8_t*)"get-buildfile-path",
+	(const uint8_t*)"get-buildfile-uri",
+	(const uint8_t*)"get-default-target",
+	(const uint8_t*)"get-name",
+	(const uint8_t*)"version",
+	(const uint8_t*)"current-directory"
 };
 
 enum project_function
@@ -586,7 +590,7 @@ enum project_function
 	UNKNOWN_PROJECT_FUNCTION
 };
 
-uint8_t project_get_function(const char* name_start, const char* name_finish)
+uint8_t project_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, project_function_str, UNKNOWN_PROJECT_FUNCTION);
 }
@@ -643,7 +647,7 @@ uint8_t program_exec_function(uint8_t function, const struct buffer* arguments, 
 	{
 		case version_:
 		{
-			static const char* program_version = PROGRAM_VERSION;
+			static const uint8_t* program_version = (const uint8_t*)(PROGRAM_VERSION);
 			struct Version version;
 
 			if (!version_parse(program_version, program_version + PROGRAM_VERSION_LENGTH, &version))
