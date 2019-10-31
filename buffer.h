@@ -49,6 +49,8 @@ uint8_t buffer_push_back(struct buffer* the_buffer, uint8_t data);
 uint8_t buffer_push_back_uint16(struct buffer* the_buffer, uint16_t data);
 uint8_t buffer_push_back_uint32(struct buffer* the_buffer, uint32_t data);
 
+uint8_t buffer_assing_to_uint16(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size);
+
 uint8_t buffer_shrink_to_fit(struct buffer* the_buffer);
 
 uint8_t buffer_return_to_pool(void* the_buffer);

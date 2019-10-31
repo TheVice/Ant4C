@@ -12,15 +12,15 @@
 #include "range.h"
 
 #include <stdio.h>
-/*#include <string.h>*/
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-static const uint8_t* digits = (const uint8_t*)"0123456789";
-static const uint8_t count_of_digits = 10;
-static const uint8_t point_symbol = '.';
+static const uint8_t point = '.';
+
+static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+#define COUNT_OF_DIGITS COUNT_OF(digits)
 
 uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, struct Version* version)
 {
@@ -38,13 +38,13 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, s
 	const uint8_t count = sizeof(ver_in_parts) / sizeof(*ver_in_parts);
 	uint8_t i = 0;
 
-	for (input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits,
+	for (input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS,
 					   1, 1);
 		 input_start < input_finish && i < count; ++i, ++input_start)
 	{
 		if (input_finish == input_start ||
 			input_start + 1 == find_any_symbol_like_or_not_like_that(input_start, input_start + 1, digits,
-					count_of_digits, 1,
+					COUNT_OF_DIGITS, 1,
 					1))
 		{
 			if (i == 0)
@@ -56,7 +56,7 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, s
 		}
 
 		*(ver_in_parts[i]) = (uint32_t)int_parse(input_start);
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, &point_symbol, 1, 1, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, &point, 1, 1, 1);
 	}
 
 	if (i == 0)

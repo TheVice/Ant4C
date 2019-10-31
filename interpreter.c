@@ -24,27 +24,27 @@
 #include "version.h"
 #include "xml.h"
 
-static const uint8_t arguments_delimiter = ',';
-static const uint8_t quote_single_symbol = '\'';
 static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
-
-static const uint8_t* namespace_border = (const uint8_t*)"::";
-static const uint8_t namespace_border_length = 2;
-
-static const uint8_t* if_str = (const uint8_t*)"if";
-static const uint8_t if_length = 2;
-
-static const uint8_t* unless_str = (const uint8_t*)"unless";
-static const uint8_t unless_length = 6;
-
-static const uint8_t* function_call_start = (const uint8_t*)"${";
-static const uint8_t function_call_start_length = 2;
-
 static const uint8_t function_call_finish = '}';
+static const uint8_t quote_single_symbol = '\'';
 
-static const uint8_t* space_and_tab = (const uint8_t*)" \t";
-static const uint8_t space_and_tab_length = 2;
+static const uint8_t arguments_delimiter = ',';
+
+static const uint8_t space_and_tab[] = { ' ', '\t' };
+#define SPACE_AND_TAB_LENGTH COUNT_OF(space_and_tab)
+
+static const uint8_t namespace_border[] = { ':', ':' };
+#define NAMESPACE_BORDER_LENGTH COUNT_OF(namespace_border)
+
+static const uint8_t if_str[] = { 'i', 'f' };
+#define IF_LENGTH COUNT_OF(if_str)
+
+static const uint8_t unless_str[] = { 'u', 'n', 'l', 'e', 's', 's' };
+#define UNLESS_LENGTH COUNT_OF(unless_str)
+
+static const uint8_t function_call_start[] = { '$', '{' };
+#define FUNCTION_CALL_START_LENGTH COUNT_OF(function_call_start)
 
 static const uint8_t* interpreter_string_enumeration_unit[] =
 {
@@ -127,7 +127,7 @@ uint8_t interpreter_disassemble_function(
 	if (-1 == (index = string_index_of(function->start,
 									   function->finish,
 									   namespace_border,
-									   namespace_border + namespace_border_length)))
+									   namespace_border + NAMESPACE_BORDER_LENGTH)))
 	{
 		return 0;
 	}
@@ -135,7 +135,7 @@ uint8_t interpreter_disassemble_function(
 	name_space->start = function->start;
 	name_space->finish = function->start + index;
 	/**/
-	name->start = name_space->finish + namespace_border_length;
+	name->start = name_space->finish + NAMESPACE_BORDER_LENGTH;
 	name->finish = find_any_symbol_like_or_not_like_that(
 					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
 
@@ -210,10 +210,10 @@ uint8_t interpreter_evaluate_argument_area(
 
 	while (-1 != (index = string_index_of(pos, argument_area->finish,
 										  namespace_border,
-										  namespace_border + namespace_border_length)))
+										  namespace_border + NAMESPACE_BORDER_LENGTH)))
 	{
 		struct range function;
-		function.start = find_any_symbol_like_or_not_like_that(pos + index, pos, space_and_tab, space_and_tab_length,
+		function.start = find_any_symbol_like_or_not_like_that(pos + index, pos, space_and_tab, SPACE_AND_TAB_LENGTH,
 						 1, -1);
 		function.finish = argument_area->finish;
 
@@ -598,7 +598,7 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 	while (-1 != (index = string_index_of(function.start,
 										  code->finish,
 										  function_call_start,
-										  function_call_start + function_call_start_length)))
+										  function_call_start + FUNCTION_CALL_START_LENGTH)))
 	{
 		if (!buffer_resize(&return_of_function, 0))
 		{
@@ -670,9 +670,9 @@ uint8_t interpreter_xml_tag_should_be_skip_by_if_or_unless(const void* project, 
 	/**/
 	uint8_t if_and_unless_lengths[2];
 
-	if_and_unless_lengths[0] = if_length;
+	if_and_unless_lengths[0] = IF_LENGTH;
 
-	if_and_unless_lengths[1] = unless_length;
+	if_and_unless_lengths[1] = UNLESS_LENGTH;
 
 	/**/
 	uint8_t bool_value_to_pass[] = { 1, 0 };

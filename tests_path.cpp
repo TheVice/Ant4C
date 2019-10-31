@@ -243,11 +243,11 @@ TEST_F(TestPath, path_get_full_path)
 
 TEST(TestPath_, path_delimiter)
 {
-	ASSERT_NE(path_posix_delimiter(), path_windows_delimiter());
+	ASSERT_NE(path_posix_delimiter, path_windows_delimiter);
 #if defined(_WIN32)
-	ASSERT_EQ(path_delimiter(), path_windows_delimiter());
+	ASSERT_EQ(PATH_DELIMITER, path_windows_delimiter);
 #else
-	ASSERT_EQ(path_delimiter(), path_posix_delimiter());
+	ASSERT_EQ(PATH_DELIMITER, path_posix_delimiter);
 #endif
 }
 
@@ -285,8 +285,8 @@ TEST(TestPath_, path_get_temp_file_name)
 	//
 	char chars[3];
 	chars[0] = '.';
-	chars[1] = path_posix_delimiter();
-	chars[2] = path_windows_delimiter();
+	chars[1] = path_posix_delimiter;
+	chars[2] = path_windows_delimiter;
 
 	for (const char& ch : chars)
 	{
@@ -312,8 +312,8 @@ TEST(TestPath_, path_get_temp_path)
 	buffer_release(&temp_path);
 	//
 	ASSERT_TRUE(path_is_path_rooted(temp_in_range.start, temp_in_range.finish));
-	static const uint8_t del = path_delimiter();
-	ASSERT_FALSE(string_ends_with(temp_in_range.start, temp_in_range.finish, &del, &del + 1));
+	ASSERT_FALSE(string_ends_with(temp_in_range.start, temp_in_range.finish, &PATH_DELIMITER,
+								  &PATH_DELIMITER + 1));
 	//
 	ASSERT_FALSE(path_get_temp_path(NULL));
 }

@@ -13,7 +13,7 @@
 
 struct buffer;
 
-enum data_type { property_value_is_char_array, property_value_is_integer, property_value_is_double };
+enum data_type { property_value_is_byte_array, property_value_is_integer, property_value_is_double };
 
 uint8_t property_get_pointer(const struct buffer* properties,
 							 const uint8_t* property_name, uint8_t property_name_length,

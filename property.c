@@ -287,7 +287,7 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 	if (NULL == the_property ||
 		NULL == value ||
 		(0 < value_length &&
-		 property_value_is_char_array != type_of_value &&
+		 property_value_is_byte_array != type_of_value &&
 		 0 < dynamic))
 	{
 		return 0;
@@ -301,7 +301,7 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 		return 0;
 	}
 
-	if (property_value_is_char_array != type_of_value &&
+	if (property_value_is_byte_array != type_of_value &&
 		!buffer_resize(&prop->value, 0))
 	{
 		return 0;
@@ -311,7 +311,7 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 	{
 		switch (type_of_value)
 		{
-			case property_value_is_char_array:
+			case property_value_is_byte_array:
 				if (dynamic)
 				{
 					if (!buffer_resize(&prop->value, 0) ||
@@ -480,7 +480,7 @@ uint8_t property_set_from_xml_tag_record(
 	return property_set_by_name(project, target, properties,
 								property_name.start, (uint8_t)(range_size(&property_name)),
 								property_value.start, range_size(&property_value),
-								property_value_is_char_array,
+								property_value_is_byte_array,
 								dynamic, overwrite, readonly, verbose);
 	/*TODO: explain fail_on_error factor, if verbose set, and return true.
 	return fail_on_error ? returned : 1;*/
@@ -504,7 +504,7 @@ uint8_t property_append(const void* project, const void* target,
 
 		if (!property_new(project, target, target_properties, prop->name, prop->name_length,
 						  value, buffer_size(&prop->value),
-						  property_value_is_char_array, prop->dynamic, prop->readonly, verbose))
+						  property_value_is_byte_array, prop->dynamic, prop->readonly, verbose))
 		{
 			return 0;
 		}

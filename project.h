@@ -27,8 +27,8 @@ uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t 
 uint8_t project_get_base_directory(const void* project, const void* target, struct buffer* base_directory);
 uint8_t project_get_buildfile_path(const void* project, const void* target, struct buffer* build_file);
 uint8_t project_get_buildfile_uri(const void* project, const void* target, struct buffer* build_file_uri);
-uint8_t project_get_default_target(const void* project, struct buffer* default_target);
-uint8_t project_get_name(const void* project, struct buffer* project_name);
+uint8_t project_get_default_target(const void* project, const void* target, struct buffer* default_target);
+uint8_t project_get_name(const void* project, const void* target, struct buffer* project_name);
 
 uint8_t project_new(void** project);
 uint8_t project_add_properties(void* project, const void* target,

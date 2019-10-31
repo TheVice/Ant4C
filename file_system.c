@@ -164,7 +164,7 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 
 	return buffer_resize(drives, size + count_of_characters);
 #else
-	return buffer_push_back(drives, path_delimiter());
+	return buffer_push_back(drives, PATH_DELIMITER);
 #endif
 }
 
@@ -176,9 +176,9 @@ uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t*
 		return 0;
 	}
 
-	const uint8_t delimiter = path_delimiter();
 	parent->start = path_start;
-	parent->finish = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start, &delimiter, 1, 1, -1);
+	parent->finish = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start, &PATH_DELIMITER, 1, 1,
+					 -1);
 
 	if (!string_trim(parent))
 	{

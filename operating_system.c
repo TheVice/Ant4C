@@ -17,7 +17,7 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, stru
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == os ||
-		sizeof(os->VersionString) / sizeof(*os->VersionString) < (size_t)(finish - start))
+		COUNT_OF(os->VersionString) < (size_t)(finish - start))
 	{
 		return 0;
 	}

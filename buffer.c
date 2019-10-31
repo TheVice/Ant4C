@@ -281,6 +281,33 @@ uint8_t buffer_push_back_uint32(struct buffer* the_buffer, uint32_t data)
 	return buffer_append(the_buffer, (const uint8_t*)&data, sizeof(uint32_t));
 }
 
+uint8_t buffer_assing_to_uint16(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size)
+{
+	if (NULL == the_buffer ||
+		NULL == data)
+	{
+		return 0;
+	}
+
+	ptrdiff_t i = buffer_size(the_buffer);
+
+	if (!buffer_append(the_buffer, NULL, sizeof(uint16_t) * size) ||
+		!buffer_resize(the_buffer, i))
+	{
+		return 0;
+	}
+
+	for (i = 0; i < size; ++i)
+	{
+		if (!buffer_push_back_uint16(the_buffer, data[i]))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 uint8_t buffer_shrink_to_fit(struct buffer* the_buffer)
 {
 	if (NULL == the_buffer || the_buffer->size < 0 || the_buffer->capacity < 512)

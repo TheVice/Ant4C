@@ -36,39 +36,15 @@
 #define L_tmpnam_s L_tmpnam
 #endif
 
-#if defined(_WIN32)
-static const uint8_t* upper_level = (const uint8_t*)"\\..";
-#else
-static const uint8_t* upper_level = (const uint8_t*)"/..";
-#endif
-static const ptrdiff_t upper_level_length = 3;
-
 static const uint8_t point = '.';
 static const uint8_t tilde = '~';
 
-static const uint8_t posix_delimiter = '/';
-static const uint8_t windows_delimiter = '\\';
-
 #if defined(_WIN32)
-static const uint8_t delimiter = '\\';
+static const uint8_t upper_level[] = { '\\', '.', '.' };
 #else
-static const uint8_t delimiter = '/';
+static const uint8_t upper_level[] = { '/', '.', '.' };
 #endif
-
-uint8_t path_delimiter()
-{
-	return delimiter;
-}
-
-uint8_t path_posix_delimiter()
-{
-	return posix_delimiter;
-}
-
-uint8_t path_windows_delimiter()
-{
-	return windows_delimiter;
-}
+#define UPPER_LEVEL_LENGTH COUNT_OF(upper_level)
 
 uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_finish,
 							  const uint8_t* ext_start, const uint8_t* ext_finish, struct buffer* path)
@@ -140,7 +116,7 @@ uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,
 		return 0;
 	}
 
-	if (!buffer_push_back(path, delimiter))
+	if (!buffer_push_back(path, PATH_DELIMITER))
 	{
 		return 0;
 	}
@@ -151,7 +127,7 @@ uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,
 	}
 
 	ptrdiff_t new_size = buffer_size(path) - size;
-	replace_double_char_by_single(buffer_data(path, size), &new_size, delimiter);
+	replace_double_char_by_single(buffer_data(path, size), &new_size, PATH_DELIMITER);
 	return buffer_resize(path, size + new_size);
 }
 
@@ -164,7 +140,7 @@ uint8_t path_get_directory_name(const uint8_t* path_start, const uint8_t* path_f
 	}
 
 	directory->finish = find_any_symbol_like_or_not_like_that(
-							path_finish - 1, path_start, &delimiter, 1, 1, -1);
+							path_finish - 1, path_start, &PATH_DELIMITER, 1, 1, -1);
 	directory->start = path_start;
 
 	if (!string_trim(directory))
@@ -172,7 +148,7 @@ uint8_t path_get_directory_name(const uint8_t* path_start, const uint8_t* path_f
 		return 0;
 	}
 
-	if (delimiter == (*directory->start) && range_is_null_or_empty(directory))
+	if (PATH_DELIMITER == (*directory->start) && range_is_null_or_empty(directory))
 	{
 		++directory->finish;
 	}
@@ -188,7 +164,7 @@ uint8_t path_get_extension(const uint8_t* path_start, const uint8_t* path_finish
 	}
 
 	const uint8_t* file_name_start = find_any_symbol_like_or_not_like_that(
-										 path_finish - 1, path_start, &delimiter, 1, 1, -1);
+										 path_finish - 1, path_start, &PATH_DELIMITER, 1, 1, -1);
 	ext->start = find_any_symbol_like_or_not_like_that(path_finish - 1, file_name_start, &point, 1, 1, -1);
 	ext->finish = path_finish;
 
@@ -214,9 +190,9 @@ uint8_t path_get_file_name(const uint8_t* path_start, const uint8_t* path_finish
 	}
 
 	const uint8_t* file_name_start = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start,
-									 &delimiter, 1, 1, -1);
+									 &PATH_DELIMITER, 1, 1, -1);
 
-	if (delimiter == (*file_name_start) && file_name_start < path_finish)
+	if (PATH_DELIMITER == (*file_name_start) && file_name_start < path_finish)
 	{
 		++file_name_start;
 	}
@@ -328,16 +304,17 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 	ptrdiff_t index = 0;
 	const uint8_t* real_start = start;
 
-	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + upper_level_length)))
+	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + UPPER_LEVEL_LENGTH)))
 	{
 		if (0 == index)
 		{
 			return 0;
 		}
 
-		const uint8_t* start_ = find_any_symbol_like_or_not_like_that(start + index - 1, real_start, &delimiter, 1, 1,
+		const uint8_t* start_ = find_any_symbol_like_or_not_like_that(start + index - 1, real_start, &PATH_DELIMITER,
+								1, 1,
 								-1);
-		start = start + index + upper_level_length;
+		start = start + index + UPPER_LEVEL_LENGTH;
 
 		if (!buffer_resize(full_path, size + start_ - real_start))
 		{
@@ -351,7 +328,7 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 				return 0;
 			}
 
-			start -= index + upper_level_length;
+			start -= index + UPPER_LEVEL_LENGTH;
 			finish = (buffer_data(full_path, 0) + buffer_size(full_path));
 		}
 		else
@@ -386,7 +363,7 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 	if (0 < index)
 	{
 		const ptrdiff_t current_index = index;
-		replace_double_char_by_single(start, &index, delimiter);
+		replace_double_char_by_single(start, &index, PATH_DELIMITER);
 
 		if (current_index != index && !buffer_resize(full_path, size + index))
 		{
@@ -411,8 +388,8 @@ uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish
 	if (1 < path_length && ':' == path_start[1])
 	{
 		if (2 < path_length &&
-			(delimiter == path_start[2] ||
-			 posix_delimiter == path_start[2]))
+			(PATH_DELIMITER == path_start[2] ||
+			 path_posix_delimiter == path_start[2]))
 		{
 			root->finish = 3 + root->start;
 		}
@@ -426,7 +403,7 @@ uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish
 
 #else
 
-	if (path_start[0] == delimiter)
+	if (PATH_DELIMITER == path_start[0])
 	{
 		root->finish = 1 + root->start;
 		return 1;
@@ -492,7 +469,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 		const uint8_t* ptr = find_any_symbol_like_or_not_like_that(
 								 temp_file_path + length - 2, temp_file_path, &point, 1, 0, -1);
 
-		if (ptr == temp_file_path || delimiter == *ptr)
+		if (ptr == temp_file_path || PATH_DELIMITER == *ptr)
 		{
 			return 0;
 		}
@@ -634,7 +611,7 @@ uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finis
 	}
 
 #endif
-	return (path_start[0] == posix_delimiter || path_start[0] == delimiter);
+	return (path_posix_delimiter == path_start[0] || PATH_DELIMITER == path_start[0]);
 }
 
 uint8_t path_get_directory_for_current_process(struct buffer* path)
@@ -890,9 +867,9 @@ uint8_t cygpath_get_unix_path(uint8_t* path_start, uint8_t* path_finish)
 
 	for (; path_start < path_finish; ++path_start)
 	{
-		if (windows_delimiter == (*path_start))
+		if (path_windows_delimiter == (*path_start))
 		{
-			(*path_start) = posix_delimiter;
+			(*path_start) = path_posix_delimiter;
 		}
 	}
 
@@ -908,9 +885,9 @@ uint8_t cygpath_get_windows_path(uint8_t* path_start, uint8_t* path_finish)
 
 	for (; path_start < path_finish; ++path_start)
 	{
-		if (posix_delimiter == (*path_start))
+		if (path_posix_delimiter == (*path_start))
 		{
-			(*path_start) = windows_delimiter;
+			(*path_start) = path_windows_delimiter;
 		}
 	}
 

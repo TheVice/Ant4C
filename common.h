@@ -40,6 +40,8 @@ int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, u
 
 uint8_t read_file(const uint8_t* file_path, struct buffer* content);
 
+#define COUNT_OF(A) (sizeof(A) / sizeof(*(A)))
+
 #if !defined(MAX)
 #define MAX(A, B) ((A) < (B) ? (B) : (A))
 #endif

@@ -58,7 +58,7 @@ TEST(TestProperty_, property_at_all)
 	ASSERT_TRUE(
 		property_set_by_name(NULL, NULL, &properties, property_name, property_name_length,
 							 property_value, property_value_length,
-							 property_value_is_char_array,
+							 property_value_is_byte_array,
 							 0, 0, 1, 0)) << buffer_free(&output) << properties_free(
 									 &properties);
 	//
@@ -111,7 +111,7 @@ TEST(TestProperty_, property_set_value)
 	//
 	ASSERT_TRUE(property_set_by_name(NULL, NULL, &properties, (const uint8_t*)"my_property", 11,
 									 (const uint8_t*)"${math::PI()}", 13,
-									 property_value_is_char_array,
+									 property_value_is_byte_array,
 									 0, 0, 0, verbose)) <<
 											 buffer_free(&output) << properties_free(&properties);
 	void* the_property = NULL;
@@ -123,7 +123,7 @@ TEST(TestProperty_, property_set_value)
 			buffer_free(&output) << properties_free(&properties);
 	ASSERT_FALSE(property_set_by_pointer(NULL, NULL, the_property,
 										 (const uint8_t*)"${property::get-value('my_property')} ${math::E()}", 50,
-										 property_value_is_char_array, 0, 0, verbose)) <<
+										 property_value_is_byte_array, 0, 0, verbose)) <<
 												 buffer_free(&output) << properties_free(&properties);
 	//
 	buffer_release(&output);

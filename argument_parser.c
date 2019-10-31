@@ -200,7 +200,7 @@ static uint8_t is_from_file = 0;
 		\
 		if (!property_set_by_name(NULL, NULL, (OUTPUT), key.start, (uint8_t)range_size(&key),						\
 								  value.start, range_size(&value),													\
-								  property_value_is_char_array,														\
+								  property_value_is_byte_array,														\
 								  1, 1, 1, argument_parser_get_verbose()))											\
 		{																											\
 			return 0;																								\
@@ -259,7 +259,7 @@ static uint8_t is_from_file = 0;
 		\
 		if (!property_set_by_name(NULL, NULL, (OUTPUT), name.start, (uint8_t)range_size(&name),						\
 								  value.start, range_size(&value),													\
-								  property_value_is_char_array,														\
+								  property_value_is_byte_array,														\
 								  1, 1, 1,																			\
 								  argument_parser_get_verbose() ||													\
 								  !buffer_resize((TMP_BUFFER), size)))												\

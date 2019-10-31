@@ -7,6 +7,7 @@
 
 #include "text_encoding.h"
 #include "buffer.h"
+#include "common.h"
 
 #include <string.h>
 
@@ -606,4 +607,24 @@ uint8_t text_encoding_decode_UTF8(
 	}
 
 	return 1;
+}
+
+static const uint8_t* text_encoding_str[] =
+{
+	(const uint8_t*)"ASCII",
+	(const uint8_t*)"UTF7",
+	(const uint8_t*)"UTF8",
+	(const uint8_t*)"UTF16BE",
+	(const uint8_t*)"UTF16LE",
+	(const uint8_t*)"UTF32BE",
+	(const uint8_t*)"UTF32LE",
+	(const uint8_t*)"BigEndianUnicode",
+	(const uint8_t*)"Unicode",
+	(const uint8_t*)"UTF32",
+	(const uint8_t*)"Default"
+};
+
+uint8_t text_encoding_get_one(const uint8_t* encoding_start, const uint8_t* encoding_finish)
+{
+	return common_string_to_enum(encoding_start, encoding_finish, text_encoding_str, TEXT_ENCODING_UNKNOWN);
 }

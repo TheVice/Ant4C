@@ -15,6 +15,7 @@ extern "C" {
 #include "project.h"
 #include "property.h"
 #include "range.h"
+#include "text_encoding.h"
 };
 
 class TestProject : public TestsBaseXml
@@ -47,11 +48,11 @@ TEST(TestProject_, project_new)
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 	//
-	returned = project_get_default_target(project, &output);
+	returned = project_get_default_target(project, NULL, &output);
 	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
 	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
 	//
-	returned = project_get_name(project, &output);
+	returned = project_get_name(project, NULL, &output);
 	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
 	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
 	//
@@ -113,7 +114,7 @@ TEST(TestProject_, project_property_set_value)
 	//
 	ASSERT_TRUE(property_set_by_pointer(project, NULL, the_property,
 										(const uint8_t*)"${property::get-value('my_property')} ${math::truncate(math::addition('3', '-4'))}", 82,
-										property_value_is_char_array, 0, 0, verbose)) <<
+										property_value_is_byte_array, 0, 0, verbose)) <<
 												buffer_free(&output) << project_free(project);
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) <<
@@ -193,7 +194,7 @@ TEST_F(TestProject, project_load_from_content)
 		//
 		ASSERT_TRUE(buffer_resize(&output, 0))
 				<< buffer_free(&output) << project_free(project);
-		ASSERT_EQ(!expected_name.empty(), project_get_name(project, &output))
+		ASSERT_EQ(!expected_name.empty(), project_get_name(project, NULL, &output))
 				<< buffer_free(&output) << project_free(project);
 		const std::string returned_name(buffer_to_string(&output));
 		ASSERT_EQ(expected_name, returned_name)
@@ -201,7 +202,7 @@ TEST_F(TestProject, project_load_from_content)
 		//
 		ASSERT_TRUE(buffer_resize(&output, 0))
 				<< buffer_free(&output) << project_free(project);
-		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(project, &output))
+		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(project, NULL, &output))
 				<< buffer_free(&output) << project_free(project);
 		const std::string returned_default_target(buffer_to_string(&output));
 		ASSERT_EQ(expected_default_target, returned_default_target)

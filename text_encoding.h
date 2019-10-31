@@ -13,7 +13,10 @@
 
 struct buffer;
 
-enum TextEncoding { ASCII, UTF7, UTF8, UTF16BE, UTF16LE, UTF32BE, UTF32LE };
+enum TextEncoding { ASCII, UTF7, UTF8, UTF16BE, UTF16LE, UTF32BE, UTF32LE, BigEndianUnicode, Unicode, UTF32, Default };
+
+#define TEXT_ENCODING_UNKNOWN (Default + 1)
+
 enum CodePageID
 {
 	windows_874 = 874,
@@ -51,5 +54,7 @@ uint8_t text_encoding_encode_UTF8(
 uint8_t text_encoding_decode_UTF8(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	struct buffer* output);
+
+uint8_t text_encoding_get_one(const uint8_t* encoding_start, const uint8_t* encoding_finish);
 
 #endif

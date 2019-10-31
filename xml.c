@@ -11,17 +11,17 @@
 #include "range.h"
 #include "string_unit.h"
 
-static const uint8_t quote_symbol = '"';
 static const uint8_t less_symbol = '<';
 static const uint8_t greater_symbol = '>';
 static const uint8_t equal_symbol = '=';
 static const uint8_t tag_close = '/';
+static const uint8_t quote_symbol = '"';
 
-static const uint8_t* comment_start = (const uint8_t*)"<!--";
-static const uint8_t comment_start_length = 4;
+static const uint8_t comment_start[] = { '<', '!', '-', '-' };
+#define COMMENT_START_LENGTH COUNT_OF(comment_start)
 
-static const uint8_t* comment_end = (const uint8_t*)"-->";
-static const uint8_t comment_end_length = 3;
+static const uint8_t comment_end[] = { '-', '-', '>' };
+#define COMMENT_END_LENGTH COUNT_OF(comment_end)
 
 uint8_t go_to_comment_end_if_it_exists(const uint8_t** start, const uint8_t* finish)
 {
@@ -33,18 +33,18 @@ uint8_t go_to_comment_end_if_it_exists(const uint8_t** start, const uint8_t* fin
 		return 0;
 	}
 
-	if (comment_start_length < finish - start_ &&
-		string_equal(start_, start_ + comment_start_length, comment_start, comment_start + comment_start_length))
+	if ((ptrdiff_t)(COMMENT_START_LENGTH) < finish - start_ &&
+		string_equal(start_, start_ + COMMENT_START_LENGTH, comment_start, comment_start + COMMENT_START_LENGTH))
 	{
-		start_ += comment_start_length;
-		const ptrdiff_t index = string_index_of(start_, finish, comment_end, comment_end + comment_end_length);
+		start_ += COMMENT_START_LENGTH;
+		const ptrdiff_t index = string_index_of(start_, finish, comment_end, comment_end + COMMENT_END_LENGTH);
 
 		if (-1 == index)
 		{
 			return 0;
 		}
 
-		start_ += index + comment_end_length;
+		start_ += index + COMMENT_END_LENGTH;
 
 		if (finish == (start_ = find_any_symbol_like_or_not_like_that(start_, finish, &less_symbol, 1, 1, 1)))
 		{

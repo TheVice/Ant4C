@@ -19,6 +19,8 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
+static const uint8_t depends_delimiter = ',';
+
 struct target
 {
 	uint8_t name[UINT8_MAX + 1];
@@ -37,8 +39,6 @@ struct depend
 	uint8_t name[UINT8_MAX + 1];
 	uint8_t name_length;
 };
-
-static const uint8_t depends_delimiter = ',';
 
 uint8_t buffer_append_target(struct buffer* targets, const struct target* data, ptrdiff_t data_count)
 {

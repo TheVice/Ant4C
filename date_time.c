@@ -36,6 +36,9 @@ static const int32_t seconds_per_day = 86400;
 static const int16_t seconds_per_hour = 3600;
 static const int8_t seconds_per_minute = 60;
 
+static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+#define COUNT_OF_DIGITS COUNT_OF(digits)
+
 uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 {
 	if (NULL == tm_)
@@ -156,9 +159,6 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 					   uint32_t* year, uint8_t* month, uint8_t* day,
 					   uint8_t* hour, uint8_t* minute, uint8_t* second)
 {
-	static const uint8_t* digits = (const uint8_t*)"0123456789";
-	static const uint8_t count_of_digits = 10;
-
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		NULL == year || NULL == month || NULL == day ||
 		NULL == hour || NULL == minute || NULL == second)
@@ -177,7 +177,7 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 
 	while (input_start != input_finish && step < 6)
 	{
-		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits, 1, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
 
 		if (input_start == input_finish)
 		{
@@ -196,7 +196,7 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 		}
 
 		++step;
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, digits, count_of_digits, 0,
+		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, digits, COUNT_OF_DIGITS, 0,
 					  1);
 	}
 

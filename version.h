@@ -13,9 +13,7 @@
 #if !defined(PROGRAM_VERSION)
 #define PROGRAM_VERSION					"YYYY.MM.DD.?"
 #endif
-#if !defined(PROGRAM_VERSION_LENGTH)
-#define PROGRAM_VERSION_LENGTH			12
-#endif
+#define PROGRAM_VERSION_LENGTH			COUNT_OF(PROGRAM_VERSION)
 
 struct Version
 {

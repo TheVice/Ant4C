@@ -13,9 +13,15 @@
 struct buffer;
 struct range;
 
-uint8_t path_delimiter();
-uint8_t path_posix_delimiter();
-uint8_t path_windows_delimiter();
+static const uint8_t path_posix_delimiter = '/';
+static const uint8_t path_windows_delimiter = '\\';
+
+#if defined(_WIN32)
+#define PATH_DELIMITER path_windows_delimiter
+#else
+#define PATH_DELIMITER path_posix_delimiter
+#endif
+
 uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_finish,
 							  const uint8_t* ext_start, const uint8_t* ext_finish, struct buffer* path);
 uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,

@@ -21,11 +21,12 @@
 #include "string_unit.h"
 #include "xml.h"
 #if 0
+
+static const uint8_t space = ' ';
+
 #if defined(_WIN32)
 
 #include <windows.h>
-
-static const uint8_t space = ' ';
 
 uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 				   wchar_t* env, const wchar_t* working_dir,
@@ -535,7 +536,6 @@ uint8_t exec(
 	expected_size += (range_size(environment_variables) / 2) * sizeof(char*);
 	expected_size += 2 * sizeof(char*) + 2;
 	//
-	static const char space = ' ';
 	struct buffer application;
 	SET_NULL_TO_BUFFER(application);
 
@@ -860,7 +860,6 @@ uint8_t exec_get_environments(const char* start, const char* finish, struct buff
 				return 0;
 			}
 
-			static const char space = ' ';
 			uint8_t contains = string_contains(name.start, name.finish, &space, &space + 1);
 
 			if ((contains && !buffer_push_back(environments, '"')) ||

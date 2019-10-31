@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum Encoding { UTF7, BigEndianUnicode, Unicode, Default, ASCII, UTF8, UTF32 };
 enum Level { Debug, Error, Info, None, Verbose, Warning, NoLevel };
 
 uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file, uint8_t level,

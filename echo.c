@@ -11,19 +11,26 @@
 #include "conversion.h"
 #include "interpreter.h"
 #include "range.h"
+#include "text_encoding.h"
 #include "xml.h"
 
 #include <stdio.h>
+
+#if defined(_WIN32)
+#include <io.h>
+#include <fcntl.h>
+#include <wchar.h>
+#endif
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-#define INFO_LABEL				"[Info]: "
-#define DEBUG_LABEL				"[Debug]: "
-#define ERROR_LABEL				"[Error]: "
-#define VERBOSE_LABEL			"[Verbose]: "
-#define WARNING_LABEL			"[Warning]: "
+static const uint8_t info_label[] = { '[', 'I', 'n', 'f', 'o', ']', ':', ' ' };
+static const uint8_t debug_label[] = { '[', 'D', 'e', 'b', 'u', 'g', ']', ':', ' ' };
+static const uint8_t error_label[] = { '[', 'E', 'r', 'r', 'o', 'r', ']', ':', ' ' };
+static const uint8_t verbose_label[] = { '[', 'V', 'e', 'r', 'b', 'o', 's', 'e', ']', ':', ' ' };
+static const uint8_t warning_label[] = { '[', 'W', 'a', 'r', 'n', 'i', 'n', 'g', ']', ':', ' ' };
 
 #define INFO_LENGTH				8
 #define DEBUG_LENGTH			9
@@ -31,13 +38,14 @@
 #define VERBOSE_LENGTH			11
 #define WARNING_LENGTH			11
 
+#if defined(_WIN32)
+#define REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(A) (Default != (A) && ASCII != (A))
+#endif
+
 uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 			 uint8_t level, const uint8_t* message, ptrdiff_t message_length,
 			 uint8_t new_line, uint8_t verbose)
 {
-	uint8_t result = 0;
-	FILE* file_stream = NULL;
-	/**/
 	(void)encoding;
 	(void)verbose;/*TODO: */
 
@@ -46,8 +54,19 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		return 1;
 	}
 
+	uint8_t result = 0;
+	FILE* file_stream = NULL;
+
 	if (NULL != file)
 	{
+#if 0
+#if __STDC_SEC_API__
+		result = (0 == _wfopen_s(&file_stream, fileW, append ? L"ab" : L"wb") && NULL != file_stream);
+#else
+		file_stream = _wfopen(fileW, append ? L"ab" : L"wb");
+		result = (NULL != file_stream);
+#endif
+#endif
 #if __STDC_SEC_API__
 		result = (0 == fopen_s(&file_stream, (const char*)file, append ? "ab" : "wb") && NULL != file_stream);
 #else
@@ -63,27 +82,27 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		switch (level)
 		{
 			case Error:
-				was_written = fwrite(ERROR_LABEL, sizeof(uint8_t), ERROR_LENGTH, file_stream);
+				was_written = fwrite(error_label, sizeof(uint8_t), ERROR_LENGTH, file_stream);
 				result = (ERROR_LENGTH == was_written);
 				break;
 
 			case Debug:
-				was_written = fwrite(DEBUG_LABEL, sizeof(uint8_t), DEBUG_LENGTH, file_stream);
+				was_written = fwrite(debug_label, sizeof(uint8_t), DEBUG_LENGTH, file_stream);
 				result = (DEBUG_LENGTH == was_written);
 				break;
 
 			case Info:
-				was_written = fwrite(INFO_LABEL, sizeof(uint8_t), INFO_LENGTH, file_stream);
+				was_written = fwrite(info_label, sizeof(uint8_t), INFO_LENGTH, file_stream);
 				result = (INFO_LENGTH == was_written);
 				break;
 
 			case Verbose:
-				was_written = fwrite(VERBOSE_LABEL, sizeof(uint8_t), VERBOSE_LENGTH, file_stream);
+				was_written = fwrite(verbose_label, sizeof(uint8_t), VERBOSE_LENGTH, file_stream);
 				result = (VERBOSE_LENGTH == was_written);
 				break;
 
 			case Warning:
-				was_written = fwrite(WARNING_LABEL, sizeof(uint8_t), WARNING_LENGTH, file_stream);
+				was_written = fwrite(warning_label, sizeof(uint8_t), WARNING_LENGTH, file_stream);
 				result = (WARNING_LENGTH == was_written);
 				break;
 
@@ -96,17 +115,53 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 	}
 
-	if (result)
+	if (!result)
 	{
-		if (NULL != message &&
-			0 < message_length)
+		return 0;
+	}
+
+	if (NULL != message && 0 < message_length)
+	{
+#if defined(_WIN32)
+		struct buffer new_message;
+		SET_NULL_TO_BUFFER(new_message);
+		int mode = 0;
+
+		if (!file && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
+		{
+			if (!buffer_assing_to_uint16(&new_message, message, message_length))
+			{
+				return 0;
+			}
+
+			result = (0 == fflush(file_stream));
+
+			if (result)
+			{
+				mode = _setmode(_fileno(file_stream), _O_U8TEXT);
+				message = buffer_data(&new_message, 0);
+				message_length = buffer_size(&new_message);
+			}
+		}
+
+#endif
+
+		if (result)
 		{
 			result = (message_length == (ptrdiff_t)fwrite(message, sizeof(uint8_t), message_length, file_stream));
 		}
-	}
-	else
-	{
-		return 0;
+
+#if defined(_WIN32)
+		buffer_release(&new_message);
+
+		if (0 < mode)
+		{
+			mode = result;
+			result = (_O_U8TEXT == _setmode(_fileno(file_stream), mode));
+			result = result & mode;
+		}
+
+#endif
 	}
 
 	if (NULL != file)
@@ -259,23 +314,6 @@ uint8_t echo_get_arguments_for_task(
 	return 1;
 }
 
-static const uint8_t* echo_encoding_str[] =
-{
-	(const uint8_t*)"UTF7",
-	(const uint8_t*)"BigEndianUnicode",
-	(const uint8_t*)"Unicode",
-	(const uint8_t*)"Default",
-	(const uint8_t*)"ASCII",
-	(const uint8_t*)"UTF8",
-	(const uint8_t*)"UTF32"
-};
-#define ECHO_UNKNOWN_ENCODING (UTF32 + 1)
-
-uint8_t echo_get_encoding(const uint8_t* encoding_start, const uint8_t* encoding_finish)
-{
-	return common_string_to_enum(encoding_start, encoding_finish, echo_encoding_str, ECHO_UNKNOWN_ENCODING);
-}
-
 static const uint8_t* echo_level_str[] =
 {
 	(const uint8_t*)"Debug",
@@ -331,9 +369,9 @@ uint8_t echo_evaluate_task(const void* project, const void* target,
 		return 0;
 	}
 
-	const uint8_t encoding = echo_get_encoding(value.start, value.finish);
+	const uint8_t encoding = text_encoding_get_one(value.start, value.finish);
 
-	if (ECHO_UNKNOWN_ENCODING == encoding)
+	if (TEXT_ENCODING_UNKNOWN == encoding)
 	{
 		buffer_release_with_inner_buffers(&arguments);
 		return 0;

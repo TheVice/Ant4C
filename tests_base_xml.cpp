@@ -13,6 +13,7 @@ extern "C" {
 #include "echo.h"
 #include "interpreter.h"
 #include "property.h"
+#include "text_encoding.h"
 };
 
 #include <cassert>
@@ -231,7 +232,7 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 									 NULL, NULL, properties,
 									 (const uint8_t*)name.c_str(), (uint8_t)name.size(),
 									 (const uint8_t*)value.c_str(), value.size(),
-									 property_value_is_char_array,
+									 property_value_is_byte_array,
 									 dynamic, overwrite, readonly, verbose);
 
 		if (!returned && failonerror)
