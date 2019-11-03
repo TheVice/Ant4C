@@ -42,6 +42,14 @@ uint8_t read_file(const uint8_t* file_path, struct buffer* content);
 
 #define COUNT_OF(A) (sizeof(A) / sizeof(*(A)))
 
+#define MEM_CPY(DST, SRC, LENGTH)								\
+	for (ptrdiff_t counter = 0; counter < LENGTH; ++counter)	\
+	{															\
+		(*(DST)) = (*(SRC));									\
+		++(DST);												\
+		++(SRC);												\
+	}
+
 #if !defined(MAX)
 #define MAX(A, B) ((A) < (B) ? (B) : (A))
 #endif

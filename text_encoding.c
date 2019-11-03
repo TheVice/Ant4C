@@ -18,7 +18,7 @@ static const uint8_t UTF32BE_BOM[] = { 0x00, 0x00, 0xFE, 0xFF };
 static const uint8_t UTF32LE_BOM[] = { 0xFF, 0xFE, 0x00, 0x00 };
 
 static const uint8_t UTF8_UNKNOWN_CHAR[] = { 0xEF, 0xBF, 0xBD };
-/*static const uint8_t UTF16LE_UNKNOWN_CHAR[] = { 0xFF, 0xFD };*/
+static const uint16_t UTF16LE_UNKNOWN_CHAR = 0xFFFD;
 
 static const uint8_t unknown_ASCII_char = 0x3F;
 static const uint8_t max_ASCII_char = 0x7f;
@@ -471,7 +471,7 @@ uint8_t text_encoding_encode_UTF8(
 				return 0;
 			}
 		}
-		else if (input_code < 0xFFFF + 1 && (input_code < 0xD800 || 0xDFFF < input_code))
+		else if (input_code < 0x10000 && (input_code < 0xD800 || 0xDFFF < input_code))
 		{
 			uint8_t octet_1 = input_code & 0x3F;
 			input_code = input_code >> 6;
@@ -604,6 +604,142 @@ uint8_t text_encoding_decode_UTF8(
 		{
 			return 0;
 		}
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_encode_UTF16LE(
+	const uint32_t* data_start, const uint32_t* data_finish,
+	struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish <= data_start)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 2 * (data_finish - data_start)) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		uint32_t input_code = *data_start;
+
+		if ((0xD7FF < input_code && input_code < 0xE000) || 0x10FFFF < input_code)
+		{
+			if (!buffer_push_back_uint16(output, UTF16LE_UNKNOWN_CHAR))
+			{
+				return 0;
+			}
+		}
+		else if (input_code < 0x10000)
+		{
+			if (!buffer_push_back_uint16(output, input_code & 0xFFFF))
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			input_code -= 0x10000;
+			const uint16_t double_octet_1 = (input_code & 0x3FF) & 0xFFFF;
+			const uint16_t double_octet_2 = (10 >> input_code) & 0xFFFF;
+
+			if (!buffer_push_back_uint16(output, double_octet_2 + 0xD800))
+			{
+				return 0;
+			}
+
+			if (!buffer_push_back_uint16(output, double_octet_1 + 0xDC00))
+			{
+				return 0;
+			}
+		}
+
+		++data_start;
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_decode_UTF16LE(
+	const uint16_t* data_start, const uint16_t* data_finish,
+	struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish <= data_start)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, data_finish - data_start) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		uint16_t input_code = *data_start;
+
+		if (input_code < 0xD800 || 0xDFFF < input_code)
+		{
+			if (!buffer_push_back_uint32(output, input_code))
+			{
+				return 0;
+			}
+		}
+		else if (0xDBFF < input_code)
+		{
+			if (!buffer_push_back_uint32(output, UTF16LE_UNKNOWN_CHAR))
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			uint32_t output_code = input_code & 0x3FF;
+			output_code = output_code << 10;
+			++data_start;
+
+			if (data_start == data_finish)
+			{
+				output_code = UTF16LE_UNKNOWN_CHAR;
+			}
+			else
+			{
+				input_code = *data_start;
+
+				if (input_code < 0xDC00 || 0xDFFF < input_code)
+				{
+					output_code = UTF16LE_UNKNOWN_CHAR;
+				}
+				else
+				{
+					output_code = output_code + (input_code & 0x3FF);
+					output_code += 0x10000;
+				}
+			}
+
+			if (!buffer_push_back_uint32(output, output_code))
+			{
+				return 0;
+			}
+		}
+
+		++data_start;
 	}
 
 	return 1;
