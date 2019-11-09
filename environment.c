@@ -722,7 +722,7 @@ struct Version GetWindowsVersion()
 										   VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL),
 										   VER_MINORVERSION, VER_GREATER_EQUAL);
 
-	for (uint8_t i = 0, count = sizeof(versions) / sizeof(*versions); i < count; ++i)
+	for (uint8_t i = 0, count = COUNT_OF(versions); i < count; ++i)
 	{
 		OSVERSIONINFOEXW osvi = { sizeof(OSVERSIONINFOEXW), 0, 0, 0, 0, { 0 }, 0, 0, 0, 0, 0 };
 		osvi.dwMajorVersion = versions[i].major;
@@ -785,7 +785,7 @@ const struct OperatingSystem* environment_get_operating_system()
 			/*TODO: call echo with verbose or debug level.*/
 		}
 
-		const uint16_t max_count = sizeof(operating_system.VersionString) / sizeof(operating_system.VersionString[0]);
+		const uint16_t max_count = COUNT_OF(operating_system.VersionString);
 		const uint16_t count = 4 + strlen(uname_data.sysname) + strlen(uname_data.release) + strlen(
 								   uname_data.version) + strlen(uname_data.machine);
 

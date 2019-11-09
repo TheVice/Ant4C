@@ -283,7 +283,7 @@ uint8_t echo_get_arguments_for_task(
 	}
 
 	if (!interpreter_get_arguments_from_xml_tag_record(project, target, attributes_start, attributes_finish,
-			attributes, attributes_lengths, sizeof(attributes_lengths) / sizeof(*attributes_lengths), arguments))
+			attributes, attributes_lengths, COUNT_OF(attributes_lengths), arguments))
 	{
 		return 0;
 	}

@@ -29,12 +29,20 @@
 
 #include <math.h>
 #include <time.h>
-#include <wchar.h>
+#include <ctype.h>
 #include <float.h>
 #include <stdio.h>
+#include <wchar.h>
+#include <assert.h>
+#include <limits.h>
+#include <locale.h>
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wctype.h>
+#include <stdbool.h>
 #include <inttypes.h>
 
 #ifdef _WIN32

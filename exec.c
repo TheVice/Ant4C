@@ -535,7 +535,7 @@ uint8_t exec(
 	expected_size += (range_size(command_line) / 2) * sizeof(char*);
 	expected_size += (range_size(environment_variables) / 2) * sizeof(char*);
 	expected_size += 2 * sizeof(char*) + 2;
-	//
+	/**/
 	struct buffer application;
 	SET_NULL_TO_BUFFER(application);
 
@@ -1055,7 +1055,7 @@ uint8_t exec_get_arguments_for_task(
 	}
 
 	if (!interpreter_get_arguments_from_xml_tag_record(project, target, attributes_start, attributes_finish,
-			attributes, attributes_lengths, sizeof(attributes_lengths) / sizeof(*attributes_lengths), arguments))
+			attributes, attributes_lengths, COUNT_OF(attributes_lengths), arguments))
 	{
 		return 0;
 	}

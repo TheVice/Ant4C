@@ -119,7 +119,9 @@ uint8_t project_get_buildfile_uri(const void* project, const void* target, struc
 		return 0;
 	}
 
+#if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(build_file_uri);
+#endif
 
 	if (!common_append_string_to_buffer((const uint8_t*)"file:///", build_file_uri))
 	{
@@ -131,15 +133,13 @@ uint8_t project_get_buildfile_uri(const void* project, const void* target, struc
 		return 0;
 	}
 
+#if defined(_WIN32)
 	uint8_t* path_start = buffer_data(build_file_uri, size);
 	uint8_t* path_finish = (buffer_data(build_file_uri, 0) + buffer_size(build_file_uri));
-
-	if (PATH_DELIMITER != path_posix_delimiter)
-	{
-		return cygpath_get_unix_path(path_start, path_finish);
-	}
-
+	return cygpath_get_unix_path(path_start, path_finish);
+#else
 	return 1;
+#endif
 }
 
 uint8_t project_get_default_target(const void* project, const void* target, struct buffer* default_target)

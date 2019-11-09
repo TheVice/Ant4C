@@ -329,7 +329,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 				if (max_ASCII_char < code)
 				{
-					if ((max_ASCII_char + sizeof(codes_874) / sizeof(*codes_874) - 1) < code)
+					if ((max_ASCII_char + COUNT_OF(codes_874) - 1) < code)
 					{
 						if (!buffer_push_back_uint16(output, 0xFFFD))
 						{
@@ -745,6 +745,78 @@ uint8_t text_encoding_decode_UTF16LE(
 	return 1;
 }
 
+uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* data_finish,
+									  struct buffer* output)
+{
+	if (NULL == (data_start) ||
+		NULL == (data_finish) ||
+		(data_finish) <= (data_start) ||
+		NULL == (output))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size((output));
+
+	if (!buffer_append((output), NULL, 2 * sizeof(uint32_t) * ((data_finish) - (data_start))) ||
+		!buffer_resize((output), size) ||
+		!text_encoding_decode_UTF8((data_start), (data_finish), (output)))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size_ = buffer_size((output));
+	const uint32_t* start = (const uint32_t*)buffer_data((output), size);
+	const uint32_t* finish = (const uint32_t*)(buffer_data((output), 0) + size_);
+
+	if (!text_encoding_encode_UTF16LE(start, finish, (output)))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size__ = buffer_size((output)) - size_;
+	uint8_t* dst = buffer_data((output), size);
+	const uint8_t* src = buffer_data((output), size_);
+	MEM_CPY(dst, src, size__);
+	return buffer_resize((output), size + size__);
+}
+#if defined(_WIN32)
+uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
+									  struct buffer* output)
+{
+	if (NULL == (data_start) ||
+		NULL == (data_finish) ||
+		(data_finish) <= (data_start) ||
+		NULL == (output))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size((output));
+
+	if (!buffer_append((output), NULL, 2 * sizeof(uint32_t) * ((data_finish) - (data_start))) ||
+		!buffer_resize((output), size) ||
+		!text_encoding_decode_UTF16LE((data_start), (data_finish), (output)))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size_ = buffer_size((output));
+	const uint32_t* start = (const uint32_t*)buffer_data((output), size);
+	const uint32_t* finish = (const uint32_t*)(buffer_data((output), 0) + size_);
+
+	if (!text_encoding_encode_UTF8(start, finish, (output)))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size__ = buffer_size((output)) - size_;
+	uint8_t* dst = buffer_data((output), size);
+	const uint8_t* src = buffer_data((output), size_);
+	MEM_CPY(dst, src, size__);
+	return buffer_resize((output), size + size__);
+}
+#endif
 static const uint8_t* text_encoding_str[] =
 {
 	(const uint8_t*)"ASCII",

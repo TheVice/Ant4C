@@ -40,7 +40,8 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, stru
 		return 0;
 	}
 
-	for (uint16_t i = 0, count = sizeof(os->VersionString) / sizeof(*os->VersionString); i < count; ++i)
+	/*TODO: memcpy*/
+	for (uint16_t i = 0, count = COUNT_OF(os->VersionString); i < count; ++i)
 	{
 		if (start + i < finish)
 		{

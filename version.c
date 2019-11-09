@@ -35,7 +35,7 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, s
 	ver_in_parts[2] = &version->build;
 	ver_in_parts[3] = &version->revision;
 	/**/
-	const uint8_t count = sizeof(ver_in_parts) / sizeof(*ver_in_parts);
+	const uint8_t count = COUNT_OF(ver_in_parts);
 	uint8_t i = 0;
 
 	for (input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS,
