@@ -400,7 +400,7 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 	prop->readonly = 0 < readonly;
 	return 1;
 }
-
+#if 0
 uint8_t property_set_from_xml_tag_record(
 	const void* project, const void* target,
 	struct buffer* properties,
@@ -484,6 +484,139 @@ uint8_t property_set_from_xml_tag_record(
 								dynamic, overwrite, readonly, verbose);
 	/*TODO: explain fail_on_error factor, if verbose set, and return true.
 	return fail_on_error ? returned : 1;*/
+}
+#endif
+
+static const uint8_t* property_attributes[] =
+{
+	(const uint8_t*)"dynamic",
+	(const uint8_t*)"name",
+	(const uint8_t*)"overwrite",
+	(const uint8_t*)"readonly",
+	(const uint8_t*)"failonerror",
+	(const uint8_t*)"verbose",
+	(const uint8_t*)"value"
+};
+
+static const uint8_t property_attributes_lengths[] = { 7, 4, 9, 8, 11, 7, 5 };
+
+#define DYNAMIC_POSITION		0
+#define NAME_POSITION			1
+#define OVERWRITE_POSITION		2
+#define READONLY_POSITION		3
+#define FAIL_ON_ERROR_POSITION	4
+#define VERBOSE_POSITION		5
+#define VALUE_POSITION			6
+
+uint8_t property_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	if (NULL == task_attributes ||
+		NULL == task_attributes_lengths ||
+		NULL == task_attributes_count ||
+		NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	*task_attributes = property_attributes;
+	*task_attributes_lengths = property_attributes_lengths;
+	*task_attributes_count = COUNT_OF(property_attributes_lengths);
+
+	if (!buffer_resize(task_arguments, 0) ||
+		!buffer_append_buffer(task_arguments, NULL, *task_attributes_count))
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
+	{
+		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
+		SET_NULL_TO_BUFFER(*attribute);
+	}
+
+	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
+	{
+		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
+
+		if (OVERWRITE_POSITION == i || FAIL_ON_ERROR_POSITION == i)
+		{
+			if (!bool_to_string(1, attribute))
+			{
+				return 0;
+			}
+		}
+		else if (NAME_POSITION == i || VALUE_POSITION == i)
+		{
+			continue;
+		}
+		else
+		{
+			if (!bool_to_string(0, attribute))
+			{
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+uint8_t property_evaluate_task(void* project, const struct buffer* task_arguments)
+{
+	if (NULL == project || NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	const struct buffer* name = buffer_buffer_data(task_arguments, NAME_POSITION);
+
+	if (!buffer_size(name))
+	{
+		return 0;
+	}
+
+	const struct buffer* value = buffer_buffer_data(task_arguments, VALUE_POSITION);
+	const struct buffer* dynamic_in_buffer = buffer_buffer_data(task_arguments, DYNAMIC_POSITION);
+	const struct buffer* overwrite_in_buffer = buffer_buffer_data(task_arguments, OVERWRITE_POSITION);
+	const struct buffer* readonly_in_buffer = buffer_buffer_data(task_arguments, READONLY_POSITION);
+	/*const struct buffer* fail_on_error = buffer_buffer_data(task_arguments, FAIL_ON_ERROR_POSITION);*/
+	const struct buffer* verbose_in_buffer = buffer_buffer_data(task_arguments, VERBOSE_POSITION);
+	/**/
+	uint8_t dynamic = 0;
+
+	if (!bool_parse(buffer_data(dynamic_in_buffer, 0), buffer_size(dynamic_in_buffer), &dynamic))
+	{
+		return 0;
+	}
+
+	uint8_t overwrite = 1;
+
+	if (!bool_parse(buffer_data(overwrite_in_buffer, 0), buffer_size(overwrite_in_buffer), &overwrite))
+	{
+		return 0;
+	}
+
+	uint8_t readonly = 0;
+
+	if (!bool_parse(buffer_data(readonly_in_buffer, 0), buffer_size(readonly_in_buffer), &readonly))
+	{
+		return 0;
+	}
+
+	uint8_t verbose = 0;
+
+	if (!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &verbose))
+	{
+		return 0;
+	}
+
+	return project_property_set_value(
+			   project,
+			   buffer_data(name, 0), (uint8_t)buffer_size(name),
+			   buffer_data(value, 0), buffer_size(value),
+			   dynamic, overwrite, readonly, verbose);
 }
 
 uint8_t property_append(const void* project, const void* target,

@@ -16,7 +16,7 @@ struct buffer;
 uint8_t project_property_get_pointer(const void* project,
 									 const uint8_t* property_name, uint8_t property_name_length,
 									 void** the_property);
-uint8_t project_property_set_value(void* project, const void* target,
+uint8_t project_property_set_value(void* project,
 								   const uint8_t* property_name, uint8_t property_name_length,
 								   const uint8_t* property_value, ptrdiff_t property_value_length,
 								   uint8_t dynamic, uint8_t overwrite,

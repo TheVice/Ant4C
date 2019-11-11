@@ -12,16 +12,6 @@ extern "C" {
 #include "range.h"
 };
 
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-
-#define _POSIXSOURCE 1
-
-#include <sys/param.h>
-#endif
-#if !defined(BSD)
-#define PUGIXML_HEADER_ONLY
-#endif
-
 #include <pugixml.hpp>
 #include <gtest/gtest.h>
 

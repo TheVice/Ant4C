@@ -15,6 +15,9 @@ extern "C" {
 
 #include <cfloat>
 #include <string>
+#if !defined(_WIN32)
+#include <climits>
+#endif
 
 class TestConversion : public TestsBaseXml
 {
@@ -86,7 +89,7 @@ TEST(TestConversion_, double_parse)
 		 count = sizeof(input) / sizeof(input[0]); i < count; ++i)
 	{
 		const double returned = double_parse(input[i]);
-		ASSERT_NEAR(expected_output[i], returned, 50 * DBL_EPSILON);
+		ASSERT_NEAR(expected_output[i], returned, 50 * DBL_EPSILON) << input[i];
 	}
 }
 

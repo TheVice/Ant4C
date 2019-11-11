@@ -129,41 +129,56 @@ TEST(TestProperty_, property_set_value)
 	buffer_release(&output);
 	property_clear(&properties);
 }
-
+#if 0
 TEST_F(TestProperty, property_set_from_xml_tag_record)
 {
-	buffer properties;
-	SET_NULL_TO_BUFFER(properties);
-	//
-	buffer output_properties;
-	SET_NULL_TO_BUFFER(output_properties);
+}
+#endif
+TEST(TestProperty_, property_get_attributes_and_arguments_for_task)
+{
+	buffer task_arguments;
+	SET_NULL_TO_BUFFER(task_arguments);
+	/**/
+	const uint8_t** task_attributes = NULL;
+	const uint8_t* task_attributes_lengths = NULL;
+	uint8_t task_attributes_count = 0;
+	/**/
+	const uint8_t returned = property_get_attributes_and_arguments_for_task(
+								 &task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments);
+	/**/
+	ASSERT_TRUE(returned) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_NE(nullptr, task_attributes) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_NE(nullptr, task_attributes_lengths) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_EQ(7, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_LT(0, buffer_size(&task_arguments)) << buffer_free_with_inner_buffers(&task_arguments);
+	/**/
+	task_attributes_count = 0;
+	buffer* argument = NULL;
 
-	for (const auto& node : nodes)
+	while (NULL != (argument = buffer_buffer_data(&task_arguments, task_attributes_count++)))
 	{
-		property_clear(&properties);
-		property_clear(&output_properties);
-		//
-		/*const uint8_t properties_loaded = */properties_load_from_node(node, "properties/property",
-				&properties);
-		//
-		const std::string record(node.node().select_node("record").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
-		const uint8_t verbose = 0;
-		//
-		/*const uint8_t output_properties_loaded = */properties_load_from_node(node, "output_properties/property",
-				&output_properties);
-		//
-		const uint8_t returned = property_set_from_xml_tag_record(NULL, NULL,
-								 &properties, (const uint8_t*)record.c_str(),
-								 record.empty() ? NULL : (const uint8_t*)record.data() + record.size(),
-								 verbose);
-		//
-		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << properties_free(&output_properties);
-		/*TODO: */
-		//
-		--node_count;
+		if (2 == task_attributes_count || 7 == task_attributes_count)
+		{
+			ASSERT_FALSE(buffer_size(argument)) << buffer_free_with_inner_buffers(&task_arguments);
+			continue;
+		}
+
+		uint8_t bool_value = 0;
+		ASSERT_TRUE(buffer_size(argument)) << (int)task_attributes_count << std::endl <<
+										   buffer_free_with_inner_buffers(&task_arguments);
+		ASSERT_TRUE(bool_parse(buffer_data(argument, 0), buffer_size(argument), &bool_value))
+				<< buffer_free_with_inner_buffers(&task_arguments);
+
+		if (3 == task_attributes_count || 5 == task_attributes_count)
+		{
+			ASSERT_TRUE(bool_value) << buffer_free_with_inner_buffers(&task_arguments);
+		}
+		else
+		{
+			ASSERT_FALSE(bool_value) << buffer_free_with_inner_buffers(&task_arguments);
+		}
 	}
 
-	property_clear(&properties);
-	property_clear(&output_properties);
+	ASSERT_EQ(8, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
+	buffer_release_with_inner_buffers(&task_arguments);
 }

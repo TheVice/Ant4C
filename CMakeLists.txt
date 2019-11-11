@@ -59,12 +59,9 @@ add_executable(ant4c_app
 
 target_link_libraries(ant4c_app ant4c)
 
-if(DEFINED PROGRAM_VERSION AND DEFINED PROGRAM_VERSION_LENGTH)
+if(DEFINED PROGRAM_VERSION)
   target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
-  target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION_LENGTH=${PROGRAM_VERSION_LENGTH})
-
   target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
-  target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION_LENGTH=${PROGRAM_VERSION_LENGTH})
 endif()
 
 if(NOT MSVC)
@@ -114,6 +111,10 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   endif()
   add_custom_command(TARGET ant4c_tests POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
+
+  if(DEFINED PUGIXML_HEADER_ONLY)
+    target_compile_definitions(ant4c_tests PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY})
+  endif()
 else()
   message(STATUS "Search pugixml and GTest via defined PUGIXML_PATH and/or GTEST_PATH if such exists.")
   if(DEFINED ENV{PUGIXML_PATH})

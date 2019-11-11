@@ -43,11 +43,17 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 								enum data_type type_of_value,
 								uint8_t dynamic,
 								uint8_t readonly, uint8_t verbose);
-uint8_t property_set_from_xml_tag_record(
+/*uint8_t property_set_from_xml_tag_record(
 	const void* project, const void* target,
 	struct buffer* properties,
 	const uint8_t* record_start, const uint8_t* record_finish,
-	uint8_t verbose);
+	uint8_t verbose);*/
+
+uint8_t property_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t property_evaluate_task(void* project, const struct buffer* task_arguments);
+
 uint8_t property_append(const void* project, const void* target,
 						struct buffer* target_properties,
 						const struct buffer* properties, uint8_t verbose);

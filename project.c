@@ -22,21 +22,12 @@
 #include <string.h>
 
 static const uint8_t project_str[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't' };
-#define PROJECT_LENGTH COUNT_OF(project_str)
-
-static const uint8_t description_str[] = { 'd', 'e', 's', 'c', 'r', 'i', 'p', 't', 'i', 'o', 'n' };
-static const uint8_t property_str[] = { 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y' };
-static const uint8_t target_str[] = { 't', 'a', 'r', 'g', 'e', 't' };
-
-#define DESCRIPTION_LENGTH COUNT_OF(description_str)
-#define PROPERTY_LENGTH COUNT_OF(property_str)
-#define TARGET_LENGTH COUNT_OF(target_str)
-
 static const uint8_t project_name_property[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't', '.', 'n', 'a', 'm', 'e' };
 static const uint8_t project_default_property[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't', '.', 'd', 'e', 'f', 'a', 'u', 'l', 't' };
 static const uint8_t project_base_dir_property[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't', '.', 'b', 'a', 's', 'e', 'd', 'i', 'r' };
 static const uint8_t project_build_file_property[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't', '.', 'b', 'u', 'i', 'l', 'd', 'f', 'i', 'l', 'e' };
 
+#define PROJECT_LENGTH					COUNT_OF(project_str)
 #define PROJECT_NAME_LENGTH				COUNT_OF(project_name_property)
 #define PROJECT_DEFAULT_LENGTH			COUNT_OF(project_default_property)
 #define PROJECT_BASE_DIR_LENGTH			COUNT_OF(project_base_dir_property)
@@ -71,7 +62,7 @@ uint8_t project_property_get_pointer(const void* project,
 	return property_get_pointer(&pro->properties, property_name, property_name_length, the_property);
 }
 
-uint8_t project_property_set_value(void* project, const void* target,
+uint8_t project_property_set_value(void* project,
 								   const uint8_t* property_name, uint8_t property_name_length,
 								   const uint8_t* property_value, ptrdiff_t property_value_length,
 								   uint8_t dynamic, uint8_t overwrite,
@@ -84,7 +75,7 @@ uint8_t project_property_set_value(void* project, const void* target,
 
 	struct project* pro = (struct project*)project;
 
-	return property_set_by_name(project, target, &pro->properties, property_name, property_name_length,
+	return property_set_by_name(project, NULL, &pro->properties, property_name, property_name_length,
 								property_value, property_value_length, property_value_is_byte_array,
 								dynamic, overwrite, readonly, verbose);
 }
@@ -249,10 +240,10 @@ uint8_t project_set_base_directory(struct project* project, void* tatget,
 			   project_base_dir_tag, PROJECT_BASE_DIR_TAG_LENGTH, verbose);
 }
 
-uint8_t project_set_buildfile_path(void* project, const void* target,
+uint8_t project_set_buildfile_path(void* project,
 								   const uint8_t* build_file, ptrdiff_t build_file_length, uint8_t verbose)
 {
-	return project_property_set_value(project, target, project_build_file_property, PROJECT_BUILD_FILE_LENGTH,
+	return project_property_set_value(project, project_build_file_property, PROJECT_BUILD_FILE_LENGTH,
 									  build_file, build_file_length, 0, 1, 1, verbose);
 }
 
@@ -276,90 +267,6 @@ uint8_t project_set_name(struct project* project, void* tatget,
 			   attributes_start, attributes_finish,
 			   project_name_property, PROJECT_NAME_LENGTH,
 			   project_name_tag, PROJECT_NAME_TAG_LENGTH, verbose);
-}
-
-uint8_t project_load_properties_and_targets(struct project* project, struct buffer* elements, uint8_t verbose)
-{
-	ptrdiff_t i = 0;
-	struct range* element = NULL;
-
-	while (NULL != (element = buffer_range_data(elements, i++)))
-	{
-		struct range tag_name_or_content;
-
-		if (!xml_get_tag_name(element->start, element->finish, &tag_name_or_content))
-		{
-			i = 0;
-			break;
-		}
-
-		if (string_equal(tag_name_or_content.start, tag_name_or_content.finish,
-						 description_str, description_str + DESCRIPTION_LENGTH))
-		{
-			if (xml_get_element_value(element, &tag_name_or_content) &&
-				!buffer_append(&project->description,
-							   tag_name_or_content.start,
-							   range_size(&tag_name_or_content)))
-			{
-				i = 0;
-				break;
-			}
-
-			continue;
-		}
-
-		uint8_t skip = 0;
-
-		if (!interpreter_xml_tag_should_be_skip_by_if_or_unless(project, NULL, tag_name_or_content.finish,
-				element->finish, &skip))
-		{
-			i = 0;
-			break;
-		}
-
-		/*TODO: name of target to skip may be used for depends.*/
-		if (skip)
-		{
-			continue;
-		}
-
-		if (string_equal(tag_name_or_content.start, tag_name_or_content.finish,
-						 property_str, property_str + PROPERTY_LENGTH))
-		{
-			if (!property_set_from_xml_tag_record(project, NULL,
-												  &project->properties,
-												  tag_name_or_content.finish, element->finish, verbose))
-			{
-				i = 0;
-				break;
-			}
-
-			continue;
-		}
-		else if (string_equal(tag_name_or_content.start, tag_name_or_content.finish, target_str,
-							  target_str + TARGET_LENGTH))
-		{
-			if (!target_add_from_xml_tag_record(&project->targets,
-												tag_name_or_content.finish, element->finish))
-			{
-				i = 0;
-				break;
-			}
-
-			continue;
-		}
-
-		if (!interpreter_evaluate_task(project, NULL,
-									   interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish),
-									   tag_name_or_content.finish,
-									   element->finish))
-		{
-			i = 0;
-			break;
-		}
-	}
-
-	return 0 < i;
 }
 
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
@@ -428,7 +335,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 
 	if (!property_exists(&pro->properties, project_base_dir_property, PROJECT_BASE_DIR_LENGTH))
 	{
-		if (!project_property_set_value(project, NULL,
+		if (!project_property_set_value(project,
 										project_base_dir_property, PROJECT_BASE_DIR_LENGTH,
 										base_dir, base_dir_length,
 										0, 1, 1, verbose))
@@ -445,7 +352,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	}
 
 	if (0 < xml_get_sub_nodes_elements(tag_name_finish, element_finish, &elements) &&
-		!project_load_properties_and_targets(pro, &elements, verbose))
+		!interpreter_evaluate_tasks(pro, NULL, &elements, verbose))
 	{
 		buffer_release(&elements);
 		return 0;
@@ -519,7 +426,7 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* pr
 
 	path_length = buffer_size(&content);
 
-	if (!project_set_buildfile_path(project, NULL,
+	if (!project_set_buildfile_path(project,
 									buffer_data(&content, 0),
 									path_length, verbose))
 	{
