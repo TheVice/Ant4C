@@ -21,7 +21,7 @@ extern "C" {
 class TestProject : public TestsBaseXml
 {
 };
-
+#if 0
 TEST(TestProject_, project_new)
 {
 	static const uint8_t expected_return = 0;
@@ -72,12 +72,6 @@ TEST(TestProject_, project_new)
 	the_property = NULL;
 	//
 	project_unload(project);
-}
-
-uint8_t project_free(void* project)
-{
-	project_unload(project);
-	return 0;
 }
 
 TEST(TestProject_, project_property_set_value)
@@ -258,6 +252,7 @@ TEST_F(TestProject, project_load_from_build_file)
 
 	buffer_release(&tmp);
 }
+#endif
 #endif
 #if 0
 project_add_properties

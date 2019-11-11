@@ -12,7 +12,6 @@
 #include "interpreter.h"
 #include "project.h"
 #include "range.h"
-#include "target.h"
 #include "xml.h"
 
 #include <string.h>
@@ -69,8 +68,7 @@ uint8_t property_is_name_valid(const uint8_t* name, uint8_t name_length)
 	return 1;
 }
 
-uint8_t property_new(const void* project, const void* target,
-					 struct buffer* properties,
+uint8_t property_new(struct buffer* properties,
 					 const uint8_t* property_name,
 					 uint8_t property_name_length,
 					 const void* value, ptrdiff_t value_length,
@@ -99,7 +97,7 @@ uint8_t property_new(const void* project, const void* target,
 	SET_NULL_TO_BUFFER(the_property.value);
 	the_property.dynamic = the_property.readonly = 0;
 
-	if (!property_set_by_pointer(project, target, &the_property, value, value_length, type_of_value, dynamic,
+	if (!property_set_by_pointer(&the_property, value, value_length, type_of_value, dynamic,
 								 readonly, verbose))
 	{
 		buffer_release(&the_property.value);
@@ -109,51 +107,7 @@ uint8_t property_new(const void* project, const void* target,
 	return buffer_append_property(properties, &the_property, 1);
 }
 
-uint8_t property_get_pointer(const struct buffer* properties,
-							 const uint8_t* property_name, uint8_t property_name_length,
-							 void** the_property)
-{
-	ptrdiff_t i = 0;
-	struct property* prop = NULL;
-
-	if (NULL == properties ||
-		!property_is_name_valid(property_name, property_name_length))
-	{
-		return 0;
-	}
-
-	while (NULL != (prop = buffer_property_data(properties, i++)))
-	{
-		if (property_name_length == prop->name_length &&
-			0 == memcmp(&prop->name, property_name, property_name_length))
-		{
-			if (the_property)
-			{
-				(*the_property) = prop;
-			}
-
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-uint8_t property_exists(const struct buffer* properties, const uint8_t* name, uint8_t name_length)
-{
-	if (NULL == properties ||
-		NULL == name ||
-		0 == name_length)
-	{
-		return 0;
-	}
-
-	return property_get_pointer(properties, name, name_length, NULL);
-}
-
-uint8_t property_get_by_name(const void* project, const void* target,
-							 const uint8_t* property_name,
-							 uint8_t property_name_length,
+uint8_t property_get_by_name(const void* project, const uint8_t* property_name, uint8_t property_name_length,
 							 struct buffer* output)
 {
 	if (NULL == output)
@@ -168,11 +122,10 @@ uint8_t property_get_by_name(const void* project, const void* target,
 		return 0;
 	}
 
-	return property_get_by_pointer(project, target, the_property, output);
+	return property_get_by_pointer(the_property, output);
 }
 
-uint8_t property_get_by_pointer(const void* project, const void* target,
-								const void* the_property, struct buffer* output)
+uint8_t property_get_by_pointer(const void* the_property, struct buffer* output)
 {
 	if (NULL == the_property ||
 		NULL == output)
@@ -196,26 +149,36 @@ uint8_t property_get_by_pointer(const void* project, const void* target,
 		return 1;
 	}
 
-	if (prop->dynamic)
-	{
-		struct range code;
-		code.start = buffer_data(&prop->value, 0);
-		code.finish = code.start + buffer_size(&prop->value);
+	return buffer_append_data_from_buffer(output, &prop->value);
+}
 
-		if (!interpreter_evaluate_code(project, target, &code, output))
-		{
-			return 0;
-		}
-	}
-	else
+uint8_t property_exists(const struct buffer* properties, const uint8_t* name, uint8_t name_length,
+						void** the_property)
+{
+	ptrdiff_t i = 0;
+	struct property* prop = NULL;
+
+	if (NULL == properties ||
+		!property_is_name_valid(name, name_length))
 	{
-		if (!buffer_append_data_from_buffer(output, &prop->value))
-		{
-			return 0;
-		}
+		return 0;
 	}
 
-	return 1;
+	while (NULL != (prop = buffer_property_data(properties, i++)))
+	{
+		if (name_length == prop->name_length &&
+			0 == memcmp(&prop->name, name, name_length))
+		{
+			if (the_property)
+			{
+				(*the_property) = prop;
+			}
+
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 uint8_t property_is_dynamic(const void* the_property, uint8_t* is_dynamic)
@@ -244,8 +207,7 @@ uint8_t property_is_readonly(const void* the_property, uint8_t* is_readonly)
 	return 1;
 }
 
-uint8_t property_set_by_name(const void* project, const void* target,
-							 struct buffer* properties,
+uint8_t property_set_by_name(struct buffer* properties,
 							 const uint8_t* name, uint8_t name_length,
 							 const uint8_t* value, ptrdiff_t value_length,
 							 enum data_type type_of_value,
@@ -261,34 +223,30 @@ uint8_t property_set_by_name(const void* project, const void* target,
 		return 0;
 	}
 
-	if (property_get_pointer(properties, name, name_length, (void**)&prop))
+	if (property_exists(properties, name, name_length, (void**)&prop))
 	{
 		if (!overwrite)
 		{
 			return 1;
 		}
 
-		return property_set_by_pointer(project, target, prop,
+		return property_set_by_pointer(prop,
 									   value, value_length, type_of_value,
 									   dynamic, readonly, verbose);
 	}
 
-	return property_new(project, target, properties, name, name_length,
+	return property_new(properties, name, name_length,
 						value, value_length, type_of_value,
 						dynamic, readonly, verbose);
 }
 
-uint8_t property_set_by_pointer(const void* project, const void* target,
-								void* the_property,
+uint8_t property_set_by_pointer(void* the_property,
 								const void* value, ptrdiff_t value_length,
 								enum data_type type_of_value,
 								uint8_t dynamic, uint8_t readonly, uint8_t verbose)
 {
 	if (NULL == the_property ||
-		NULL == value ||
-		(0 < value_length &&
-		 property_value_is_byte_array != type_of_value &&
-		 0 < dynamic))
+		NULL == value)
 	{
 		return 0;
 	}
@@ -301,8 +259,7 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 		return 0;
 	}
 
-	if (property_value_is_byte_array != type_of_value &&
-		!buffer_resize(&prop->value, 0))
+	if (!buffer_resize(&prop->value, 0))
 	{
 		return 0;
 	}
@@ -312,65 +269,9 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 		switch (type_of_value)
 		{
 			case property_value_is_byte_array:
-				if (dynamic)
+				if (!buffer_append(&prop->value, value, value_length))
 				{
-					if (!buffer_resize(&prop->value, 0) ||
-						!buffer_append(&prop->value, value, value_length))
-					{
-						return 0;
-					}
-				}
-				else if (value)
-				{
-					struct range code;
-					code.start = value;
-					code.finish = code.start + value_length;
-					value_length = buffer_size(&prop->value);
-
-					if (!interpreter_evaluate_code(project, target, &code, &prop->value))
-					{
-						return 0;
-					}
-
-					if (!value_length)
-					{
-						break;
-					}
-
-					uint8_t* dst = buffer_data(&prop->value, 0);
-					uint8_t* src = buffer_data(&prop->value, value_length);
-					value_length = buffer_size(&prop->value) - value_length;
-
-					for (ptrdiff_t i = 0; i < value_length; ++i)
-					{
-						(*dst) = (*src);
-						++dst;
-						++src;
-					}
-
-#if 0
-#if __STDC_SEC_API__
-
-					if (0 != memcpy_s(buffer_data(&prop->value, 0),
-									  buffer_size(&prop->value) - value_length,
-									  buffer_data(&prop->value, value_length),
-									  buffer_size(&prop->value) - value_length))
-					{
-						return 0;
-					}
-
-#else
-					memcpy(buffer_data(&prop->value, 0),
-						   buffer_data(&prop->value, value_length),
-						   buffer_size(&prop->value) - value_length);
-#endif
-					/*NOTE: buffer_size(&prop->value) - value_length)*/
-#endif
-
-					if (!buffer_resize(&prop->value, value_length))
-					{
-						return 0;
-					}
+					return 0;
 				}
 
 				break;
@@ -400,92 +301,6 @@ uint8_t property_set_by_pointer(const void* project, const void* target,
 	prop->readonly = 0 < readonly;
 	return 1;
 }
-#if 0
-uint8_t property_set_from_xml_tag_record(
-	const void* project, const void* target,
-	struct buffer* properties,
-	const uint8_t* record_start, const uint8_t* record_finish,
-	uint8_t verbose)
-{
-	if (NULL == properties ||
-		NULL == record_start || NULL == record_finish ||
-		record_finish <= record_start)
-	{
-		return 0;
-	}
-
-	static const uint8_t* name_str = (const uint8_t*)"name";
-	static const uint8_t name_length = 4;
-	static const uint8_t* value_str = (const uint8_t*)"value";
-	static const uint8_t value_length = 5;
-	/**/
-	static const uint8_t* property_attributes[] =
-	{
-		(const uint8_t*)"dynamic",
-		(const uint8_t*)"overwrite",
-		(const uint8_t*)"readonly",
-		(const uint8_t*)"failonerror",
-		(const uint8_t*)"verbose"
-	};
-	/**/
-	static const uint8_t property_attributes_lengths[] = { 7, 9, 8, 11, 7 };
-	/**/
-	struct range property_name;
-	struct range property_value;
-
-	if (!xml_get_attribute_value(record_start, record_finish, name_str, name_length, &property_name))
-	{
-		return 0;
-	}
-
-	if (!xml_get_attribute_value(record_start, record_finish, value_str, value_length, &property_value))
-	{
-		return 0;
-	}
-
-	uint8_t dynamic = 0;
-	uint8_t overwrite = 1;
-	uint8_t readonly = 0;
-	uint8_t fail_on_error = 1;
-	uint8_t verbose_local = 0;
-	/**/
-	uint8_t* value_pointers[5];
-	value_pointers[0] = &dynamic;
-	value_pointers[1] = &overwrite;
-	value_pointers[2] = &readonly;
-	value_pointers[3] = &fail_on_error;
-	value_pointers[4] = &verbose_local;
-
-	for (uint8_t i = 0; i < 5; ++i)
-	{
-		struct range attribute_value;
-
-		if (!xml_get_attribute_value(record_start, record_finish, property_attributes[i],
-									 property_attributes_lengths[i], &attribute_value))
-		{
-			continue;
-		}
-
-		if (!bool_parse(attribute_value.start, range_size(&attribute_value), value_pointers[i]))
-		{
-			return 0;
-		}
-	}
-
-	if (!verbose && verbose_local)
-	{
-		verbose = verbose_local;
-	}
-
-	return property_set_by_name(project, target, properties,
-								property_name.start, (uint8_t)(range_size(&property_name)),
-								property_value.start, range_size(&property_value),
-								property_value_is_byte_array,
-								dynamic, overwrite, readonly, verbose);
-	/*TODO: explain fail_on_error factor, if verbose set, and return true.
-	return fail_on_error ? returned : 1;*/
-}
-#endif
 
 static const uint8_t* property_attributes[] =
 {
@@ -617,13 +432,13 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 			   buffer_data(name, 0), (uint8_t)buffer_size(name),
 			   buffer_data(value, 0), buffer_size(value),
 			   dynamic, overwrite, readonly, verbose);
+	/*TODO: explain fail_on_error factor, if verbose set, and return true.
+	return fail_on_error ? returned : 1;*/
 }
 
-uint8_t property_append(const void* project, const void* target,
-						struct buffer* target_properties,
-						const struct buffer* properties, uint8_t verbose)
+uint8_t property_add_at_project(void* project, const struct buffer* properties, uint8_t verbose)
 {
-	if (NULL == target_properties || NULL == properties)
+	if (NULL == project || NULL == properties)
 	{
 		return 0;
 	}
@@ -635,9 +450,8 @@ uint8_t property_append(const void* project, const void* target,
 	{
 		const void* value = buffer_size(&prop->value) ? buffer_data(&prop->value, 0) : (void*)prop;
 
-		if (!property_new(project, target, target_properties, prop->name, prop->name_length,
-						  value, buffer_size(&prop->value),
-						  property_value_is_byte_array, prop->dynamic, prop->readonly, verbose))
+		if (!project_property_set_value(project, prop->name, prop->name_length,
+										value, buffer_size(&prop->value), prop->dynamic, 1, prop->readonly, verbose))
 		{
 			return 0;
 		}
@@ -684,9 +498,8 @@ uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_fin
 	return common_string_to_enum(name_start, name_finish, property_str, UNKNOWN_PROPERTY);
 }
 
-uint8_t property_exec_function(const void* project, const void* target,
-							   uint8_t function, const struct buffer* arguments,
-							   uint8_t arguments_count, struct buffer* output)
+uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
+							   uint8_t arguments_count, void** the_property, struct buffer* output)
 {
 	if (UNKNOWN_PROPERTY <= function ||
 		NULL == arguments ||
@@ -703,17 +516,9 @@ uint8_t property_exec_function(const void* project, const void* target,
 		return 0;
 	}
 
-	const ptrdiff_t length = range_size(&argument);
-
-	if (length < 1)
-	{
-		return 0;
-	}
-
-	struct property* prop = NULL;
-
-	const uint8_t is_exists = project_property_get_pointer(project, argument.start, (uint8_t)length,
-							  (void**)&prop);
+	const uint8_t is_exists = project_property_get_pointer(project,
+							  argument.start, (uint8_t)range_size(&argument), the_property);
+	struct property* prop = (struct property*)the_property;
 
 	if (function != property_exists_ && !is_exists)
 	{
@@ -726,7 +531,7 @@ uint8_t property_exec_function(const void* project, const void* target,
 			return bool_to_string(is_exists, output);
 
 		case property_get_value_:
-			return is_exists && property_get_by_pointer(project, target, prop, output);
+			return is_exists && property_get_by_pointer(prop, output);
 
 		case property_is_dynamic_:
 			return NULL != prop && bool_to_string(prop->dynamic, output);
@@ -740,4 +545,53 @@ uint8_t property_exec_function(const void* project, const void* target,
 	}
 
 	return 0;
+}
+
+uint8_t property_actualize_value(const void* project, const void* target,
+								 uint8_t property_function_id, void* the_property,
+								 ptrdiff_t size, struct buffer* return_of_function)
+{
+	if (property_get_value_ != property_function_id)
+	{
+		return 1;
+	}
+
+	uint8_t dynamic = 0;
+
+	if (!property_is_dynamic(the_property, &dynamic))
+	{
+		return 0;
+	}
+
+	if (!dynamic)
+	{
+		return 1;
+	}
+
+	struct buffer code_in_buffer;
+
+	SET_NULL_TO_BUFFER(code_in_buffer);
+
+	if (!buffer_append(&code_in_buffer, buffer_data(return_of_function, size),
+					   buffer_size(return_of_function) - size) ||
+		!buffer_resize(return_of_function, size))
+	{
+		buffer_release(&code_in_buffer);
+		return 0;
+	}
+
+	struct range code;
+
+	code.start = buffer_data(&code_in_buffer, 0);
+
+	code.finish = code.start + buffer_size(&code_in_buffer);
+
+	if (!interpreter_evaluate_code(project, target, &code, return_of_function))
+	{
+		buffer_release(&code_in_buffer);
+		return 0;
+	}
+
+	buffer_release(&code_in_buffer);
+	return 1;
 }

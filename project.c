@@ -21,6 +21,7 @@
 
 #include <string.h>
 
+#if 0
 static const uint8_t project_str[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't' };
 static const uint8_t project_name_property[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't', '.', 'n', 'a', 'm', 'e' };
 static const uint8_t project_default_property[] = { 'p', 'r', 'o', 'j', 'e', 'c', 't', '.', 'd', 'e', 'f', 'a', 'u', 'l', 't' };
@@ -40,6 +41,7 @@ static const uint8_t project_base_dir_tag[] = { 'b', 'a', 's', 'e', 'd', 'i', 'r
 #define PROJECT_NAME_TAG_LENGTH			COUNT_OF(project_name_tag)
 #define PROJECT_DEFAULT_TAG_LENGTH		COUNT_OF(project_default_tag)
 #define PROJECT_BASE_DIR_TAG_LENGTH		COUNT_OF(project_base_dir_tag)
+#endif
 
 struct project
 {
@@ -59,7 +61,7 @@ uint8_t project_property_get_pointer(const void* project,
 
 	/*TODO: validate project pointer.*/
 	const struct project* pro = (const struct project*)project;
-	return property_get_pointer(&pro->properties, property_name, property_name_length, the_property);
+	return property_exists(&pro->properties, property_name, property_name_length, the_property);
 }
 
 uint8_t project_property_set_value(void* project,
@@ -75,7 +77,7 @@ uint8_t project_property_set_value(void* project,
 
 	struct project* pro = (struct project*)project;
 
-	return property_set_by_name(project, NULL, &pro->properties, property_name, property_name_length,
+	return property_set_by_name(&pro->properties, property_name, property_name_length,
 								property_value, property_value_length, property_value_is_byte_array,
 								dynamic, overwrite, readonly, verbose);
 }
@@ -90,7 +92,7 @@ uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t 
 	const struct project* pro = (const struct project*)project;
 	return target_exists(&pro->targets, name, name_length);
 }
-
+#if 0
 uint8_t project_get_base_directory(const void* project, const void* target, struct buffer* base_directory)
 {
 	return property_get_by_name(project, target, project_base_dir_property, PROJECT_BASE_DIR_LENGTH,
@@ -144,7 +146,7 @@ uint8_t project_get_name(const void* project, const void* target, struct buffer*
 	return property_get_by_name(project, target, project_name_property, PROJECT_NAME_LENGTH,
 								project_name);
 }
-
+#endif
 static struct project gProject;
 
 uint8_t project_new(void** project)
@@ -161,22 +163,9 @@ uint8_t project_new(void** project)
 	(*project) = &gProject;
 	return 1;
 }
-
-uint8_t project_add_properties(void* project, const void* target, const void* properties,
-							   uint8_t verbose)
-{
-	if (NULL == project || NULL == properties)
-	{
-		return 0;
-	}
-
-	struct project* pro = (struct project*)project;
-
-	return property_append(project, target, &pro->properties, properties, verbose);
-}
-
+#if 0
 uint8_t project_set_property_from_attribute_if_such_exists(
-	struct project* project, const void* target,
+	struct project* project,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
 	const uint8_t* property_name, uint8_t property_name_length,
 	const uint8_t* attribute_name, uint8_t attribute_name_length,
@@ -201,7 +190,6 @@ uint8_t project_set_property_from_attribute_if_such_exists(
 								&attribute_value))
 	{
 		if (!property_set_by_name(
-				project, target,
 				&project->properties,
 				property_name, property_name_length,
 				attribute_value.start, range_size(&attribute_value),
@@ -465,7 +453,7 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* pr
 	buffer_release(&content);
 	return 1;
 }
-
+#endif
 void project_unload(void* project)
 {
 	if (NULL == project || &gProject != project)
@@ -505,8 +493,8 @@ uint8_t project_get_function(const uint8_t* name_start, const uint8_t* name_fini
 {
 	return common_string_to_enum(name_start, name_finish, project_function_str, UNKNOWN_PROJECT_FUNCTION);
 }
-
-uint8_t project_exec_function(const void* project, const void* target,
+#if 0
+uint8_t project_exec_function(const void* project,
 							  uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							  struct buffer* output)
 {
@@ -542,7 +530,7 @@ uint8_t project_exec_function(const void* project, const void* target,
 
 	return 0;
 }
-
+#endif
 uint8_t program_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							  struct buffer* output)
 {

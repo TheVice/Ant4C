@@ -255,27 +255,48 @@ uint8_t interpreter_get_value_for_argument(
 	if (range_is_null_or_empty(argument_area) ||
 		NULL == values)
 	{
+		buffer_release(&value);
 		return 0;
 	}
 
 	if (!string_trim(argument_area))
 	{
+		buffer_release(&value);
 		return 0;
 	}
 
 	if (!interpreter_evaluate_argument_area(project, target, argument_area, &value))
 	{
+		buffer_release(&value);
 		return 0;
 	}
 
 	if (!buffer_size(&value))
 	{
-		if (!property_get_by_name(project, target,
-								  argument_area->start, (uint8_t)range_size(argument_area), &value))
+		if (property_get_by_name(project, argument_area->start, (uint8_t)range_size(argument_area), &value))
 		{
-			if (!interpreter_get_value_from_quote(argument_area, argument_area) ||
+			void* the_property = NULL;
+
+			if (!project_property_get_pointer(project, argument_area->start, (uint8_t)range_size(argument_area),
+											  &the_property))
+			{
+				buffer_release(&value);
+				return 0;
+			}
+
+			if (!property_actualize_value(project, target, 1, the_property, 0, &value))
+			{
+				buffer_release(&value);
+				return 0;
+			}
+		}
+		else
+		{
+			if (!buffer_resize(&value, 0) ||
+				!interpreter_get_value_from_quote(argument_area, argument_area) ||
 				!buffer_append_data_from_range(&value, argument_area))
 			{
+				buffer_release(&value);
 				return 0;
 			}
 		}
@@ -524,7 +545,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 
 			break;
 
-		case project_unit:
+		/*TODO:case project_unit:
 			if (!project_exec_function(
 					project, target,
 					project_get_function(name.start, name.finish), &values, values_count, return_of_function))
@@ -533,19 +554,28 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				return 0;
 			}
 
-			break;
+			break;*/
 
 		case property_unit:
-			if (!property_exec_function(
-					project, target,
-					property_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
+		{
+			void* the_property = NULL;
+			const uint8_t property_function_id = property_get_function(name.start, name.finish);
+			ptrdiff_t size = buffer_size(return_of_function);
+
+			if (!property_exec_function(project, property_function_id, &values, values_count, &the_property,
+										return_of_function))
 			{
 				buffer_release_with_inner_buffers(&values);
 				return 0;
 			}
 
-			break;
+			if (!property_actualize_value(project, target, property_function_id, the_property, size,
+										  return_of_function))
+			{
+				return 0;
+			}
+		}
+		break;
 
 		case string_unit:
 			if (!string_exec_function(

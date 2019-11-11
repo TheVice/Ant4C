@@ -162,14 +162,15 @@ uint8_t argument_parser_free()
 		const uint8_t expected_readonly = property.node().attribute("readonly").as_bool();		\
 		/**/																					\
 		void* the_property = NULL;																\
-		ASSERT_TRUE(property_get_pointer(argument_parser_get_properties(),						\
-										 (const uint8_t*)name.data(), (uint8_t)name.size(), &the_property)) <<	\
-												 (INPUT) << std::endl <<						\
-												 buffer_free(&property_value) <<				\
-												 buffer_free(&command_arguments) <<				\
-												 argument_parser_free();						\
+		ASSERT_TRUE(property_exists(argument_parser_get_properties(),							\
+									(const uint8_t*)name.data(),								\
+									(uint8_t)name.size(), &the_property)) <<					\
+											(INPUT) << std::endl <<								\
+											buffer_free(&property_value) <<						\
+											buffer_free(&command_arguments) <<					\
+											argument_parser_free();								\
 		/**/																					\
-		ASSERT_TRUE(property_get_by_pointer(NULL, NULL, the_property, &property_value)) <<		\
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<					\
 				(INPUT) << std::endl <<															\
 				buffer_free(&property_value) <<													\
 				buffer_free(&command_arguments) <<												\

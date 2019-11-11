@@ -27,9 +27,9 @@ uint8_t file_exists_by_wchar_path(const wchar_t* path);
 uint8_t directory_exists(const uint8_t* path);
 #if 0
 directory_get_creation_time
-#endif
+/*#endif*/
 uint8_t directory_get_current_directory(const void* project, struct buffer* current_directory);
-#if 0
+/*#if 0*/
 directory_get_directory_root->path_root
 directory_get_last_access_time
 directory_get_last_write_time

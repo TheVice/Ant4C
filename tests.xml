@@ -1163,11 +1163,11 @@
       <output>is-path-rooted('/') => True</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
+    <!--interpreter_evaluate_code>
       <code>less('1', string::get-length(get-full-path('.'))) => ${math::less('1', string::get-length(path::get-full-path('.')))}</code>
       <output>less('1', string::get-length(get-full-path('.'))) => True</output>
       <return>1</return>
-    </interpreter_evaluate_code>
+    </interpreter_evaluate_code-->
     <interpreter_evaluate_code if="${platform::is-windows()}">
       <code>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => ${cygpath::get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection')}</code>
       <output>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => C:\PROGRA~1\WIF4A9~1</output>
@@ -2763,7 +2763,7 @@
     </project_load_from_build_file>
   </TestProject>
   <TestProperty>
-    <property_set_from_xml_tag_record>
+    <property_task>
       <properties>
         <property name="property_name" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" />
       </properties>
@@ -2773,7 +2773,7 @@
         <property name="property_name" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" />
         <property name="debug" value="true" dynamic="false" overwrite="true" readonly="false" failonerror="true" verbose="false" />
       </output_properties>
-    </property_set_from_xml_tag_record>
+    </property_task>
   </TestProperty>
   <TestStringUnit>
     <string_index_of_any>

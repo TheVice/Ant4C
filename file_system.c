@@ -116,7 +116,7 @@ uint8_t directory_exists(const uint8_t* path)
 	return 1;
 #endif
 }
-
+#if 0
 uint8_t directory_get_current_directory(const void* project, struct buffer* current_directory)
 {
 	if (!project_get_base_directory(project, NULL, current_directory))
@@ -126,7 +126,7 @@ uint8_t directory_get_current_directory(const void* project, struct buffer* curr
 
 	return 1;
 }
-
+#endif
 uint8_t directory_get_logical_drives(struct buffer* drives)
 {
 #if defined(_WIN32)

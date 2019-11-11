@@ -12,13 +12,14 @@ extern "C" {
 #include "conversion.h"
 #include "echo.h"
 #include "interpreter.h"
+#include "project.h"
 #include "property.h"
 #include "text_encoding.h"
 };
 
 #include <cassert>
-#include <utility>
 #include <ostream>
+#include <utility>
 #include <iostream>
 
 #ifdef _WIN32
@@ -208,39 +209,62 @@ std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::
 	return output;
 }
 
+uint8_t project_free(void* project)
+{
+	project_unload(project);
+	return 0;
+}
+
+void property_load_from_node(const pugi::xml_node& property,
+							 std::string& name, std::string& value,
+							 uint8_t& dynamic, uint8_t& overwrite,
+							 uint8_t& readonly, uint8_t& fail_on_error,
+							 uint8_t& verbose)
+{
+	name = property.attribute("name").as_string();
+	value = property.attribute("value").as_string();
+	dynamic = property.attribute("dynamic").as_bool();
+	const auto overwrite_attribute = property.attribute("overwrite");
+	overwrite = nullptr == overwrite_attribute ? 1 : overwrite_attribute.as_bool();
+	readonly = property.attribute("readonly").as_bool();
+	const auto fail_on_error_attribute = property.attribute("failonerror");
+	fail_on_error = nullptr == fail_on_error_attribute ? 1 : fail_on_error_attribute.as_bool();
+	verbose = property.attribute("verbose").as_bool();
+}
+
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties)
 {
 	for (const auto& property : node.node().select_nodes(path))
 	{
-		const std::string name(property.node().attribute("name").as_string());
+		std::string name;
+		std::string value;
+		uint8_t dynamic;
+		uint8_t overwrite;
+		uint8_t readonly;
+		uint8_t fail_on_error;
+		uint8_t verbose;
+		//
+		property_load_from_node(property.node(), name, value, dynamic,
+								overwrite, readonly, fail_on_error, verbose);
 
 		if (name.empty())
 		{
 			return 0;
 		}
 
-		const std::string value(property.node().attribute("value").as_string());
-		const uint8_t dynamic = property.node().attribute("dynamic").as_bool();
-		const auto overwrite_attribute = property.node().attribute("overwrite");
-		const uint8_t overwrite = NULL == overwrite_attribute ? 1 : overwrite_attribute.as_bool();
-		const uint8_t readonly = property.node().attribute("readonly").as_bool();
-		const auto failonerror_attribute = property.node().attribute("failonerror");
-		const uint8_t failonerror = NULL == failonerror_attribute ? 1 : failonerror_attribute.as_bool();
-		const uint8_t verbose = property.node().attribute("verbose").as_bool();
-		/**/
 		const uint8_t returned = property_set_by_name(
-									 NULL, NULL, properties,
+									 properties,
 									 (const uint8_t*)name.c_str(), (uint8_t)name.size(),
 									 (const uint8_t*)value.c_str(), value.size(),
 									 property_value_is_byte_array,
 									 dynamic, overwrite, readonly, verbose);
 
-		if (!returned && failonerror)
+		if (!returned && fail_on_error)
 		{
 			return 0;
 		}
 
-		if (!failonerror && !returned)
+		if (!fail_on_error && !returned)
 		{
 			static const std::string
 			warn_about_failonerror("Failed to set property. Continue as demanded at 'fail on error' option.");

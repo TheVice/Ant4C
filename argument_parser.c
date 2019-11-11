@@ -228,7 +228,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		else if ((10 < length && 0 == memcmp(argv[i], "-buildfile:", 11)) ||
 				 (2 < length && 0 == memcmp(argv[i], "/f:", 3)))
 		{
-			if (length < ('/' == argv[i][0] ? 4 : 12))
+			if (length < (size_t)('/' == argv[i][0] ? 4 : 12))
 			{
 				buffer_release(&build_files);
 				return 0;
@@ -243,7 +243,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		else if ((8 < length && 0 == memcmp(argv[i], "-logfile:", 9)) ||
 				 (2 < length && 0 == memcmp(argv[i], "-l:", 3)))
 		{
-			if (length < (':' == argv[i][2] ? 4 : 10))
+			if (length < (size_t)(':' == argv[i][2] ? 4 : 10))
 			{
 				buffer_release(&log_file);
 				return 0;
@@ -286,6 +286,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 			}
 
 			struct range key;
+
 			struct range value;
 
 			if (!argument_get_key_and_value(
@@ -298,7 +299,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 				return 0;
 			}
 
-			if (!property_set_by_name(NULL, NULL, &properties,
+			if (!property_set_by_name(&properties,
 									  key.start, (uint8_t)range_size(&key),
 									  value.start, range_size(&value),
 									  property_value_is_byte_array,

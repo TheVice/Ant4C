@@ -370,7 +370,7 @@ TEST(TestPath_, path_is_path_rooted)
 	}
 }
 
-TEST(TestPath_, path_exec_function_get_full_path)
+TEST(TestPath_, DISABLED_path_exec_function_get_full_path)
 {
 	/*get_full_path path::get-full-path('')*/
 	buffer output;

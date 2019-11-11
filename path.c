@@ -928,7 +928,7 @@ uint8_t path_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, path_function_str, UNKNOWN_PATH_FUNCTION);
 }
-
+#if 0
 uint8_t path_get_full_path_(const void* project, const struct range* path, struct buffer* output)
 {
 	const ptrdiff_t size = buffer_size(output);
@@ -960,11 +960,13 @@ uint8_t path_get_full_path_(const void* project, const struct range* path, struc
 		   path_get_full_path(base_dir.start, base_dir.finish,
 							  path->start, path->finish, output);
 }
-
+#endif
 uint8_t path_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
 						   uint8_t arguments_count,
 						   struct buffer* output)
 {
+	(void)project;
+
 	if (UNKNOWN_PATH_FUNCTION <= function ||
 		NULL == arguments ||
 		2 < arguments_count ||
@@ -1039,9 +1041,11 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 			return (1 == arguments_count) &&
 				   path_get_file_name_without_extension(argument1.start, argument1.finish, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
+#if 0
 
 		case get_full_path:
 			return (1 == arguments_count) && path_get_full_path_(project, &argument1, output);
+#endif
 
 		case get_path_root:
 			return (1 == arguments_count) &&
