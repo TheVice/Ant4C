@@ -156,9 +156,9 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 
 		if (0 < mode)
 		{
-			mode = result;
+			uint8_t previous_result = result;
 			result = (_O_U8TEXT == _setmode(_fileno(file_stream), mode));
-			result = result & mode;
+			result = result & previous_result;
 		}
 
 #endif

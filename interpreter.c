@@ -545,20 +545,33 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 
 			break;
 
-		/*TODO:case project_unit:
+		case project_unit:
+		{
+			static const uint8_t* property_get_value = (const uint8_t*)"get-value";
+			const void* the_property = NULL;
+			const uint8_t property_function_id = property_get_function(property_get_value, property_get_value + 9);
+			ptrdiff_t size = buffer_size(return_of_function);
+
 			if (!project_exec_function(
-					project, target,
-					project_get_function(name.start, name.finish), &values, values_count, return_of_function))
+					project,
+					project_get_function(name.start, name.finish), &values, values_count, &the_property, return_of_function))
 			{
 				buffer_release_with_inner_buffers(&values);
 				return 0;
 			}
 
-			break;*/
+			if (!property_actualize_value(project, target, property_function_id, the_property, size,
+										  return_of_function))
+			{
+				buffer_release_with_inner_buffers(&values);
+				return 0;
+			}
+		}
+		break;
 
 		case property_unit:
 		{
-			void* the_property = NULL;
+			const void* the_property = NULL;
 			const uint8_t property_function_id = property_get_function(name.start, name.finish);
 			ptrdiff_t size = buffer_size(return_of_function);
 
@@ -572,6 +585,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			if (!property_actualize_value(project, target, property_function_id, the_property, size,
 										  return_of_function))
 			{
+				buffer_release_with_inner_buffers(&values);
 				return 0;
 			}
 		}
@@ -848,6 +862,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"move",
 	(const uint8_t*)"ndoc",
 	(const uint8_t*)"nunit2",
+	(const uint8_t*)"project",
 	(const uint8_t*)"property",
 	(const uint8_t*)"rc",
 	(const uint8_t*)"readregistry",
@@ -916,6 +931,7 @@ enum interpreter_task
 	move_task,
 	ndoc_task,
 	nunit2_task,
+	project_task,
 	property_task,
 	rc_task,
 	readregistry_task,
@@ -1099,6 +1115,25 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 #endif
 
+		case project_task:
+			if (!project_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = project_evaluate_task(project, &task_arguments);
+			break;
+
 		case property_task:
 			if (!property_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
 					&task_attributes_count, &task_arguments))
@@ -1139,7 +1174,8 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 					struct range value;
 
 					if (!xml_get_attribute_value(attributes_start, attributes_finish,
-												 task_attributes[task_attributes_count - 1], task_attributes_lengths[task_attributes_count - 1],
+												 task_attributes[task_attributes_count - 1],
+												 task_attributes_lengths[task_attributes_count - 1],
 												 &value))
 					{
 						task_attributes_count = 0;

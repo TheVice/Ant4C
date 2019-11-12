@@ -2743,13 +2743,26 @@
       <return>1</return>
       <name>discriminant</name>
     </project>
-    <!--project_load_from_build_file>
+    <project_load_from_content>
+      <content>
+        <![CDATA[
+        <project name="project-properties" default="some_target">
+          <echo message="Default target - ${project::get-default-target()}." level="None" />
+          <echo message="Project name - ${project::get-name()}." level="None" />
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>project-properties</name>
+      <default>some_target</default>
+    </project_load_from_content>
+    <project_load_from_build_file>
       <content>
         <![CDATA[
         ]]>
       </content>
       <return>0</return>
-    </project_load_from_build_file-->
+    </project_load_from_build_file>
     <project_load_from_build_file>
       <content>
         <![CDATA[
@@ -2760,6 +2773,22 @@
         ]]>
       </content>
       <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <content>
+        <![CDATA[
+        <project name="project-properties" default="some_target">
+          <echo message="Base directory - '${project::get-base-directory()}'." level="Info" />
+          <echo message="Build file - '${project::get-buildfile-path()}'." level="Info" />
+          <!--echo message="Build file uri - '${project::get-buildfile-uri()}'." level="Info" /-->
+          <echo message="Default target - '${project::get-default-target()}'." level="Info" />
+          <echo message="Project name - '${project::get-name()}'." level="Info" />
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>project-properties</name>
+      <default>some_target</default>
     </project_load_from_build_file>
   </TestProject>
   <TestProperty>

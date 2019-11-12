@@ -277,7 +277,7 @@ uint8_t property_set_by_pointer(void* the_property,
 				break;
 
 			case property_value_is_integer:
-				if (!int64_to_string(*((int64_t*)value), &prop->value))
+				if (!int64_to_string(*((const int64_t*)value), &prop->value))
 				{
 					return 0;
 				}
@@ -285,7 +285,7 @@ uint8_t property_set_by_pointer(void* the_property,
 				break;
 
 			case property_value_is_double:
-				if (!double_to_string(*((double*)value), &prop->value))
+				if (!double_to_string(*((const double*)value), &prop->value))
 				{
 					return 0;
 				}
@@ -443,6 +443,7 @@ uint8_t property_add_at_project(void* project, const struct buffer* properties, 
 		return 0;
 	}
 
+	static const uint8_t overwrite = 1;
 	ptrdiff_t i = 0;
 	struct property* prop = NULL;
 
@@ -451,7 +452,8 @@ uint8_t property_add_at_project(void* project, const struct buffer* properties, 
 		const void* value = buffer_size(&prop->value) ? buffer_data(&prop->value, 0) : (void*)prop;
 
 		if (!project_property_set_value(project, prop->name, prop->name_length,
-										value, buffer_size(&prop->value), prop->dynamic, 1, prop->readonly, verbose))
+										value, buffer_size(&prop->value), prop->dynamic,
+										overwrite, prop->readonly, verbose))
 		{
 			return 0;
 		}
@@ -499,11 +501,12 @@ uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_fin
 }
 
 uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
-							   uint8_t arguments_count, void** the_property, struct buffer* output)
+							   uint8_t arguments_count, const void** the_property, struct buffer* output)
 {
 	if (UNKNOWN_PROPERTY <= function ||
 		NULL == arguments ||
 		1 != arguments_count ||
+		NULL == the_property ||
 		NULL == output)
 	{
 		return 0;
@@ -516,9 +519,11 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 		return 0;
 	}
 
+	void* non_const_prop = NULL;
 	const uint8_t is_exists = project_property_get_pointer(project,
-							  argument.start, (uint8_t)range_size(&argument), the_property);
-	struct property* prop = (struct property*)the_property;
+							  argument.start, (uint8_t)range_size(&argument), &non_const_prop);
+	(*the_property) = is_exists ? non_const_prop : NULL;
+	const struct property* prop = (const struct property*)(*the_property);
 
 	if (function != property_exists_ && !is_exists)
 	{
@@ -548,7 +553,7 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 }
 
 uint8_t property_actualize_value(const void* project, const void* target,
-								 uint8_t property_function_id, void* the_property,
+								 uint8_t property_function_id, const void* the_property,
 								 ptrdiff_t size, struct buffer* return_of_function)
 {
 	if (property_get_value_ != property_function_id)

@@ -21,7 +21,7 @@ extern "C" {
 class TestProject : public TestsBaseXml
 {
 };
-#if 0
+
 TEST(TestProject_, project_new)
 {
 	static const uint8_t expected_return = 0;
@@ -31,120 +31,66 @@ TEST(TestProject_, project_new)
 	ASSERT_TRUE(project_new(&project));
 	ASSERT_NE(nullptr, project);
 	//
-	struct buffer output;
-	SET_NULL_TO_BUFFER(output);
+	const void* the_property = NULL;
 	//
-	uint8_t returned = project_get_base_directory(project, NULL, &output);
+	the_property = NULL;
+	uint8_t returned = project_get_base_directory(project, &the_property);
+	ASSERT_EQ(expected_return, returned);
+	//
+	the_property = NULL;
+	returned = project_get_buildfile_path(project, &the_property);
+	ASSERT_EQ(expected_return, returned);
+	//
+	/*returned = project_get_buildfile_uri(project, NULL, &output);
 	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
+	ASSERT_STREQ("file:///", buffer_to_string(&output).c_str()) << buffer_free(&output);*/
 	//
-	returned = project_get_buildfile_path(project, NULL, &output);
-	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
+	the_property = NULL;
+	returned = project_get_default_target(project, &the_property);
+	ASSERT_EQ(expected_return, returned);
 	//
-	returned = project_get_buildfile_uri(project, NULL, &output);
-	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_STREQ("file:///", buffer_to_string(&output).c_str()) << buffer_free(&output);
+	the_property = NULL;
+	returned = project_get_name(project, &the_property);
+	ASSERT_EQ(expected_return, returned);
 	//
-	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-	//
-	returned = project_get_default_target(project, NULL, &output);
-	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
-	//
-	returned = project_get_name(project, NULL, &output);
-	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
-	//
-	buffer_release(&output);
-	//
-	void* the_property = NULL;
-	ASSERT_FALSE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15, &the_property));
-	ASSERT_EQ(nullptr, the_property);
+	void* the_non_const_property = NULL;
+	ASSERT_FALSE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15,
+				 &the_non_const_property));
+	ASSERT_EQ(nullptr, the_non_const_property);
 	//
 	ASSERT_TRUE(project_property_set_value(project,
 										   (const uint8_t*)"program.version", 15,
 										   (const uint8_t*)"YYYY.MM.DD.?", 12,
 										   0, 0, 1, verbose));
 	//
-	ASSERT_TRUE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15, &the_property));
-	ASSERT_NE(nullptr, the_property);
+	ASSERT_TRUE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15,
+				&the_non_const_property));
+	ASSERT_NE(nullptr, the_non_const_property);
 	the_property = NULL;
+	the_non_const_property = NULL;
 	//
 	project_unload(project);
 }
-
+#if 0
 TEST(TestProject_, project_property_set_value)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-	/*TODO: for (const auto& node : nodes)
-	{*/
-	void* project = NULL;
-	ASSERT_TRUE(project_new(&project)) << buffer_free(&output);
-	ASSERT_NE(nullptr, project) << buffer_free(&output);
-	//
-	const char* expected_return_1 = "7";
-	const char* expected_return_2 = "7 -1";
-	uint8_t verbose = 0;
-	//
-	ASSERT_TRUE(project_property_set_value(project,
-										   (const uint8_t*)"my_property", 11,
-										   (const uint8_t*)"${math::truncate(math::addition('3', '4'))}", 43,
-										   0, 0, 0, verbose)) <<
-												   buffer_free(&output) << project_free(project);
-	//
-	void* the_property = NULL;
-	ASSERT_TRUE(project_property_get_pointer(project, (const uint8_t*)"my_property", 11, &the_property)) <<
-			buffer_free(&output) << project_free(project);
-	//
-	ASSERT_TRUE(buffer_resize(&output, 0)) <<
-										   buffer_free(&output) << project_free(project);
-	ASSERT_TRUE(property_get_by_pointer(project, NULL, the_property, &output)) <<
-			buffer_free(&output) << project_free(project);
-	//
-	ASSERT_STREQ(expected_return_1, buffer_to_string(&output).c_str()) <<
-			buffer_free(&output) << project_free(project);
-	//
-	ASSERT_TRUE(property_set_by_pointer(project, NULL, the_property,
-										(const uint8_t*)"${property::get-value('my_property')} ${math::truncate(math::addition('3', '-4'))}", 82,
-										property_value_is_byte_array, 0, 0, verbose)) <<
-												buffer_free(&output) << project_free(project);
-	//
-	ASSERT_TRUE(buffer_resize(&output, 0)) <<
-										   buffer_free(&output) << project_free(project);
-	ASSERT_TRUE(property_get_by_pointer(project, NULL, the_property, &output)) <<
-			buffer_free(&output) << project_free(project);
-	//
-	ASSERT_STREQ(expected_return_2, buffer_to_string(&output).c_str()) <<
-			buffer_free(&output) << project_free(project);
-	//
-	project_unload(project);
-	//}
-	buffer_release(&output);
 }
-
+#endif
 TEST_F(TestProject, project_load_from_content)
 {
-#if defined(_WIN32)
-	static const std::string base_dir_str("A:\\");
-#else
-	static const std::string base_dir_str("/");
-#endif
-	static const range base_dir = string_to_range(base_dir_str);
-	//
-	const std::string base_directory = base_dir_str;
-	//
 	struct buffer output;
 	SET_NULL_TO_BUFFER(output);
 
 	for (const auto& node : nodes)
 	{
+		const void* the_property = NULL;
+		//
 		const std::string content(node.node().select_node("content").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
+		const std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
 		const uint8_t verbose = 0;
 		//TODO: const auto targets = node.node().select_nodes("target");
 		//
@@ -157,48 +103,40 @@ TEST_F(TestProject, project_load_from_content)
 				<< buffer_free(&output) << project_free(project);
 		//
 		const uint8_t returned = project_load_from_content(content_in_range.start, content_in_range.finish,
-								 base_dir.start, range_size(&base_dir), project, verbose);
+								 project, verbose);
 		ASSERT_EQ(expected_return, returned)
-				<< buffer_free(&output) << project_free(project);
+				<< content << std::endl << buffer_free(&output) << project_free(project);
 
 		if (returned)
 		{
-			ASSERT_TRUE(buffer_resize(&output, 0))
+			the_property = NULL;
+			ASSERT_NE(expected_base_directory.empty(), project_get_base_directory(project, &the_property))
 					<< buffer_free(&output) << project_free(project);
-			ASSERT_EQ(!base_directory.empty(), project_get_base_directory(project, NULL, &output))
-					<< buffer_free(&output) << project_free(project);
-			const std::string returned_base_directory(buffer_to_string(&output));
-			ASSERT_EQ(base_directory, returned_base_directory)
+			const std::string returned_base_directory(property_to_string(the_property, &output));
+			ASSERT_EQ(expected_base_directory, returned_base_directory)
 					<< buffer_free(&output) << project_free(project);
 		}
 
-		ASSERT_TRUE(buffer_resize(&output, 0))
-				<< buffer_free(&output) << project_free(project);
-		ASSERT_FALSE(project_get_buildfile_path(project, NULL, &output))
-				<< buffer_free(&output) << project_free(project);
-		ASSERT_FALSE(buffer_size(&output))
+		the_property = NULL;
+		ASSERT_FALSE(project_get_buildfile_path(project, &the_property))
 				<< buffer_free(&output) << project_free(project);
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0))
-				<< buffer_free(&output) << project_free(project);
-		ASSERT_FALSE(project_get_buildfile_uri(project, NULL, &output))
+		/*ASSERT_FALSE(project_get_buildfile_uri(project, NULL, &output))
 				<< buffer_free(&output) << project_free(project);
 		ASSERT_STREQ("file:///", buffer_to_string(&output).c_str())
-				<< buffer_free(&output) << project_free(project);
+				<< buffer_free(&output) << project_free(project);*/
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0))
+		the_property = NULL;
+		ASSERT_EQ(!expected_name.empty(), project_get_name(project, &the_property))
 				<< buffer_free(&output) << project_free(project);
-		ASSERT_EQ(!expected_name.empty(), project_get_name(project, NULL, &output))
-				<< buffer_free(&output) << project_free(project);
-		const std::string returned_name(buffer_to_string(&output));
+		const std::string returned_name(property_to_string(the_property, &output));
 		ASSERT_EQ(expected_name, returned_name)
 				<< buffer_free(&output) << project_free(project);
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0))
+		the_property = NULL;
+		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(project, &the_property))
 				<< buffer_free(&output) << project_free(project);
-		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(project, NULL, &output))
-				<< buffer_free(&output) << project_free(project);
-		const std::string returned_default_target(buffer_to_string(&output));
+		const std::string returned_default_target(property_to_string(the_property, &output));
 		ASSERT_EQ(expected_default_target, returned_default_target)
 				<< buffer_free(&output) << project_free(project);
 		/*TODO: for (const auto& target : targets)
@@ -253,9 +191,7 @@ TEST_F(TestProject, project_load_from_build_file)
 	buffer_release(&tmp);
 }
 #endif
-#endif
 #if 0
-project_add_properties
 project_exec_function
 #endif
 TEST(TestProgram, program_exec_function)
@@ -272,4 +208,34 @@ TEST(TestProgram, program_exec_function)
 	ASSERT_LT(0, buffer_size(&output)) << buffer_free(&output);
 	//
 	buffer_release(&output);
+}
+
+TEST(TestProject_, project_get_attributes_and_arguments_for_task)
+{
+	buffer task_arguments;
+	SET_NULL_TO_BUFFER(task_arguments);
+	/**/
+	const uint8_t** task_attributes = NULL;
+	const uint8_t* task_attributes_lengths = NULL;
+	uint8_t task_attributes_count = 0;
+	/**/
+	const uint8_t returned = project_get_attributes_and_arguments_for_task(
+								 &task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments);
+	/**/
+	ASSERT_TRUE(returned) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_NE(nullptr, task_attributes) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_NE(nullptr, task_attributes_lengths) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_EQ(3, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_LT(0, buffer_size(&task_arguments)) << buffer_free_with_inner_buffers(&task_arguments);
+	/**/
+	task_attributes_count = 0;
+	buffer* argument = NULL;
+
+	while (NULL != (argument = buffer_buffer_data(&task_arguments, task_attributes_count++)))
+	{
+		ASSERT_FALSE(buffer_size(argument)) << buffer_free_with_inner_buffers(&task_arguments);
+	}
+
+	ASSERT_EQ(4, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
+	buffer_release_with_inner_buffers(&task_arguments);
 }
