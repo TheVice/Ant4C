@@ -277,8 +277,8 @@ uint8_t interpreter_get_value_for_argument(
 		{
 			void* the_property = NULL;
 
-			if (!project_property_get_pointer(project, argument_area->start, (uint8_t)range_size(argument_area),
-											  &the_property))
+			if (!project_property_exists(project, argument_area->start, (uint8_t)range_size(argument_area),
+										 &the_property))
 			{
 				buffer_release(&value);
 				return 0;

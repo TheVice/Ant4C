@@ -152,15 +152,22 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 
 #if defined(_WIN32)
-		buffer_release(&new_message);
 
 		if (0 < mode)
 		{
 			uint8_t previous_result = result;
+			result = (0 == fflush(file_stream));
+			previous_result = previous_result & result;
+#if defined(_MSC_VER)
 			result = (_O_U8TEXT == _setmode(_fileno(file_stream), mode));
+#else
+			mode = _setmode(_fileno(file_stream), mode);
+			result = (_O_U8TEXT == mode || -1 != mode);
+#endif
 			result = result & previous_result;
 		}
 
+		buffer_release(&new_message);
 #endif
 	}
 

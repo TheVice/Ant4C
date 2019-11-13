@@ -13,9 +13,9 @@
 
 struct buffer;
 
-uint8_t project_property_get_pointer(const void* project,
-									 const uint8_t* property_name, uint8_t property_name_length,
-									 void** the_property);
+uint8_t project_property_exists(const void* project,
+								const uint8_t* property_name, uint8_t property_name_length,
+								void** the_property);
 uint8_t project_property_set_value(void* project,
 								   const uint8_t* property_name, uint8_t property_name_length,
 								   const uint8_t* property_value, ptrdiff_t property_value_length,
@@ -26,7 +26,7 @@ uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t 
 
 uint8_t project_get_base_directory(const void* project, const void** the_property);
 uint8_t project_get_buildfile_path(const void* project, const void** the_property);
-/*uint8_t project_get_buildfile_uri(const void* project, const void* target, struct buffer* build_file_uri);*/
+uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build_file_uri);
 uint8_t project_get_default_target(const void* project, const void** the_property);
 uint8_t project_get_name(const void* project, const void** the_property);
 

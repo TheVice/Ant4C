@@ -41,9 +41,12 @@ TEST(TestProject_, project_new)
 	returned = project_get_buildfile_path(project, &the_property);
 	ASSERT_EQ(expected_return, returned);
 	//
-	/*returned = project_get_buildfile_uri(project, NULL, &output);
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+	returned = project_get_buildfile_uri(the_property, &output);
 	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_STREQ("file:///", buffer_to_string(&output).c_str()) << buffer_free(&output);*/
+	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
+	buffer_release(&output);
 	//
 	the_property = NULL;
 	returned = project_get_default_target(project, &the_property);
@@ -54,8 +57,8 @@ TEST(TestProject_, project_new)
 	ASSERT_EQ(expected_return, returned);
 	//
 	void* the_non_const_property = NULL;
-	ASSERT_FALSE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15,
-				 &the_non_const_property));
+	ASSERT_FALSE(project_property_exists(project, (const uint8_t*)"program.version", 15,
+										 &the_non_const_property));
 	ASSERT_EQ(nullptr, the_non_const_property);
 	//
 	ASSERT_TRUE(project_property_set_value(project,
@@ -63,8 +66,8 @@ TEST(TestProject_, project_new)
 										   (const uint8_t*)"YYYY.MM.DD.?", 12,
 										   0, 0, 1, verbose));
 	//
-	ASSERT_TRUE(project_property_get_pointer(project, (const uint8_t*)"program.version", 15,
-				&the_non_const_property));
+	ASSERT_TRUE(project_property_exists(project, (const uint8_t*)"program.version", 15,
+										&the_non_const_property));
 	ASSERT_NE(nullptr, the_non_const_property);
 	the_property = NULL;
 	the_non_const_property = NULL;
@@ -121,10 +124,10 @@ TEST_F(TestProject, project_load_from_content)
 		ASSERT_FALSE(project_get_buildfile_path(project, &the_property))
 				<< buffer_free(&output) << project_free(project);
 		//
-		/*ASSERT_FALSE(project_get_buildfile_uri(project, NULL, &output))
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output) << project_free(project);
+		ASSERT_FALSE(project_get_buildfile_uri(the_property, &output))
 				<< buffer_free(&output) << project_free(project);
-		ASSERT_STREQ("file:///", buffer_to_string(&output).c_str())
-				<< buffer_free(&output) << project_free(project);*/
+		ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output) << project_free(project);
 		//
 		the_property = NULL;
 		ASSERT_EQ(!expected_name.empty(), project_get_name(project, &the_property))
@@ -154,7 +157,7 @@ TEST_F(TestProject, project_load_from_content)
 
 	buffer_release(&output);
 }
-#if !defined(_WIN32)
+
 TEST_F(TestProject, project_load_from_build_file)
 {
 	struct buffer tmp;
@@ -190,7 +193,6 @@ TEST_F(TestProject, project_load_from_build_file)
 
 	buffer_release(&tmp);
 }
-#endif
 #if 0
 project_exec_function
 #endif
@@ -199,11 +201,13 @@ TEST(TestProgram, program_exec_function)
 	struct buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
-	ASSERT_FALSE(program_exec_function(5,/*version_ TODO:${program::version()}*/
+	const uint8_t* version = (const uint8_t*)"version";
+	ASSERT_FALSE(program_exec_function(project_get_function(version, version + 7),
 									   (const buffer*)&program_exec_function, 0, &output)) << buffer_free(&output);
 	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
 	//
-	ASSERT_TRUE(program_exec_function(6,/*current_directory TODO:${program::current-directory()}*/
+	const uint8_t* current_directory = (const uint8_t*)"current-directory";
+	ASSERT_TRUE(program_exec_function(project_get_function(current_directory, current_directory + 17),
 									  (const buffer*)&program_exec_function, 0, &output)) << buffer_free(&output);
 	ASSERT_LT(0, buffer_size(&output)) << buffer_free(&output);
 	//

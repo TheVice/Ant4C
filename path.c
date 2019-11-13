@@ -14,6 +14,7 @@
 #include "project.h"
 #include "range.h"
 #include "string_unit.h"
+#include "text_encoding.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -533,52 +534,46 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	}
 
 #if defined(_WIN32)
-#if 0
 	const ptrdiff_t size = buffer_size(temp_path);
 
-	if (!buffer_append_wchar_t(temp_path, NULL, 2))
+	if (!buffer_append(temp_path, NULL, 2 * sizeof(uint32_t) * FILENAME_MAX))
 	{
 		return 0;
 	}
 
-	wchar_t* w = (wchar_t*)buffer_data(temp_path, size);
-	DWORD length = GetTempPathW(2, w);
+	wchar_t* pathW = (wchar_t*)buffer_data(temp_path, size);
+	DWORD length = GetTempPathW(sizeof(wchar_t), pathW);
 
-	if (length < 3)
+	if (length < sizeof(wchar_t) + 1)
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(temp_path, NULL, length) ||
-		!buffer_append_wchar_t(temp_path, NULL, length))
+	if (!buffer_resize(temp_path, size) ||
+		!buffer_append(temp_path, NULL, 2 * sizeof(uint32_t) * length))
 	{
 		return 0;
 	}
 
-	uint8_t* m = buffer_data(temp_path, size);
-	w = (wchar_t*)buffer_data(temp_path, size + length);
-	length = GetTempPathW(length, w);
+	pathW = (wchar_t*)buffer_data(temp_path,
+								  buffer_size(temp_path) - sizeof(wchar_t) * (sizeof(wchar_t) + length));
+	length = GetTempPathW(length, pathW);
 
-	if (!length || !buffer_resize(temp_path, size + length))
+	if (!buffer_resize(temp_path, size) ||
+		!text_encoding_UTF16LE_to_UTF8(pathW, pathW + length, temp_path))
 	{
 		return 0;
 	}
 
-	WIDE2MULTI(w, m, length);
+	struct range directory;
 
-	if (length < 1)
+	if (!path_get_directory_name(buffer_data(temp_path, size), buffer_data(temp_path, 0) + buffer_size(temp_path),
+								 &directory))
 	{
 		return 0;
 	}
 
-	ptrdiff_t length_ = buffer_size(temp_path) - size;
-	const uint8_t* m_ = find_any_symbol_like_or_not_like_that(m + length_ - 1, m, &delimiter, 1, 0, -1);
-	m_ = find_any_symbol_like_or_not_like_that(m_, m + length_, &delimiter, 1, 1, 1);
-	length_ = m_ - m;
-	return buffer_resize(temp_path, size + length_);
-#endif
-	/*TODO:*/
-	return 0;
+	return buffer_resize(temp_path, size + range_size(&directory));
 #else
 	return common_append_string_to_buffer((const uint8_t*)"/tmp", temp_path);
 #endif

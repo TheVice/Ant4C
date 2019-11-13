@@ -1111,9 +1111,9 @@ uint8_t exec_get_arguments_for_task(
 
 			if (!project_property_set_value(project, buffer_char_data(argument_value, 0),
 											(uint8_t)buffer_size(argument_value), NULL, 0, 0, 1, 0, verbose) ||
-				!project_property_get_pointer(project, buffer_char_data(argument_value, 0),
-											  (uint8_t)buffer_size(argument_value),
-											  &the_property))
+				!project_property_exists(project, buffer_char_data(argument_value, 0),
+										 (uint8_t)buffer_size(argument_value),
+										 &the_property))
 			{
 				return 0;
 			}

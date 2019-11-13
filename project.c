@@ -55,9 +55,9 @@ static const uint8_t project_properties_lengths[] = { 12, 15, 15, 17 };
 #define BASE_DIR_POSITION		2
 #define BUILD_FILE_POSITION		3
 
-uint8_t project_property_get_pointer(const void* project,
-									 const uint8_t* property_name, uint8_t property_name_length,
-									 void** the_property)
+uint8_t project_property_exists(const void* project,
+								const uint8_t* property_name, uint8_t property_name_length,
+								void** the_property)
 {
 	if (NULL == project || NULL == property_name || 0 == property_name_length)
 	{
@@ -106,7 +106,7 @@ uint8_t project_get_base_directory(const void* project, const void** the_propert
 	}
 
 	void* prop = NULL;
-	const uint8_t returned = project_property_get_pointer(project,
+	const uint8_t returned = project_property_exists(project,
 							 project_properties[BASE_DIR_POSITION],
 							 project_properties_lengths[BASE_DIR_POSITION], &prop);
 	(*the_property) = returned ? prop : NULL;
@@ -121,43 +121,55 @@ uint8_t project_get_buildfile_path(const void* project, const void** the_propert
 	}
 
 	void* prop = NULL;
-	const uint8_t returned = project_property_get_pointer(project,
+	const uint8_t returned = project_property_exists(project,
 							 project_properties[BUILD_FILE_POSITION],
 							 project_properties_lengths[BUILD_FILE_POSITION], &prop);
 	(*the_property) = returned ? prop : NULL;
 	return returned;
 }
-#if 0
-uint8_t project_get_buildfile_uri(const void* project, const void* target, struct buffer* build_file_uri)
+
+uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build_file_uri)
 {
-	if (NULL == project || NULL == build_file_uri)
+	if (NULL == the_property || NULL == build_file_uri)
 	{
 		return 0;
 	}
 
-#if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(build_file_uri);
-#endif
 
 	if (!common_append_string_to_buffer((const uint8_t*)"file:///", build_file_uri))
 	{
 		return 0;
 	}
 
-	if (!project_get_buildfile_path(project, target, build_file_uri))
+	if (!property_get_by_pointer(the_property, build_file_uri))
 	{
 		return 0;
 	}
 
-#if defined(_WIN32)
 	uint8_t* path_start = buffer_data(build_file_uri, size);
-	uint8_t* path_finish = (buffer_data(build_file_uri, 0) + buffer_size(build_file_uri));
-	return cygpath_get_unix_path(path_start, path_finish);
-#else
+	uint8_t* path_finish = buffer_data(build_file_uri, 0) + buffer_size(build_file_uri);
+#if defined(_WIN32)
+
+	if (!cygpath_get_unix_path(path_start, path_finish))
+	{
+		return 0;
+	}
+
+#endif
+
+	if (path_start + 8 < path_finish && '/' == *(path_start + 8))
+	{
+		path_start += 8;
+		const ptrdiff_t length = path_finish - path_start;
+		path_finish = path_start + 1;
+		MEM_CPY(path_start, path_finish, length);
+		return buffer_resize(build_file_uri, buffer_size(build_file_uri) - 1);
+	}
+
 	return 1;
-#endif
 }
-#endif
+
 uint8_t project_get_default_target(const void* project, const void** the_property)
 {
 	if (NULL == the_property)
@@ -166,7 +178,7 @@ uint8_t project_get_default_target(const void* project, const void** the_propert
 	}
 
 	void* prop = NULL;
-	const uint8_t returned = project_property_get_pointer(project,
+	const uint8_t returned = project_property_exists(project,
 							 project_properties[DEFAULT_POSITION],
 							 project_properties_lengths[DEFAULT_POSITION], &prop);
 	(*the_property) = returned ? prop : NULL;
@@ -181,7 +193,7 @@ uint8_t project_get_name(const void* project, const void** the_property)
 	}
 
 	void* prop = NULL;
-	const uint8_t returned = project_property_get_pointer(project,
+	const uint8_t returned = project_property_exists(project,
 							 project_properties[NAME_POSITION],
 							 project_properties_lengths[NAME_POSITION], &prop);
 	(*the_property) = returned ? prop : NULL;
@@ -338,7 +350,7 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* pr
 	if (!project_property_set_value(project,
 									project_properties[BUILD_FILE_POSITION],
 									project_properties_lengths[BUILD_FILE_POSITION],
-									buffer_data(&content, 0), path_length,
+									buffer_data(&content, 0), path_length - 1,
 									0, 1, 1, verbose))
 	{
 		buffer_release(&content);
@@ -520,8 +532,8 @@ uint8_t project_exec_function(const void* project,
 		case get_buildfile_path:
 			return project_get_buildfile_path(project, the_property) && property_get_by_pointer(*the_property, output);
 
-		/*case get_buildfile_uri:
-			return project_get_buildfile_uri(project, target, output);*/
+		case get_buildfile_uri:
+			return project_get_buildfile_path(project, the_property) && project_get_buildfile_uri(*the_property, output);
 
 		case get_default_target:
 			return project_get_default_target(project, the_property) && property_get_by_pointer(*the_property, output);

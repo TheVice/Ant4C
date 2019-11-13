@@ -117,7 +117,7 @@ uint8_t property_get_by_name(const void* project, const uint8_t* property_name, 
 
 	void* the_property = NULL;
 
-	if (!project_property_get_pointer(project, property_name, property_name_length, &the_property))
+	if (!project_property_exists(project, property_name, property_name_length, &the_property))
 	{
 		return 0;
 	}
@@ -520,7 +520,7 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 	}
 
 	void* non_const_prop = NULL;
-	const uint8_t is_exists = project_property_get_pointer(project,
+	const uint8_t is_exists = project_property_exists(project,
 							  argument.start, (uint8_t)range_size(&argument), &non_const_prop);
 	(*the_property) = is_exists ? non_const_prop : NULL;
 	const struct property* prop = (const struct property*)(*the_property);

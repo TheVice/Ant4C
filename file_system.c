@@ -12,6 +12,7 @@
 #include "project.h"
 #include "range.h"
 #include "string_unit.h"
+#include "text_encoding.h"
 
 #if defined(_WIN32)
 #include <stdio.h>
@@ -45,10 +46,6 @@ uint8_t directory_exists_by_wchar_path(const wchar_t* path)
 
 uint8_t path_to_pathW(const uint8_t* path, struct buffer* pathW)
 {
-	(void)path;
-	(void)pathW;
-#if 0
-
 	if (NULL == path ||
 		'\0' == *path ||
 		NULL == pathW)
@@ -56,7 +53,7 @@ uint8_t path_to_pathW(const uint8_t* path, struct buffer* pathW)
 		return 0;
 	}
 
-	int32_t length = common_count_bytes_until(path, 0);
+	const ptrdiff_t length = common_count_bytes_until(path, 0);
 
 	if (path_is_path_rooted(path, path + length) &&
 		!buffer_append_wchar_t((pathW), L"\\\\?\\", 4))
@@ -64,19 +61,7 @@ uint8_t path_to_pathW(const uint8_t* path, struct buffer* pathW)
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(pathW);
-
-	if (!buffer_append_wchar_t(pathW, NULL, length) ||
-		!buffer_push_back_uint16(pathW, 0))
-	{
-		return 0;
-	}
-
-	wchar_t* w = (wchar_t*)buffer_data(pathW, size);
-	MULTI2WIDE(path, w, length)
-	return 0 < length;
-#endif
-	return 0;
+	return text_encoding_UTF8_to_UTF16LE(path, path + length, pathW) && buffer_push_back_uint16(pathW, 0);
 }
 #else
 

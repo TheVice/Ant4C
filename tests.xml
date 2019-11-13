@@ -2780,9 +2780,14 @@
         <project name="project-properties" default="some_target">
           <echo message="Base directory - '${project::get-base-directory()}'." level="Info" />
           <echo message="Build file - '${project::get-buildfile-path()}'." level="Info" />
-          <!--echo message="Build file uri - '${project::get-buildfile-uri()}'." level="Info" /-->
+          <echo message="Build file uri - '${project::get-buildfile-uri()}'." level="Info" />
           <echo message="Default target - '${project::get-default-target()}'." level="Info" />
           <echo message="Project name - '${project::get-name()}'." level="Info" />
+          <!--echo message="Program version - '${program::version()}'." level="Info" /-->
+          <echo message="Current directory - '${program::current-directory()}'." level="Info" />
+          <target name="some_target">
+            <echo message="Hello from target '${target::get-current-target()}'." level="Info" />
+          </target>
         </project>
         ]]>
       </content>

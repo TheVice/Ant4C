@@ -172,7 +172,7 @@ TEST_F(TestProperty, property_task)
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties);
 			//
 			void* the_property = NULL;
-			ASSERT_TRUE(project_property_get_pointer(
+			ASSERT_TRUE(project_property_exists(
 							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property))
 					<< name << buffer_free(&properties);
 			//
