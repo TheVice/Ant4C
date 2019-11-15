@@ -172,9 +172,6 @@ TEST(TestConversion_, long_parse)
 	{
 #if !defined(_WIN32)
 		ASSERT_EQ(expected_output[i], long_parse(input[i]));
-		/*TODO: std::wstring inputW;
-		inputW.assign(input[i].cbegin(), input[i].cend());
-		ASSERT_EQ(expected_output[i], long_parse_wchar_t(inputW.c_str()));*/
 #endif
 		ASSERT_EQ(expected_output[i], int64_parse(input[i]));
 	}

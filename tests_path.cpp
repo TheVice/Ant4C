@@ -273,7 +273,7 @@ TEST(TestPath_, path_get_path_root)
 		ASSERT_EQ(NULL != expected_root[i] ? std::string(expected_root[i]) : std::string(), range_to_string(root));
 	}
 }
-#if !defined(_WIN32)
+
 TEST(TestPath_, path_get_temp_file_name)
 {
 	buffer temp_file_name;
@@ -317,7 +317,7 @@ TEST(TestPath_, path_get_temp_path)
 	//
 	ASSERT_FALSE(path_get_temp_path(NULL));
 }
-#endif
+
 TEST(TestPath_, path_has_extension)
 {
 	const uint8_t* input[] =
@@ -370,47 +370,30 @@ TEST(TestPath_, path_is_path_rooted)
 	}
 }
 
-TEST(TestPath_, DISABLED_path_exec_function_get_full_path)
+TEST(TestPath_, path_exec_function_get_full_path)
 {
-	/*get_full_path path::get-full-path('')*/
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-	ASSERT_TRUE(path_exec_function(NULL, 6,
-								   &output, 1, &output)) << buffer_free(&output);
-	const ptrdiff_t size = buffer_size(&output);
-	ASSERT_TRUE(size) << buffer_free(&output);
+	ASSERT_FALSE(path_exec_function(NULL, path_get_full_path_function, &output, 1,
+									&output)) << buffer_free(&output);
+	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
+	//
+	range function;
+	function.start = (const uint8_t*)"path::get-full-path('.')";
+	function.finish = function.start + 24;
+	ASSERT_TRUE(interpreter_evaluate_function(NULL, NULL, &function, &output)) << buffer_free(&output);
+	ASSERT_TRUE(buffer_size(&output)) << buffer_free(&output);
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-	buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
 	//
-	const uint8_t* folder_name = (const uint8_t*)"abcdef";
-	const ptrdiff_t folder_name_length = 6;
+	function.start = (const uint8_t*)"path::get-full-path('abcdef')";
+	function.finish = function.start + 29;
+	ASSERT_TRUE(interpreter_evaluate_function(NULL, NULL, &function, &output)) << buffer_free(&output);
+	ASSERT_TRUE(buffer_size(&output)) << buffer_free(&output);
 	//
-	ASSERT_TRUE(buffer_append(&arguments, folder_name,
-							  folder_name_length)) << buffer_free(&arguments) << buffer_free(&output);
-	ASSERT_TRUE(buffer_append_buffer(&output, &arguments, 1)) << buffer_free(&arguments) << buffer_free(&output);
-	//
-	const ptrdiff_t size_ = buffer_size(&output);
-	ASSERT_TRUE(buffer_append(&output, NULL,
-							  size_ + 4 + folder_name_length + size)) << buffer_free(&arguments) << buffer_free(&output);
-	ASSERT_TRUE(buffer_resize(&output, size_)) << buffer_free(&arguments) << buffer_free(&output);
-	//
-	ASSERT_TRUE(path_exec_function(NULL, 6, &output, 1,
-								   &output)) << buffer_free(&arguments) << buffer_free(&output);
-	ASSERT_TRUE(buffer_size(&output)) << buffer_free(&arguments) << buffer_free(&output);
-	//
-	const uint8_t* path = buffer_data(&output, size_);
-	const ptrdiff_t path_length = (buffer_size(&output) - size_);
-	ASSERT_TRUE(string_ends_with(path, path + path_length,
-								 folder_name, folder_name + folder_name_length)) << buffer_free(&arguments) << buffer_free(&output);
-	//
-	buffer_release(&arguments);
 	buffer_release(&output);
-	//
-	ASSERT_EQ(size + 1 + folder_name_length, path_length);
 }
 
 /*
@@ -419,6 +402,5 @@ path_get_directory_for_current_image
 cygpath_get_dos_path
 cygpath_get_unix_path
 cygpath_get_windows_path
-path_exec_function
 cygpath_exec_function
 */

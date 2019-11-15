@@ -122,12 +122,6 @@ long long_parse(const uint8_t* value)
 	return atol((const char*)value);
 }
 
-long long_parse_wchar_t(const wchar_t* value)
-{
-	wchar_t* ch = NULL;
-	return wcstol(value, &ch, 10);
-}
-
 uint8_t long_to_string(long long_value, struct buffer* output_string)
 {
 #if __STDC_SEC_API__
@@ -140,12 +134,6 @@ uint8_t long_to_string(long long_value, struct buffer* output_string)
 int64_t int64_parse(const uint8_t* value)
 {
 	return atoll((const char*)value);
-}
-
-int64_t int64_parse_wchar_t(const wchar_t* value)
-{
-	wchar_t* ch = NULL;
-	return (int64_t)wcstoimax(value, &ch, 10);
 }
 
 uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)

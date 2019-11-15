@@ -13,6 +13,7 @@
 #include "echo.h"
 #include "environment.h"
 #include "exec.h"
+#include "file_system.h"
 #include "math_unit.h"
 #include "operating_system.h"
 #include "path.h"
@@ -386,41 +387,27 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 		return 0;
 	}
 
-	const uint8_t values_count = interpreter_get_values_for_arguments(
-									 project, target, &arguments_area, &values);
+	uint8_t values_count = interpreter_get_values_for_arguments(
+							   project, target, &arguments_area, &values);
 
 	switch (interpreter_get_unit(name_space.start, name_space.finish))
 	{
 		case bool_unit:
-			if (!bool_exec_function(
-					conversion_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = bool_exec_function(
+							   conversion_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case cygpath_unit:
-			if (!cygpath_exec_function(path_get_function(name.start, name.finish),
-									   &values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = cygpath_exec_function(
+							   path_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case datetime_unit:
-			if (!datetime_exec_function(
-					datetime_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = datetime_exec_function(
+							   datetime_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 #if 0
 
@@ -432,25 +419,15 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 #endif
 
 		case double_unit:
-			if (!double_exec_function(
-					conversion_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = double_exec_function(
+							   conversion_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case environment_unit:
-			if (!environment_exec_function(
-					environment_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = environment_exec_function(
+							   environment_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 #if 0
 
@@ -462,110 +439,126 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 #endif
 
 		case int_unit:
-			if (!int_exec_function(
-					conversion_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = int_exec_function(
+							   conversion_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case int64_unit:
-			if (!int64_exec_function(
-					conversion_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = int64_exec_function(
+							   conversion_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case long_unit:
-			if (!long_exec_function(
-					conversion_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = long_exec_function(
+							   conversion_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case math_unit:
-			if (!math_exec_function(
-					math_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = math_exec_function(
+							   math_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case operating_system_unit:
-			if (!os_exec_function(os_get_function(name.start, name.finish), &values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = os_exec_function(os_get_function(name.start, name.finish), &values, values_count,
+											return_of_function);
 			break;
 
 		case path_unit:
-			if (!path_exec_function(project,
-									path_get_function(name.start, name.finish), &values, values_count,
-									return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
+		{
+			const uint8_t path_function_id = path_get_function(name.start, name.finish);
 
-			break;
+			if (path_get_full_path_function == path_function_id)
+			{
+				if (1 != values_count)
+				{
+					values_count = 0;
+					break;
+				}
+
+				struct range path;
+
+				if (!common_get_one_argument(&values, &path, 0))
+				{
+					path.start = path.finish = (const uint8_t*)&path;
+				}
+
+				ptrdiff_t size = buffer_size(return_of_function);
+				const void* the_property = NULL;
+
+				if (!directory_get_current_directory(project, &the_property, return_of_function))
+				{
+					values_count = 0;
+					break;
+				}
+
+				if (!property_actualize_value(project, target, property_get_value_function, &the_property, size,
+											  return_of_function))
+				{
+					values_count = 0;
+					break;
+				}
+
+				struct buffer full_path;
+
+				SET_NULL_TO_BUFFER(full_path);
+
+				if (!path_get_full_path(buffer_data(return_of_function, size),
+										buffer_data(return_of_function, 0) + buffer_size(return_of_function),
+										path.start, path.finish, &full_path))
+				{
+					buffer_release(&full_path);
+					values_count = 0;
+					break;
+				}
+
+				values_count = buffer_resize(return_of_function, size) &&
+							   buffer_append_data_from_buffer(return_of_function, &full_path);
+				buffer_release(&full_path);
+			}
+			else
+			{
+				values_count = path_exec_function(project, path_function_id, &values, values_count, return_of_function);
+			}
+		}
+		break;
 
 		case platform_unit:
-			if (!platform_exec_function(os_get_function(name.start, name.finish), &values, values_count,
-										return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = platform_exec_function(os_get_function(name.start, name.finish), &values, values_count,
+												  return_of_function);
 			break;
 
 		case program_unit:
-			if (!program_exec_function(project_get_function(name.start, name.finish), &values, values_count,
-									   return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = program_exec_function(project_get_function(name.start, name.finish), &values, values_count,
+												 return_of_function);
 			break;
 
 		case project_unit:
 		{
-			static const uint8_t* property_get_value = (const uint8_t*)"get-value";
 			const void* the_property = NULL;
-			const uint8_t property_function_id = property_get_function(property_get_value, property_get_value + 9);
 			ptrdiff_t size = buffer_size(return_of_function);
 
 			if (!project_exec_function(
 					project,
-					project_get_function(name.start, name.finish), &values, values_count, &the_property, return_of_function))
+					project_get_function(name.start, name.finish),
+					&values, values_count, &the_property, return_of_function))
 			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
+				values_count = 0;
+				break;
 			}
 
-			if (!property_actualize_value(project, target, property_function_id, the_property, size,
-										  return_of_function))
+			if (!property_actualize_value(project, target,
+										  property_get_value_function,
+										  the_property, size, return_of_function))
 			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
+				values_count = 0;
+				break;
 			}
+
+			values_count = 1;
 		}
 		break;
 
@@ -578,28 +571,25 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			if (!property_exec_function(project, property_function_id, &values, values_count, &the_property,
 										return_of_function))
 			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
+				values_count = 0;
+				break;
 			}
 
 			if (!property_actualize_value(project, target, property_function_id, the_property, size,
 										  return_of_function))
 			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
+				values_count = 0;
+				break;
 			}
+
+			values_count = 1;
 		}
 		break;
 
 		case string_unit:
-			if (!string_exec_function(
-					string_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = string_exec_function(
+							   string_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 #if 0
 
@@ -611,35 +601,25 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 #endif
 
 		case timespan_unit:
-			if (!timespan_exec_function(
-					timespan_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = timespan_exec_function(
+							   timespan_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case version_unit:
-			if (!version_exec_function(
-					version_get_function(name.start, name.finish),
-					&values, values_count, return_of_function))
-			{
-				buffer_release_with_inner_buffers(&values);
-				return 0;
-			}
-
+			values_count = version_exec_function(
+							   version_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
 
 		case UNKNOWN_UNIT:
 		default:
-			buffer_release_with_inner_buffers(&values);
-			return 0;
+			values_count = 0;
+			break;
 	}
 
 	buffer_release_with_inner_buffers(&values);
-	return 1;
+	return values_count;
 }
 
 uint8_t interpreter_evaluate_code(const void* project, const void* target,

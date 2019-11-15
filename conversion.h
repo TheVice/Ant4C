@@ -8,7 +8,6 @@
 #ifndef _CONVERSION_H_
 #define _CONVERSION_H_
 
-#include <wchar.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -24,11 +23,9 @@ int32_t int_parse(const uint8_t* value);
 uint8_t int_to_string(int32_t int_value, struct buffer* output_string);
 
 long long_parse(const uint8_t* value);
-long long_parse_wchar_t(const wchar_t* value);
 uint8_t long_to_string(long long_value, struct buffer* output_string);
 
 int64_t int64_parse(const uint8_t* value);
-int64_t int64_parse_wchar_t(const wchar_t* value);
 uint8_t int64_to_string(int64_t int_value, struct buffer* output_string);
 
 uint8_t conversion_get_function(const uint8_t* name_start, const uint8_t* name_finish);

@@ -13,6 +13,26 @@
 struct buffer;
 struct range;
 
+enum path_function
+{
+	path_change_extension_function,
+	path_combine_function,
+	path_get_directory_name_function,
+	path_get_extension_function,
+	path_get_file_name_function,
+	path_get_file_name_without_extension_function,
+	path_get_full_path_function,
+	path_get_path_root_function,
+	path_get_temp_file_name_function,
+	path_get_temp_path_function,
+	path_has_extension_function,
+	path_is_path_rooted_function,
+	cygpath_get_dos_path_function,
+	cygpath_get_unix_path_function,
+	cygpath_get_windows_path_function,
+	PATH_UNKNOWN_FUNCTION
+};
+
 static const uint8_t path_posix_delimiter = '/';
 static const uint8_t path_windows_delimiter = '\\';
 

@@ -57,6 +57,11 @@ add_library(ant4c STATIC
 add_executable(ant4c_app
             "${CMAKE_SOURCE_DIR}/main.c")
 
+#if (MSVC OR MINGW)
+#  add_compile_definitions(ant4c UNICODE _UNICODE)
+#  add_compile_definitions(ant4c_app UNICODE _UNICODE)
+#endif()
+
 target_link_libraries(ant4c_app ant4c)
 
 if(DEFINED PROGRAM_VERSION)
@@ -115,6 +120,10 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   if(DEFINED PUGIXML_HEADER_ONLY)
     target_compile_definitions(ant4c_tests PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY})
   endif()
+# if (MSVC OR MINGW)
+#   add_compile_definitions(tests_exec_app UNICODE _UNICODE)
+#   add_compile_definitions(ant4c_tests UNICODE _UNICODE)
+# endif()
 else()
   message(STATUS "Search pugixml and GTest via defined PUGIXML_PATH and/or GTEST_PATH if such exists.")
   if(DEFINED ENV{PUGIXML_PATH})
@@ -187,6 +196,12 @@ else()
       add_custom_command(TARGET ant4c_tests POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
       message(STATUS "pugixml and GTest was found.")
+
+#     if (MSVC OR MINGW)
+#       add_compile_definitions(${GTEST_MAIN_LIBRARY} UNICODE _UNICODE)
+#       add_compile_definitions(tests_exec_app UNICODE _UNICODE)
+#       add_compile_definitions(ant4c_tests UNICODE _UNICODE)
+#     endif()
     endif()
   endif()
 endif()

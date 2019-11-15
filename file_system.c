@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "path.h"
+#include "property.h"
 #include "project.h"
 #include "range.h"
 #include "string_unit.h"
@@ -30,7 +31,7 @@
 	\
 	(CLOSE_RESULT) = FindClose(file_handle);
 
-uint8_t directory_exists_by_wchar_path(const wchar_t* path)
+uint8_t directory_exists_wchar_t(const wchar_t* path)
 {
 	if (NULL == path || L'\0' == *path)
 	{
@@ -44,7 +45,7 @@ uint8_t directory_exists_by_wchar_path(const wchar_t* path)
 	return close_return && is_directory;
 }
 
-uint8_t path_to_pathW(const uint8_t* path, struct buffer* pathW)
+uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 {
 	if (NULL == path ||
 		'\0' == *path ||
@@ -80,13 +81,13 @@ uint8_t directory_exists(const uint8_t* path)
 	struct buffer pathW;
 	SET_NULL_TO_BUFFER(pathW);
 
-	if (!path_to_pathW(path, &pathW))
+	if (!file_system_path_to_pathW(path, &pathW))
 	{
 		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t is_exists = directory_exists_by_wchar_path(buffer_wchar_t_data(&pathW, 0));
+	const uint8_t is_exists = directory_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
 	buffer_release(&pathW);
 	return is_exists;
 #else
@@ -101,17 +102,23 @@ uint8_t directory_exists(const uint8_t* path)
 	return 1;
 #endif
 }
-#if 0
-uint8_t directory_get_current_directory(const void* project, struct buffer* current_directory)
+
+uint8_t directory_get_current_directory(const void* project, const void** the_property,
+										struct buffer* current_directory)
 {
-	if (!project_get_base_directory(project, NULL, current_directory))
+	if (!project_get_base_directory(project, the_property))
 	{
+		if (NULL != the_property)
+		{
+			(*the_property) = NULL;
+		}
+
 		return path_get_directory_for_current_process(current_directory);
 	}
 
-	return 1;
+	return property_get_by_pointer(the_property, current_directory);
 }
-#endif
+
 uint8_t directory_get_logical_drives(struct buffer* drives)
 {
 #if defined(_WIN32)
@@ -173,7 +180,7 @@ uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t*
 	return range_is_null_or_empty(parent);
 }
 #if defined(_WIN32)
-uint8_t file_exists_by_wchar_path(const wchar_t* path)
+uint8_t file_exists_wchar_t(const wchar_t* path)
 {
 	if (NULL == path)
 	{
@@ -200,13 +207,13 @@ uint8_t file_exists(const uint8_t* path)
 	struct buffer pathW;
 	SET_NULL_TO_BUFFER(pathW);
 
-	if (!path_to_pathW(path, &pathW))
+	if (!file_system_path_to_pathW(path, &pathW))
 	{
 		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t is_exists = file_exists_by_wchar_path(buffer_wchar_t_data(&pathW, 0));
+	const uint8_t is_exists = file_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
 	buffer_release(&pathW);
 	return is_exists;
 #else
@@ -227,7 +234,7 @@ uint64_t file_get_length(const uint8_t* path)
 	struct buffer pathW;
 	SET_NULL_TO_BUFFER(pathW);
 
-	if (!path_to_pathW(path, &pathW))
+	if (!file_system_path_to_pathW(path, &pathW))
 	{
 		buffer_release(&pathW);
 		return 0;

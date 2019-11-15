@@ -19,17 +19,18 @@ struct buffer;
 struct range;
 
 #if defined(_WIN32)
-uint8_t directory_exists_by_wchar_path(const wchar_t* path);
+uint8_t directory_exists_wchar_t(const wchar_t* path);
 
-uint8_t file_exists_by_wchar_path(const wchar_t* path);
+uint8_t file_exists_wchar_t(const wchar_t* path);
 #endif
 
 uint8_t directory_exists(const uint8_t* path);
 #if 0
 directory_get_creation_time
-/*#endif*/
-uint8_t directory_get_current_directory(const void* project, struct buffer* current_directory);
-/*#if 0*/
+#endif
+uint8_t directory_get_current_directory(const void* project, const void** the_property,
+										struct buffer* current_directory);
+#if 0
 directory_get_directory_root->path_root
 directory_get_last_access_time
 directory_get_last_write_time

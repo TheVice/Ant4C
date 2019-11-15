@@ -488,22 +488,15 @@ static const uint8_t* property_str[] =
 	(const uint8_t*)"is-readonly"
 };
 
-enum property_function
-{
-	property_exists_, property_get_value_,
-	property_is_dynamic_, property_is_readonly_,
-	UNKNOWN_PROPERTY
-};
-
 uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
-	return common_string_to_enum(name_start, name_finish, property_str, UNKNOWN_PROPERTY);
+	return common_string_to_enum(name_start, name_finish, property_str, PROPERTY_UNKNOWN_FUNCTION);
 }
 
 uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
 							   uint8_t arguments_count, const void** the_property, struct buffer* output)
 {
-	if (UNKNOWN_PROPERTY <= function ||
+	if (PROPERTY_UNKNOWN_FUNCTION <= function ||
 		NULL == arguments ||
 		1 != arguments_count ||
 		NULL == the_property ||
@@ -525,26 +518,26 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 	(*the_property) = is_exists ? non_const_prop : NULL;
 	const struct property* prop = (const struct property*)(*the_property);
 
-	if (function != property_exists_ && !is_exists)
+	if (function != property_exists_function && !is_exists)
 	{
 		return 0;
 	}
 
 	switch (function)
 	{
-		case property_exists_:
+		case property_exists_function:
 			return bool_to_string(is_exists, output);
 
-		case property_get_value_:
+		case property_get_value_function:
 			return is_exists && property_get_by_pointer(prop, output);
 
-		case property_is_dynamic_:
+		case property_is_dynamic_function:
 			return NULL != prop && bool_to_string(prop->dynamic, output);
 
-		case property_is_readonly_:
+		case property_is_readonly_function:
 			return NULL != prop && bool_to_string(prop->readonly, output);
 
-		case UNKNOWN_PROPERTY:
+		case PROPERTY_UNKNOWN_FUNCTION:
 		default:
 			break;
 	}
@@ -556,7 +549,7 @@ uint8_t property_actualize_value(const void* project, const void* target,
 								 uint8_t property_function_id, const void* the_property,
 								 ptrdiff_t size, struct buffer* return_of_function)
 {
-	if (property_get_value_ != property_function_id)
+	if (property_get_value_function != property_function_id)
 	{
 		return 1;
 	}

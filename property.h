@@ -14,6 +14,14 @@
 struct buffer;
 
 enum data_type { property_value_is_byte_array, property_value_is_integer, property_value_is_double };
+enum property_function
+{
+	property_exists_function,
+	property_get_value_function,
+	property_is_dynamic_function,
+	property_is_readonly_function,
+	PROPERTY_UNKNOWN_FUNCTION
+};
 
 uint8_t property_get_by_name(const void* project, const uint8_t* property_name, uint8_t property_name_length,
 							 struct buffer* output);
