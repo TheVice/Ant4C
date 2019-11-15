@@ -312,6 +312,28 @@ uint8_t properties_free(buffer* properties)
 	return 0;
 }
 
+std::wstring u8string_to_u16string(const std::string& input, buffer* value)
+{
+	static const std::wstring empty;
+
+	if (!text_encoding_UTF8_to_UTF16LE(
+			(const uint8_t*)input.c_str(), (const uint8_t*)input.c_str() + input.size(), value))
+	{
+		return empty;
+	}
+
+	return buffer_to_u16string(value);
+}
+
+std::wstring u8string_to_u16string(const std::string& input)
+{
+	buffer value;
+	SET_NULL_TO_BUFFER(value);
+	const auto returned(u8string_to_u16string(input, &value));
+	buffer_release(&value);
+	return returned;
+}
+
 std::string TestsBaseXml::tests_xml;
 pugi::xml_document TestsBaseXml::document;
 std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;

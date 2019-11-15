@@ -19,7 +19,7 @@ extern "C" {
 class TestFileSystem : public TestsBaseXml
 {
 };
-#if !defined(_WIN32)
+
 TEST_F(TestFileSystem, directory_exists)
 {
 	buffer tmp;
@@ -50,7 +50,6 @@ TEST_F(TestFileSystem, directory_exists)
 }
 //directory_get_current_directory
 //directory_get_parent_directory
-
 TEST_F(TestFileSystem, file_exists)
 {
 	buffer tmp;
@@ -79,5 +78,4 @@ TEST_F(TestFileSystem, file_exists)
 
 	buffer_release(&tmp);
 }
-#endif
 //file_get_length

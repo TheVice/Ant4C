@@ -54,6 +54,9 @@ void property_load_from_node(const pugi::xml_node& property,
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties);
 uint8_t properties_free(buffer* properties);
 
+std::wstring u8string_to_u16string(const std::string& input, buffer* value);
+std::wstring u8string_to_u16string(const std::string& input);
+
 class TestsBaseXml : public testing::Test
 {
 protected:

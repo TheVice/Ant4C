@@ -200,7 +200,7 @@ TEST(TestEnvironment_, environment_at_all)
 	buffer_release(&expected_result);
 	buffer_release(&result);
 }
-#if 0
+
 TEST(TestEnvironment_, environment_get_operating_system)
 {
 	const OperatingSystem* os = environment_get_operating_system();
@@ -210,9 +210,9 @@ TEST(TestEnvironment_, environment_get_operating_system)
 #else
 	ASSERT_EQ(Unix, os->Platform);
 #endif
-	ASSERT_LT((size_t)0, strlen(os->VersionString));
+	ASSERT_LT(0, common_count_bytes_until(os->VersionString, 0));
 }
-#endif
+
 TEST(TestEnvironment_, environment_newline)
 {
 	buffer newline;
@@ -256,17 +256,21 @@ TEST_F(TestEnvironment, environment_variable_exists)
 		--node_count;
 	}
 }
-#if 0
+
 TEST(TestOperatingSystem, operating_system_at_all)
 {
+	static const uint8_t zero = '\0';
+	//
 	buffer input;
 	SET_NULL_TO_BUFFER(input);
 	//
-	ASSERT_TRUE(common_append_string_to_buffer("Microsoft Windows NT 6.2.9200", &input)) << buffer_free(&input);
-	ASSERT_TRUE(buffer_push_back(&input, '\0')) << buffer_free(&input);
+	ASSERT_TRUE(common_append_string_to_buffer((const uint8_t*)"Microsoft Windows NT 6.2.9200",
+				&input)) << buffer_free(&input);
+	ASSERT_TRUE(buffer_push_back(&input, zero)) << buffer_free(&input);
 	//
-	ASSERT_TRUE(common_append_string_to_buffer("OpenBSD 6.5 GENERIC.MP#3 amd64", &input)) << buffer_free(&input);
-	ASSERT_TRUE(buffer_push_back(&input, '\0')) << buffer_free(&input);
+	ASSERT_TRUE(common_append_string_to_buffer((const uint8_t*)"OpenBSD 6.5 GENERIC.MP#3 amd64",
+				&input)) << buffer_free(&input);
+	ASSERT_TRUE(buffer_push_back(&input, zero)) << buffer_free(&input);
 	//
 	const PlatformID expected_platforms[] = { Win32, Unix };
 	const Version expected_versions[] = { {6, 2, 9200, 0}, {6, 5, 0, 0} };
@@ -276,7 +280,7 @@ TEST(TestOperatingSystem, operating_system_at_all)
 	const uint8_t* pos = start;
 	uint8_t i = 0;
 
-	while (finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, "\0", 1, 1, 1)))
+	while (finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 1, 1)))
 	{
 		ASSERT_LT(i, sizeof(expected_platforms) / sizeof(*expected_platforms)) << buffer_free(&input);
 		ASSERT_LT(i, sizeof(expected_versions) / sizeof(*expected_versions)) << buffer_free(&input);
@@ -291,16 +295,16 @@ TEST(TestOperatingSystem, operating_system_at_all)
 		ASSERT_EQ(expected_versions[i].build, returned_version.build) << buffer_free(&input);
 		ASSERT_EQ(expected_versions[i].revision, returned_version.revision) << buffer_free(&input);
 		//
-		ASSERT_STREQ(start, operating_system_to_string(&os)) << buffer_free(&input);
+		ASSERT_STREQ((const char*)start, (const char*)operating_system_to_string(&os)) << buffer_free(&input);
 		//
 		++i;
 		++pos;
-		start = find_any_symbol_like_or_not_like_that(pos, finish, "\0", 1, 0, 1);
+		start = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 0, 1);
 	}
 
 	buffer_release(&input);
 }
-#endif
+
 TEST(TestPlatform, platform_at_all)
 {
 	ASSERT_NE(nullptr, platform_get_name());

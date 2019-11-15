@@ -176,12 +176,6 @@ uint8_t argument_parser_free()
 				buffer_free(&command_arguments) <<												\
 				argument_parser_free();															\
 		/**/																					\
-		ASSERT_NE(nullptr, &property_value) <<													\
-											(INPUT) << std::endl <<								\
-											buffer_free(&property_value) <<						\
-											buffer_free(&command_arguments) <<					\
-											argument_parser_free();								\
-		/**/																					\
 		ASSERT_EQ(value, buffer_to_string(&property_value)) <<									\
 				(INPUT) << std::endl <<															\
 				buffer_free(&property_value) <<													\
@@ -269,8 +263,11 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 		const uint8_t expected_no_logo = (uint8_t)INT_PARSE(node.node().select_node("no_logo").node().child_value());
 		const uint8_t expected_help = (uint8_t)INT_PARSE(node.node().select_node("help").node().child_value());
 #if defined(_WIN32)
-		std::wstring inputW;
-		inputW.assign(input.cbegin(), input.cend());//TODO: only for English.
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				buffer_free(&property_value) <<
+				buffer_free(&command_arguments) <<
+				argument_parser_free();
+		std::wstring inputW = u8string_to_u16string(input, &property_value);
 #endif
 
 		for (uint8_t step = 0; step < 2; ++step)
