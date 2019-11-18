@@ -148,29 +148,36 @@ uint8_t text_encoding_get_BOM(
 		return 0;
 	}
 
-	/*TODO: UTF7*/
 	switch (encoding)
 	{
-		case UTF8:
-			return buffer_append(output, UTF8_BOM, 3);
+		case UTF7:
+			return 0; /*TODO: */
 
+		case BigEndianUnicode:
 		case UTF16BE:
 			return buffer_append(output, UTF16BE_BOM, 2);
 
+		case Unicode:
 		case UTF16LE:
 			return buffer_append(output, UTF16LE_BOM, 2);
 
 		case UTF32BE:
 			return buffer_append(output, UTF32BE_BOM, 4);
 
+		case UTF32:
 		case UTF32LE:
 			return buffer_append(output, UTF32LE_BOM, 4);
 
-		default:
+		case Default:
+		case ASCII:
+		case UTF8:
 			break;
+
+		default:
+			return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 uint8_t text_encoding_get_data_encoding_by_BOM(const uint8_t* data, ptrdiff_t data_length)
@@ -331,7 +338,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 				{
 					if ((max_ASCII_char + COUNT_OF(codes_874) - 1) < code)
 					{
-						if (!buffer_push_back_uint16(output, 0xFFFD))
+						if (!buffer_push_back_uint16(output, UTF16LE_UNKNOWN_CHAR))
 						{
 							return 0;
 						}
@@ -424,6 +431,52 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 	return 1;
 }
 
+uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
+{
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	if (input < 0x80)
+	{
+		output[0] = (uint8_t)input;
+		return 1;
+	}
+	else if (input < 0x800)
+	{
+		output[1] = input & 0x3F;
+		input = input >> 6;
+		output[0] = input & 0x1F;
+		/**/
+		output[0] += 0xC0;
+		output[1] += 0x80;
+		/**/
+		return 2;
+	}
+	else if (input < 0x10000 && (input < 0xD800 || 0xDFFF < input))
+	{
+		output[2] = input & 0x3F;
+		input = input >> 6;
+		output[1] = input & 0x3F;
+		input = input >> 6;
+		output[0] = input & 0x1F;
+		/**/
+		output[0] += 0xE0;
+		output[1] += 0x80;
+		output[2] += 0x80;
+		/**/
+		return 3;
+	}
+
+	for (input = 0; input < 3; ++input)
+	{
+		output[input] = UTF8_UNKNOWN_CHAR[input];
+	}
+
+	return 3;
+}
+
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	struct buffer* output)
@@ -436,9 +489,9 @@ uint8_t text_encoding_encode_UTF8(
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
+	ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 3 * (data_finish - data_start)) ||
+	if (!buffer_append(output, NULL, 4 * (data_finish - data_start)) ||
 		!buffer_resize(output, size))
 	{
 		return 0;
@@ -446,60 +499,17 @@ uint8_t text_encoding_encode_UTF8(
 
 	while (data_start < data_finish)
 	{
-		uint32_t input_code = *data_start;
-
-		if (input_code < 0x80)
+		if (!buffer_append(output, NULL, 4))
 		{
-			if (!buffer_push_back(output, (uint8_t)input_code))
-			{
-				return 0;
-			}
+			return 0;
 		}
-		else if (input_code < 0x800)
+
+		uint8_t* out = buffer_data(output, size);
+		size += text_encoding_encode_UTF8_single(*data_start, out);
+
+		if (!buffer_resize(output, size))
 		{
-			uint8_t octet_1 = input_code & 0x3F;
-			input_code = input_code >> 6;
-			uint8_t octet_2 = input_code & 0x1F;
-
-			if (!buffer_push_back(output, 0xC0 + octet_2))
-			{
-				return 0;
-			}
-
-			if (!buffer_push_back(output, 0x80 + octet_1))
-			{
-				return 0;
-			}
-		}
-		else if (input_code < 0x10000 && (input_code < 0xD800 || 0xDFFF < input_code))
-		{
-			uint8_t octet_1 = input_code & 0x3F;
-			input_code = input_code >> 6;
-			uint8_t octet_2 = input_code & 0x3F;
-			input_code = input_code >> 6;
-			uint8_t octet_3 = input_code & 0x1F;
-
-			if (!buffer_push_back(output, 0xE0 + octet_3))
-			{
-				return 0;
-			}
-
-			if (!buffer_push_back(output, 0x80 + octet_2))
-			{
-				return 0;
-			}
-
-			if (!buffer_push_back(output, 0x80 + octet_1))
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			if (!buffer_append(output, UTF8_UNKNOWN_CHAR, 3))
-			{
-				return 0;
-			}
+			return 0;
 		}
 
 		++data_start;
@@ -511,6 +521,69 @@ uint8_t text_encoding_encode_UTF8(
 uint8_t text_encoding_is_valid_octet_(uint8_t input)
 {
 	return 0x9F < input && input < 0xC0;
+}
+
+uint8_t text_encoding_decode_UTF8_single(const uint8_t* input_start, const uint8_t* input_finish,
+		uint32_t* output)
+{
+	if (NULL == input_start ||
+		NULL == input_finish ||
+		NULL == output ||
+		input_finish <= input_start)
+	{
+		return 0;
+	}
+
+	(*output) = UTF16LE_UNKNOWN_CHAR;
+	const uint8_t octet_1 = (*input_start);
+
+	if (octet_1 < 0x80)
+	{
+		(*output) = octet_1;
+		return 1;
+	}
+	else if (octet_1 < 0xC0)
+	{
+		return 1;
+	}
+
+	uint8_t octet_2 = 0;
+	uint8_t octet_3 = 0;
+	uint8_t* octets[2];
+	octets[0] = &octet_2;
+	octets[1] = &octet_3;
+	uint8_t count = 0;
+
+	while (++input_start < input_finish && count < 2)
+	{
+		const uint8_t input_code = (*input_start);
+
+		if (input_code < 0x80 || 0xBF < input_code)
+		{
+			break;
+		}
+
+		*(octets[count++]) = input_code;
+	}
+
+	if (2 == count && (0xDF < octet_1 && octet_1 < 0xF0))
+	{
+		if (octet_1 < 0xE1 && !text_encoding_is_valid_octet_(octet_2))
+		{
+			return count;
+		}
+
+		(*output) = 0x1000 * (octet_1 & 0x1F);
+		(*output) += 0x40 * (octet_2 & 0x3F);
+		(*output) += octet_3 & 0x3F;
+	}
+	else if (1 == count && octet_1 < 0xE0)
+	{
+		(*output) = 0x40 * (octet_1 & 0x1F);
+		(*output) += octet_2 & 0x3F;
+	}
+
+	return 1 + count;
 }
 
 uint8_t text_encoding_decode_UTF8(
@@ -525,7 +598,7 @@ uint8_t text_encoding_decode_UTF8(
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
+	ptrdiff_t size = buffer_size(output);
 
 	if (!buffer_append(output, NULL, data_finish - data_start) ||
 		!buffer_resize(output, size))
@@ -535,78 +608,46 @@ uint8_t text_encoding_decode_UTF8(
 
 	while (data_start < data_finish)
 	{
-		uint32_t output_code = 0xFFFD;
-		const uint8_t octet_1 = *data_start;
-
-		if (octet_1 < 0x80)
-		{
-			if (!buffer_push_back_uint32(output, octet_1))
-			{
-				return 0;
-			}
-
-			++data_start;
-			continue;
-		}
-		else if (octet_1 < 0xC0)
-		{
-			if (!buffer_push_back_uint32(output, output_code))
-			{
-				return 0;
-			}
-
-			++data_start;
-			continue;
-		}
-
-		uint8_t octet_2 = 0;
-		uint8_t octet_3 = 0;
-		uint8_t* octets[2];
-		octets[0] = &octet_2;
-		octets[1] = &octet_3;
-		uint8_t count = 0;
-
-		while (++data_start < data_finish && count < 2)
-		{
-			const uint8_t code_ = *data_start;
-
-			if (code_ < 0x80 || 0xBF < code_)
-			{
-				break;
-			}
-
-			*(octets[count++]) = code_;
-		}
-
-		if (2 == count && (0xDF < octet_1 && octet_1 < 0xF0))
-		{
-			if (octet_1 < 0xE1 && !text_encoding_is_valid_octet_(octet_2))
-			{
-				if (!buffer_push_back_uint32(output, output_code))
-				{
-					return 0;
-				}
-
-				continue;
-			}
-
-			output_code = 0x1000 * (octet_1 & 0x1F);
-			output_code += 0x40 * (octet_2 & 0x3F);
-			output_code += octet_3 & 0x3F;
-		}
-		else if (1 == count && octet_1 < 0xE0)
-		{
-			output_code = 0x40 * (octet_1 & 0x1F);
-			output_code += octet_2 & 0x3F;
-		}
-
-		if (!buffer_push_back_uint32(output, output_code))
+		if (!buffer_push_back_uint32(output, 0))
 		{
 			return 0;
 		}
+
+		uint32_t* out = (uint32_t*)buffer_data(output, size);
+		data_start += text_encoding_decode_UTF8_single(data_start, data_finish, out);
+		size += sizeof(uint32_t);
 	}
 
 	return 1;
+}
+
+uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
+{
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	if ((0xD7FF < input && input < 0xE000) || 0x10FFFF < input)
+	{
+		output[0] = UTF16LE_UNKNOWN_CHAR;
+		return 1;
+	}
+	else if (input < 0x10000)
+	{
+		output[0] = input & 0xFFFF;
+		return 1;
+	}
+
+	input -= 0x10000;
+	/**/
+	output[1] = (input & 0x3FF) & 0xFFFF;
+	output[0] = (10 >> input) & 0xFFFF;
+	/**/
+	output[0] += 0xD800;
+	output[1] += 0xDC00;
+	/**/
+	return 2;
 }
 
 uint8_t text_encoding_encode_UTF16LE(
@@ -621,9 +662,9 @@ uint8_t text_encoding_encode_UTF16LE(
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
+	ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 2 * (data_finish - data_start)) ||
+	if (!buffer_append(output, NULL, 2 * sizeof(uint16_t) * (data_finish - data_start)) ||
 		!buffer_resize(output, size))
 	{
 		return 0;
@@ -631,43 +672,69 @@ uint8_t text_encoding_encode_UTF16LE(
 
 	while (data_start < data_finish)
 	{
-		uint32_t input_code = *data_start;
-
-		if ((0xD7FF < input_code && input_code < 0xE000) || 0x10FFFF < input_code)
+		if (!buffer_append(output, NULL, 2 * sizeof(uint16_t)))
 		{
-			if (!buffer_push_back_uint16(output, UTF16LE_UNKNOWN_CHAR))
-			{
-				return 0;
-			}
+			return 0;
 		}
-		else if (input_code < 0x10000)
-		{
-			if (!buffer_push_back_uint16(output, input_code & 0xFFFF))
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			input_code -= 0x10000;
-			const uint16_t double_octet_1 = (input_code & 0x3FF) & 0xFFFF;
-			const uint16_t double_octet_2 = (10 >> input_code) & 0xFFFF;
 
-			if (!buffer_push_back_uint16(output, double_octet_2 + 0xD800))
-			{
-				return 0;
-			}
+		uint16_t* out = (uint16_t*)buffer_data(output, size);
+		size += sizeof(uint16_t) * text_encoding_encode_UTF16LE_single(*data_start, out);
 
-			if (!buffer_push_back_uint16(output, double_octet_1 + 0xDC00))
-			{
-				return 0;
-			}
+		if (!buffer_resize(output, size))
+		{
+			return 0;
 		}
 
 		++data_start;
 	}
 
 	return 1;
+}
+
+uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const uint16_t* input_finish,
+		uint32_t* output)
+{
+	if (NULL == input_start ||
+		NULL == input_finish ||
+		NULL == output ||
+		input_finish <= input_start)
+	{
+		return 0;
+	}
+
+	if ((*input_start) < 0xD800 || 0xDFFF < (*input_start))
+	{
+		(*output) = (*input_start);
+		return 1;
+	}
+	else if (0xDBFF < (*input_start))
+	{
+		(*output) = UTF16LE_UNKNOWN_CHAR;
+		return 1;
+	}
+
+	(*output) = (*input_start) & 0x3FF;
+	(*output) = (*output) << 10;
+	++input_start;
+
+	if (input_start == input_finish)
+	{
+		(*output) = UTF16LE_UNKNOWN_CHAR;
+	}
+	else
+	{
+		if ((*input_start) < 0xDC00 || 0xDFFF < (*input_start))
+		{
+			(*output) = UTF16LE_UNKNOWN_CHAR;
+		}
+		else
+		{
+			(*output) += ((*input_start) & 0x3FF);
+			(*output) += 0x10000;
+		}
+	}
+
+	return 2;
 }
 
 uint8_t text_encoding_decode_UTF16LE(
@@ -682,7 +749,7 @@ uint8_t text_encoding_decode_UTF16LE(
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
+	ptrdiff_t size = buffer_size(output);
 
 	if (!buffer_append(output, NULL, data_finish - data_start) ||
 		!buffer_resize(output, size))
@@ -692,54 +759,14 @@ uint8_t text_encoding_decode_UTF16LE(
 
 	while (data_start < data_finish)
 	{
-		uint16_t input_code = *data_start;
-
-		if (input_code < 0xD800 || 0xDFFF < input_code)
+		if (!buffer_push_back_uint32(output, 0))
 		{
-			if (!buffer_push_back_uint32(output, input_code))
-			{
-				return 0;
-			}
-		}
-		else if (0xDBFF < input_code)
-		{
-			if (!buffer_push_back_uint32(output, UTF16LE_UNKNOWN_CHAR))
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			uint32_t output_code = input_code & 0x3FF;
-			output_code = output_code << 10;
-			++data_start;
-
-			if (data_start == data_finish)
-			{
-				output_code = UTF16LE_UNKNOWN_CHAR;
-			}
-			else
-			{
-				input_code = *data_start;
-
-				if (input_code < 0xDC00 || 0xDFFF < input_code)
-				{
-					output_code = UTF16LE_UNKNOWN_CHAR;
-				}
-				else
-				{
-					output_code = output_code + (input_code & 0x3FF);
-					output_code += 0x10000;
-				}
-			}
-
-			if (!buffer_push_back_uint32(output, output_code))
-			{
-				return 0;
-			}
+			return 0;
 		}
 
-		++data_start;
+		uint32_t* out = (uint32_t*)buffer_data(output, size);
+		data_start += text_encoding_decode_UTF16LE_single(data_start, data_finish, out);
+		size += sizeof(uint32_t);
 	}
 
 	return 1;
@@ -748,73 +775,91 @@ uint8_t text_encoding_decode_UTF16LE(
 uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* data_finish,
 									  struct buffer* output)
 {
-	if (NULL == (data_start) ||
-		NULL == (data_finish) ||
-		(data_finish) <= (data_start) ||
-		NULL == (output))
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		data_finish <= data_start ||
+		NULL == output)
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size((output));
+	ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append((output), NULL, 2 * sizeof(uint32_t) * ((data_finish) - (data_start))) ||
-		!buffer_resize((output), size) ||
-		!text_encoding_decode_UTF8((data_start), (data_finish), (output)))
+	if (!buffer_append(output, NULL, sizeof(uint16_t) * (data_finish - data_start) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size_ = buffer_size((output));
-	const uint32_t* start = (const uint32_t*)buffer_data((output), size);
-	const uint32_t* finish = (const uint32_t*)(buffer_data((output), 0) + size_);
+	uint32_t* decoded_UTF8 = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	if (!text_encoding_encode_UTF16LE(start, finish, (output)))
+	if (!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size__ = buffer_size((output)) - size_;
-	uint8_t* dst = buffer_data((output), size);
-	const uint8_t* src = buffer_data((output), size_);
-	MEM_CPY(dst, src, size__);
-	return buffer_resize((output), size + size__);
+	while (data_start < data_finish)
+	{
+		if (!buffer_append(output, NULL, 2 * sizeof(uint16_t)))
+		{
+			return 0;
+		}
+
+		uint16_t* out = (uint16_t*)buffer_data(output, size);
+		data_start += text_encoding_decode_UTF8_single(data_start, data_finish, decoded_UTF8);
+		size += sizeof(uint16_t) * text_encoding_encode_UTF16LE_single(*decoded_UTF8, out);
+
+		if (!buffer_resize(output, size))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
 }
 #if defined(_WIN32)
 uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
 									  struct buffer* output)
 {
-	if (NULL == (data_start) ||
-		NULL == (data_finish) ||
-		(data_finish) <= (data_start) ||
-		NULL == (output))
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		data_finish <= data_start ||
+		NULL == output)
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size((output));
+	ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append((output), NULL, 2 * sizeof(uint32_t) * ((data_finish) - (data_start))) ||
-		!buffer_resize((output), size) ||
-		!text_encoding_decode_UTF16LE((data_start), (data_finish), (output)))
+	if (!buffer_append(output, NULL, 4 * (data_finish - data_start) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size_ = buffer_size((output));
-	const uint32_t* start = (const uint32_t*)buffer_data((output), size);
-	const uint32_t* finish = (const uint32_t*)(buffer_data((output), 0) + size_);
+	uint32_t* decoded_UTF16LE = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	if (!text_encoding_encode_UTF8(start, finish, (output)))
+	if (!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size__ = buffer_size((output)) - size_;
-	uint8_t* dst = buffer_data((output), size);
-	const uint8_t* src = buffer_data((output), size_);
-	MEM_CPY(dst, src, size__);
-	return buffer_resize((output), size + size__);
+	while (data_start < data_finish)
+	{
+		if (!buffer_append(output, NULL, 4))
+		{
+			return 0;
+		}
+
+		uint8_t* out = buffer_data(output, size);
+		data_start += text_encoding_decode_UTF16LE_single(data_start, data_finish, decoded_UTF16LE);
+		size += text_encoding_encode_UTF8_single(*decoded_UTF16LE, out);
+
+		if (!buffer_resize(output, size))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
 }
 #endif
 static const uint8_t* text_encoding_str[] =

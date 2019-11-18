@@ -27,11 +27,15 @@ TEST(TestTextEncoding_, text_encoding_get_BOM)
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
+	ASSERT_TRUE(text_encoding_get_BOM(ASCII, &output)) << buffer_free(&output);
 	ASSERT_FALSE(text_encoding_get_BOM(UTF7, &output)) << buffer_free(&output); //TODO:
 	ASSERT_TRUE(text_encoding_get_BOM(UTF8, &output)) << buffer_free(&output);
+	ASSERT_TRUE(text_encoding_get_BOM(BigEndianUnicode, &output)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF16BE, &output)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF16LE, &output)) << buffer_free(&output);
+	ASSERT_TRUE(text_encoding_get_BOM(Unicode, &output)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF32BE, &output)) << buffer_free(&output);
+	ASSERT_TRUE(text_encoding_get_BOM(UTF32, &output)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF32LE, &output)) << buffer_free(&output);
 	//
 	buffer_release(&output);
@@ -454,24 +458,6 @@ TEST(TestTextEncoding_, text_encoding_encode_UTF16LE)
 			}
 		}
 
-		/*mbstate_t state;
-		memset(&state, 0, sizeof(mbstate_t));
-		//
-		ptrdiff_t j = 0;
-		uint8_t* ptr = NULL;
-		uint32_t expected_out = i - 1024;
-		const uint8_t* finish_ = (buffer_data(&encode_output, 0) + buffer_size(&encode_output));
-
-		while (NULL != (ptr = buffer_data(&encode_output, j)))
-		{
-			uint32_t out = 0;
-			size_t rc = mbrtoc16((char16_t*)&out, (const char*)&ptr, finish_ - ptr, &state);
-			ASSERT_LT(0, rc) << buffer_free(&input) << buffer_free(&encode_output) << buffer_free(&decode_output);
-			ASSERT_LE(rc, sizeof(uint32_t)) << buffer_free(&input) << buffer_free(&encode_output) << buffer_free(&decode_output);
-			ASSERT_EQ(expected_out, out) <<  buffer_free(&input) << buffer_free(&encode_output) << buffer_free(&decode_output);
-			j += rc;
-			++expected_out;
-		}*/
 		const uint16_t* start_for_decode = (const uint16_t*)buffer_data(&encode_output, 0);
 		const uint16_t* finish_for_decode = start_for_decode + buffer_size(&encode_output) / sizeof(uint16_t);
 		ASSERT_TRUE(text_encoding_decode_UTF16LE(start_for_decode, finish_for_decode, &decode_output))
@@ -484,4 +470,198 @@ TEST(TestTextEncoding_, text_encoding_encode_UTF16LE)
 	buffer_release(&decode_output);
 	buffer_release(&encode_output);
 	buffer_release(&input);
+}
+
+TEST(TestTextEncoding_, text_encoding_UTF8_to_UTF16LE)
+{
+	buffer input_UTF8;
+	SET_NULL_TO_BUFFER(input_UTF8);
+	//
+	ASSERT_TRUE(buffer_resize(&input_UTF8, sizeof(uint32_t) * (0xFFFF + 1))) << buffer_free(&input_UTF8);
+	ASSERT_TRUE(buffer_resize(&input_UTF8, 0)) << buffer_free(&input_UTF8);
+
+	for (uint8_t a = 0; a < 0x80; ++a)
+	{
+		ASSERT_TRUE(buffer_push_back(&input_UTF8, a)) << buffer_free(&input_UTF8);
+	}
+
+	for (uint8_t a = 0xC2; a < 0xE0; ++a)
+	{
+		for (uint8_t b = 0x80; b < 0xC0; ++b)
+		{
+			ASSERT_TRUE(buffer_push_back(&input_UTF8, a)) << buffer_free(&input_UTF8);
+			ASSERT_TRUE(buffer_push_back(&input_UTF8, b)) << buffer_free(&input_UTF8);
+		}
+	}
+
+	for (uint8_t a = 0xE0; a < 0xE1; ++a)
+	{
+		for (uint8_t b = 0xA0; b < 0xC0; ++b)
+		{
+			for (uint8_t c = 0x80; c < 0xC0; ++c)
+			{
+				ASSERT_TRUE(buffer_push_back(&input_UTF8, a)) << buffer_free(&input_UTF8);
+				ASSERT_TRUE(buffer_push_back(&input_UTF8, b)) << buffer_free(&input_UTF8);
+				ASSERT_TRUE(buffer_push_back(&input_UTF8, c)) << buffer_free(&input_UTF8);
+			}
+		}
+	}
+
+	for (uint8_t a = 0xE1; a < 0xF0; ++a)
+	{
+		for (uint8_t b = 0x80; b < 0xC0; ++b)
+		{
+			for (uint8_t c = 0x80; c < 0xC0; ++c)
+			{
+				ASSERT_TRUE(buffer_push_back(&input_UTF8, a)) << buffer_free(&input_UTF8);
+				ASSERT_TRUE(buffer_push_back(&input_UTF8, b)) << buffer_free(&input_UTF8);
+				ASSERT_TRUE(buffer_push_back(&input_UTF8, c)) << buffer_free(&input_UTF8);
+			}
+		}
+	}
+
+	buffer returned_UTF16LE;
+	SET_NULL_TO_BUFFER(returned_UTF16LE);
+	//
+	ASSERT_TRUE(buffer_resize(&returned_UTF16LE,
+							  sizeof(uint32_t) * (0xFFFF + 1))) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE);
+	ASSERT_TRUE(buffer_resize(&returned_UTF16LE,
+							  0)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE);
+	//
+	ASSERT_TRUE(text_encoding_UTF8_to_UTF16LE(buffer_data(&input_UTF8, 0), buffer_data(&input_UTF8,
+				0) + buffer_size(&input_UTF8), &returned_UTF16LE)) << buffer_free(&input_UTF8) << buffer_free(
+							&returned_UTF16LE);
+	//
+	buffer decoded_UTF8;
+	SET_NULL_TO_BUFFER(decoded_UTF8);
+	//
+	ASSERT_TRUE(buffer_resize(&decoded_UTF8,
+							  sizeof(uint32_t) * (0xFFFF + 1))) << buffer_free(&input_UTF8) << buffer_free(
+										  &returned_UTF16LE) << buffer_free(&decoded_UTF8);
+	ASSERT_TRUE(buffer_resize(&decoded_UTF8,
+							  0)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) << buffer_free(&decoded_UTF8);
+	//
+	ASSERT_TRUE(text_encoding_decode_UTF8(buffer_data(&input_UTF8, 0), buffer_data(&input_UTF8,
+										  0) + buffer_size(&input_UTF8), &decoded_UTF8)) << buffer_free(&input_UTF8) << buffer_free(
+												  &returned_UTF16LE) << buffer_free(&decoded_UTF8);
+	//
+	buffer decoded_UTF16LE;
+	SET_NULL_TO_BUFFER(decoded_UTF16LE);
+	//
+	ASSERT_TRUE(buffer_resize(&decoded_UTF16LE,
+							  sizeof(uint32_t) * (0xFFFF + 1))) << buffer_free(&input_UTF8) << buffer_free(
+										  &returned_UTF16LE) << buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+	ASSERT_TRUE(buffer_resize(&decoded_UTF16LE,
+							  0)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) << buffer_free(
+									  &decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+	//
+	ASSERT_TRUE(text_encoding_decode_UTF16LE(buffer_uint16_data(&returned_UTF16LE, 0),
+				(const uint16_t*)(buffer_data(&returned_UTF16LE, 0) + buffer_size(&returned_UTF16LE)),
+				&decoded_UTF16LE)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) << buffer_free(
+									   &decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+	uint32_t expected_return = 0x0;
+
+	for (; expected_return < 0x10000; ++expected_return)
+	{
+		const uint32_t* returned_UTF16LE_value = buffer_uint32_data(&decoded_UTF16LE, expected_return);
+		ASSERT_NE(nullptr, returned_UTF16LE_value) <<
+				buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+				buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+
+		if (0xD7FF < expected_return && expected_return < 0xE000)
+		{
+			ASSERT_EQ((uint32_t)0xFFFD, (*returned_UTF16LE_value)) <<
+					buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+					buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+		}
+		else
+		{
+			ASSERT_EQ(expected_return, (*returned_UTF16LE_value)) <<
+					buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+					buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+		}
+
+		const uint32_t* returned_UTF8_value = buffer_uint32_data(&decoded_UTF16LE, expected_return);
+		ASSERT_NE(nullptr, returned_UTF8_value) <<
+												buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+												buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+
+		if (0xD7FF < expected_return && expected_return < 0xE000)
+		{
+			ASSERT_EQ((uint32_t)0xFFFD, (*returned_UTF8_value)) <<
+					buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+					buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+		}
+		else
+		{
+			ASSERT_EQ(expected_return, (*returned_UTF8_value)) <<
+					buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+					buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+		}
+	}
+
+	ASSERT_EQ(nullptr, buffer_uint32_data(&decoded_UTF16LE, expected_return)) <<
+			buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+			buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+	ASSERT_EQ(nullptr, buffer_uint32_data(&decoded_UTF16LE, expected_return)) <<
+			buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+			buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+	//
+#if defined(_WIN32)
+	buffer returned_UTF8;
+	SET_NULL_TO_BUFFER(returned_UTF8);
+	//
+	ASSERT_TRUE(buffer_resize(&returned_UTF8, sizeof(uint32_t) * (0xFFFF + 1))) <<
+			buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+			buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+	ASSERT_TRUE(buffer_resize(&returned_UTF8, 0)) <<
+			buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+			buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+	//
+	ASSERT_TRUE(text_encoding_UTF16LE_to_UTF8(buffer_uint16_data(&returned_UTF16LE, 0),
+				(const uint16_t*)(buffer_data(&returned_UTF16LE, 0) + buffer_size(&decoded_UTF16LE)),
+				&returned_UTF8)) <<
+								 buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+								 buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+	//
+	uint32_t returned_result = 0;
+
+	for (expected_return = 0x0; expected_return < buffer_size(&input_UTF8); ++expected_return, ++returned_result)
+	{
+		const uint8_t* expected = buffer_data(&input_UTF8, expected_return);
+		ASSERT_NE(nullptr, expected) <<
+									 buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+									 buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+		const uint8_t* returned = buffer_data(&returned_UTF8, returned_result);
+		ASSERT_NE(nullptr, returned) <<
+									 buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+									 buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+
+		if (163711 < expected_return) //TODO: && expected_return < 163711 + 3 * (0xE000 - 0xD7FF))
+		{
+			/*TODO: expected_return += 2;
+			returned_result += 2;*/
+			continue;
+		}
+		else
+		{
+			ASSERT_EQ(*expected, *returned) <<
+											buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+											buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+		}
+	}
+
+	ASSERT_EQ(nullptr, buffer_data(&input_UTF8, expected_return)) <<
+			buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+			buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);
+	/*ASSERT_EQ(nullptr, buffer_data(&returned_UTF8, returned_result)) <<
+		buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) <<
+		buffer_free(&decoded_UTF8) << buffer_free(&decoded_UTF16LE) << buffer_free(&returned_UTF8);*/
+	buffer_release(&returned_UTF8);
+#endif
+	//
+	buffer_release(&decoded_UTF16LE);
+	buffer_release(&decoded_UTF8);
+	buffer_release(&returned_UTF16LE);
+	buffer_release(&input_UTF8);
 }
