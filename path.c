@@ -536,7 +536,7 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 #if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(temp_path);
 
-	if (!buffer_append(temp_path, NULL, 2 * sizeof(uint32_t) * FILENAME_MAX))
+	if (!buffer_append(temp_path, NULL, 6 * FILENAME_MAX + sizeof(uint32_t)))
 	{
 		return 0;
 	}
@@ -550,13 +550,13 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	}
 
 	if (!buffer_resize(temp_path, size) ||
-		!buffer_append(temp_path, NULL, 2 * sizeof(uint32_t) * length))
+		!buffer_append(temp_path, NULL, (ptrdiff_t)6 * length + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
 	pathW = (wchar_t*)buffer_data(temp_path,
-								  buffer_size(temp_path) - sizeof(wchar_t) * (sizeof(wchar_t) + length));
+								  buffer_size(temp_path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
 	length = GetTempPathW(length, pathW);
 
 	if (!buffer_resize(temp_path, size) ||
@@ -619,45 +619,43 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 	const ptrdiff_t size = buffer_size(path);
 #if defined(_WIN32)
 
-	if (!buffer_append_wchar_t(path, NULL, 2))
+	if (!buffer_append(path, NULL, 6 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	wchar_t* w = (wchar_t*)buffer_data(path, size);
-	DWORD length = GetCurrentDirectoryW(2, w);
+	wchar_t* pathW = (wchar_t*)buffer_data(path, size);
+	const DWORD length = GetCurrentDirectoryW(2, pathW);
 
-	if (length == 0)
+	if (length < 2)
 	{
 		return 0;
 	}
 
-	if (2 < length)
+	if (FILENAME_MAX < length)
 	{
 		if (!buffer_resize(path, size) ||
-			!buffer_append_char(path, NULL, (ptrdiff_t)length + 1) ||
-			!buffer_append_wchar_t(path, NULL, (ptrdiff_t)length + 1))
-		{
-			return 0;
-		}
-
-		w = (wchar_t*)buffer_data(path, size + sizeof(char) * ((ptrdiff_t)length + 1));
-		length = GetCurrentDirectoryW(length + 1, w);
-
-		if (length == 0)
+			!buffer_append(path, NULL, (ptrdiff_t)6 * (length + (ptrdiff_t)1) + sizeof(uint32_t)))
 		{
 			return 0;
 		}
 	}
 
-	if (!buffer_resize(path, size + length))
+	pathW = (wchar_t*)buffer_data(path,
+								  buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
+	const DWORD returned_length = GetCurrentDirectoryW(length + 1, pathW);
+
+	if (returned_length < 2)
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(path, size);
-	WIDE2MULTI(w, m, length);
-	return 0 < length;
+	if (!buffer_resize(path, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(pathW, pathW + returned_length, path);
 #else
 
 	while (1)
@@ -695,8 +693,8 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	}
 
 	const ptrdiff_t size = buffer_size(path);
-#if defined(_WIN32)
 #if 0
+	defined(_WIN32)
 
 	while (1)
 	{
@@ -757,10 +755,6 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	}
 
 	return 1;
-#endif
-	(void)size;
-	/*TODO:*/
-	return 0;
 #elif __linux
 
 	while (1)
@@ -811,43 +805,37 @@ uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_fini
 
 #if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(path);
-	uint16_t count = (uint16_t)(path_finish - path_start);
 
-	if (!buffer_append_char(path, NULL, (ptrdiff_t)count + 1) ||
-		!buffer_append_wchar_t(path, NULL, 2 * ((ptrdiff_t)count + 1)))
+	if (!text_encoding_UTF8_to_UTF16LE(path_start, path_finish, path) ||
+		!buffer_push_back_uint16(path, 0))
 	{
 		return 0;
 	}
 
-	wchar_t* long_path = (wchar_t*)buffer_data(path, size + 1 + count);
+	const ptrdiff_t count = path_finish - path_start;
 
-	for (uint16_t i = 0; i < count; ++i)/*TODO: Use WIDE2MULTI*/
-	{
-		long_path[i] = path_start[i];
-	}
-
-	long_path[count] = L'\0';
-	ptrdiff_t index = size + 1 + count + sizeof(wchar_t) * ((ptrdiff_t)count + 1);
-	wchar_t* short_path = (wchar_t*)buffer_data(path, index);
-	count = (uint16_t)GetShortPathNameW(long_path, short_path, count + 1);
-
-	if (!count)
+	if (!buffer_append(path, NULL, 6 * (count + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(path, size);
-	m[count] = '\0';
-	index = count;
-	WIDE2MULTI(short_path, m, count)
+	const wchar_t* long_path = (const wchar_t*)buffer_data(path, size);
+	wchar_t* short_path = (wchar_t*)buffer_data(path,
+						  buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * count - sizeof(uint16_t));
+	/**/
+	const DWORD returned_count = GetShortPathNameW(long_path, short_path, (DWORD)(count + 1));
 
-	if (!count)
+	if (!returned_count)
 	{
 		return 0;
 	}
 
-	/*NOTE: for save terminate path in buffer + 1 to the index should be added.*/
-	return buffer_resize(path, size + index);
+	if (!buffer_resize(path, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(short_path, short_path + returned_count, path);
 #else
 	return 0;
 #endif

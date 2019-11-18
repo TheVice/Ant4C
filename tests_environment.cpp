@@ -152,52 +152,30 @@ TEST(TestEnvironment_, environment_get_folder_path)
 	buffer_release(&path);
 }
 
-TEST(TestEnvironment_, environment_at_all)
+TEST(TestEnvironment_, environment_get_machine_name)
 {
+#if defined(_WIN32)
+	const uint8_t* variable_name = (const uint8_t*)"COMPUTERNAME";
+	const uint8_t variable_name_length = 12;
+#endif
 	buffer result;
 	SET_NULL_TO_BUFFER(result);
+	//
+	ASSERT_TRUE(environment_get_machine_name(&result)) << buffer_free(&result);
+#if defined(_WIN32)
 	buffer expected_result;
 	SET_NULL_TO_BUFFER(expected_result);
-#if defined(_WIN32)
-	const char* variable_name[] = { "USERPROFILE", "COMPUTERNAME", "USERNAME" };
-#else
-	const char* variable_name[] = { "HOME", "NAME", "LOGNAME" };
-#endif
-
-	for (uint8_t i = 0; i < 3; ++i)
-	{
-		ASSERT_TRUE(buffer_resize(&result, 0)) << buffer_free(&expected_result) << buffer_free(&result);
-		ASSERT_TRUE(buffer_resize(&expected_result, 0)) << buffer_free(&expected_result) << buffer_free(&result);
-
-		if (0 == i)
-		{
-			ASSERT_TRUE(environment_get_folder_path(UserProfile,
-													&result)) << buffer_free(&expected_result) << buffer_free(&result);
-		}
-		else if (1 == i)
-		{
-			ASSERT_TRUE(environment_get_machine_name(&result)) << buffer_free(&expected_result) << buffer_free(&result);
-#if defined(BSD) || defined(__linux__)
-			continue;
-#endif
-		}
-		else if (2 == i)
-		{
-			ASSERT_TRUE(environment_get_user_name(&result)) << buffer_free(&expected_result) << buffer_free(&result);
-		}
-
-		const std::string result_str(buffer_to_string(&result));
-		const uint8_t variable_name_length = (uint8_t)strlen(variable_name[i]);
-		ASSERT_TRUE(environment_get_variable((const uint8_t*)variable_name[i], variable_name_length,
-											 &expected_result))
-				<< variable_name[i] << std::endl
-				<< "Expected value for variable is '" << result_str << "'" << std::endl
-				<< buffer_free(&expected_result) << buffer_free(&result);
-		const std::string expected_result_str(buffer_to_string(&expected_result));
-		ASSERT_EQ(expected_result_str, result_str);
-	}
-
+	//
+	const std::string returned(buffer_to_string(&result));
+	ASSERT_TRUE(
+		environment_get_variable(variable_name, variable_name + variable_name_length, &expected_result))
+			<< "Expected value for variable is '" << returned << "'" << std::endl
+			<< buffer_free(&expected_result) << buffer_free(&result);
+	const std::string expected_return(buffer_to_string(&expected_result));
+	ASSERT_EQ(expected_return, returned) << buffer_free(&expected_result) << buffer_free(&result);
+	//
 	buffer_release(&expected_result);
+#endif
 	buffer_release(&result);
 }
 
@@ -211,6 +189,35 @@ TEST(TestEnvironment_, environment_get_operating_system)
 	ASSERT_EQ(Unix, os->Platform);
 #endif
 	ASSERT_LT(0, common_count_bytes_until(os->VersionString, 0));
+}
+
+TEST(TestEnvironment_, environment_get_user_name)
+{
+#if defined(_WIN32)
+	const uint8_t* variable_name = (const uint8_t*)"USERNAME";
+	const uint8_t variable_name_length = 8;
+#else
+	const uint8_t* variable_name = (const uint8_t*)"LOGNAME";
+	const uint8_t variable_name_length = 7;
+#endif
+	buffer result;
+	SET_NULL_TO_BUFFER(result);
+	//
+	ASSERT_TRUE(environment_get_user_name(&result)) << buffer_free(&result);
+	//
+	buffer expected_result;
+	SET_NULL_TO_BUFFER(expected_result);
+	//
+	const std::string returned(buffer_to_string(&result));
+	ASSERT_TRUE(
+		environment_get_variable(variable_name, variable_name + variable_name_length, &expected_result))
+			<< "Expected value for variable is '" << returned << "'" << std::endl
+			<< buffer_free(&expected_result) << buffer_free(&result);
+	const std::string expected_return(buffer_to_string(&expected_result));
+	ASSERT_EQ(expected_return, returned) << buffer_free(&expected_result) << buffer_free(&result);
+	//
+	buffer_release(&expected_result);
+	buffer_release(&result);
 }
 
 TEST(TestEnvironment_, environment_newline)
@@ -245,12 +252,12 @@ TEST_F(TestEnvironment, environment_variable_exists)
 {
 	for (const auto& node : nodes)
 	{
-		const char* variable_name = node.node().select_node("variable_name").node().child_value();
+		const uint8_t* variable_name = (const uint8_t*)node.node().select_node("variable_name").node().child_value();
 		const uint8_t variable_name_length = (uint8_t)INT_PARSE(
 				node.node().select_node("variable_name_length").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
-		const uint8_t returned = environment_variable_exists((const uint8_t*)variable_name, variable_name_length);
+		const uint8_t returned = environment_variable_exists(variable_name, variable_name + variable_name_length);
 		ASSERT_EQ(expected_return, returned) << "'" << variable_name << "'" << std::endl;
 		//
 		--node_count;

@@ -185,6 +185,7 @@ TEST_F(TestProperty, property_task)
 			ASSERT_EQ(expected_readonly, returned_readonly) << name << buffer_free(&properties);
 		}
 
+		project_unload(project);
 		--node_count;
 	}
 

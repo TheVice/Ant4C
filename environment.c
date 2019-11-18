@@ -11,6 +11,7 @@
 #include "conversion.h"
 #include "operating_system.h"
 #include "range.h"
+#include "text_encoding.h"
 
 #include <string.h>
 
@@ -257,21 +258,10 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 	if (S_OK == fnSHGetKnownFolderPath(&folderID, KF_FLAG_DEFAULT, NULL, &pathW))
 	{
-		uint16_t count = (uint16_t)wcslen(pathW);
-		const ptrdiff_t path_size = buffer_size(path);
-
-		if (!buffer_append_char(path, NULL, count))
-		{
-			CoTaskMemFree(pathW);
-			pathW = NULL;
-			return 0;
-		}
-
-		char* m = (char*)buffer_data(path, path_size);
-		WIDE2MULTI(pathW, m, count);
+		const size_t count = wcslen(pathW);
+		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(pathW, pathW + count, path);
 		CoTaskMemFree(pathW);
-		pathW = NULL;
-		return 0 < count;
+		return returned;
 	}
 
 	return 1;
@@ -487,29 +477,35 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 #else
 	fnSHGetFolderPathW = (LPFN_SHGETFOLDERPATHW)GetProcAddress(shell32Module, "SHGetFolderPathW");
 #endif
-	ptrdiff_t path_size = buffer_size(path);
 
-	if (!buffer_append_char(path, NULL, MAX_PATH + 1) || !buffer_append_char(path, NULL, MAX_PATH + 1))
+	if (NULL == fnSHGetFolderPathW)
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(path, path_size);
-	wchar_t* w = (wchar_t*)buffer_data(path, path_size + MAX_PATH + 1);
+	const ptrdiff_t size = buffer_size(path);
 
-	if (S_OK != fnSHGetFolderPathW(NULL, folderID, NULL, SHGFP_TYPE_DEFAULT, w))
+	if (!buffer_append(path, NULL, 6 * (MAX_PATH + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(path, path_size + (ptrdiff_t)wcslen(w)))
+	wchar_t* pathW = (wchar_t*)buffer_data(path,
+										   buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * MAX_PATH - sizeof(uint16_t));
+
+	if (S_OK != fnSHGetFolderPathW(NULL, folderID, NULL, SHGFP_TYPE_DEFAULT, pathW))
 	{
 		return 0;
 	}
 
-	uint16_t count  = (uint16_t)(buffer_size(path) - path_size);
-	WIDE2MULTI(w, m, count);
-	return 0 < count;
+	const size_t count = wcslen(pathW);
+
+	if (!buffer_resize(path, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(pathW, pathW + count, path);
 #endif
 }
 
@@ -629,25 +625,28 @@ uint8_t environment_get_machine_name(struct buffer* name)
 		return 0;
 	}
 
-	const ptrdiff_t name_size = buffer_size(name);
-	DWORD size = MAX_COMPUTERNAME_LENGTH + 1;
+	const ptrdiff_t size = buffer_size(name);
+	DWORD max_size = 6 * (MAX_COMPUTERNAME_LENGTH + 1) + sizeof(uint32_t);
 
-	if (!buffer_append_char(name, NULL, size) || !buffer_append_wchar_t(name, NULL, size))
+	if (!buffer_append(name, NULL, max_size))
 	{
 		return 0;
 	}
 
-	wchar_t* nameW = (wchar_t*)buffer_data(name, name_size + size);
+	wchar_t* nameW = (wchar_t*)buffer_data(name,
+										   buffer_size(name) - sizeof(uint32_t) - sizeof(uint16_t) * MAX_COMPUTERNAME_LENGTH - sizeof(uint16_t));
 
-	if (!GetComputerNameW(nameW, &size))
+	if (!GetComputerNameW(nameW, &max_size))
 	{
 		return 0;
 	}
 
-	const DWORD computer_name_size = size;
-	char* m = (char*)buffer_data(name, name_size);
-	WIDE2MULTI(nameW, m, size);
-	return size && buffer_resize(name, name_size + computer_name_size);
+	if (!buffer_resize(name, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name);
 }
 
 #else
@@ -813,25 +812,29 @@ uint8_t environment_get_user_name(struct buffer* name)
 		return 0;
 	}
 
-	const ptrdiff_t name_size = buffer_size(name);
-	DWORD size = UNLEN + 1;
+	const ptrdiff_t size = buffer_size(name);
+	DWORD max_size = 6 * (UNLEN + 1) + sizeof(uint32_t);
 
-	if (!buffer_append_char(name, NULL, size) || !buffer_append_wchar_t(name, NULL, size))
+	if (!buffer_append(name, NULL, max_size))
 	{
 		return 0;
 	}
 
-	wchar_t* nameW = (wchar_t*)buffer_data(name, name_size + size);
+	wchar_t* nameW = (wchar_t*)buffer_data(name,
+										   buffer_size(name) - sizeof(uint32_t) - sizeof(uint16_t) * UNLEN - sizeof(uint16_t));
 
-	if (!GetUserNameW(nameW, &size))
+	if (!GetUserNameW(nameW, &max_size))
 	{
 		return 0;
 	}
 
-	const DWORD user_name_size = size - 1;
-	char* m = (char*)buffer_data(name, name_size);
-	WIDE2MULTI(nameW, m, size);
-	return size && buffer_resize(name, name_size + user_name_size);
+	if (!buffer_resize(name, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name) &&
+		   buffer_resize(name, buffer_size(name) - 1);
 }
 
 #else
@@ -855,111 +858,108 @@ uint8_t environment_get_user_name(struct buffer* name)
 }
 
 #endif
+
+#define LOCAL_OR_ARGUMENT(L, A) (NULL != (A) ? (A) : (L))
+
 #if defined(_WIN32)
 
-uint8_t environment_get_variable(const uint8_t* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
 								 struct buffer* variable)
 {
-	if (NULL == variable_name || 0 == variable_name_length)
+	if (range_in_parts_is_null_or_empty(variable_name_start, variable_name_finish))
 	{
 		return 0;
 	}
 
-	struct buffer variable_name_w;
+	struct buffer l_variable;
 
-	SET_NULL_TO_BUFFER(variable_name_w);
+	SET_NULL_TO_BUFFER(l_variable);
 
-	if (!buffer_append_wchar_t(&variable_name_w, NULL, (ptrdiff_t)variable_name_length + 2))
+	const ptrdiff_t size = buffer_size(variable);
+
+	if (!text_encoding_UTF8_to_UTF16LE(variable_name_start, variable_name_finish, LOCAL_OR_ARGUMENT(&l_variable,
+									   variable)) ||
+		!buffer_push_back_uint16(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
 	{
-		buffer_release(&variable_name_w);
+		buffer_release(&l_variable);
 		return 0;
 	}
 
-	wchar_t* ptr = buffer_wchar_t_data(&variable_name_w, 0);
+	const ptrdiff_t value_start = buffer_size(LOCAL_OR_ARGUMENT(&l_variable, variable));
 
-	for (uint8_t i = 0; i < variable_name_length; ++i)/*TODO: Use WIDE2MULTI*/
+	if (!buffer_push_back_uint16(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
 	{
-		ptr[i] = variable_name[i];
+		buffer_release(&l_variable);
+		return 0;
 	}
 
-	ptr[variable_name_length] = L'\0';
-	const uint16_t pos = variable_name_length + 1;
-	DWORD size = GetEnvironmentVariableW(buffer_wchar_t_data(&variable_name_w, 0),
-										 buffer_wchar_t_data(&variable_name_w, pos),
-										 1);
+	const DWORD variable_value_size = GetEnvironmentVariableW(
+										  (const wchar_t*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), size),
+										  (wchar_t*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), value_start),
+										  1);
+	buffer_release(&l_variable);
 
-	if (0 == size)
+	if (variable_value_size < 2)
 	{
-		buffer_release(&variable_name_w);
 		return 0;
 	}
 
 	if (NULL == variable)
 	{
-		buffer_release(&variable_name_w);
 		return 1;
 	}
 
-	if (1 < size)
+	if (!buffer_append(variable, NULL, sizeof(uint32_t) + (ptrdiff_t)6 * (variable_value_size + (ptrdiff_t)1)))
 	{
-		if (!buffer_append_wchar_t(&variable_name_w, NULL, size))
-		{
-			buffer_release(&variable_name_w);
-			return 0;
-		}
-
-		size = GetEnvironmentVariableW(buffer_wchar_t_data(&variable_name_w, 0),
-									   buffer_wchar_t_data(&variable_name_w, pos),
-									   size);
-
-		if (0 == size)
-		{
-			buffer_release(&variable_name_w);
-			return 0;
-		}
-	}
-
-	++size;
-	const ptrdiff_t variable_size = buffer_size(variable);
-
-	if (!buffer_append_char(variable, NULL, size))
-	{
-		buffer_release(&variable_name_w);
 		return 0;
 	}
 
-	--size;
-	const wchar_t* w = buffer_wchar_t_data(&variable_name_w, pos);
-	char* m = (char*)buffer_data(variable, variable_size);
-	WIDE2MULTI(w, m, size);
-	buffer_release(&variable_name_w);
-	return size && buffer_resize(variable, buffer_size(variable) - 1);
+	wchar_t* value = (wchar_t*)buffer_data(variable,
+										   buffer_size(variable) - sizeof(uint32_t) - sizeof(uint16_t) * variable_value_size - sizeof(uint16_t));
+	const DWORD returned_value_size = GetEnvironmentVariableW(
+										  (const wchar_t*)buffer_data(variable, size),
+										  value,
+										  variable_value_size);
+
+	if (variable_value_size < returned_value_size)
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(variable, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(value, value + returned_value_size, variable);
 }
 
 #else
 
-uint8_t environment_get_variable(const uint8_t* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
 								 struct buffer* variable)
 {
-	if (NULL == variable_name ||
-		0 == variable_name_length)
+	if (range_in_parts_is_null_or_empty(variable_name_start, variable_name_finish))
 	{
 		return 0;
 	}
 
-	struct buffer variable_name_;
+	struct buffer l_variable;
 
-	SET_NULL_TO_BUFFER(variable_name_);
+	SET_NULL_TO_BUFFER(l_variable);
 
-	if (!buffer_append(&variable_name_, variable_name, variable_name_length) ||
-		!buffer_push_back(&variable_name_, 0))
+	const ptrdiff_t size = buffer_size(variable);
+
+	if (!buffer_append(LOCAL_OR_ARGUMENT(&l_variable, variable), variable_name_start,
+					   variable_name_finish - variable_name_start) ||
+		!buffer_push_back(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
 	{
-		buffer_release(&variable_name_);
+		buffer_release(&l_variable);
 		return 0;
 	}
 
-	const char* value = getenv(buffer_char_data(&variable_name_, 0));
-	buffer_release(&variable_name_);
+	const char* value = getenv((const char*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), size));
+	buffer_release(&l_variable);
 
 	if (NULL == value)
 	{
@@ -971,11 +971,10 @@ uint8_t environment_get_variable(const uint8_t* variable_name, uint8_t variable_
 		return 1;
 	}
 
-	return common_append_string_to_buffer((const uint8_t*)value, variable);
+	return buffer_resize(variable, size) && common_append_string_to_buffer((const uint8_t*)value, variable);
 }
 
 #endif
-
 
 uint8_t environment_newline(struct buffer* newline)
 {
@@ -991,9 +990,9 @@ uint8_t environment_newline(struct buffer* newline)
 #endif
 }
 
-uint8_t environment_variable_exists(const uint8_t* variable_name, uint8_t variable_name_length)
+uint8_t environment_variable_exists(const uint8_t* variable_name_start, const uint8_t* variable_name_finish)
 {
-	return environment_get_variable(variable_name, variable_name_length, NULL);
+	return environment_get_variable(variable_name_start, variable_name_finish, NULL);
 }
 
 uint8_t environment_is64bit_process()
@@ -1198,14 +1197,14 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 
 		case get_variable:
 			return (1 == arguments_count) &&
-				   environment_get_variable(argument.start, (uint8_t)range_size(&argument), output);
+				   environment_get_variable(argument.start, argument.finish, output);
 
 		case newline:
 			return !arguments_count && environment_newline(output);
 
 		case variable_exists:
 			return (1 == arguments_count) &&
-				   bool_to_string(environment_variable_exists(argument.start, (uint8_t)range_size(&argument)),
+				   bool_to_string(environment_variable_exists(argument.start, argument.finish),
 								  output);
 
 		case is64bit_process:

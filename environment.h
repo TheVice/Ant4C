@@ -69,10 +69,10 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 uint8_t environment_get_machine_name(struct buffer* name);
 const struct OperatingSystem* environment_get_operating_system();
 uint8_t environment_get_user_name(struct buffer* name);
-uint8_t environment_get_variable(const uint8_t* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
 								 struct buffer* variable);
 uint8_t environment_newline(struct buffer* newline);
-uint8_t environment_variable_exists(const uint8_t* variable_name, uint8_t variable_name_length);
+uint8_t environment_variable_exists(const uint8_t* variable_name_start, const uint8_t* variable_name_finish);
 uint8_t environment_is64bit_process();
 uint8_t environment_is64bit_operating_system();
 

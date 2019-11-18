@@ -396,11 +396,50 @@ TEST(TestPath_, path_exec_function_get_full_path)
 	buffer_release(&output);
 }
 
-/*
-path_get_directory_for_current_process
-path_get_directory_for_current_image
-cygpath_get_dos_path
-cygpath_get_unix_path
+TEST(TestPath_, path_get_directory_for_current_process)
+{
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+	ASSERT_TRUE(path_get_directory_for_current_process(&output)) << buffer_free(&output);
+	const auto path_in_range = buffer_to_range(&output);
+	ASSERT_TRUE(path_is_path_rooted(path_in_range.start, path_in_range.finish)) << buffer_free(&output);
+	buffer_release(&output);
+}
+
+/*path_get_directory_for_current_image*/
+TEST(TestPath_, cygpath_get_dos_path)
+{
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+#if defined(_WIN32)
+	const uint8_t* paths[] =
+	{
+		(const uint8_t*)"C:\\Program Files\\Windows Defender Advanced Threat Protection"
+	};
+	//
+	const uint16_t paths_lengths[] =
+	{
+		60
+	};
+	//
+	const std::string expected_outputs[] =
+	{
+		"C:\\PROGRA~1\\WIF4A9~1"
+	};
+
+	for (size_t i = 0, count = COUNT_OF(paths); i < count; ++i)
+	{
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(cygpath_get_dos_path(paths[i], paths[i] + paths_lengths[i], &output)) << buffer_free(&output);
+		ASSERT_EQ(expected_outputs[i], buffer_to_string(&output)) << buffer_free(&output);
+	}
+
+#else
+	const uint8_t* path_start = (const uint8_t*)"/";
+	ASSERT_FALSE(cygpath_get_dos_path(path_start, path_start + 1, &output)) << buffer_free(&output);//TODO:
+#endif
+	buffer_release(&output);
+}
+/*cygpath_get_unix_path
 cygpath_get_windows_path
-cygpath_exec_function
-*/
+cygpath_exec_function*/

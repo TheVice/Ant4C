@@ -407,13 +407,6 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv)
 	{
 		const size_t length = wcslen(argv[i]);
 
-		if (!buffer_resize(&argumentA, 2 * sizeof(uint32_t) * length) ||
-			!buffer_resize(&argumentA, 0))
-		{
-			buffer_release(&argumentA);
-			return 0;
-		}
-
 		if (!text_encoding_UTF16LE_to_UTF8(argv[i], argv[i] + length, &argumentA) ||
 			!buffer_push_back(&argumentA, 0))
 		{

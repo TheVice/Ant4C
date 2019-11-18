@@ -129,34 +129,32 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 	}
 
 	const ptrdiff_t size = buffer_size(drives);
-	const DWORD count_of_characters = GetLogicalDriveStringsW(0, NULL);
+	const DWORD logical_drives = GetLogicalDrives();
 
-	if (!count_of_characters ||
-		!buffer_append_char(drives, NULL, count_of_characters) ||
-		!buffer_append_wchar_t(drives, NULL, count_of_characters))
+	if (0 == logical_drives ||
+		!buffer_append(drives, NULL, 4 * 26 + 1) ||
+		!buffer_resize(drives, size))
 	{
 		return 0;
 	}
 
-	wchar_t* w = (wchar_t*)buffer_data(drives, size + count_of_characters);
-
-	if (!GetLogicalDriveStringsW(count_of_characters, w))
+	for (uint32_t drive = 'A', i = 1, count = 'Z' + 1; drive < count; ++drive, i = i << 1)
 	{
-		return 0;
+		if (i & logical_drives)
+		{
+			if (!buffer_push_back(drives, (uint8_t)drive) ||
+				!buffer_push_back(drives, ':') ||
+				!buffer_push_back(drives, '\\') ||
+				!buffer_push_back(drives, '\0'))
+			{
+				return 0;
+			}
+		}
 	}
 
-	DWORD count = count_of_characters;
-	char* m = (char*)buffer_data(drives, size);
-	WIDE2MULTI(w, m, count);
-
-	if (!count)
-	{
-		return 0;
-	}
-
-	return buffer_resize(drives, size + count_of_characters);
+	return buffer_push_back(drives, '\0');
 #else
-	return buffer_push_back(drives, PATH_DELIMITER);
+	return buffer_push_back(drives, PATH_DELIMITER) && buffer_push_back_uint16(drives, 0);
 #endif
 }
 

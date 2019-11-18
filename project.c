@@ -471,6 +471,7 @@ uint8_t project_evaluate_task(void* project, const struct buffer* task_arguments
 					buffer_data(&build_file, 0),
 					buffer_data(&build_file, 0) + buffer_size(&build_file), &base_directory))
 			{
+				buffer_release(&build_file);
 				return 0;
 			}
 
@@ -480,9 +481,12 @@ uint8_t project_evaluate_task(void* project, const struct buffer* task_arguments
 											base_directory.start, range_size(&base_directory),
 											0, 1, 1, /*verbose*/0))
 			{
+				buffer_release(&build_file);
 				return 0;
 			}
 		}
+
+		buffer_release(&build_file);
 	}
 
 	return 1;
