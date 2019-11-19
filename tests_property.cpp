@@ -88,41 +88,6 @@ TEST(TestProperty_, property_at_all)
 	property_clear(&properties);
 }
 
-TEST(TestProperty_, property_set_value)
-{
-	uint8_t verbose = 0;
-	//
-	buffer properties;
-	SET_NULL_TO_BUFFER(properties);
-	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-	//
-	const char* expected_return = "3.1415926535897931";
-	//
-	ASSERT_TRUE(property_set_by_name(&properties, (const uint8_t*)"my_property", 11,
-									 (const uint8_t*)"${math::PI()}", 13,
-									 property_value_is_byte_array,
-									 1, 0, 1, verbose))
-			<< buffer_free(&output) << properties_free(&properties);
-	void* the_property = NULL;
-	ASSERT_TRUE(property_exists(&properties, (const uint8_t*)"my_property", 11, &the_property))
-			<< buffer_free(&output) << properties_free(&properties);
-	ASSERT_TRUE(property_get_by_pointer(the_property, &output))
-			<< buffer_free(&output) << properties_free(&properties);
-	ASSERT_TRUE(property_actualize_value(NULL, NULL, 1, the_property, 0, &output))
-			<< buffer_free(&output) << properties_free(&properties);
-	ASSERT_STREQ(expected_return, buffer_to_string(&output).c_str())
-			<< buffer_free(&output) << properties_free(&properties);
-	ASSERT_FALSE(property_set_by_pointer(the_property,
-										 (const uint8_t*)"${property::get-value('my_property')} ${math::E()}", 50,
-										 property_value_is_byte_array, 0, 0, verbose))
-			<< buffer_free(&output) << properties_free(&properties);
-	//
-	buffer_release(&output);
-	property_clear(&properties);
-}
-
 TEST_F(TestProperty, property_task)
 {
 	static const uint8_t* property_str = (const uint8_t*)"property";

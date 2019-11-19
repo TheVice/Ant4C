@@ -9,7 +9,6 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
-#include "interpreter.h"
 #include "project.h"
 #include "range.h"
 #include "xml.h"
@@ -543,53 +542,4 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 	}
 
 	return 0;
-}
-
-uint8_t property_actualize_value(const void* project, const void* target,
-								 uint8_t property_function_id, const void* the_property,
-								 ptrdiff_t size, struct buffer* return_of_function)
-{
-	if (property_get_value_function != property_function_id)
-	{
-		return 1;
-	}
-
-	uint8_t dynamic = 0;
-
-	if (!property_is_dynamic(the_property, &dynamic))
-	{
-		return 0;
-	}
-
-	if (!dynamic)
-	{
-		return 1;
-	}
-
-	struct buffer code_in_buffer;
-
-	SET_NULL_TO_BUFFER(code_in_buffer);
-
-	if (!buffer_append(&code_in_buffer, buffer_data(return_of_function, size),
-					   buffer_size(return_of_function) - size) ||
-		!buffer_resize(return_of_function, size))
-	{
-		buffer_release(&code_in_buffer);
-		return 0;
-	}
-
-	struct range code;
-
-	code.start = buffer_data(&code_in_buffer, 0);
-
-	code.finish = code.start + buffer_size(&code_in_buffer);
-
-	if (!interpreter_evaluate_code(project, target, &code, return_of_function))
-	{
-		buffer_release(&code_in_buffer);
-		return 0;
-	}
-
-	buffer_release(&code_in_buffer);
-	return 1;
 }

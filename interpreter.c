@@ -246,6 +246,55 @@ uint8_t interpreter_evaluate_argument_area(
 	return (pos != argument_area->start) ? buffer_append(output, pos, argument_area->finish - pos) : 1;
 }
 
+uint8_t interpreter_actualize_property_value(const void* project, const void* target,
+		uint8_t property_function_id, const void* the_property,
+		ptrdiff_t size, struct buffer* return_of_function)
+{
+	if (property_get_value_function != property_function_id)
+	{
+		return 1;
+	}
+
+	uint8_t dynamic = 0;
+
+	if (!property_is_dynamic(the_property, &dynamic))
+	{
+		return 0;
+	}
+
+	if (!dynamic)
+	{
+		return 1;
+	}
+
+	struct buffer code_in_buffer;
+
+	SET_NULL_TO_BUFFER(code_in_buffer);
+
+	if (!buffer_append(&code_in_buffer, buffer_data(return_of_function, size),
+					   buffer_size(return_of_function) - size) ||
+		!buffer_resize(return_of_function, size))
+	{
+		buffer_release(&code_in_buffer);
+		return 0;
+	}
+
+	struct range code;
+
+	code.start = buffer_data(&code_in_buffer, 0);
+
+	code.finish = code.start + buffer_size(&code_in_buffer);
+
+	if (!interpreter_evaluate_code(project, target, &code, return_of_function))
+	{
+		buffer_release(&code_in_buffer);
+		return 0;
+	}
+
+	buffer_release(&code_in_buffer);
+	return 1;
+}
+
 uint8_t interpreter_get_value_for_argument(
 	const void* project, const void* target,
 	struct range* argument_area, struct buffer* values)
@@ -285,7 +334,7 @@ uint8_t interpreter_get_value_for_argument(
 				return 0;
 			}
 
-			if (!property_actualize_value(project, target, 1, the_property, 0, &value))
+			if (!interpreter_actualize_property_value(project, target, 1, the_property, 0, &value))
 			{
 				buffer_release(&value);
 				return 0;
@@ -495,8 +544,8 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 					break;
 				}
 
-				if (!property_actualize_value(project, target, property_get_value_function, &the_property, size,
-											  return_of_function))
+				if (!interpreter_actualize_property_value(project, target, property_get_value_function, &the_property, size,
+						return_of_function))
 				{
 					values_count = 0;
 					break;
@@ -550,9 +599,9 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				break;
 			}
 
-			if (!property_actualize_value(project, target,
-										  property_get_value_function,
-										  the_property, size, return_of_function))
+			if (!interpreter_actualize_property_value(project, target,
+					property_get_value_function,
+					the_property, size, return_of_function))
 			{
 				values_count = 0;
 				break;
@@ -575,8 +624,8 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				break;
 			}
 
-			if (!property_actualize_value(project, target, property_function_id, the_property, size,
-										  return_of_function))
+			if (!interpreter_actualize_property_value(project, target, property_function_id, the_property, size,
+					return_of_function))
 			{
 				values_count = 0;
 				break;
@@ -1025,7 +1074,23 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 
 		case echo_task:
-			return echo_evaluate_task(project, target, attributes_start, attributes_finish, element_finish);
+			if (!echo_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = echo_evaluate_task(project, &task_arguments, attributes_finish, element_finish);
+			break;
 
 		case exec_task:
 			return exec_evaluate_task(project, target, attributes_start, attributes_finish, element_finish);

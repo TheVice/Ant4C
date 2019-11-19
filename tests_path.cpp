@@ -406,7 +406,20 @@ TEST(TestPath_, path_get_directory_for_current_process)
 	buffer_release(&output);
 }
 
-/*path_get_directory_for_current_image*/
+TEST(TestPath_, path_get_directory_for_current_image)
+{
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+#if defined(_WIN32) || defined(__linux__)
+	ASSERT_TRUE(path_get_directory_for_current_image(&output)) << buffer_free(&output);
+	const auto path_in_range = buffer_to_range(&output);
+	ASSERT_TRUE(path_is_path_rooted(path_in_range.start, path_in_range.finish)) << buffer_free(&output);
+#else
+	ASSERT_FALSE(path_get_directory_for_current_image(&output)) << buffer_free(&output);
+#endif
+	buffer_release(&output);
+}
+
 TEST(TestPath_, cygpath_get_dos_path)
 {
 	buffer output;

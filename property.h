@@ -55,8 +55,5 @@ void property_clear(struct buffer* properties);
 uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
 							   uint8_t arguments_count, const void** the_property, struct buffer* output);
-uint8_t property_actualize_value(const void* project, const void* target,
-								 uint8_t property_function_id, const void* the_property,
-								 ptrdiff_t size, struct buffer* return_of_function);
 
 #endif

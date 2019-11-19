@@ -693,106 +693,85 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	}
 
 	const ptrdiff_t size = buffer_size(path);
-#if 0
-	defined(_WIN32)
+#if defined(_WIN32)
 
-	while (1)
+	while (buffer_append(path, NULL, sizeof(uint16_t) * FILENAME_MAX + sizeof(uint32_t)))
 	{
-		if (!buffer_append_wchar_t(path, NULL, FILENAME_MAX))
+		wchar_t* ptr = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
+		const ptrdiff_t expected_size = (buffer_size(path) - size) / sizeof(uint16_t) - sizeof(uint32_t);
+		const DWORD real_size = GetModuleFileNameW(NULL, ptr, (DWORD)expected_size);
+
+		if (!real_size)
 		{
 			return 0;
 		}
 
-		wchar_t* ptr = (wchar_t*)buffer_data(path, size);
-		const ptrdiff_t size_ = (buffer_size(path) - size) / sizeof(wchar_t);
-		const DWORD real_size = GetModuleFileNameW(NULL, ptr, (DWORD)size_);
+		if (expected_size < real_size)
+		{
+			continue;
+		}
 
-		if (0 == real_size)
+		if (!buffer_resize(path, size + real_size) ||
+			!buffer_append(path, NULL, (ptrdiff_t)4 * (real_size + (ptrdiff_t)1) + sizeof(uint32_t)))
 		{
 			return 0;
 		}
 
-		if (real_size < (DWORD)size_) /*TODO: move condition to while.*/
+		ptr = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
+
+		if (!buffer_resize(path, size))
 		{
-			if (!buffer_resize(path, size + real_size) ||
-				!buffer_append_wchar_t(path, NULL, (ptrdiff_t)2 + real_size))
-			{
-				return 0;
-			}
-
-			ptr = (wchar_t*)buffer_data(path, size);
-
-			if (!buffer_resize(path, size + real_size) ||
-				!buffer_append_wchar_t(path, ptr, real_size))
-			{
-				return 0;
-			}
-
-			ptr = (wchar_t*)buffer_data(path, size + real_size);
-			uint8_t* m = buffer_data(path, size);
-			uint16_t c = (uint16_t)real_size;
-			WIDE2MULTI(ptr, m, c);
-
-			if (!c)
-			{
-				return 0;
-			}
-
-			struct range directory;
-
-			if (!path_get_directory_name(m, m + real_size, &directory))
-			{
-				return 0;
-			}
-
-			if (!buffer_resize(path, size + range_size(&directory)))
-			{
-				return 0;
-			}
-
-			break;
+			return 0;
 		}
+
+		if (!text_encoding_UTF16LE_to_UTF8(ptr, ptr + real_size, path))
+		{
+			return 0;
+		}
+
+		struct range directory;
+
+		if (!path_get_directory_name(buffer_data(path, size), buffer_data(path, 0) + buffer_size(path), &directory))
+		{
+			return 0;
+		}
+
+		return buffer_resize(path, size + range_size(&directory));
 	}
 
-	return 1;
-#elif __linux
+#elif defined(__linux__)
 
-	while (1)
+	while (buffer_append_wchar_t(path, NULL, FILENAME_MAX))
 	{
-		if (!buffer_append_wchar_t(path, NULL, FILENAME_MAX))
-		{
-			return 0;
-		}
-
 		uint8_t* ptr = buffer_data(path, size);
-		const ptrdiff_t size_ = buffer_size(path) - size;
-		ptrdiff_t real_size = readlink("/proc/self/exe", (char*)ptr, size_);
+		const ptrdiff_t expected_size = buffer_size(path) - size;
+		ptrdiff_t real_size = readlink("/proc/self/exe", (char*)ptr, expected_size);
 
 		if (-1 == real_size)
 		{
 			return 0;
 		}
 
-		if (real_size < size_)
+		if (expected_size < real_size)
 		{
-			struct range directory;
-
-			if (!path_get_directory_name(ptr, ptr + real_size, &directory) ||
-				!buffer_resize(path, size + range_size(&directory)))
-			{
-				return 0;
-			}
-
-			break;
+			continue;
 		}
+
+		struct range directory;
+
+		if (!path_get_directory_name(ptr, ptr + real_size, &directory))
+		{
+			return 0;
+		}
+
+		return buffer_resize(path, size + range_size(&directory));
 	}
 
-	return 1;
 #else
 	(void)size;
 	/*TODO:*/
-	return 0;
 #endif
+	return 0;
 }
 
 uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path)
