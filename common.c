@@ -65,18 +65,18 @@ const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
 }
 
-void replace_double_char_by_single(uint8_t* string, ptrdiff_t* length, uint8_t to_be_replaced)
+uint8_t common_replace_double_byte_by_single(uint8_t* input, ptrdiff_t* size, uint8_t to_be_replaced)
 {
-	if (NULL == string || NULL == length || 0 == (*length))
-	{
-		return;
-	}
+	ptrdiff_t match = 0;
 
-	ptrdiff_t match = (*length);
+	if (NULL == input || NULL == size || 0 == (match = (*size)))
+	{
+		return 0;
+	}
 
 	for (ptrdiff_t i = 0, current = -1, count = match; i < count; ++i)
 	{
-		if (i + 1 < count && to_be_replaced == string[i + 1] && to_be_replaced == string[i])
+		if (i + 1 < count && to_be_replaced == input[i + 1] && to_be_replaced == input[i])
 		{
 			--match;
 
@@ -90,14 +90,16 @@ void replace_double_char_by_single(uint8_t* string, ptrdiff_t* length, uint8_t t
 
 		if (-1 != current && current != i)
 		{
-			string[current++] = string[i];
+			input[current++] = input[i];
 		}
 	}
 
-	if (match != (*length))
+	if (match != (*size))
 	{
-		(*length) = match;
+		(*size) = match;
 	}
+
+	return 1;
 }
 
 /*uint8_t common_string_to_enum_(const uint8_t* string_start, const uint8_t* string_finish,

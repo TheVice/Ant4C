@@ -19,6 +19,8 @@ struct buffer;
 struct range;
 
 #if defined(_WIN32)
+uint8_t file_system_append_pre_root(const struct range* path, struct buffer* output);
+uint8_t file_system_get_position_after_pre_root(struct range* path);
 uint8_t directory_exists_wchar_t(const wchar_t* path);
 
 uint8_t file_exists_wchar_t(const wchar_t* path);

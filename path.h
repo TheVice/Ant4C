@@ -45,7 +45,7 @@ static const uint8_t path_windows_delimiter = '\\';
 uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_finish,
 							  const uint8_t* ext_start, const uint8_t* ext_finish, struct buffer* path);
 uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,
-					 const uint8_t* path2_start, const uint8_t* path2_finish, struct buffer* path);
+					 const uint8_t* path2_start, const uint8_t* path2_finish, struct buffer* output);
 uint8_t path_get_directory_name(const uint8_t* path_start, const uint8_t* path_finish,
 								struct range* directory);
 uint8_t path_get_extension(const uint8_t* path_start, const uint8_t* path_finish, struct range* ext);

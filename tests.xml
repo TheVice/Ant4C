@@ -216,29 +216,35 @@
       <argument>-buildfile:1.build</argument>
       <output>1.build</output>
     </argument_parser_get_build_file>
-    <!--argument_parser_get_log_file>
+    <argument_parser_get_log_file>
       <argument>-l:</argument>
       <output></output>
-    </argument_parser_get_log_file-->
+      <return>0</return>
+    </argument_parser_get_log_file>
     <argument_parser_get_log_file>
       <argument>-l:1.txt</argument>
       <output>1.txt</output>
+      <return>1</return>
     </argument_parser_get_log_file>
-    <!--argument_parser_get_log_file>
+    <argument_parser_get_log_file>
       <argument>-logfile:</argument>
       <output></output>
-    </argument_parser_get_log_file-->
+      <return>0</return>
+    </argument_parser_get_log_file>
     <argument_parser_get_log_file>
       <argument>-logfile:1.txt</argument>
       <output>1.txt</output>
+      <return>1</return>
     </argument_parser_get_log_file>
     <argument_parser_get_log_file>
       <argument>-logfile:"C:\Program Files\1.txt"</argument>
       <output>C:\Program Files\1.txt</output>
+      <return>1</return>
     </argument_parser_get_log_file>
     <argument_parser_get_log_file>
       <argument>-l:"C:\Program Files\1.txt"</argument>
       <output>C:\Program Files\1.txt</output>
+      <return>1</return>
     </argument_parser_get_log_file>
   </TestArgumentParser>
   <TestConversion>
@@ -1128,7 +1134,7 @@
       <output>get-path-root('/tmp/file') => /</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <!--interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>is-path-rooted(get-temp-file-name()) => ${path::is-path-rooted(path::get-temp-file-name())}</code>
       <output>is-path-rooted(get-temp-file-name()) => True</output>
       <return>1</return>
@@ -1137,7 +1143,7 @@
       <code>is-path-rooted(get-temp-path()) => ${path::is-path-rooted(path::get-temp-path())}</code>
       <output>is-path-rooted(get-temp-path()) => True</output>
       <return>1</return>
-    </interpreter_evaluate_code-->
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>has-extension('abc.txt') => ${path::has-extension('abc.txt')}</code>
       <output>has-extension('abc.txt') => True</output>
@@ -1163,11 +1169,11 @@
       <output>is-path-rooted('/') => True</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <!--interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>less('1', string::get-length(get-full-path('.'))) => ${math::less('1', string::get-length(path::get-full-path('.')))}</code>
       <output>less('1', string::get-length(get-full-path('.'))) => True</output>
       <return>1</return>
-    </interpreter_evaluate_code-->
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-windows()}">
       <code>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => ${cygpath::get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection')}</code>
       <output>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => C:\PROGRA~1\WIF4A9~1</output>
@@ -1198,11 +1204,11 @@
       <output>get-windows-path('/usr/lib/') => \usr\lib\</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <!--interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>empty(get-directory-name(get-temp-path())) -> ${string::empty(path::get-directory-name(path::get-temp-path()))}</code>
       <output>empty(get-directory-name(get-temp-path())) -> False</output>
       <return>1</return>
-    </interpreter_evaluate_code-->
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>empty(current-directory()) => ${string::empty(program::current-directory())}</code>
       <output>empty(current-directory()) => False</output>
@@ -1228,16 +1234,16 @@
       <output>to-string('False') => False</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <!--interpreter_evaluate_code>
-      <code>parse('0.5') => ${double::parse('0.5')}</code>
+    <interpreter_evaluate_code>
+      <code>parse('0.5') => ${string::substring(double::parse('0.5'), '0', '3')}</code>
       <output>parse('0.5') => 0.5</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>to-string('0.5') => ${double::to-string('0.5')}</code>
+      <code>to-string('0.5') => ${string::substring(double::to-string('0.5'), '0', '3')}</code>
       <output>to-string('0.5') => 0.5</output>
       <return>1</return>
-    </interpreter_evaluate_code-->
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>parse('2') => ${int::parse('2')}</code>
       <output>parse('2') => 2</output>
@@ -2487,11 +2493,11 @@
       <output>C:\1.exe</output>
       <return>1</return>
     </path_change_extension>
-    <path_combine if="${platform::is-windows()}">
+    <path_combine>
       <path1></path1>
       <path2></path2>
       <output></output>
-      <return></return>
+      <return>1</return>
     </path_combine>
     <path_combine if="${platform::is-windows()}">
       <path1>C:\</path1>
@@ -2499,14 +2505,86 @@
       <output>C:\Windows</output>
       <return>1</return>
     </path_combine>
-    <path_combine if="${platform::is-unix()}">
+    <path_combine if="${platform::is-windows()}">
       <path1></path1>
+      <path2>\Windows</path2>
+      <output>\Windows</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1>C:\</path1>
       <path2></path2>
-      <output></output>
-      <return></return>
+      <output>C:\</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1>C:/</path1>
+      <path2>/Windows</path2>
+      <output>C:\Windows</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1></path1>
+      <path2>/Windows</path2>
+      <output>\Windows</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1>C:/</path1>
+      <path2></path2>
+      <output>C:\</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1>C:/</path1>
+      <path2>\Windows</path2>
+      <output>C:\Windows</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-windows()}">
+      <path1>C:\</path1>
+      <path2>/Windows</path2>
+      <output>C:\Windows</output>
+      <return>1</return>
     </path_combine>
     <path_combine if="${platform::is-unix()}">
       <path1>/tmp/</path1>
+      <path2>/file</path2>
+      <output>/tmp/file</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1></path1>
+      <path2>/file</path2>
+      <output>/file</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1>/tmp/</path1>
+      <path2></path2>
+      <output>/tmp/</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1>/tmp/</path1>
+      <path2>\file</path2>
+      <output>/tmp/file</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1></path1>
+      <path2>\file</path2>
+      <output>/file</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1>\tmp/</path1>
+      <path2></path2>
+      <output>/tmp/</output>
+      <return>1</return>
+    </path_combine>
+    <path_combine if="${platform::is-unix()}">
+      <path1>\tmp\</path1>
       <path2>/file</path2>
       <output>/tmp/file</output>
       <return>1</return>
@@ -2611,14 +2689,14 @@
       <full_path>/</full_path>
       <return>1</return>
     </path_get_full_path>
-    <!--path_get_full_path if="${platform::is-unix()}">
+    <TODO><path_get_full_path if="${platform::is-unix()}">
       <root_path>/tmp</root_path>
       <root_path_length>4</root_path_length>
       <path>/..</path>
       <path_length>3</path_length>
       <full_path>/</full_path>
       <return>1</return>
-    </path_get_full_path-->
+    </path_get_full_path></TODO>
     <path_get_full_path if="${platform::is-windows()}">
       <root_path>C:\</root_path>
       <root_path_length>3</root_path_length>

@@ -31,9 +31,42 @@
 	\
 	(CLOSE_RESULT) = FindClose(file_handle);
 
+static const uint8_t* pre_root_path = (const uint8_t*)"\\\\?\\";
+static const uint8_t pre_root_path_length = 4;
+
+uint8_t file_system_append_pre_root(const struct range* path, struct buffer* output)
+{
+	if (range_is_null_or_empty(path) || NULL == output)
+	{
+		return 0;
+	}
+
+	if (path_is_path_rooted(path->start, path->finish) &&
+		!string_starts_with(path->start, path->finish, pre_root_path, pre_root_path + pre_root_path_length) &&
+		!buffer_append(output, pre_root_path, pre_root_path_length))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+uint8_t file_system_get_position_after_pre_root(struct range* path)
+{
+	if (range_is_null_or_empty(path))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t index = string_index_of(path->start, path->finish,
+											pre_root_path, pre_root_path + pre_root_path_length);
+	path->start += (-1 == index ? 0 : index + pre_root_path_length);
+	return 1;
+}
+
 uint8_t directory_exists_wchar_t(const wchar_t* path)
 {
-	if (NULL == path || L'\0' == *path)
+	if (NULL == path)
 	{
 		return 0;
 	}
@@ -48,7 +81,6 @@ uint8_t directory_exists_wchar_t(const wchar_t* path)
 uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 {
 	if (NULL == path ||
-		'\0' == *path ||
 		NULL == pathW)
 	{
 		return 0;
@@ -56,8 +88,14 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 
 	const ptrdiff_t length = common_count_bytes_until(path, 0);
 
+	if (!length)
+	{
+		return 0;
+	}
+
 	if (path_is_path_rooted(path, path + length) &&
-		!buffer_append_wchar_t((pathW), L"\\\\?\\", 4))
+		!string_starts_with(path, path + length, pre_root_path, pre_root_path + pre_root_path_length) &&
+		!buffer_append_wchar_t(pathW, L"\\\\?\\", 4))
 	{
 		return 0;
 	}
@@ -72,7 +110,7 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 #endif
 uint8_t directory_exists(const uint8_t* path)
 {
-	if (NULL == path || '\0' == *path)
+	if (NULL == path)
 	{
 		return 0;
 	}
@@ -196,7 +234,7 @@ uint8_t file_exists_wchar_t(const wchar_t* path)
 #endif
 uint8_t file_exists(const uint8_t* path)
 {
-	if (NULL == path || '\0' == *path)
+	if (NULL == path)
 	{
 		return 0;
 	}
@@ -223,7 +261,7 @@ uint8_t file_exists(const uint8_t* path)
 
 uint64_t file_get_length(const uint8_t* path)
 {
-	if (NULL == path || '\0' == *path)
+	if (NULL == path)
 	{
 		return 0;
 	}

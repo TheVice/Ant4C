@@ -83,7 +83,7 @@ TEST_F(TestPath, path_combine)
 		const uint8_t returned = path_combine(path1_in_range.start, path1_in_range.finish,
 											  path2_in_range.start, path2_in_range.finish, &path);
 		//
-		ASSERT_EQ(expected_return, returned) << buffer_free(&path);
+		ASSERT_EQ(expected_return, returned) << path1 << std::endl << path2 << buffer_free(&path);
 		ASSERT_EQ(expected_output, buffer_to_string(&path)) << buffer_free(&path);
 		//
 		--node_count;

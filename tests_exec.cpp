@@ -188,24 +188,6 @@ static uint8_t argument_get_keys_and_values(
 	return 1;
 }
 
-/*TEST(TestExec_, no_program)
-{
-	ASSERT_FALSE(exec(0, NULL, NULL, NULL, NULL,
-					  NULL, NULL, NULL, NULL, 0, 0, 0));
-}
-
-TEST(TestExec_, no_program_at_base_dir)
-{
-	const std::string program_str("program");
-	const range program = string_to_range(program_str);
-	//
-	const std::string base_dir_str("\\/base\\dir//");
-	const range base_dir = string_to_range(base_dir_str);
-	//
-	ASSERT_FALSE(exec(0, &program, &base_dir, NULL, NULL,
-					  NULL, NULL, NULL, NULL, 0, 0, 0));
-}*/
-
 TEST_F(TestExec, exec_at_all)
 {
 	buffer tmp;
@@ -282,7 +264,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		//
 		ASSERT_EQ(expected_return, returned) << buffer_free(&tmp) << buffer_free(&temp_file_name);
 		//
-		const auto result = output_file_content.load_file(output_file.start);
+		const auto result = output_file_content.load_file((const char*)output_file.start);
 		ASSERT_EQ(pugi::xml_parse_status::status_ok,
 				  result.status) << buffer_free(&tmp) << buffer_free(&temp_file_name);
 		//

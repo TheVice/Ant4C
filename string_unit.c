@@ -135,13 +135,19 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 {
 	if (NULL == input_start || NULL == input_finish ||
 		NULL == to_be_replaced_start || NULL == to_be_replaced_finish ||
-		NULL == output || input_finish <= input_start ||
+		NULL == output || input_finish < input_start ||
 		to_be_replaced_finish <= to_be_replaced_start)
 	{
 		return 0;
 	}
 
 	const ptrdiff_t input_length = input_finish - input_start;
+
+	if (input_length < 1)
+	{
+		return 1;
+	}
+
 	const ptrdiff_t size = buffer_size(output);
 
 	if (!buffer_append(output, input_start, input_length))

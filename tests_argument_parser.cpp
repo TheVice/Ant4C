@@ -487,18 +487,21 @@ TEST_F(TestArgumentParser, argument_parser_get_log_file)
 	{
 		const uint8_t* input = (const uint8_t*)node.node().select_node("argument").node().child_value();
 		const char* expected_output = node.node().select_node("output").node().child_value();
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		argument_parser_release();
 		GET_CHAR_ARGV(argument, input);
 		//
-		ASSERT_TRUE(argument_parser_char(0, 1, argv)) << input << std::endl << buffer_free(&argument);
+		uint8_t returned = argument_parser_char(0, 1, argv);
+		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&argument);
 		ASSERT_STREQ(expected_output, range_to_string(argument_parser_get_log_file()).c_str()) << input << std::endl
 				<< buffer_free(&argument);
 #if defined(_WIN32)
 		argument_parser_release();
 		GET_WCHAR_T_ARGVW(argument, input);
 		//
-		ASSERT_TRUE(argument_parser_wchar_t(0, 1, argvW)) << input << std::endl << buffer_free(&argument);
+		returned = argument_parser_wchar_t(0, 1, argvW);
+		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&argument);
 		ASSERT_STREQ(expected_output, range_to_string(argument_parser_get_log_file()).c_str()) << input << std::endl
 				<< buffer_free(&argument);
 #endif

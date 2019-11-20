@@ -723,7 +723,9 @@ struct Version GetWindowsVersion()
 
 	for (uint8_t i = 0, count = COUNT_OF(versions); i < count; ++i)
 	{
-		OSVERSIONINFOEXW osvi = { sizeof(OSVERSIONINFOEXW), 0, 0, 0, 0, { 0 }, 0, 0, 0, 0, 0 };
+		OSVERSIONINFOEXW osvi;
+		memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
+		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 		osvi.dwMajorVersion = versions[i].major;
 		osvi.dwMinorVersion = versions[i].minor;
 

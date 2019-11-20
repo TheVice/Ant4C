@@ -19,7 +19,7 @@ const uint8_t* find_any_symbol_like_or_not_like_that(const uint8_t* start, const
 		const uint8_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
 const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(const wchar_t* start, const wchar_t* finish,
 		const wchar_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
-void replace_double_char_by_single(uint8_t* string, ptrdiff_t* length, uint8_t to_be_replaced);
+uint8_t common_replace_double_byte_by_single(uint8_t* input, ptrdiff_t* size, uint8_t to_be_replaced);
 
 ptrdiff_t common_count_bytes_until(const uint8_t* bytes, uint8_t until);
 

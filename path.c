@@ -89,47 +89,75 @@ uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_fin
 }
 
 uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,
-					 const uint8_t* path2_start, const uint8_t* path2_finish, struct buffer* path)
+					 const uint8_t* path2_start, const uint8_t* path2_finish, struct buffer* output)
 {
-	if (NULL == path1_start || NULL == path1_finish ||
-		NULL == path2_start || NULL == path2_finish ||
-		NULL == path ||
-		path1_finish < path1_start || path2_finish < path2_start)
+	if (path1_finish < path1_start ||
+		path2_finish < path2_start ||
+		NULL == output)
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(path);
+	ptrdiff_t new_size = path1_finish - path1_start + path2_finish - path2_start;
 
-	if (!buffer_append(path, NULL,
-					   path1_finish - path1_start + 1 + path2_finish - path2_start))
+	if (path1_start < path1_finish && path2_start < path2_finish)
+	{
+		++new_size;
+	}
+
+	if (!new_size)
+	{
+		return 1;
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, new_size))
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(path, size))
+	if (!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
-	if (!buffer_append(path, path1_start, path1_finish - path1_start))
+	if (!buffer_append(output, path1_start, path1_finish - path1_start))
 	{
 		return 0;
 	}
 
-	if (!buffer_push_back(path, PATH_DELIMITER))
+	if (size < buffer_size(output) && !buffer_push_back(output, PATH_DELIMITER))
 	{
 		return 0;
 	}
 
-	if (!buffer_append(path, path2_start, path2_finish - path2_start))
+	if (!buffer_append(output, path2_start, path2_finish - path2_start))
 	{
 		return 0;
 	}
 
-	ptrdiff_t new_size = buffer_size(path) - size;
-	replace_double_char_by_single(buffer_data(path, size), &new_size, PATH_DELIMITER);
-	return buffer_resize(path, size + new_size);
+	new_size = buffer_size(output) - size;
+
+	if (new_size)
+	{
+#if defined(_WIN32)
+
+		if (!cygpath_get_windows_path(buffer_data(output, size), buffer_data(output, size) + new_size))
+#else
+		if (!cygpath_get_unix_path(buffer_data(output, size), buffer_data(output, size) + new_size))
+#endif
+		{
+			return 0;
+		}
+
+		if (!common_replace_double_byte_by_single(buffer_data(output, size), &new_size, PATH_DELIMITER))
+		{
+			return 0;
+		}
+	}
+
+	return new_size ? buffer_resize(output, size + new_size) : 1;
 }
 
 uint8_t path_get_directory_name(const uint8_t* path_start, const uint8_t* path_finish,
@@ -364,7 +392,11 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 	if (0 < index)
 	{
 		const ptrdiff_t current_index = index;
-		replace_double_char_by_single(start, &index, PATH_DELIMITER);
+
+		if (!common_replace_double_byte_by_single(start, &index, PATH_DELIMITER))
+		{
+			return 0;
+		}
 
 		if (current_index != index && !buffer_resize(full_path, size + index))
 		{
