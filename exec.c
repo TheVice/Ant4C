@@ -20,7 +20,6 @@
 #include "string_unit.h"
 #include "text_encoding.h"
 #include "xml.h"
-#if 0
 
 static const uint8_t space_symbol = ' ';
 
@@ -449,12 +448,7 @@ uint8_t exec(
 	const wchar_t* working_dirW = NULL;
 	wchar_t* environment_variablesW = NULL;
 
-	if (3 == count)
-	{
-		working_dirW = programW + indexes[1];
-		environment_variablesW = ptr + indexes[2];
-	}
-	else if (1 < count)
+	if (1 < count)
 	{
 		for (uint8_t i = 1; i < count; ++i)
 		{
@@ -887,6 +881,7 @@ uint8_t exec(
 	return spawn;
 }
 #endif
+#if 0
 uint8_t exec_get_environments(const char* start, const char* finish, struct buffer* environments)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
@@ -1408,34 +1403,6 @@ uint8_t exec_evaluate_task(void* project, const void* target,
 }
 #else
 
-uint8_t exec(
-	uint8_t append,
-	const struct range* program,
-	const struct range* base_dir,
-	const struct range* command_line,
-	const struct range* output_file,
-	void* pid_property,
-	void* result_property,
-	const struct range* working_dir,
-	const struct range* environment_variables,
-	uint8_t spawn,
-	uint32_t time_out,
-	uint8_t verbose)
-{
-	(void)append;
-	(void)program;
-	(void)base_dir;
-	(void)command_line;
-	(void)output_file;
-	(void)pid_property;
-	(void)result_property;
-	(void)working_dir;
-	(void)environment_variables;
-	(void)spawn;
-	(void)time_out;
-	(void)verbose;
-	return 0;
-}
 uint8_t exec_evaluate_task(void* project, const void* target,
 						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
 						   const uint8_t* element_finish)

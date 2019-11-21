@@ -466,10 +466,9 @@
       <return>0</return>
     </environment_variable_exists>
   </TestEnvironment>
-  <TestExec>
-    <exec_at_all>
+  <TestExec allow_output_to_console="true">
+    <exec_with_redirect_to_tmp_file>
       <append></append>
-      <program></program>
       <base_dir></base_dir>
       <command_line></command_line>
       <pid_property></pid_property>
@@ -480,75 +479,86 @@
       <time_out></time_out>
       <verbose></verbose>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all><!-- command_line -->
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <comment>command_line</comment>>
       <command_line>1 2 3 4 5</command_line>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-windows()}"><!-- working_dir -->
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-windows()}">
+      <comment>working_dir</comment>>
       <working_dir>C:\</working_dir>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-unix()}"><!-- working_dir -->
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-unix()}">
+      <comment>working_dir</comment>>
       <working_dir>/home/</working_dir>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all><!-- environment_variables -->
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <comment>environment_variables</comment>>
       <environment_variables>var1=value1</environment_variables>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all><!-- command_line environment_variables -->
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <comment>command_line environment_variables</comment>>
       <command_line>1 2 3 4 5</command_line>
       <environment_variables>var1=value1</environment_variables>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-windows()}"><!-- working_dir environment_variables -->
-      <working_dir>C:\</working_dir>
-      <environment_variables>var1=value1</environment_variables>
-      <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-unix()}"><!-- working_dir environment_variables -->
-      <working_dir>/home/</working_dir>
-      <environment_variables>var1=value1</environment_variables>
-      <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-windows()}"><!-- command_line working_dir -->
-      <command_line>1 2 3 4 5</command_line>
-      <working_dir>C:\</working_dir>
-      <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-unix()}"><!-- command_line working_dir -->
-      <command_line>1 2 3 4 5</command_line>
-      <working_dir>/home/</working_dir>
-      <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-windows()}"><!-- command_line working_dir environment_variables -->
-      <command_line>1 2 3 4 5</command_line>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-windows()}">
+      <comment>working_dir environment_variables</comment>>
       <working_dir>C:\</working_dir>
       <environment_variables>var1=value1</environment_variables>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all if="${platform::is-unix()}"><!-- command_line working_dir environment_variables -->
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-unix()}">
+      <comment>working_dir environment_variables</comment>>
+      <working_dir>/home/</working_dir>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-windows()}">
+      <comment>command_line working_dir</comment>>
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>C:\</working_dir>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-unix()}">
+      <comment>command_line working_dir</comment>>
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>/home/</working_dir>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-windows()}">
+      <comment>command_line working_dir environment_variables</comment>>
+      <command_line>1 2 3 4 5</command_line>
+      <working_dir>C:\</working_dir>
+      <environment_variables>var1=value1</environment_variables>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file if="${platform::is-unix()}">
+      <comment>command_line working_dir environment_variables</comment>>
       <command_line>1 2 3 4 5</command_line>
       <working_dir>/home/</working_dir>
       <environment_variables>var1=value1</environment_variables>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
       <environment_variables>var1=value1 var2=value2</environment_variables>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
       <environment_variables>"var 1"="value 1"</environment_variables>
       <return>1</return>
-    </exec_at_all>
-    <exec_at_all>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
       <environment_variables>"var 1"="value 1" "var 2"="value 2"</environment_variables>
       <return>1</return>
-    </exec_at_all>
+    </exec_with_redirect_to_tmp_file>
     <exec_with_redirect_to_tmp_file>
       <return>1</return>
     </exec_with_redirect_to_tmp_file>
