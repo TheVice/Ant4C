@@ -738,7 +738,7 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 			return 0;
 		}
 
-		if (expected_size < real_size)
+		if (expected_size < (ptrdiff_t)real_size)
 		{
 			continue;
 		}

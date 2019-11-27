@@ -275,10 +275,10 @@ uint8_t echo_get_level(const uint8_t* level_start, const uint8_t* level_finish)
 	return common_string_to_enum(level_start, level_finish, echo_levels, ECHO_UNKNOWN_LEVEL);
 }
 
-uint8_t echo_evaluate_task(void* project, struct buffer* task_arguments,
+uint8_t echo_evaluate_task(struct buffer* task_arguments,
 						   const uint8_t* attributes_finish, const uint8_t* element_finish)
 {
-	if (NULL == project || NULL == task_arguments)
+	if (NULL == task_arguments)
 	{
 		return 0;
 	}

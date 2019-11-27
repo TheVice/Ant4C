@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+struct buffer;
 struct range;
 
 uint8_t exec(
@@ -25,8 +26,11 @@ uint8_t exec(
 	uint8_t spawn,
 	uint32_t time_out,
 	uint8_t verbose);
-uint8_t exec_evaluate_task(void* project, const void* target,
-						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
-						   const uint8_t* element_finish);
+
+uint8_t exec_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
+						   const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose);
 
 #endif

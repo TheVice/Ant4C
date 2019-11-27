@@ -1000,7 +1000,7 @@ uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task
 }
 
 uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish)
+								  const uint8_t* attributes_start, const uint8_t* element_finish, uint8_t verbose)
 {
 	if (UNKNOWN_TASK < command || range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
@@ -1089,11 +1089,28 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				break;
 			}
 
-			task_attributes_count = echo_evaluate_task(project, &task_arguments, attributes_finish, element_finish);
+			task_attributes_count = echo_evaluate_task(&task_arguments, attributes_finish, element_finish);
 			break;
 
 		case exec_task:
-			return exec_evaluate_task(project, target, attributes_start, attributes_finish, element_finish);
+			if (!exec_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = exec_evaluate_task(project, &task_arguments, attributes_finish, element_finish,
+									verbose);
+			break;
 #if 0
 
 		case fail_:
@@ -1176,7 +1193,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				break;
 			}
 
-			task_attributes_count = project_evaluate_task(project, &task_arguments);
+			task_attributes_count = project_evaluate_task(project, &task_arguments, verbose);
 			break;
 
 		case property_task:
@@ -1352,7 +1369,6 @@ uint8_t interpreter_evaluate_tasks(void* project, const void* target,
 {
 	ptrdiff_t i = 0;
 	struct range* element = NULL;
-	(void)verbose;/*TODO:*/
 
 	while (NULL != (element = buffer_range_data(elements, i++)))
 	{
@@ -1367,7 +1383,7 @@ uint8_t interpreter_evaluate_tasks(void* project, const void* target,
 		if (!interpreter_evaluate_task(project, target,
 									   interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish),
 									   tag_name_or_content.finish,
-									   element->finish))
+									   element->finish, verbose))
 		{
 			i = 0;
 			break;

@@ -113,7 +113,7 @@ TEST_F(TestProperty, property_task)
 		ASSERT_TRUE(property_add_at_project(project, &properties, verbose)) << project_free(&project);
 		//
 		const uint8_t returned = interpreter_evaluate_task(project, NULL, task_id,
-								 (const uint8_t*)record.c_str(), (const uint8_t*)record.c_str() + record.size());
+								 (const uint8_t*)record.c_str(), (const uint8_t*)record.c_str() + record.size(), verbose);
 		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << project_free(&project);
 		property_clear(&properties);
 

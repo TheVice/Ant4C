@@ -30,7 +30,7 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 		uint8_t index, uint8_t attributes_count, struct buffer* output);
 uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish);
 uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish);
+								  const uint8_t* attributes_start, const uint8_t* element_finish, uint8_t verbose);
 uint8_t interpreter_evaluate_tasks(void* project, const void* target,
 								   const struct buffer* elements, uint8_t verbose);
 

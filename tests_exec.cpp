@@ -25,6 +25,7 @@ extern "C" {
 #include <string>
 #include <cassert>
 #include <cstdint>
+#include <sstream>
 #include <utility>
 
 class TestExec : public TestsBaseXml
@@ -251,6 +252,10 @@ uint8_t compare_paths_with_delimiter_independ(const char* path_1, const char* pa
 
 TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 {
+	static const auto exec_str(std::string("exec"));
+	static const uint8_t exec_task_id = interpreter_get_task((const uint8_t*)exec_str.c_str(),
+										(const uint8_t*)exec_str.c_str() + exec_str.size());
+	//
 	buffer temp_file_name;
 	SET_NULL_TO_BUFFER(temp_file_name);
 	//
@@ -299,7 +304,56 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 							NULL, NULL, &working_dir, &environment_variables,
 							spawn, time_out, verbose);
 			//
-			ASSERT_EQ(expected_return, returned) << buffer_free(&temp_file_name);
+			ASSERT_EQ(expected_return, returned)
+					<< "program - '" << range_to_string(&program) << "'" << std::endl
+					<< "base directory - '" << range_to_string(base_dir) << "'" << std::endl
+					<< "command line - '" << range_to_string(command_line) << "'" << std::endl
+					<< "working directory - '" << range_to_string(working_dir) << "'" << std::endl
+					<< "environment variables - '" << range_to_string(environment_variables) << "'" << std::endl
+					<< buffer_free(&temp_file_name);
+			//
+			pugi::xml_document exec_document;
+			auto exec_node = exec_document.append_child(exec_str.c_str());
+			//
+			ASSERT_TRUE(exec_node.append_attribute("program").set_value((const char*)program.start))
+					<< program.start << std::endl << buffer_free(&temp_file_name);
+			ASSERT_TRUE(exec_node.append_attribute("append").set_value((bool)append))
+					<< (int)append << std::endl << buffer_free(&temp_file_name);
+
+			if (!range_is_null_or_empty(&command_line))
+			{
+				ASSERT_TRUE(exec_node.append_attribute("commandline").set_value((const char*)command_line.start))
+						<< program.start << std::endl << buffer_free(&temp_file_name);
+			}
+
+			ASSERT_TRUE(exec_node.append_attribute("spawn").set_value((bool)spawn))
+					<< (int)spawn << std::endl << buffer_free(&temp_file_name);
+
+			if (!range_is_null_or_empty(&working_dir))
+			{
+				ASSERT_TRUE(exec_node.append_attribute("workingdir").set_value((const char*)working_dir.start))
+						<< working_dir.start << std::endl << buffer_free(&temp_file_name);
+			}
+
+			ASSERT_TRUE(exec_node.append_attribute("failonerror").set_value(true))
+					<< 1 << std::endl << buffer_free(&temp_file_name);
+			//
+			ASSERT_TRUE(exec_node.append_attribute("timeout").set_value(time_out))
+					<< time_out << std::endl << buffer_free(&temp_file_name);
+			//
+			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value((bool)verbose))
+					<< (int)verbose << std::endl << buffer_free(&temp_file_name);
+			//
+			std::ostringstream string_stream;
+			exec_document.print(string_stream);
+			const auto exec_code = string_stream.str();
+			const auto exec_code_in_range = string_to_range(exec_code);
+			//
+			returned = interpreter_evaluate_task(NULL, NULL, exec_task_id,
+												 exec_code_in_range.start + 1 + exec_str.size(), exec_code_in_range.finish, verbose);
+			ASSERT_EQ(expected_return, returned)
+					<< exec_code << std::endl
+					<< buffer_free(&temp_file_name);
 		}
 
 		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
@@ -410,7 +464,6 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		const auto working_directory = output_file_content.select_node(
 			pugi::xpath_query("App4ExecTest/working_directory"));
 		*/
-
 		const auto environments = output_file_content.select_nodes(
 									  pugi::xpath_query("App4ExecTest/environments/environment"));
 
@@ -429,7 +482,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			{
 				start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1);
 				ASSERT_STREQ(range_to_string(previous, start).c_str(), environment.node().child_value())
-					<< buffer_free(&temp_file_name);
+						<< buffer_free(&temp_file_name);
 				start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1);
 				previous = start;
 			}
@@ -441,4 +494,34 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	}
 
 	buffer_release(&temp_file_name);
+}
+
+TEST(TestExec_, exec_get_attributes_and_arguments_for_task)
+{
+	buffer task_arguments;
+	SET_NULL_TO_BUFFER(task_arguments);
+	/**/
+	const uint8_t** task_attributes = NULL;
+	const uint8_t* task_attributes_lengths = NULL;
+	uint8_t task_attributes_count = 0;
+	/**/
+	uint8_t returned = exec_get_attributes_and_arguments_for_task(
+						   &task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments);
+	/**/
+	ASSERT_TRUE(returned) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_NE(nullptr, task_attributes) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_NE(nullptr, task_attributes_lengths) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_EQ(12, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
+	ASSERT_LT(0, buffer_size(&task_arguments)) << buffer_free_with_inner_buffers(&task_arguments);
+	/**/
+	task_attributes_count = 0;
+	buffer* argument = NULL;
+
+	while (NULL != (argument = buffer_buffer_data(&task_arguments, task_attributes_count++)))
+	{
+		ASSERT_FALSE(buffer_size(argument)) << buffer_free_with_inner_buffers(&task_arguments);
+	}
+
+	ASSERT_EQ(14, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
+	buffer_release_with_inner_buffers(&task_arguments);
 }
