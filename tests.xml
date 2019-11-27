@@ -3692,6 +3692,24 @@ Approximate round trip times in milli-seconds:
       <return></return>
     </xml_get_attribute_value>
     <xml_get_attribute_value>
+      <input><![CDATA[<project name = "">]]></input>
+      <attribute>name</attribute>
+      <output></output>
+      <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<project name = "&#1;&#x2;&#X3;">]]></input>
+      <attribute>name</attribute>
+      <output>&#1;&#x2;&#x3;</output>
+      <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<project name = "&lt;&gt;&amp;&apos;&quot;">]]></input>
+      <attribute>name</attribute>
+      <output>&lt;&gt;&amp;&apos;&quot;</output>
+      <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
       <input><![CDATA[<project name = "example" default="hello">]]></input>
       <attribute>name</attribute>
       <output>example</output>

@@ -842,13 +842,19 @@ uint8_t exec_get_environments(const uint8_t* start, const uint8_t* finish, struc
 	}
 
 	count = 0;
+	/**/
+	struct buffer attribute_value;
+	SET_NULL_TO_BUFFER(attribute_value);
 
 	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
 	{
 		static const uint8_t* var_name = (const uint8_t*)"variable";
+		static const uint8_t* name_str = (const uint8_t*)"name";
+		static const uint8_t* value_str = (const uint8_t*)"value";
 
 		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
 		{
+			buffer_release(&attribute_value);
 			buffer_release(&elements);
 			return 0;
 		}
@@ -858,19 +864,24 @@ uint8_t exec_get_environments(const uint8_t* start, const uint8_t* finish, struc
 			continue;
 		}
 
-		if (!xml_get_attribute_value(env_ptr->start, env_ptr->finish, (const uint8_t*)"name", 4, &name) ||
-			range_is_null_or_empty(&name))
+		if (!buffer_resize(&attribute_value, 0) ||
+			!xml_get_attribute_value(env_ptr->start, env_ptr->finish, name_str, 4, &attribute_value) ||
+			!buffer_size(&attribute_value))
 		{
+			buffer_release(&attribute_value);
 			buffer_release(&elements);
 			return 0;
 		}
 
+		name.start = buffer_data(&attribute_value, 0);
+		name.finish = name.start + buffer_size(&attribute_value);
 		uint8_t contains = string_contains(name.start, name.finish, &space_symbol, &space_symbol + 1);
 
 		if (contains)
 		{
 			if (!string_quote(name.start, name.finish, environments))
 			{
+				buffer_release(&attribute_value);
 				buffer_release(&elements);
 				return 0;
 			}
@@ -879,25 +890,31 @@ uint8_t exec_get_environments(const uint8_t* start, const uint8_t* finish, struc
 		{
 			if (!buffer_append_data_from_range(environments, &name))
 			{
+				buffer_release(&attribute_value);
 				buffer_release(&elements);
 				return 0;
 			}
 		}
 
-		if (!buffer_push_back(environments, equal_symbol))
+		if (!buffer_push_back(environments, equal_symbol) ||
+			!buffer_resize(&attribute_value, 0))
 		{
+			buffer_release(&attribute_value);
 			buffer_release(&elements);
 			return 0;
 		}
 
-		if (xml_get_attribute_value(env_ptr->start, env_ptr->finish, (const uint8_t*)"value", 5, &name))
+		if (xml_get_attribute_value(env_ptr->start, env_ptr->finish, value_str, 5, &attribute_value))
 		{
+			name.start = buffer_data(&attribute_value, 0);
+			name.finish = name.start + buffer_size(&attribute_value);
 			contains = string_contains(name.start, name.finish, &space_symbol, &space_symbol + 1);
 
 			if (contains)
 			{
 				if (!string_quote(name.start, name.finish, environments))
 				{
+					buffer_release(&attribute_value);
 					buffer_release(&elements);
 					return 0;
 				}
@@ -906,6 +923,7 @@ uint8_t exec_get_environments(const uint8_t* start, const uint8_t* finish, struc
 			{
 				if (!buffer_append_data_from_range(environments, &name))
 				{
+					buffer_release(&attribute_value);
 					buffer_release(&elements);
 					return 0;
 				}
@@ -914,11 +932,13 @@ uint8_t exec_get_environments(const uint8_t* start, const uint8_t* finish, struc
 
 		if (!buffer_push_back(environments, zero_symbol))
 		{
+			buffer_release(&attribute_value);
 			buffer_release(&elements);
 			return 0;
 		}
 	}
 
+	buffer_release(&attribute_value);
 	buffer_release(&elements);
 	return 1;
 }

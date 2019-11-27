@@ -215,6 +215,10 @@ uint8_t target_add(struct buffer* targets,
 uint8_t target_add_from_xml_tag_record(struct buffer* targets,
 									   const uint8_t* record_start, const uint8_t* record_finish)
 {
+	(void)targets;
+	(void)record_start;
+	(void)record_finish;
+#if 0
 	struct range name;
 	struct range description;
 	struct range depends;
@@ -246,6 +250,8 @@ uint8_t target_add_from_xml_tag_record(struct buffer* targets,
 	content.start = 1 + xml_get_tag_finish_pos(record_start, record_finish);
 	content.finish = record_finish;
 	return target_add(targets, &name, &description, &depends, &content);
+#endif
+	return 0;
 }
 
 void target_clear(struct buffer* targets)

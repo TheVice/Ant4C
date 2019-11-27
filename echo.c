@@ -343,21 +343,14 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments,
 	}
 	else
 	{
-		struct range value;
-
-		if (!xml_get_element_value_from_parts(attributes_finish, element_finish, &value))
-		{
-			return 0;
-		}
-
-		if (!range_is_null_or_empty(&value) && (!buffer_resize(message_in_buffer, 0) ||
-												!buffer_append_data_from_range(message_in_buffer, &value)))
+		if (!xml_get_element_value(attributes_finish, element_finish, message_in_buffer))
 		{
 			return 0;
 		}
 
 		if (buffer_size(message_in_buffer))
 		{
+			/*TODO: string_trim*/
 			message = buffer_data(message_in_buffer, 0);
 			message_length = buffer_size(message_in_buffer);
 		}

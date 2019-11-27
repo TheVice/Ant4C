@@ -825,16 +825,19 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 		const uint8_t** attributes, const uint8_t* attributes_lengths,
 		uint8_t index, uint8_t attributes_count, struct buffer* output)
 {
+	struct buffer attribute_value;
+	SET_NULL_TO_BUFFER(attribute_value);
+
 	for (; index < attributes_count; ++index)
 	{
 		struct buffer* argument = buffer_buffer_data(output, index);
 
-		if (NULL == argument)
+		if (NULL == argument ||
+			!buffer_resize(&attribute_value, 0))
 		{
+			buffer_release(&attribute_value);
 			return 0;
 		}
-
-		struct range attribute_value;
 
 		if (!xml_get_attribute_value(start_of_attributes, finish_of_attributes,
 									 attributes[index], attributes_lengths[index],
@@ -843,14 +846,22 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 			continue;
 		}
 
+		struct range code;
+
+		code.start = buffer_data(&attribute_value, 0);
+
+		code.finish = code.start + buffer_size(&attribute_value);
+
 		if (!buffer_resize(argument, 0) ||
-			(!range_is_null_or_empty(&attribute_value) &&
-			 !interpreter_evaluate_code(project, target, &attribute_value, argument)))
+			((code.start < code.finish) &&
+			 !interpreter_evaluate_code(project, target, &code, argument)))
 		{
+			buffer_release(&attribute_value);
 			return 0;
 		}
 	}
 
+	buffer_release(&attribute_value);
 	return 1;
 }
 
@@ -1233,20 +1244,13 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 						break;
 					}
 
-					struct range value;
-
-					if (!xml_get_attribute_value(attributes_start, attributes_finish,
-												 task_attributes[task_attributes_count - 1],
-												 task_attributes_lengths[task_attributes_count - 1],
-												 &value))
-					{
-						task_attributes_count = 0;
-						break;
-					}
-
 					argument = buffer_buffer_data(&task_arguments, task_attributes_count - 1);
 
-					if (!buffer_resize(argument, 0) || !buffer_append_data_from_range(argument, &value))
+					if (!buffer_resize(argument, 0) ||
+						!xml_get_attribute_value(attributes_start, attributes_finish,
+												 task_attributes[task_attributes_count - 1],
+												 task_attributes_lengths[task_attributes_count - 1],
+												 argument))
 					{
 						task_attributes_count = 0;
 						break;
