@@ -81,6 +81,7 @@ set(SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
             "${CMAKE_SOURCE_DIR}/tests_conversion.cpp"
             "${CMAKE_SOURCE_DIR}/tests_date_time.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_echo.cpp"
             "${CMAKE_SOURCE_DIR}/tests_environment.cpp"
             "${CMAKE_SOURCE_DIR}/tests_exec.cpp"
             "${CMAKE_SOURCE_DIR}/tests_file_system.cpp"

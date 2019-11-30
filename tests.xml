@@ -466,6 +466,16 @@
       <return>0</return>
     </environment_variable_exists>
   </TestEnvironment>
+  <TestEcho>
+    <echo_evaluate_task>
+      <code><![CDATA[<echo />]]></code>
+      <return>1</return>
+    </echo_evaluate_task>
+    <echo_evaluate_task>
+      <code><![CDATA[<echo message="Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('ABAB', 'B')}?" verbose="true" />]]></code>
+      <return>1</return>
+    </echo_evaluate_task>
+  </TestEcho>
   <TestExec allow_output_to_console="true">
     <exec_with_redirect_to_tmp_file>
       <append></append>

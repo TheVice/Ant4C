@@ -22,7 +22,6 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 uint8_t xml_get_tag_name(const uint8_t* start, const uint8_t* finish, struct range* name);
 uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
 								const uint8_t* attribute, ptrdiff_t attribute_length, struct buffer* value);
-uint8_t xml_get_element_value(const uint8_t* element_start, const uint8_t* element_finish,
-							  struct buffer* value);
+uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struct buffer* value);
 
 #endif

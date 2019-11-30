@@ -170,7 +170,7 @@ TEST_F(TestXml, xml_get_attribute_value)
 	buffer_release(&value);
 }
 
-TEST_F(TestXml, DISABLED_xml_get_element_value)
+TEST_F(TestXml, xml_get_element_value)
 {
 	buffer value;
 	SET_NULL_TO_BUFFER(value);
