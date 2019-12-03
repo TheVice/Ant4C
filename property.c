@@ -326,55 +326,11 @@ uint8_t property_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments)
 {
-	if (NULL == task_attributes ||
-		NULL == task_attributes_lengths ||
-		NULL == task_attributes_count ||
-		NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	*task_attributes = property_attributes;
-	*task_attributes_lengths = property_attributes_lengths;
-	*task_attributes_count = COUNT_OF(property_attributes_lengths);
-
-	if (!buffer_resize(task_arguments, 0) ||
-		!buffer_append_buffer(task_arguments, NULL, *task_attributes_count))
-	{
-		return 0;
-	}
-
-	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
-	{
-		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
-		SET_NULL_TO_BUFFER(*attribute);
-	}
-
-	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
-	{
-		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
-
-		if (OVERWRITE_POSITION == i || FAIL_ON_ERROR_POSITION == i)
-		{
-			if (!bool_to_string(1, attribute))
-			{
-				return 0;
-			}
-		}
-		else if (NAME_POSITION == i || VALUE_POSITION == i)
-		{
-			continue;
-		}
-		else
-		{
-			if (!bool_to_string(0, attribute))
-			{
-				return 0;
-			}
-		}
-	}
-
-	return 1;
+	return common_get_attributes_and_arguments_for_task(
+			   property_attributes, property_attributes_lengths,
+			   COUNT_OF(property_attributes_lengths),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
 }
 
 uint8_t property_evaluate_task(void* project, const struct buffer* task_arguments)
@@ -400,28 +356,32 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 	/**/
 	uint8_t dynamic = 0;
 
-	if (!bool_parse(buffer_data(dynamic_in_buffer, 0), buffer_size(dynamic_in_buffer), &dynamic))
+	if (buffer_size(dynamic_in_buffer) &&
+		!bool_parse(buffer_data(dynamic_in_buffer, 0), buffer_size(dynamic_in_buffer), &dynamic))
 	{
 		return 0;
 	}
 
 	uint8_t overwrite = 1;
 
-	if (!bool_parse(buffer_data(overwrite_in_buffer, 0), buffer_size(overwrite_in_buffer), &overwrite))
+	if (buffer_size(overwrite_in_buffer) &&
+		!bool_parse(buffer_data(overwrite_in_buffer, 0), buffer_size(overwrite_in_buffer), &overwrite))
 	{
 		return 0;
 	}
 
 	uint8_t readonly = 0;
 
-	if (!bool_parse(buffer_data(readonly_in_buffer, 0), buffer_size(readonly_in_buffer), &readonly))
+	if (buffer_size(readonly_in_buffer) &&
+		!bool_parse(buffer_data(readonly_in_buffer, 0), buffer_size(readonly_in_buffer), &readonly))
 	{
 		return 0;
 	}
 
 	uint8_t verbose = 0;
 
-	if (!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &verbose))
+	if (buffer_size(verbose_in_buffer) &&
+		!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &verbose))
 	{
 		return 0;
 	}

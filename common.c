@@ -275,6 +275,44 @@ int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, u
 	return 0;
 }
 
+uint8_t common_get_attributes_and_arguments_for_task(
+	const uint8_t** input_task_attributes,
+	const uint8_t* input_task_attributes_lengths,
+	uint8_t input_task_attributes_count,
+	const uint8_t*** task_attributes,
+	const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count,
+	struct buffer* task_arguments)
+{
+	if (NULL == task_attributes ||
+		NULL == task_attributes_lengths ||
+		NULL == task_attributes_count ||
+		NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	*task_attributes = input_task_attributes;
+	*task_attributes_lengths = input_task_attributes_lengths;
+	*task_attributes_count = input_task_attributes_count;
+	/**/
+	buffer_release_inner_buffers(task_arguments);
+
+	if (!buffer_resize(task_arguments, 0) ||
+		!buffer_append_buffer(task_arguments, NULL, input_task_attributes_count))
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 0; i < input_task_attributes_count; ++i)
+	{
+		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
+		SET_NULL_TO_BUFFER(*attribute);
+	}
+
+	return 1;
+}
+
 uint8_t read_file(const uint8_t* file_path, struct buffer* content)
 {
 	if (NULL == file_path || NULL == content)

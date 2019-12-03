@@ -179,12 +179,12 @@ TEST_F(TestProject, project_load_from_build_file)
 				<< tmp_path << std::endl << buffer_free(&tmp);
 		//
 		void* project = NULL;
-		ASSERT_TRUE(project_new(&project)) << buffer_free(&tmp);
+		ASSERT_TRUE(project_new(&project)) << buffer_free(&tmp) << project_free(project);
 		//
 		const uint8_t returned = project_load_from_build_file(
 									 buffer_data(&tmp, 0), project, verbose);
 		ASSERT_EQ(expected_return, returned)
-				<< tmp_path << std::endl << buffer_free(&tmp);
+				<< tmp_path << std::endl << buffer_free(&tmp) << project_free(project);
 		//
 		project_unload(project);
 		//
@@ -210,34 +210,4 @@ TEST(TestProgram, program_exec_function)
 	ASSERT_LT(0, buffer_size(&output)) << buffer_free(&output);
 	//
 	buffer_release(&output);
-}
-
-TEST(TestProject_, project_get_attributes_and_arguments_for_task)
-{
-	buffer task_arguments;
-	SET_NULL_TO_BUFFER(task_arguments);
-	/**/
-	const uint8_t** task_attributes = NULL;
-	const uint8_t* task_attributes_lengths = NULL;
-	uint8_t task_attributes_count = 0;
-	/**/
-	const uint8_t returned = project_get_attributes_and_arguments_for_task(
-								 &task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments);
-	/**/
-	ASSERT_TRUE(returned) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_NE(nullptr, task_attributes) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_NE(nullptr, task_attributes_lengths) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_EQ(3, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_LT(0, buffer_size(&task_arguments)) << buffer_free_with_inner_buffers(&task_arguments);
-	/**/
-	task_attributes_count = 0;
-	buffer* argument = NULL;
-
-	while (NULL != (argument = buffer_buffer_data(&task_arguments, task_attributes_count++)))
-	{
-		ASSERT_FALSE(buffer_size(argument)) << buffer_free_with_inner_buffers(&task_arguments);
-	}
-
-	ASSERT_EQ(4, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
-	buffer_release_with_inner_buffers(&task_arguments);
 }

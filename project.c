@@ -376,31 +376,11 @@ uint8_t project_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments)
 {
-	if (NULL == task_attributes ||
-		NULL == task_attributes_lengths ||
-		NULL == task_attributes_count ||
-		NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	*task_attributes = project_attributes;
-	*task_attributes_lengths = project_attributes_lengths;
-	*task_attributes_count = COUNT_OF(project_attributes_lengths);
-
-	if (!buffer_resize(task_arguments, 0) ||
-		!buffer_append_buffer(task_arguments, NULL, *task_attributes_count))
-	{
-		return 0;
-	}
-
-	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
-	{
-		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
-		SET_NULL_TO_BUFFER(*attribute);
-	}
-
-	return 1;
+	return common_get_attributes_and_arguments_for_task(
+			   project_attributes, project_attributes_lengths,
+			   COUNT_OF(project_attributes_lengths),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
 }
 
 uint8_t project_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose)

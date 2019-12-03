@@ -13,7 +13,6 @@
 struct buffer;
 struct range;
 
-uint8_t interpreter_get_value_from_quote(const struct range* quote, struct range* value);
 uint8_t interpreter_disassemble_function(const struct range* function,
 		struct range* name_space, struct range* name, struct range* arguments_area);
 uint8_t interpreter_get_values_for_arguments(const void* project, const void* target,

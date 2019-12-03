@@ -317,7 +317,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			//
 			ASSERT_TRUE(exec_node.append_attribute("program").set_value((const char*)program.start))
 					<< program.start << std::endl << buffer_free(&temp_file_name);
-			ASSERT_TRUE(exec_node.append_attribute("append").set_value((bool)append))
+			ASSERT_TRUE(exec_node.append_attribute("append").set_value(append ? true : false))
 					<< (int)append << std::endl << buffer_free(&temp_file_name);
 
 			if (!range_is_null_or_empty(&command_line))
@@ -326,7 +326,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 						<< program.start << std::endl << buffer_free(&temp_file_name);
 			}
 
-			ASSERT_TRUE(exec_node.append_attribute("spawn").set_value((bool)spawn))
+			ASSERT_TRUE(exec_node.append_attribute("spawn").set_value(spawn ? true : false))
 					<< (int)spawn << std::endl << buffer_free(&temp_file_name);
 
 			if (!range_is_null_or_empty(&working_dir))
@@ -341,7 +341,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_TRUE(exec_node.append_attribute("timeout").set_value(time_out))
 					<< time_out << std::endl << buffer_free(&temp_file_name);
 			//
-			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value((bool)verbose))
+			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose ? true : false))
 					<< (int)verbose << std::endl << buffer_free(&temp_file_name);
 			//
 			std::ostringstream string_stream;
@@ -494,34 +494,4 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	}
 
 	buffer_release(&temp_file_name);
-}
-
-TEST(TestExec_, exec_get_attributes_and_arguments_for_task)
-{
-	buffer task_arguments;
-	SET_NULL_TO_BUFFER(task_arguments);
-	/**/
-	const uint8_t** task_attributes = NULL;
-	const uint8_t* task_attributes_lengths = NULL;
-	uint8_t task_attributes_count = 0;
-	/**/
-	uint8_t returned = exec_get_attributes_and_arguments_for_task(
-						   &task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments);
-	/**/
-	ASSERT_TRUE(returned) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_NE(nullptr, task_attributes) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_NE(nullptr, task_attributes_lengths) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_EQ(12, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
-	ASSERT_LT(0, buffer_size(&task_arguments)) << buffer_free_with_inner_buffers(&task_arguments);
-	/**/
-	task_attributes_count = 0;
-	buffer* argument = NULL;
-
-	while (NULL != (argument = buffer_buffer_data(&task_arguments, task_attributes_count++)))
-	{
-		ASSERT_FALSE(buffer_size(argument)) << buffer_free_with_inner_buffers(&task_arguments);
-	}
-
-	ASSERT_EQ(14, task_attributes_count) << buffer_free_with_inner_buffers(&task_arguments);
-	buffer_release_with_inner_buffers(&task_arguments);
 }

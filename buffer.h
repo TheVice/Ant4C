@@ -30,6 +30,7 @@ ptrdiff_t buffer_size(const struct buffer* the_buffer);
 
 uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size);
 void buffer_release(struct buffer* the_buffer);
+void buffer_release_inner_buffers(struct buffer* buffer);
 void buffer_release_with_inner_buffers(struct buffer* the_buffer);
 
 uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size);

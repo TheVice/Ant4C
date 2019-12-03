@@ -28,7 +28,7 @@ enum string_function
 	UNKNOWN_STRING_FUNCTION
 };
 
-static const uint8_t quote_symbol = '"';
+static const uint8_t* quote_symbols = (const uint8_t*)"\"'";
 
 ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
 							  const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
@@ -523,12 +523,12 @@ uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
 
 	if (range_in_parts_is_null_or_empty(input_start, input_finish))
 	{
-		return buffer_push_back(output, quote_symbol) && buffer_push_back(output, quote_symbol);
+		return buffer_push_back(output, quote_symbols[0]) && buffer_push_back(output, quote_symbols[0]);
 	}
 
-	return buffer_push_back(output, quote_symbol) &&
+	return buffer_push_back(output, quote_symbols[0]) &&
 		   buffer_append(output, input_start, input_finish - input_start) &&
-		   buffer_push_back(output, quote_symbol);
+		   buffer_push_back(output, quote_symbols[0]);
 }
 
 uint8_t string_un_quote(struct range* input_output)
@@ -542,15 +542,15 @@ uint8_t string_un_quote(struct range* input_output)
 	}
 
 	input_output->start = find_any_symbol_like_or_not_like_that(
-							  input_output->start, input_output->finish, &quote_symbol, 1, 0, 1);
-	input_output->finish = find_any_symbol_like_or_not_like_that(
-							   input_output->finish - 1, input_output->start, &quote_symbol, 1, 0, -1);
+							  input_output->start, input_output->finish, quote_symbols, 2, 0, 1);
 
-	if (input_output->start < input_output->finish)
+	if (input_output->finish == input_output->start)
 	{
-		input_output->finish++;
+		return 1;
 	}
 
+	input_output->finish = 1 + find_any_symbol_like_or_not_like_that(
+							   input_output->finish - 1, input_output->start, quote_symbols, 2, 0, -1);
 	return 1;
 }
 

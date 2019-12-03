@@ -70,7 +70,6 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 			 uint8_t level, const uint8_t* message, ptrdiff_t message_length,
 			 uint8_t new_line, uint8_t verbose)
 {
-	(void)encoding;
 	(void)verbose;/*TODO: */
 
 	if (NoLevel < level)
@@ -202,72 +201,11 @@ uint8_t echo_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments)
 {
-	if (NULL == task_attributes ||
-		NULL == task_attributes_lengths ||
-		NULL == task_attributes_count ||
-		NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	*task_attributes = echo_attributes;
-	*task_attributes_lengths = echo_attributes_lengths;
-	*task_attributes_count = COUNT_OF(echo_attributes_lengths);
-
-	if (!buffer_resize(task_arguments, 0) ||
-		!buffer_append_buffer(task_arguments, NULL, *task_attributes_count))
-	{
-		return 0;
-	}
-
-	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
-	{
-		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
-		SET_NULL_TO_BUFFER(*attribute);
-	}
-
-#if 0
-
-	for (uint8_t i = 0, attributes_count = *task_attributes_count; i < attributes_count; ++i)
-	{
-		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
-
-		if (FAIL_ON_ERROR_POSITION == i)
-		{
-			if (!bool_to_string(1, attribute))
-			{
-				return 0;
-			}
-		}
-		else if (FILE_POSITION == i || MESSAGE_POSITION == i)
-		{
-			continue;
-		}
-		else if (ENCODING_POSITION == i)
-		{
-			if (!buffer_append_char(attribute, "UTF8", 4))
-			{
-				return 0;
-			}
-		}
-		else if (LEVEL_POSITION == i)
-		{
-			if (!buffer_append(attribute, echo_levels[Info], common_count_bytes_until(echo_levels[Info], 0)))
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			if (!bool_to_string(0, attribute))
-			{
-				return 0;
-			}
-		}
-	}
-
-#endif
-	return 1;
+	return common_get_attributes_and_arguments_for_task(
+			   echo_attributes, echo_attributes_lengths,
+			   COUNT_OF(echo_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
 }
 
 uint8_t echo_get_level(const uint8_t* level_start, const uint8_t* level_finish)

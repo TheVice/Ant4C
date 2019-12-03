@@ -467,14 +467,6 @@
     </environment_variable_exists>
   </TestEnvironment>
   <TestEcho>
-    <echo_evaluate_task>
-      <code><![CDATA[<echo />]]></code>
-      <return>1</return>
-    </echo_evaluate_task>
-    <echo_evaluate_task>
-      <code><![CDATA[<echo message="Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('ABAB', 'B')}?" verbose="true" />]]></code>
-      <return>1</return>
-    </echo_evaluate_task>
   </TestEcho>
   <TestExec allow_output_to_console="true">
     <exec_with_redirect_to_tmp_file>
@@ -2293,6 +2285,14 @@
       <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_task>
+      <code><![CDATA[<echo />]]></code>
+      <return>1</return>
+    </interpreter_evaluate_task>
+    <interpreter_evaluate_task>
+      <code><![CDATA[<echo message="Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('ABAB', 'B')}?" verbose="true" />]]></code>
+      <return>1</return>
+    </interpreter_evaluate_task>
   </TestInterpreter>
   <TestMathUnit>
     <math_abs>
@@ -3353,6 +3353,16 @@ Approximate round trip times in milli-seconds:
       <input>""a b c""</input>
       <return>1</return>
       <output>a b c</output>
+    </string_un_quote>
+    <string_un_quote>
+      <input>''</input>
+      <return>1</return>
+      <output></output>
+    </string_un_quote>
+    <string_un_quote>
+      <input>""</input>
+      <return>1</return>
+      <output></output>
     </string_un_quote>
     <string_equal>
       <input_1></input_1>

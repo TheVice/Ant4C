@@ -53,7 +53,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 	/**/
 	int64_t this_time = 0;
 
-	while (1)
+	for (;;)
 	{
 		int64_t year = (int64_t)seconds_per_day * (datetime_is_leap_year(tm_->tm_year) ? 366 : 365);
 
@@ -66,7 +66,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		++tm_->tm_year;
 	}
 
-	while (1)
+	for (;;)
 	{
 		uint8_t days = datetime_get_days_in_month(tm_->tm_year, 1 + (uint8_t)tm_->tm_mon);
 		int64_t month = (int64_t)seconds_per_day * days;
@@ -81,7 +81,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		tm_->tm_yday += days;
 	}
 
-	while (1)
+	for (;;)
 	{
 		if (time < this_time + seconds_per_day)
 		{
@@ -93,7 +93,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		++tm_->tm_yday;
 	}
 
-	while (1)
+	for (;;)
 	{
 		if (time < this_time + seconds_per_hour)
 		{
@@ -104,7 +104,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		++tm_->tm_hour;
 	}
 
-	while (1)
+	for (;;)
 	{
 		if (time < this_time + seconds_per_minute)
 		{

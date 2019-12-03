@@ -626,7 +626,8 @@ TEST(TestTextEncoding_, text_encoding_UTF8_to_UTF16LE)
 	//
 	uint32_t returned_result = 0;
 
-	for (expected_return = 0x0; expected_return < buffer_size(&input_UTF8); ++expected_return, ++returned_result)
+	for (expected_return = 0x0; expected_return < (uint32_t)buffer_size(&input_UTF8);
+		 ++expected_return, ++returned_result)
 	{
 		const uint8_t* expected = buffer_data(&input_UTF8, expected_return);
 		ASSERT_NE(nullptr, expected) <<

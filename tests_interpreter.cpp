@@ -94,7 +94,7 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 
 	buffer_release_with_inner_buffers(&output);
 }
-
+//interpreter_evaluate_function
 TEST_F(TestInterpreter, interpreter_evaluate_code)
 {
 	buffer output;
@@ -130,3 +130,47 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 
 	buffer_release(&output);
 }
+/*interpreter_is_xml_tag_should_be_skip_by_if_or_unless
+interpreter_get_arguments_from_xml_tag_record
+interpreter_get_task*/
+TEST_F(TestInterpreter, interpreter_evaluate_task)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string code(node.node().select_node("code").node().child_value());
+		ASSERT_FALSE(code.empty());
+		//
+		auto doc = pugi::xml_document();
+		const auto result = doc.load_string(code.c_str());
+		ASSERT_EQ(pugi::xml_parse_status::status_ok, result.status) << code;
+		//
+		const std::string task_name(doc.first_child().name());
+		const auto task_name_in_range = string_to_range(task_name);
+		const auto task_id = interpreter_get_task(task_name_in_range.start, task_name_in_range.finish);
+		//
+		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		auto verbose_attribute = node.node().attribute("verbose");
+		uint8_t verbose = 0;
+
+		if (verbose_attribute.empty())
+		{
+			verbose = (uint8_t)doc.first_child().attribute("verbose").as_bool();
+		}
+		else
+		{
+			verbose = (uint8_t)verbose_attribute.as_bool();
+		}
+
+		auto code_in_range = string_to_range(code);
+		code_in_range.start += 1 + task_name.size();
+		const auto returned = interpreter_evaluate_task(
+								  NULL, NULL, task_id,
+								  code_in_range.start, code_in_range.finish,
+								  verbose);
+		//
+		ASSERT_EQ(expected_return, returned) << code;
+		//
+		--node_count;
+	}
+}
+//interpreter_evaluate_tasks

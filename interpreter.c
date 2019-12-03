@@ -28,7 +28,6 @@
 static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
 static const uint8_t function_call_finish = '}';
-static const uint8_t quote_single_symbol = '\'';
 
 static const uint8_t arguments_delimiter = ',';
 
@@ -102,25 +101,6 @@ uint8_t interpreter_get_unit(const uint8_t* name_space_start, const uint8_t* nam
 {
 	return common_string_to_enum(name_space_start, name_space_finish, interpreter_string_enumeration_unit,
 								 UNKNOWN_UNIT);
-}
-
-uint8_t interpreter_get_value_from_quote(const struct range* quote, struct range* value)
-{
-	if (range_is_null_or_empty(quote) || NULL == value)
-	{
-		return 0;
-	}
-
-	if (quote->finish == (value->start = find_any_symbol_like_or_not_like_that(
-			quote->start, quote->finish, &quote_single_symbol, 1, 1, 1)))
-	{
-		return 0;
-	}
-
-	++value->start;
-	value->finish = find_any_symbol_like_or_not_like_that(value->start, quote->finish, &quote_single_symbol, 1, 1,
-					1);
-	return quote_single_symbol == *value->finish;
 }
 
 uint8_t interpreter_disassemble_function(
@@ -343,7 +323,7 @@ uint8_t interpreter_get_value_for_argument(
 		else
 		{
 			if (!buffer_resize(&value, 0) ||
-				!interpreter_get_value_from_quote(argument_area, argument_area) ||
+				!string_un_quote(argument_area) ||
 				!buffer_append_data_from_range(&value, argument_area))
 			{
 				buffer_release(&value);
@@ -1227,7 +1207,8 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				struct buffer* argument = buffer_buffer_data(&task_arguments, 0);
 				uint8_t dynamic = 0;
 
-				if (!bool_parse(buffer_data(argument, 0), buffer_size(argument), &dynamic))
+				if (buffer_size(argument) &&
+					!bool_parse(buffer_data(argument, 0), buffer_size(argument), &dynamic))
 				{
 					task_attributes_count = 0;
 					break;

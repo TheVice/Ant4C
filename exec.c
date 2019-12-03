@@ -746,17 +746,16 @@ uint8_t exec_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments)
 {
-	if (NULL == task_attributes ||
-		NULL == task_attributes_lengths ||
-		NULL == task_attributes_count ||
-		NULL == task_arguments)
+	if (!common_get_attributes_and_arguments_for_task(
+			exec_attributes, exec_attributes_lengths,
+			COUNT_OF(exec_attributes_lengths),
+			task_attributes, task_attributes_lengths,
+			task_attributes_count, task_arguments))
 	{
 		return 0;
 	}
 
-	*task_attributes = exec_attributes;
-	*task_attributes_lengths = exec_attributes_lengths;
-	*task_attributes_count = COUNT_OF(exec_attributes_lengths);
+	buffer_release_inner_buffers(task_arguments);
 
 	if (!buffer_resize(task_arguments, 0) ||
 		!buffer_append_buffer(task_arguments, NULL, ATTRIBUTES_COUNT))

@@ -38,6 +38,15 @@ uint8_t common_get_three_arguments(const struct buffer* arguments, struct range*
 uint8_t common_unbox_bool_data(const struct buffer* box_with_data, uint8_t i, uint8_t j, uint8_t* data);
 int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, uint8_t j);
 
+uint8_t common_get_attributes_and_arguments_for_task(
+	const uint8_t** input_task_attributes,
+	const uint8_t* input_task_attributes_lengths,
+	uint8_t input_task_attributes_count,
+	const uint8_t*** task_attributes,
+	const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count,
+	struct buffer* task_arguments);
+
 uint8_t read_file(const uint8_t* file_path, struct buffer* content);
 
 #define COUNT_OF(A) (sizeof(A) / sizeof(*(A)))

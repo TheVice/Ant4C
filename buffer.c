@@ -118,7 +118,7 @@ void buffer_release(struct buffer* buffer)
 	buffer->capacity = 0;
 }
 
-void buffer_release_with_inner_buffers(struct buffer* buffer)
+void buffer_release_inner_buffers(struct buffer* buffer)
 {
 	ptrdiff_t i = 0;
 	struct buffer* inner_buffer = NULL;
@@ -127,7 +127,11 @@ void buffer_release_with_inner_buffers(struct buffer* buffer)
 	{
 		buffer_release(inner_buffer);
 	}
+}
 
+void buffer_release_with_inner_buffers(struct buffer* buffer)
+{
+	buffer_release_inner_buffers(buffer);
 	buffer_release(buffer);
 }
 
