@@ -10,6 +10,7 @@
 #include "common.h"
 #include "range.h"
 #include "string_unit.h"
+#include "text_encoding.h"
 
 #include <stdlib.h>
 
@@ -225,13 +226,52 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 		return 0;
 	}
 
+	struct buffer digits;
+
+	SET_NULL_TO_BUFFER(digits);
+
+	if (!buffer_resize(&digits, (finish - start) / 3) ||
+		!buffer_resize(&digits, 0))
+	{
+		buffer_release(&digits);
+		return 0;
+	}
+
 	const uint8_t* previous_pos = start;
 
 	while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish,
 							  &(characters[AMPERSAND_POSITION]), 1, 1, 1)))
 	{
-		if (!buffer_append(output, previous_pos, start - previous_pos))
+		if (previous_pos < start && buffer_size(&digits))
 		{
+#if 0
+
+			if (BigEndian)
+			{
+				...
+			}
+			else
+			{
+#endif
+
+				if (!text_encoding_UTF16LE_to_UTF8(
+						buffer_uint16_data(&digits, 0),
+						(const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits)), output) ||
+					!buffer_resize(&digits, 0))
+				{
+					buffer_release(&digits);
+					return 0;
+				}
+
+#if 0
+			}
+
+#endif
+		}
+
+		if (previous_pos < start && !buffer_append(output, previous_pos, start - previous_pos))
+		{
+			buffer_release(&digits);
 			return 0;
 		}
 
@@ -246,35 +286,13 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 			static const uint8_t* skip_to_digit = (const uint8_t*)"&#xX";
 			static const uint8_t number_sign = '#';
 			start = find_any_symbol_like_or_not_like_that(start + 2, finish, skip_to_digit, 4, 0, 1);
-			const long val = strtol((const char*)start, NULL, number_sign == (*(start - 1)) ? 10 : 16);
+			const long value = strtol((const char*)start, NULL, number_sign == (*(start - 1)) ? 10 : 16);
 
-			if (val < 0)
+			if ((value < 0 || UINT16_MAX < value) ||
+				!buffer_push_back_uint16(&digits, (uint16_t)value))
 			{
-				if (!buffer_push_back(output, 0))
-				{
-					return 0;
-				}
-			}
-			else if (val < UINT8_MAX + 1)
-			{
-				if (!buffer_push_back(output, (uint8_t)val))
-				{
-					return 0;
-				}
-			}
-			else if (val < UINT16_MAX + 1)
-			{
-				if (!buffer_push_back_uint16(output, (uint16_t)val))
-				{
-					return 0;
-				}
-			}
-			else
-			{
-				if (!buffer_push_back_uint32(output, (uint32_t)val))
-				{
-					return 0;
-				}
+				buffer_release(&digits);
+				return 0;
 			}
 		}
 		else
@@ -285,6 +303,7 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 				{
 					if (!buffer_push_back(output, characters[i]))
 					{
+						buffer_release(&digits);
 						return 0;
 					}
 
@@ -297,6 +316,7 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 			{
 				if (!buffer_push_back(output, characters[AMPERSAND_POSITION]))
 				{
+					buffer_release(&digits);
 					return 0;
 				}
 
@@ -311,6 +331,34 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 		previous_pos = start;
 	}
 
+	if (buffer_size(&digits))
+	{
+#if 0
+
+		if (BigEndian)
+		{
+			...
+		}
+		else
+		{
+#endif
+
+			if (!text_encoding_UTF16LE_to_UTF8(
+					buffer_uint16_data(&digits, 0),
+					(const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits)), output) ||
+				!buffer_resize(&digits, 0))
+			{
+				buffer_release(&digits);
+				return 0;
+			}
+
+#if 0
+		}
+
+#endif
+	}
+
+	buffer_release(&digits);
 	return previous_pos < finish ? buffer_append(output, previous_pos, finish - previous_pos) : 1;
 }
 
@@ -373,8 +421,6 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 {
 	static const uint8_t* cdata_start = (const uint8_t*)"<![CDATA[";
 	static const uint8_t cdata_start_length = 9;
-	static const uint8_t* cdata_finish = (const uint8_t*)"]]>";
-	static const uint8_t cdata_finish_length = 3;
 
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == value)
@@ -408,6 +454,9 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 
 		while (-1 != (index = string_index_of(start, finish, cdata_start, cdata_start + cdata_start_length)))
 		{
+			static const uint8_t* cdata_finish = (const uint8_t*)"]]>";
+			static const uint8_t cdata_finish_length = 3;
+
 			if (!xml_read_ampersand_based_data(start, start + index, value))
 			{
 				return 0;

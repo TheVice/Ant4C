@@ -816,7 +816,10 @@ uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* 
 
 	return 1;
 }
-#if defined(_WIN32)
+#if 0
+uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
+									  struct buffer* output)
+#endif
 uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
 									  struct buffer* output)
 {
@@ -861,7 +864,7 @@ uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t
 
 	return 1;
 }
-#endif
+
 static const uint8_t* text_encoding_str[] =
 {
 	(const uint8_t*)"ASCII",

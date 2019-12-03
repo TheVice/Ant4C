@@ -18,13 +18,7 @@ extern "C" {
 #include "string_unit.h"
 };
 
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-
-#define _POSIXSOURCE 1
-
-#include <sys/param.h>
-#endif
-
+#include <string>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -123,7 +117,7 @@ TEST(TestEnvironment_, environment_get_folder_path)
 	buffer path;
 	SET_NULL_TO_BUFFER(path);
 
-	for (uint8_t i = 0, count = sizeof(input) / sizeof(*input); i < count; ++i)
+	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
 		ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
 		ASSERT_TRUE(environment_get_folder_path(input[i], &path)) << (uint32_t)i << std::endl
@@ -131,21 +125,31 @@ TEST(TestEnvironment_, environment_get_folder_path)
 
 		if (!expected_result[i].empty())
 		{
-			const ptrdiff_t size = path.size;
+			const ptrdiff_t size = buffer_size(&path);
 			const range code = string_to_range(expected_result[i]);
 			ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &code, &path))
 					<< "'" << expected_result[i] << "'" << std::endl << buffer_free(&path);
-			std::string data(buffer_to_string(&path));
-			ASSERT_FALSE(data.empty()) << (uint32_t)i << std::endl << buffer_free(&path);
-			ASSERT_EQ(2 * size, path.size) << (uint32_t)i << " '" << data << "'" << std::endl << buffer_free(&path);
-			ASSERT_TRUE(string_to_lower((const uint8_t*)data.c_str(), (const uint8_t*)data.c_str() + data.size(),
-										(uint8_t*)&data[0])) << buffer_free(&path);
-			ASSERT_EQ(data.substr(size), data.substr(0, size)) << (uint32_t)i << std::endl << buffer_free(&path);
+			std::string path_in_string(buffer_to_string(&path));
+			ASSERT_FALSE(path_in_string.empty()) << (uint32_t)i << std::endl << buffer_free(&path);
+			ASSERT_EQ(2 * size, buffer_size(&path))
+					<< (uint32_t)i << std::endl
+					<< path_in_string << std::endl << buffer_free(&path);
+			ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+			ASSERT_TRUE(string_to_lower(
+							(const uint8_t*)path_in_string.c_str(),
+							(const uint8_t*)path_in_string.c_str() + path_in_string.size(),
+							&path)) << buffer_free(&path);
+			path_in_string = buffer_to_string(&path);
+			ASSERT_EQ(2 * size, (ptrdiff_t)path_in_string.size())
+					<< (uint32_t)i << std::endl
+					<< path_in_string << std::endl << buffer_free(&path);
+			ASSERT_EQ(path_in_string.substr(size),
+					  path_in_string.substr(0, size)) << (uint32_t)i << std::endl << buffer_free(&path);
 		}
 		else
 		{
 			const std::string path_str(buffer_to_string(&path));
-			ASSERT_EQ(0, path.size) << (uint32_t)i << " '" << path_str << "'" << std::endl << buffer_free(&path);
+			ASSERT_EQ(0, buffer_size(&path)) << (uint32_t)i << " '" << path_str << "'" << std::endl << buffer_free(&path);
 		}
 	}
 
@@ -282,18 +286,19 @@ TEST(TestOperatingSystem, operating_system_at_all)
 	const PlatformID expected_platforms[] = { Win32, Unix };
 	const Version expected_versions[] = { {6, 2, 9200, 0}, {6, 5, 0, 0} };
 	//
-	const uint8_t* start = buffer_data(&input, 0);
-	const uint8_t* finish = start + buffer_size(&input);
-	const uint8_t* pos = start;
+	range input_in_range = buffer_to_range(&input);
+	const uint8_t* pos = input_in_range.start;
 	uint8_t i = 0;
 
-	while (finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 1, 1)))
+	while (input_in_range.finish != (pos = find_any_symbol_like_or_not_like_that(pos,
+										   input_in_range.finish,
+										   &zero, 1, 1, 1)))
 	{
-		ASSERT_LT(i, sizeof(expected_platforms) / sizeof(*expected_platforms)) << buffer_free(&input);
-		ASSERT_LT(i, sizeof(expected_versions) / sizeof(*expected_versions)) << buffer_free(&input);
+		ASSERT_LT(i, COUNT_OF(expected_platforms)) << buffer_free(&input);
+		ASSERT_LT(i, COUNT_OF(expected_versions)) << buffer_free(&input);
 		//
 		OperatingSystem os;
-		ASSERT_TRUE(operating_system_parse(start, pos, &os)) << buffer_free(&input);
+		ASSERT_TRUE(operating_system_parse(input_in_range.start, pos, &os)) << buffer_free(&input);
 		ASSERT_EQ(expected_platforms[i], operating_system_get_platform(&os)) << buffer_free(&input);
 		//
 		const Version returned_version = operating_system_get_version(&os);
@@ -302,11 +307,12 @@ TEST(TestOperatingSystem, operating_system_at_all)
 		ASSERT_EQ(expected_versions[i].build, returned_version.build) << buffer_free(&input);
 		ASSERT_EQ(expected_versions[i].revision, returned_version.revision) << buffer_free(&input);
 		//
-		ASSERT_STREQ((const char*)start, (const char*)operating_system_to_string(&os)) << buffer_free(&input);
+		ASSERT_STREQ((const char*)input_in_range.start,
+					 (const char*)operating_system_to_string(&os)) << buffer_free(&input);
 		//
 		++i;
 		++pos;
-		start = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 0, 1);
+		input_in_range.start = find_any_symbol_like_or_not_like_that(pos, input_in_range.finish, &zero, 1, 0, 1);
 	}
 
 	buffer_release(&input);

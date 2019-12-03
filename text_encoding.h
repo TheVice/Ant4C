@@ -48,6 +48,11 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	uint16_t code_page, struct buffer* output);
 
+uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output);
+uint8_t text_encoding_decode_UTF8_single(
+	const uint8_t* input_start, const uint8_t* input_finish,
+	uint32_t* output);
+
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	struct buffer* output);
@@ -64,10 +69,12 @@ uint8_t text_encoding_decode_UTF16LE(
 
 uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* data_finish,
 									  struct buffer* output);
-#if defined(_WIN32)
+#if 0
+uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
+									  struct buffer* output)
+#endif
 uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
 									  struct buffer* output);
-#endif
 
 uint8_t text_encoding_get_one(const uint8_t* encoding_start, const uint8_t* encoding_finish);
 

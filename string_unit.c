@@ -10,6 +10,7 @@
 #include "common.h"
 #include "conversion.h"
 #include "range.h"
+#include "text_encoding.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -17,6 +18,15 @@
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
+
+enum string_function
+{
+	contains, ends_with, get_length, index_of, last_index_of,
+	pad_left, pad_right, replace, starts_with, substring,
+	to_lower, to_upper, trim, trim_end, trim_start,
+	quote, un_quote, equal, empty,
+	UNKNOWN_STRING_FUNCTION
+};
 
 static const uint8_t quote_symbol = '"';
 
@@ -111,8 +121,17 @@ ptrdiff_t string_get_length(const uint8_t* input_start, const uint8_t* input_fin
 		return -1;
 	}
 
-	/*FIXME: encode from bytes into string and calculate string length. Current form correct for ASCII.*/
-	return input_finish - input_start;
+	uint8_t offset = 0;
+	ptrdiff_t length = 0;
+	uint32_t char_set = 0;
+
+	while (0 < (offset = text_encoding_decode_UTF8_single(input_start, input_finish, &char_set)))
+	{
+		input_start += offset;
+		++length;
+	}
+
+	return length;
 }
 
 ptrdiff_t string_index_of(const uint8_t* input_start, const uint8_t* input_finish,
@@ -126,8 +145,98 @@ ptrdiff_t string_last_index_of(const uint8_t* input_start, const uint8_t* input_
 {
 	return string_index_of_any(input_start, input_finish, value_start, value_finish, -1);
 }
-/*TODO:string_pad_left
-string_pad_right*/
+
+enum string_pad_side { string_pad_left_function = pad_left, string_pad_right_function = pad_right };
+
+uint8_t string_pad(const uint8_t* input_start, const uint8_t* input_finish,
+				   const uint8_t* value_start, const uint8_t* value_finish,
+				   ptrdiff_t result_length, struct buffer* output, enum string_pad_side side)
+{
+	if (input_finish < input_start ||
+		range_in_parts_is_null_or_empty(value_start, value_finish) ||
+		result_length < 0 ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t length = string_get_length(input_start, input_finish);
+
+	if (result_length < length + 1)
+	{
+		return buffer_append(output, input_start, input_finish - input_start);
+	}
+
+	result_length -= length;
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL,
+					   input_finish - input_start + 4 * result_length + sizeof(uint32_t)) ||
+		!buffer_resize(output, size + sizeof(uint32_t)))
+	{
+		return 0;
+	}
+
+	const uint8_t offset = text_encoding_decode_UTF8_single(
+							   value_start, value_finish,
+							   (uint32_t*)buffer_data(output, size));
+
+	if (!offset ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	if (string_pad_left_function == side)
+	{
+		while (result_length)
+		{
+			if (!buffer_append(output, value_start, offset))
+			{
+				return 0;
+			}
+
+			--result_length;
+		}
+	}
+
+	if (!buffer_append(output, input_start, input_finish - input_start))
+	{
+		return 0;
+	}
+
+	if (string_pad_right_function == side)
+	{
+		while (result_length)
+		{
+			if (!buffer_append(output, value_start, offset))
+			{
+				return 0;
+			}
+
+			--result_length;
+		}
+	}
+
+	return 1;
+}
+
+uint8_t string_pad_left(const uint8_t* input_start, const uint8_t* input_finish,
+						const uint8_t* value_start, const uint8_t* value_finish,
+						ptrdiff_t result_length, struct buffer* output)
+{
+	return string_pad(input_start, input_finish, value_start, value_finish,
+					  result_length, output, string_pad_left_function);
+}
+
+uint8_t string_pad_right(const uint8_t* input_start, const uint8_t* input_finish,
+						 const uint8_t* value_start, const uint8_t* value_finish,
+						 ptrdiff_t result_length, struct buffer* output)
+{
+	return string_pad(input_start, input_finish, value_start, value_finish,
+					  result_length, output, string_pad_right_function);
+}
+
 uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 					   const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
 					   const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
@@ -218,72 +327,120 @@ uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_fini
 	return 0 == string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
 }
 
-uint8_t string_substring(const uint8_t* input, ptrdiff_t input_length,
+uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish,
 						 ptrdiff_t index, ptrdiff_t length, struct buffer* output)
 {
-	if (NULL == input || NULL == output ||
-		input_length < 0 ||
+	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		index < 0 ||
-		length < 0 ||
-		input_length < index + length)
+		NULL == output)
 	{
 		return 0;
 	}
 
-	/*FIXME: encode from bytes into string and substring string. Current form correct for ASCII.*/
-	return buffer_append(output, &input[index], length);
-}
+	const ptrdiff_t size = buffer_size(output);
 
-uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output)
-{
-	if (NULL == input_start || NULL == input_finish || NULL == output ||
-		input_finish <= input_start)
+	if (!buffer_append(output, NULL, (input_finish - input_start) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	const uint8_t* pos = input_start;
-	/*TODO: encode may required.*/
+	uint32_t* ptr = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	while (input_finish != pos)
+	if (!buffer_resize(output, size))
 	{
-		*output = (uint8_t)tolower(*pos);
-		++pos;
-		++output;
+		return 0;
+	}
+
+	while (index)
+	{
+		const uint8_t offset = text_encoding_decode_UTF8_single(
+								   input_start, input_finish, ptr);
+
+		if (!offset)
+		{
+			return 0;
+		}
+
+		input_start += offset;
+		--index;
+	}
+
+	if (length < 0)
+	{
+		return buffer_append(output, input_start, input_finish - input_start);
+	}
+
+	while (length)
+	{
+		const uint8_t offset = text_encoding_decode_UTF8_single(
+								   input_start, input_finish, ptr);
+
+		if (!offset ||
+			!buffer_append(output, input_start, offset))
+		{
+			return 0;
+		}
+
+		input_start += offset;
+		--length;
 	}
 
 	return 1;
 }
 
-uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output)
+uint8_t string_transform_to_case(const uint8_t* input_start, const uint8_t* input_finish,
+								 struct buffer* output, uint8_t required_case)
 {
-	if (NULL == input_start || NULL == input_finish || NULL == output ||
-		input_finish <= input_start)
+	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
+		NULL == output ||
+		(to_lower != required_case && to_upper != required_case))
 	{
 		return 0;
 	}
 
-	const uint8_t* pos = input_start;
-	/*TODO: encode may required.*/
+	ptrdiff_t size = buffer_size(output);
 
-	while (input_finish != pos)
+	if (!buffer_append(output, NULL, 2 * (input_finish - input_start) + sizeof(uint32_t)))
 	{
-		*output = (uint8_t)toupper(*pos);
-		++pos;
-		++output;
+		return 0;
+	}
+
+	uint32_t* ptr = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	uint8_t offset = 0;
+
+	while (0 < (offset = text_encoding_decode_UTF8_single(input_start, input_finish, ptr)))
+	{
+		input_start += offset;
+		(*ptr) = (to_lower == required_case) ? tolower(*ptr) : toupper(*ptr);
+
+		if (!buffer_append(output, NULL, 4) ||
+			(offset = text_encoding_encode_UTF8_single(*ptr, buffer_data(output, size))) < 1 ||
+			!buffer_resize(output, size + offset))
+		{
+			return 0;
+		}
+
+		size += offset;
 	}
 
 	return 1;
 }
 
-enum string_function
+uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output)
 {
-	contains, ends_with, get_length, index_of, last_index_of,
-	pad_left, pad_right, replace, starts_with, substring,
-	to_lower, to_upper, trim, trim_end, trim_start,
-	quote, un_quote, equal, empty,
-	UNKNOWN_STRING_FUNCTION
-};
+	return string_transform_to_case(input_start, input_finish, output, to_lower);
+}
+
+uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output)
+{
+	return string_transform_to_case(input_start, input_finish, output, to_upper);
+}
 
 enum string_trim_mode { string_trim_mode_all = trim, string_trim_mode_end = trim_end, string_trim_mode_start = trim_start };
 
@@ -457,12 +614,14 @@ uint8_t string_exec_function(uint8_t function,
 		return 0;
 	}
 
-	const ptrdiff_t current_output_size = buffer_size(output);
 	struct range argument1;
+
 	struct range argument2;
+
 	struct range argument3;
-	argument1.start = argument2.start = argument3.start = argument1.finish = argument2.finish = argument3.finish =
-											NULL;
+
+	argument1.start = argument2.start = argument3.start =
+											argument1.finish = argument2.finish = argument3.finish = NULL;
 
 	switch (arguments_count)
 	{
@@ -495,7 +654,8 @@ uint8_t string_exec_function(uint8_t function,
 			break;
 
 		case 3:
-			if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, substring == function ? 1 : 0))
+			if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3,
+											(substring == function || pad_left == function || pad_right == function) ? 1 : 0))
 			{
 				if (NULL == argument1.start)
 				{
@@ -523,12 +683,13 @@ uint8_t string_exec_function(uint8_t function,
 	{
 		case contains:
 			return (2 == arguments_count) &&
-				   bool_to_string(string_contains(argument1.start, argument1.finish, argument2.start, argument2.finish), output);
+				   bool_to_string(string_contains(argument1.start, argument1.finish,
+												  argument2.start, argument2.finish), output);
 
 		case ends_with:
 			return (2 == arguments_count) &&
-				   bool_to_string(string_ends_with(argument1.start, argument1.finish, argument2.start, argument2.finish),
-								  output);
+				   bool_to_string(string_ends_with(argument1.start, argument1.finish,
+												   argument2.start, argument2.finish), output);
 
 		case get_length:
 			return (1 == arguments_count) &&
@@ -544,13 +705,11 @@ uint8_t string_exec_function(uint8_t function,
 				   int64_to_string(string_index_of_any(argument1.start, argument1.finish, argument2.start, argument2.finish, -1),
 								   output);
 
-		/*TODO:
 		case pad_left:
-			break;
-
 		case pad_right:
-			break;
-		*/
+			return (3 == arguments_count) &&
+				   string_pad(argument1.start, argument1.finish - 1, argument2.start, argument2.finish,
+							  (ptrdiff_t)int64_parse(argument3.start), output, function);
 
 		case replace:
 			return (3 == arguments_count) && string_replace(
@@ -584,31 +743,26 @@ uint8_t string_exec_function(uint8_t function,
 				return 1;
 			}
 
-			const ptrdiff_t input_length = range_size(&argument1) - 1;
 			const ptrdiff_t index = (ptrdiff_t)int64_parse(argument2.start);
-			const ptrdiff_t length = (3 == arguments_count) ? (ptrdiff_t)int64_parse(argument3.start) :
-									 (input_length - index);
-			/**/
-			return string_substring(argument1.start, input_length, index, length, output);
+			ptrdiff_t length = -1;
+
+			if (3 == arguments_count)
+			{
+				length = (ptrdiff_t)int64_parse(argument3.start);
+
+				if (length < 0)
+				{
+					return 0;
+				}
+			}
+
+			return string_substring(argument1.start, argument1.finish - 1, index, length, output);
 		}
 
 		case to_lower:
-			if (1 != arguments_count || (argument1.start != argument1.finish &&
-										 !buffer_append(output, NULL, range_size(&argument1))))
-			{
-				break;
-			}
-
-			return string_to_lower(argument1.start, argument1.finish, buffer_data(output, current_output_size));
-
 		case to_upper:
-			if (1 != arguments_count || (argument1.start != argument1.finish &&
-										 !buffer_append(output, NULL, range_size(&argument1))))
-			{
-				break;
-			}
-
-			return string_to_upper(argument1.start, argument1.finish, buffer_data(output, current_output_size));
+			return (1 == arguments_count) &&
+				   string_transform_to_case(argument1.start, argument1.finish, output, function);
 
 		case trim:
 		case trim_end:

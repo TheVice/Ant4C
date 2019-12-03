@@ -23,18 +23,22 @@ ptrdiff_t string_index_of(const uint8_t* input_start, const uint8_t* input_finis
 						  const uint8_t* value_start, const uint8_t* value_finish);
 ptrdiff_t string_last_index_of(const uint8_t* input_start, const uint8_t* input_finish,
 							   const uint8_t* value_start, const uint8_t* value_finish);
-/*TODO: string_pad_left
-string_pad_right*/
+uint8_t string_pad_left(const uint8_t* input_start, const uint8_t* input_finish,
+						const uint8_t* value_start, const uint8_t* value_finish,
+						ptrdiff_t result_length, struct buffer* output);
+uint8_t string_pad_right(const uint8_t* input_start, const uint8_t* input_finish,
+						 const uint8_t* value_start, const uint8_t* value_finish,
+						 ptrdiff_t result_length, struct buffer* output);
 uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 					   const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
 					   const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
 					   struct buffer* output);
 uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_finish,
 						   const uint8_t* value_start, const uint8_t* value_finish);
-uint8_t string_substring(const uint8_t* input, ptrdiff_t input_length,
+uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish,
 						 ptrdiff_t index, ptrdiff_t length, struct buffer* output);
-uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output);
-uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output);
+uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output);
+uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output);
 uint8_t string_trim(struct range* input_output);
 uint8_t string_trim_end(struct range* input_output);
 uint8_t string_trim_start(struct range* input_output);

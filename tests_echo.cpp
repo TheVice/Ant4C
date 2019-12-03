@@ -38,7 +38,8 @@ TEST_F(TestEcho, echo_evaluate_task)
 		if (verbose_attribute.empty())
 		{
 			auto doc = pugi::xml_document();
-			ASSERT_TRUE(doc.load_string(echo_code.c_str()));
+			const auto result = doc.load_string(echo_code.c_str());
+			ASSERT_EQ(pugi::xml_parse_status::status_ok, result.status);
 			ASSERT_STREQ(echo_str.c_str(), doc.first_child().name());
 			verbose = (uint8_t)doc.first_child().attribute("verbose").as_bool();
 		}

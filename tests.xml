@@ -864,6 +864,16 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>pad-left('Abc', ' ', '4') -> ${string::pad-left('Abc', ' ', '4')}</code>
+      <output>pad-left('Abc', ' ', '4') ->  Abc</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>pad-right('Abc', ' ', '4') -> ${string::pad-right('Abc', ' ', '4')}</code>
+      <output>pad-right('Abc', ' ', '4') -> Abc </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>replace('', '', '') -> ${string::replace('', '', '')}</code>
       <output>replace('', '', '') -> </output>
       <return>0</return>
@@ -1007,7 +1017,7 @@
       <code>un-quote(""a b c"") -> ${string::un-quote('""a b c""')}</code>
       <output>un-quote(""a b c"") -> a b c</output>
       <return>1</return>
-    </interpreter_evaluate_code>    
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>equal('', '') -> ${string::equal('', '')}</code>
       <output>equal('', '') -> True</output>
@@ -2217,12 +2227,12 @@
       <code>parse(60) -> ${timespan::parse('60')}</code>
       <output>parse(60) -> 60</output>
       <return>1</return>
-    </interpreter_evaluate_code>    
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>to-string(60) -> ${timespan::to-string('60')}</code>
       <output>to-string(60) -> 60</output>
       <return>1</return>
-    </interpreter_evaluate_code>    
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>get-seconds(60) -> ${timespan::get-seconds('60')}</code>
       <output>get-seconds(60) -> 60</output>
@@ -2908,6 +2918,42 @@
     </property_task>
   </TestProperty>
   <TestStringUnit>
+    <string_get_length>
+      <input></input>
+      <return></return>
+    </string_get_length>
+    <string_get_length>
+      <input> </input>
+      <return>1</return>
+    </string_get_length>
+    <string_get_length>
+      <input>  </input>
+      <return>2</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#x7e;</input>
+      <return>1</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#xa1;</input>
+      <return>1</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#xa1;&#x07ff;</input>
+      <return>2</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#xa1;&#x08a0;</input>
+      <return>2</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#x08a0;</input>
+      <return>1</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#x08a0;&#xffee;</input>
+      <return>2</return>
+    </string_get_length>
     <string_index_of_any>
       <input></input>
       <value></value>
@@ -2950,6 +2996,14 @@
       <step>-1</step>
       <return>0</return>
     </string_index_of_any>
+    <string_pad>
+      <input></input>
+      <value> </value>
+      <length>1</length>
+      <return>1</return>
+      <output> </output>
+      <side>right</side>
+    </string_pad>
     <string_replace>
       <input></input>
       <to_be_replaced></to_be_replaced>
@@ -2977,7 +3031,7 @@
       <by_replacement>b01</by_replacement>
       <output>ab0123</output>
       <return>1</return>
-    </string_replace>    
+    </string_replace>
     <string_replace>
       <input>abc123</input>
       <to_be_replaced>bc1</to_be_replaced>
@@ -3098,7 +3152,7 @@ Approximate round trip times in milli-seconds:
 [Info]:     Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
 [Info]: Approximate round trip times in milli-seconds:
 [Info]:     Minimum = 0ms, Maximum = 0ms, Average = 0ms
-[Info]:         ]]>  
+[Info]:         ]]>
       </output>
       <return>1</return>
     </string_replace>
@@ -3107,6 +3161,36 @@ Approximate round trip times in milli-seconds:
     <string_starts_with input=" " value=" " return="true" />
     <string_starts_with input="AB" value="CD" return="false" />
     <string_starts_with input="ABCD" value="AB" return="true" />
+    <string_transform_to_case>
+      <input></input>
+      <letter_case></letter_case>
+      <output></output>
+      <return></return>
+    </string_transform_to_case>
+    <string_transform_to_case>
+      <input>Abc</input>
+      <letter_case>upper</letter_case>
+      <output>ABC</output>
+      <return>1</return>
+    </string_transform_to_case>
+    <string_transform_to_case>
+      <input>ABC</input>
+      <letter_case>upper</letter_case>
+      <output>ABC</output>
+      <return>1</return>
+    </string_transform_to_case>
+    <string_transform_to_case>
+      <input>Abc</input>
+      <letter_case>lower</letter_case>
+      <output>abc</output>
+      <return>1</return>
+    </string_transform_to_case>
+    <string_transform_to_case>
+      <input>ABC</input>
+      <letter_case>lower</letter_case>
+      <output>abc</output>
+      <return>1</return>
+    </string_transform_to_case>
     <string_trim>
       <input></input>
       <input_length></input_length>
@@ -3708,9 +3792,15 @@ Approximate round trip times in milli-seconds:
       <return>1</return>
     </xml_get_attribute_value>
     <xml_get_attribute_value>
-      <input><![CDATA[<project name = "&#1;&#x2;&#X3;">]]></input>
+      <input><![CDATA[<project name = "&#126;&#xa1;&#X07ff;">]]></input>
       <attribute>name</attribute>
-      <output>&#1;&#x2;&#x3;</output>
+      <output>&#126;&#xa1;&#x07ff;</output>
+      <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<project name = "&#126; &#xa1; &#X07ff;">]]></input>
+      <attribute>name</attribute>
+      <output>&#126; &#xa1; &#x07ff;</output>
       <return>1</return>
     </xml_get_attribute_value>
     <xml_get_attribute_value>
@@ -3754,6 +3844,16 @@ Approximate round trip times in milli-seconds:
     <xml_get_element_value>
       <input><![CDATA[<abc>123</abc>]]></input>
       <output>123</output>
+      <return>1</return>
+    </xml_get_element_value>
+    <xml_get_element_value>
+      <input><![CDATA[<abc>&#126;&#xa1;&#X07ff;</abc>]]></input>
+      <output>&#126;&#xa1;&#x07ff;</output>
+      <return>1</return>
+    </xml_get_element_value>
+    <xml_get_element_value>
+      <input><![CDATA[<abc>&#126; &#xa1; &#X07ff;</abc>]]></input>
+      <output>&#126; &#xa1; &#x07ff;</output>
       <return>1</return>
     </xml_get_element_value>
   </TestXml>
