@@ -108,13 +108,14 @@ TEST_F(TestProperty, property_task)
 		const uint8_t verbose = 0;
 		//
 		void* project = NULL;
-		ASSERT_TRUE(project_new(&project)) << properties_free(&properties) << project_free(&project);
+		ASSERT_TRUE(project_new(&project)) << properties_free(&properties) << project_free(project);
 		//
-		ASSERT_TRUE(property_add_at_project(project, &properties, verbose)) << project_free(&project);
+		ASSERT_TRUE(property_add_at_project(project, &properties,
+											verbose)) << properties_free(&properties) << project_free(project);
 		//
 		const uint8_t returned = interpreter_evaluate_task(project, NULL, task_id,
 								 (const uint8_t*)record.c_str(), (const uint8_t*)record.c_str() + record.size(), verbose);
-		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << project_free(&project);
+		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << project_free(project);
 		property_clear(&properties);
 
 		for (const auto& property : output_properties)
@@ -129,25 +130,27 @@ TEST_F(TestProperty, property_task)
 			//
 			property_load_from_node(property.node(), name, expected_value, expected_dynamic,
 									overwrite, expected_readonly, fail_on_error, local_verbose);
-			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties);
+			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
 			ASSERT_TRUE(property_get_by_name(project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
 											 &properties))
-					<< name << std::endl << buffer_free(&properties);
+					<< name << std::endl << buffer_free(&properties) << project_free(project);
 			ASSERT_EQ(expected_value, buffer_to_string(&properties)) << buffer_free(&properties);
-			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties);
+			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
 			//
 			void* the_property = NULL;
 			ASSERT_TRUE(project_property_exists(
 							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property))
-					<< name << buffer_free(&properties);
+					<< name << buffer_free(&properties) << project_free(project);
 			//
 			uint8_t returned_dynamic = 0;
-			ASSERT_TRUE(property_is_dynamic(the_property, &returned_dynamic)) << name << buffer_free(&properties);
-			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << buffer_free(&properties);
+			ASSERT_TRUE(property_is_dynamic(the_property,
+											&returned_dynamic)) << name << buffer_free(&properties) << project_free(project);
+			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << buffer_free(&properties) << project_free(project);
 			//
 			uint8_t returned_readonly = 0;
-			ASSERT_TRUE(property_is_readonly(the_property, &returned_readonly)) << name << buffer_free(&properties);
-			ASSERT_EQ(expected_readonly, returned_readonly) << name << buffer_free(&properties);
+			ASSERT_TRUE(property_is_readonly(the_property,
+											 &returned_readonly)) << name << buffer_free(&properties) << project_free(project);
+			ASSERT_EQ(expected_readonly, returned_readonly) << name << buffer_free(&properties) << project_free(project);
 		}
 
 		project_unload(project);

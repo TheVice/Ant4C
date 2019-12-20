@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 struct buffer;
+struct range;
 
 uint8_t project_property_exists(const void* project,
 								const uint8_t* property_name, uint8_t property_name_length,
@@ -22,7 +23,10 @@ uint8_t project_property_set_value(void* project,
 								   uint8_t dynamic, uint8_t overwrite,
 								   uint8_t readonly, uint8_t verbose);
 
+uint8_t project_target_new(void* project,
+						   const struct range* name, const struct range* depends, const struct range* content);
 uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t name_length);
+uint8_t project_target_has_executed(const void* project, const uint8_t* name, uint8_t name_length);
 
 uint8_t project_get_base_directory(const void* project, const void** the_property);
 uint8_t project_get_buildfile_path(const void* project, const void** the_property);

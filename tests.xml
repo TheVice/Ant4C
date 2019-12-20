@@ -147,7 +147,6 @@
     <argument_append_arguments>
       <argument></argument>
       <output></output>
-      <output_length></output_length>
       <return></return>
     </argument_append_arguments>
     <argument_append_arguments>
@@ -161,8 +160,7 @@
       <argument>8</argument>
       <argument>9</argument>
       <argument>0</argument>
-      <output>1&#00;2&#00;3&#00;4&#00;5&#00;6&#00;7&#00;8&#00;9&#00;0&#00;</output><!-- FIXME: not all XML parsers support '\0' for char in this form. -->
-      <output_length>20</output_length>
+      <output>10x020x030x040x050x060x070x080x090x000x0</output>
       <return>1</return>
     </argument_append_arguments>
     <argument_append_arguments>
@@ -176,8 +174,7 @@
       <argument>8</argument>
       <argument>9</argument>
       <argument>0</argument>
-      <output>a b c&#00;2&#00;3&#00;4&#00;5&#00;6&#00;7&#00;8&#00;9&#00;0&#00;</output><!-- FIXME: not all XML parsers support '\0' for char in this form. -->
-      <output_length>24</output_length>
+      <output>a b c0x020x030x040x050x060x070x080x090x000x0</output>
       <return>1</return>
     </argument_append_arguments>
     <argument_parser_get_verbose>
@@ -856,12 +853,12 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>pad-left('Abc', ' ', '4') -> ${string::pad-left('Abc', ' ', '4')}</code>
+      <code>pad-left('Abc', ' ', '4') -> ${string::pad-left('Abc', 4, ' ')}</code>
       <output>pad-left('Abc', ' ', '4') ->  Abc</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>pad-right('Abc', ' ', '4') -> ${string::pad-right('Abc', ' ', '4')}</code>
+      <code>pad-right('Abc', ' ', '4') -> ${string::pad-right('Abc', 4, ' ')}</code>
       <output>pad-right('Abc', ' ', '4') -> Abc </output>
       <return>1</return>
     </interpreter_evaluate_code>
@@ -2285,12 +2282,223 @@
       <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <!--code>exists('bool') -> ${task::exists('bool')} </code>
+      <code>exists('cygpath') -> ${task::exists('cygpath')} </code>
+      <code>exists('datetime') -> ${task::exists('datetime')} </code>
+      <code>exists('directory') -> ${task::exists('directory')} </code>
+      <code>exists('dns') -> ${task::exists('dns')} </code>
+      <code>exists('double') -> ${task::exists('double')} </code>
+      <code>exists('environment') -> ${task::exists('environment')} </code>
+      <code>exists('file') -> ${task::exists('file')} </code>
+      <code>exists('fileversioninfo') -> ${task::exists('fileversioninfo')} </code>
+      <code>exists('int') -> ${task::exists('int')} </code>
+      <code>exists('int64') -> ${task::exists('int64')} </code>
+      <code>exists('long') -> ${task::exists('long')} </code>
+      <code>exists('math') -> ${task::exists('math')} </code>
+      <code>exists('operating-system') -> ${task::exists('operating-system')} </code>
+      <code>exists('path') -> ${task::exists('path')} </code>
+      <code>exists('platform') -> ${task::exists('platform')} </code>
+      <code>exists('program') -> ${task::exists('program')} </code>
+      <code>exists('project') -> ${task::exists('project')} </code>
+      <code>exists('property') -> ${task::exists('property')} </code>
+      <code>exists('string') -> ${task::exists('string')} </code>
+      <code>exists('target') -> ${task::exists('target')} </code>
+      <code>exists('task') -> ${task::exists('task')} </code>
+      <code>exists('timespan') -> ${task::exists('timespan')} </code>
+      <code>exists('version') -> ${task::exists('version')}</code>
+      <output>exists('bool') -> True </output>
+      <output>exists('cygpath') -> True </output>
+      <output>exists('datetime') -> True </output>
+      <output>exists('directory') -> False </output>
+      <output>exists('dns') -> False </output>
+      <output>exists('double') -> True </output>
+      <output>exists('environment') -> True </output>
+      <output>exists('file') -> False </output>
+      <output>exists('fileversioninfo') -> False </output>
+      <output>exists('int') -> True </output>
+      <output>exists('int64') -> True </output>
+      <output>exists('long') -> True </output>
+      <output>exists('math') -> True </output>
+      <output>exists('operating-system') -> True </output>
+      <output>exists('path') -> True </output>
+      <output>exists('platform') -> True </output>
+      <output>exists('program') -> True </output>
+      <output>exists('project') -> True </output>
+      <output>exists('property') -> True </output>
+      <output>exists('string') -> True </output>
+      <output>exists('target') -> False </output>
+      <output>exists('task') -> True </output>
+      <output>exists('timespan') -> True </output>
+      <output>exists('version') -> True</output>
+      -->
+      <code>exists('al') -> ${task::exists('al')} </code>
+      <code>exists('asminfo') -> ${task::exists('asminfo')} </code>
+      <code>exists('attrib') -> ${task::exists('attrib')} </code>
+      <code>exists('aximp') -> ${task::exists('aximp')} </code>
+      <code>exists('call') -> ${task::exists('call')} </code>
+      <code>exists('choose') -> ${task::exists('choose')} </code>
+      <code>exists('cl') -> ${task::exists('cl')} </code>
+      <code>exists('copy') -> ${task::exists('copy')} </code>
+      <code>exists('csc') -> ${task::exists('csc')} </code>
+      <code>exists('delay-sign') -> ${task::exists('delay-sign')} </code>
+      <code>exists('delete') -> ${task::exists('delete')} </code>
+      <code>exists('description') -> ${task::exists('description')} </code>
+      <code>exists('echo') -> ${task::exists('echo')} </code>
+      <code>exists('exec') -> ${task::exists('exec')} </code>
+      <code>exists('fail') -> ${task::exists('fail')} </code>
+      <code>exists('foreach') -> ${task::exists('foreach')} </code>
+      <code>exists('get') -> ${task::exists('get')} </code>
+      <code>exists('gunzip') -> ${task::exists('gunzip')} </code>
+      <code>exists('if') -> ${task::exists('if')} </code>
+      <code>exists('ilasm') -> ${task::exists('ilasm')} </code>
+      <code>exists('ildasm') -> ${task::exists('ildasm')} </code>
+      <code>exists('include') -> ${task::exists('include')} </code>
+      <code>exists('jsc') -> ${task::exists('jsc')} </code>
+      <code>exists('lib') -> ${task::exists('lib')} </code>
+      <code>exists('license') -> ${task::exists('license')} </code>
+      <code>exists('link') -> ${task::exists('link')} </code>
+      <code>exists('loadfile') -> ${task::exists('loadfile')} </code>
+      <code>exists('loadtasks') -> ${task::exists('loadtasks')} </code>
+      <code>exists('mail') -> ${task::exists('mail')} </code>
+      <code>exists('mc') -> ${task::exists('mc')} </code>
+      <code>exists('midl') -> ${task::exists('midl')} </code>
+      <code>exists('mkdir') -> ${task::exists('mkdir')} </code>
+      <code>exists('move') -> ${task::exists('move')} </code>
+      <code>exists('ndoc') -> ${task::exists('ndoc')} </code>
+      <code>exists('nunit2') -> ${task::exists('nunit2')} </code>
+      <code>exists('project') -> ${task::exists('project')} </code>
+      <code>exists('property') -> ${task::exists('property')} </code>
+      <code>exists('rc') -> ${task::exists('rc')} </code>
+      <code>exists('readregistry') -> ${task::exists('readregistry')} </code>
+      <code>exists('regasm') -> ${task::exists('regasm')} </code>
+      <code>exists('regex') -> ${task::exists('regex')} </code>
+      <code>exists('regsvcs') -> ${task::exists('regsvcs')} </code>
+      <code>exists('resgen') -> ${task::exists('resgen')} </code>
+      <code>exists('script') -> ${task::exists('script')} </code>
+      <code>exists('servicecontroller') -> ${task::exists('servicecontroller')} </code>
+      <code>exists('setenv') -> ${task::exists('setenv')} </code>
+      <code>exists('sleep') -> ${task::exists('sleep')} </code>
+      <code>exists('solution') -> ${task::exists('solution')} </code>
+      <code>exists('style') -> ${task::exists('style')} </code>
+      <code>exists('sysinfo') -> ${task::exists('sysinfo')} </code>
+      <code>exists('tar') -> ${task::exists('tar')} </code>
+      <code>exists('target') -> ${task::exists('target')} </code>
+      <code>exists('tlbexp') -> ${task::exists('tlbexp')} </code>
+      <code>exists('tlbimp') -> ${task::exists('tlbimp')} </code>
+      <code>exists('touch') -> ${task::exists('touch')} </code>
+      <code>exists('trycatch') -> ${task::exists('trycatch')} </code>
+      <code>exists('tstamp') -> ${task::exists('tstamp')} </code>
+      <code>exists('untar') -> ${task::exists('untar')} </code>
+      <code>exists('unzip') -> ${task::exists('unzip')} </code>
+      <code>exists('uptodate') -> ${task::exists('uptodate')} </code>
+      <code>exists('vbc') -> ${task::exists('vbc')} </code>
+      <code>exists('vjc') -> ${task::exists('vjc')} </code>
+      <code>exists('xmlpeek') -> ${task::exists('xmlpeek')} </code>
+      <code>exists('xmlpoke') -> ${task::exists('xmlpoke')} </code>
+      <code>exists('zip') -> ${task::exists('zip')}</code>
+      <output>exists('al') -> False </output>
+      <output>exists('asminfo') -> False </output>
+      <output>exists('attrib') -> False </output>
+      <output>exists('aximp') -> False </output>
+      <output>exists('call') -> False </output>
+      <output>exists('choose') -> False </output>
+      <output>exists('cl') -> False </output>
+      <output>exists('copy') -> False </output>
+      <output>exists('csc') -> False </output>
+      <output>exists('delay-sign') -> False </output>
+      <output>exists('delete') -> False </output>
+      <output>exists('description') -> True </output>
+      <output>exists('echo') -> True </output>
+      <output>exists('exec') -> True </output>
+      <output>exists('fail') -> False </output>
+      <output>exists('foreach') -> False </output>
+      <output>exists('get') -> False </output>
+      <output>exists('gunzip') -> False </output>
+      <output>exists('if') -> False </output>
+      <output>exists('ilasm') -> False </output>
+      <output>exists('ildasm') -> False </output>
+      <output>exists('include') -> False </output>
+      <output>exists('jsc') -> False </output>
+      <output>exists('lib') -> False </output>
+      <output>exists('license') -> False </output>
+      <output>exists('link') -> False </output>
+      <output>exists('loadfile') -> False </output>
+      <output>exists('loadtasks') -> False </output>
+      <output>exists('mail') -> False </output>
+      <output>exists('mc') -> False </output>
+      <output>exists('midl') -> False </output>
+      <output>exists('mkdir') -> False </output>
+      <output>exists('move') -> False </output>
+      <output>exists('ndoc') -> False </output>
+      <output>exists('nunit2') -> False </output>
+      <output>exists('project') -> True </output>
+      <output>exists('property') -> True </output>
+      <output>exists('rc') -> False </output>
+      <output>exists('readregistry') -> False </output>
+      <output>exists('regasm') -> False </output>
+      <output>exists('regex') -> False </output>
+      <output>exists('regsvcs') -> False </output>
+      <output>exists('resgen') -> False </output>
+      <output>exists('script') -> False </output>
+      <output>exists('servicecontroller') -> False </output>
+      <output>exists('setenv') -> False </output>
+      <output>exists('sleep') -> False </output>
+      <output>exists('solution') -> False </output>
+      <output>exists('style') -> False </output>
+      <output>exists('sysinfo') -> False </output>
+      <output>exists('tar') -> False </output>
+      <output>exists('target') -> True </output>
+      <output>exists('tlbexp') -> False </output>
+      <output>exists('tlbimp') -> False </output>
+      <output>exists('touch') -> False </output>
+      <output>exists('trycatch') -> False </output>
+      <output>exists('tstamp') -> False </output>
+      <output>exists('untar') -> False </output>
+      <output>exists('unzip') -> False </output>
+      <output>exists('uptodate') -> False </output>
+      <output>exists('vbc') -> False </output>
+      <output>exists('vjc') -> False </output>
+      <output>exists('xmlpeek') -> False </output>
+      <output>exists('xmlpoke') -> False </output>
+      <output>exists('zip') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>exists('build') -> ${target::exists('build')}</code>
+      <output>exists('build') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-current-target() -> ${target::get-current-target()}</code>
+      <output>get-current-target() -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>has-executed('build') -> ${target::has-executed('build')}</code>
+      <output>has-executed('build') -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
     <interpreter_evaluate_task>
       <code><![CDATA[<echo />]]></code>
       <return>1</return>
     </interpreter_evaluate_task>
     <interpreter_evaluate_task>
       <code><![CDATA[<echo message="Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('ABAB', 'B')}?" verbose="true" />]]></code>
+      <return>1</return>
+    </interpreter_evaluate_task>
+    <interpreter_evaluate_task>
+      <code><![CDATA[<echo>
+Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('ABAB', 'B')}?
+      </echo> />]]></code>
+      <return>1</return>
+    </interpreter_evaluate_task>
+    <interpreter_evaluate_task project="true">
+      <code><![CDATA[<property name="debug" value="true" />]]></code>
+      <return>1</return>
+    </interpreter_evaluate_task>
+    <interpreter_evaluate_task project="true">
+      <code><![CDATA[<property name="PI" value="{math::PI()}" dynamic="true" />]]></code>
       <return>1</return>
     </interpreter_evaluate_task>
   </TestInterpreter>
@@ -2831,6 +3039,63 @@
       <return>1</return>
       <name>discriminant</name>
       <description>Calculate 'real' solution(s) of quadratic polynomial.</description>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content>
+        <![CDATA[
+        <project name="tasks_to_skip">
+          <attrib if="false" />
+          <call if="false" />
+          <choose if="false" />
+          <cl if="false" />
+          <copy if="false" />
+          <csc if="false" />
+          <delete if="false" />
+          <description if="false" />
+          <echo if="false" />
+          <exec if="false" />
+          <fail if="false" />
+          <foreach if="false" />
+          <get if="false" />
+          <gunzip if="false" />
+          <if if="false" />
+          <ilasm if="false" />
+          <include if="false" />
+          <lib if="false" />
+          <link if="false" />
+          <loadfile if="false" />
+          <mail if="false" />
+          <mc if="false" />
+          <mkdir if="false" />
+          <move if="false" />
+          <project if="false" />
+          <property if="false" />
+          <rc if="false" />
+          <readregistry if="false" />
+          <regex if="false" />
+          <regsvcs if="false" />
+          <setenv if="false" />
+          <sleep if="false" />
+          <solution if="false" />
+          <style if="false" />
+          <tar if="false" />
+          <touch if="false" />
+          <trycatch if="false" />
+          <tstamp if="false" />
+          <untar if="false" />
+          <unzip if="false" />
+          <uptodate if="false" />
+          <vbc if="false" />
+          <vjc if="false" />
+          <xmlpeek if="false" />
+          <xmlpoke if="false" />
+          <zip if="false" />
+          <foo if="false" />
+        </project>
+        ]]>
+      </content>
+      <return>1</return>
+      <name>tasks_to_skip</name>
     </project_load_from_content>
     <project><!-- project_load_from_content -->
       <content>

@@ -35,6 +35,8 @@ std::string range_to_string(const uint8_t* start_of_range, const uint8_t* finish
 std::string range_to_string(const range& input);
 std::string range_to_string(const range* input);
 
+void null_range_to_empty(range& input);
+
 uint8_t buffer_free(buffer* input);
 uint8_t buffer_resize_and_free_inner_buffers(buffer* storage);
 uint8_t buffer_free_with_inner_buffers(buffer* storage);

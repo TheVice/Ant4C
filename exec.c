@@ -22,8 +22,6 @@
 #include "xml.h"
 
 static const uint8_t zero_symbol = '\0';
-static const uint8_t space_symbol = ' ';
-static const uint8_t equal_symbol = '=';
 
 uint8_t exec_get_program_full_path(const struct range* program, const struct range* base_dir,
 								   struct buffer* full_path)
@@ -76,6 +74,7 @@ uint8_t exec_get_program_full_path(const struct range* program, const struct ran
 
 #include <windows.h>
 
+static const uint8_t space_symbol = ' ';
 static const wchar_t zero_symbol_w = L'\0';
 
 uint8_t exec_win32_append_command_line(const struct range* command_line, struct buffer* output)
@@ -716,14 +715,13 @@ static const uint8_t* exec_attributes[] =
 	(const uint8_t*)"resultproperty",
 	(const uint8_t*)"spawn",
 	(const uint8_t*)"workingdir",
-	(const uint8_t*)"failonerror",
 	(const uint8_t*)"timeout",
 	(const uint8_t*)"verbose"
 };
 
 static const uint8_t exec_attributes_lengths[] =
 {
-	7, 6, 7, 11, 6, 11, 14, 5, 10, 11, 7, 7
+	7, 6, 7, 11, 6, 11, 14, 5, 10, 7, 7
 };
 
 #define PROGRAM_POSITION			0
@@ -735,10 +733,9 @@ static const uint8_t exec_attributes_lengths[] =
 #define RESULT_PROPERTY_POSITION	6
 #define SPAWN_POSITION				7
 #define WORKING_DIR_POSITION		8
-#define FAIL_ON_ERROR_POSITION		9
-#define TIME_OUT_POSITION			10
-#define VERBOSE_POSITION			11
-#define ENVIRONMENT_POSITION		12
+#define TIME_OUT_POSITION			9
+#define VERBOSE_POSITION			10
+#define ENVIRONMENT_POSITION		11
 
 #define ATTRIBUTES_COUNT	(ENVIRONMENT_POSITION + 1)
 
@@ -772,183 +769,12 @@ uint8_t exec_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-uint8_t exec_get_environments(const uint8_t* start, const uint8_t* finish, struct buffer* environments)
-{
-	if (range_in_parts_is_null_or_empty(start, finish) ||
-		NULL == environments)
-	{
-		return 0;
-	}
-
-	struct buffer elements;
-
-	SET_NULL_TO_BUFFER(elements);
-
-	if (!buffer_resize(&elements, 0))
-	{
-		buffer_release(&elements);
-		return 0;
-	}
-
-	uint16_t count = xml_get_sub_nodes_elements(start, finish, &elements);
-
-	if (!count)
-	{
-		buffer_release(&elements);
-		return 1;
-	}
-
-	count = 0;
-	struct range name;
-	struct range* env_ptr = NULL;
-
-	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
-	{
-		static const uint8_t* env_name = (const uint8_t*)"environment";
-
-		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
-		{
-			buffer_release(&elements);
-			return 0;
-		}
-
-		if (string_equal(name.start, name.finish, env_name, env_name + 11))
-		{
-			break;
-		}
-	}
-
-	if (NULL == env_ptr)
-	{
-		buffer_release(&elements);
-		return 1;
-	}
-
-	name = *env_ptr;
-
-	if (!buffer_resize(&elements, 0))
-	{
-		buffer_release(&elements);
-		return 0;
-	}
-
-	count = xml_get_sub_nodes_elements(name.start, name.finish, &elements);
-
-	if (!count)
-	{
-		buffer_release(&elements);
-		return 1;
-	}
-
-	count = 0;
-	/**/
-	struct buffer attribute_value;
-	SET_NULL_TO_BUFFER(attribute_value);
-
-	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
-	{
-		static const uint8_t* var_name = (const uint8_t*)"variable";
-		static const uint8_t* name_str = (const uint8_t*)"name";
-		static const uint8_t* value_str = (const uint8_t*)"value";
-
-		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-
-		if (!string_equal(name.start, name.finish, var_name, var_name + 8))
-		{
-			continue;
-		}
-
-		if (!buffer_resize(&attribute_value, 0) ||
-			!xml_get_attribute_value(env_ptr->start, env_ptr->finish, name_str, 4, &attribute_value) ||
-			!buffer_size(&attribute_value))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-
-		name.start = buffer_data(&attribute_value, 0);
-		name.finish = name.start + buffer_size(&attribute_value);
-		uint8_t contains = string_contains(name.start, name.finish, &space_symbol, &space_symbol + 1);
-
-		if (contains)
-		{
-			if (!string_quote(name.start, name.finish, environments))
-			{
-				buffer_release(&attribute_value);
-				buffer_release(&elements);
-				return 0;
-			}
-		}
-		else
-		{
-			if (!buffer_append_data_from_range(environments, &name))
-			{
-				buffer_release(&attribute_value);
-				buffer_release(&elements);
-				return 0;
-			}
-		}
-
-		if (!buffer_push_back(environments, equal_symbol) ||
-			!buffer_resize(&attribute_value, 0))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-
-		if (xml_get_attribute_value(env_ptr->start, env_ptr->finish, value_str, 5, &attribute_value))
-		{
-			name.start = buffer_data(&attribute_value, 0);
-			name.finish = name.start + buffer_size(&attribute_value);
-			contains = string_contains(name.start, name.finish, &space_symbol, &space_symbol + 1);
-
-			if (contains)
-			{
-				if (!string_quote(name.start, name.finish, environments))
-				{
-					buffer_release(&attribute_value);
-					buffer_release(&elements);
-					return 0;
-				}
-			}
-			else
-			{
-				if (!buffer_append_data_from_range(environments, &name))
-				{
-					buffer_release(&attribute_value);
-					buffer_release(&elements);
-					return 0;
-				}
-			}
-		}
-
-		if (!buffer_push_back(environments, zero_symbol))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-	}
-
-	buffer_release(&attribute_value);
-	buffer_release(&elements);
-	return 1;
-}
-
 int64_t exec_millisecond_to_second(int64_t millisecond)
 {
 	return math_truncate(math_ceiling((double)millisecond / 1000));
 }
 
-uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
-						   const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
+uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -960,16 +786,13 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 	const struct buffer* base_dir_in_a_buffer = buffer_buffer_data(task_arguments, BASE_DIR_POSITION);
 	const struct buffer* command_line_in_a_buffer = buffer_buffer_data(task_arguments, COMMAND_LINE_POSITION);
 	struct buffer* output_path_in_a_buffer = buffer_buffer_data(task_arguments, OUTPUT_POSITION);
-	/*const struct buffer* pid_property_in_a_buffer = buffer_buffer_data(task_arguments, PID_PROPERTY_POSITION);
-	const struct buffer* result_property_in_a_buffer = buffer_buffer_data(task_arguments, RESULT_PROPERTY_POSITION);*/
 	void* pid_property = NULL;
 	void* result_property = NULL;
 	const struct buffer* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
 	struct buffer* working_dir_in_a_buffer = buffer_buffer_data(task_arguments, WORKING_DIR_POSITION);
-	/*const struct buffer* fail_on_error = buffer_buffer_data(task_arguments, FAIL_ON_ERROR_POSITION);*/
 	struct buffer* time_out_in_a_buffer = buffer_buffer_data(task_arguments, TIME_OUT_POSITION);
 	const struct buffer* verbose_in_a_buffer = buffer_buffer_data(task_arguments, VERBOSE_POSITION);
-	struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
+	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
 
 	if (!buffer_size(program_path_in_a_buffer))
 	{
@@ -980,7 +803,7 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 
 	program.start = buffer_data(program_path_in_a_buffer, 0);
 
-	program.finish = buffer_data(program_path_in_a_buffer, 0) + buffer_size(program_path_in_a_buffer);
+	program.finish = program.start + buffer_size(program_path_in_a_buffer);
 
 	/**/
 	uint8_t append = 0;
@@ -996,7 +819,7 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 	if (buffer_size(base_dir_in_a_buffer))
 	{
 		base_directory.start = buffer_data(base_dir_in_a_buffer, 0);
-		base_directory.finish = buffer_data(base_dir_in_a_buffer, 0) + buffer_size(base_dir_in_a_buffer);
+		base_directory.finish = base_directory.start + buffer_size(base_dir_in_a_buffer);
 	}
 	else
 	{
@@ -1008,7 +831,7 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 	if (buffer_size(command_line_in_a_buffer))
 	{
 		command_line.start = buffer_data(command_line_in_a_buffer, 0);
-		command_line.finish = buffer_data(command_line_in_a_buffer, 0) + buffer_size(command_line_in_a_buffer);
+		command_line.finish = command_line.start + buffer_size(command_line_in_a_buffer);
 	}
 	else
 	{
@@ -1025,7 +848,7 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 		}
 
 		output_file.start = buffer_data(output_path_in_a_buffer, 0);
-		output_file.finish = buffer_data(output_path_in_a_buffer, 0) + buffer_size(output_path_in_a_buffer);
+		output_file.finish = output_file.start + buffer_size(output_path_in_a_buffer);
 	}
 	else
 	{
@@ -1085,7 +908,7 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 		}
 
 		working_directory.start = buffer_data(working_dir_in_a_buffer, 0);
-		working_directory.finish = buffer_data(working_dir_in_a_buffer, 0) + buffer_size(working_dir_in_a_buffer);
+		working_directory.finish = working_directory.start + buffer_size(working_dir_in_a_buffer);
 	}
 	else
 	{
@@ -1127,17 +950,12 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 		}
 	}
 
-	if (!exec_get_environments(attributes_finish, element_finish, environment_in_a_buffer))
-	{
-		return 0;
-	}
-
 	struct range environment_variables;
 
 	if (buffer_size(environment_in_a_buffer))
 	{
 		environment_variables.start = buffer_data(environment_in_a_buffer, 0);
-		environment_variables.finish = buffer_data(environment_in_a_buffer, 0) + buffer_size(environment_in_a_buffer);
+		environment_variables.finish = environment_variables.start + buffer_size(environment_in_a_buffer);
 	}
 	else
 	{
@@ -1146,6 +964,4 @@ uint8_t exec_evaluate_task(void* project, struct buffer* task_arguments,
 
 	return exec(append, &program, &base_directory, &command_line, &output_file, pid_property, result_property,
 				&working_directory, &environment_variables, spawn, (uint32_t)time_out, MAX(local_verbose, verbose));
-	/*TODO: explain fail_on_error factor, if verbose set, and return true.
-	return fail_on_error ? returned : 1;*/
 }

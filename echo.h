@@ -21,7 +21,6 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file, uint8_t leve
 uint8_t echo_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t echo_evaluate_task(struct buffer* task_arguments,
-						   const uint8_t* attributes_finish, const uint8_t* element_finish);
+uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
 
 #endif

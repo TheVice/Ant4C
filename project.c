@@ -84,6 +84,25 @@ uint8_t project_property_set_value(void* project,
 								dynamic, overwrite, readonly, verbose);
 }
 
+uint8_t project_target_new(void* project,
+						   const struct range* name, const struct range* depends, const struct range* content)
+{
+	if (NULL == project ||
+		range_is_null_or_empty(name))
+	{
+		return 0;
+	}
+
+	struct project* pro = (struct project*)project;
+
+	if (target_exists(project, name->start, (uint8_t)range_size(name)))
+	{
+		return 0;
+	}
+
+	return target_new(name, depends, content, &(pro->targets));
+}
+
 uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t name_length)
 {
 	if (NULL == project || NULL == name || 0 == name_length)
@@ -93,6 +112,17 @@ uint8_t project_target_exists(const void* project, const uint8_t* name, uint8_t 
 
 	const struct project* pro = (const struct project*)project;
 	return target_exists(&pro->targets, name, name_length);
+}
+
+uint8_t project_target_has_executed(const void* project, const uint8_t* name, uint8_t name_length)
+{
+	if (NULL == project || NULL == name || 0 == name_length)
+	{
+		return 0;
+	}
+
+	const struct project* pro = (const struct project*)project;
+	return target_has_executed(&pro->targets, name, name_length);
 }
 
 uint8_t project_get_base_directory(const void* project, const void** the_property)

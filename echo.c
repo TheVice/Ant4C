@@ -11,7 +11,6 @@
 #include "conversion.h"
 #include "range.h"
 #include "text_encoding.h"
-#include "xml.h"
 
 #include <stdio.h>
 
@@ -19,6 +18,24 @@
 #include <io.h>
 #include <fcntl.h>
 #include <wchar.h>
+#if defined(_MSC_VER)
+#include <sdkddkver.h>
+#if _WIN32_WINNT == 0x0603
+#pragma message(__FILE__ " The function '_setmode' from '\\Microsoft Visual Studio 12.0\\' have known issue.")
+#if NOTE
+At 'Microsoft Visual Studio 12.0' or at kits from this version
+function '_setmode' have an issue,
+
+so echo will failed for non Default or ASCII encoding according to line 186 of file
+'C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\crt\src\_flsbuf.c'
+where 'charcount = sizeof(TCHAR)' and TCHAR always equal to char.
+
+Echo task direct will fail at assert of file
+'C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\crt\src\write.c'
+on line 116 with code '_VALIDATE_CLEAR_OSSERR_RETURN(((cnt & 1) == 0), EINVAL, -1)'.
+#endif
+#endif
+#endif
 #endif
 
 #if !defined(__STDC_SEC_API__)
@@ -35,12 +52,11 @@ static const uint8_t* echo_attributes[] =
 	(const uint8_t*)"encoding",
 	(const uint8_t*)"file",
 	(const uint8_t*)"level",
-	(const uint8_t*)"message",
-	(const uint8_t*)"failonerror",
-	(const uint8_t*)"verbose"
+	(const uint8_t*)"verbose",
+	(const uint8_t*)"message"
 };
 
-static const uint8_t echo_attributes_lengths[] = { 6, 8, 4, 5, 7, 11, 7 };
+static const uint8_t echo_attributes_lengths[] = { 6, 8, 4, 5, 7, 7 };
 
 static const uint8_t* echo_levels[] =
 {
@@ -58,10 +74,10 @@ static const uint8_t* echo_labels[] =
 	(const uint8_t*)"[Debug]: ",
 	(const uint8_t*)"[Error]: ",
 	(const uint8_t*)"[Info]: ",
-	(const uint8_t*)"",
+	(const uint8_t*)"",/*None*/
 	(const uint8_t*)"[Verbose]: ",
 	(const uint8_t*)"[Warning]: ",
-	(const uint8_t*)""
+	(const uint8_t*)""/*NoLevel*/
 };
 
 static const uint8_t echo_labels_lengths[] = { 9, 9, 8, 0, 11, 11, 0 };
@@ -193,9 +209,8 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 #define ENCODING_POSITION		1
 #define FILE_POSITION			2
 #define LEVEL_POSITION			3
-#define MESSAGE_POSITION		4
-#define FAIL_ON_ERROR_POSITION	5
-#define VERBOSE_POSITION		6
+#define VERBOSE_POSITION		4
+#define MESSAGE_POSITION		5
 
 uint8_t echo_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
@@ -213,8 +228,7 @@ uint8_t echo_get_level(const uint8_t* level_start, const uint8_t* level_finish)
 	return common_string_to_enum(level_start, level_finish, echo_levels, ECHO_UNKNOWN_LEVEL);
 }
 
-uint8_t echo_evaluate_task(struct buffer* task_arguments,
-						   const uint8_t* attributes_finish, const uint8_t* element_finish)
+uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -225,8 +239,7 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments,
 	const struct buffer* encoding_in_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
 	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
 	const struct buffer* level_in_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
-	struct buffer* message_in_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
-	/*const struct buffer* fail_on_error = buffer_buffer_data(task_arguments, FAIL_ON_ERROR_POSITION);*/
+	const struct buffer* message_in_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
 	const struct buffer* verbose_in_buffer = buffer_buffer_data(task_arguments, VERBOSE_POSITION);
 	/**/
 	uint8_t append = 0;
@@ -243,7 +256,7 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments,
 	{
 		struct range value;
 		value.start = buffer_data(encoding_in_buffer, 0);
-		value.finish = buffer_data(encoding_in_buffer, 0) + buffer_size(encoding_in_buffer);
+		value.finish = value.start + buffer_size(encoding_in_buffer);
 		/**/
 		encoding = text_encoding_get_one(value.start, value.finish);
 	}
@@ -266,7 +279,7 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments,
 	{
 		struct range value;
 		value.start = buffer_data(level_in_buffer, 0);
-		value.finish = buffer_data(level_in_buffer, 0) + buffer_size(level_in_buffer);
+		value.finish = value.start + buffer_size(level_in_buffer);
 		/**/
 		level = echo_get_level(value.start, value.finish);
 	}
@@ -276,34 +289,19 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments,
 
 	if (buffer_size(message_in_buffer))
 	{
+		/*TODO: string_trim for 'NULL == file'.*/
 		message = buffer_data(message_in_buffer, 0);
 		message_length = buffer_size(message_in_buffer);
 	}
-	else
-	{
-		if (!xml_get_element_value(attributes_finish, element_finish, message_in_buffer))
-		{
-			return 0;
-		}
-
-		if (buffer_size(message_in_buffer))
-		{
-			/*TODO: string_trim*/
-			message = buffer_data(message_in_buffer, 0);
-			message_length = buffer_size(message_in_buffer);
-		}
-	}
 
 	uint8_t new_line = 1;
-	uint8_t verbose = 0;
+	uint8_t local_verbose = 0;
 
 	if (buffer_size(verbose_in_buffer) &&
-		!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &verbose))
+		!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &local_verbose))
 	{
 		return 0;
 	}
 
-	return echo(append, encoding, file, level, message, message_length, new_line, verbose);
-	/*TODO: explain fail_on_error factor, if verbose set, and return true.
-	return fail_on_error ? returned : 1;*/
+	return echo(append, encoding, file, level, message, message_length, new_line, MAX(local_verbose, verbose));
 }

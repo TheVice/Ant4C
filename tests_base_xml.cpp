@@ -141,6 +141,15 @@ std::string range_to_string(const range* input)
 	return (NULL == input) ? range_to_string(NULL, NULL) : range_to_string(input->start, input->finish);
 }
 
+void null_range_to_empty(range& input)
+{
+	if (NULL == input.start ||
+		NULL == input.finish)
+	{
+		input.start = input.finish = (const uint8_t*)&input;
+	}
+}
+
 uint8_t buffer_free(buffer* input)
 {
 	buffer_release(input);

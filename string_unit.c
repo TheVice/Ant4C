@@ -708,8 +708,8 @@ uint8_t string_exec_function(uint8_t function,
 		case pad_left:
 		case pad_right:
 			return (3 == arguments_count) &&
-				   string_pad(argument1.start, argument1.finish - 1, argument2.start, argument2.finish,
-							  (ptrdiff_t)int64_parse(argument3.start), output, function);
+				   string_pad(argument1.start, argument1.finish - 1, argument3.start, argument3.finish,
+							  (ptrdiff_t)int64_parse(argument2.start), output, function);
 
 		case replace:
 			return (3 == arguments_count) && string_replace(

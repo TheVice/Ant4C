@@ -19,15 +19,6 @@ class TestStringUnit : public TestsBaseXml
 {
 };
 
-void null_range_to_empty(range& input)
-{
-	if (NULL == input.start ||
-		NULL == input.finish)
-	{
-		input.start = input.finish = (const uint8_t*)&input;
-	}
-}
-
 /*string_contains
 string_ends_with*/
 TEST_F(TestStringUnit, string_get_length)

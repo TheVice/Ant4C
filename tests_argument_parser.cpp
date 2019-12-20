@@ -322,9 +322,14 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 		ASSERT_TRUE(buffer_resize(&command_arguments, 0)) << buffer_free(&command_arguments);
 		//
 		const auto arguments = node.node().select_nodes("argument");
-		const uint8_t output_length = (uint8_t)INT_PARSE(
-										  node.node().select_node("output_length").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		std::string expected_output(node.node().select_node("output").node().child_value());
+		auto pos = std::string::npos;
+
+		while (std::string::npos != (pos = expected_output.find("0x0")))
+		{
+			expected_output = expected_output.replace(pos, 3, "\0", 1);
+		}
 
 		for (const auto& argument : arguments)
 		{
@@ -336,8 +341,6 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 			ASSERT_EQ(expected_return, returned) << buffer_free(&command_arguments);
 		}
 
-		ASSERT_EQ(output_length, buffer_size(&command_arguments)) << buffer_free(&command_arguments);
-		const std::string expected_output(node.node().select_node("output").node().child_value(), output_length);
 		ASSERT_EQ(expected_output, buffer_to_string(&command_arguments)) << buffer_free(&command_arguments);
 		//
 		int argc = 0;

@@ -47,7 +47,7 @@ uint8_t property_set_by_pointer(void* the_property,
 uint8_t property_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t property_evaluate_task(void* project, const struct buffer* task_arguments);
+uint8_t property_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose);
 
 uint8_t property_add_at_project(void* project, const struct buffer* properties, uint8_t verbose);
 void property_clear(struct buffer* properties);

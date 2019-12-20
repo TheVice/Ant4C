@@ -33,4 +33,8 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 uint8_t interpreter_evaluate_tasks(void* project, const void* target,
 								   const struct buffer* elements, uint8_t verbose);
 
+uint8_t task_get_function(const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t task_exec_function(uint8_t function, const struct buffer* arguments,
+						   uint8_t arguments_count, struct buffer* output);
+
 #endif

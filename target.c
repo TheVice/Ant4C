@@ -8,36 +8,30 @@
 #include "target.h"
 #include "buffer.h"
 #include "common.h"
+#include "conversion.h"
+#include "project.h"
 #include "property.h"
 #include "range.h"
 #include "string_unit.h"
-#include "xml.h"
 
+#include <stddef.h>
 #include <string.h>
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-static const uint8_t depends_delimiter = ',';
+/*static const uint8_t depends_delimiter = ',';*/
 
 struct target
 {
 	uint8_t name[UINT8_MAX + 1];
 	uint8_t name_length;
 	/**/
-	struct buffer description;
 	struct buffer depends;
 	struct buffer content;
 	/**/
 	uint8_t has_executed;
-};
-
-struct depend
-{
-	const struct target* target;
-	uint8_t name[UINT8_MAX + 1];
-	uint8_t name_length;
 };
 
 uint8_t buffer_append_target(struct buffer* targets, const struct target* data, ptrdiff_t data_count)
@@ -53,40 +47,94 @@ struct target* buffer_target_data(const struct buffer* targets, ptrdiff_t data_p
 uint8_t target_exists(const struct buffer* targets,
 					  const uint8_t* name, uint8_t name_length)
 {
-	void* trg = NULL;
-	return target_get(targets, name, name_length, &trg);
+	return target_get(targets, name, name_length, NULL);
 }
 
-uint8_t target_get_current_target(const void* target, const uint8_t** name, ptrdiff_t* name_length)
+uint8_t target_get_current_target(const void* target, const uint8_t** name, uint8_t* name_length)
 {
 	if (NULL == target)
 	{
 		return 0;
 	}
 
-	const struct target* trg = (const struct target*)target;
-	*name = trg->name;
-	*name_length = trg->name_length;
+	const struct target* target_ = (const struct target*)target;
+	*name = target_->name;
+	*name_length = target_->name_length;
 	return 1;
 }
 
 uint8_t target_has_executed(const struct buffer* targets,
 							const uint8_t* name, uint8_t name_length)
 {
-	void* trg = NULL;
+	void* target_ = NULL;
 
-	if (!target_get(targets, name, name_length, &trg))
+	if (!target_get(targets, name, name_length, &target_))
 	{
 		return 0;
 	}
 
-	return 0 < ((struct target*)trg)->has_executed;
+	return 0 < ((struct target*)target_)->has_executed;
+}
+
+uint8_t target_new(const struct range* name, const struct range* depends, const struct range* content,
+				   struct buffer* targets)
+{
+	if (range_is_null_or_empty(name) ||
+		UINT8_MAX < range_size(name) ||
+		NULL == targets)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(targets);
+	struct target* target = NULL;
+
+	if (!buffer_append_target(targets, NULL, 1) ||
+		NULL == (target = (struct target*)buffer_data(targets, size)))
+	{
+		return 0;
+	}
+
+	SET_NULL_TO_BUFFER(target->depends);
+	SET_NULL_TO_BUFFER(target->content);
+	target->name_length = (uint8_t)range_size(name);
+#if __STDC_SEC_API__
+
+	if (0 != memcpy_s(target->name, UINT8_MAX, name->start, target->name_length))
+	{
+		return 0;
+	}
+
+#else
+	memcpy(target, name->start, target->name_length);
+#endif
+	target->name[target->name_length] = '\0';
+
+	if (!range_is_null_or_empty(depends))
+	{
+		if (!buffer_append_data_from_range(&(target->depends), depends))
+		{
+			return 0;
+		}
+	}
+
+	if (!range_is_null_or_empty(content))
+	{
+		if (!buffer_append_data_from_range(&(target->content), content))
+		{
+			return 0;
+		}
+	}
+
+	target->has_executed = 0;
+	/**/
+	return 1;
 }
 
 uint8_t target_get(const struct buffer* targets, const uint8_t* name,
 				   uint8_t name_length, void** target)
 {
-	if (NULL == targets ||  NULL == name || 0 == name_length || NULL == target)
+	if (NULL == targets ||  NULL == name || 0 == name_length)
 	{
 		return 0;
 	}
@@ -99,158 +147,15 @@ uint8_t target_get(const struct buffer* targets, const uint8_t* name,
 		if (name_length == target_->name_length &&
 			0 == memcmp(&target_->name, name, name_length))
 		{
-			(*target) = target_;
+			if (NULL != target)
+			{
+				(*target) = target_;
+			}
+
 			return 1;
 		}
 	}
 
-	return 0;
-}
-
-uint8_t target_add_depend(const struct range* depend_name, struct buffer* depends)
-{
-	if (range_is_null_or_empty(depend_name))
-	{
-		return 0;
-	}
-
-	struct depend depend_;
-
-	depend_.target = NULL;
-
-	depend_.name_length = (uint8_t)range_size(depend_name);
-
-#if __STDC_SEC_API__
-	if (0 != memcpy_s(depend_.name, UINT8_MAX, depend_name->start, depend_.name_length))
-	{
-		return 0;
-	}
-
-#else
-	memcpy(depend_.name, depend_name->start, depend_.name_length);
-#endif
-	return buffer_append(depends, (const uint8_t*)&depend_, sizeof(struct depend));
-}
-
-uint8_t target_add(struct buffer* targets,
-				   const struct range* name, const struct range* description,
-				   const struct range* depends, const struct range* content)
-{
-	if (NULL == targets || range_is_null_or_empty(name) || range_is_null_or_empty(content))
-	{
-		return 0;
-	}
-
-	struct target new_target;
-
-	SET_NULL_TO_BUFFER(new_target.description);
-
-	SET_NULL_TO_BUFFER(new_target.depends);
-
-	SET_NULL_TO_BUFFER(new_target.content);
-
-	new_target.name_length = (uint8_t)range_size(name);
-
-	if (target_exists(targets, name->start, new_target.name_length))
-	{
-		return 0;
-	}
-
-#if __STDC_SEC_API__
-
-	if (0 != memcpy_s(new_target.name, UINT8_MAX, name->start, new_target.name_length))
-	{
-		return 0;
-	}
-
-#else
-	memcpy(new_target.name, name->start, new_target.name_length);
-#endif
-	new_target.name[new_target.name_length] = '\0';
-
-	if (!range_is_null_or_empty(description))
-	{
-		if (!buffer_append(&new_target.description, description->start,
-						   description->finish - description->start))
-		{
-			return 0;
-		}
-	}
-
-	if (!range_is_null_or_empty(depends))
-	{
-		struct range depend_;
-		depend_.start = depends->start;
-		depend_.finish = depends->finish;
-
-		while (depends->finish != (depend_.finish = find_any_symbol_like_or_not_like_that(depend_.finish,
-								   depends->finish, &depends_delimiter, 1, 1, 1)))
-		{
-			const uint8_t* pos = depend_.finish + 1;
-
-			if (!string_trim(&depend_) || !target_add_depend(&depend_, &new_target.depends))
-			{
-				return 0;
-			}
-
-			depend_.start = pos;
-			depend_.finish = pos;
-		}
-
-		if (!string_trim(&depend_) || !target_add_depend(&depend_, &new_target.depends))
-		{
-			return 0;
-		}
-	}
-
-	if (!buffer_append(&new_target.content, content->start, content->finish - content->start))
-	{
-		return 0;
-	}
-
-	new_target.has_executed = 0;
-	return buffer_append_target(targets, &new_target, 1);
-}
-
-uint8_t target_add_from_xml_tag_record(struct buffer* targets,
-									   const uint8_t* record_start, const uint8_t* record_finish)
-{
-	(void)targets;
-	(void)record_start;
-	(void)record_finish;
-#if 0
-	struct range name;
-	struct range description;
-	struct range depends;
-	struct range content;
-	/**/
-	const uint8_t* target_attributes[] = { (const uint8_t*)"name", (const uint8_t*)"description", (const uint8_t*)"depends" };
-	const uint8_t target_attributes_lengths[] = { 4, 11, 7 };
-	/**/
-	struct range* attribute_values[3];
-	attribute_values[0] = &name;
-	attribute_values[1] = &description;
-	attribute_values[2] = &depends;
-
-	for (uint8_t i = 0; i < 3; ++i)
-	{
-		if (!xml_get_attribute_value(record_start, record_finish, target_attributes[i],
-									 target_attributes_lengths[i], attribute_values[i]))
-		{
-			if (!i)
-			{
-				return 0;
-			}
-
-			attribute_values[i]->start = attribute_values[i]->finish = NULL;
-			continue;
-		}
-	}
-
-	content.start = 1 + xml_get_tag_finish_pos(record_start, record_finish);
-	content.finish = record_finish;
-	return target_add(targets, &name, &description, &depends, &content);
-#endif
 	return 0;
 }
 
@@ -266,10 +171,148 @@ void target_clear(struct buffer* targets)
 
 	while (NULL != (target = buffer_target_data(targets, i++)))
 	{
-		buffer_release(&target->description);
 		buffer_release(&target->depends);
 		buffer_release(&target->content);
 	}
 
 	buffer_release(targets);
+}
+
+const uint8_t* target_attributes[] =
+{
+	(const uint8_t*)"name",
+	(const uint8_t*)"depends"
+};
+
+const uint8_t target_attributes_lengths[] =
+{
+	4,
+	7
+};
+
+#define NAME_POSITION			0
+#define DEPENDS_POSITION		1
+
+uint8_t target_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   target_attributes, target_attributes_lengths,
+			   COUNT_OF(target_attributes_lengths),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t target_evaluate_task(void* project, const struct buffer* task_arguments,
+							 const uint8_t* attributes_finish, const uint8_t* element_finish,
+							 uint8_t verbose)
+{
+	(void)verbose;
+
+	if (NULL == project || NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	const struct buffer* name = buffer_buffer_data(task_arguments, NAME_POSITION);
+
+	if (!buffer_size(name))
+	{
+		return 0;
+	}
+
+	struct range name_in_range;
+
+	name_in_range.start = buffer_data(name, 0);
+
+	name_in_range.finish = name_in_range.start + buffer_size(name);
+
+	const struct buffer* depends = buffer_buffer_data(task_arguments, DEPENDS_POSITION);
+
+	struct range depends_in_range;
+
+	depends_in_range.start = depends_in_range.finish = NULL;
+
+	if (buffer_size(depends))
+	{
+		depends_in_range.start = buffer_data(depends, 0);
+		depends_in_range.finish = depends_in_range.start + buffer_size(depends);
+	}
+
+	struct range content;
+
+	content.start = content.finish = NULL;
+
+	if (!range_in_parts_is_null_or_empty(attributes_finish, element_finish))
+	{
+		content.start = attributes_finish;
+		content.finish = element_finish;
+	}
+
+	return project_target_new(project, &name_in_range, &depends_in_range, &content);
+}
+
+enum target_function
+{
+	target_exists_,
+	get_current_target_,
+	has_executed_,
+	UNKNOWN_TARGET_FUNCTION
+};
+
+static const uint8_t* target_function_str[] =
+{
+	(const uint8_t*)"exists",
+	(const uint8_t*)"get-current-target",
+	(const uint8_t*)"has-executed"
+};
+
+uint8_t target_get_function(const uint8_t* name_start, const uint8_t* name_finish)
+{
+	return common_string_to_enum(name_start, name_finish, target_function_str, UNKNOWN_TARGET_FUNCTION);
+}
+
+uint8_t target_exec_function(const void* project,
+							 const void* target,
+							 uint8_t function, const struct buffer* arguments,
+							 uint8_t arguments_count, struct buffer* output)
+{
+	if (UNKNOWN_TARGET_FUNCTION <= function ||
+		NULL == arguments ||
+		(0 != arguments_count && 1 != arguments_count) ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	struct range argument;
+
+	argument.start = argument.finish = NULL;
+
+	if (arguments_count && !common_get_one_argument(arguments, &argument, 0))
+	{
+		return 0;
+	}
+
+	switch (function)
+	{
+		case target_exists_:
+			return bool_to_string(project_target_exists(project, argument.start, (uint8_t)range_size(&argument)), output);
+
+		case get_current_target_:
+			return !arguments_count &&
+				   target_get_current_target(target, &argument.start, &function) &&
+				   buffer_append(output, argument.start, function);
+
+		case has_executed_:
+			return bool_to_string(
+					   project_target_has_executed(project, argument.start, (uint8_t)range_size(&argument)), output);
+
+		case UNKNOWN_TARGET_FUNCTION:
+		default:
+			break;
+	}
+
+	return 0;
 }

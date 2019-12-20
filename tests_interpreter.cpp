@@ -11,6 +11,7 @@ extern "C" {
 #include "buffer.h"
 #include "conversion.h"
 #include "interpreter.h"
+#include "project.h"
 #include "range.h"
 };
 
@@ -161,14 +162,22 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 			verbose = (uint8_t)verbose_attribute.as_bool();
 		}
 
+		void* project = NULL;
+
+		if (node.node().attribute("project").as_bool())
+		{
+			ASSERT_TRUE(project_new(&project)) << project_free(project);
+		}
+
 		auto code_in_range = string_to_range(code);
 		code_in_range.start += 1 + task_name.size();
 		const auto returned = interpreter_evaluate_task(
-								  NULL, NULL, task_id,
+								  project, NULL, task_id,
 								  code_in_range.start, code_in_range.finish,
 								  verbose);
 		//
-		ASSERT_EQ(expected_return, returned) << code;
+		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(project);
+		project_unload(project);
 		//
 		--node_count;
 	}
