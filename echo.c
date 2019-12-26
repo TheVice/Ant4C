@@ -20,18 +20,19 @@
 #include <wchar.h>
 #if defined(_MSC_VER)
 #include <sdkddkver.h>
+#if NOTE
 #if _WIN32_WINNT == 0x0603
 #pragma message(__FILE__ " The function '_setmode' from '\\Microsoft Visual Studio 12.0\\' have known issue.")
-#if NOTE
+
 At 'Microsoft Visual Studio 12.0' or at kits from this version
 function '_setmode' have an issue,
 
 so echo will failed for non Default or ASCII encoding according to line 186 of file
-'C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\crt\src\_flsbuf.c'
+'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\crt\\src\\_flsbuf.c'
 where 'charcount = sizeof(TCHAR)' and TCHAR always equal to char.
 
 Echo task direct will fail at assert of file
-'C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\crt\src\write.c'
+'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\crt\\src\\write.c'
 on line 116 with code '_VALIDATE_CLEAR_OSSERR_RETURN(((cnt & 1) == 0), EINVAL, -1)'.
 #endif
 #endif
@@ -141,6 +142,9 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	if (NULL != message && 0 < message_length)
 	{
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _WIN32_WINNT == 0x0603
+		(void)encoding;
+#else
 		struct buffer new_message;
 		SET_NULL_TO_BUFFER(new_message);
 		int mode = 0;
@@ -163,6 +167,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 
 #endif
+#endif
 
 		if (result)
 		{
@@ -170,6 +175,8 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _WIN32_WINNT == 0x0603
+#else
 
 		if (0 < mode)
 		{
@@ -186,6 +193,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 
 		buffer_release(&new_message);
+#endif
 #endif
 	}
 

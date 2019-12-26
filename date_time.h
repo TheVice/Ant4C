@@ -36,12 +36,17 @@ uint32_t datetime_get_year(int64_t input);
 
 uint8_t datetime_is_leap_year(uint32_t year);
 
+int64_t datetime_now_utc();
 int64_t datetime_now();
 
 int64_t datetime_encode(uint32_t year, uint8_t month, uint8_t day,
 						uint8_t hour, uint8_t minute, uint8_t second);
 uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* day,
 						uint8_t* hour, uint8_t* minute, uint8_t* second, uint16_t* year_day);
+
+#if !defined(_WIN32)
+long datetime_get_bias();
+#endif
 
 int64_t timespan_from_days(double input);
 int64_t timespan_from_hours(double input);

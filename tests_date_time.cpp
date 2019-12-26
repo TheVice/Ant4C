@@ -14,6 +14,7 @@ extern "C" {
 #include "range.h"
 };
 
+#include <string>
 #include <cstdint>
 
 class TestDateTime : public TestsBaseXml
@@ -153,8 +154,26 @@ TEST_F(TestDateTime, datetime_get_day)
 		--node_count;
 	}
 }
-/*datetime_get_day_of_week
-datetime_get_day_of_year*/
+
+TEST_F(TestDateTime, datetime_get_day_of_week)
+{
+	for (const auto& node : nodes)
+	{
+		const uint32_t year = INT_PARSE(node.node().select_node("year").node().child_value());
+		const uint8_t month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
+		const uint8_t day = (uint8_t)INT_PARSE(node.node().select_node("day").node().child_value());
+		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		//
+		const int64_t input = datetime_encode(year, month, day, 0, 0, 0);
+		//
+		const uint8_t returned = datetime_get_day_of_week(input);
+		//
+		ASSERT_EQ(expected_return, returned) << year << " " << (int)month << " " << (int)day;
+		//
+		--node_count;
+	}
+}
+/*datetime_get_day_of_year*/
 TEST_F(TestDateTime, datetime_get_days_in_month)
 {
 	for (const auto& node : nodes)

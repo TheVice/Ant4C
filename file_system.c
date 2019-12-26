@@ -8,18 +8,36 @@
 #include "file_system.h"
 #include "buffer.h"
 #include "common.h"
+#if !defined(_WIN32)
+#include "date_time.h"
+#endif
 #include "path.h"
 #include "property.h"
 #include "project.h"
 #include "range.h"
 #include "string_unit.h"
+#if defined(_WIN32)
 #include "text_encoding.h"
+#endif
+
+#include <stdio.h>
 
 #if defined(_WIN32)
-#include <stdio.h>
 #include <string.h>
 
 #include <windows.h>
+#else
+#define _POSIXSOURCE 1
+
+#include <dirent.h>
+#include <sys/stat.h>
+#endif
+
+#if !defined(__STDC_SEC_API__)
+#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
+#endif
+
+#if defined(_WIN32)
 
 #define FIND_FILE_OBJECT_DATA(PATHW, DATA, RETURN, CLOSE_RESULT)\
 	const HANDLE file_handle = FindFirstFileW((PATHW), (DATA));	\
@@ -30,6 +48,30 @@
 	}															\
 	\
 	(CLOSE_RESULT) = FindClose(file_handle);
+
+#define FIND_FILE_OBJECT_DATA_FROM_BUFFER(PATH)												\
+	struct buffer pathW;																	\
+	SET_NULL_TO_BUFFER(pathW);																\
+	\
+	if (!file_system_path_to_pathW((PATH), &pathW))											\
+	{																						\
+		buffer_release(&pathW);																\
+		return 0;																			\
+	}																						\
+	\
+	WIN32_FIND_DATAW file_data;																\
+	const HANDLE file_handle = FindFirstFileW(buffer_wchar_t_data(&pathW, 0), &file_data);	\
+	buffer_release(&pathW);																	\
+	\
+	if (INVALID_HANDLE_VALUE == file_handle)												\
+	{																						\
+		return 0;																			\
+	}																						\
+	\
+	if (!FindClose(file_handle))															\
+	{																						\
+		return 0;																			\
+	}
 
 static const uint8_t* pre_root_path = (const uint8_t*)"\\\\?\\";
 static const uint8_t pre_root_path_length = 4;
@@ -103,10 +145,26 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 	return text_encoding_UTF8_to_UTF16LE(path, path + length, pathW) && buffer_push_back_uint16(pathW, 0);
 }
 #else
+#define FILE_STAT(PATH)									\
+	struct stat file_status;							\
+	file_status.st_size = 0;							\
+	\
+	if (stat((const char*)(PATH), &file_status) ||		\
+		!(S_IFDIR != (file_status.st_mode & S_IFDIR)))	\
+	{													\
+		return 0;										\
+	}
 
-#define _POSIXSOURCE 1
+#define DIRECTORY_STAT(PATH)								\
+	struct stat directory_status;							\
+	directory_status.st_size = 0;							\
+	\
+	if (stat((const char*)(PATH), &directory_status) ||		\
+		S_IFDIR != (directory_status.st_mode & S_IFDIR))	\
+	{														\
+		return 0;											\
+	}
 
-#include <dirent.h>
 #endif
 uint8_t directory_exists(const uint8_t* path)
 {
@@ -141,6 +199,82 @@ uint8_t directory_exists(const uint8_t* path)
 #endif
 }
 
+int64_t file_system_win32_time_to_datetime(int64_t input)
+{
+	if (input < 1)
+	{
+		return 0;
+	}
+
+	input = input / 10000000;
+	input -= 11644473600;/*1970 - 1601*/
+	return input;
+}
+
+long file_system_get_bias()
+{
+	static uint8_t loaded = 0;
+	static long result = 0;
+
+	if (!loaded)
+	{
+#if defined(_WIN32)
+#if defined(_MSC_VER)
+		DYNAMIC_TIME_ZONE_INFORMATION tz;
+
+		if (TIME_ZONE_ID_INVALID == GetDynamicTimeZoneInformation(&tz))
+#else
+		TIME_ZONE_INFORMATION tz;
+
+		if (TIME_ZONE_ID_INVALID == GetTimeZoneInformation(&tz))
+#endif
+		{
+			return 0;
+		}
+
+		loaded = 1;
+		result = tz.Bias + tz.DaylightBias;
+#else
+		loaded = 1;
+		result = datetime_get_bias();
+#endif
+	}
+
+	return result;
+}
+
+int64_t directory_get_creation_time(const uint8_t* path)
+{
+	return directory_get_creation_time_utc(path) - (int64_t)60 * file_system_get_bias();
+}
+
+int64_t directory_get_creation_time_utc(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
+	const uint8_t is_directory = (0 != (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+
+	if (!is_directory)
+	{
+		return 0;
+	}
+
+	return file_system_win32_time_to_datetime(
+			   ((int64_t)file_data.ftCreationTime.dwHighDateTime << 32) + file_data.ftCreationTime.dwLowDateTime);
+#else
+	DIRECTORY_STAT(path);
+	int64_t result = directory_status.st_atim.tv_sec;
+	result = directory_status.st_mtim.tv_sec < result ? directory_status.st_mtim.tv_sec : result;
+	result = directory_status.st_ctim.tv_sec < result ? directory_status.st_ctim.tv_sec : result;
+	return result;
+#endif
+}
+
 uint8_t directory_get_current_directory(const void* project, const void** the_property,
 										struct buffer* current_directory)
 {
@@ -155,6 +289,69 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 	}
 
 	return property_get_by_pointer(the_property, current_directory);
+}
+
+uint8_t directory_get_directory_root(const uint8_t* path, struct range* output)
+{
+	return NULL != path && path_get_path_root(path, path + common_count_bytes_until(path, 0), output);
+}
+
+int64_t directory_get_last_access_time(const uint8_t* path)
+{
+	return directory_get_last_access_time_utc(path) - (int64_t)60 * file_system_get_bias();
+}
+
+int64_t directory_get_last_access_time_utc(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
+	const uint8_t is_directory = (0 != (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+
+	if (!is_directory)
+	{
+		return 0;
+	}
+
+	return file_system_win32_time_to_datetime(
+			   ((int64_t)file_data.ftLastAccessTime.dwHighDateTime << 32) + file_data.ftLastAccessTime.dwLowDateTime);
+#else
+	DIRECTORY_STAT(path);
+	return directory_status.st_atim.tv_sec;
+#endif
+}
+
+int64_t directory_get_last_write_time(const uint8_t* path)
+{
+	return directory_get_last_write_time_utc(path) - (int64_t)60 * file_system_get_bias();
+}
+
+int64_t directory_get_last_write_time_utc(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
+	const uint8_t is_directory = (0 != (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+
+	if (!is_directory)
+	{
+		return 0;
+	}
+
+	return file_system_win32_time_to_datetime(
+			   ((int64_t)file_data.ftLastWriteTime.dwHighDateTime << 32) + file_data.ftLastWriteTime.dwLowDateTime);
+#else
+	DIRECTORY_STAT(path);
+	return directory_status.st_mtim.tv_sec;
+#endif
 }
 
 uint8_t directory_get_logical_drives(struct buffer* drives)
@@ -229,8 +426,6 @@ uint8_t file_exists_wchar_t(const wchar_t* path)
 	const uint8_t is_file = (0 == (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
 	return close_return && is_file;
 }
-#else
-#include <sys/stat.h>
 #endif
 uint8_t file_exists(const uint8_t* path)
 {
@@ -259,9 +454,118 @@ uint8_t file_exists(const uint8_t* path)
 #endif
 }
 
-uint64_t file_get_length(const uint8_t* path)
+int64_t file_get_creation_time(const uint8_t* path)
+{
+	return file_get_creation_time_utc(path) - (int64_t)60 * file_system_get_bias();
+}
+
+int64_t file_get_creation_time_utc(const uint8_t* path)
 {
 	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
+	const uint8_t is_file = (0 == (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+
+	if (!is_file)
+	{
+		return 0;
+	}
+
+	return file_system_win32_time_to_datetime(
+			   ((int64_t)file_data.ftCreationTime.dwHighDateTime << 32) + file_data.ftCreationTime.dwLowDateTime);
+#else
+	FILE_STAT(path);
+	int64_t result = file_status.st_atim.tv_sec;
+	result = file_status.st_mtim.tv_sec < result ? file_status.st_mtim.tv_sec : result;
+	result = file_status.st_ctim.tv_sec < result ? file_status.st_ctim.tv_sec : result;
+	return result;
+#endif
+}
+
+int64_t file_get_last_access_time(const uint8_t* path)
+{
+	return file_get_last_access_time_utc(path) - (int64_t)60 * file_system_get_bias();
+}
+
+int64_t file_get_last_access_time_utc(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
+	const uint8_t is_file = (0 == (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+
+	if (!is_file)
+	{
+		return 0;
+	}
+
+	return file_system_win32_time_to_datetime(
+			   ((int64_t)file_data.ftLastAccessTime.dwHighDateTime << 32) + file_data.ftLastAccessTime.dwLowDateTime);
+#else
+	FILE_STAT(path);
+	return file_status.st_atim.tv_sec;
+#endif
+}
+
+int64_t file_get_last_write_time(const uint8_t* path)
+{
+	return file_get_last_write_time_utc(path) - (int64_t)60 * file_system_get_bias();
+}
+
+int64_t file_get_last_write_time_utc(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
+	const uint8_t is_file = (0 == (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+
+	if (!is_file)
+	{
+		return 0;
+	}
+
+	return file_system_win32_time_to_datetime(
+			   ((int64_t)file_data.ftLastWriteTime.dwHighDateTime << 32) + file_data.ftLastWriteTime.dwLowDateTime);
+#else
+	FILE_STAT(path);
+	return file_status.st_mtim.tv_sec;
+#endif
+}
+#if defined(_WIN32)
+uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** output)
+{
+	if (NULL == path ||
+		NULL == mode ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__
+	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != (*output));
+#else
+	(*output) = (void*)_wfopen(path, mode);
+	return (NULL != (*output));
+#endif
+}
+#endif
+uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
+{
+	if (NULL == path ||
+		NULL == mode ||
+		NULL == output)
 	{
 		return 0;
 	}
@@ -276,20 +580,42 @@ uint64_t file_get_length(const uint8_t* path)
 		return 0;
 	}
 
-	WIN32_FIND_DATAW file_data;
-	const HANDLE file_handle = FindFirstFileW(buffer_wchar_t_data(&pathW, 0), &file_data);
+	const ptrdiff_t size = buffer_size(&pathW);
+
+	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, '\0'), &pathW) ||
+		!buffer_push_back_uint16(&pathW, 0))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!file_open_wchar_t(buffer_wchar_t_data(&pathW, 0), (const wchar_t*)buffer_data(&pathW, size), output))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
 	buffer_release(&pathW);
+	return 1;
+#else
+#if __STDC_SEC_API__
+	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != (*output));
+#else
+	(*output) = (void*)fopen((const char*)path, (const char*)mode);
+	return (NULL != (*output));
+#endif
+#endif
+}
 
-	if (INVALID_HANDLE_VALUE == file_handle)
+uint64_t file_get_length(const uint8_t* path)
+{
+	if (NULL == path)
 	{
 		return 0;
 	}
 
-	if (!FindClose(file_handle))
-	{
-		return 0;
-	}
-
+#if defined(_WIN32)
+	FIND_FILE_OBJECT_DATA_FROM_BUFFER(path);
 	const uint8_t is_file = (0 == (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
 
 	if (!is_file)
@@ -302,15 +628,12 @@ uint64_t file_get_length(const uint8_t* path)
 	length += file_data.nFileSizeLow;
 	return length;
 #else
-	struct stat file_status;
-	file_status.st_size = 0;
-
-	if (stat((const char*)path, &file_status) ||
-		!(S_IFDIR != (file_status.st_mode & S_IFDIR)))
-	{
-		return 0;
-	}
-
+	FILE_STAT(path);
 	return file_status.st_size;
 #endif
+}
+
+uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file)
+{
+	return file_get_last_write_time_utc(src_file) <= file_get_last_write_time_utc(target_file);
 }

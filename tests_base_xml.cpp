@@ -191,7 +191,7 @@ uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* 
 			return 0;
 		}
 
-		range code = string_to_range(if_);
+		auto code = string_to_range(if_);
 
 		if (!interpreter_evaluate_code(NULL, NULL, &code, tmp))
 		{
@@ -231,7 +231,7 @@ std::string property_to_string(const void* the_property, buffer* value)
 		return buffer_to_string(NULL);
 	}
 
-	const uint8_t returned = property_get_by_pointer(the_property, value);
+	const auto returned = property_get_by_pointer(the_property, value);
 
 	if (!returned)
 	{

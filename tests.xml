@@ -342,6 +342,42 @@
     <datetime_get_day>
       <input>31</input>
     </datetime_get_day>
+    <datetime_get_day_of_week>
+      <year>1970</year>
+      <month>1</month>
+      <day>1</day>
+      <return>4</return>
+    </datetime_get_day_of_week>
+    <datetime_get_day_of_week>
+      <year>2015</year>
+      <month>12</month>
+      <day>23</day>
+      <return>3</return>
+    </datetime_get_day_of_week>
+    <datetime_get_day_of_week>
+      <year>2016</year>
+      <month>12</month>
+      <day>23</day>
+      <return>5</return>
+    </datetime_get_day_of_week>
+    <datetime_get_day_of_week>
+      <year>2017</year>
+      <month>12</month>
+      <day>23</day>
+      <return>6</return>
+    </datetime_get_day_of_week>
+    <datetime_get_day_of_week>
+      <year>2018</year>
+      <month>12</month>
+      <day>23</day>
+      <return>0</return>
+    </datetime_get_day_of_week>
+    <datetime_get_day_of_week>
+      <year>2019</year>
+      <month>12</month>
+      <day>23</day>
+      <return>1</return>
+    </datetime_get_day_of_week>
     <datetime_get_days_in_month>
       <year></year>
       <month></month>
@@ -2124,6 +2160,13 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>get-day(1569840495) -> ${datetime::get-day-of-week('1569840495')} </code>
+      <code>get-day(1577059200) -> ${datetime::get-day-of-week('1577059200')}</code>
+      <output>get-day(1569840495) -> 1 </output>
+      <output>get-day(1577059200) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>get-day-of-year(1569840495) -> ${datetime::get-day-of-year('1569840495')}</code>
       <output>get-day-of-year(1569840495) -> 273</output>
       <return>1</return>
@@ -2165,6 +2208,11 @@
       <code>is-leap-year(2019) -> ${datetime::is-leap-year('2019')}</code>
       <output>is-leap-year(2016) -> True, </output>
       <output>is-leap-year(2019) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>empty(now-utc()) -> ${string::empty(datetime::now-utc())}</code>
+      <output>empty(now-utc()) -> False</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
