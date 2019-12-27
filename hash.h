@@ -15,4 +15,7 @@ struct buffer;
 uint8_t hash_algorithm_bytes_to_string(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output);
 
+uint8_t hash_algorithm_crc32(
+	const uint8_t* start, const uint8_t* finish, uint32_t* output, uint8_t order);
+
 #endif

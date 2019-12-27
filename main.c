@@ -48,6 +48,7 @@ int main(int argc, char** argv)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 #endif
+#if HASH
 	struct buffer input;
 	SET_NULL_TO_BUFFER(input);
 
@@ -79,6 +80,46 @@ int main(int argc, char** argv)
 	ptr = buffer_data(&input, size);
 	printf("%s\n", ptr);
 	buffer_release(&input);
+#elif CRC32
+	const uint8_t* input[] = { (const uint8_t*)"", (const uint8_t*)"The quick brown fox jumps over the lazy dog" };
+	const uint8_t lengths[] = { 0, 43 };
+	const char* expected_output[] = { "00000000", "00000000", "414fa339", "39a34f41" };
+	struct buffer str_output;
+	SET_NULL_TO_BUFFER(str_output);
+
+	for (uint8_t i = 0, count = sizeof(lengths) / sizeof(*lengths), o = 0; i < count; ++i)
+	{
+		for (uint8_t j = 0; j < 2; ++j, ++o)
+		{
+			uint32_t output = 0;
+
+			if (!hash_algorithm_crc32(input[i], input[i] + lengths[i], &output, j))
+			{
+				buffer_release(&str_output);
+				printf("%s\n", "FAILURE");
+				return EXIT_FAILURE;
+			}
+
+			if (!buffer_resize(&str_output, 0) ||
+				!hash_algorithm_bytes_to_string((const uint8_t*)(&output), (const uint8_t*)(&output + 1), &str_output))
+			{
+				buffer_release(&str_output);
+				printf("%s\n", "FAILURE");
+				return EXIT_FAILURE;
+			}
+
+			if (0 != memcmp(expected_output[o], buffer_char_data(&str_output, 0), 8))
+			{
+				buffer_release(&str_output);
+				printf("%s\n", "FAILURE");
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	buffer_release(&str_output);
+	printf("%s\n", "SUCCESS");
+#endif
 	/**/
 	(void)argc;
 	(void)argv;
