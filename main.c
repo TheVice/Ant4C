@@ -14,6 +14,7 @@
 #include "environment.h"
 #include "exec.h"
 #include "file_system.h"
+#include "hash.h"
 #include "interpreter.h"
 #include "math_unit.h"
 #include "operating_system.h"
