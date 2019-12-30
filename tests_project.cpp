@@ -11,6 +11,7 @@ extern "C" {
 #include "buffer.h"
 #include "conversion.h"
 #include "echo.h"
+#include "load_file.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -168,6 +169,15 @@ TEST_F(TestProject, project_load_from_build_file)
 		const std::string content(node.node().select_node("content").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(
 											node.node().select_node("return").node().child_value());
+		const std::string str_encoding(node.node().select_node("encoding").node().child_value());
+		const auto encoding_in_range(string_to_range(str_encoding));
+		auto encoding = load_file_get_file_encoding(encoding_in_range.start, encoding_in_range.finish);
+
+		if (FILE_ENCODING_UNKNOWN == encoding)
+		{
+			encoding = UTF8;
+		}
+
 		uint8_t verbose = 0;
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
@@ -182,7 +192,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		ASSERT_TRUE(project_new(&project)) << buffer_free(&tmp) << project_free(project);
 		//
 		const uint8_t returned = project_load_from_build_file(
-									 buffer_data(&tmp, 0), project, verbose);
+									 buffer_data(&tmp, 0), encoding, project, verbose);
 		ASSERT_EQ(expected_return, returned)
 				<< tmp_path << std::endl << buffer_free(&tmp) << project_free(project);
 		//

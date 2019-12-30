@@ -421,7 +421,7 @@ int64_t datetime_now_utc()
 {
 	time_t now = 0;
 
-	if (((time_t) -1) == time(&now))
+	if (((time_t)-1) == time(&now))
 	{
 		return 0;
 	}
@@ -439,7 +439,7 @@ int64_t datetime_now()
 {
 	time_t now = 0;
 
-	if (((time_t) -1) == time(&now))
+	if (((time_t)-1) == time(&now))
 	{
 		return 0;
 	}
@@ -556,7 +556,7 @@ long datetime_get_bias()
 {
 	time_t now = 0;
 
-	if (!datetime_now_utc(&now))
+	if (((time_t)-1) == time(&now))
 	{
 		return 0;
 	}

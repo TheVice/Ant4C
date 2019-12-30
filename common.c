@@ -313,7 +313,7 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-uint8_t read_file(const uint8_t* file_path, struct buffer* content)
+/*uint8_t read_file(const uint8_t* file_path, struct buffer* content)
 {
 	if (NULL == file_path || NULL == content)
 	{
@@ -362,4 +362,4 @@ uint8_t read_file(const uint8_t* file_path, struct buffer* content)
 	fclose(file_stream);
 	file_stream = NULL;
 	return ret;
-}
+}*/

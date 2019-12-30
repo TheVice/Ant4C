@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "load_file.h"
 #include "math_unit.h"
 #include "property.h"
 #include "range.h"
@@ -20,6 +21,7 @@
 static uint8_t is_argument_init = 0;
 
 static uint8_t argument_parser_debug = 0;
+static uint16_t argument_parser_encoding = UTF8;
 static uint8_t argument_parser_help = 0;
 static uint8_t argument_parser_indent = 0;
 static uint8_t argument_parser_no_logo = 0;
@@ -267,6 +269,11 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 				 (6 == length && 0 == memcmp(argv[i], "-debug", 6)))
 		{
 			argument_parser_debug = argument_parser_get_bool_value(argv[i], length);
+		}
+		else if (10 < length && 0 == memcmp(argv[i], "-encoding:", 10))
+		{
+			argument_parser_encoding = load_file_get_file_encoding((const uint8_t*)(argv[i] + 10),
+									   (const uint8_t*)(argv[i] + length));
 		}
 		else if ((7 == length && (0 == memcmp(argv[i], "-quiet+", 7) ||
 								  0 == memcmp(argv[i], "-quiet-", 7))) ||
@@ -745,6 +752,11 @@ uint8_t argument_from_wchar_t(const wchar_t* input_start, const wchar_t* input_f
 uint8_t argument_parser_get_debug()
 {
 	return argument_parser_debug;
+}
+
+uint16_t argument_parser_get_encoding()
+{
+	return argument_parser_encoding;
 }
 
 uint8_t argument_parser_get_help()

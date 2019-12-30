@@ -19,16 +19,16 @@ enum TextEncoding { ASCII, UTF7, UTF8, UTF16BE, UTF16LE, UTF32BE, UTF32LE, BigEn
 
 enum CodePageID
 {
-	windows_874 = 874,
-	windows_1250 = 1250,
-	windows_1251 = 1251,
-	windows_1252 = 1252,
-	windows_1253 = 1253,
-	windows_1254 = 1254,
-	windows_1255 = 1255,
-	windows_1256 = 1256,
-	windows_1257 = 1257,
-	windows_1258 = 1258
+	Windows_874 = 874,
+	Windows_1250 = 1250,
+	Windows_1251 = 1251,
+	Windows_1252 = 1252,
+	Windows_1253 = 1253,
+	Windows_1254 = 1254,
+	Windows_1255 = 1255,
+	Windows_1256 = 1256,
+	Windows_1257 = 1257,
+	Windows_1258 = 1258
 };
 
 uint8_t text_encoding_get_BOM(

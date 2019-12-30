@@ -16,6 +16,7 @@
 #include "file_system.h"
 #include "hash.h"
 #include "interpreter.h"
+#include "load_file.h"
 #include "math_unit.h"
 #include "operating_system.h"
 #include "path.h"
@@ -63,18 +64,19 @@ static pid_t pid = 0;
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-#define LOGO "Program version "PROGRAM_VERSION"\n"	\
+#define LOGO (const uint8_t*)"Program version "PROGRAM_VERSION"\n"	\
 	"The MIT License (MIT)\n"						\
 	"Copyright(c) 2019 https://github.com/TheVice/"
-#define LOGO_LENGTH strlen(LOGO)
-#define SAMPLE_USING "Sample using - [options]          ..." /*<target>*/
+#define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
+#define SAMPLE_USING (const uint8_t*)"Sample using - [options]          ..." /*<target>*/
 #define SAMPLE_USING_LENGTH 37
-#define OPTIONS "Options:\n"															\
+#define OPTIONS (const uint8_t*)"Options:\n"															\
 	"\t-buildfile: - set path to project file. Short form /f:.\n"						\
+	"\t-encoding: - set encoding of input file. Can be ASCII, UTF8, Unicode, UTF16LE, UTF32 or UTF32LE in any letter case.\n"	\
 	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"	\
 	"\t-nologo - do not display program version, license and copyright information.\n"	\
 	"\t-help - print this message. Short form -h."
-#define OPTIONS_LENGTH 260
+#define OPTIONS_LENGTH 377
 
 uint8_t print_status(int status)
 {
@@ -140,7 +142,7 @@ int main(int argc, char** argv)
 			argc = 0;
 		}
 
-		if (!echo(0, Default, NULL, Error, "Failed to parse command arguments.", 34, 1, 0))
+		if (!echo(0, Default, NULL, Error, (const uint8_t*)"Failed to parse command arguments.", 34, 1, 0))
 		{
 			argc = 0;
 		}
@@ -187,15 +189,16 @@ int main(int argc, char** argv)
 			break;
 		}
 
-		if (!project_add_properties(project, NULL, argument_parser_get_properties(), argument_parser_get_verbose()))
+		if (!property_add_at_project(project, argument_parser_get_properties(), argument_parser_get_verbose()))
 		{
 			project_unload(project);
 			argc = 0;
 			break;
 		}
 
-		const uint8_t is_loaded = project_load_from_build_file(build_file->start, project,
-								  argument_parser_get_verbose());
+		const uint8_t is_loaded = project_load_from_build_file(
+									  build_file->start, argument_parser_get_encoding(),
+									  project, argument_parser_get_verbose());
 
 		if (!is_loaded)
 		{
@@ -213,8 +216,9 @@ int main(int argc, char** argv)
 	argc = 0 < argc;
 	print_status(argc);
 	return argc ? EXIT_SUCCESS : EXIT_FAILURE;
-#endif
+#else
 	(void)argc;
 	(void)argv;
 	return EXIT_SUCCESS;
+#endif
 }

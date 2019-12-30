@@ -36,6 +36,7 @@ uint8_t argument_from_wchar_t(const wchar_t* input_start, const wchar_t* input_f
 							  struct buffer* output, int* argc, wchar_t*** argv);
 #endif
 uint8_t argument_parser_get_debug();
+uint16_t argument_parser_get_encoding();
 uint8_t argument_parser_get_help();
 uint8_t argument_parser_get_indent();
 uint8_t argument_parser_get_no_logo();

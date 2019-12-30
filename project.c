@@ -11,6 +11,7 @@
 #include "conversion.h"
 #include "file_system.h"
 #include "interpreter.h"
+#include "load_file.h"
 #include "path.h"
 #include "property.h"
 #include "range.h"
@@ -303,7 +304,8 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	return 1;
 }
 
-uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* project, uint8_t verbose)
+uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, uint16_t encoding, void* project,
+									 uint8_t verbose)
 {
 	ptrdiff_t path_length = 0;
 
@@ -333,16 +335,18 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* pr
 		return 0;
 	}
 
-	if (!path_get_full_path(buffer_data(&content, 0), buffer_data(&content, 0) + addition_path_length,
-							path_to_build_file, path_to_build_file + path_length, &content))
+	uint8_t* dst = buffer_data(&content, 0);
+	const uint8_t* src = dst + addition_path_length;
+
+	if (!path_get_full_path(dst, src, path_to_build_file, path_to_build_file + path_length, &content))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
 	path_length = buffer_size(&content) - addition_path_length;
-	uint8_t* dst = buffer_data(&content, 0);
-	const uint8_t* src = buffer_data(&content, addition_path_length);
+	dst = buffer_data(&content, 0);
+	src = dst + addition_path_length;
 	MEM_CPY(dst, src, path_length);
 
 	if (!buffer_resize(&content, path_length) ||
@@ -352,7 +356,9 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* pr
 		return 0;
 	}
 
-	if (!file_exists(buffer_data(&content, 0)))
+	dst = buffer_data(&content, 0);
+
+	if (!file_exists(dst))
 	{
 		buffer_release(&content);
 		return 0;
@@ -363,22 +369,26 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* pr
 	if (!project_property_set_value(project,
 									project_properties[BUILD_FILE_POSITION],
 									project_properties_lengths[BUILD_FILE_POSITION],
-									buffer_data(&content, 0), path_length - 1,
+									dst, path_length - 1,
 									0, 1, 1, verbose))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	if (!read_file(buffer_data(&content, 0), &content))
+	dst = buffer_data(&content, 0);
+
+	if (!buffer_resize(&content, 0) ||
+		!load_file_to_buffer(dst, &content, encoding, verbose))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	if (!project_load_from_content(buffer_data(&content, 0) + path_length,
-								   buffer_data(&content, 0) + buffer_size(&content),
-								   project, verbose))
+	dst = buffer_data(&content, 0);
+	src = buffer_data(&content, 0) + buffer_size(&content);
+
+	if (!project_load_from_content(dst, src, project, verbose))
 	{
 		buffer_release(&content);
 		return 0;

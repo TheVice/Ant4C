@@ -47,7 +47,7 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	uint8_t* task_attributes_count,
 	struct buffer* task_arguments);
 
-uint8_t read_file(const uint8_t* file_path, struct buffer* content);
+/*uint8_t read_file(const uint8_t* file_path, struct buffer* content);*/
 
 #define COUNT_OF(A) (sizeof(A) / sizeof(*(A)))
 
@@ -66,14 +66,5 @@ uint8_t read_file(const uint8_t* file_path, struct buffer* content);
 #if !defined(MIN)
 #define MIN(A, B) ((A) > (B) ? (B) : (A))
 #endif
-
-#if defined(_WIN32)
-
-#define WIDE2MULTI(W, M, COUNT)	\
-	(COUNT) = (0 < WideCharToMultiByte(CP_UTF8, 0, (W), (COUNT), (M), (COUNT), NULL, NULL));
-#endif
-
-#define MULTI2WIDE(M, W, COUNT)	\
-	(COUNT) = (0 < MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, (M), (COUNT), (W), (COUNT)));
 
 #endif

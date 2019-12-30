@@ -329,7 +329,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 	switch (code_page)
 	{
-		case windows_874:
+		case Windows_874:
 			while (data_start < data_finish)
 			{
 				const uint8_t code = *data_start;
@@ -365,39 +365,39 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 			return 1;
 
-		case windows_1250:
+		case Windows_1250:
 			ptr = codes_1250;
 			break;
 
-		case windows_1251:
+		case Windows_1251:
 			ptr = codes_1251;
 			break;
 
-		case windows_1252:
+		case Windows_1252:
 			ptr = codes_1252;
 			break;
 
-		case windows_1253:
+		case Windows_1253:
 			ptr = codes_1253;
 			break;
 
-		case windows_1254:
+		case Windows_1254:
 			ptr = codes_1254;
 			break;
 
-		case windows_1255:
+		case Windows_1255:
 			ptr = codes_1255;
 			break;
 
-		case windows_1256:
+		case Windows_1256:
 			ptr = codes_1256;
 			break;
 
-		case windows_1257:
+		case Windows_1257:
 			ptr = codes_1257;
 			break;
 
-		case windows_1258:
+		case Windows_1258:
 			ptr = codes_1258;
 			break;
 

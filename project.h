@@ -37,7 +37,8 @@ uint8_t project_get_name(const void* project, const void** the_property);
 uint8_t project_new(void** project);
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
 								  void* project, uint8_t verbose);
-uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, void* project, uint8_t verbose);
+uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, uint16_t encoding,
+									 void* project, uint8_t verbose);
 void project_unload(void* project);
 
 uint8_t project_get_attributes_and_arguments_for_task(
