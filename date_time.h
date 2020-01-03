@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -36,6 +36,7 @@ uint32_t datetime_get_year(int64_t input);
 
 uint8_t datetime_is_leap_year(uint32_t year);
 
+int64_t datetime_ticks();
 int64_t datetime_now_utc();
 int64_t datetime_now();
 
@@ -50,13 +51,17 @@ long datetime_get_bias();
 
 int64_t timespan_from_days(double input);
 int64_t timespan_from_hours(double input);
+int64_t timespan_from_milliseconds(double input);
 int64_t timespan_from_minutes(double input);
 int64_t timespan_from_seconds(double input);
+int64_t timespan_from_ticks(int64_t ticks);
 int32_t timespan_get_days(int64_t input);
 int32_t timespan_get_hours(int64_t input);
 int32_t timespan_get_minutes(int64_t input);
+int64_t timespan_get_ticks(int64_t input);
 double timespan_get_total_days(int64_t input);
 double timespan_get_total_hours(int64_t input);
+int64_t timespan_get_total_milliseconds(int64_t input);
 double timespan_get_total_minutes(int64_t input);
 
 uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish);

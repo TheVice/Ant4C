@@ -1973,18 +1973,19 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>truncate(multiplication(10, tan(0))) -> ${math::truncate(math::multiplication('10', math::tan('0')))}, </code>
-      <code>truncate(multiplication(10, tan(PI / 6))) -> ${math::truncate(math::multiplication('10', math::tan(math::division(math::PI(), '6'))))}, </code>
-      <code>truncate(multiplication(10, tan(PI / 4))) -> ${math::truncate(math::multiplication('10', math::tan(math::division(math::PI(), '4'))))}, </code>
-      <code>truncate(multiplication(10, tan(PI / 3))) -> ${math::truncate(math::multiplication('10', math::tan(math::division(math::PI(), '3'))))}, </code>
-      <code>truncate(multiplication(10, tan(PI))) -> ${math::truncate(math::multiplication('10', math::tan(math::PI())))}, </code>
-      <code>truncate(multiplication(10, tan(2 * PI))) -> ${math::truncate(math::multiplication('10', math::tan(math::multiplication('2', math::PI()))))}</code>
-      <output>truncate(multiplication(10, tan(0))) -> 0, </output>
-      <output>truncate(multiplication(10, tan(PI / 6))) -> 5, </output>
-      <output>truncate(multiplication(10, tan(PI / 4))) -> 9, </output>
-      <output>truncate(multiplication(10, tan(PI / 3))) -> 17, </output>
-      <output>truncate(multiplication(10, tan(PI))) -> 0, </output>
-      <output>truncate(multiplication(10, tan(2 * PI))) -> 0</output>
+      <code>near(tan(0), 0) -> ${math::near(math::tan('0'), '0')}, </code>
+      <code>near(tan(PI / 6), 0.577350) -> ${math::near(math::tan(math::division(math::PI(), '6')), '0.577350', '0.000001')}, </code>
+      <code>near(tan(PI / 4), 1) -> ${math::near(math::tan(math::division(math::PI(), '4')), '1')}, </code>
+      <code>near(tan(PI / 3), 1.732050) -> ${math::near(math::tan(math::division(math::PI(), '3')), '1.732050', '0.000001')}, </code>
+      <code>near(tan(PI), 0) -> ${math::near(math::tan(math::PI()), '0', '0.000001')}, </code>
+      <code>near(tan(2 * PI), 0) -> ${math::near(math::tan(math::multiplication('2', math::PI())), '0', '0.000001')}</code>
+      <!--code>near(tan(2 * PI), 0) -> ${math::near(math::tan(math::multiplication('2', math::PI())), '0'), TODO: Should be mark as error '0.000001'}</code-->
+      <output>near(tan(0), 0) -> True, </output>
+      <output>near(tan(PI / 6), 0.577350) -> True, </output>
+      <output>near(tan(PI / 4), 1) -> True, </output>
+      <output>near(tan(PI / 3), 1.732050) -> True, </output>
+      <output>near(tan(PI), 0) -> True, </output>
+      <output>near(tan(2 * PI), 0) -> True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -2013,16 +2014,16 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>truncate(multiplication(10, cot(PI / 6))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '6'))))}, </code>
-      <code>truncate(multiplication(10, cot(PI / 4))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '4'))))}, </code>
-      <code>truncate(multiplication(10, cot(PI / 3))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '3'))))}, </code>
-      <code>truncate(multiplication(10, cot(PI / 2))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::PI(), '2'))))}, </code>
-      <code>truncate(multiplication(10, cot(3 * PI / 2))) -> ${math::truncate(math::multiplication('10', math::cot(math::division(math::multiplication('3', math::PI()), '2'))))}</code>
-      <output>truncate(multiplication(10, cot(PI / 6))) -> 17, </output>
-      <output>truncate(multiplication(10, cot(PI / 4))) -> 10, </output>
-      <output>truncate(multiplication(10, cot(PI / 3))) -> 5, </output>
-      <output>truncate(multiplication(10, cot(PI / 2))) -> 0, </output>
-      <output>truncate(multiplication(10, cot(3 * PI / 2))) -> 0</output>
+      <code>near(cot(PI / 6), 1.732050) -> ${math::near(math::cot(math::division(math::PI(), '6')), '1.732050', '0.000001')}, </code>
+      <code>near(cot(PI / 4), 1) -> ${math::near(math::cot(math::division(math::PI(), '4')), '1', '0.000001')}, </code>
+      <code>near(cot(PI / 3), 0.577350) -> ${math::near(math::cot(math::division(math::PI(), '3')), '0.577350', '0.000001')}, </code>
+      <code>near(cot(PI / 2), 0) -> ${math::near(math::cot(math::division(math::PI(), '2')), '0', '0.000001')}, </code>
+      <code>near(cot(3 * PI / 2), 0) -> ${math::near(math::cot(math::division(math::multiplication('3', math::PI()), '2')), '0', '0.000001')}</code>
+      <output>near(cot(PI / 6), 1.732050) -> True, </output>
+      <output>near(cot(PI / 4), 1) -> True, </output>
+      <output>near(cot(PI / 3), 0.577350) -> True, </output>
+      <output>near(cot(PI / 2), 0) -> True, </output>
+      <output>near(cot(3 * PI / 2), 0) -> True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -2064,10 +2065,10 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>PI -> ${math::PI()}, </code>
-      <code>E -> ${math::E()}</code>
-      <output>PI -> 3.1415926535897931, </output>
-      <output>E -> 2.7182818284590451</output>
+      <code>near(PI, 3.1415926535897931) -> ${math::near(math::PI(), '3.1415926535897931', '0.000001')}, </code>
+      <code>near(E, 2.7182818284590451) -> ${math::near(math::E(), '2.7182818284590451', '0.000001')}</code>
+      <output>near(PI, 3.1415926535897931) -> True, </output>
+      <output>near(E, 2.7182818284590451) -> True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -2173,10 +2174,14 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>empty(double_epsilon()) -> ${string::empty(math::double_epsilon())}, </code>
       <code>near(1, 2) -> ${math::near('1', '2')}, </code>
+      <code>near(1, 2, 0.000001) -> ${math::near('1', '2', '0.000001')}, </code>
       <code>less(1, 2) -> ${math::less('1', '2')}, </code>
       <code>greater(1, 2) -> ${math::greater('1', '2')}</code>
+      <output>empty(double_epsilon()) -> False, </output>
       <output>near(1, 2) -> False, </output>
+      <output>near(1, 2, 0.000001) -> False, </output>
       <output>less(1, 2) -> True, </output>
       <output>greater(1, 2) -> False</output>
       <return>1</return>
@@ -2270,6 +2275,11 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>empty(ticks()) -> ${string::empty(datetime::ticks())}</code>
+      <output>empty(ticks()) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>empty(now-utc()) -> ${string::empty(datetime::now-utc())}</code>
       <output>empty(now-utc()) -> False</output>
       <return>1</return>
@@ -2295,6 +2305,11 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>from-milliseconds(10000) -> ${timespan::from-milliseconds('10000')}</code>
+      <output>from-milliseconds(10000) -> 10</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>from-minutes(1) -> ${timespan::from-minutes('1')}</code>
       <output>from-minutes(1) -> 60</output>
       <return>1</return>
@@ -2302,6 +2317,11 @@
     <interpreter_evaluate_code>
       <code>from-seconds(1) -> ${timespan::from-seconds('1')}</code>
       <output>from-seconds(1) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>empty(from-ticks(100000000)) -> ${string::empty(timespan::from-ticks('100000000'))}</code>
+      <output>empty(from-ticks(100000000)) -> False</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -2340,6 +2360,11 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>empty(get-ticks(10)) -> ${string::empty(timespan::get-ticks('10'))}</code>
+      <output>empty(get-ticks(10)) -> False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>get-total-days(86400) -> ${math::truncate(timespan::get-total-days('86400'))}</code>
       <output>get-total-days(86400) -> 1</output>
       <return>1</return>
@@ -2347,6 +2372,11 @@
     <interpreter_evaluate_code>
       <code>get-total-hours(3600) -> ${math::truncate(timespan::get-total-hours('3600'))}</code>
       <output>get-total-hours(3600) -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>get-total-milliseconds(1) -> ${timespan::get-total-milliseconds('1')}</code>
+      <output>get-total-milliseconds(1) -> 1000</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>

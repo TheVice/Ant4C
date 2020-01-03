@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -243,82 +243,46 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 					   struct buffer* output)
 {
 	if (NULL == input_start || NULL == input_finish ||
-		NULL == to_be_replaced_start || NULL == to_be_replaced_finish ||
-		NULL == output || input_finish < input_start ||
-		to_be_replaced_finish <= to_be_replaced_start)
+		range_in_parts_is_null_or_empty(to_be_replaced_start, to_be_replaced_finish) ||
+		NULL == output || input_finish < input_start)
 	{
 		return 0;
 	}
 
-	const ptrdiff_t input_length = input_finish - input_start;
+	ptrdiff_t input_length = input_finish - input_start;
 
 	if (input_length < 1)
 	{
 		return 1;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
-
-	if (!buffer_append(output, input_start, input_length))
+	if (string_equal(to_be_replaced_start, to_be_replaced_finish, by_replacement_start, by_replacement_finish))
 	{
-		return 0;
+		return buffer_append(output, input_start, input_length);
 	}
 
 	const ptrdiff_t to_be_replaced_length = to_be_replaced_finish - to_be_replaced_start;
-	const ptrdiff_t by_replacement_length =	(NULL == by_replacement_start || NULL == by_replacement_finish ||
+	const ptrdiff_t by_replacement_length = (NULL == by_replacement_start || NULL == by_replacement_finish ||
 											by_replacement_finish < by_replacement_start) ? -1 : (by_replacement_finish - by_replacement_start);
 
-	if (1 == to_be_replaced_length && to_be_replaced_length == by_replacement_length)
+	while (-1 != (input_length = string_index_of_any(
+									 input_start, input_finish, to_be_replaced_start, to_be_replaced_finish, 1)))
 	{
-		if (to_be_replaced_start[0] == by_replacement_start[0])
-		{
-			return 1;
-		}
-
-		for (ptrdiff_t i = 0; i < input_length; ++i)
-		{
-			if (to_be_replaced_start[0] == *(buffer_data(output, size + i)))
-			{
-				*(buffer_data(output, size + i)) = by_replacement_start[0];
-			}
-		}
-
-		return 1;
-	}
-
-	if (!buffer_resize(output, size))
-	{
-		return 0;
-	}
-
-	const uint8_t* previous_position = input_start;
-	ptrdiff_t index = -1;
-
-	while (-1 != (index = string_index_of_any(
-							  previous_position, input_finish, to_be_replaced_start, to_be_replaced_finish, 1)))
-	{
-		if (!buffer_append(output, previous_position, index))
+		if (!buffer_append(output, input_start, input_length))
 		{
 			return 0;
 		}
 
-		if (-1 != by_replacement_length)
+		if (-1 != by_replacement_length &&
+			!buffer_append(output, by_replacement_start, by_replacement_length))
 		{
-			if (!buffer_append(output, by_replacement_start, by_replacement_length))
-			{
-				return 0;
-			}
+			return 0;
 		}
 
-		previous_position += index + to_be_replaced_length;
+		input_start += input_length + to_be_replaced_length;
 	}
 
-	if (!buffer_append(output, previous_position, input_finish - previous_position))
-	{
-		return 0;
-	}
-
-	return 1;
+	return buffer_append(output, input_start, input_finish - input_start);
 }
 
 uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_finish,

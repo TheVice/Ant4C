@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -19,6 +19,9 @@
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
+
+#define CLOCK_T	((clock_t)-1)
+#define TIME_T	((time_t)-1)
 
 #define LOCAL_TIME(T)												\
 	struct tm* tm_ = localtime((const time_t* const)(T));
@@ -417,11 +420,23 @@ uint8_t datetime_is_leap_year(uint32_t year)
 	return ((!(year % 400)) || ((year % 100) && (!(year % 4))));
 }
 
+int64_t datetime_ticks()
+{
+	const clock_t ticks = clock();
+
+	if (CLOCK_T == ticks)
+	{
+		return 0;
+	}
+
+	return ticks;
+}
+
 int64_t datetime_now_utc()
 {
 	time_t now = 0;
 
-	if (((time_t)-1) == time(&now))
+	if (TIME_T == time(&now))
 	{
 		return 0;
 	}
@@ -439,7 +454,7 @@ int64_t datetime_now()
 {
 	time_t now = 0;
 
-	if (((time_t)-1) == time(&now))
+	if (TIME_T == time(&now))
 	{
 		return 0;
 	}
@@ -556,7 +571,7 @@ long datetime_get_bias()
 {
 	time_t now = 0;
 
-	if (((time_t)-1) == time(&now))
+	if (TIME_T == time(&now))
 	{
 		return 0;
 	}
@@ -583,7 +598,12 @@ int64_t timespan_from_hours(double input)
 {
 	return (int64_t)((double)seconds_per_hour * input);
 }
-/*timespan_from_milliseconds*/
+
+int64_t timespan_from_milliseconds(double input)
+{
+	return (int64_t)(input / 1000);
+}
+
 int64_t timespan_from_minutes(double input)
 {
 	return (int64_t)((double)seconds_per_minute * input);
@@ -593,7 +613,17 @@ int64_t timespan_from_seconds(double input)
 {
 	return (int64_t)input;
 }
-/*timespan_from_ticks*/
+
+int64_t timespan_from_ticks(int64_t ticks)
+{
+	if (ticks < CLOCKS_PER_SEC)
+	{
+		return 0;
+	}
+
+	return (int64_t)(((double)ticks) / CLOCKS_PER_SEC);
+}
+
 int32_t timespan_get_days(int64_t input)
 {
 	int32_t days = 0;
@@ -620,8 +650,12 @@ int32_t timespan_get_minutes(int64_t input)
 
 	return minutes;
 }
-/*timespan_get_seconds*/
-/*timespan_get_ticks*/
+
+int64_t timespan_get_ticks(int64_t input)
+{
+	return CLOCKS_PER_SEC * input;
+}
+
 double timespan_get_total_days(int64_t input)
 {
 	return (double)input / seconds_per_day;
@@ -631,7 +665,12 @@ double timespan_get_total_hours(int64_t input)
 {
 	return (double)input / seconds_per_hour;
 }
-/*timespan_get_total_milliseconds*/
+
+int64_t timespan_get_total_milliseconds(int64_t input)
+{
+	return 1000 * input;
+}
+
 double timespan_get_total_minutes(int64_t input)
 {
 	return (double)input / seconds_per_minute;
@@ -654,6 +693,7 @@ static const uint8_t* datetime_function_str[] =
 	(const uint8_t*)"get-ticks",
 	(const uint8_t*)"get-year",
 	(const uint8_t*)"is-leap-year",
+	(const uint8_t*)"ticks",
 	(const uint8_t*)"now-utc",
 	(const uint8_t*)"now",
 	(const uint8_t*)"from-input"
@@ -664,7 +704,7 @@ enum datetime_function
 	format_to_string, parse, to_string,	get_day, get_day_of_week,
 	get_day_of_year, get_days_in_month, get_hour, get_millisecond,
 	get_minute, get_month, get_second, get_ticks, get_year,
-	is_leap_year, now_utc, now, encode,
+	is_leap_year, ticks, now_utc, now, encode,
 	UNKNOWN_DATETIME_FUNCTION
 };
 
@@ -767,6 +807,15 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 		case is_leap_year:
 			return 1 == arguments_count && bool_to_string(datetime_is_leap_year(int_parse(argument1.start)), output);
 
+		case ticks:
+			if (!arguments_count)
+			{
+				const int64_t ticks = datetime_ticks();
+				return /*0 < ticks && */int64_to_string(0 < ticks ? ticks : 0, output);
+			}
+
+			break;
+
 		case now_utc:
 			if (!arguments_count)
 			{
@@ -867,9 +916,6 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 		return 0;
 	}
 
-	/*double double_argument = 0;
-	int64_t int64_argument = 0;*/
-
 	switch (function)
 	{
 		case ts_from_days_:
@@ -879,18 +925,16 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return int64_to_string(timespan_from_hours(double_parse(argument.start)), output);
 
 		case ts_from_milliseconds_:
-			/*TODO:*/
-			break;
+			return int64_to_string(timespan_from_milliseconds(double_parse(argument.start)), output);
 
 		case ts_from_minutes_:
 			return int64_to_string(timespan_from_minutes(double_parse(argument.start)), output);
 
 		case ts_from_seconds_:
-			return int64_to_string((int64_t)double_parse(argument.start), output);
+			return int64_to_string(int64_parse(argument.start), output);
 
 		case ts_from_ticks_:
-			/*TODO:*/
-			break;
+			return int64_to_string(timespan_from_ticks(int64_parse(argument.start)), output);
 
 		case ts_get_days_:
 			return int_to_string(timespan_get_days(int64_parse(argument.start)), output);
@@ -912,8 +956,7 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return int64_to_string(int64_parse(argument.start), output);
 
 		case ts_get_ticks_:
-			/*TODO:*/
-			break;
+			return int64_to_string(timespan_get_ticks(int64_parse(argument.start)), output);
 
 		case ts_get_total_days_:
 			return double_to_string(timespan_get_total_days(int64_parse(argument.start)), output);
@@ -922,8 +965,7 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return double_to_string(timespan_get_total_hours(int64_parse(argument.start)), output);
 
 		case ts_get_total_milliseconds_:
-			/*TODO:*/
-			break;
+			return int64_to_string(timespan_get_total_milliseconds(int64_parse(argument.start)), output);
 
 		case ts_get_total_minutes_:
 			return double_to_string(timespan_get_total_minutes(int64_parse(argument.start)), output);
