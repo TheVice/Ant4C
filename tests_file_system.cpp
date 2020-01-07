@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -233,9 +233,11 @@ TEST(TestFileSystem_, file_up_to_date)
 	buffer paths;
 	SET_NULL_TO_BUFFER(paths);
 	ASSERT_TRUE(path_get_temp_file_name(&paths)) << buffer_free(&paths);
+	ASSERT_TRUE(buffer_push_back(&paths, 0)) << buffer_free(&paths);
 	//
 	const auto size = buffer_size(&paths);
 	ASSERT_TRUE(path_get_temp_file_name(&paths)) << buffer_free(&paths);
+	ASSERT_TRUE(buffer_push_back(&paths, 0)) << buffer_free(&paths);
 	//
 	const auto src_file = buffer_data(&paths, 0);
 	const auto target_file = buffer_data(&paths, size);

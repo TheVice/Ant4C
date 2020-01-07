@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -554,7 +554,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 #else
 	memcpy(temp_file_path, temp_path_, length);
 #endif
-	return buffer_resize(temp_file_name, size + length) && buffer_push_back(temp_file_name, 0);
+	return buffer_resize(temp_file_name, size + length);
 #endif
 }
 

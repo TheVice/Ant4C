@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -30,16 +30,17 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 		 (Unicode != encoding) &&
 		 (UTF16LE != encoding) &&
 		 (UTF32 != encoding) &&
-		 (UTF32LE != encoding)))
+		 (UTF32LE != encoding) &&
+		 (Binary != encoding)))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size = file_get_length(path);
+	const ptrdiff_t size = (ptrdiff_t)file_get_length(path);
 
 	if (!size)
 	{
-		return 1;
+		return buffer_resize(content, 0);
 	}
 
 	FILE* file_stream = NULL;

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -283,12 +283,13 @@ TEST(TestPath_, path_get_temp_file_name)
 	const std::string temp_file_name_str(buffer_to_string(&temp_file_name));
 	const range temp_file_name_range = string_to_range(temp_file_name_str);
 	//
-	char chars[3];
+	char chars[4];
 	chars[0] = '.';
 	chars[1] = path_posix_delimiter;
 	chars[2] = path_windows_delimiter;
+	chars[3] = '\0';
 
-	for (const char& ch : chars)
+	for (const auto& ch : chars)
 	{
 		ASSERT_NE(ch, *(temp_file_name_range.finish - 1)) <<
 				temp_file_name_range.start << std::endl << ch << std::endl;

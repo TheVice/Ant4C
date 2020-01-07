@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -183,6 +183,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
 		const std::string tmp_path(buffer_to_string(&tmp));
+		ASSERT_TRUE(buffer_push_back(&tmp, 0)) << buffer_free(&tmp);
 		//
 		ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), Info,
 						 (const uint8_t*)content.c_str(), content.size(), 0, verbose))
