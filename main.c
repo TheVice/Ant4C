@@ -47,19 +47,38 @@ int main(int argc, char** argv)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 #endif
-	uint8_t output[UINT8_MAX];
-
-	if (!BLAKE3((const uint8_t*)&argc, (const uint8_t*)&argc, 32/*131*/, output))
+	uint8_t* expected_outputs[] =
 	{
-		printf("%i %s\n", __LINE__, "FAILURE");
-		return EXIT_FAILURE;
+		"af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262e00f03e7b69af26b7faaf09fcd333050338ddfe085b8cc869ca98b206c08243a26f5487789e8f660afe6c99ef9e0c52b92e7393024a80459cf91f476f9ffdbda7001c22e159b402631f277ca96f2defdf1078282314e763699a31c5363165421cce14d"
+	};
+	/**/
+	uint8_t output[2 * UINT8_MAX];
+
+	for (uint8_t i = 0, count = 1; i < count; ++i)
+	{
+		if (!BLAKE3((const uint8_t*)&argc, (const uint8_t*)&argc, 131, output))
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			return EXIT_FAILURE;
+		}
+
+		char* ptr = (char*)(output + 131);
+
+		for (uint8_t j = 0; j < 131; ++j)
+		{
+			ptr += sprintf(ptr, output[j] < 16 ? "0%x" : "%x", output[j]);
+		}
+
+		ptr = (char*)(output + 131);
+
+		if (strlen(expected_outputs[i]) != strlen(ptr) ||
+			0 != memcmp(expected_outputs[i], ptr, strlen(expected_outputs[i])))
+		{
+			printf("\nexpected: '%s'\nreturned: '%s'\n%s\n", expected_outputs[i], ptr, "FAILURE");
+			return EXIT_FAILURE;
+		}
 	}
 
-	for (argc = 0; argc < 32; ++argc)
-	{
-		printf(output[argc] < 16 ? "0%x" : "%x", output[argc]);
-	}
-	
 	printf("\nSUCCESS\n");
 	(void)argv;
 	return EXIT_SUCCESS;
