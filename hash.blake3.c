@@ -110,15 +110,24 @@ uint8_t BLAKE3_compress_XOF(uint32_t* h, const uint32_t* m, const uint32_t* t, u
 	uint32_t V[16];
 
 	if (NULL == h ||
-		!BLAKE3_compress(h, m, t, b, d, V) ||
-		NULL == output)
+		!BLAKE3_compress(h, m, t, b, d, V))
 	{
 		return 0;
 	}
 
-	for (uint8_t i = 0, count = 16, middle = 8; i < count; ++i)
+	if (NULL != output)
 	{
-		output[i] = V[i] ^ ((i < middle) ? V[middle + i] : h[i - middle]);
+		for (uint8_t i = 0, count = 16, middle = 8; i < count; ++i)
+		{
+			output[i] = V[i] ^ ((i < middle) ? V[middle + i] : h[i - middle]);
+		}
+	}
+	else
+	{
+		for (uint8_t i = 0, count = 8; i < count; ++i)
+		{
+			h[i] = V[i] ^ V[count + i];
+		}
 	}
 
 	return 1;
@@ -155,6 +164,44 @@ uint8_t BLAKE3_compress_XOF(uint32_t* h, const uint32_t* m, const uint32_t* t, u
 		memcpy((OUTPUT) + (L), (INPUT), (PROCESSED));						\
 		(L) += (PROCESSED);													\
 	}
+
+uint8_t BLAKE3_update_chunk_data(
+	const uint8_t* input, uint64_t length, uint32_t* output, uint8_t* l, uint32_t* h,
+	uint8_t* compressed, uint32_t* t, uint8_t d)
+{
+	if (NULL == input ||
+		NULL == output ||
+		NULL == l ||
+		NULL == h ||
+		NULL == compressed ||
+		NULL == t)
+	{
+		return 0;
+	}
+
+	uint16_t index = 0;
+	uint8_t processed = 0;
+
+	while (BLAKE3_BLOCK_LENGTH < length)
+	{
+		if (!BLAKE3_compress_XOF(h, (const uint32_t*)(input + index), t, BLAKE3_BLOCK_LENGTH,
+								 d | (0 < (*compressed) ? 0 : CHUNK_START), NULL))
+		{
+			return 0;
+		}
+
+		(*compressed) += 1;
+		index += BLAKE3_BLOCK_LENGTH;
+		length -= BLAKE3_BLOCK_LENGTH;
+	}
+
+#if __STDC_SEC_API__
+	GET_DATA_FOR_CHUNK_SEC(input + index, length, output, (*l), processed);
+#else
+	GET_DATA_FOR_CHUNK(input + index, length, output, (*l), processed);
+#endif
+	return processed == length;
+}
 
 uint8_t BLAKE3_get_bytes_from_root_chunk(
 	uint8_t hash_length, uint32_t* h, const uint32_t* m,
@@ -232,13 +279,9 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 	uint8_t l = 0;
 	uint8_t d = 0;
 
-	if (0 < length)
+	if (0 < length && !BLAKE3_update_chunk_data(start, (uint64_t)length, m, &l, h, &compressed, t, d))
 	{
-#if __STDC_SEC_API__
-		GET_DATA_FOR_CHUNK_SEC(start, length, m, l, t[0]);
-#else
-		GET_DATA_FOR_CHUNK(start, length, m, l, t[0]);
-#endif
+		return 0;
 	}
 
 	return BLAKE3_final(stack_length, compressed, h, m, l, d, hash_length, output);
