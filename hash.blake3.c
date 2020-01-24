@@ -35,7 +35,7 @@ enum BLAKE3_DOMAIN_FLAGS
 
 #define BLAKE3_BLOCK_LENGTH (uint8_t)(16 * sizeof(uint32_t))
 #define BLAKE3_CHUNK_LENGTH (uint16_t)1024
-#define BLAKE3_OUTPUT_LENGTH (uint8_t)32
+#define BLAKE3_OUTPUT_LENGTH (uint8_t)(8 * sizeof(uint32_t))
 #define BLAKE3_MAXIMUM_CHUNKS_COUNT (uint8_t)24
 
 #define ROTATE_RIGHT_UINT32_T(VALUE, OFFSET)			\
@@ -140,13 +140,13 @@ uint8_t BLAKE3_hash_input(uint8_t d, const uint8_t* input, const uint32_t* t, ui
 {
 #if __STDC_SEC_API__
 
-	if (0 != memcpy_s(h, 8 * sizeof(uint32_t), IV, 8 * sizeof(uint32_t)))
+	if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
 	{
 		return 0;
 	}
 
 #else
-	memcpy(h, IV, 8 * sizeof(uint32_t));
+	memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
 #endif
 	uint16_t count_of_blocks = BLAKE3_CHUNK_LENGTH / BLAKE3_BLOCK_LENGTH;
 	uint8_t domain_flags = d | CHUNK_START;
@@ -182,15 +182,14 @@ uint8_t BLAKE3_hash_inputs(uint8_t d, const uint8_t** inputs, uint8_t count_of_i
 
 	while (0 < count_of_inputs)
 	{
-		if (!BLAKE3_hash_input(d, inputs[index], counter, output))
+		if (!BLAKE3_hash_input(d, inputs[index], counter, output + index * BLAKE3_OUTPUT_LENGTH))
 		{
 			return 0;
 		}
 
-		output += index * BLAKE3_OUTPUT_LENGTH;
 		counter[0] += 1;
-		index += 1;
-		count_of_inputs -= 1;
+		++index;
+		--count_of_inputs;
 	}
 
 	return 1;
@@ -357,7 +356,7 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 			chunks[number_of_chunks] = input;
 			input += BLAKE3_CHUNK_LENGTH;
 			length -= BLAKE3_CHUNK_LENGTH;
-			number_of_chunks += 1;
+			++number_of_chunks;
 		}
 
 		if (!BLAKE3_hash_inputs(d, chunks, number_of_chunks, t, output))
@@ -410,7 +409,7 @@ uint8_t BLAKE3_get_bytes_from_root_chunk(
 			return 0;
 		}
 
-		const uint8_t processed = 16 * sizeof(uint32_t) < hash_length ? 16 * sizeof(uint32_t) : hash_length;
+		const uint8_t processed = BLAKE3_BLOCK_LENGTH < hash_length ? BLAKE3_BLOCK_LENGTH : hash_length;
 		index += processed;
 		hash_length -= processed;
 		chunk_counter[0] += 1;
@@ -423,7 +422,7 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 					 uint8_t compressed, const uint32_t* t, uint32_t* h, uint32_t* m,
 					 uint8_t l, uint8_t d, uint8_t hash_length, uint8_t* output)
 {
-	uint8_t domain_flags = 0;
+	uint8_t domain_flags = d;
 
 	if (0 == stack_length)
 	{
@@ -436,6 +435,13 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 	if (0 < BLAKE3_BLOCK_LENGTH * compressed + l)
 	{
 		domain_flags = d | (0 < compressed ? 0 : CHUNK_START) | CHUNK_END;
+	}
+	else
+	{
+		stack_length -= 2;
+		memcpy(m, stack + (uint64_t)stack_length * BLAKE3_BLOCK_LENGTH, BLAKE3_BLOCK_LENGTH);
+		domain_flags = d | PARENT;
+		l = BLAKE3_BLOCK_LENGTH;
 	}
 
 	while (0 < stack_length)
@@ -461,7 +467,7 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 #else
 		memcpy(m, block, BLAKE3_BLOCK_LENGTH);
 #endif
-		domain_flags = PARENT;
+		domain_flags = d | PARENT;
 		l = BLAKE3_BLOCK_LENGTH;
 	}
 
@@ -497,7 +503,7 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 	memcpy(h, IV, 8 * sizeof(uint32_t));
 #endif
 	uint32_t m[16];
-	memset(m, 0, 16 * sizeof(uint32_t));
+	memset(m, 0, BLAKE3_BLOCK_LENGTH);
 	uint32_t t[2];
 	t[0] = t[1] = 0;
 	uint8_t l = 0;
