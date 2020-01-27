@@ -11,7 +11,7 @@ main.c.obj: main.c
 .PHONY: main.c.obj
 
 main: hash.a main.c.obj
-	cc main.c.obj hash.a -lm -o main
+	cc main.c.obj hash.a -o main
 
 clean:
 	rm hash.blake3.c.obj main.c.obj hash.a main

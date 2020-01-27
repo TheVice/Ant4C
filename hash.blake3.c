@@ -399,13 +399,45 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 		}
 
 		length -= to_process;
-
+		return 0 == length;
+		/*NOTE: Requested test case for commented code, if such even exists.
 		if (0 == length)
 		{
 			return 1;
 		}
 
 		input += to_process;
+		const uint8_t domain_flags = d | (0 < (*compressed) ? 0 : CHUNK_START) | CHUNK_END;
+
+		if (!BLAKE3_compress(h, m, t, (*l), domain_flags, NULL))
+		{
+			return 0;
+		}
+
+		if (!MERGE(stack, stack_length, t, d))
+		{
+			return 0;
+		}
+
+#if __STDC_SEC_API__
+		PUSH_CHUNK_TO_STACK_SEC(h, stack, *stack_length);
+#else
+		PUSH_CHUNK_TO_STACK(h, stack, *stack_length);
+#endif
+#if __STDC_SEC_API__
+
+		if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
+#endif
+		t[0] += 1;
+		(*compressed) = 0;
+		memset(m, 0, BLAKE3_BLOCK_LENGTH);
+		(*l) = 0;*/
 	}
 
 	uint8_t number_of_chunks = 0;
@@ -444,7 +476,6 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 
 		number_of_chunks = 0;
 	}
-	/*TODO:*/
 
 	if (0 < length)
 	{
@@ -503,8 +534,6 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 		return BLAKE3_get_bytes_from_root_chunk(hash_length, h, m, l, domain_flags, output);
 	}
 
-	/*TODO:*/
-
 	if (0 < BLAKE3_BLOCK_LENGTH * compressed + l)
 	{
 		domain_flags = d | (0 < compressed ? 0 : CHUNK_START) | CHUNK_END;
@@ -512,9 +541,14 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 	else
 	{
 		stack_length -= 2;
-		memcpy(m, stack + (uint64_t)stack_length * BLAKE3_BLOCK_LENGTH, BLAKE3_BLOCK_LENGTH);
+#if __STDC_SEC_API__
+		memcpy_s(m, BLAKE3_BLOCK_LENGTH, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_BLOCK_LENGTH);
+#else
+		memcpy(m, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_BLOCK_LENGTH);
+#endif
 		domain_flags = d | PARENT;
 		l = BLAKE3_BLOCK_LENGTH;
+		t[0] = t[1] = 0;
 	}
 
 	while (0 < stack_length)
