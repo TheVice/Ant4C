@@ -429,6 +429,11 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 
 		for (uint64_t index = 0; index < number_of_chunks; ++index)
 		{
+			if (!MERGE(stack, stack_length, t, d))
+			{
+				return 0;
+			}
+
 #if __STDC_SEC_API__
 			PUSH_CHUNK_TO_STACK_SEC(output + index * BLAKE3_OUTPUT_LENGTH, stack, *stack_length);
 #else
