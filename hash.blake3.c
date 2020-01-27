@@ -492,7 +492,7 @@ uint8_t BLAKE3_get_bytes_from_root_chunk(
 }
 
 uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
-					 uint8_t compressed, const uint32_t* t, uint32_t* h, uint32_t* m,
+					 uint8_t compressed, uint32_t* t, uint32_t* h, uint32_t* m,
 					 uint8_t l, uint8_t d, uint8_t hash_length, uint8_t* output)
 {
 	uint8_t domain_flags = d;
@@ -542,6 +542,7 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 #endif
 		domain_flags = d | PARENT;
 		l = BLAKE3_BLOCK_LENGTH;
+		t[0] = t[1] = 0;
 	}
 
 	domain_flags |= ROOT;
