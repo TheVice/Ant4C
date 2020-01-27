@@ -33,6 +33,7 @@ enum BLAKE3_DOMAIN_FLAGS
 	KEYED_HASH = 16, DERIVE_KEY_CONTEXT = 32, DERIVE_KEY_MATERIAL = 64*/
 };
 
+#define BLAKE3_STACK_LENGTH (uint8_t)8
 #define BLAKE3_BLOCK_LENGTH (uint8_t)(16 * sizeof(uint32_t))
 #define BLAKE3_CHUNK_LENGTH (uint16_t)1024
 #define BLAKE3_OUTPUT_LENGTH (uint8_t)(8 * sizeof(uint32_t))
@@ -291,7 +292,7 @@ uint8_t BLAKE3_update_chunk_data(
 
 #define PUSH_CHUNK_TO_STACK_SEC(INPUT, STACK, STACK_LENGTH)							\
 	\
-	if (8 == (STACK_LENGTH))														\
+	if ((BLAKE3_STACK_LENGTH) == (STACK_LENGTH))									\
 	{\
 		return 0;\
 	}\
@@ -306,7 +307,7 @@ uint8_t BLAKE3_update_chunk_data(
 
 #define PUSH_CHUNK_TO_STACK(INPUT, STACK, STACK_LENGTH)								\
 	\
-	if (8 == (STACK_LENGTH))														\
+	if ((BLAKE3_STACK_LENGTH) == (STACK_LENGTH))									\
 	{\
 		return 0;\
 	}\
@@ -315,6 +316,68 @@ uint8_t BLAKE3_update_chunk_data(
 		   (INPUT), (BLAKE3_OUTPUT_LENGTH));										\
 	\
 	++(STACK_LENGTH);
+
+uint8_t population_count(const uint8_t* input, uint8_t size)
+{
+	uint8_t result = 0;
+
+	for (uint8_t i = 0; i < size; ++i)
+	{
+		uint8_t in = input[i];
+
+		do
+		{
+			result += 1 == in % 2;
+		}
+		while (1 < (in /= 2));
+
+		result += 1 == in;
+	}
+
+	return result;
+}
+
+uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t d)
+{
+	const uint8_t population = population_count((const uint8_t*)t, sizeof(uint32_t));
+	/*uint32_t* h = (uint32_t*)(stack + ((BLAKE3_STACK_LENGTH - 1) * BLAKE3_OUTPUT_LENGTH));*/
+	uint32_t h[BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)];
+
+	while ((*stack_length) > population)
+	{
+		static const uint32_t local_t[] = { 0, 0 };
+		uint32_t* m = (uint32_t*)(stack + ((uint64_t)((*stack_length) - 2) * BLAKE3_OUTPUT_LENGTH));
+#if __STDC_SEC_API__
+
+		if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
+#endif
+
+		if (!BLAKE3_compress_XOF(h, m, local_t, BLAKE3_BLOCK_LENGTH, d | PARENT, NULL))
+		{
+			return 0;
+		}
+
+#if __STDC_SEC_API__
+
+		if (0 != memcpy_s(m, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(m, h, BLAKE3_OUTPUT_LENGTH);
+#endif
+		--(*stack_length);
+	}
+
+	return 1;
+}
 
 uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t* l, uint32_t* h,
 					uint8_t* compressed, uint32_t* t, uint8_t* stack, uint8_t* stack_length, uint8_t d)
@@ -380,6 +443,11 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 
 	if (0 < length)
 	{
+		if (!MERGE(stack, stack_length, t, d))
+		{
+			return 0;
+		}
+
 		if (!BLAKE3_update_chunk_data(input, length, m, l, h, compressed, t, d))
 		{
 			return 0;
@@ -486,23 +554,22 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 		return 0;
 	}
 
-	/*TODO:*/
 	const ptrdiff_t length = finish - start;
-	uint8_t stack[8 * BLAKE3_OUTPUT_LENGTH];
+	uint8_t stack[BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH];
 	uint8_t stack_length = 0;
 	uint8_t compressed = 0;
-	uint32_t h[8];
+	uint32_t h[BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)];
 #if __STDC_SEC_API__
 
-	if (0 != memcpy_s(h, 8 * sizeof(uint32_t), IV, 8 * sizeof(uint32_t)))
+	if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
 	{
 		return 0;
 	}
 
 #else
-	memcpy(h, IV, 8 * sizeof(uint32_t));
+	memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
 #endif
-	uint32_t m[16];
+	uint32_t m[BLAKE3_BLOCK_LENGTH / sizeof(uint32_t)];
 	memset(m, 0, BLAKE3_BLOCK_LENGTH);
 	uint32_t t[2];
 	t[0] = t[1] = 0;
