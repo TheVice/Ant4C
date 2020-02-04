@@ -218,16 +218,17 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 	}
 
 	ptrdiff_t s = (size * 8) / rate;
+	s = sizeof(uint64_t) * (s * (1600 / w));
 
-	if (!buffer_resize(P, sizeof(uint64_t) * (s * 1600 / w)))
+	if (!buffer_resize(P, s))
 	{
 		return 0;
 	}
 
-	memset(buffer_data(P, 0), 0, buffer_size(P));
 	uint64_t* ptr = (uint64_t*)buffer_data(P, 0);
+	memset(ptr, 0, s);
 	s = w / 8;
-	uint8_t part[8];
+	uint8_t* part = (addition + 180);
 
 	for (ptrdiff_t i = 0, j = 0, xF = 0; xF < size; xF++)
 	{
@@ -241,7 +242,7 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 
 		if (0 == (count * 8 % w))
 		{
-			const ptrdiff_t index = count - w / 8;
+			const ptrdiff_t index = count - s;
 
 			if (length <= index || length <= index + s)
 			{
@@ -293,7 +294,7 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 #endif
 			}
 
-			uint64_t* Pi = ptr + (1600 / w * i + j);
+			uint64_t* Pi = ptr + ((1600 / w) * i + j);
 
 			if (!hash_algorithm_uint8_t_array_to_uint64_t(part, part + 8, Pi))
 			{
@@ -307,24 +308,23 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 	return 1;
 }
 
-uint8_t Keccak(const uint8_t* start, const uint8_t* finish, uint8_t is_sha3,
-			   uint16_t rate, uint16_t capacity, struct buffer* output)
+uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
+			   uint16_t rate, uint16_t capacity, uint8_t* output)
 {
-	if (NULL == start ||
-		NULL == finish ||
-		finish < start ||
+	if (NULL == input ||
+		length < 0 ||
 		1 < is_sha3 ||
 		NULL == output)
 	{
 		return 0;
 	}
 
-	ptrdiff_t length = finish - start;
+	static const uint8_t count = 5;
 	/*Padding*/
 	struct buffer P;
 	SET_NULL_TO_BUFFER(P);
 
-	if (!Padding(start, length, is_sha3, rate, w_array[INSTANCE_NUMBER], &P))
+	if (!Padding(input, length, is_sha3, rate, w_array[INSTANCE_NUMBER], &P))
 	{
 		buffer_release(&P);
 		return 0;
@@ -342,10 +342,7 @@ uint8_t Keccak(const uint8_t* start, const uint8_t* finish, uint8_t is_sha3,
 	};
 
 	/*Absorption phase*/
-	for (ptrdiff_t xF = 0,
-		 i = 0,
-		 count = 5,
-		 j = 0,
+	for (ptrdiff_t xF = 0, i = 0, j = 0,
 		 size = (buffer_size(&P) / sizeof(uint64_t)) / (1600 / w_array[INSTANCE_NUMBER]); xF < size; xF++)
 	{
 		for (i = 0; i < count; i++)
@@ -355,7 +352,7 @@ uint8_t Keccak(const uint8_t* start, const uint8_t* finish, uint8_t is_sha3,
 				if ((i + j * count) < (rate / w_array[INSTANCE_NUMBER]))
 				{
 					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, count)] =
-						S[TWO_DIMENSION_TO_ONE_INDEX(i, j, count)] ^ ptr[1600 / w_array[INSTANCE_NUMBER] * xF + i + j * 5];
+						S[TWO_DIMENSION_TO_ONE_INDEX(i, j, count)] ^ ptr[(1600 / w_array[INSTANCE_NUMBER]) * xF + i + j * 5];
 				}
 			}
 		}
@@ -365,14 +362,11 @@ uint8_t Keccak(const uint8_t* start, const uint8_t* finish, uint8_t is_sha3,
 
 	buffer_release(&P);
 	/**/
-	length = buffer_size(output);
 	const uint8_t d_max = (uint8_t)(capacity / (2 * 8));
 
 	/*Squeezing phase*/
 	for (is_sha3 = 0; ;)
 	{
-		static const uint8_t count = 5;
-
 		for (uint8_t i = 0; i < count; i++)
 		{
 			for (uint8_t j = 0; j < count; j++)
@@ -380,17 +374,21 @@ uint8_t Keccak(const uint8_t* start, const uint8_t* finish, uint8_t is_sha3,
 				if ((count * i + j) < (rate / w_array[INSTANCE_NUMBER]))
 				{
 					ptr = &(S[TWO_DIMENSION_TO_ONE_INDEX(j, i, count)]);
+#if __STDC_SEC_API__
 
-					if (!buffer_append(output, (const uint8_t*)ptr, sizeof(uint64_t)))
+					if (0 != memcpy_s(output + is_sha3, sizeof(uint64_t), ptr, sizeof(uint64_t)))
 					{
 						return 0;
 					}
 
+#else
+					memcpy(output + is_sha3, ptr, sizeof(uint64_t));
+#endif
 					is_sha3 += sizeof(uint64_t);
 
 					if (d_max <= is_sha3)
 					{
-						i = j = 5;
+						i = j = count;
 					}
 				}
 			}
@@ -404,7 +402,7 @@ uint8_t Keccak(const uint8_t* start, const uint8_t* finish, uint8_t is_sha3,
 		Keccak_f(S);
 	}
 
-	return buffer_resize(output, length + d_max);
+	return 1;
 }
 
 enum HashType { Hash512 = 0, Hash384, Hash256 = 3, Hash224 };
@@ -412,49 +410,73 @@ static const uint16_t rate_array[] = { 576, 832, 1024, 1088, 1152, 1216, 1280, 1
 static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448, 384, 320, 256, 192 };
 
 uint8_t hash_algorithm_keccak_224(
-	const uint8_t* start, const uint8_t* finish,  struct buffer* output)
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 0, rate_array[Hash224], capacity_array[Hash224], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 0, rate_array[Hash224], capacity_array[Hash224],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 100);
 }
 
 uint8_t hash_algorithm_keccak_256(
-	const uint8_t* start, const uint8_t* finish,  struct buffer* output)
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 0, rate_array[Hash256], capacity_array[Hash256], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 0, rate_array[Hash256], capacity_array[Hash256],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 96);
 }
 
 uint8_t hash_algorithm_keccak_384(
-	const uint8_t* start, const uint8_t* finish,  struct buffer* output)
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 0, rate_array[Hash384], capacity_array[Hash384], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 0, rate_array[Hash384], capacity_array[Hash384],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 80);
 }
 
 uint8_t hash_algorithm_keccak_512(
-	const uint8_t* start, const uint8_t* finish,  struct buffer* output)
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 0, rate_array[Hash512], capacity_array[Hash512], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 0, rate_array[Hash512], capacity_array[Hash512],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 64);
 }
 
 uint8_t hash_algorithm_sha3_224(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 1, rate_array[Hash224], capacity_array[Hash224], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 1, rate_array[Hash224], capacity_array[Hash224],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 100);
 }
 
 uint8_t hash_algorithm_sha3_256(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 1, rate_array[Hash256], capacity_array[Hash256], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 1, rate_array[Hash256], capacity_array[Hash256],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 96);
 }
 
 uint8_t hash_algorithm_sha3_384(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 1, rate_array[Hash384], capacity_array[Hash384], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 1, rate_array[Hash384], capacity_array[Hash384],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 80);
 }
 
 uint8_t hash_algorithm_sha3_512(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
-	return Keccak(start, finish, 1, rate_array[Hash512], capacity_array[Hash512], output);
+	return buffer_append(output, NULL, 128) &&
+		   Keccak(start, finish - start, 1, rate_array[Hash512], capacity_array[Hash512],
+				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
+		   buffer_resize(output, buffer_size(output) - 64);
 }

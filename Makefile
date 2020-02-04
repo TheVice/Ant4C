@@ -22,8 +22,7 @@ hash.a: buffer.c.obj hash.c.obj hash.crc32.c.obj hash.blake2.c.obj hash.blake3.c
 	ar rcs hash.a buffer.c.obj hash.c.obj hash.crc32.c.obj hash.blake2.c.obj hash.blake3.c.obj hash.sha3.c.obj
 
 main.c.obj: main.c
-	cc -c main.c -o main.c.obj $(CFLAGS)
-.PHONY: main.c.obj
+	cc -c main.c -o main.c.obj
 
 main: hash.a main.c.obj
 	cc main.c.obj hash.a -o main
