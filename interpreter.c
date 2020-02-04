@@ -1425,6 +1425,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				break;
 			}
 
+			if (attributes_finish < element_finish)
 			{
 				struct buffer* environments = buffer_buffer_data(&task_arguments, task_attributes_count);
 

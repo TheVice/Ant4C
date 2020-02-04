@@ -31,7 +31,7 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 		 (UTF16LE != encoding) &&
 		 (UTF32 != encoding) &&
 		 (UTF32LE != encoding) &&
-		 (Binary != encoding)))
+		 (Default != encoding)))
 	{
 		return 0;
 	}
@@ -57,7 +57,7 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 		return 0;
 	}
 
-	if (Binary != encoding)
+	if (Default != encoding)
 	{
 		if (!buffer_append(content, NULL, 2 * sizeof(uint32_t)))
 		{
@@ -69,7 +69,7 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 	uint8_t returned = 0;
 	uint8_t* ptr = buffer_data(content, 0);
 
-	if (Binary != encoding)
+	if (Default != encoding)
 	{
 		while (returned != 2 * sizeof(uint32_t))
 		{
@@ -98,7 +98,7 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 		return 0;
 	}
 
-	if (Binary == encoding)
+	if (Default == encoding)
 	{
 		return 1;
 	}
