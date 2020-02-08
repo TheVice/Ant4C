@@ -28,6 +28,7 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/file_system.c"
             "${CMAKE_SOURCE_DIR}/file_system.h"
             "${CMAKE_SOURCE_DIR}/hash.blake2.c"
+            "${CMAKE_SOURCE_DIR}/hash.blake3.c"
             "${CMAKE_SOURCE_DIR}/hash.c"
             "${CMAKE_SOURCE_DIR}/hash.crc32.c"
             "${CMAKE_SOURCE_DIR}/hash.h"
