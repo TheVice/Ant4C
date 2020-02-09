@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -16,6 +16,7 @@
 #include "file_system.h"
 #include "math_unit.h"
 #include "operating_system.h"
+#include "hash.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -56,6 +57,7 @@ static const uint8_t* interpreter_string_enumeration_unit[] =
 	(const uint8_t*)"file",
 	(const uint8_t*)"fileversioninfo",
 #endif
+	(const uint8_t*)"hash",
 	(const uint8_t*)"int",
 	(const uint8_t*)"int64",
 	(const uint8_t*)"long",
@@ -88,6 +90,7 @@ enum interpreter_enumeration_unit
 	file_unit,
 	fileversioninfo_unit,
 #endif
+	hash_unit,
 	int_unit,
 	int64_unit,
 	long_unit,
@@ -475,6 +478,12 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 		case fileversioninfo_:
 			break;
 #endif
+
+		case hash_unit:
+			values_count = hash_algorithm_exec_function(
+							   hash_algorithm_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
+			break;
 
 		case int_unit:
 			values_count = int_exec_function(

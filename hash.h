@@ -48,4 +48,8 @@ uint8_t hash_algorithm_sha3_384(
 uint8_t hash_algorithm_sha3_512(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output);
 
+uint8_t hash_algorithm_get_function(const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* arguments,
+									 uint8_t arguments_count, struct buffer* output);
+
 #endif
