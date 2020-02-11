@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -12,7 +12,6 @@
 #include <wchar.h>
 #endif
 
-#include <stddef.h>
 #include <stdint.h>
 
 struct buffer;
@@ -23,6 +22,8 @@ uint8_t file_system_append_pre_root(const struct range* path, struct buffer* out
 uint8_t file_system_get_position_after_pre_root(struct range* path);
 #endif
 
+uint8_t directory_create(const uint8_t* path);
+uint8_t directory_delete(const uint8_t* path);
 #if defined(_WIN32)
 uint8_t directory_exists_wchar_t(const wchar_t* path);
 #endif
@@ -50,8 +51,8 @@ int64_t file_get_last_access_time(const uint8_t* path);
 int64_t file_get_last_access_time_utc(const uint8_t* path);
 int64_t file_get_last_write_time(const uint8_t* path);
 int64_t file_get_last_write_time_utc(const uint8_t* path);
-uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output);
 uint64_t file_get_length(const uint8_t* path);
+uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output);
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file);
 
 #endif

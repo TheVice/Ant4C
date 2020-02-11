@@ -3041,33 +3041,8 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>bytes-to-string('&#x1;&#x2;&#x3;&#x4;&#x5;') -> ${hash::bytes-to-string('&#x1;&#x2;&#x3;&#x4;&#x5;')}</code>
-      <output>bytes-to-string('&#x1;&#x2;&#x3;&#x4;&#x5;') -> 0102030405</output>
-      <return>1</return>
-    </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
-      <code>bytes-to-string('&#x6;&#x7;&#x8;&#x9;&#xa;') -> ${hash::bytes-to-string('&#x6;&#x7;&#x8;&#x9;&#xa;')}</code>
-      <output>bytes-to-string('&#x6;&#x7;&#x8;&#x9;&#xa;') -> 060708090a</output>
-      <return>1</return>
-    </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
-      <code>bytes-to-string('&#xb;&#xc;&#xd;&#xe;&#xf;') -> ${hash::bytes-to-string('&#xb;&#xc;&#xd;&#xe;&#xf;')}</code>
-      <output>bytes-to-string('&#xb;&#xc;&#xd;&#xe;&#xf;') -> 0b0c0d0e0f</output>
-      <return>1</return>
-    </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
-      <code>bytes-to-string('&#x10;&#x11;&#x12;&#x13;') -> ${hash::bytes-to-string('&#x10;&#x11;&#x12;&#x13;')}</code>
-      <output>bytes-to-string('&#x10;&#x11;&#x12;&#x13;') -> 10111213</output>
-      <return>1</return>
-    </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
-      <code>bytes-to-string('&#x18;&#x19;&#x1a;&#x1b;') -> ${hash::bytes-to-string('&#x14;&#x15;&#x16;&#x17;')}</code>
-      <output>bytes-to-string('&#x18;&#x19;&#x1a;&#x1b;') -> 14151617</output>
-      <return>1</return>
-    </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
-      <code>bytes-to-string('&#x18;&#x19;&#x1a;&#x1b;') -> ${hash::bytes-to-string('&#x18;&#x19;&#x1a;&#x1b;')}</code>
-      <output>bytes-to-string('&#x18;&#x19;&#x1a;&#x1b;') -> 18191a1b</output>
+      <code>bytes-to-string('&#x9;&#xa;&#xd;') -> ${hash::bytes-to-string('&#x9;&#xa;&#xd;')}</code>
+      <output>bytes-to-string('&#x9;&#xa;&#xd;') -> 090a0d</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>

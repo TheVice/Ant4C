@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -21,6 +21,7 @@
 #endif
 
 #include <stdio.h>
+#include <stddef.h>
 
 #if defined(_WIN32)
 #include <string.h>
@@ -30,6 +31,7 @@
 #define _POSIXSOURCE 1
 
 #include <dirent.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #endif
 
@@ -106,6 +108,17 @@ uint8_t file_system_get_position_after_pre_root(struct range* path)
 	return 1;
 }
 
+uint8_t directory_create_wchar_t(const wchar_t* path)
+{
+	/*return 0 != CreateDirectoryExW(%HOME%, path, NULL);*/
+	return 0 != CreateDirectoryW(path, NULL);
+}
+
+uint8_t directory_delete_wchar_t(const wchar_t* path)
+{
+	return 0 != RemoveDirectoryW(path);
+}
+
 uint8_t directory_exists_wchar_t(const wchar_t* path)
 {
 	if (NULL == path)
@@ -166,6 +179,58 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 	}
 
 #endif
+
+uint8_t directory_create(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = directory_create_wchar_t(buffer_wchar_t_data(&pathW, 0));
+	buffer_release(&pathW);
+	return returned;
+#else
+	static const mode_t mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
+	return 0 == mkdir((const char*)path, mode);
+#endif
+}
+
+uint8_t directory_delete(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = directory_delete_wchar_t(buffer_wchar_t_data(&pathW, 0));
+	buffer_release(&pathW);
+	return returned;
+#else
+	return 0 == rmdir((const char*)path);
+#endif
+}
+
 uint8_t directory_exists(const uint8_t* path)
 {
 	if (NULL == path)

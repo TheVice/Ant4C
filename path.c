@@ -457,7 +457,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 #if !defined(_WIN32)
 	int fd = -1;
 
-	if (!common_append_string_to_buffer((const uint8_t*)"/tmp/fileXXXXXX", temp_file_name) ||
+	if (!buffer_append_char(temp_file_name, "/tmp/fileXXXXXX", 15) ||
 		!buffer_push_back(temp_file_name, 0))
 	{
 		return 0;
@@ -471,7 +471,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 	}
 
 	close(fd);
-	return buffer_resize(temp_file_name, size + strlen(temp_file_path));
+	return buffer_resize(temp_file_name, size + 15);
 #else
 
 	if (!buffer_append_char(temp_file_name, NULL, L_tmpnam_s))
@@ -607,7 +607,7 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 
 	return buffer_resize(temp_path, size + range_size(&directory));
 #else
-	return common_append_string_to_buffer((const uint8_t*)"/tmp", temp_path);
+	return buffer_append_char(temp_path, "/tmp", 4);
 #endif
 }
 
