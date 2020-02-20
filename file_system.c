@@ -21,7 +21,6 @@
 #endif
 
 #include <stdio.h>
-#include <stddef.h>
 
 #if defined(_WIN32)
 #include <string.h>
@@ -76,6 +75,7 @@
 	}
 
 static const uint8_t* pre_root_path = (const uint8_t*)"\\\\?\\";
+static const wchar_t* pre_root_path_wchar_t = L"\\\\?\\";
 static const uint8_t pre_root_path_length = 4;
 
 uint8_t file_system_append_pre_root(const struct range* path, struct buffer* output)
@@ -150,7 +150,7 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 
 	if (path_is_path_rooted(path, path + length) &&
 		!string_starts_with(path, path + length, pre_root_path, pre_root_path + pre_root_path_length) &&
-		!buffer_append_wchar_t(pathW, L"\\\\?\\", 4))
+		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
 	{
 		return 0;
 	}
@@ -248,9 +248,9 @@ uint8_t directory_exists(const uint8_t* path)
 		return 0;
 	}
 
-	const uint8_t is_exists = directory_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
+	const uint8_t returned = directory_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
 	buffer_release(&pathW);
-	return is_exists;
+	return returned;
 #else
 	DIR* dir = opendir((const char*)path);
 
@@ -477,6 +477,43 @@ uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t*
 
 	return range_is_null_or_empty(parent);
 }
+
+#if defined(_WIN32)
+int32_t _file_fileno(void* stream)
+{
+	return _fileno(stream);
+}
+#endif
+uint8_t file_close(void* stream)
+{
+	return NULL != stream &&
+		   0 == fclose(stream);
+}
+
+uint8_t file_delete(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = (0 != DeleteFileW(buffer_wchar_t_data(&pathW, 0)));
+	buffer_release(&pathW);
+	return returned;
+#else
+	return 0 == remove((const char*)path);
+#endif
+}
 #if defined(_WIN32)
 uint8_t file_exists_wchar_t(const wchar_t* path)
 {
@@ -509,14 +546,35 @@ uint8_t file_exists(const uint8_t* path)
 		return 0;
 	}
 
-	const uint8_t is_exists = file_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
+	const uint8_t returned = file_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
 	buffer_release(&pathW);
-	return is_exists;
+	return returned;
 #else
 	struct stat file_status;
 	file_status.st_mode = 0;
 	return -1 != stat((const char*)path, &file_status) && (S_IFDIR != (file_status.st_mode & S_IFDIR));
 #endif
+}
+
+uint8_t file_fflush(void* stream)
+{
+	return NULL != stream && 0 == fflush(stream);
+}
+
+uint8_t file_fseek(void* stream, long offset, int32_t origin)
+{
+	return NULL != stream && 0 == fseek(stream, offset, origin);
+}
+
+long file_ftell(void* stream)
+{
+	return NULL == stream ? 0 : ftell(stream);
+}
+
+uint8_t file_fwrite(const void* content, const size_t size_of_content_element,
+					const size_t count_of_elements, void* stream)
+{
+	return count_of_elements == fwrite(content, size_of_content_element, count_of_elements, stream);
 }
 
 int64_t file_get_creation_time(const uint8_t* path)
@@ -654,14 +712,10 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 		return 0;
 	}
 
-	if (!file_open_wchar_t(buffer_wchar_t_data(&pathW, 0), (const wchar_t*)buffer_data(&pathW, size), output))
-	{
-		buffer_release(&pathW);
-		return 0;
-	}
-
+	const uint8_t returned =
+		file_open_wchar_t(buffer_wchar_t_data(&pathW, 0), (const wchar_t*)buffer_data(&pathW, size), output);
 	buffer_release(&pathW);
-	return 1;
+	return returned;
 #else
 #if __STDC_SEC_API__
 	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != (*output));
@@ -669,6 +723,22 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	(*output) = (void*)fopen((const char*)path, (const char*)mode);
 	return (NULL != (*output));
 #endif
+#endif
+}
+
+uint64_t file_read(void* stream, uint64_t size, void* output)
+{
+	if (NULL == stream ||
+		0 == size ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__ && defined(_MSC_VER)
+	return fread_s(output, (size_t)size, sizeof(uint8_t), (size_t)size, stream);
+#else
+	return fread(output, sizeof(uint8_t), (size_t)size, stream);
 #endif
 }
 
@@ -701,4 +771,137 @@ uint64_t file_get_length(const uint8_t* path)
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file)
 {
 	return file_get_last_write_time_utc(src_file) <= file_get_last_write_time_utc(target_file);
+}
+
+#define DELETE_DIR_POSITION		0
+#define DELETE_FILE_POSITION	1
+
+static const uint8_t* delete_attributes[] =
+{
+	(const uint8_t*)"dir",
+	(const uint8_t*)"file"
+};
+
+static const uint8_t delete_attributes_lengths[] = { 3, 4 };
+
+uint8_t delete_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   delete_attributes, delete_attributes_lengths,
+			   COUNT_OF(delete_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	if (NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	struct buffer* dir_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_DIR_POSITION);
+
+	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_FILE_POSITION);
+
+	/**/
+	const uint8_t* dir_ = NULL;
+
+	if (buffer_size(dir_path_in_buffer))
+	{
+		if (!buffer_push_back(dir_path_in_buffer, 0))
+		{
+			return 0;
+		}
+
+		dir_ = buffer_data(dir_path_in_buffer, 0);
+
+		if (file_exists(dir_))
+		{
+			return 0;
+		}
+	}
+
+	const uint8_t* file = NULL;
+
+	if (buffer_size(file_path_in_buffer))
+	{
+		if (!buffer_push_back(file_path_in_buffer, 0))
+		{
+			return 0;
+		}
+
+		file = buffer_data(file_path_in_buffer, 0);
+
+		if (directory_exists(file))
+		{
+			return 0;
+		}
+	}
+
+	if (NULL == dir_ && NULL == file)
+	{
+		return 0;
+	}
+
+	if (file && file_exists(file))
+	{
+		verbose = file_delete(file);
+	}
+	else
+	{
+		verbose = 1;
+	}
+
+	if (dir_ && directory_exists(dir_))
+	{
+		verbose = directory_delete(dir_) && verbose;
+	}
+
+	return verbose;
+}
+
+#define MKDIR_DIR_POSITION		0
+
+uint8_t mkdir_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   delete_attributes, delete_attributes_lengths, 1,
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	(void)verbose;
+
+	if (NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	struct buffer* dir_path_in_buffer = buffer_buffer_data(task_arguments, MKDIR_DIR_POSITION);
+
+	if (!buffer_size(dir_path_in_buffer))
+	{
+		return 0;
+	}
+
+	if (!buffer_push_back(dir_path_in_buffer, 0))
+	{
+		return 0;
+	}
+
+	const uint8_t* dir_ = buffer_data(dir_path_in_buffer, 0);
+
+	if (file_exists(dir_))
+	{
+		return 0;
+	}
+
+	return directory_create(dir_);
 }

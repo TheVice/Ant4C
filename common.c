@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -313,53 +313,12 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-/*uint8_t read_file(const uint8_t* file_path, struct buffer* content)
+void* common_get_output_stream()
 {
-	if (NULL == file_path || NULL == content)
-	{
-		return 0;
-	}
+	return stdout;
+}
 
-	FILE* file_stream = NULL;
-#if __STDC_SEC_API__
-
-	if (0 != fopen_s(&file_stream, (const char*)file_path, "rb") || NULL == file_stream)
-#else
-	if (NULL == (file_stream = fopen((const char*)file_path, "rb")))
-#endif
-	{
-		return 0;
-	}
-
-	uint8_t ret = 0;
-
-	if (0 == fseek(file_stream, 0, SEEK_END))
-	{
-		const long file_size = ftell(file_stream);
-
-		if (0 < file_size)
-		{
-			const ptrdiff_t size = buffer_size(content);
-
-			if (buffer_append(content, NULL, file_size))
-			{
-				uint8_t* ptr = buffer_data(content, size);
-
-				if (NULL != ptr && 0 == fseek(file_stream, 0, SEEK_SET))
-				{
-#if __STDC_SEC_API__ && defined(_MSC_VER)
-					ret = (file_size == (long)fread_s(ptr, file_size, sizeof(uint8_t),
-													  file_size, file_stream));
-#else
-					ret = (file_size == (long)fread(ptr, sizeof(uint8_t),
-													file_size, file_stream));
-#endif
-				}
-			}
-		}
-	}
-
-	fclose(file_stream);
-	file_stream = NULL;
-	return ret;
-}*/
+void* common_get_error_output_stream()
+{
+	return stderr;
+}

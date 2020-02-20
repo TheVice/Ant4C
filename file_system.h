@@ -12,6 +12,7 @@
 #include <wchar.h>
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 struct buffer;
@@ -42,9 +43,19 @@ uint8_t directory_get_parent_directory(
 	const uint8_t* path_start, const uint8_t* path_finish, struct range* parent);
 
 #if defined(_WIN32)
+int32_t _file_fileno(void* stream);
+#endif
+uint8_t file_close(void* stream);
+uint8_t file_delete(const uint8_t* path);
+#if defined(_WIN32)
 uint8_t file_exists_wchar_t(const wchar_t* path);
 #endif
 uint8_t file_exists(const uint8_t* path);
+uint8_t file_fflush(void* stream);
+uint8_t file_fseek(void* stream, long offset, int32_t origin);
+long file_ftell(void* stream);
+uint8_t file_fwrite(const void* content, const size_t size_of_content_element,
+					const size_t count_of_elements, void* stream);
 int64_t file_get_creation_time(const uint8_t* path);
 int64_t file_get_creation_time_utc(const uint8_t* path);
 int64_t file_get_last_access_time(const uint8_t* path);
@@ -53,6 +64,17 @@ int64_t file_get_last_write_time(const uint8_t* path);
 int64_t file_get_last_write_time_utc(const uint8_t* path);
 uint64_t file_get_length(const uint8_t* path);
 uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output);
+uint64_t file_read(void* stream, uint64_t size, void* output);
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file);
+
+uint8_t delete_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
+
+uint8_t mkdir_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
 
 #endif

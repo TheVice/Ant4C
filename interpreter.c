@@ -1187,8 +1187,8 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"copy",
 	(const uint8_t*)"csc",
 	(const uint8_t*)"delay-sign",
-	(const uint8_t*)"delete",
 #endif
+	(const uint8_t*)"delete",
 	(const uint8_t*)"description",
 	(const uint8_t*)"echo",
 	(const uint8_t*)"exec",
@@ -1210,7 +1210,9 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"mail",
 	(const uint8_t*)"mc",
 	(const uint8_t*)"midl",
+#endif
 	(const uint8_t*)"mkdir",
+#if TODO
 	(const uint8_t*)"move",
 	(const uint8_t*)"ndoc",
 	(const uint8_t*)"nunit2",
@@ -1264,8 +1266,8 @@ enum interpreter_task
 	copy_task,
 	csc_task,
 	delay_sign_task,
-	delete_task,
 #endif
+	delete_task,
 	description_task,
 	echo_task,
 	exec_task,
@@ -1287,7 +1289,9 @@ enum interpreter_task
 	mail_task,
 	mc_task,
 	midl_task,
+#endif
 	mkdir_task,
+#if 0
 	move_task,
 	ndoc_task,
 	nunit2_task,
@@ -1408,10 +1412,26 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case delay_sign_:
 			break;
-
-		case delete_:
-			break;
 #endif
+
+		case delete_task:
+			if (!delete_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = delete_evaluate_task(&task_arguments, verbose);
+			break;
 
 		case description_task:
 			/*TODO:*/
@@ -1531,9 +1551,27 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case midl_:
 			break;
+#endif
 
-		case mkdir_:
+		case mkdir_task:
+			if (!mkdir_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = mkdir_evaluate_task(&task_arguments, verbose);
 			break;
+#if 0
 
 		case move_:
 			break;

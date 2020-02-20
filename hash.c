@@ -29,6 +29,11 @@ uint8_t hash_algorithm_bytes_to_string(const uint8_t* start, const uint8_t* fini
 		return 0;
 	}
 
+	if (finish == start)
+	{
+		return 1;
+	}
+
 	ptrdiff_t size = buffer_size(output);
 
 	if (!buffer_append(output, NULL, 2 * (finish - start) + 2))
@@ -41,17 +46,10 @@ uint8_t hash_algorithm_bytes_to_string(const uint8_t* start, const uint8_t* fini
 
 	while (start < finish && size < max_size)
 	{
-		if ((*start) < 16)
-		{
-			(*ptr) = '0';
-			++ptr;
-			++size;
-		}
-
 #if __STDC_SEC_API__
-		const int32_t sz = sprintf_s(ptr, 3, "%x", *start);
+		const int32_t sz = sprintf_s(ptr, 3, (*start) < 16 ? "0%x" : "%x", *start);
 #else
-		const int32_t sz = sprintf(ptr, "%x", *start);
+		const int32_t sz = sprintf(ptr, (*start) < 16 ? "0%x" : "%x", *start);
 #endif
 		ptr += sz;
 		size += sz;
@@ -124,7 +122,11 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 	{
 		if (!common_get_two_arguments(arguments, &argument1, &argument2, 0))
 		{
-			argument1.start = argument1.finish = (const uint8_t*)&argument1;
+			if (range_is_null_or_empty(&argument1))
+			{
+				argument1.start = argument1.finish = (const uint8_t*)&argument1;
+			}
+
 			arguments_count = 1;
 		}
 	}
@@ -153,8 +155,6 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 		{
 			uint8_t order = 1;
 
-			/* "decreasing" 0
-			 * "increasing" 1 */
 			if (2 == arguments_count)
 			{
 				if (10 != range_size(&argument2))
@@ -162,8 +162,9 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 					break;
 				}
 
-				order = (0 == memcmp("decreasing", argument2.start, 10) ? 0 :
-						 (0 == memcmp("increasing", argument2.start, 10) ? 1 : 2));
+				order = argument2.start ?
+						(0 == memcmp("decreasing", argument2.start, 10) ? 0 :
+						 (0 == memcmp("increasing", argument2.start, 10) ? 1 : 2)) : 2;
 
 				if (1 < order)
 				{

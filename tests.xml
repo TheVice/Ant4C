@@ -827,6 +827,12 @@
       <return>1</return>
     </crc32>
     <crc32>
+      <input>123456789</input>
+      <return>1</return>
+      <increasing>2639f4cb</increasing>
+      <decreasing>cbf43926</decreasing>
+    </crc32>
+    <crc32>
       <input>The quick brown fox jumps over the lazy dog</input>
       <return>1</return>
       <increasing>39a34f41</increasing>
@@ -2938,7 +2944,7 @@
       <output>exists('copy') -> False </output>
       <output>exists('csc') -> False </output>
       <output>exists('delay-sign') -> False </output>
-      <output>exists('delete') -> False </output>
+      <output>exists('delete') -> True </output>
       <output>exists('description') -> True </output>
       <output>exists('echo') -> True </output>
       <output>exists('exec') -> True </output>
@@ -2959,7 +2965,7 @@
       <output>exists('mail') -> False </output>
       <output>exists('mc') -> False </output>
       <output>exists('midl') -> False </output>
-      <output>exists('mkdir') -> False </output>
+      <output>exists('mkdir') -> True </output>
       <output>exists('move') -> False </output>
       <output>exists('ndoc') -> False </output>
       <output>exists('nunit2') -> False </output>

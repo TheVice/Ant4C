@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -47,7 +47,8 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	uint8_t* task_attributes_count,
 	struct buffer* task_arguments);
 
-/*uint8_t read_file(const uint8_t* file_path, struct buffer* content);*/
+void* common_get_output_stream();
+void* common_get_error_output_stream();
 
 #define COUNT_OF(A) (sizeof(A) / sizeof(*(A)))
 

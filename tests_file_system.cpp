@@ -9,15 +9,15 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "date_time.h"
 #include "echo.h"
 #include "file_system.h"
 #include "hash.h"
 #include "path.h"
-#if defined(_WIN32)
+#include "project.h"
 #include "text_encoding.h"
-#endif
 };
 
 #include <cstdio>
@@ -32,36 +32,49 @@ class TestFileSystem : public TestsBaseXml
 {
 };
 
+uint8_t get_crc32_of(const int64_t input, buffer* output)
+{
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	const auto size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 4 * sizeof(uint32_t)))
+	{
+		return 0;
+	}
+
+	auto ptr = (const uint8_t*)&input;
+	auto out = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+
+	if (!hash_algorithm_crc32(ptr, ptr + sizeof(int64_t), out, 1))
+	{
+		return 0;
+	}
+
+	ptr = (const uint8_t*)out;
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	return hash_algorithm_bytes_to_string(ptr, ptr + sizeof(uint32_t), output);
+}
+
 TEST(TestFileSystem_, directory_create_and_delete)
 {
 	buffer path;
 	SET_NULL_TO_BUFFER(path);
 	//
-	const auto now = datetime_now_utc();
-	auto ptr = (const uint8_t*)&now;
-	ASSERT_TRUE(buffer_push_back_uint32(&path, 0)) << buffer_free(&path);
-	ASSERT_TRUE(hash_algorithm_crc32(ptr, ptr + sizeof(int64_t),
-									 buffer_uint32_data(&path, 0), 1)) << buffer_free(&path);
-	//
-	ASSERT_TRUE(buffer_append(&path, NULL, 2 * sizeof(uint32_t) + 2)) << buffer_free(&path);
-	ASSERT_TRUE(buffer_resize(&path, sizeof(uint32_t))) << buffer_free(&path);
-	ptr = buffer_data(&path, 0);
-	ASSERT_TRUE(hash_algorithm_bytes_to_string(ptr, ptr + sizeof(uint32_t), &path)) << buffer_free(&path);
-	//
-	char folder_name[8];
-	ptr = buffer_data(&path, sizeof(uint32_t));
-#if __STDC_SEC_API__
-	ASSERT_EQ(0, memcpy_s(folder_name, 8, ptr, 8)) << buffer_free(&path);
-#else
-	memcpy(folder_name, ptr, 8);
-#endif
-	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
 	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
-	ASSERT_TRUE(buffer_append_char(&path, folder_name, 8)) << buffer_free(&path);
+	ASSERT_TRUE(get_crc32_of(datetime_now_utc(), &path)) << buffer_free(&path);
 	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
-	ptr = buffer_data(&path, 0);
+	const auto ptr = buffer_data(&path, 0);
 	ASSERT_FALSE(directory_exists(ptr)) << ptr << std::endl << buffer_free(&path);
 	ASSERT_TRUE(directory_create(ptr)) << ptr << std::endl << buffer_free(&path);
 	ASSERT_TRUE(directory_exists(ptr)) << ptr << std::endl << buffer_free(&path);

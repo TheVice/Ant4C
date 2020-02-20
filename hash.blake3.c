@@ -400,7 +400,9 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 
 		length -= to_process;
 		return 0 == length;
-		/*NOTE: Requested test case for commented code, if such even exists.
+#if 0
+
+		/*NOTE: Requested test case for commented code, if such even exists.*/
 		if (0 == length)
 		{
 			return 1;
@@ -419,9 +421,12 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 			return 0;
 		}
 
+		/**/
 #if __STDC_SEC_API__
+		/**/
 		PUSH_CHUNK_TO_STACK_SEC(h, stack, *stack_length);
 #else
+		/**/
 		PUSH_CHUNK_TO_STACK(h, stack, *stack_length);
 #endif
 #if __STDC_SEC_API__
@@ -432,12 +437,14 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 		}
 
 #else
+		/**/
 		memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
 #endif
 		t[0] += 1;
 		(*compressed) = 0;
 		memset(m, 0, BLAKE3_BLOCK_LENGTH);
-		(*l) = 0;*/
+		(*l) = 0;
+#endif
 	}
 
 	uint8_t number_of_chunks = 0;

@@ -9,34 +9,14 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "file_system.h"
 #include "range.h"
 #include "text_encoding.h"
-
-#include <stdio.h>
 
 #if defined(_WIN32)
 #include <io.h>
 #include <fcntl.h>
 #include <wchar.h>
-#if defined(_MSC_VER)
-#include <sdkddkver.h>
-#if NOTE
-#if _WIN32_WINNT == 0x0603
-#pragma message(__FILE__ " The function '_setmode' from '\\Microsoft Visual Studio 12.0\\' have known issue.")
-
-At 'Microsoft Visual Studio 12.0' or at kits from this version
-function '_setmode' have an issue,
-
-so echo will failed for non Default or ASCII encoding according to line 186 of file
-'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\crt\\src\\_flsbuf.c'
-where 'charcount = sizeof(TCHAR)' and TCHAR always equal to char.
-
-Echo task direct will fail at assert of file
-'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\crt\\src\\write.c'
-on line 116 with code '_VALIDATE_CLEAR_OSSERR_RETURN(((cnt & 1) == 0), EINVAL, -1)'.
-#endif
-#endif
-#endif
 #endif
 
 #if !defined(__STDC_SEC_API__)
@@ -99,28 +79,15 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	}
 
 	uint8_t result = 0;
-	FILE* file_stream = NULL;
+	void* file_stream = NULL;
 
 	if (NULL != file)
 	{
-#if 0
-#if __STDC_SEC_API__
-		result = (0 == _wfopen_s(&file_stream, fileW, append ? L"ab" : L"wb") && NULL != file_stream);
-#else
-		file_stream = _wfopen(fileW, append ? L"ab" : L"wb");
-		result = (NULL != file_stream);
-#endif
-#endif
-#if __STDC_SEC_API__
-		result = (0 == fopen_s(&file_stream, (const char*)file, append ? "ab" : "wb") && NULL != file_stream);
-#else
-		file_stream = fopen((const char*)file, append ? "ab" : "wb");
-		result = (NULL != file_stream);
-#endif
+		result = file_open(file, append ? (const uint8_t*)"ab" : (const uint8_t*)"wb", &file_stream);
 	}
 	else
 	{
-		file_stream = (Error != level) ? stdout : stderr;
+		file_stream = (Error != level) ? common_get_output_stream() : common_get_error_output_stream();
 
 		if (NoLevel == level)
 		{
@@ -128,8 +95,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 		else
 		{
-			result = (echo_labels_lengths[level] == fwrite(echo_labels[level], sizeof(uint8_t),
-					  echo_labels_lengths[level], file_stream));
+			result = file_fwrite(echo_labels[level], sizeof(uint8_t), echo_labels_lengths[level], file_stream);
 		}
 	}
 
@@ -141,9 +107,6 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	if (NULL != message && 0 < message_length)
 	{
 #if defined(_WIN32)
-#if defined(_MSC_VER) && _WIN32_WINNT == 0x0603
-		(void)encoding;
-#else
 		struct buffer new_message;
 		SET_NULL_TO_BUFFER(new_message);
 		int mode = 0;
@@ -155,37 +118,34 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 				return 0;
 			}
 
-			result = (0 == fflush(file_stream));
+			result = file_fflush(file_stream);
 
 			if (result)
 			{
-				mode = _setmode(_fileno(file_stream), _O_U8TEXT);
+				mode = _setmode(_file_fileno(file_stream), _O_U8TEXT);
 				message = buffer_data(&new_message, 0);
 				message_length = buffer_size(&new_message);
 			}
 		}
 
 #endif
-#endif
 
 		if (result)
 		{
-			result = (message_length == (ptrdiff_t)fwrite(message, sizeof(uint8_t), message_length, file_stream));
+			result = file_fwrite(message, sizeof(uint8_t), message_length, file_stream);
 		}
 
 #if defined(_WIN32)
-#if defined(_MSC_VER) && _WIN32_WINNT == 0x0603
-#else
 
 		if (0 < mode)
 		{
 			uint8_t previous_result = result;
-			result = (0 == fflush(file_stream));
+			result = file_fflush(file_stream);
 			previous_result = previous_result & result;
 #if defined(_MSC_VER)
-			result = (_O_U8TEXT == _setmode(_fileno(file_stream), mode));
+			result = (_O_U8TEXT == _setmode(_file_fileno(file_stream), mode));
 #else
-			mode = _setmode(_fileno(file_stream), mode);
+			mode = _setmode(_file_fileno(file_stream), mode);
 			result = (_O_U8TEXT == mode || -1 != mode);
 #endif
 			result = result & previous_result;
@@ -193,17 +153,16 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 
 		buffer_release(&new_message);
 #endif
-#endif
 	}
 
 	if (NULL != file)
 	{
-		const uint8_t previous_result = (0 == fclose(file_stream));
+		const uint8_t previous_result = file_close(file_stream);
 		result = result && previous_result;
 	}
 	else if (result && new_line)
 	{
-		result = result && (1 == fwrite("\n", sizeof(uint8_t), 1, file_stream));
+		result = result && file_fwrite("\n", sizeof(uint8_t), 1, file_stream);
 	}
 
 	file_stream = NULL;
