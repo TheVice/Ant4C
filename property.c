@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -306,18 +306,16 @@ static const uint8_t* property_attributes[] =
 	(const uint8_t*)"name",
 	(const uint8_t*)"overwrite",
 	(const uint8_t*)"readonly",
-	(const uint8_t*)"verbose",
 	(const uint8_t*)"value"
 };
 
-static const uint8_t property_attributes_lengths[] = { 7, 4, 9, 8, 7, 5 };
+static const uint8_t property_attributes_lengths[] = { 7, 4, 9, 8, 5 };
 
 #define DYNAMIC_POSITION		0
 #define NAME_POSITION			1
 #define OVERWRITE_POSITION		2
 #define READONLY_POSITION		3
-#define VERBOSE_POSITION		4
-#define VALUE_POSITION			5
+#define VALUE_POSITION			4
 
 uint8_t property_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
@@ -348,7 +346,6 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 	const struct buffer* dynamic_in_buffer = buffer_buffer_data(task_arguments, DYNAMIC_POSITION);
 	const struct buffer* overwrite_in_buffer = buffer_buffer_data(task_arguments, OVERWRITE_POSITION);
 	const struct buffer* readonly_in_buffer = buffer_buffer_data(task_arguments, READONLY_POSITION);
-	const struct buffer* verbose_in_buffer = buffer_buffer_data(task_arguments, VERBOSE_POSITION);
 	/**/
 	uint8_t dynamic = 0;
 
@@ -374,19 +371,11 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 		return 0;
 	}
 
-	uint8_t local_verbose = 0;
-
-	if (buffer_size(verbose_in_buffer) &&
-		!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &local_verbose))
-	{
-		return 0;
-	}
-
 	return project_property_set_value(
 			   project,
 			   buffer_data(name, 0), (uint8_t)buffer_size(name),
 			   buffer_data(value, 0), buffer_size(value),
-			   dynamic, overwrite, readonly, MAX(local_verbose, verbose));
+			   dynamic, overwrite, readonly, verbose);
 }
 
 uint8_t property_add_at_project(void* project, const struct buffer* properties, uint8_t verbose)

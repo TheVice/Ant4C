@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -465,11 +465,11 @@ uint8_t exec_posix_no_redirect(
 	{
 		if (NULL != working_dir && -1 == chdir(working_dir))
 		{
-			return 0;
+			return 0;/*TODO:*/
 		}
 
 		NULL == env ? execv(program, cmd) : execve(program, cmd, env);
-		return 0;
+		return 0;/*TODO: exit EXIT_SUCCESS*/
 	}
 
 	return 1;
@@ -512,11 +512,11 @@ uint8_t exec_posix_with_redirect(
 
 		if (NULL != working_dir && -1 == chdir(working_dir))
 		{
-			return 0;
+			return 0;/*TODO:*/
 		}
 
 		NULL == env ? execv(program, cmd) : execve(program, cmd, env);
-		return 0;
+		return 0;/*TODO: exit EXIT_SUCCESS*/
 	}
 
 	close(file_des[1]);
@@ -715,13 +715,12 @@ static const uint8_t* exec_attributes[] =
 	(const uint8_t*)"resultproperty",
 	(const uint8_t*)"spawn",
 	(const uint8_t*)"workingdir",
-	(const uint8_t*)"timeout",
-	(const uint8_t*)"verbose"
+	(const uint8_t*)"timeout"
 };
 
 static const uint8_t exec_attributes_lengths[] =
 {
-	7, 6, 7, 11, 6, 11, 14, 5, 10, 7, 7
+	7, 6, 7, 11, 6, 11, 14, 5, 10, 7
 };
 
 #define PROGRAM_POSITION			0
@@ -734,8 +733,7 @@ static const uint8_t exec_attributes_lengths[] =
 #define SPAWN_POSITION				7
 #define WORKING_DIR_POSITION		8
 #define TIME_OUT_POSITION			9
-#define VERBOSE_POSITION			10
-#define ENVIRONMENT_POSITION		11
+#define ENVIRONMENT_POSITION		10
 
 #define ATTRIBUTES_COUNT	(ENVIRONMENT_POSITION + 1)
 
@@ -791,7 +789,6 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 	const struct buffer* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
 	struct buffer* working_dir_in_a_buffer = buffer_buffer_data(task_arguments, WORKING_DIR_POSITION);
 	struct buffer* time_out_in_a_buffer = buffer_buffer_data(task_arguments, TIME_OUT_POSITION);
-	const struct buffer* verbose_in_a_buffer = buffer_buffer_data(task_arguments, VERBOSE_POSITION);
 	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
 
 	if (!buffer_size(program_path_in_a_buffer))
@@ -939,17 +936,6 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		time_out = (uint64_t)data;
 	}
 
-	uint8_t local_verbose = 0;
-
-	if (buffer_size(verbose_in_a_buffer))
-	{
-		if (!bool_parse(buffer_data(verbose_in_a_buffer, 0),
-						buffer_size(verbose_in_a_buffer), &local_verbose))
-		{
-			return 0;
-		}
-	}
-
 	struct range environment_variables;
 
 	if (buffer_size(environment_in_a_buffer))
@@ -963,5 +949,5 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 	}
 
 	return exec(append, &program, &base_directory, &command_line, &output_file, pid_property, result_property,
-				&working_directory, &environment_variables, spawn, (uint32_t)time_out, MAX(local_verbose, verbose));
+				&working_directory, &environment_variables, spawn, (uint32_t)time_out, verbose);
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -53,11 +53,10 @@ static const uint8_t* echo_attributes[] =
 	(const uint8_t*)"encoding",
 	(const uint8_t*)"file",
 	(const uint8_t*)"level",
-	(const uint8_t*)"verbose",
 	(const uint8_t*)"message"
 };
 
-static const uint8_t echo_attributes_lengths[] = { 6, 8, 4, 5, 7, 7 };
+static const uint8_t echo_attributes_lengths[] = { 6, 8, 4, 5, 7 };
 
 static const uint8_t* echo_levels[] =
 {
@@ -217,8 +216,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 #define ENCODING_POSITION		1
 #define FILE_POSITION			2
 #define LEVEL_POSITION			3
-#define VERBOSE_POSITION		4
-#define MESSAGE_POSITION		5
+#define MESSAGE_POSITION		4
 
 uint8_t echo_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
@@ -248,7 +246,6 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
 	const struct buffer* level_in_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
 	const struct buffer* message_in_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
-	const struct buffer* verbose_in_buffer = buffer_buffer_data(task_arguments, VERBOSE_POSITION);
 	/**/
 	uint8_t append = 0;
 
@@ -303,13 +300,5 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 
 	uint8_t new_line = 1;
-	uint8_t local_verbose = 0;
-
-	if (buffer_size(verbose_in_buffer) &&
-		!bool_parse(buffer_data(verbose_in_buffer, 0), buffer_size(verbose_in_buffer), &local_verbose))
-	{
-		return 0;
-	}
-
-	return echo(append, encoding, file, level, message, message_length, new_line, MAX(local_verbose, verbose));
+	return echo(append, encoding, file, level, message, message_length, new_line, verbose);
 }

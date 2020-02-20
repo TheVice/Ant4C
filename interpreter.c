@@ -760,8 +760,10 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	};
 	/**/
 	static const uint8_t bool_values_to_pass[] = { 1, 0 };
+	/**/
+	static const uint8_t count_of_attributes = 2;
 
-	if (range_in_parts_is_null_or_empty(start_of_attributes, finish_of_attributes) || NULL == skip)
+	if (NULL == skip)
 	{
 		return 0;
 	}
@@ -770,19 +772,19 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	struct buffer attributes;
 	SET_NULL_TO_BUFFER(attributes);
 
-	if (!buffer_append_buffer(&attributes, NULL, COUNT_OF(bool_values_to_pass)))
+	if (!buffer_append_buffer(&attributes, NULL, count_of_attributes))
 	{
 		buffer_release_with_inner_buffers(&attributes);
 		return 0;
 	}
 
-	for (uint8_t i = 0, count = COUNT_OF(bool_values_to_pass); i < count; ++i)
+	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
 		struct buffer* attribute = buffer_buffer_data(&attributes, i);
 		SET_NULL_TO_BUFFER(*attribute);
 	}
 
-	for (uint8_t i = 0, count = COUNT_OF(bool_values_to_pass); i < count; ++i)
+	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
 		struct buffer* attribute = buffer_buffer_data(&attributes, i);
 
@@ -795,13 +797,13 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 
 	if (!interpreter_get_arguments_from_xml_tag_record(
 			project, target, start_of_attributes, finish_of_attributes,
-			if_and_unless, if_and_unless_lengths, 0, COUNT_OF(if_and_unless_lengths), &attributes))
+			if_and_unless, if_and_unless_lengths, 0, count_of_attributes, &attributes))
 	{
 		buffer_release_with_inner_buffers(&attributes);
 		return 0;
 	}
 
-	for (uint8_t i = 0, count = COUNT_OF(bool_values_to_pass); i < count; ++i)
+	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
 		const struct buffer* attribute = buffer_buffer_data(&attributes, i);
 		uint8_t bool_value = 0;
@@ -827,52 +829,82 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	return 1;
 }
 
-uint8_t interpreter_get_xml_tag_get_fail_on_error_value(
+uint8_t interpreter_get_xml_tag_attribute_values(
 	const void* project,
 	const void* target,
 	const uint8_t* start_of_attributes,
 	const uint8_t* finish_of_attributes,
-	uint8_t* fail_on_error)
+	uint8_t* fail_on_error,
+	uint8_t* verbose)
 {
-	static const uint8_t* fail_on_error_str = (const uint8_t*)"failonerror";
-	static const uint8_t fail_on_error_length = 11;
+	static const uint8_t* attributes[] =
+	{
+		(const uint8_t*)"failonerror",
+		(const uint8_t*)"verbose"
+	};
+	/**/
+	static const uint8_t attributes_lengths[] =
+	{
+		11, 7
+	};
 
-	if (range_in_parts_is_null_or_empty(start_of_attributes, finish_of_attributes) || NULL == fail_on_error)
+	if (NULL == fail_on_error || NULL == verbose)
 	{
 		return 0;
 	}
 
-	struct buffer fail_on_error_in_buffer;
+	const uint8_t count_of_attributes = (0 == (*verbose) ? 2 : 1);
+	/*TODO: can be from outside.*/
+	struct buffer values;
+	SET_NULL_TO_BUFFER(values);
 
-	SET_NULL_TO_BUFFER(fail_on_error_in_buffer);
+	if (!buffer_append_buffer(&values, NULL, count_of_attributes))
+	{
+		buffer_release(&values);
+		return 0;
+	}
 
+	ptrdiff_t i = 0;
 	struct buffer* ptr = NULL;
 
-	if (!buffer_append_buffer(&fail_on_error_in_buffer, NULL, 1) ||
-		NULL == (ptr = buffer_buffer_data(&fail_on_error_in_buffer, 0)))
+	while (NULL != (ptr = buffer_buffer_data(&values, i++)))
 	{
-		buffer_release(&fail_on_error_in_buffer);
-		return 0;
+		SET_NULL_TO_BUFFER(*ptr);
 	}
 
-	SET_NULL_TO_BUFFER(*ptr);
+	if (count_of_attributes != i - 1)
+	{
+		buffer_release(&values);
+		return 0;
+	}
 
 	if (!interpreter_get_arguments_from_xml_tag_record(project, target, start_of_attributes, finish_of_attributes,
-			&fail_on_error_str, &fail_on_error_length, 0, 1, &fail_on_error_in_buffer))
+			attributes, attributes_lengths, 0, count_of_attributes, &values))
 	{
-		buffer_release_with_inner_buffers(&fail_on_error_in_buffer);
+		buffer_release_with_inner_buffers(&values);
 		return 0;
 	}
 
-	if (buffer_size(ptr) &&
-		!bool_parse(buffer_data(ptr, 0),
-					buffer_size(ptr), fail_on_error))
+	uint8_t* outputs[2];
+	outputs[0] = fail_on_error;
+	outputs[1] = verbose;
+	i = 0;
+
+	while (NULL != (ptr = buffer_buffer_data(&values, i++)))
 	{
-		buffer_release_with_inner_buffers(&fail_on_error_in_buffer);
-		return 0;
+		if (!buffer_size(ptr))
+		{
+			continue;
+		}
+
+		if (!bool_parse(buffer_data(ptr, 0), buffer_size(ptr), outputs[i - 1]))
+		{
+			buffer_release_with_inner_buffers(&values);
+			return 0;
+		}
 	}
 
-	buffer_release_with_inner_buffers(&fail_on_error_in_buffer);
+	buffer_release_with_inner_buffers(&values);
 	return 1;
 }
 
@@ -1311,28 +1343,28 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 		return 0;
 	}
 
+	uint8_t fail_on_error = 1;
 	uint8_t task_attributes_count = 0;
 	const uint8_t* attributes_finish = xml_get_tag_finish_pos(attributes_start, element_finish);
 
-	if (!range_in_parts_is_null_or_empty(attributes_start, attributes_finish) &&
-		!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-			project, target, attributes_start, attributes_finish, &task_attributes_count))
+	if (!range_in_parts_is_null_or_empty(attributes_start, attributes_finish))
 	{
-		return 0;
-	}
+		if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
+				project, target, attributes_start, attributes_finish, &task_attributes_count))
+		{
+			return 0;
+		}
 
-	if (task_attributes_count)
-	{
-		return 1;
-	}
+		if (task_attributes_count)
+		{
+			return 1;
+		}
 
-	uint8_t fail_on_error = 1;
-
-	if (!range_in_parts_is_null_or_empty(attributes_start, attributes_finish) &&
-		!interpreter_get_xml_tag_get_fail_on_error_value(
-			project, target, attributes_start, attributes_finish, &fail_on_error))
-	{
-		return 0;
+		if (!interpreter_get_xml_tag_attribute_values(
+				project, target, attributes_start, attributes_finish, &fail_on_error, &verbose))
+		{
+			return 0;
+		}
 	}
 
 	struct buffer task_arguments;
@@ -1717,8 +1749,8 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 	{
 		if (!echo(0, Default, NULL, Warning,
 				  (const uint8_t*)
-				  "[interpreter] task was failed. However evaluation of script continue as requested at 'fail on error' attribute.",
-				  111,
+				  "[interpreter]: task was failed. However evaluation of script continue as requested at 'fail on error' attribute.",
+				  112,
 				  1, verbose))
 		{
 			return 0;
