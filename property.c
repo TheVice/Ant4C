@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "load_file.h"
 #include "project.h"
 #include "range.h"
 
@@ -24,7 +25,7 @@ struct property
 	uint8_t name_length;
 	struct buffer value;
 	uint8_t dynamic;
-	uint8_t readonly;
+	uint8_t read_only;
 };
 
 uint8_t buffer_append_property(struct buffer* properties, const struct property* data, ptrdiff_t data_count)
@@ -71,7 +72,7 @@ uint8_t property_new(struct buffer* properties,
 					 uint8_t property_name_length,
 					 const void* value, ptrdiff_t value_length,
 					 enum data_type type_of_value,
-					 uint8_t dynamic, uint8_t readonly, uint8_t verbose)
+					 uint8_t dynamic, uint8_t read_only, uint8_t verbose)
 {
 	if (NULL == properties ||
 		!property_is_name_valid(property_name, property_name_length))
@@ -93,34 +94,16 @@ uint8_t property_new(struct buffer* properties,
 	the_property.name[property_name_length] = '\0';
 	the_property.name_length = property_name_length;
 	SET_NULL_TO_BUFFER(the_property.value);
-	the_property.dynamic = the_property.readonly = 0;
+	the_property.dynamic = the_property.read_only = 0;
 
 	if (!property_set_by_pointer(&the_property, value, value_length, type_of_value, dynamic,
-								 readonly, verbose))
+								 read_only, verbose))
 	{
 		buffer_release(&the_property.value);
 		return 0;
 	}
 
 	return buffer_append_property(properties, &the_property, 1);
-}
-
-uint8_t property_get_by_name(const void* project, const uint8_t* property_name, uint8_t property_name_length,
-							 struct buffer* output)
-{
-	if (NULL == output)
-	{
-		return 0;
-	}
-
-	void* the_property = NULL;
-
-	if (!project_property_exists(project, property_name, property_name_length, &the_property))
-	{
-		return 0;
-	}
-
-	return property_get_by_pointer(the_property, output);
 }
 
 uint8_t property_get_by_pointer(const void* the_property, struct buffer* output)
@@ -192,16 +175,16 @@ uint8_t property_is_dynamic(const void* the_property, uint8_t* is_dynamic)
 	return 1;
 }
 
-uint8_t property_is_readonly(const void* the_property, uint8_t* is_readonly)
+uint8_t property_is_readonly(const void* the_property, uint8_t* is_read_only)
 {
 	if (NULL == the_property ||
-		NULL == is_readonly)
+		NULL == is_read_only)
 	{
 		return 0;
 	}
 
 	const struct property* prop = (const struct property*)the_property;
-	*is_readonly = prop->readonly;
+	*is_read_only = prop->read_only;
 	return 1;
 }
 
@@ -209,8 +192,8 @@ uint8_t property_set_by_name(struct buffer* properties,
 							 const uint8_t* name, uint8_t name_length,
 							 const uint8_t* value, ptrdiff_t value_length,
 							 enum data_type type_of_value,
-							 uint8_t dynamic, uint8_t overwrite,
-							 uint8_t readonly, uint8_t verbose)
+							 uint8_t dynamic, uint8_t over_write,
+							 uint8_t read_only, uint8_t verbose)
 {
 	struct property* prop = NULL;
 
@@ -223,25 +206,25 @@ uint8_t property_set_by_name(struct buffer* properties,
 
 	if (property_exists(properties, name, name_length, (void**)&prop))
 	{
-		if (!overwrite)
+		if (!over_write)
 		{
 			return 1;
 		}
 
 		return property_set_by_pointer(prop,
 									   value, value_length, type_of_value,
-									   dynamic, readonly, verbose);
+									   dynamic, read_only, verbose);
 	}
 
 	return property_new(properties, name, name_length,
 						value, value_length, type_of_value,
-						dynamic, readonly, verbose);
+						dynamic, read_only, verbose);
 }
 
 uint8_t property_set_by_pointer(void* the_property,
 								const void* value, ptrdiff_t value_length,
 								enum data_type type_of_value,
-								uint8_t dynamic, uint8_t readonly, uint8_t verbose)
+								uint8_t dynamic, uint8_t read_only, uint8_t verbose)
 {
 	if (NULL == the_property ||
 		NULL == value)
@@ -252,7 +235,7 @@ uint8_t property_set_by_pointer(void* the_property,
 	(void)verbose;/*TODO: */
 	struct property* prop = (struct property*)the_property;
 
-	if (prop->readonly)
+	if (prop->read_only)
 	{
 		return 0;
 	}
@@ -296,7 +279,41 @@ uint8_t property_set_by_pointer(void* the_property,
 	}
 
 	prop->dynamic = 0 < dynamic;
-	prop->readonly = 0 < readonly;
+	prop->read_only = 0 < read_only;
+	return 1;
+}
+
+uint8_t property_set_from_file(
+	void* the_property,
+	const uint8_t* file_name, uint16_t encoding,
+	uint8_t dynamic, uint8_t read_only, uint8_t verbose)
+{
+	if (NULL == the_property ||
+		NULL == file_name)
+	{
+		return 0;
+	}
+
+	(void)verbose;/*TODO: */
+	struct property* prop = (struct property*)the_property;
+
+	if (prop->read_only)
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(&prop->value, 0))
+	{
+		return 0;
+	}
+
+	if (!load_file_to_buffer(file_name, encoding, &prop->value, verbose))
+	{
+		return 0;
+	}
+
+	prop->dynamic = 0 < dynamic;
+	prop->read_only = 0 < read_only;
 	return 1;
 }
 
@@ -313,8 +330,8 @@ static const uint8_t property_attributes_lengths[] = { 7, 4, 9, 8, 5 };
 
 #define DYNAMIC_POSITION		0
 #define NAME_POSITION			1
-#define OVERWRITE_POSITION		2
-#define READONLY_POSITION		3
+#define OVER_WRITE_POSITION		2
+#define READ_ONLY_POSITION		3
 #define VALUE_POSITION			4
 
 uint8_t property_get_attributes_and_arguments_for_task(
@@ -344,8 +361,8 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 
 	const struct buffer* value = buffer_buffer_data(task_arguments, VALUE_POSITION);
 	const struct buffer* dynamic_in_buffer = buffer_buffer_data(task_arguments, DYNAMIC_POSITION);
-	const struct buffer* overwrite_in_buffer = buffer_buffer_data(task_arguments, OVERWRITE_POSITION);
-	const struct buffer* readonly_in_buffer = buffer_buffer_data(task_arguments, READONLY_POSITION);
+	const struct buffer* over_write_in_buffer = buffer_buffer_data(task_arguments, OVER_WRITE_POSITION);
+	const struct buffer* read_only_in_buffer = buffer_buffer_data(task_arguments, READ_ONLY_POSITION);
 	/**/
 	uint8_t dynamic = 0;
 
@@ -355,18 +372,18 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 		return 0;
 	}
 
-	uint8_t overwrite = 1;
+	uint8_t over_write = 1;
 
-	if (buffer_size(overwrite_in_buffer) &&
-		!bool_parse(buffer_data(overwrite_in_buffer, 0), buffer_size(overwrite_in_buffer), &overwrite))
+	if (buffer_size(over_write_in_buffer) &&
+		!bool_parse(buffer_data(over_write_in_buffer, 0), buffer_size(over_write_in_buffer), &over_write))
 	{
 		return 0;
 	}
 
-	uint8_t readonly = 0;
+	uint8_t read_only = 0;
 
-	if (buffer_size(readonly_in_buffer) &&
-		!bool_parse(buffer_data(readonly_in_buffer, 0), buffer_size(readonly_in_buffer), &readonly))
+	if (buffer_size(read_only_in_buffer) &&
+		!bool_parse(buffer_data(read_only_in_buffer, 0), buffer_size(read_only_in_buffer), &read_only))
 	{
 		return 0;
 	}
@@ -375,7 +392,7 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 			   project,
 			   buffer_data(name, 0), (uint8_t)buffer_size(name),
 			   buffer_data(value, 0), buffer_size(value),
-			   dynamic, overwrite, readonly, verbose);
+			   dynamic, over_write, read_only, verbose);
 }
 
 uint8_t property_add_at_project(void* project, const struct buffer* properties, uint8_t verbose)
@@ -385,7 +402,7 @@ uint8_t property_add_at_project(void* project, const struct buffer* properties, 
 		return 0;
 	}
 
-	static const uint8_t overwrite = 1;
+	static const uint8_t over_write = 1;
 	ptrdiff_t i = 0;
 	struct property* prop = NULL;
 
@@ -395,7 +412,7 @@ uint8_t property_add_at_project(void* project, const struct buffer* properties, 
 
 		if (!project_property_set_value(project, prop->name, prop->name_length,
 										value, buffer_size(&prop->value), prop->dynamic,
-										overwrite, prop->readonly, verbose))
+										over_write, prop->read_only, verbose))
 		{
 			return 0;
 		}
@@ -436,7 +453,7 @@ uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_fin
 }
 
 uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
-							   uint8_t arguments_count, const void** the_property, struct buffer* output)
+							   uint8_t arguments_count, const void** the_property, struct buffer* output, uint8_t verbose)
 {
 	if (PROPERTY_UNKNOWN_FUNCTION <= function ||
 		NULL == arguments ||
@@ -456,7 +473,7 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 
 	void* non_const_prop = NULL;
 	const uint8_t is_exists = project_property_exists(project,
-							  argument.start, (uint8_t)range_size(&argument), &non_const_prop);
+							  argument.start, (uint8_t)range_size(&argument), &non_const_prop, verbose);
 	(*the_property) = is_exists ? non_const_prop : NULL;
 	const struct property* prop = (const struct property*)(*the_property);
 
@@ -477,7 +494,7 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 			return NULL != prop && bool_to_string(prop->dynamic, output);
 
 		case property_is_readonly_function:
-			return NULL != prop && bool_to_string(prop->readonly, output);
+			return NULL != prop && bool_to_string(prop->read_only, output);
 
 		case PROPERTY_UNKNOWN_FUNCTION:
 		default:

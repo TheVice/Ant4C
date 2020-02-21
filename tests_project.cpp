@@ -26,7 +26,7 @@ class TestProject : public TestsBaseXml
 TEST(TestProject_, project_new)
 {
 	static const uint8_t expected_return = 0;
-	static const uint8_t verbose = 0;
+	static const uint8_t verbose = 0;/*TODO*/
 	//
 	void* project = NULL;
 	ASSERT_TRUE(project_new(&project));
@@ -59,7 +59,7 @@ TEST(TestProject_, project_new)
 	//
 	void* the_non_const_property = NULL;
 	ASSERT_FALSE(project_property_exists(project, (const uint8_t*)"program.version", 15,
-										 &the_non_const_property));
+										 &the_non_const_property, verbose));
 	ASSERT_EQ(nullptr, the_non_const_property);
 	//
 	ASSERT_TRUE(project_property_set_value(project,
@@ -68,7 +68,7 @@ TEST(TestProject_, project_new)
 										   0, 0, 1, verbose));
 	//
 	ASSERT_TRUE(project_property_exists(project, (const uint8_t*)"program.version", 15,
-										&the_non_const_property));
+										&the_non_const_property, verbose));
 	ASSERT_NE(nullptr, the_non_const_property);
 	the_property = NULL;
 	the_non_const_property = NULL;

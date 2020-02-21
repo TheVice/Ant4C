@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -20,9 +20,12 @@ enum FileEncoding
 
 struct buffer;
 
-uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_t encoding, uint8_t verbose);
-uint8_t load_file(const uint8_t* path, void* the_property, uint16_t encoding, uint8_t verbose);
-
+uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffer* output, uint8_t verbose);
 uint16_t load_file_get_file_encoding(const uint8_t* encoding_start, const uint8_t* encoding_finish);
+
+uint8_t load_file_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t load_file_evaluate_task(void* project, struct buffer* task_arguments, uint8_t verbose);
 
 #endif

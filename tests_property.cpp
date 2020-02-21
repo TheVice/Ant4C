@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -46,8 +46,8 @@ TEST(TestProperty_, property_at_all)
 	ASSERT_FALSE(property_is_dynamic(the_property, &dynamic))
 			<< buffer_free(&output) << properties_free(&properties);
 	//
-	uint8_t readonly = 0;
-	ASSERT_FALSE(property_is_readonly(the_property, &readonly))
+	uint8_t read_only = 0;
+	ASSERT_FALSE(property_is_readonly(the_property, &read_only))
 			<< buffer_free(&output) << properties_free(&properties);
 	//
 	const uint8_t* property_value = (const uint8_t*)"Property value";
@@ -79,9 +79,9 @@ TEST(TestProperty_, property_at_all)
 	ASSERT_EQ(0, dynamic)
 			<< buffer_free(&output) << properties_free(&properties);
 	//
-	ASSERT_TRUE(property_is_readonly(the_property, &readonly))
+	ASSERT_TRUE(property_is_readonly(the_property, &read_only))
 			<< buffer_free(&output) << properties_free(&properties);
-	ASSERT_EQ(1, readonly)
+	ASSERT_EQ(1, read_only)
 			<< buffer_free(&output) << properties_free(&properties);
 	//
 	buffer_release(&output);
@@ -105,7 +105,7 @@ TEST_F(TestProperty, property_task)
 		const std::string record(node.node().select_node("record").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const auto output_properties = node.node().select_nodes("output_properties/property");
-		const uint8_t verbose = 0;
+		const uint8_t verbose = 0;/*TODO*/
 		//
 		void* project = NULL;
 		ASSERT_TRUE(project_new(&project)) << properties_free(&properties) << project_free(project);
@@ -123,23 +123,24 @@ TEST_F(TestProperty, property_task)
 			std::string name;
 			std::string expected_value;
 			uint8_t expected_dynamic;
-			uint8_t overwrite;
-			uint8_t expected_readonly;
+			uint8_t over_write;
+			uint8_t expected_read_only;
 			uint8_t fail_on_error;
 			uint8_t local_verbose;
 			//
 			property_load_from_node(property.node(), name, expected_value, expected_dynamic,
-									overwrite, expected_readonly, fail_on_error, local_verbose);
+									over_write, expected_read_only, fail_on_error, local_verbose);
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
-			ASSERT_TRUE(property_get_by_name(project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
-											 &properties))
+			ASSERT_TRUE(project_property_get_by_name(
+							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
+							&properties))
 					<< name << std::endl << buffer_free(&properties) << project_free(project);
 			ASSERT_EQ(expected_value, buffer_to_string(&properties)) << buffer_free(&properties);
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
 			//
 			void* the_property = NULL;
 			ASSERT_TRUE(project_property_exists(
-							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property))
+							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property, verbose))
 					<< name << buffer_free(&properties) << project_free(project);
 			//
 			uint8_t returned_dynamic = 0;
@@ -147,10 +148,11 @@ TEST_F(TestProperty, property_task)
 											&returned_dynamic)) << name << buffer_free(&properties) << project_free(project);
 			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << buffer_free(&properties) << project_free(project);
 			//
-			uint8_t returned_readonly = 0;
+			uint8_t returned_read_only = 0;
 			ASSERT_TRUE(property_is_readonly(the_property,
-											 &returned_readonly)) << name << buffer_free(&properties) << project_free(project);
-			ASSERT_EQ(expected_readonly, returned_readonly) << name << buffer_free(&properties) << project_free(project);
+											 &returned_read_only)) << name << buffer_free(&properties) << project_free(project);
+			ASSERT_EQ(expected_read_only, returned_read_only) << name << buffer_free(&properties) << project_free(
+						project);
 		}
 
 		project_unload(project);

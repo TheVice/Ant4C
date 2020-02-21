@@ -556,25 +556,25 @@ uint8_t file_exists(const uint8_t* path)
 #endif
 }
 
-uint8_t file_fflush(void* stream)
+uint8_t file_flush(void* stream)
 {
 	return NULL != stream && 0 == fflush(stream);
 }
 
-uint8_t file_fseek(void* stream, long offset, int32_t origin)
+uint8_t file_seek(void* stream, long offset, int32_t origin)
 {
 	return NULL != stream && 0 == fseek(stream, offset, origin);
 }
 
-long file_ftell(void* stream)
+long file_tell(void* stream)
 {
-	return NULL == stream ? 0 : ftell(stream);
+	return NULL != stream ? ftell(stream) : 0;
 }
 
-uint8_t file_fwrite(const void* content, const size_t size_of_content_element,
-					const size_t count_of_elements, void* stream)
+size_t file_write(const void* content, const size_t size_of_content_element,
+				  const size_t count_of_elements, void* stream)
 {
-	return count_of_elements == fwrite(content, size_of_content_element, count_of_elements, stream);
+	return fwrite(content, size_of_content_element, count_of_elements, stream);
 }
 
 int64_t file_get_creation_time(const uint8_t* path)
@@ -726,19 +726,13 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 #endif
 }
 
-uint64_t file_read(void* stream, uint64_t size, void* output)
+size_t file_read(void* content, const size_t size_of_content_element,
+				 const size_t count_of_elements, void* stream)
 {
-	if (NULL == stream ||
-		0 == size ||
-		NULL == output)
-	{
-		return 0;
-	}
-
 #if __STDC_SEC_API__ && defined(_MSC_VER)
-	return fread_s(output, (size_t)size, sizeof(uint8_t), (size_t)size, stream);
+	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, stream);
 #else
-	return fread(output, sizeof(uint8_t), (size_t)size, stream);
+	return fread(content, size_of_content_element, count_of_elements, stream);
 #endif
 }
 

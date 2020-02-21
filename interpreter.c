@@ -17,6 +17,7 @@
 #include "math_unit.h"
 #include "operating_system.h"
 #include "hash.h"
+#include "load_file.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -47,13 +48,13 @@ static const uint8_t* interpreter_string_enumeration_unit[] =
 	(const uint8_t*)"bool",
 	(const uint8_t*)"cygpath",
 	(const uint8_t*)"datetime",
-#if TODO
+#if 0
 	(const uint8_t*)"directory",
 	(const uint8_t*)"dns",
 #endif
 	(const uint8_t*)"double",
 	(const uint8_t*)"environment",
-#if TODO
+#if 0
 	(const uint8_t*)"file",
 	(const uint8_t*)"fileversioninfo",
 #endif
@@ -80,13 +81,13 @@ enum interpreter_enumeration_unit
 	bool_unit,
 	cygpath_unit,
 	datetime_unit,
-#if TODO
+#if 0
 	directory_unit,
 	dns_unit,
 #endif
 	double_unit,
 	environment_unit,
-#if TODO
+#if 0
 	file_unit,
 	fileversioninfo_unit,
 #endif
@@ -315,12 +316,13 @@ uint8_t interpreter_get_value_for_argument(
 
 	if (!buffer_size(&value))
 	{
-		if (property_get_by_name(project, argument_area->start, (uint8_t)range_size(argument_area), &value))
+		if (project_property_get_by_name(project, argument_area->start, (uint8_t)range_size(argument_area), &value))
 		{
+			uint8_t verbose = 0;/*TODO*/
 			void* the_property = NULL;
 
 			if (!project_property_exists(project, argument_area->start, (uint8_t)range_size(argument_area),
-										 &the_property))
+										 &the_property, verbose))
 			{
 				buffer_release(&value);
 				return 0;
@@ -611,12 +613,13 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 
 		case property_unit:
 		{
+			uint8_t verbose = 0;/*TODO*/
 			const void* the_property = NULL;
 			const uint8_t property_function_id = property_get_function(name.start, name.finish);
 			ptrdiff_t size = buffer_size(return_of_function);
 
 			if (!property_exec_function(project, property_function_id, &values, values_count, &the_property,
-										return_of_function))
+										return_of_function, verbose))
 			{
 				values_count = 0;
 				break;
@@ -1176,7 +1179,7 @@ uint8_t interpreter_get_environments(
 
 static const uint8_t* interpreter_task_str[] =
 {
-#if TODO
+#if 0
 	(const uint8_t*)"al",
 	(const uint8_t*)"asminfo",
 	(const uint8_t*)"attrib",
@@ -1192,7 +1195,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"description",
 	(const uint8_t*)"echo",
 	(const uint8_t*)"exec",
-#if TODO
+#if 0
 	(const uint8_t*)"fail",
 	(const uint8_t*)"foreach",
 	(const uint8_t*)"get",
@@ -1205,21 +1208,23 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"lib",
 	(const uint8_t*)"license",
 	(const uint8_t*)"link",
+#endif
 	(const uint8_t*)"loadfile",
+#if 0
 	(const uint8_t*)"loadtasks",
 	(const uint8_t*)"mail",
 	(const uint8_t*)"mc",
 	(const uint8_t*)"midl",
 #endif
 	(const uint8_t*)"mkdir",
-#if TODO
+#if 0
 	(const uint8_t*)"move",
 	(const uint8_t*)"ndoc",
 	(const uint8_t*)"nunit2",
 #endif
 	(const uint8_t*)"project",
 	(const uint8_t*)"property",
-#if TODO
+#if 0
 	(const uint8_t*)"rc",
 	(const uint8_t*)"readregistry",
 	(const uint8_t*)"regasm",
@@ -1236,7 +1241,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"tar",
 #endif
 	(const uint8_t*)"target",
-#if TODO
+#if 0
 	(const uint8_t*)"tlbexp",
 	(const uint8_t*)"tlbimp",
 	(const uint8_t*)"touch",
@@ -1255,7 +1260,7 @@ static const uint8_t* interpreter_task_str[] =
 
 enum interpreter_task
 {
-#if TODO
+#if 0
 	al_task,
 	asminfo_task,
 	attrib_task,
@@ -1271,7 +1276,7 @@ enum interpreter_task
 	description_task,
 	echo_task,
 	exec_task,
-#if TODO
+#if 0
 	fail_task,
 	foreach_task,
 	get_task,
@@ -1284,7 +1289,9 @@ enum interpreter_task
 	lib_task,
 	license_task,
 	link_task,
+#endif
 	loadfile_task,
+#if 0
 	loadtasks_task,
 	mail_task,
 	mc_task,
@@ -1298,7 +1305,7 @@ enum interpreter_task
 #endif
 	project_task,
 	property_task,
-#if TODO
+#if 0
 	rc_task,
 	readregistry_task,
 	regasm_task,
@@ -1315,7 +1322,7 @@ enum interpreter_task
 	tar_task,
 #endif
 	target_task,
-#if TODO
+#if 0
 	tlbexp_task,
 	tlbimp_task,
 	touch_task,
@@ -1536,9 +1543,27 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case link_:
 			break;
+#endif
 
-		case loadfile_:
+		case loadfile_task:
+			if (!load_file_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = load_file_evaluate_task(project, &task_arguments, verbose);
 			break;
+#if 0
 
 		case loadtasks_:
 			break;

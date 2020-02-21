@@ -2960,7 +2960,7 @@
       <output>exists('lib') -> False </output>
       <output>exists('license') -> False </output>
       <output>exists('link') -> False </output>
-      <output>exists('loadfile') -> False </output>
+      <output>exists('loadfile') -> True </output>
       <output>exists('loadtasks') -> False </output>
       <output>exists('mail') -> False </output>
       <output>exists('mc') -> False </output>

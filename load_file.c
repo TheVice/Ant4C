@@ -9,21 +9,20 @@
 #include "buffer.h"
 #include "common.h"
 #include "file_system.h"
+#include "project.h"
 #include "property.h"
 #include "range.h"
 #include "string_unit.h"
 #include "text_encoding.h"
 
-#include <stdio.h>
-
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_t encoding, uint8_t verbose)
+uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffer* output, uint8_t verbose)
 {
 	if (NULL == path ||
-		NULL == content ||
+		NULL == output ||
 		FILE_ENCODING_UNKNOWN == encoding ||
 		((ASCII != encoding) && /*TODO:*/
 		 (UTF8 != encoding) &&
@@ -40,34 +39,34 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 
 	if (!size)
 	{
-		return buffer_resize(content, 0);
+		return buffer_resize(output, 0);
 	}
 
-	FILE* file_stream = NULL;
+	void* file_stream = NULL;
 
-	if (!file_open(path, (const uint8_t*)"rb", (void**)&file_stream))
+	if (!file_open(path, (const uint8_t*)"rb", &file_stream))
 	{
-		fclose(file_stream);
+		file_close(file_stream);
 		return 0;
 	}
 
-	if (!buffer_resize(content, size))
+	if (!buffer_resize(output, size))
 	{
-		fclose(file_stream);
+		file_close(file_stream);
 		return 0;
 	}
 
 	if (Default != encoding)
 	{
-		if (!buffer_append(content, NULL, 2 * sizeof(uint32_t)))
+		if (!buffer_append(output, NULL, 2 * sizeof(uint32_t)))
 		{
-			fclose(file_stream);
+			file_close(file_stream);
 			return 0;
 		}
 	}
 
 	uint8_t returned = 0;
-	uint8_t* ptr = buffer_data(content, 0);
+	uint8_t* ptr = buffer_data(output, 0);
 
 	if (Default != encoding)
 	{
@@ -79,19 +78,15 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 		ptr += returned;
 	}
 
-#if __STDC_SEC_API__ && defined(_MSC_VER)
-	returned = (size == (ptrdiff_t)fread_s(ptr, size, sizeof(uint8_t), size, file_stream));
-#else
-	returned = (size == (ptrdiff_t)fread(ptr, sizeof(uint8_t), size, file_stream));
-#endif
+	returned = (size == (ptrdiff_t)file_read(ptr, sizeof(uint8_t), size, file_stream));
 
 	if (!returned)
 	{
-		fclose(file_stream);
+		file_close(file_stream);
 		return 0;
 	}
 
-	returned = (0 == fclose(file_stream));
+	returned = file_close(file_stream);
 
 	if (!returned)
 	{
@@ -130,17 +125,17 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 		{
 			const uint16_t* start = (const uint16_t*)ptr;
 			const uint16_t* finish = (const uint16_t*)(ptr + size);
-			returned = (uint8_t)(ptr - buffer_data(content, 0)) + 2; /*NOTE: 2 - do not convert and do not left BOM.*/
+			returned = (uint8_t)(ptr - buffer_data(output, 0)) + 2; /*NOTE: 2 - do not convert and do not left BOM.*/
 
-			if (!buffer_append(content, NULL, 4 * (finish - start) + sizeof(uint32_t)))
+			if (!buffer_append(output, NULL, 4 * (finish - start) + sizeof(uint32_t)))
 			{
 				return 0;
 			}
 
-			ptr = buffer_data(content, returned);
+			ptr = buffer_data(output, returned);
 			start = (const uint16_t*)ptr;
 			finish = (const uint16_t*)(ptr + size);
-			return buffer_resize(content, 0) && text_encoding_UTF16LE_to_UTF8(start, finish, content);
+			return buffer_resize(output, 0) && text_encoding_UTF16LE_to_UTF8(start, finish, output);
 		}
 
 		case UTF32BE:
@@ -150,8 +145,8 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 
 		case UTF32:
 		case UTF32LE:
-			return buffer_resize(content, 0) &&
-				   text_encoding_encode_UTF8((const uint32_t*)(ptr + 4), (const uint32_t*)(ptr + size), content);
+			return buffer_resize(output, 0) &&
+				   text_encoding_encode_UTF8((const uint32_t*)(ptr + 4), (const uint32_t*)(ptr + size), output);
 
 		default:
 			break;
@@ -174,15 +169,15 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 			const uint16_t* start = (const uint16_t*)ptr;
 			const uint16_t* finish = (const uint16_t*)(ptr + size);
 
-			if (!buffer_append(content, NULL, 4 * (finish - start) + sizeof(uint32_t)))
+			if (!buffer_append(output, NULL, 4 * (finish - start) + sizeof(uint32_t)))
 			{
 				return 0;
 			}
 
-			ptr = buffer_data(content, 2 * sizeof(uint32_t));
+			ptr = buffer_data(output, 2 * sizeof(uint32_t));
 			start = (const uint16_t*)ptr;
 			finish = (const uint16_t*)(ptr + size);
-			return buffer_resize(content, 0) && text_encoding_UTF16LE_to_UTF8(start, finish, content);
+			return buffer_resize(output, 0) && text_encoding_UTF16LE_to_UTF8(start, finish, output);
 		}
 
 		case UTF32BE:
@@ -191,8 +186,8 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 
 		case UTF32:
 		case UTF32LE:
-			return buffer_resize(content, 0) &&
-				   text_encoding_encode_UTF8((const uint32_t*)ptr, (const uint32_t*)(ptr + size), content);
+			return buffer_resize(output, 0) &&
+				   text_encoding_encode_UTF8((const uint32_t*)ptr, (const uint32_t*)(ptr + size), output);
 
 		case Windows_874:
 		case Windows_1250:
@@ -223,53 +218,6 @@ uint8_t load_file_to_buffer(const uint8_t* path, struct buffer* content, uint16_
 
 	(void)verbose;
 	return 0;
-}
-
-uint8_t load_file(const uint8_t* path, void* the_property, uint16_t encoding, uint8_t verbose)
-{
-	if (NULL == path ||
-		NULL == the_property)
-	{
-		return 0;
-	}
-
-	struct buffer content;
-
-	SET_NULL_TO_BUFFER(content);
-
-	if (!load_file_to_buffer(path, &content, encoding, verbose))
-	{
-		buffer_release(&content);
-		return 0;
-	}
-
-	struct range input_in_range;
-
-	input_in_range.start = buffer_data(&content, 0);
-
-	if (NULL == input_in_range.start)
-	{
-		buffer_release(&content);
-		return 1;
-	}
-
-	input_in_range.finish = input_in_range.start + buffer_size(&content);
-
-	if (!string_trim(&input_in_range))
-	{
-		buffer_release(&content);
-		return 0;
-	}
-
-	if (!property_set_by_pointer(the_property, input_in_range.start, range_size(&input_in_range),
-								 property_value_is_byte_array/*property_value_is_file_content*/, 0, 0, verbose))
-	{
-		buffer_release(&content);
-		return 0;
-	}
-
-	buffer_release(&content);
-	return 1;
 }
 
 uint16_t load_file_get_file_encoding(const uint8_t* encoding_start, const uint8_t* encoding_finish)
@@ -340,4 +288,92 @@ uint16_t load_file_get_file_encoding(const uint8_t* encoding_start, const uint8_
 
 	buffer_release(&enc);
 	return FILE_ENCODING_UNKNOWN;
+}
+
+#define FILE_POSITION		0
+#define PROPERTY_POSITION	1
+#define ENCODING_POSITION	2
+
+static const uint8_t* attributes[] =
+{
+	(const uint8_t*)"file",
+	(const uint8_t*)"property",
+	(const uint8_t*)"encoding"
+};
+
+static const uint8_t attributes_lengths[] = { 4, 8, 8 };
+
+uint8_t load_file_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   attributes, attributes_lengths,
+			   COUNT_OF(attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t load_file_evaluate_task(void* project, struct buffer* task_arguments, uint8_t verbose)
+{
+	if (NULL == project ||
+		NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
+
+	const struct buffer* property_in_a_buffer = buffer_buffer_data(task_arguments, PROPERTY_POSITION);
+
+	const struct buffer* encoding_name_in_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
+
+	uint8_t property_name_length = 0;
+
+	if (!buffer_size(file_path_in_buffer) ||
+		0 == (property_name_length = (uint8_t)buffer_size(property_in_a_buffer)))
+	{
+		return 0;
+	}
+
+	const uint8_t* file = NULL;
+
+	if (!buffer_push_back(file_path_in_buffer, 0))
+	{
+		return 0;
+	}
+
+	file = buffer_data(file_path_in_buffer, 0);
+	/**/
+	const uint8_t* property_name = buffer_data(property_in_a_buffer, 0);
+	/**/
+	uint16_t encoding = ASCII;
+	const uint8_t encoding_length = (uint8_t)buffer_size(encoding_name_in_buffer);
+
+	if (encoding_length)
+	{
+		const uint8_t* ptr = buffer_data(encoding_name_in_buffer, 0);
+		encoding = load_file_get_file_encoding(ptr, ptr + encoding_length);
+
+		if (FILE_ENCODING_UNKNOWN == encoding)
+		{
+			return 0;
+		}
+	}
+
+	uint8_t dynamic = 0;
+	uint8_t read_only = 0;
+	/**/
+	void* the_property = NULL;
+
+	if (!project_property_set_value(project, property_name,
+									property_name_length,
+									(const uint8_t*)&the_property, 0, dynamic, 1, read_only, verbose) ||
+		!project_property_exists(project, property_name,
+								 property_name_length, &the_property, verbose))
+	{
+		return 0;
+	}
+
+	return property_set_from_file(the_property, file, encoding, dynamic, read_only, verbose);
 }

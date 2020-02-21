@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -16,12 +16,15 @@ struct range;
 
 uint8_t project_property_exists(const void* project,
 								const uint8_t* property_name, uint8_t property_name_length,
-								void** the_property);
+								void** the_property, uint8_t verbose);
 uint8_t project_property_set_value(void* project,
 								   const uint8_t* property_name, uint8_t property_name_length,
 								   const uint8_t* property_value, ptrdiff_t property_value_length,
-								   uint8_t dynamic, uint8_t overwrite,
-								   uint8_t readonly, uint8_t verbose);
+								   uint8_t dynamic, uint8_t over_write,
+								   uint8_t read_only, uint8_t verbose);
+uint8_t project_property_get_by_name(const void* project,
+									 const uint8_t* property_name, uint8_t property_name_length,
+									 struct buffer* output);
 
 uint8_t project_target_new(void* project,
 						   const struct range* name, const struct range* depends, const struct range* content);

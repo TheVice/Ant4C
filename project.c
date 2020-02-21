@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -55,13 +55,14 @@ static const uint8_t project_properties_lengths[] = { 12, 15, 15, 17 };
 
 uint8_t project_property_exists(const void* project,
 								const uint8_t* property_name, uint8_t property_name_length,
-								void** the_property)
+								void** the_property, uint8_t verbose)
 {
 	if (NULL == project || NULL == property_name || 0 == property_name_length)
 	{
 		return 0;
 	}
 
+	(void)verbose;/*TODO*/
 	/*TODO: validate project pointer.*/
 	const struct project* pro = (const struct project*)project;
 	return property_exists(&pro->properties, property_name, property_name_length, the_property);
@@ -70,8 +71,8 @@ uint8_t project_property_exists(const void* project,
 uint8_t project_property_set_value(void* project,
 								   const uint8_t* property_name, uint8_t property_name_length,
 								   const uint8_t* property_value, ptrdiff_t property_value_length,
-								   uint8_t dynamic, uint8_t overwrite,
-								   uint8_t readonly, uint8_t verbose)
+								   uint8_t dynamic, uint8_t over_write,
+								   uint8_t read_only, uint8_t verbose)
 {
 	if (NULL == project || NULL == property_name || 0 == property_name_length)
 	{
@@ -82,7 +83,27 @@ uint8_t project_property_set_value(void* project,
 
 	return property_set_by_name(&pro->properties, property_name, property_name_length,
 								property_value, property_value_length, property_value_is_byte_array,
-								dynamic, overwrite, readonly, verbose);
+								dynamic, over_write, read_only, verbose);
+}
+
+uint8_t project_property_get_by_name(
+	const void* project, const uint8_t* property_name, uint8_t property_name_length, struct buffer* output)
+{
+	uint8_t verbose = 0;/*TODO*/
+
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	void* the_property = NULL;
+
+	if (!project_property_exists(project, property_name, property_name_length, &the_property, verbose))
+	{
+		return 0;
+	}
+
+	return property_get_by_pointer(the_property, output);
 }
 
 uint8_t project_target_new(void* project,
@@ -128,6 +149,8 @@ uint8_t project_target_has_executed(const void* project, const uint8_t* name, ui
 
 uint8_t project_get_base_directory(const void* project, const void** the_property)
 {
+	uint8_t verbose = 0;/*TODO*/
+
 	if (NULL == the_property)
 	{
 		return 0;
@@ -136,13 +159,15 @@ uint8_t project_get_base_directory(const void* project, const void** the_propert
 	void* prop = NULL;
 	const uint8_t returned = project_property_exists(project,
 							 project_properties[BASE_DIR_POSITION],
-							 project_properties_lengths[BASE_DIR_POSITION], &prop);
+							 project_properties_lengths[BASE_DIR_POSITION], &prop, verbose);
 	(*the_property) = returned ? prop : NULL;
 	return returned;
 }
 
 uint8_t project_get_buildfile_path(const void* project, const void** the_property)
 {
+	uint8_t verbose = 0;/*TODO*/
+
 	if (NULL == the_property)
 	{
 		return 0;
@@ -151,7 +176,7 @@ uint8_t project_get_buildfile_path(const void* project, const void** the_propert
 	void* prop = NULL;
 	const uint8_t returned = project_property_exists(project,
 							 project_properties[BUILD_FILE_POSITION],
-							 project_properties_lengths[BUILD_FILE_POSITION], &prop);
+							 project_properties_lengths[BUILD_FILE_POSITION], &prop, verbose);
 	(*the_property) = returned ? prop : NULL;
 	return returned;
 }
@@ -200,6 +225,8 @@ uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build
 
 uint8_t project_get_default_target(const void* project, const void** the_property)
 {
+	uint8_t verbose = 0;/*TODO*/
+
 	if (NULL == the_property)
 	{
 		return 0;
@@ -208,13 +235,15 @@ uint8_t project_get_default_target(const void* project, const void** the_propert
 	void* prop = NULL;
 	const uint8_t returned = project_property_exists(project,
 							 project_properties[DEFAULT_POSITION],
-							 project_properties_lengths[DEFAULT_POSITION], &prop);
+							 project_properties_lengths[DEFAULT_POSITION], &prop, verbose);
 	(*the_property) = returned ? prop : NULL;
 	return returned;
 }
 
 uint8_t project_get_name(const void* project, const void** the_property)
 {
+	uint8_t verbose = 0;/*TODO*/
+
 	if (NULL == the_property)
 	{
 		return 0;
@@ -223,7 +252,7 @@ uint8_t project_get_name(const void* project, const void** the_property)
 	void* prop = NULL;
 	const uint8_t returned = project_property_exists(project,
 							 project_properties[NAME_POSITION],
-							 project_properties_lengths[NAME_POSITION], &prop);
+							 project_properties_lengths[NAME_POSITION], &prop, verbose);
 	(*the_property) = returned ? prop : NULL;
 	return returned;
 }
@@ -379,7 +408,7 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, uint16_t
 	dst = buffer_data(&content, 0);
 
 	if (!buffer_resize(&content, 0) ||
-		!load_file_to_buffer(dst, &content, encoding, verbose))
+		!load_file_to_buffer(dst, encoding, &content, verbose))
 	{
 		buffer_release(&content);
 		return 0;
@@ -463,9 +492,9 @@ uint8_t project_evaluate_task(void* project, const struct buffer* task_arguments
 		struct buffer build_file;
 		SET_NULL_TO_BUFFER(build_file);
 
-		if (property_get_by_name(project,
-								 project_properties[BUILD_FILE_POSITION],
-								 project_properties_lengths[BUILD_FILE_POSITION], &build_file) &&
+		if (project_property_get_by_name(project,
+										 project_properties[BUILD_FILE_POSITION],
+										 project_properties_lengths[BUILD_FILE_POSITION], &build_file) &&
 			buffer_size(&build_file))
 		{
 			struct range base_directory;

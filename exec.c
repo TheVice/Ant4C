@@ -874,9 +874,10 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		void** the_property = (PID_PROPERTY_POSITION == index ? &pid_property : &result_property);
 
 		if (!project_property_set_value(project, buffer_data(property_in_a_buffer, 0),
-										(uint8_t)buffer_size(property_in_a_buffer), NULL, 0, 0, 1, 0, verbose) ||
+										(uint8_t)buffer_size(property_in_a_buffer),
+										(const uint8_t*)the_property, 0, 0, 1, 0, verbose) ||
 			!project_property_exists(project, buffer_data(property_in_a_buffer, 0),
-									 (uint8_t)buffer_size(property_in_a_buffer), the_property))
+									 (uint8_t)buffer_size(property_in_a_buffer), the_property, verbose))
 		{
 			return 0;
 		}

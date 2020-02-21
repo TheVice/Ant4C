@@ -95,7 +95,8 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 		else
 		{
-			result = file_fwrite(echo_labels[level], sizeof(uint8_t), echo_labels_lengths[level], file_stream);
+			result = (echo_labels_lengths[level] == file_write(echo_labels[level], sizeof(uint8_t),
+					  echo_labels_lengths[level], file_stream));
 		}
 	}
 
@@ -118,7 +119,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 				return 0;
 			}
 
-			result = file_fflush(file_stream);
+			result = file_flush(file_stream);
 
 			if (result)
 			{
@@ -132,7 +133,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 
 		if (result)
 		{
-			result = file_fwrite(message, sizeof(uint8_t), message_length, file_stream);
+			result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
 		}
 
 #if defined(_WIN32)
@@ -140,7 +141,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		if (0 < mode)
 		{
 			uint8_t previous_result = result;
-			result = file_fflush(file_stream);
+			result = file_flush(file_stream);
 			previous_result = previous_result & result;
 #if defined(_MSC_VER)
 			result = (_O_U8TEXT == _setmode(_file_fileno(file_stream), mode));
@@ -162,7 +163,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	}
 	else if (result && new_line)
 	{
-		result = result && file_fwrite("\n", sizeof(uint8_t), 1, file_stream);
+		result = result && (1 == file_write("\n", sizeof(uint8_t), 1, file_stream));
 	}
 
 	file_stream = NULL;
