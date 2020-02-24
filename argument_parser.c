@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -191,6 +191,22 @@ uint8_t argument_get_file_path(const uint8_t* argument,
 		   buffer_push_back(output, 0);
 }
 
+uint16_t argument_parser_get_encoding_from_name(const char* start, const char* finish)
+{
+	struct buffer encoding_name;
+	SET_NULL_TO_BUFFER(encoding_name);
+
+	if (!buffer_append_char(&encoding_name, start, finish - start))
+	{
+		buffer_release(&encoding_name);
+		return FILE_ENCODING_UNKNOWN;
+	}
+
+	const uint16_t result = load_file_get_encoding(&encoding_name);
+	buffer_release(&encoding_name);
+	return result;
+}
+
 uint8_t argument_parser_char(int i, int argc, char** argv)
 {
 	argument_parser_get_verbose_char(argc, argv);
@@ -272,8 +288,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		}
 		else if (10 < length && 0 == memcmp(argv[i], "-encoding:", 10))
 		{
-			argument_parser_encoding = load_file_get_file_encoding((const uint8_t*)(argv[i] + 10),
-									   (const uint8_t*)(argv[i] + length));
+			argument_parser_encoding = argument_parser_get_encoding_from_name(argv[i] + 10, argv[i] + length);
 		}
 		else if ((7 == length && (0 == memcmp(argv[i], "-quiet+", 7) ||
 								  0 == memcmp(argv[i], "-quiet-", 7))) ||

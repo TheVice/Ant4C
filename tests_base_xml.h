@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -50,8 +50,8 @@ std::string property_to_string(const void* the_property, buffer* value);
 std::string property_to_string(const void* the_property);
 void property_load_from_node(const pugi::xml_node& property,
 							 std::string& name, std::string& value,
-							 uint8_t& dynamic, uint8_t& overwrite,
-							 uint8_t& readonly, uint8_t& fail_on_error,
+							 uint8_t& dynamic, uint8_t& over_write,
+							 uint8_t& read_only, uint8_t& fail_on_error,
 							 uint8_t& verbose);
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties);
 uint8_t properties_free(buffer* properties);
@@ -64,6 +64,7 @@ class TestsBaseXml : public testing::Test
 protected:
 	pugi::xpath_node_set nodes;
 	std::size_t node_count;
+	uint8_t verbose;
 
 private:
 	static std::string tests_xml;

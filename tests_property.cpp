@@ -105,7 +105,6 @@ TEST_F(TestProperty, property_task)
 		const std::string record(node.node().select_node("record").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const auto output_properties = node.node().select_nodes("output_properties/property");
-		const uint8_t verbose = 0;/*TODO*/
 		//
 		void* project = NULL;
 		ASSERT_TRUE(project_new(&project)) << properties_free(&properties) << project_free(project);

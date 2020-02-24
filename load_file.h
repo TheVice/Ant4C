@@ -21,7 +21,7 @@ enum FileEncoding
 struct buffer;
 
 uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffer* output, uint8_t verbose);
-uint16_t load_file_get_file_encoding(const uint8_t* encoding_start, const uint8_t* encoding_finish);
+uint16_t load_file_get_encoding(struct buffer* encoding_name);
 
 uint8_t load_file_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

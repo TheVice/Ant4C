@@ -607,6 +607,54 @@
     </exec_with_redirect_to_tmp_file>
   </TestExec>
   <TestFileSystem>
+    <directory_enumerate_file_system_entries>
+      <input><![CDATA[
+      <project name="Empty folder">
+        <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" overwrite="true" />
+        <mkdir dir="${property::get-value('folder')}" />
+        <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
+      </project>
+      ]]></input>
+      <property>folder</property>
+      <output entry_type="directory" recurse="false" />
+      <output entry_type="file" recurse="false" />
+      <output entry_type="all" recurse="false" />
+      <output entry_type="directory" recurse="true" />
+      <output entry_type="file" recurse="true" />
+      <output entry_type="all" recurse="true" />
+    </directory_enumerate_file_system_entries>
+    <!--directory_enumerate_file_system_entries>
+      <input>
+        <![CDATA[
+      <project name="With one folder">
+        <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" overwrite="true" />
+        <mkdir dir="${property::get-value('folder')}" />
+        <property name="entry" value="${path::combine(property::get-value('folder'), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />
+        <mkdir dir="${property::get-value('entry')}" />
+        <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
+      </project>
+      ]]>
+      </input>
+      <property>folder</property>
+      <output entry_type="directory" recurse="false">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="file" recurse="false">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="all" recurse="false">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="directory" recurse="true">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="file" recurse="true">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="all" recurse="true">
+        <entry>entry</entry>
+      </output>
+    </directory_enumerate_file_system_entries-->
     <directory_exists>
       <input></input>
       <return></return>
@@ -1188,6 +1236,335 @@
     <interpreter_evaluate_code>
       <code>Just a string.</code>
       <output>Just a string.</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Desktop')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Programs')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Personal')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('MyDocuments')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Favorites')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Startup')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Recent')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('SendTo')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('StartMenu')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('MyMusic')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('MyVideos')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('DesktopDirectory')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('MyComputer')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('NetworkShortcuts')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Fonts')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Templates')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonStartMenu')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonPrograms')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonStartup')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonDesktopDirectory')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('ApplicationData')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('PrinterShortcuts')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('LocalApplicationData')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('InternetCache')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Cookies')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('History')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonApplicationData')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Windows')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('System')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('ProgramFiles')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('MyPictures')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('UserProfile')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('SystemX86')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('ProgramFilesX86')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonProgramFiles')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonProgramFilesX86')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonTemplates')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonDocuments')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonAdminTools')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('AdminTools')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonMusic')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonPictures')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonVideos')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('Resources')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('LocalizedResources')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CommonOemLinks')</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::empty(</code>
+      <code>environment::get-folder-path('CDBurning')</code>
+      <code>)}</code>
+      <output>False</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -3121,6 +3498,82 @@
       <output>hash::sha3-512('') -> a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26</output>
       <return>1</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}"><!-- TODO -->
+      <code>${string::empty(</code>
+
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'directory')</code>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'file')</code>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'all')</code>
+
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'directory', 'false')</code>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'file', 'false')</code>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'all', 'false')</code>
+      <TODO>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'directory', 'true')</code>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'file', 'true')</code>
+      <code>directory::enumerate-file-system-entries(path::combine(path::get-temp-path(), '*.*'), 'all', 'true')</code>
+      </TODO>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>exists(get-temp-path()) -> ${directory::exists(path::get-temp-path())}</code>
+      <output>exists(get-temp-path()) -> True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-creation-time(path::get-temp-path())</code>
+      <code>directory::get-creation-time-utc(path::get-temp-path())</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-last-access-time(path::get-temp-path())</code>
+      <code>directory::get-last-access-time-utc(path::get-temp-path())</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-last-write-time(path::get-temp-path())</code>
+      <code>directory::get-last-write-time-utc(path::get-temp-path())</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-directory-root(path::get-temp-path())</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-parent-directory(environment::get-folder-path('Personal'))</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-current-directory())</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(</code>
+      <code>directory::get-logical-drives())</code>
+      <code>)}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
     <interpreter_evaluate_task>
       <code><![CDATA[<echo />]]></code>
       <return>1</return>
@@ -3587,6 +4040,18 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </path_get_full_path>
   </TestPath>
   <TestProject>
+    <project_property_set_value>
+      <code><![CDATA[]]></code>
+      <property>
+        <return></return>
+      </property>
+    </project_property_set_value>
+    <project_property_set_value>
+      <code><![CDATA[]]></code>
+      <property name="a" value="" overwrite="false" readonly="true">
+        <return>1</return>
+      </property>
+    </project_property_set_value>
     <project_load_from_content>
       <content><![CDATA[]]></content>
       <return></return>
@@ -3770,6 +4235,20 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>project-properties</name>
       <default>some_target</default>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="loadfile sample">
+        <property name="file" value="${path::get-temp-file-name()}" overwrite="true" readonly="true" />
+        <echo message="${property::get-value('file')}" file="${property::get-value('file')}" />
+        <!--echo message="${file}" file="${file}" /--><!-- TODO -->
+        <loadfile file="${property::get-value('file')}" property="content" />
+        <delete file="${property::get-value('file')}" />
+        <echo message="${property::get-value('content')}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>loadfile sample</name>
     </project_load_from_content>
     <project_load_from_build_file>
       <content>

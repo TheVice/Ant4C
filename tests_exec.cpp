@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -56,8 +56,10 @@ protected:
 
 	uint8_t spawn;
 	uint32_t time_out;
-	uint8_t verbose;
+	uint8_t verbose_;
 	uint8_t expected_return;
+
+	uint8_t allow_output_to_console;
 
 protected:
 	TestExec() :
@@ -77,8 +79,9 @@ protected:
 		environment_variables(),
 		spawn(),
 		time_out(),
-		verbose(),
-		expected_return()
+		verbose_(),
+		expected_return(),
+		allow_output_to_console(0)
 	{
 		predefine_arguments.insert(std::make_pair("--tests_exec_app=", &tests_exec_app));
 	}
@@ -97,6 +100,13 @@ protected:
 			assert(!result);
 			ASSERT_FALSE(result);
 		}
+
+		/*const std::string allow_str(nodes.first().parent().attribute("allow_output_to_console").as_string());
+		const range allow_code(string_to_range(allow_str));
+		ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &allow_code, &temp_file_name)) << buffer_free(&temp_file_name);
+		allow_code = buffer_to_range(&temp_file_name);
+		ASSERT_TRUE(bool_parse(allow_code.start, range_size(&allow_code), &allow_output_to_console)) << buffer_free(&temp_file_name);*/
+		allow_output_to_console = nodes.first().parent().attribute("allow_output_to_console").as_bool();
 	}
 
 	void load_input_data(const pugi::xpath_node& node);
@@ -129,7 +139,7 @@ void TestExec::load_input_data(const pugi::xpath_node& node)
 	//
 	spawn = (uint8_t)INT_PARSE(node.node().select_node("spawn").node().child_value());
 	time_out = (uint8_t)INT_PARSE(node.node().select_node("time_out").node().child_value());
-	verbose = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
+	verbose_ = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
 	//
 	expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 }
@@ -258,15 +268,6 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	//
 	buffer temp_file_name;
 	SET_NULL_TO_BUFFER(temp_file_name);
-	//
-	uint8_t allow_output_to_console = 0;
-	const std::string allow_str(nodes.first().parent().attribute("allow_output_to_console").as_string());
-	range allow_code(string_to_range(allow_str));
-	ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &allow_code,
-										  &temp_file_name)) << buffer_free(&temp_file_name);
-	allow_code = buffer_to_range(&temp_file_name);
-	ASSERT_TRUE(bool_parse(allow_code.start, range_size(&allow_code),
-						   &allow_output_to_console)) << buffer_free(&temp_file_name);
 	//
 	pugi::xml_document output_file_content;
 

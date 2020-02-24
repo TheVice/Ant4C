@@ -48,8 +48,8 @@ static const uint8_t* interpreter_string_enumeration_unit[] =
 	(const uint8_t*)"bool",
 	(const uint8_t*)"cygpath",
 	(const uint8_t*)"datetime",
-#if 0
 	(const uint8_t*)"directory",
+#if 0
 	(const uint8_t*)"dns",
 #endif
 	(const uint8_t*)"double",
@@ -81,8 +81,8 @@ enum interpreter_enumeration_unit
 	bool_unit,
 	cygpath_unit,
 	datetime_unit,
-#if 0
 	directory_unit,
+#if 0
 	dns_unit,
 #endif
 	double_unit,
@@ -452,10 +452,35 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 							   datetime_get_function(name.start, name.finish),
 							   &values, values_count, return_of_function);
 			break;
-#if 0
 
-		case directory_:
-			break;
+		case directory_unit:
+		{
+			const uint8_t dir_function_id = dir_get_function(name.start, name.finish);
+
+			if (0 == values_count &&
+				dir_get_id_of_get_current_directory_function() == dir_function_id)
+			{
+				const ptrdiff_t size = buffer_size(return_of_function);
+				const void* the_property = NULL;
+
+				if (!directory_get_current_directory(project, &the_property, return_of_function))
+				{
+					values_count = 0;
+					break;
+				}
+
+				values_count = interpreter_actualize_property_value(
+								   project, target,
+								   property_get_value_function,
+								   &the_property, size, return_of_function);
+			}
+			else
+			{
+				values_count = dir_exec_function(dir_function_id, &values, values_count, return_of_function);
+			}
+		}
+		break;
+#if 0
 
 		case dns_:
 			break;
@@ -599,15 +624,10 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				break;
 			}
 
-			if (!interpreter_actualize_property_value(project, target,
-					property_get_value_function,
-					the_property, size, return_of_function))
-			{
-				values_count = 0;
-				break;
-			}
-
-			values_count = 1;
+			values_count = interpreter_actualize_property_value(
+							   project, target,
+							   property_get_value_function,
+							   the_property, size, return_of_function);
 		}
 		break;
 
@@ -625,14 +645,10 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				break;
 			}
 
-			if (!interpreter_actualize_property_value(project, target, property_function_id, the_property, size,
-					return_of_function))
-			{
-				values_count = 0;
-				break;
-			}
-
-			values_count = 1;
+			values_count = interpreter_actualize_property_value(
+							   project, target,
+							   property_function_id,
+							   the_property, size, return_of_function);
 		}
 		break;
 
@@ -1219,8 +1235,6 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"mkdir",
 #if 0
 	(const uint8_t*)"move",
-	(const uint8_t*)"ndoc",
-	(const uint8_t*)"nunit2",
 #endif
 	(const uint8_t*)"project",
 	(const uint8_t*)"property",
@@ -1300,8 +1314,6 @@ enum interpreter_task
 	mkdir_task,
 #if 0
 	move_task,
-	ndoc_task,
-	nunit2_task,
 #endif
 	project_task,
 	property_task,
@@ -1599,12 +1611,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 #if 0
 
 		case move_:
-			break;
-
-		case ndoc_:
-			break;
-
-		case nunit2_:
 			break;
 #endif
 

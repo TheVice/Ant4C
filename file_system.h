@@ -25,6 +25,8 @@ uint8_t file_system_get_position_after_pre_root(struct range* path);
 
 uint8_t directory_create(const uint8_t* path);
 uint8_t directory_delete(const uint8_t* path);
+uint8_t directory_enumerate_file_system_entries(
+	const uint8_t* pattern, const uint8_t entry_type, const uint8_t recurse, struct buffer* output);
 #if defined(_WIN32)
 uint8_t directory_exists_wchar_t(const wchar_t* path);
 #endif
@@ -32,8 +34,8 @@ uint8_t directory_exists(const uint8_t* path);
 int64_t directory_get_creation_time(const uint8_t* path);
 int64_t directory_get_creation_time_utc(const uint8_t* path);
 uint8_t directory_get_current_directory(
-	const void* project, const void** the_property, struct buffer* current_directory);
-uint8_t directory_get_directory_root(const uint8_t* path, struct range* output);
+	const void* project, const void** the_property, struct buffer* output);
+uint8_t directory_get_directory_root(const uint8_t* path, struct range* root);
 int64_t directory_get_last_access_time(const uint8_t* path);
 int64_t directory_get_last_access_time_utc(const uint8_t* path);
 int64_t directory_get_last_write_time(const uint8_t* path);
@@ -66,7 +68,13 @@ uint64_t file_get_length(const uint8_t* path);
 uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output);
 size_t file_read(void* content, const size_t size_of_content_element,
 				 const size_t count_of_elements, void* stream);
+uint8_t file_read_all_bytes(const uint8_t* path, struct buffer* output);
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file);
+
+uint8_t dir_get_id_of_get_current_directory_function();
+uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t dir_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count, struct buffer* output);
 
 uint8_t delete_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

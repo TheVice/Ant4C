@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -252,16 +252,16 @@ std::string property_to_string(const void* the_property)
 
 void property_load_from_node(const pugi::xml_node& property,
 							 std::string& name, std::string& value,
-							 uint8_t& dynamic, uint8_t& overwrite,
-							 uint8_t& readonly, uint8_t& fail_on_error,
+							 uint8_t& dynamic, uint8_t& over_write,
+							 uint8_t& read_only, uint8_t& fail_on_error,
 							 uint8_t& verbose)
 {
 	name = property.attribute("name").as_string();
 	value = property.attribute("value").as_string();
 	dynamic = property.attribute("dynamic").as_bool();
-	const auto overwrite_attribute = property.attribute("overwrite");
-	overwrite = nullptr == overwrite_attribute ? 1 : overwrite_attribute.as_bool();
-	readonly = property.attribute("readonly").as_bool();
+	const auto over_write_attribute = property.attribute("overwrite");
+	over_write = nullptr == over_write_attribute ? 1 : over_write_attribute.as_bool();
+	read_only = property.attribute("readonly").as_bool();
 	const auto fail_on_error_attribute = property.attribute("failonerror");
 	fail_on_error = nullptr == fail_on_error_attribute ? 1 : fail_on_error_attribute.as_bool();
 	verbose = property.attribute("verbose").as_bool();
@@ -273,14 +273,14 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 	{
 		std::string name;
 		std::string value;
-		uint8_t dynamic;
-		uint8_t overwrite;
-		uint8_t readonly;
-		uint8_t fail_on_error;
-		uint8_t verbose;
+		uint8_t dynamic = 0;
+		uint8_t over_write = 0;
+		uint8_t read_only = 0;
+		uint8_t fail_on_error = 0;
+		uint8_t verbose = 0;
 		//
 		property_load_from_node(property.node(), name, value, dynamic,
-								overwrite, readonly, fail_on_error, verbose);
+								over_write, read_only, fail_on_error, verbose);
 
 		if (name.empty())
 		{
@@ -292,7 +292,7 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 									 (const uint8_t*)name.c_str(), (uint8_t)name.size(),
 									 (const uint8_t*)value.c_str(), value.size(),
 									 property_value_is_byte_array,
-									 dynamic, overwrite, readonly, verbose);
+									 dynamic, over_write, read_only, verbose);
 
 		if (!returned && fail_on_error)
 		{
@@ -414,7 +414,10 @@ bool TestsBaseXml::load_document(pugi::xml_document& doc, const std::string& xml
 	return pugi::xml_parse_status::status_ok == result.status;
 }
 
-TestsBaseXml::TestsBaseXml() : nodes(), node_count(0)
+TestsBaseXml::TestsBaseXml() :
+	nodes(),
+	node_count(0),
+	verbose(0)
 {
 	predefine_arguments.insert(std::make_pair("--tests_xml=", &tests_xml));
 }
@@ -439,6 +442,7 @@ void TestsBaseXml::SetUp()
 	load_nodes();
 	node_count = nodes.size();
 	ASSERT_NE(0u, node_count) << "Test has no any case(s)." << std::endl;
+	verbose = nodes.first().parent().attribute("verbose").as_bool();
 }
 
 void TestsBaseXml::TearDown()

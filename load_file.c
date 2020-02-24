@@ -21,6 +21,11 @@
 
 uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffer* output, uint8_t verbose)
 {
+	(void)encoding;
+	(void)verbose;
+	return buffer_resize(output, 0) && file_read_all_bytes(path, output);
+#if 0
+
 	if (NULL == path ||
 		NULL == output ||
 		FILE_ENCODING_UNKNOWN == encoding ||
@@ -218,9 +223,10 @@ uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffe
 
 	(void)verbose;
 	return 0;
+#endif
 }
 
-uint16_t load_file_get_file_encoding(const uint8_t* encoding_start, const uint8_t* encoding_finish)
+uint16_t load_file_get_encoding(struct buffer* encoding_name)
 {
 	static const uint8_t* code_pages[] =
 	{
@@ -248,45 +254,53 @@ uint16_t load_file_get_file_encoding(const uint8_t* encoding_start, const uint8_
 		(const uint8_t*)"iso_8859_8",
 		(const uint8_t*)"iso_8859_9"
 	};
-	/**/
-	struct buffer enc;
-	SET_NULL_TO_BUFFER(enc);
 
-	if (!string_to_lower(encoding_start, encoding_finish, &enc))
+	if (NULL == encoding_name)
 	{
-		buffer_release(&enc);
+		return 0;
+	}
+
+	uint16_t result = (uint16_t)buffer_size(encoding_name);
+
+	if (!buffer_append(encoding_name, NULL, (ptrdiff_t)2 * result + sizeof(uint32_t)) ||
+		!buffer_resize(encoding_name, result))
+	{
+		return 0;
+	}
+
+	const uint8_t* start = buffer_data(encoding_name, 0);
+	const uint8_t* finish = start + result;
+
+	if (!string_to_lower(start, finish, encoding_name))
+	{
 		return FILE_ENCODING_UNKNOWN;
 	}
 
-	encoding_start = buffer_data(&enc, 0);
-	encoding_finish = encoding_start + buffer_size(&enc);
-	uint16_t result = text_encoding_get_one(encoding_start, encoding_finish);
+	finish = start + buffer_size(encoding_name);
+	start = buffer_data(encoding_name, result);
+	text_encoding_get_one(start, finish);
 
 	if (TEXT_ENCODING_UNKNOWN != result)
 	{
-		buffer_release(&enc);
 		return result;
 	}
 
-	result = common_string_to_enum(encoding_start, encoding_finish, code_pages, COUNT_OF(code_pages));
+	result = common_string_to_enum(start, finish, code_pages, COUNT_OF(code_pages));
 
 	if (COUNT_OF(code_pages) != result)
 	{
 		result += Windows_874;
-		buffer_release(&enc);
 		return result;
 	}
 
-	result = common_string_to_enum(encoding_start, encoding_finish, file_encodings, COUNT_OF(file_encodings));
+	result = common_string_to_enum(start, finish, file_encodings, COUNT_OF(file_encodings));
 
 	if (COUNT_OF(file_encodings) != result)
 	{
 		result += ISO_8859_1;
-		buffer_release(&enc);
 		return result;
 	}
 
-	buffer_release(&enc);
 	return FILE_ENCODING_UNKNOWN;
 }
 
@@ -322,15 +336,15 @@ uint8_t load_file_evaluate_task(void* project, struct buffer* task_arguments, ui
 		return 0;
 	}
 
-	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
+	struct buffer* file_path_in_a_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
 
 	const struct buffer* property_in_a_buffer = buffer_buffer_data(task_arguments, PROPERTY_POSITION);
 
-	const struct buffer* encoding_name_in_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
+	struct buffer* encoding_name_in_a_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
 
 	uint8_t property_name_length = 0;
 
-	if (!buffer_size(file_path_in_buffer) ||
+	if (!buffer_size(file_path_in_a_buffer) ||
 		0 == (property_name_length = (uint8_t)buffer_size(property_in_a_buffer)))
 	{
 		return 0;
@@ -338,22 +352,18 @@ uint8_t load_file_evaluate_task(void* project, struct buffer* task_arguments, ui
 
 	const uint8_t* file = NULL;
 
-	if (!buffer_push_back(file_path_in_buffer, 0))
+	if (!buffer_push_back(file_path_in_a_buffer, 0))
 	{
 		return 0;
 	}
 
-	file = buffer_data(file_path_in_buffer, 0);
-	/**/
+	file = buffer_data(file_path_in_a_buffer, 0);
 	const uint8_t* property_name = buffer_data(property_in_a_buffer, 0);
-	/**/
 	uint16_t encoding = ASCII;
-	const uint8_t encoding_length = (uint8_t)buffer_size(encoding_name_in_buffer);
 
-	if (encoding_length)
+	if (buffer_size(encoding_name_in_a_buffer))
 	{
-		const uint8_t* ptr = buffer_data(encoding_name_in_buffer, 0);
-		encoding = load_file_get_file_encoding(ptr, ptr + encoding_length);
+		encoding = load_file_get_encoding(encoding_name_in_a_buffer);
 
 		if (FILE_ENCODING_UNKNOWN == encoding)
 		{

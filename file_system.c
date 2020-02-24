@@ -8,6 +8,7 @@
 #include "file_system.h"
 #include "buffer.h"
 #include "common.h"
+#include "conversion.h"
 #if !defined(_WIN32)
 #include "date_time.h"
 #endif
@@ -37,6 +38,8 @@
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
+
+enum entry_types { directory_entry, file_entry, all_entries, UNKNOWN_ENTRY_TYPE };
 
 #if defined(_WIN32)
 
@@ -231,6 +234,22 @@ uint8_t directory_delete(const uint8_t* path)
 #endif
 }
 
+uint8_t directory_enumerate_file_system_entries(
+	const uint8_t* pattern, const uint8_t entry_type, const uint8_t recurse, struct buffer* output)
+{
+	if (NULL == pattern ||
+		all_entries < entry_type ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	(void)recurse;
+	(void)output;
+	/*TODO:*/
+	return 0;
+}
+
 uint8_t directory_exists(const uint8_t* path)
 {
 	if (NULL == path)
@@ -341,7 +360,7 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 }
 
 uint8_t directory_get_current_directory(const void* project, const void** the_property,
-										struct buffer* current_directory)
+										struct buffer* output)
 {
 	if (!project_get_base_directory(project, the_property))
 	{
@@ -350,15 +369,15 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 			(*the_property) = NULL;
 		}
 
-		return path_get_directory_for_current_process(current_directory);
+		return path_get_directory_for_current_process(output);
 	}
 
-	return property_get_by_pointer(the_property, current_directory);
+	return property_get_by_pointer(the_property, output);
 }
 
-uint8_t directory_get_directory_root(const uint8_t* path, struct range* output)
+uint8_t directory_get_directory_root(const uint8_t* path, struct range* root)
 {
-	return NULL != path && path_get_path_root(path, path + common_count_bytes_until(path, 0), output);
+	return NULL != path && path_get_path_root(path, path + common_count_bytes_until(path, 0), root);
 }
 
 int64_t directory_get_last_access_time(const uint8_t* path)
@@ -475,7 +494,7 @@ uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t*
 		return 0;
 	}
 
-	return range_is_null_or_empty(parent);
+	return !range_is_null_or_empty(parent);
 }
 
 #if defined(_WIN32)
@@ -736,6 +755,49 @@ size_t file_read(void* content, const size_t size_of_content_element,
 #endif
 }
 
+uint8_t file_read_all_bytes(const uint8_t* path, struct buffer* output)
+{
+	if (NULL == path ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	void* stream = NULL;
+
+	if (!file_open(path, (const uint8_t*)"rb", &stream))
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 4096))
+	{
+		file_close(stream);
+		return 0;
+	}
+
+	uint64_t readed = 0;
+	uint8_t* ptr = buffer_data(output, size);
+
+	while (0 < (readed = file_read(ptr, sizeof(uint8_t), 4096, stream)))
+	{
+		size += (ptrdiff_t)readed;
+
+		if (!buffer_resize(output, size) ||
+			!buffer_append(output, NULL, 4096))
+		{
+			file_close(stream);
+			return 0;
+		}
+
+		ptr = buffer_data(output, size);
+	}
+
+	return file_close(stream) && buffer_resize(output, size);
+}
+
 uint64_t file_get_length(const uint8_t* path)
 {
 	if (NULL == path)
@@ -765,6 +827,181 @@ uint64_t file_get_length(const uint8_t* path)
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file)
 {
 	return file_get_last_write_time_utc(src_file) <= file_get_last_write_time_utc(target_file);
+}
+
+static const uint8_t* entry_types_str[] =
+{
+	(const uint8_t*)"directory",
+	(const uint8_t*)"file",
+	(const uint8_t*)"all"
+};
+
+static const uint8_t* dir_function_str[] =
+{
+	(const uint8_t*)"enumerate-file-system-entries",
+	(const uint8_t*)"exists",
+	(const uint8_t*)"get-creation-time",
+	(const uint8_t*)"get-creation-time-utc",
+	(const uint8_t*)"get-current-directory",
+	(const uint8_t*)"get-directory-root",
+	(const uint8_t*)"get-last-access-time",
+	(const uint8_t*)"get-last-access-time-utc",
+	(const uint8_t*)"get-last-write-time",
+	(const uint8_t*)"get-last-write-time-utc",
+	(const uint8_t*)"get-logical-drives",
+	(const uint8_t*)"get-parent-directory"
+};
+
+enum dir_function
+{
+	enumerate_file_system_entries,
+	exists,
+	get_creation_time,
+	get_creation_time_utc,
+	get_current_directory,
+	get_directory_root,
+	get_last_access_time,
+	get_last_access_time_utc,
+	get_last_write_time,
+	get_last_write_time_utc,
+	get_logical_drives,
+	get_parent_directory,
+	UNKNOWN_DIR_FUNCTION
+};
+
+uint8_t dir_get_id_of_get_current_directory_function()
+{
+	return get_current_directory;
+}
+
+uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish)
+{
+	return common_string_to_enum(name_start, name_finish, dir_function_str, UNKNOWN_DIR_FUNCTION);
+}
+
+uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+						  struct buffer* output)
+{
+	if (UNKNOWN_DIR_FUNCTION <= function ||
+		get_current_directory == function ||
+		NULL == arguments ||
+		3 < arguments_count ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	struct range argument1;
+
+	struct range argument2;
+
+	struct range argument3;
+
+	argument1.start = argument2.start = argument1.finish = argument2.finish =
+											argument3.start = argument3.finish = NULL;
+
+	if (1 == arguments_count)
+	{
+		if (!common_get_one_argument(arguments, &argument1, 1))
+		{
+			return 0;
+		}
+
+		argument1.finish--;
+	}
+	else if (2 == arguments_count)
+	{
+		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
+		{
+			return 0;
+		}
+
+		argument1.finish--;
+		argument2.finish--;
+	}
+	else if (3 == arguments_count)
+	{
+		if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, 1))
+		{
+			return 0;
+		}
+
+		argument1.finish--;
+		argument2.finish--;
+		argument3.finish--;
+	}
+
+	switch (function)
+	{
+		case enumerate_file_system_entries:
+		{
+			if (3 != arguments_count &&
+				2 != arguments_count)
+			{
+				break;
+			}
+
+			const uint8_t entry_type = common_string_to_enum(
+										   argument2.start, argument2.finish, entry_types_str, UNKNOWN_ENTRY_TYPE);
+
+			if (UNKNOWN_ENTRY_TYPE == entry_type)
+			{
+				break;
+			}
+
+			uint8_t recurse = 0;
+
+			if (3 == arguments_count &&
+				!bool_parse(argument3.start, range_size(&argument3), &recurse))
+			{
+				break;
+			}
+
+			return directory_enumerate_file_system_entries(argument1.start, entry_type, recurse, output);
+		}
+
+		case exists:
+			return 1 == arguments_count && bool_to_string(directory_exists(argument1.start), output);
+
+		case get_creation_time:
+			return 1 == arguments_count && int64_to_string(directory_get_creation_time(argument1.start), output);
+
+		case get_creation_time_utc:
+			return 1 == arguments_count && int64_to_string(directory_get_creation_time_utc(argument1.start), output);
+
+		/*case get_current_directory:
+			return 0 == arguments_count && directory_get_current_directory(project, the_property, output);*/
+
+		case get_directory_root:
+			return 1 == arguments_count &&
+				   directory_get_directory_root(argument1.start, &argument2) &&
+				   buffer_append_data_from_range(output, &argument2);
+
+		case get_last_access_time:
+			return 1 == arguments_count && int64_to_string(directory_get_last_access_time(argument1.start), output);
+
+		case get_last_access_time_utc:
+			return 1 == arguments_count && int64_to_string(directory_get_last_access_time_utc(argument1.start), output);
+
+		case get_last_write_time:
+			return 1 == arguments_count && int64_to_string(directory_get_last_write_time(argument1.start), output);
+
+		case get_last_write_time_utc:
+			return 1 == arguments_count && int64_to_string(directory_get_last_write_time_utc(argument1.start), output);
+
+		case get_logical_drives:
+			return 0 == arguments_count && directory_get_logical_drives(output);
+
+		case get_parent_directory:
+			return 1 == arguments_count &&
+				   directory_get_parent_directory(argument1.start, argument1.finish, &argument2) &&
+				   buffer_append_data_from_range(output, &argument2);
+
+		case UNKNOWN_DIR_FUNCTION:
+			break;
+	}
+
+	return 0;
 }
 
 #define DELETE_DIR_POSITION		0
@@ -800,7 +1037,6 @@ uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 
 	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_FILE_POSITION);
 
-	/**/
 	const uint8_t* dir_ = NULL;
 
 	if (buffer_size(dir_path_in_buffer))

@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "echo.h"
 #include "load_file.h"
@@ -23,63 +24,72 @@ class TestProject : public TestsBaseXml
 {
 };
 
-TEST(TestProject_, project_new)
+TEST_F(TestProject, project_property_set_value)
 {
-	static const uint8_t expected_return = 0;
-	static const uint8_t verbose = 0;/*TODO*/
-	//
-	void* project = NULL;
-	ASSERT_TRUE(project_new(&project));
-	ASSERT_NE(nullptr, project);
-	//
-	const void* the_property = NULL;
-	//
-	the_property = NULL;
-	uint8_t returned = project_get_base_directory(project, &the_property);
-	ASSERT_EQ(expected_return, returned);
-	//
-	the_property = NULL;
-	returned = project_get_buildfile_path(project, &the_property);
-	ASSERT_EQ(expected_return, returned);
-	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-	returned = project_get_buildfile_uri(the_property, &output);
-	ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
-	buffer_release(&output);
-	//
-	the_property = NULL;
-	returned = project_get_default_target(project, &the_property);
-	ASSERT_EQ(expected_return, returned);
-	//
-	the_property = NULL;
-	returned = project_get_name(project, &the_property);
-	ASSERT_EQ(expected_return, returned);
-	//
-	void* the_non_const_property = NULL;
-	ASSERT_FALSE(project_property_exists(project, (const uint8_t*)"program.version", 15,
-										 &the_non_const_property, verbose));
-	ASSERT_EQ(nullptr, the_non_const_property);
-	//
-	ASSERT_TRUE(project_property_set_value(project,
-										   (const uint8_t*)"program.version", 15,
-										   (const uint8_t*)"YYYY.MM.DD.?", 12,
-										   0, 0, 1, verbose));
-	//
-	ASSERT_TRUE(project_property_exists(project, (const uint8_t*)"program.version", 15,
-										&the_non_const_property, verbose));
-	ASSERT_NE(nullptr, the_non_const_property);
-	the_property = NULL;
-	the_non_const_property = NULL;
-	//
-	project_unload(project);
+	for (const auto& node : nodes)
+	{
+		const auto code(get_data_from_nodes(node, "code"));
+		//
+		const auto code_in_range = string_to_range(code);
+		//
+		void* project = NULL;
+		ASSERT_TRUE(project_new(&project)) << project_free(project);
+		ASSERT_NE(nullptr, project) << project_free(project);
+		//
+		ASSERT_NE(code.empty(), project_load_from_content(
+					  code_in_range.start, code_in_range.finish, project, verbose)) << project_free(project);
+
+		for (const auto& property : node.node().select_nodes("property"))
+		{
+			std::string property_name;
+			std::string property_value;
+			uint8_t dynamic = 0;
+			uint8_t over_write = 0;
+			uint8_t read_only = 0;
+			uint8_t fail_on_error = 0;
+			uint8_t property_verbose = 0;
+			//
+			property_load_from_node(property.node(), property_name, property_value, dynamic,
+									over_write, read_only, fail_on_error, property_verbose);
+			//
+			property_verbose = MAX(verbose, property_verbose);
+			//
+			const auto expected_return = (uint8_t)INT_PARSE(property.node().select_node("return").node().child_value());
+			//
+			auto returned = project_property_set_value(project,
+							(const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(),
+							(const uint8_t*)property_value.c_str(), property_value.size(),
+							dynamic, over_write, read_only, property_verbose);
+			//
+			ASSERT_EQ(expected_return, returned) << project_free(project);
+			//
+			void* the_property = NULL;
+			returned = project_property_exists(
+						   project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &the_property,
+						   property_verbose);
+			//
+			ASSERT_EQ(expected_return, returned) << project_free(project);
+
+			if (expected_return)
+			{
+				uint8_t returned_dynamic = 0;
+				uint8_t returned_read_only = 0;
+				//
+				//ASSERT_TRUE(property_get_by_pointer(the_property, returned_value));
+				ASSERT_TRUE(property_is_dynamic(the_property, &returned_dynamic)) << project_free(project);
+				ASSERT_TRUE(property_is_readonly(the_property, &returned_read_only)) << project_free(project);
+				//
+				ASSERT_EQ(dynamic, returned_dynamic) << project_free(project);
+				ASSERT_EQ(read_only, returned_read_only) << project_free(project);
+			}
+		}
+
+		project_unload(project);
+		//
+		--node_count;
+	}
 }
-#if 0
-TEST(TestProject_, project_property_set_value)
-{
-}
-#endif
+
 TEST_F(TestProject, project_load_from_content)
 {
 	struct buffer output;
@@ -95,7 +105,6 @@ TEST_F(TestProject, project_load_from_content)
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
 		const std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
-		const uint8_t verbose = 0;
 		//TODO: const auto targets = node.node().select_nodes("target");
 		//
 		const range content_in_range = string_to_range(content);
@@ -159,6 +168,10 @@ TEST_F(TestProject, project_load_from_content)
 	buffer_release(&output);
 }
 
+extern "C" {
+	extern uint16_t argument_parser_get_encoding_from_name(const char* start, const char* finish);
+};
+
 TEST_F(TestProject, project_load_from_build_file)
 {
 	struct buffer tmp;
@@ -171,15 +184,14 @@ TEST_F(TestProject, project_load_from_build_file)
 											node.node().select_node("return").node().child_value());
 		const std::string str_encoding(node.node().select_node("encoding").node().child_value());
 		const auto encoding_in_range(string_to_range(str_encoding));
-		auto encoding = load_file_get_file_encoding(encoding_in_range.start, encoding_in_range.finish);
+		auto encoding = argument_parser_get_encoding_from_name(
+							(const char*)encoding_in_range.start, (const char*)encoding_in_range.finish);
 
 		if (FILE_ENCODING_UNKNOWN == encoding)
 		{
 			encoding = UTF8;
 		}
 
-		uint8_t verbose = 0;
-		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
 		const std::string tmp_path(buffer_to_string(&tmp));

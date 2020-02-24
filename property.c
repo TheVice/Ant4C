@@ -162,29 +162,29 @@ uint8_t property_exists(const struct buffer* properties, const uint8_t* name, ui
 	return 0;
 }
 
-uint8_t property_is_dynamic(const void* the_property, uint8_t* is_dynamic)
+uint8_t property_is_dynamic(const void* the_property, uint8_t* dynamic)
 {
 	if (NULL == the_property ||
-		NULL == is_dynamic)
+		NULL == dynamic)
 	{
 		return 0;
 	}
 
 	const struct property* prop = (const struct property*)the_property;
-	*is_dynamic = prop->dynamic;
+	*dynamic = prop->dynamic;
 	return 1;
 }
 
-uint8_t property_is_readonly(const void* the_property, uint8_t* is_read_only)
+uint8_t property_is_readonly(const void* the_property, uint8_t* read_only)
 {
 	if (NULL == the_property ||
-		NULL == is_read_only)
+		NULL == read_only)
 	{
 		return 0;
 	}
 
 	const struct property* prop = (const struct property*)the_property;
-	*is_read_only = prop->read_only;
+	*read_only = prop->read_only;
 	return 1;
 }
 
@@ -353,45 +353,51 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 	}
 
 	const struct buffer* name = buffer_buffer_data(task_arguments, NAME_POSITION);
+	const uint8_t name_length = (uint8_t)buffer_size(name);
 
-	if (!buffer_size(name))
+	if (!name_length)
 	{
 		return 0;
 	}
 
-	const struct buffer* value = buffer_buffer_data(task_arguments, VALUE_POSITION);
-	const struct buffer* dynamic_in_buffer = buffer_buffer_data(task_arguments, DYNAMIC_POSITION);
-	const struct buffer* over_write_in_buffer = buffer_buffer_data(task_arguments, OVER_WRITE_POSITION);
-	const struct buffer* read_only_in_buffer = buffer_buffer_data(task_arguments, READ_ONLY_POSITION);
+	const struct buffer* value_in_a_buffer = buffer_buffer_data(task_arguments, VALUE_POSITION);
+	const struct buffer* dynamic_in_a_buffer = buffer_buffer_data(task_arguments, DYNAMIC_POSITION);
+	const struct buffer* over_write_in_a_buffer = buffer_buffer_data(task_arguments, OVER_WRITE_POSITION);
+	const struct buffer* read_only_in_a_buffer = buffer_buffer_data(task_arguments, READ_ONLY_POSITION);
 	/**/
-	uint8_t dynamic = 0;
+	const uint8_t* value = buffer_data(value_in_a_buffer, 0);
 
-	if (buffer_size(dynamic_in_buffer) &&
-		!bool_parse(buffer_data(dynamic_in_buffer, 0), buffer_size(dynamic_in_buffer), &dynamic))
+	if (NULL == value)
+	{
+		value = (const uint8_t*)&value;
+	}
+
+	uint8_t dynamic = (uint8_t)buffer_size(dynamic_in_a_buffer);
+
+	if (dynamic && !bool_parse(buffer_data(dynamic_in_a_buffer, 0), dynamic, &dynamic))
 	{
 		return 0;
 	}
 
 	uint8_t over_write = 1;
 
-	if (buffer_size(over_write_in_buffer) &&
-		!bool_parse(buffer_data(over_write_in_buffer, 0), buffer_size(over_write_in_buffer), &over_write))
+	if (buffer_size(over_write_in_a_buffer) &&
+		!bool_parse(buffer_data(over_write_in_a_buffer, 0), buffer_size(over_write_in_a_buffer), &over_write))
 	{
 		return 0;
 	}
 
-	uint8_t read_only = 0;
+	uint8_t read_only = (uint8_t)buffer_size(read_only_in_a_buffer);
 
-	if (buffer_size(read_only_in_buffer) &&
-		!bool_parse(buffer_data(read_only_in_buffer, 0), buffer_size(read_only_in_buffer), &read_only))
+	if (read_only && !bool_parse(buffer_data(read_only_in_a_buffer, 0), read_only, &read_only))
 	{
 		return 0;
 	}
 
 	return project_property_set_value(
 			   project,
-			   buffer_data(name, 0), (uint8_t)buffer_size(name),
-			   buffer_data(value, 0), buffer_size(value),
+			   buffer_data(name, 0), name_length,
+			   value, buffer_size(value_in_a_buffer),
 			   dynamic, over_write, read_only, verbose);
 }
 

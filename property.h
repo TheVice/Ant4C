@@ -27,8 +27,8 @@ uint8_t property_get_by_pointer(const void* the_property, struct buffer* output)
 
 uint8_t property_exists(const struct buffer* properties,
 						const uint8_t* name, uint8_t name_length, void** the_property);
-uint8_t property_is_dynamic(const void* the_property, uint8_t* is_dynamic);
-uint8_t property_is_readonly(const void* the_property, uint8_t* is_readonly);
+uint8_t property_is_dynamic(const void* the_property, uint8_t* dynamic);
+uint8_t property_is_readonly(const void* the_property, uint8_t* read_only);
 
 uint8_t property_set_by_name(struct buffer* properties,
 							 const uint8_t* name, uint8_t name_length,

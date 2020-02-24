@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -150,18 +150,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		const auto task_id = interpreter_get_task(task_name_in_range.start, task_name_in_range.finish);
 		//
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
-		auto verbose_attribute = node.node().attribute("verbose");
-		uint8_t verbose = 0;
-
-		if (verbose_attribute.empty())
-		{
-			verbose = (uint8_t)doc.first_child().attribute("verbose").as_bool();
-		}
-		else
-		{
-			verbose = (uint8_t)verbose_attribute.as_bool();
-		}
-
+		//
 		void* project = NULL;
 
 		if (node.node().attribute("project").as_bool())
