@@ -163,7 +163,7 @@ uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,
 uint8_t path_get_directory_name(const uint8_t* path_start, const uint8_t* path_finish,
 								struct range* directory)
 {
-	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||  NULL == directory)
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) || NULL == directory)
 	{
 		return 0;
 	}
@@ -690,7 +690,7 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 	return text_encoding_UTF16LE_to_UTF8(pathW, pathW + returned_length, path);
 #else
 
-	while (1)
+	for (;;)
 	{
 		if (!buffer_append_char(path, NULL, FILENAME_MAX))
 		{
@@ -907,9 +907,34 @@ static const uint8_t* path_function_str[] =
 	(const uint8_t*)"get-windows-path"
 };
 
+enum path_function
+{
+	path_change_extension_function,
+	path_combine_function,
+	path_get_directory_name_function,
+	path_get_extension_function,
+	path_get_file_name_function,
+	path_get_file_name_without_extension_function,
+	path_get_full_path_function,
+	path_get_path_root_function,
+	path_get_temp_file_name_function,
+	path_get_temp_path_function,
+	path_has_extension_function,
+	path_is_path_rooted_function,
+	cygpath_get_dos_path_function,
+	cygpath_get_unix_path_function,
+	cygpath_get_windows_path_function,
+	UNKNOWN_PATH_FUNCTION
+};
+
+uint8_t path_get_id_of_get_full_path_function()
+{
+	return path_get_full_path_function;
+}
+
 uint8_t path_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
-	return common_string_to_enum(name_start, name_finish, path_function_str, PATH_UNKNOWN_FUNCTION);
+	return common_string_to_enum(name_start, name_finish, path_function_str, UNKNOWN_PATH_FUNCTION);
 }
 
 uint8_t path_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
@@ -918,7 +943,7 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 {
 	(void)project;
 
-	if (PATH_UNKNOWN_FUNCTION <= function ||
+	if (UNKNOWN_PATH_FUNCTION <= function ||
 		NULL == arguments ||
 		2 < arguments_count ||
 		NULL == output)
@@ -1007,7 +1032,7 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 				   bool_to_string(path_is_path_rooted(argument1.start, argument1.finish), output);
 
 		case path_get_full_path_function:
-		case PATH_UNKNOWN_FUNCTION:
+		case UNKNOWN_PATH_FUNCTION:
 		default:
 			break;
 	}
@@ -1018,7 +1043,7 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							  struct buffer* output)
 {
-	if (PATH_UNKNOWN_FUNCTION <= function ||
+	if (UNKNOWN_PATH_FUNCTION <= function ||
 		NULL == arguments ||
 		1 != arguments_count ||
 		NULL == output)
@@ -1050,7 +1075,7 @@ uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, 
 				   cygpath_get_windows_path(buffer_data(output, size),
 											buffer_data(output, size) + range_size(&argument));
 
-		case PATH_UNKNOWN_FUNCTION:
+		case UNKNOWN_PATH_FUNCTION:
 		default:
 			break;
 	}

@@ -24,7 +24,7 @@ uint8_t project_property_set_value(void* project,
 								   uint8_t read_only, uint8_t verbose);
 uint8_t project_property_get_by_name(const void* project,
 									 const uint8_t* property_name, uint8_t property_name_length,
-									 struct buffer* output);
+									 struct buffer* output, uint8_t verbose);
 
 uint8_t project_target_new(void* project,
 						   const struct range* name, const struct range* depends, const struct range* content);

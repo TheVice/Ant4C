@@ -175,7 +175,8 @@ uint8_t buffer_free_with_inner_buffers(buffer* storage)
 	return 0;
 }
 
-uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition)
+uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition,
+		uint8_t verbose)
 {
 	if (NULL == tmp || NULL == condition)
 	{
@@ -193,7 +194,7 @@ uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* 
 
 		auto code = string_to_range(if_);
 
-		if (!interpreter_evaluate_code(NULL, NULL, &code, tmp))
+		if (!interpreter_evaluate_code(NULL, NULL, &code, tmp, verbose))
 		{
 			return 0;
 		}

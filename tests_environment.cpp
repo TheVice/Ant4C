@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -29,6 +29,7 @@ class TestEnvironment : public TestsBaseXml
 
 TEST(TestEnvironment_, environment_get_folder_path)
 {
+	static const uint8_t verbose = 0;
 #if defined(_WIN32)
 	const SpecialFolder input[] =
 	{
@@ -127,7 +128,7 @@ TEST(TestEnvironment_, environment_get_folder_path)
 		{
 			const ptrdiff_t size = buffer_size(&path);
 			const range code = string_to_range(expected_result[i]);
-			ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &code, &path))
+			ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &code, &path, verbose))
 					<< "'" << expected_result[i] << "'" << std::endl << buffer_free(&path);
 			std::string path_in_string(buffer_to_string(&path));
 			ASSERT_FALSE(path_in_string.empty()) << (uint32_t)i << std::endl << buffer_free(&path);

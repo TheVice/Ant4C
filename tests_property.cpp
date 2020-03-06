@@ -129,10 +129,11 @@ TEST_F(TestProperty, property_task)
 			//
 			property_load_from_node(property.node(), name, expected_value, expected_dynamic,
 									over_write, expected_read_only, fail_on_error, local_verbose);
+			//
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
 			ASSERT_TRUE(project_property_get_by_name(
 							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
-							&properties))
+							&properties, verbose))
 					<< name << std::endl << buffer_free(&properties) << project_free(project);
 			ASSERT_EQ(expected_value, buffer_to_string(&properties)) << buffer_free(&properties);
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);

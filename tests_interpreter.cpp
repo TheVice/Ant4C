@@ -68,7 +68,8 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 		const range arguments_in_range = string_to_range(arguments);
 		ASSERT_TRUE(buffer_resize_and_free_inner_buffers(&output)) << buffer_free_with_inner_buffers(&output);
 		//
-		const uint8_t returned = interpreter_get_values_for_arguments(NULL, NULL, &arguments_in_range, &output);
+		const uint8_t returned = interpreter_get_values_for_arguments(NULL, NULL, &arguments_in_range, &output,
+								 verbose);
 		ASSERT_EQ(expected_return, returned) << buffer_free_with_inner_buffers(&output) << std::endl
 											 << arguments;
 		ptrdiff_t i = 0;
@@ -104,7 +105,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 	for (const auto& node : nodes)
 	{
 		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &output, &condition)) << buffer_free(&output);
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &output, &condition, verbose)) << buffer_free(&output);
 
 		if (!condition)
 		{
@@ -120,7 +121,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 		const range code_in_range = string_to_range(code);
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const uint8_t returned = interpreter_evaluate_code(NULL, NULL, &code_in_range, &output);
+		const uint8_t returned = interpreter_evaluate_code(NULL, NULL, &code_in_range, &output, verbose);
 		ASSERT_EQ(expected_return, returned) << "'" << code << "'" << std::endl << buffer_free(&output);
 		//
 		const std::string current_output(buffer_to_string(&output));

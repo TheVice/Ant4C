@@ -87,10 +87,9 @@ uint8_t project_property_set_value(void* project,
 }
 
 uint8_t project_property_get_by_name(
-	const void* project, const uint8_t* property_name, uint8_t property_name_length, struct buffer* output)
+	const void* project, const uint8_t* property_name, uint8_t property_name_length, struct buffer* output,
+	uint8_t verbose)
 {
-	uint8_t verbose = 0;/*TODO*/
-
 	if (NULL == output)
 	{
 		return 0;
@@ -494,7 +493,7 @@ uint8_t project_evaluate_task(void* project, const struct buffer* task_arguments
 
 		if (project_property_get_by_name(project,
 										 project_properties[BUILD_FILE_POSITION],
-										 project_properties_lengths[BUILD_FILE_POSITION], &build_file) &&
+										 project_properties_lengths[BUILD_FILE_POSITION], &build_file, verbose) &&
 			buffer_size(&build_file))
 		{
 			struct range base_directory;

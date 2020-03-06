@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -12,26 +12,6 @@
 
 struct buffer;
 struct range;
-
-enum path_function
-{
-	path_change_extension_function,
-	path_combine_function,
-	path_get_directory_name_function,
-	path_get_extension_function,
-	path_get_file_name_function,
-	path_get_file_name_without_extension_function,
-	path_get_full_path_function,
-	path_get_path_root_function,
-	path_get_temp_file_name_function,
-	path_get_temp_path_function,
-	path_has_extension_function,
-	path_is_path_rooted_function,
-	cygpath_get_dos_path_function,
-	cygpath_get_unix_path_function,
-	cygpath_get_windows_path_function,
-	PATH_UNKNOWN_FUNCTION
-};
 
 static const uint8_t path_posix_delimiter = '/';
 static const uint8_t path_windows_delimiter = '\\';
@@ -67,6 +47,7 @@ uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_fini
 uint8_t cygpath_get_unix_path(uint8_t* path_start, uint8_t* path_finish);
 uint8_t cygpath_get_windows_path(uint8_t* path_start, uint8_t* path_finish);
 
+uint8_t path_get_id_of_get_full_path_function();
 uint8_t path_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t path_exec_function(const void* project,
 						   uint8_t function, const struct buffer* arguments, uint8_t arguments_count,

@@ -453,15 +453,29 @@ static const uint8_t* property_str[] =
 	(const uint8_t*)"is-readonly"
 };
 
+enum property_function
+{
+	property_exists_function,
+	property_get_value_function,
+	property_is_dynamic_function,
+	property_is_readonly_function,
+	UNKNOWN_PROPERTY_FUNCTION
+};
+
+uint8_t property_get_id_of_get_value_function()
+{
+	return property_get_value_function;
+}
+
 uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
-	return common_string_to_enum(name_start, name_finish, property_str, PROPERTY_UNKNOWN_FUNCTION);
+	return common_string_to_enum(name_start, name_finish, property_str, UNKNOWN_PROPERTY_FUNCTION);
 }
 
 uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
 							   uint8_t arguments_count, const void** the_property, struct buffer* output, uint8_t verbose)
 {
-	if (PROPERTY_UNKNOWN_FUNCTION <= function ||
+	if (UNKNOWN_PROPERTY_FUNCTION <= function ||
 		NULL == arguments ||
 		1 != arguments_count ||
 		NULL == the_property ||
@@ -502,7 +516,7 @@ uint8_t property_exec_function(const void* project, uint8_t function, const stru
 		case property_is_readonly_function:
 			return NULL != prop && bool_to_string(prop->read_only, output);
 
-		case PROPERTY_UNKNOWN_FUNCTION:
+		case UNKNOWN_PROPERTY_FUNCTION:
 		default:
 			break;
 	}

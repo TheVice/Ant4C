@@ -81,7 +81,7 @@ protected:
 		time_out(),
 		verbose_(),
 		expected_return(),
-		allow_output_to_console(0)
+		allow_output_to_console()
 	{
 		predefine_arguments.insert(std::make_pair("--tests_exec_app=", &tests_exec_app));
 	}
@@ -101,11 +101,6 @@ protected:
 			ASSERT_FALSE(result);
 		}
 
-		/*const std::string allow_str(nodes.first().parent().attribute("allow_output_to_console").as_string());
-		const range allow_code(string_to_range(allow_str));
-		ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &allow_code, &temp_file_name)) << buffer_free(&temp_file_name);
-		allow_code = buffer_to_range(&temp_file_name);
-		ASSERT_TRUE(bool_parse(allow_code.start, range_size(&allow_code), &allow_output_to_console)) << buffer_free(&temp_file_name);*/
 		allow_output_to_console = nodes.first().parent().attribute("allow_output_to_console").as_bool();
 	}
 
@@ -275,7 +270,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	{
 		uint8_t condition = 0;
 		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &temp_file_name,
-					&condition)) << buffer_free(&temp_file_name);
+					&condition, verbose)) << buffer_free(&temp_file_name);
 
 		if (!condition)
 		{
@@ -303,7 +298,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		{
 			returned = exec(append, &program, &base_dir, &command_line, NULL,
 							NULL, NULL, &working_dir, &environment_variables,
-							spawn, time_out, verbose);
+							spawn, time_out, verbose_);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< "program - '" << range_to_string(&program) << "'" << std::endl
@@ -342,8 +337,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_TRUE(exec_node.append_attribute("timeout").set_value(time_out))
 					<< time_out << std::endl << buffer_free(&temp_file_name);
 			//
-			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose ? true : false))
-					<< (int)verbose << std::endl << buffer_free(&temp_file_name);
+			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose_ ? true : false))
+					<< (int)verbose_ << std::endl << buffer_free(&temp_file_name);
 			//
 			std::ostringstream string_stream;
 			exec_document.print(string_stream);
@@ -351,7 +346,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			const auto exec_code_in_range = string_to_range(exec_code);
 			//
 			returned = interpreter_evaluate_task(NULL, NULL, exec_task_id,
-												 exec_code_in_range.start + 1 + exec_str.size(), exec_code_in_range.finish, verbose);
+												 exec_code_in_range.start + 1 + exec_str.size(), exec_code_in_range.finish, verbose_);
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl
 					<< buffer_free(&temp_file_name);
@@ -366,7 +361,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		returned =
 			exec(append, &program, &base_dir, &command_line, &output_file,
 				 NULL, NULL, &working_dir, &environment_variables,
-				 spawn, time_out, verbose);
+				 spawn, time_out, verbose_);
 		//
 		ASSERT_EQ(expected_return, returned) << buffer_free(&temp_file_name);
 		//

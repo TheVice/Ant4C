@@ -608,14 +608,13 @@
   </TestExec>
   <TestFileSystem>
     <directory_enumerate_file_system_entries>
-      <input><![CDATA[
+      <code input="folder"><![CDATA[
       <project name="Empty folder">
         <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" overwrite="true" />
-        <mkdir dir="${property::get-value('folder')}" />
+        <mkdir dir="${property::get-value('folder')}" unless="${directory::exists(property::get-value('folder'))}" />
         <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
       </project>
-      ]]></input>
-      <property>folder</property>
+      ]]></code>
       <output entry_type="directory" recurse="false" />
       <output entry_type="file" recurse="false" />
       <output entry_type="all" recurse="false" />
@@ -623,38 +622,66 @@
       <output entry_type="file" recurse="true" />
       <output entry_type="all" recurse="true" />
     </directory_enumerate_file_system_entries>
-    <!--directory_enumerate_file_system_entries>
-      <input>
-        <![CDATA[
+    <directory_enumerate_file_system_entries>
+      <code input="folder"><![CDATA[
       <project name="With one folder">
         <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" overwrite="true" />
-        <mkdir dir="${property::get-value('folder')}" />
-        <property name="entry" value="${path::combine(property::get-value('folder'), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />
+        <mkdir dir="${property::get-value('folder')}" unless="${directory::exists(property::get-value('folder'))}" />
+        <property name="entry" value="${path::combine(property::get-value('folder'), hash::bytes-to-string(hash::crc32(property::get-value('folder'))))}" />
         <mkdir dir="${property::get-value('entry')}" />
         <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
       </project>
-      ]]>
-      </input>
-      <property>folder</property>
+      ]]></code>
       <output entry_type="directory" recurse="false">
         <entry>entry</entry>
       </output>
-      <output entry_type="file" recurse="false">
-        <entry>entry</entry>
-      </output>
+      <output entry_type="file" recurse="false" />
       <output entry_type="all" recurse="false">
         <entry>entry</entry>
       </output>
       <output entry_type="directory" recurse="true">
         <entry>entry</entry>
       </output>
-      <output entry_type="file" recurse="true">
-        <entry>entry</entry>
-      </output>
+      <output entry_type="file" recurse="true" />
       <output entry_type="all" recurse="true">
         <entry>entry</entry>
       </output>
-    </directory_enumerate_file_system_entries-->
+    </directory_enumerate_file_system_entries>
+    <!--directory_enumerate_file_system_entries>
+      <code input="folder">
+        <![CDATA[
+      <project name="With one folder and inner in it">
+        <description>Create root folder</description>
+        <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" overwrite="true" />
+        <mkdir dir="${property::get-value('folder')}" unless="${directory::exists(property::get-value('folder'))}" />
+        <description>Create sub folder</description>
+        <property name="entry" value="${path::combine(property::get-value('folder'), hash::bytes-to-string(hash::crc32(property::get-value('folder'))))}" />
+        <mkdir dir="${property::get-value('entry')}" />
+        <description>Create folder in the sub folder of root directory</description>
+        <property name="entry_" value="${path::combine(property::get-value('entry'), hash::bytes-to-string(hash::crc32(property::get-value('entry'))))}" />
+        <mkdir dir="${property::get-value('entry_')}" />
+        <description>Save in property input for function to test</description>
+        <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
+      </project>
+      ]]>
+      </code>
+      <output entry_type="directory" recurse="false">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="file" recurse="false" />
+      <output entry_type="all" recurse="false">
+        <entry>entry</entry>
+      </output>
+      <output entry_type="directory" recurse="true">
+        <entry>entry</entry>
+        <entry>entry_</entry>
+      </output>
+      <output entry_type="file" recurse="true" />
+      <output entry_type="all" recurse="true">
+        <entry>entry</entry>
+        <entry>entry_</entry>
+      </output>
+    </directory_enumerate_file_system_entries -->
     <directory_exists>
       <input></input>
       <return></return>
@@ -3942,9 +3969,19 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <directory>C:</directory>
       <return>1</return>
     </path_get_directory_name>
+    <path_get_directory_name if="${platform::is-windows()}">
+      <path>C:\Temp\</path>
+      <directory>C:\Temp</directory>
+      <return>1</return>
+    </path_get_directory_name>
     <path_get_directory_name if="${platform::is-unix()}">
       <path>/tmp</path>
       <directory>/</directory>
+      <return>1</return>
+    </path_get_directory_name>
+    <path_get_directory_name if="${platform::is-unix()}">
+      <path>/tmp/</path>
+      <directory>/tmp</directory>
       <return>1</return>
     </path_get_directory_name>
     <path_get_extension>

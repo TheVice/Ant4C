@@ -480,21 +480,7 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t* path_finish,
 									   struct range* parent)
 {
-	if (range_in_parts_is_null_or_empty(path_start, path_finish) || NULL == parent)
-	{
-		return 0;
-	}
-
-	parent->start = path_start;
-	parent->finish = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start, &PATH_DELIMITER, 1, 1,
-					 -1);
-
-	if (!string_trim(parent))
-	{
-		return 0;
-	}
-
-	return !range_is_null_or_empty(parent);
+	return path_get_directory_name(path_start, path_finish, parent);
 }
 
 #if defined(_WIN32)

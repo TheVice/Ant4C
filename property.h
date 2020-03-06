@@ -14,14 +14,6 @@
 struct buffer;
 
 enum data_type { property_value_is_byte_array, property_value_is_integer, property_value_is_double };
-enum property_function
-{
-	property_exists_function,
-	property_get_value_function,
-	property_is_dynamic_function,
-	property_is_readonly_function,
-	PROPERTY_UNKNOWN_FUNCTION
-};
 
 uint8_t property_get_by_pointer(const void* the_property, struct buffer* output);
 
@@ -52,6 +44,7 @@ uint8_t property_evaluate_task(void* project, const struct buffer* task_argument
 uint8_t property_add_at_project(void* project, const struct buffer* properties, uint8_t verbose);
 void property_clear(struct buffer* properties);
 
+uint8_t property_get_id_of_get_value_function();
 uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
 							   uint8_t arguments_count, const void** the_property, struct buffer* output, uint8_t verbose);

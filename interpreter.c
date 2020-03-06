@@ -211,7 +211,7 @@ uint8_t interpreter_get_function_from_argument(
 
 uint8_t interpreter_evaluate_argument_area(
 	const void* project, const void* target,
-	const struct range* argument_area, struct buffer* output)
+	const struct range* argument_area, struct buffer* output, uint8_t verbose)
 {
 	ptrdiff_t index = 0;
 	const uint8_t* pos = argument_area->start;
@@ -228,7 +228,7 @@ uint8_t interpreter_evaluate_argument_area(
 		if (!string_trim(&function) ||
 			!interpreter_get_function_from_argument(&function) ||
 			!buffer_append(output, pos, function.start - pos) ||
-			!interpreter_evaluate_function(project, target, &function, output))
+			!interpreter_evaluate_function(project, target, &function, output, verbose))
 		{
 			return 0;
 		}
@@ -241,9 +241,9 @@ uint8_t interpreter_evaluate_argument_area(
 
 uint8_t interpreter_actualize_property_value(const void* project, const void* target,
 		uint8_t property_function_id, const void* the_property,
-		ptrdiff_t size, struct buffer* return_of_function)
+		ptrdiff_t size, struct buffer* return_of_function, uint8_t verbose)
 {
-	if (property_get_value_function != property_function_id)
+	if (property_get_id_of_get_value_function() != property_function_id)
 	{
 		return 1;
 	}
@@ -278,7 +278,7 @@ uint8_t interpreter_actualize_property_value(const void* project, const void* ta
 
 	code.finish = code.start + buffer_size(&code_in_buffer);
 
-	if (!interpreter_evaluate_code(project, target, &code, return_of_function))
+	if (!interpreter_evaluate_code(project, target, &code, return_of_function, verbose))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -290,7 +290,7 @@ uint8_t interpreter_actualize_property_value(const void* project, const void* ta
 
 uint8_t interpreter_get_value_for_argument(
 	const void* project, const void* target,
-	struct range* argument_area, struct buffer* values)
+	struct range* argument_area, struct buffer* values, uint8_t verbose)
 {
 	struct buffer value;
 	SET_NULL_TO_BUFFER(value);
@@ -308,7 +308,7 @@ uint8_t interpreter_get_value_for_argument(
 		return 0;
 	}
 
-	if (!interpreter_evaluate_argument_area(project, target, argument_area, &value))
+	if (!interpreter_evaluate_argument_area(project, target, argument_area, &value, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -316,9 +316,9 @@ uint8_t interpreter_get_value_for_argument(
 
 	if (!buffer_size(&value))
 	{
-		if (project_property_get_by_name(project, argument_area->start, (uint8_t)range_size(argument_area), &value))
+		if (project_property_get_by_name(project, argument_area->start, (uint8_t)range_size(argument_area), &value,
+										 verbose))
 		{
-			uint8_t verbose = 0;/*TODO*/
 			void* the_property = NULL;
 
 			if (!project_property_exists(project, argument_area->start, (uint8_t)range_size(argument_area),
@@ -328,7 +328,7 @@ uint8_t interpreter_get_value_for_argument(
 				return 0;
 			}
 
-			if (!interpreter_actualize_property_value(project, target, 1, the_property, 0, &value))
+			if (!interpreter_actualize_property_value(project, target, 1, the_property, 0, &value, verbose))
 			{
 				buffer_release(&value);
 				return 0;
@@ -352,7 +352,7 @@ uint8_t interpreter_get_value_for_argument(
 
 uint8_t interpreter_get_values_for_arguments(
 	const void* project, const void* target,
-	const struct range* arguments_area, struct buffer* values)
+	const struct range* arguments_area, struct buffer* values, uint8_t verbose)
 {
 	if (range_is_null_or_empty(arguments_area) || NULL == values)
 	{
@@ -373,7 +373,7 @@ uint8_t interpreter_get_values_for_arguments(
 		{
 			const uint8_t* pos = argument_area.finish + 1;/*TODO: MIN(pos, arguments_area->finish)*/
 
-			if (!interpreter_get_value_for_argument(project, target, &argument_area, values))
+			if (!interpreter_get_value_for_argument(project, target, &argument_area, values, verbose))
 			{
 				return 0;
 			}
@@ -406,7 +406,7 @@ uint8_t interpreter_get_values_for_arguments(
 		++argument_area.finish;
 	}
 
-	if (!interpreter_get_value_for_argument(project, target, &argument_area, values))
+	if (!interpreter_get_value_for_argument(project, target, &argument_area, values, verbose))
 	{
 		return 0;
 	}
@@ -416,7 +416,7 @@ uint8_t interpreter_get_values_for_arguments(
 }
 
 uint8_t interpreter_evaluate_function(const void* project, const void* target, const struct range* function,
-									  struct buffer* return_of_function)
+									  struct buffer* return_of_function, uint8_t verbose)
 {
 	struct buffer values;
 	SET_NULL_TO_BUFFER(values);
@@ -431,7 +431,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 	}
 
 	uint8_t values_count = interpreter_get_values_for_arguments(
-							   project, target, &arguments_area, &values);
+							   project, target, &arguments_area, &values, verbose);
 
 	switch (interpreter_get_unit(name_space.start, name_space.finish))
 	{
@@ -471,8 +471,8 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 
 				values_count = interpreter_actualize_property_value(
 								   project, target,
-								   property_get_value_function,
-								   &the_property, size, return_of_function);
+								   property_get_id_of_get_value_function(),
+								   &the_property, size, return_of_function, verbose);
 			}
 			else
 			{
@@ -545,7 +545,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 		{
 			const uint8_t path_function_id = path_get_function(name.start, name.finish);
 
-			if (path_get_full_path_function == path_function_id)
+			if (path_get_id_of_get_full_path_function() == path_function_id)
 			{
 				if (1 != values_count)
 				{
@@ -569,8 +569,9 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 					break;
 				}
 
-				if (!interpreter_actualize_property_value(project, target, property_get_value_function, &the_property, size,
-						return_of_function))
+				if (!interpreter_actualize_property_value(project, target, property_get_id_of_get_value_function(),
+						&the_property, size,
+						return_of_function, verbose))
 				{
 					values_count = 0;
 					break;
@@ -626,14 +627,13 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 
 			values_count = interpreter_actualize_property_value(
 							   project, target,
-							   property_get_value_function,
-							   the_property, size, return_of_function);
+							   property_get_id_of_get_value_function(),
+							   the_property, size, return_of_function, verbose);
 		}
 		break;
 
 		case property_unit:
 		{
-			uint8_t verbose = 0;/*TODO*/
 			const void* the_property = NULL;
 			const uint8_t property_function_id = property_get_function(name.start, name.finish);
 			ptrdiff_t size = buffer_size(return_of_function);
@@ -648,7 +648,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			values_count = interpreter_actualize_property_value(
 							   project, target,
 							   property_function_id,
-							   the_property, size, return_of_function);
+							   the_property, size, return_of_function, verbose);
 		}
 		break;
 
@@ -694,7 +694,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 }
 
 uint8_t interpreter_evaluate_code(const void* project, const void* target,
-								  const struct range* code, struct buffer* output)
+								  const struct range* code, struct buffer* output, uint8_t verbose)
 {
 	if (range_is_null_or_empty(code) || NULL == output)
 	{
@@ -740,7 +740,7 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 
 		function.start += 2;
 
-		if (!interpreter_evaluate_function(project, target, &function, &return_of_function))
+		if (!interpreter_evaluate_function(project, target, &function, &return_of_function, verbose))
 		{
 			buffer_release(&return_of_function);
 			return 0;
@@ -765,7 +765,8 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	const void* target,
 	const uint8_t* start_of_attributes,
 	const uint8_t* finish_of_attributes,
-	uint8_t* skip)
+	uint8_t* skip,
+	uint8_t verbose)
 {
 	static const uint8_t* if_and_unless[] =
 	{
@@ -816,7 +817,7 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 
 	if (!interpreter_get_arguments_from_xml_tag_record(
 			project, target, start_of_attributes, finish_of_attributes,
-			if_and_unless, if_and_unless_lengths, 0, count_of_attributes, &attributes))
+			if_and_unless, if_and_unless_lengths, 0, count_of_attributes, &attributes, verbose))
 	{
 		buffer_release_with_inner_buffers(&attributes);
 		return 0;
@@ -854,7 +855,8 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 	const uint8_t* start_of_attributes,
 	const uint8_t* finish_of_attributes,
 	uint8_t* fail_on_error,
-	uint8_t* verbose)
+	uint8_t* verbose_value,
+	uint8_t verbose)
 {
 	static const uint8_t* attributes[] =
 	{
@@ -867,12 +869,12 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 		11, 7
 	};
 
-	if (NULL == fail_on_error || NULL == verbose)
+	if (NULL == fail_on_error || NULL == verbose_value)
 	{
 		return 0;
 	}
 
-	const uint8_t count_of_attributes = (0 == (*verbose) ? 2 : 1);
+	const uint8_t count_of_attributes = (0 == (*verbose_value) ? 2 : 1);
 	/*TODO: can be from outside.*/
 	struct buffer values;
 	SET_NULL_TO_BUFFER(values);
@@ -898,7 +900,7 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 	}
 
 	if (!interpreter_get_arguments_from_xml_tag_record(project, target, start_of_attributes, finish_of_attributes,
-			attributes, attributes_lengths, 0, count_of_attributes, &values))
+			attributes, attributes_lengths, 0, count_of_attributes, &values, verbose))
 	{
 		buffer_release_with_inner_buffers(&values);
 		return 0;
@@ -906,7 +908,7 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 
 	uint8_t* outputs[2];
 	outputs[0] = fail_on_error;
-	outputs[1] = verbose;
+	outputs[1] = verbose_value;
 	i = 0;
 
 	while (NULL != (ptr = buffer_buffer_data(&values, i++)))
@@ -930,7 +932,7 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const void* target,
 		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
 		const uint8_t** attributes, const uint8_t* attributes_lengths,
-		uint8_t index, uint8_t attributes_count, struct buffer* output)
+		uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose)
 {
 	struct buffer attribute_value;
 	SET_NULL_TO_BUFFER(attribute_value);
@@ -961,7 +963,7 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 
 		if (!buffer_resize(argument, 0) ||
 			((code.start < code.finish) &&
-			 !interpreter_evaluate_code(project, target, &code, argument)))
+			 !interpreter_evaluate_code(project, target, &code, argument, verbose)))
 		{
 			buffer_release(&attribute_value);
 			return 0;
@@ -977,7 +979,8 @@ uint8_t interpreter_get_xml_element_value(
 	const void* target,
 	const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
-	struct buffer* output)
+	struct buffer* output,
+	uint8_t verbose)
 {
 	struct buffer value;
 	SET_NULL_TO_BUFFER(value);
@@ -995,7 +998,7 @@ uint8_t interpreter_get_xml_element_value(
 	code.finish = code.start + buffer_size(&value);
 
 	if (!range_is_null_or_empty(&code) &&
-		!interpreter_evaluate_code(project, target, &code, output))
+		!interpreter_evaluate_code(project, target, &code, output, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -1010,7 +1013,8 @@ uint8_t interpreter_get_environments(
 	const void* target,
 	const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
-	struct buffer* environments)
+	struct buffer* environments,
+	uint8_t verbose)
 {
 	if (range_in_parts_is_null_or_empty(attributes_finish, element_finish) ||
 		NULL == environments)
@@ -1148,7 +1152,7 @@ uint8_t interpreter_get_environments(
 			name.start = buffer_data(&attribute_value, 0);
 			name.finish = name.start + buffer_size(&attribute_value);
 
-			if (!interpreter_evaluate_code(project, target, &name, environments))
+			if (!interpreter_evaluate_code(project, target, &name, environments, verbose))
 			{
 				buffer_release(&attribute_value);
 				buffer_release(&elements);
@@ -1372,8 +1376,10 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 	if (!range_in_parts_is_null_or_empty(attributes_start, attributes_finish))
 	{
+		uint8_t task_verbose = verbose;
+
 		if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-				project, target, attributes_start, attributes_finish, &task_attributes_count))
+				project, target, attributes_start, attributes_finish, &task_attributes_count, verbose))
 		{
 			return 0;
 		}
@@ -1384,10 +1390,12 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 		}
 
 		if (!interpreter_get_xml_tag_attribute_values(
-				project, target, attributes_start, attributes_finish, &fail_on_error, &verbose))
+				project, target, attributes_start, attributes_finish, &fail_on_error, &task_verbose, verbose))
 		{
 			return 0;
 		}
+
+		verbose = verbose < task_verbose ? task_verbose : verbose;
 	}
 
 	struct buffer task_arguments;
@@ -1443,7 +1451,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1467,7 +1475,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1478,7 +1486,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 				if (!buffer_size(message))
 				{
-					if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message))
+					if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message, verbose))
 					{
 						task_attributes_count = 0;
 						break;
@@ -1499,7 +1507,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1509,7 +1517,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			{
 				struct buffer* environments = buffer_buffer_data(&task_arguments, task_attributes_count);
 
-				if (!interpreter_get_environments(project, target, attributes_finish, element_finish, environments))
+				if (!interpreter_get_environments(project, target, attributes_finish, element_finish, environments, verbose))
 				{
 					task_attributes_count = 0;
 					break;
@@ -1567,7 +1575,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1600,7 +1608,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1624,7 +1632,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1643,7 +1651,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, 1, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, 1, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
@@ -1665,7 +1673,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 					if (!interpreter_get_arguments_from_xml_tag_record(
 							project, target, attributes_start, attributes_finish,
 							task_attributes, task_attributes_lengths,
-							1, task_attributes_count - 1, &task_arguments))
+							1, task_attributes_count - 1, &task_arguments, verbose))
 					{
 						task_attributes_count = 0;
 						break;
@@ -1686,7 +1694,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				else if (!interpreter_get_arguments_from_xml_tag_record(
 							 project, target, attributes_start, attributes_finish,
 							 task_attributes, task_attributes_lengths,
-							 1, task_attributes_count, &task_arguments))
+							 1, task_attributes_count, &task_arguments, verbose))
 				{
 					task_attributes_count = 0;
 					break;
@@ -1750,7 +1758,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments))
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;

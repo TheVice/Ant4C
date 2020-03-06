@@ -62,7 +62,7 @@ TEST_F(TestPath, path_combine)
 	for (const auto& node : nodes)
 	{
 		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &path, &condition)) << buffer_free(&path);
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &path, &condition, verbose)) << buffer_free(&path);
 
 		if (!condition)
 		{
@@ -100,7 +100,7 @@ TEST_F(TestPath, path_get_directory_name)
 	for (const auto& node : nodes)
 	{
 		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition)) << buffer_free(&tmp);
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose)) << buffer_free(&tmp);
 
 		if (!condition)
 		{
@@ -154,7 +154,7 @@ TEST_F(TestPath, path_get_file_name)
 	for (const auto& node : nodes)
 	{
 		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition)) << buffer_free(&tmp);
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose)) << buffer_free(&tmp);
 
 		if (!condition)
 		{
@@ -209,7 +209,8 @@ TEST_F(TestPath, path_get_full_path)
 	for (const auto& node : nodes)
 	{
 		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &full_path, &condition)) << buffer_free(&full_path);
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &full_path, &condition,
+					verbose)) << buffer_free(&full_path);
 
 		if (!condition)
 		{
@@ -373,25 +374,27 @@ TEST(TestPath_, path_is_path_rooted)
 
 TEST(TestPath_, path_exec_function_get_full_path)
 {
+	static const uint8_t verbose = 0;
+	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-	ASSERT_FALSE(path_exec_function(NULL, path_get_full_path_function, &output, 1,
+	ASSERT_FALSE(path_exec_function(NULL, path_get_id_of_get_full_path_function(), &output, 1,
 									&output)) << buffer_free(&output);
 	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
 	//
 	range function;
 	function.start = (const uint8_t*)"path::get-full-path('.')";
 	function.finish = function.start + 24;
-	ASSERT_TRUE(interpreter_evaluate_function(NULL, NULL, &function, &output)) << buffer_free(&output);
+	ASSERT_TRUE(interpreter_evaluate_function(NULL, NULL, &function, &output, verbose)) << buffer_free(&output);
 	ASSERT_TRUE(buffer_size(&output)) << buffer_free(&output);
 	//
 	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 	//
 	function.start = (const uint8_t*)"path::get-full-path('abcdef')";
 	function.finish = function.start + 29;
-	ASSERT_TRUE(interpreter_evaluate_function(NULL, NULL, &function, &output)) << buffer_free(&output);
+	ASSERT_TRUE(interpreter_evaluate_function(NULL, NULL, &function, &output, verbose)) << buffer_free(&output);
 	ASSERT_TRUE(buffer_size(&output)) << buffer_free(&output);
 	//
 	buffer_release(&output);

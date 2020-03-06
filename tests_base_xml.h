@@ -41,7 +41,8 @@ uint8_t buffer_free(buffer* input);
 uint8_t buffer_resize_and_free_inner_buffers(buffer* storage);
 uint8_t buffer_free_with_inner_buffers(buffer* storage);
 
-uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition);
+uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition,
+		uint8_t verbose);
 std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::string& name_of_nodes);
 
 uint8_t project_free(void* project);
