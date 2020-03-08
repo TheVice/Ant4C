@@ -111,6 +111,20 @@ uint8_t file_system_get_position_after_pre_root(struct range* path)
 	return 1;
 }
 
+void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path)
+{
+	if (NULL != path && NULL != (*path))
+	{
+		const wchar_t* ptr = wcsstr((*path), pre_root_path_wchar_t);
+
+		if (NULL != ptr)
+		{
+			ptr += pre_root_path_length;
+			(*path) = ptr;
+		}
+	}
+}
+
 uint8_t directory_create_wchar_t(const wchar_t* path)
 {
 	/*return 0 != CreateDirectoryExW(%HOME%, path, NULL);*/
@@ -120,6 +134,142 @@ uint8_t directory_create_wchar_t(const wchar_t* path)
 uint8_t directory_delete_wchar_t(const wchar_t* path)
 {
 	return 0 != RemoveDirectoryW(path);
+}
+
+uint8_t directory_enumerate_file_system_entries_wchar_t(
+	struct buffer* pattern,
+	const uint8_t entry_type, const uint8_t recurse,
+	struct buffer* output)
+{
+	if (NULL == pattern ||
+		all_entries < entry_type ||
+		(0 != recurse && 1 != recurse) ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	WIN32_FIND_DATAW file_data;
+	const wchar_t* start = buffer_wchar_t_data(pattern, 0);
+	const HANDLE file_handle = FindFirstFileW(start, &file_data);
+
+	if (INVALID_HANDLE_VALUE == file_handle)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(pattern);
+	const wchar_t* finish = (const wchar_t*)(buffer_data(pattern, 0) + size);
+	const ptrdiff_t index =
+		find_any_symbol_like_or_not_like_that_wchar_t(finish - 1, start, L"\\", 1, 1, -1) - start;
+	const ptrdiff_t delta = size - index;
+
+	do
+	{
+		const size_t name_length = wcslen(file_data.cFileName);
+
+		if (0 != (FILE_ATTRIBUTE_DIRECTORY & file_data.dwFileAttributes))
+		{
+			if ((1 == name_length && 0 == wmemcmp(L".", file_data.cFileName, name_length)) ||
+				(2 == name_length && 0 == wmemcmp(L"..", file_data.cFileName, name_length)))
+			{
+				continue;
+			}
+		}
+
+		if (!buffer_append_wchar_t(pattern, NULL, 1 + name_length + delta))
+		{
+			FindClose(file_handle);
+			return 0;
+		}
+
+		const ptrdiff_t new_index = 1 + index + name_length;
+
+		if (!buffer_resize(pattern, sizeof(wchar_t) * new_index))
+		{
+			FindClose(file_handle);
+			return 0;
+		}
+
+		start = buffer_wchar_t_data(pattern, index);
+
+		if (!buffer_append_wchar_t(pattern, start, delta) ||
+			!buffer_push_back_uint16(pattern, 0))
+		{
+			FindClose(file_handle);
+			return 0;
+		}
+
+		if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
+			!buffer_push_back_uint16(pattern, PATH_DELIMITER) ||
+			!buffer_append_wchar_t(pattern, file_data.cFileName, name_length))
+		{
+			FindClose(file_handle);
+			return 0;
+		}
+
+		if (0 != (FILE_ATTRIBUTE_DIRECTORY & file_data.dwFileAttributes))
+		{
+			if (recurse)
+			{
+				if (!buffer_append_wchar_t(pattern, NULL, delta) ||
+					!directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output))
+				{
+					FindClose(file_handle);
+					return 0;
+				}
+			}
+
+			if (file_entry == entry_type)
+			{
+				finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+
+				if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
+					!buffer_append_wchar_t(pattern, finish, delta))
+				{
+					FindClose(file_handle);
+					return 0;
+				}
+
+				continue;
+			}
+		}
+		else if (directory_entry == entry_type)
+		{
+			finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+
+			if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
+				!buffer_append_wchar_t(pattern, finish, delta))
+			{
+				FindClose(file_handle);
+				return 0;
+			}
+
+			continue;
+		}
+
+		start = buffer_wchar_t_data(pattern, 0);
+		finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+		file_system_set_position_after_pre_root_wchar_t(&start);
+
+		if (!text_encoding_UTF16LE_to_UTF8(start, finish, output) ||
+			!buffer_push_back(output, 0))
+		{
+			FindClose(file_handle);
+			return 0;
+		}
+
+		if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
+			!buffer_append_wchar_t(pattern, finish, delta))
+		{
+			FindClose(file_handle);
+			return 0;
+		}
+	}
+	while (FindNextFileW(file_handle, &file_data));
+
+	FindClose(file_handle);
+	return 1;
 }
 
 uint8_t directory_exists_wchar_t(const wchar_t* path)
