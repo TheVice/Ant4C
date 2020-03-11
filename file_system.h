@@ -26,7 +26,7 @@ uint8_t file_system_get_position_after_pre_root(struct range* path);
 uint8_t directory_create(const uint8_t* path);
 uint8_t directory_delete(const uint8_t* path);
 uint8_t directory_enumerate_file_system_entries(
-	const uint8_t* pattern, const uint8_t entry_type, const uint8_t recurse, struct buffer* output);
+	struct buffer* path, const uint8_t entry_type, const uint8_t recurse, struct buffer* output);
 #if defined(_WIN32)
 uint8_t directory_exists_wchar_t(const wchar_t* path);
 #endif

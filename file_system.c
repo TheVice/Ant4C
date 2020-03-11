@@ -22,10 +22,9 @@
 #endif
 
 #include <stdio.h>
-
-#if defined(_WIN32)
 #include <string.h>
 
+#if defined(_WIN32)
 #include <windows.h>
 #else
 #define _POSIXSOURCE 1
@@ -138,7 +137,7 @@ uint8_t directory_delete_wchar_t(const wchar_t* path)
 
 uint8_t directory_enumerate_file_system_entries_wchar_t(
 	struct buffer* pattern,
-	const uint8_t entry_type, const uint8_t recurse,
+	const uint8_t entry_type, const uint8_t recurse, uint8_t output_encoding,
 	struct buffer* output)
 {
 	if (NULL == pattern ||
@@ -158,11 +157,11 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(pattern);
-	const wchar_t* finish = (const wchar_t*)(buffer_data(pattern, 0) + size);
+	const ptrdiff_t size = wcslen(start);
+	const wchar_t* finish = start + size;
 	const ptrdiff_t index =
 		find_any_symbol_like_or_not_like_that_wchar_t(finish - 1, start, L"\\", 1, 1, -1) - start;
-	const ptrdiff_t delta = size - index;
+	const ptrdiff_t delta = size - index + 1;
 
 	do
 	{
@@ -193,8 +192,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 
 		start = buffer_wchar_t_data(pattern, index);
 
-		if (!buffer_append_wchar_t(pattern, start, delta) ||
-			!buffer_push_back_uint16(pattern, 0))
+		if (!buffer_append_wchar_t(pattern, start, delta))
 		{
 			FindClose(file_handle);
 			return 0;
@@ -213,7 +211,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			if (recurse)
 			{
 				if (!buffer_append_wchar_t(pattern, NULL, delta) ||
-					!directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output))
+					!directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output_encoding, output))
 				{
 					FindClose(file_handle);
 					return 0;
@@ -248,15 +246,27 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			continue;
 		}
 
-		start = buffer_wchar_t_data(pattern, 0);
-		finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
-		file_system_set_position_after_pre_root_wchar_t(&start);
-
-		if (!text_encoding_UTF16LE_to_UTF8(start, finish, output) ||
-			!buffer_push_back(output, 0))
+		if (UTF8 == output_encoding)
 		{
-			FindClose(file_handle);
-			return 0;
+			start = buffer_wchar_t_data(pattern, 0);
+			finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+			file_system_set_position_after_pre_root_wchar_t(&start);
+
+			if (!text_encoding_UTF16LE_to_UTF8(start, finish, output) ||
+				!buffer_push_back(output, 0))
+			{
+				FindClose(file_handle);
+				return 0;
+			}
+		}
+		else
+		{
+			if (!buffer_append(output, buffer_data(pattern, 0), sizeof(wchar_t) * new_index) ||
+				!buffer_push_back_uint16(output, 0))
+			{
+				FindClose(file_handle);
+				return 0;
+			}
 		}
 
 		if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
@@ -331,8 +341,105 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 		return 0;											\
 	}
 
-#endif
+uint8_t directory_delete_(const char* path)
+{
+	return 0 == rmdir(path);
+}
 
+uint8_t directory_enumerate_file_system_entries_(
+	struct buffer* path, const uint8_t* wildcard,
+	const uint8_t entry_type, const uint8_t recurse,
+	struct buffer* output)
+{
+	if (NULL == path ||
+		all_entries < entry_type ||
+		(0 != recurse && 1 != recurse) ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	DIR* directory = opendir(buffer_char_data(path, 0));
+
+	if (NULL == directory)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(path);
+	struct dirent* entry = NULL;
+
+	while (NULL != (entry = readdir(directory)))
+	{
+		const size_t name_length = common_count_bytes_until((const uint8_t*)entry->d_name, 0);
+
+		if (DT_DIR == entry->d_type)
+		{
+			if ((1 == name_length && 0 == memcmp(".", entry->d_name, name_length)) ||
+				(2 == name_length && 0 == memcmp("..", entry->d_name, name_length)))
+			{
+				continue;
+			}
+		}
+
+		if (!buffer_resize(path, size - 1) ||
+			!path_combine_in_place(path, size - 2, (const uint8_t*)entry->d_name,
+								   (const uint8_t*)(entry->d_name + name_length)) ||
+			!buffer_push_back(path, 0))
+		{
+			closedir(directory);
+			return 0;
+		}
+
+		if (DT_DIR == entry->d_type)
+		{
+			if (recurse)
+			{
+				if (!directory_enumerate_file_system_entries_(path, wildcard, entry_type, recurse, output))
+				{
+					closedir(directory);
+					return 0;
+				}
+			}
+
+			if (file_entry == entry_type)
+			{
+				if (!buffer_resize(path, size - 1) ||
+					!buffer_push_back(path, 0))
+				{
+					closedir(directory);
+					return 0;
+				}
+
+				continue;
+			}
+		}
+		else if (directory_entry == entry_type)
+		{
+			if (!buffer_resize(path, size - 1) ||
+				!buffer_push_back(path, 0))
+			{
+				closedir(directory);
+				return 0;
+			}
+
+			continue;
+		}
+
+		(void)wildcard;/*TODO:*/
+
+		if (!buffer_append_data_from_buffer(output, path) ||
+			!buffer_resize(path, size - 1) ||
+			!buffer_push_back(path, 0))
+		{
+			closedir(directory);
+			return 0;
+		}
+	}
+
+	return 0 == closedir(directory);
+}
+#endif
 uint8_t directory_create(const uint8_t* path)
 {
 	if (NULL == path)
@@ -366,38 +473,231 @@ uint8_t directory_delete(const uint8_t* path)
 		return 0;
 	}
 
-#if defined(_WIN32)
 	struct buffer pathW;
+
 	SET_NULL_TO_BUFFER(pathW);
 
+#if defined(_WIN32)
 	if (!file_system_path_to_pathW(path, &pathW))
 	{
 		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t returned = directory_delete_wchar_t(buffer_wchar_t_data(&pathW, 0));
-	buffer_release(&pathW);
-	return returned;
+	const ptrdiff_t size = buffer_size(&pathW);
+
+	if (!buffer_resize(&pathW, size - sizeof(wchar_t)) ||
+		!buffer_append_wchar_t(&pathW, L"\\*\0", 3))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
 #else
-	return 0 == rmdir((const char*)path);
+
+	if (!buffer_append(&pathW, path, common_count_bytes_until(path, 0)) ||
+		!buffer_push_back(&pathW, 0))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
 #endif
+	struct buffer entries;
+	SET_NULL_TO_BUFFER(entries);
+
+	for (uint8_t entry = file_entry; ; entry = directory_entry)
+	{
+		if (!buffer_resize(&entries, 0))
+		{
+			buffer_release(&entries);
+			buffer_release(&pathW);
+			return 0;
+		}
+
+#if defined(_WIN32)
+
+		if (!directory_enumerate_file_system_entries_wchar_t(&pathW, entry, 1, UTF16LE, &entries))
+#else
+		if (!directory_enumerate_file_system_entries(&pathW, entry, 1, &entries))
+#endif
+		{
+			buffer_release(&entries);
+			buffer_release(&pathW);
+			return 0;
+		}
+
+#if defined(_WIN32)
+		const wchar_t* start = buffer_wchar_t_data(&entries, 0);
+		const wchar_t* finish = (const wchar_t*)(buffer_data(&entries, 0) + buffer_size(&entries));
+#else
+		const uint8_t* start = buffer_data(&entries, 0);
+		const uint8_t* finish = start + buffer_size(&entries);
+#endif
+
+		if (file_entry == entry)
+		{
+			while (start != finish)
+			{
+#if defined(_WIN32)
+
+				if (0 != DeleteFileW(start))
+#else
+				if (0 != remove((const char*)start))
+#endif
+				{
+					buffer_release(&entries);
+					buffer_release(&pathW);
+					return 0;
+				}
+
+#if defined(_WIN32)
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 0, 1);
+#else
+				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 0, 1);
+#endif
+			}
+		}
+		else
+		{
+			while (start != finish)
+			{
+#if defined(_WIN32)
+
+				if (!directory_delete_wchar_t(start))
+#else
+				if (!directory_delete_((const char*)start))
+#endif
+				{
+					buffer_release(&entries);
+					buffer_release(&pathW);
+					return 0;
+				}
+
+#if defined(_WIN32)
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 0, 1);
+#else
+				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 0, 1);
+#endif
+			}
+
+			break;
+		}
+	}
+
+	buffer_release(&entries);
+#if defined(_WIN32)
+
+	if (!buffer_resize(&pathW, size - sizeof(wchar_t)) ||
+		!buffer_push_back_uint16(&pathW, 0))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!directory_delete_wchar_t(buffer_wchar_t_data(&pathW, 0)))
+#else
+	if (!directory_delete_(buffer_char_data(&pathW, 0)))
+#endif
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	buffer_release(&pathW);
+	return 1;
 }
 
 uint8_t directory_enumerate_file_system_entries(
-	const uint8_t* pattern, const uint8_t entry_type, const uint8_t recurse, struct buffer* output)
+	struct buffer* path, const uint8_t entry_type, const uint8_t recurse, struct buffer* output)
 {
-	if (NULL == pattern ||
+	if (NULL == path ||
 		all_entries < entry_type ||
+		(0 != recurse && 1 != recurse) ||
 		NULL == output)
 	{
 		return 0;
 	}
 
-	(void)recurse;
-	(void)output;
-	/*TODO:*/
-	return 0;
+	struct range file_name;
+
+	file_name.start = buffer_data(path, 0);
+
+	file_name.finish = file_name.start + buffer_size(path);
+
+	if (!path_get_file_name(file_name.start, file_name.finish, &file_name))
+	{
+		return 0;
+	}
+
+	if (file_name.finish == find_any_symbol_like_or_not_like_that(
+			file_name.start, file_name.finish, (const uint8_t*)"?*", 2, 1, 1))
+	{
+		const ptrdiff_t index = file_name.start - buffer_data(path, 0);
+		static const uint8_t asterisk = '*';
+
+		if (!buffer_resize(path, buffer_size(path) - 1) ||
+			!path_combine_in_place(path, buffer_size(path) < index ? index - 1 : index, &asterisk, &asterisk + 1) ||
+			!buffer_push_back(path, 0))
+		{
+			return 0;
+		}
+	}
+
+#if defined(_WIN32)
+	struct buffer patternW;
+	SET_NULL_TO_BUFFER(patternW);
+
+	if (!file_system_path_to_pathW(buffer_data(path, 0), &patternW))
+	{
+		buffer_release(&patternW);
+		return 0;
+	}
+
+	const uint8_t returned = directory_enumerate_file_system_entries_wchar_t(
+								 &patternW, entry_type, recurse, UTF8, output);
+	/**/
+	buffer_release(&patternW);
+	return returned;
+#else
+	file_name.start = buffer_data(path, 0);
+	file_name.finish = file_name.start + buffer_size(path);
+
+	if (!path_get_file_name(file_name.start, file_name.finish, &file_name))
+	{
+		return 0;
+	}
+
+	struct buffer wildcard;
+
+	SET_NULL_TO_BUFFER(wildcard);
+
+	if (!buffer_append_data_from_range(&wildcard, &file_name))
+	{
+		buffer_release(&wildcard);
+		return 0;
+	}
+
+	file_name.start = buffer_data(path, 0);
+	file_name.finish = file_name.start + buffer_size(path);
+
+	if (!path_get_directory_name(file_name.start, file_name.finish, &file_name) ||
+		!buffer_resize(path, range_size(&file_name)) ||
+		!buffer_push_back(path, 0))
+	{
+		buffer_release(&wildcard);
+		return 0;
+	}
+
+	const uint8_t returned = directory_enumerate_file_system_entries_(
+								 path, buffer_data(&wildcard, 0), entry_type, recurse, output);
+	buffer_release(&wildcard);
+	return returned;
+#endif
 }
 
 uint8_t directory_exists(const uint8_t* path)
@@ -1093,7 +1393,7 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 				break;
 			}
 
-			return directory_enumerate_file_system_entries(argument1.start, entry_type, recurse, output);
+			return directory_enumerate_file_system_entries(buffer_buffer_data(arguments, 0), entry_type, recurse, output);
 		}
 
 		case exists:
