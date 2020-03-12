@@ -369,21 +369,118 @@ TEST(TestFileSystem_, directory_get_logical_drives)
 	buffer_release(&drives);
 }
 
-TEST(TestFileSystem_, directory_get_parent_directory)
+TEST(TestFileSystem_, directory_move)
 {
 	buffer path;
 	SET_NULL_TO_BUFFER(path);
+	//
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
+	ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
-	const auto path_in_range = buffer_to_range(&path);
-	ASSERT_FALSE(range_is_null_or_empty(&path_in_range)) << buffer_free(&path);
+	const ptrdiff_t size = buffer_size(&path);
 	//
-	range parent;
-	ASSERT_TRUE(directory_get_parent_directory(path_in_range.start, path_in_range.finish,
-				&parent)) << buffer_free(&path);
+	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
+	ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
-	ASSERT_FALSE(string_equal(path_in_range.start, path_in_range.finish, parent.start,
-							  parent.finish)) << buffer_free(&path);
+	ASSERT_EQ(2 * size, buffer_size(&path)) << buffer_free(&path);
+	//
+	auto returned = memcmp(buffer_char_data(&path, 0), buffer_char_data(&path, size), size);
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	ASSERT_FALSE(directory_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	//
+	returned = directory_create(buffer_data(&path, 0));
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	ASSERT_TRUE(directory_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	ASSERT_FALSE(directory_exists(buffer_data(&path, size))) << buffer_free(&path);
+	//
+	returned = directory_move(buffer_data(&path, 0), buffer_data(&path, size));
+	//
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	ASSERT_FALSE(directory_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	ASSERT_TRUE(directory_exists(buffer_data(&path, size))) << buffer_free(&path);
+	//
+	ASSERT_TRUE(directory_delete(buffer_data(&path, size))) << buffer_free(&path);
+	//
+	buffer_release(&path);
+}
+
+TEST(TestFileSystem_, file_copy)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+		//
+		ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
+		ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+		//
+		const ptrdiff_t size = buffer_size(&path);
+		//
+		ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+		ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
+		ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
+		ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+
+		if (2 * size == buffer_size(&path))
+		{
+			auto returned = memcmp(buffer_char_data(&path, 0), buffer_char_data(&path, size), size);
+			ASSERT_TRUE(returned) << buffer_free(&path);
+		}
+
+		if (i)
+		{
+			ASSERT_TRUE(echo(0, Default, buffer_data(&path, 0), NoLevel, buffer_data(&path, 0), size, 0, 0))
+					<< buffer_free(&path);
+		}
+		else
+		{
+			if (!file_exists(buffer_data(&path, 0)))
+			{
+				ASSERT_TRUE(file_create(buffer_data(&path, 0))) << buffer_free(&path);
+			}
+		}
+
+		ASSERT_TRUE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+		ASSERT_FALSE(file_exists(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_TRUE(file_copy(buffer_data(&path, 0), buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_TRUE(file_exists(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_TRUE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+		//
+		ASSERT_TRUE(file_delete(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_TRUE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
+		ASSERT_FALSE(file_exists(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_FALSE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	}
+
+	buffer_release(&path);
+}
+
+TEST(TestFileSystem_, file_create)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	//
+	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
+	ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+	//
+	ASSERT_FALSE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	ASSERT_TRUE(file_create(buffer_data(&path, 0))) << buffer_free(&path);
+	//
+	ASSERT_TRUE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	ASSERT_TRUE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
+	ASSERT_FALSE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+	//
 	buffer_release(&path);
 }
 
@@ -467,6 +564,57 @@ TEST(TestFileSystem_, file_get_attributes)
 	EXPECT_TRUE(test_was_run) << "[Warning]: No files from inputs exists at your environment.";
 }
 
+TEST(TestFileSystem_, file_move)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+		//
+		ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
+		ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+		//
+		const ptrdiff_t size = buffer_size(&path);
+		//
+		ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+		ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
+		ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
+		ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+
+		if (2 * size == buffer_size(&path))
+		{
+			auto returned = memcmp(buffer_char_data(&path, 0), buffer_char_data(&path, size), size);
+			ASSERT_TRUE(returned) << buffer_free(&path);
+		}
+
+		if (i)
+		{
+			ASSERT_TRUE(echo(0, Default, buffer_data(&path, 0), NoLevel, buffer_data(&path, 0), size, 0, 0))
+					<< buffer_free(&path);
+		}
+		else
+		{
+			if (!file_exists(buffer_data(&path, 0)))
+			{
+				ASSERT_TRUE(file_create(buffer_data(&path, 0))) << buffer_free(&path);
+			}
+		}
+
+		ASSERT_TRUE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+		ASSERT_FALSE(file_exists(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_TRUE(file_move(buffer_data(&path, 0), buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_TRUE(file_exists(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_FALSE(file_exists(buffer_data(&path, 0))) << buffer_free(&path);
+		//
+		ASSERT_TRUE(file_delete(buffer_data(&path, size))) << buffer_free(&path);
+		ASSERT_FALSE(file_exists(buffer_data(&path, size))) << buffer_free(&path);
+	}
+
+	buffer_release(&path);
+}
+
 TEST(TestFileSystem_, file_up_to_date)
 {
 	buffer paths;
@@ -483,4 +631,40 @@ TEST(TestFileSystem_, file_up_to_date)
 	ASSERT_TRUE(file_up_to_date(src_file, target_file)) << buffer_free(&paths);
 	//
 	buffer_release(&paths);
+}
+
+TEST(TestFileSystem_, file_write_all_bytes)
+{
+	static const uint16_t content_size[] = { 0, INT8_MAX, UINT8_MAX, 4096, 7000, 8192, 9000 };
+	//
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	//
+	ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+	//
+	const auto path_str(buffer_to_string(&path));
+	const uint8_t* ptr = (const uint8_t*)path_str.c_str();
+
+	for (uint8_t i = 0, count = COUNT_OF(content_size); i < count; ++i)
+	{
+		static const uint8_t value = '\0';
+		//
+		ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+		const uint8_t returned =
+			string_pad_left(&value, &value, &value, &value + 1, content_size[i], &path);
+		ASSERT_TRUE(returned) << buffer_free(&path);
+		//
+		ptrdiff_t size = buffer_size(&path);
+		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
+		//
+		ASSERT_TRUE(file_write_all_bytes(ptr, &path));
+		//
+		size = file_get_length((const uint8_t*)path_str.c_str());
+		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
+	}
+
+	ASSERT_TRUE(file_delete(ptr)) << buffer_free(&path);
+	ASSERT_FALSE(file_exists(ptr)) << buffer_free(&path);
+	buffer_release(&path);
 }

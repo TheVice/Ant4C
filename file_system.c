@@ -932,6 +932,66 @@ uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t*
 {
 	return path_get_directory_name(path_start, path_finish, parent);
 }
+#if !defined(_WIN32)
+uint8_t file_system_move_entry(const uint8_t* current_path, const uint8_t* new_path)
+{
+	return 0 == rename((const char*)current_path, (const char*)new_path);
+}
+#endif
+uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path)
+{
+	if (NULL == current_path ||
+		NULL == new_path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(current_path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!directory_exists_wchar_t(buffer_wchar_t_data(&pathW, 0)))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(&pathW);
+
+	if (!file_system_path_to_pathW(new_path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (file_exists_wchar_t((const wchar_t*)buffer_data(&pathW, size)))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = (0 != MoveFileExW(buffer_wchar_t_data(&pathW, 0),
+							  (const wchar_t*)buffer_data(&pathW, size),
+							  MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
+	buffer_release(&pathW);
+	return returned;
+#else
+
+	if (!directory_exists(current_path) ||
+		file_exists(new_path))
+	{
+		return 0;
+	}
+
+	return file_system_move_entry(current_path, new_path);
+#endif
+}
 
 #if defined(_WIN32)
 int32_t _file_fileno(void* stream)
@@ -943,6 +1003,129 @@ uint8_t file_close(void* stream)
 {
 	return NULL != stream &&
 		   0 == fclose(stream);
+}
+#if defined(_WIN32)
+uint8_t file_copy_wchar_t(const wchar_t* current_path, const wchar_t* new_path)
+{
+#if defined(_WIN32_WINNT_WIN8) && defined(_WIN32_WINNT) && (_WIN32_WINNT_WIN8 <= _WIN32_WINNT)
+	return SUCCEEDED(CopyFile2(current_path, new_path, NULL));
+#else
+	return 0 != CopyFileExW(current_path, new_path, NULL, NULL, FALSE, COPY_FILE_FAIL_IF_EXISTS);
+#endif
+}
+#endif
+uint8_t file_copy(const uint8_t* exists_file, const uint8_t* new_file)
+{
+	if (NULL == exists_file ||
+		NULL == new_file)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(exists_file, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!file_exists_wchar_t((const wchar_t*)buffer_data(&pathW, 0)))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(&pathW);
+
+	if (!file_system_path_to_pathW(new_file, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (directory_exists_wchar_t(buffer_wchar_t_data(&pathW, size)))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned =
+		file_copy_wchar_t(buffer_wchar_t_data(&pathW, 0),
+						  (const wchar_t*)buffer_data(&pathW, size));
+	buffer_release(&pathW);
+	return returned;
+#else
+
+	if (!file_exists(exists_file))
+	{
+		return 0;
+	}
+
+	if (directory_exists(new_file))
+	{
+		return 0;
+	}
+
+	void* input = NULL;
+
+	if (!file_open(exists_file, (const uint8_t*)"rb", &input))
+	{
+		return 0;
+	}
+
+	struct buffer content;
+
+	SET_NULL_TO_BUFFER(content);
+
+	if (!buffer_resize(&content, 4096))
+	{
+		buffer_release(&content);
+		file_close(input);
+		return 0;
+	}
+
+	void* output = NULL;
+
+	if (!file_open(new_file, (const uint8_t*)"wb", &output))
+	{
+		buffer_release(&content);
+		file_close(input);
+		return 0;
+	}
+
+	size_t size = 0;
+
+	while (0 < (size = file_read(buffer_data(&content, 0), sizeof(uint8_t), 4096, input)))
+	{
+		if (size != file_write(buffer_data(&content, 0), sizeof(uint8_t), size, output))
+		{
+			file_close(input);
+			file_close(output);
+			buffer_release(&content);
+			return 0;
+		}
+	}
+
+	buffer_release(&content);
+	size = file_close(input);
+	size = size && file_close(output);
+	return 0 < size && file_get_length(exists_file) == file_get_length(new_file);
+#endif
+}
+
+uint8_t file_create(const uint8_t* path)
+{
+	void* stream = NULL;
+
+	if (!file_open(path, (const uint8_t*)"wb", &stream))
+	{
+		return 0;
+	}
+
+	return file_close(stream);
 }
 
 uint8_t file_delete(const uint8_t* path)
@@ -1139,6 +1322,61 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 #endif
 }
 #endif
+uint8_t file_move(const uint8_t* current_path, const uint8_t* new_path)
+{
+	if (NULL == current_path ||
+		NULL == new_path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(current_path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!file_exists_wchar_t(buffer_wchar_t_data(&pathW, 0)))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(&pathW);
+
+	if (!file_system_path_to_pathW(new_path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (directory_exists_wchar_t((const wchar_t*)buffer_data(&pathW, size)))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = (0 != MoveFileExW(buffer_wchar_t_data(&pathW, 0),
+							  (const wchar_t*)buffer_data(&pathW, size),
+							  MOVEFILE_WRITE_THROUGH | MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
+	buffer_release(&pathW);
+	return returned;
+#else
+
+	if (!file_exists(current_path) ||
+		directory_exists(new_path))
+	{
+		return 0;
+	}
+
+	return file_system_move_entry(current_path, new_path);
+#endif
+}
+
 uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 {
 	if (NULL == path ||
@@ -1263,6 +1501,38 @@ uint64_t file_get_length(const uint8_t* path)
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file)
 {
 	return file_get_last_write_time_utc(src_file) <= file_get_last_write_time_utc(target_file);
+}
+
+uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* output)
+{
+	if (NULL == path ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	void* stream = NULL;
+
+	if (!file_open(path, (const uint8_t*)"wb", &stream))
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (0 < size)
+	{
+		size_t written = 0;
+		uint8_t* ptr = buffer_data(output, 0);
+
+		while (0 < (written = file_write(ptr, sizeof(uint8_t), MIN(4096, size), stream)))
+		{
+			size -= (ptrdiff_t)written;
+			ptr += written;
+		}
+	}
+
+	return file_close(stream);
 }
 
 static const uint8_t* entry_types_str[] =
@@ -1570,4 +1840,52 @@ uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 
 	return directory_create(dir_);
+}
+
+#define COPY_MOVE_DIR_POSITION			0
+#define COPY_MOVE_FILE_POSITION			1
+#define COPY_MOVE_FLATTEN_POSITION		2
+#define COPY_MOVE_TO_DIR_POSITION		3
+#define COPY_MOVE_TO_FILE_POSITION		4
+#define COPY_MOVE_OVER_WRITE_POSITION	5
+
+static const uint8_t* copy_move_attributes[] =
+{
+	(const uint8_t*)"dir",
+	(const uint8_t*)"file",
+	(const uint8_t*)"flatten",
+	(const uint8_t*)"todir",
+	(const uint8_t*)"tofile",
+	(const uint8_t*)"overwrite"
+};
+
+static const uint8_t copy_move_attributes_lengths[] = { 3, 4, 7, 5, 6, 9 };
+
+uint8_t copy_move_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   copy_move_attributes, copy_move_attributes_lengths,
+			   COUNT_OF(copy_move_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t copy_move_evaluate_task(uint8_t task_id, struct buffer* task_arguments, uint8_t verbose)
+{
+	(void)task_id;
+	(void)task_arguments;
+	(void)verbose;
+	return 0;
+}
+
+uint8_t copy_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	return copy_move_evaluate_task(0, task_arguments, verbose);
+}
+
+uint8_t move_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	return copy_move_evaluate_task(1, task_arguments, verbose);
 }

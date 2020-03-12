@@ -1200,17 +1200,11 @@ uint8_t interpreter_get_environments(
 static const uint8_t* interpreter_task_str[] =
 {
 #if 0
-	(const uint8_t*)"al",
-	(const uint8_t*)"asminfo",
 	(const uint8_t*)"attrib",
-	(const uint8_t*)"aximp",
 	(const uint8_t*)"call",
 	(const uint8_t*)"choose",
-	(const uint8_t*)"cl",
-	(const uint8_t*)"copy",
-	(const uint8_t*)"csc",
-	(const uint8_t*)"delay-sign",
 #endif
+	(const uint8_t*)"copy",
 	(const uint8_t*)"delete",
 	(const uint8_t*)"description",
 	(const uint8_t*)"echo",
@@ -1221,55 +1215,34 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"get",
 	(const uint8_t*)"gunzip",
 	(const uint8_t*)"if",
-	(const uint8_t*)"ilasm",
-	(const uint8_t*)"ildasm",
 	(const uint8_t*)"include",
-	(const uint8_t*)"jsc",
-	(const uint8_t*)"lib",
-	(const uint8_t*)"license",
-	(const uint8_t*)"link",
 #endif
 	(const uint8_t*)"loadfile",
 #if 0
 	(const uint8_t*)"loadtasks",
 	(const uint8_t*)"mail",
-	(const uint8_t*)"mc",
-	(const uint8_t*)"midl",
 #endif
 	(const uint8_t*)"mkdir",
-#if 0
 	(const uint8_t*)"move",
-#endif
 	(const uint8_t*)"project",
 	(const uint8_t*)"property",
 #if 0
-	(const uint8_t*)"rc",
 	(const uint8_t*)"readregistry",
-	(const uint8_t*)"regasm",
 	(const uint8_t*)"regex",
-	(const uint8_t*)"regsvcs",
-	(const uint8_t*)"resgen",
 	(const uint8_t*)"script",
-	(const uint8_t*)"servicecontroller",
 	(const uint8_t*)"setenv",
 	(const uint8_t*)"sleep",
-	(const uint8_t*)"solution",
 	(const uint8_t*)"style",
-	(const uint8_t*)"sysinfo",
 	(const uint8_t*)"tar",
 #endif
 	(const uint8_t*)"target",
 #if 0
-	(const uint8_t*)"tlbexp",
-	(const uint8_t*)"tlbimp",
 	(const uint8_t*)"touch",
 	(const uint8_t*)"trycatch",
 	(const uint8_t*)"tstamp",
 	(const uint8_t*)"untar",
 	(const uint8_t*)"unzip",
 	(const uint8_t*)"uptodate",
-	(const uint8_t*)"vbc",
-	(const uint8_t*)"vjc",
 	(const uint8_t*)"xmlpeek",
 	(const uint8_t*)"xmlpoke",
 	(const uint8_t*)"zip"
@@ -1279,17 +1252,11 @@ static const uint8_t* interpreter_task_str[] =
 enum interpreter_task
 {
 #if 0
-	al_task,
-	asminfo_task,
 	attrib_task,
-	aximp_task,
 	call_task,
 	choose_task,
-	cl_task,
-	copy_task,
-	csc_task,
-	delay_sign_task,
 #endif
+	copy_task,
 	delete_task,
 	description_task,
 	echo_task,
@@ -1300,55 +1267,34 @@ enum interpreter_task
 	get_task,
 	gunzip_task,
 	if_task,
-	ilasm_task,
-	ildasm_task,
 	include_task,
-	jsc_task,
-	lib_task,
-	license_task,
-	link_task,
 #endif
 	loadfile_task,
 #if 0
 	loadtasks_task,
 	mail_task,
-	mc_task,
-	midl_task,
 #endif
 	mkdir_task,
-#if 0
 	move_task,
-#endif
 	project_task,
 	property_task,
 #if 0
-	rc_task,
 	readregistry_task,
-	regasm_task,
 	regex_task,
-	regsvcs_task,
-	resgen_task,
 	script_task,
-	servicecontroller_task,
 	setenv_task,
 	sleep_task,
-	solution_task,
 	style_task,
-	sysinfo_task,
 	tar_task,
 #endif
 	target_task,
 #if 0
-	tlbexp_task,
-	tlbimp_task,
 	touch_task,
 	trycatch_task,
 	tstamp_task,
 	untar_task,
 	unzip_task,
 	uptodate_task,
-	vbc_task,
-	vjc_task,
 	xmlpeek_task,
 	xmlpoke_task,
 	zip_task,
@@ -1410,16 +1356,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 	{
 #if 0
 
-		case al_:
-			break;
-
-		case asminfo_:
-			break;
-
 		case attrib_:
-			break;
-
-		case aximp_:
 			break;
 
 		case call_:
@@ -1427,19 +1364,26 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case choose_:
 			break;
-
-		case cl_:
-			break;
-
-		case copy_:
-			break;
-
-		case csc_:
-			break;
-
-		case delay_sign_:
-			break;
 #endif
+
+		case copy_task:
+			if (!copy_move_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = copy_evaluate_task(&task_arguments, verbose);
+			break;
 
 		case delete_task:
 			if (!delete_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -1543,25 +1487,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 		case if_:
 			break;
 
-		case ilasm_:
-			break;
-
-		case ildasm_:
-			break;
-
 		case include_:
-			break;
-
-		case jsc_:
-			break;
-
-		case lib_:
-			break;
-
-		case license_:
-			break;
-
-		case link_:
 			break;
 #endif
 
@@ -1590,12 +1516,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case mail_:
 			break;
-
-		case mc_:
-			break;
-
-		case midl_:
-			break;
 #endif
 
 		case mkdir_task:
@@ -1616,11 +1536,25 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			task_attributes_count = mkdir_evaluate_task(&task_arguments, verbose);
 			break;
-#if 0
 
-		case move_:
+		case move_task:
+			if (!copy_move_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = move_evaluate_task(&task_arguments, verbose);
 			break;
-#endif
 
 		case project_task:
 			if (!project_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -1705,28 +1639,13 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 #if 0
 
-		case rc_:
-			break;
-
 		case readregistry_:
-			break;
-
-		case regasm_:
 			break;
 
 		case regex_:
 			break;
 
-		case regsvcs_:
-			break;
-
-		case resgen_:
-			break;
-
 		case script_:
-			break;
-
-		case servicecontroller_:
 			break;
 
 		case setenv_:
@@ -1735,13 +1654,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 		case sleep_:
 			break;
 
-		case solution_:
-			break;
-
 		case style_:
-			break;
-
-		case sysinfo_:
 			break;
 
 		case tar_:
@@ -1775,12 +1688,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 #if 0
 
-		case tlbexp_:
-			break;
-
-		case tlbimp_:
-			break;
-
 		case touch_:
 			break;
 
@@ -1797,12 +1704,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 
 		case uptodate_:
-			break;
-
-		case vbc_:
-			break;
-
-		case vjc_:
 			break;
 
 		case xmlpeek_:

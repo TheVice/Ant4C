@@ -3347,7 +3347,7 @@
       <output>exists('call') -> False </output>
       <output>exists('choose') -> False </output>
       <output>exists('cl') -> False </output>
-      <output>exists('copy') -> False </output>
+      <output>exists('copy') -> True </output>
       <output>exists('csc') -> False </output>
       <output>exists('delay-sign') -> False </output>
       <output>exists('delete') -> True </output>
@@ -3372,7 +3372,7 @@
       <output>exists('mc') -> False </output>
       <output>exists('midl') -> False </output>
       <output>exists('mkdir') -> True </output>
-      <output>exists('move') -> False </output>
+      <output>exists('move') -> True </output>
       <output>exists('ndoc') -> False </output>
       <output>exists('nunit2') -> False </output>
       <output>exists('project') -> True </output>
