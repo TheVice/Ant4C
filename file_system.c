@@ -9,9 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
-#if !defined(_WIN32)
 #include "date_time.h"
-#endif
 #include "path.h"
 #include "property.h"
 #include "project.h"
@@ -29,6 +27,7 @@
 #else
 #define _POSIXSOURCE 1
 
+#include <utime.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -745,6 +744,23 @@ int64_t file_system_win32_time_to_datetime(int64_t input)
 	return input;
 }
 
+int64_t file_system_datetime_to_win32_time(int64_t input)
+{
+	if (input < 1)
+	{
+		return 0;
+	}
+
+	input += 11644473600;
+	input *= 10000000;
+	return input;
+}
+
+#define INT64_T_TO_FILETIME(I, O)						\
+	(I) = file_system_datetime_to_win32_time(I);		\
+	(O).dwHighDateTime = (I) >> 32;						\
+	(O).dwLowDateTime = (int32_t)(I);/* && INT32_MAX;*/
+
 long file_system_get_bias()
 {
 	static uint8_t loaded = 0;
@@ -992,7 +1008,119 @@ uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path)
 	return file_system_move_entry(current_path, new_path);
 #endif
 }
+#if defined(_WIN32)
+uint8_t file_system_set_time_utc_wchar_t(const wchar_t* path, const FILETIME* creationTime,
+		const FILETIME* lastAccessTime, const FILETIME* lastWriteTime)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
 
+	static FILETIME localLastAccessTime;
+
+	if (NULL == lastAccessTime)
+	{
+		localLastAccessTime.dwLowDateTime = localLastAccessTime.dwHighDateTime = UINT32_MAX;
+		lastAccessTime = &localLastAccessTime;
+	}
+
+#if defined(_WIN32_WINNT_WIN8) && defined(_WIN32_WINNT) && (_WIN32_WINNT_WIN8 <= _WIN32_WINNT)
+	const HANDLE file_handle = CreateFile2(path, FILE_WRITE_ATTRIBUTES, 0, OPEN_EXISTING, NULL);
+#else
+	const HANDLE file_handle = CreateFileW(path, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
+										   FILE_ATTRIBUTE_NORMAL, NULL);
+#endif
+
+	if (INVALID_HANDLE_VALUE == file_handle)
+	{
+		return 0;
+	}
+
+	if (0 == SetFileTime(file_handle, creationTime, lastAccessTime, lastWriteTime))
+	{
+		CloseHandle(file_handle);
+		return 0;
+	}
+
+	return 0 != CloseHandle(file_handle);
+}
+
+uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+	struct buffer pathW;
+
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	FILETIME win32_time;
+	INT64_T_TO_FILETIME(time, win32_time);
+
+	if (0 == time)
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const wchar_t* ptr = buffer_wchar_t_data(&pathW, 0);
+	uint8_t returned = 0;
+
+	if (/*c*/ 0 == function)
+	{
+		returned = file_system_set_time_utc_wchar_t(ptr, &win32_time, NULL, NULL);
+	}
+	else if (/*a*/ 1 == function)
+	{
+		returned = file_system_set_time_utc_wchar_t(ptr, NULL, &win32_time, NULL);
+	}
+	else /*w*/
+	{
+		returned = file_system_set_time_utc_wchar_t(ptr, NULL, NULL, &win32_time);
+	}
+
+	buffer_release(&pathW);
+	return returned;
+}
+
+uint8_t file_system_set_time(const uint8_t* path, int64_t time, uint8_t function)
+{
+	return file_system_set_time_utc(path, time + (int64_t)60 * file_system_get_bias(), function);
+}
+#endif
+uint8_t directory_set_current_directory(const uint8_t* path)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = 0 != SetCurrentDirectoryW(buffer_wchar_t_data(&pathW, 0));
+	buffer_release(&pathW);
+	return returned;
+#else
+	return -1 != chdir((const char*)path);
+#endif
+}
 #if defined(_WIN32)
 int32_t _file_fileno(void* stream)
 {
@@ -1502,7 +1630,99 @@ uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file)
 {
 	return file_get_last_write_time_utc(src_file) <= file_get_last_write_time_utc(target_file);
 }
+#if defined(_WIN32)
+uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
+{
+	return file_system_set_time(path, time, 0/*TODO*/);
+}
 
+uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
+{
+	return file_system_set_time_utc(path, time, 0/*TODO*/);
+}
+
+uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
+{
+	return file_system_set_time(path, time, 1/*TODO*/);
+}
+
+uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
+{
+	return file_system_set_time_utc(path, time, 1/*TODO*/);
+}
+
+uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
+{
+	return file_system_set_time(path, time, 2/*TODO*/);
+}
+
+uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
+{
+	return file_system_set_time_utc(path, time, 2/*TODO*/);
+}
+#else
+uint8_t file_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+	struct utimbuf times;
+
+	if (/*a*/1 == function)
+	{
+		times.actime = time;
+		times.modtime = file_get_last_write_time_utc(path);
+	}
+	else if (/*w*/2 == function)
+	{
+		times.actime = file_get_last_access_time_utc(path);
+		times.modtime = time;
+	}
+	else
+	{
+		return 1;
+	}
+
+	return 0 == utime((const char*)path, &times);
+}
+
+uint8_t file_set_time(const uint8_t* path, int64_t time, uint8_t function)
+{
+	return file_set_time_utc(path, time + (int64_t)60 * file_system_get_bias(), function);
+}
+
+uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
+{
+	return file_set_time(path, time, 0/*TODO*/);
+}
+
+uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
+{
+	return file_set_time_utc(path, time, 0/*TODO*/);
+}
+
+uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
+{
+	return file_set_time(path, time, 1/*TODO*/);
+}
+
+uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
+{
+	return file_set_time_utc(path, time, 1/*TODO*/);
+}
+
+uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
+{
+	return file_set_time(path, time, 2/*TODO*/);
+}
+
+uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
+{
+	return file_set_time_utc(path, time, 2/*TODO*/);
+}
+#endif
 uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* output)
 {
 	if (NULL == path ||
@@ -1612,8 +1832,6 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 		{
 			return 0;
 		}
-
-		argument1.finish--;
 	}
 	else if (2 == arguments_count)
 	{
@@ -1621,9 +1839,6 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 		{
 			return 0;
 		}
-
-		argument1.finish--;
-		argument2.finish--;
 	}
 	else if (3 == arguments_count)
 	{
@@ -1631,10 +1846,6 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 		{
 			return 0;
 		}
-
-		argument1.finish--;
-		argument2.finish--;
-		argument3.finish--;
 	}
 
 	switch (function)
@@ -1840,6 +2051,107 @@ uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 
 	return directory_create(dir_);
+}
+
+#define TOUCH_DATE_TIME_POSITION	0
+#define TOUCH_FILE_POSITION			1
+#define TOUCH_MILLIS_POSITION		2
+
+static const uint8_t* touch_attributes[] =
+{
+	(const uint8_t*)"datetime",
+	(const uint8_t*)"file",
+	(const uint8_t*)"millis"
+};
+
+static const uint8_t touch_attributes_lengths[] = { 8, 4, 6 };
+
+uint8_t touch_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   touch_attributes, touch_attributes_lengths,
+			   COUNT_OF(touch_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	(void)verbose;
+
+	if (NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, TOUCH_FILE_POSITION);
+
+	if (!buffer_size(file_path_in_buffer))
+	{
+		return 1;
+	}
+
+	if (!buffer_push_back(file_path_in_buffer, 0) ||
+		directory_exists(buffer_data(file_path_in_buffer, 0)))
+	{
+		return 0;
+	}
+
+	struct buffer* date_time_in_buffer = buffer_buffer_data(task_arguments, TOUCH_DATE_TIME_POSITION);
+
+	struct buffer* millis_in_buffer = buffer_buffer_data(task_arguments, TOUCH_MILLIS_POSITION);
+
+	if (!file_exists(buffer_data(file_path_in_buffer, 0)))
+	{
+		if (!file_create(buffer_data(file_path_in_buffer, 0)))
+		{
+			return 0;
+		}
+
+		if (!buffer_size(date_time_in_buffer) &&
+			!buffer_size(millis_in_buffer))
+		{
+			return 1;
+		}
+	}
+
+	int64_t seconds = 0;
+
+	if (buffer_size(date_time_in_buffer))
+	{
+		if (!datetime_parse_buffer(date_time_in_buffer))
+		{
+			return 0;
+		}
+
+		seconds = buffer_size(date_time_in_buffer);
+		seconds -= sizeof(int64_t);
+
+		if (seconds < 1)
+		{
+			return 0;
+		}
+
+		seconds = *(const int64_t*)buffer_data(date_time_in_buffer, seconds);
+	}
+	else if (buffer_size(millis_in_buffer))
+	{
+		if (!buffer_push_back(millis_in_buffer, 0))
+		{
+			return 0;
+		}
+
+		seconds = int64_parse(buffer_data(millis_in_buffer, 0));
+		seconds = date_time_millisecond_to_second(seconds);
+	}
+	else
+	{
+		seconds = datetime_now();
+	}
+
+	return file_set_last_write_time(buffer_data(file_path_in_buffer, 0), seconds);
 }
 
 #define COPY_MOVE_DIR_POSITION			0

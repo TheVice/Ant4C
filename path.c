@@ -695,12 +695,17 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 		return 0;
 	}
 
+	const wchar_t* start = (const wchar_t*)buffer_data(path,
+						   buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
+
 	if (!buffer_resize(path, size))
 	{
 		return 0;
 	}
 
-	return text_encoding_UTF16LE_to_UTF8(pathW, pathW + returned_length, path);
+	const wchar_t* finish = start + returned_length;
+	file_system_set_position_after_pre_root_wchar_t(&start);
+	return text_encoding_UTF16LE_to_UTF8(start, finish, path);
 #else
 
 	for (;;)

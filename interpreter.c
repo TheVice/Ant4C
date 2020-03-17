@@ -34,6 +34,9 @@ static const uint8_t function_call_finish = '}';
 
 static const uint8_t arguments_delimiter = ',';
 
+static const uint8_t lt = '<';
+static const uint8_t gt = '>';
+
 static const uint8_t space_and_tab[] = { ' ', '\t' };
 #define SPACE_AND_TAB_LENGTH COUNT_OF(space_and_tab)
 
@@ -1236,8 +1239,8 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"tar",
 #endif
 	(const uint8_t*)"target",
-#if 0
 	(const uint8_t*)"touch",
+#if 0
 	(const uint8_t*)"trycatch",
 	(const uint8_t*)"tstamp",
 	(const uint8_t*)"untar",
@@ -1288,8 +1291,8 @@ enum interpreter_task
 	tar_task,
 #endif
 	target_task,
-#if 0
 	touch_task,
+#if 0
 	trycatch_task,
 	tstamp_task,
 	untar_task,
@@ -1678,18 +1681,34 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			attributes_finish = find_any_symbol_like_or_not_like_that(
-									attributes_finish + 1, element_finish, (const uint8_t*)"<", 1, 1, 1);
-			element_finish = find_any_symbol_like_or_not_like_that(element_finish - 1, attributes_finish,
-							 (const uint8_t*)"<", 1, 1, -1);
-			element_finish = find_any_symbol_like_or_not_like_that(element_finish - 1, attributes_finish,
-							 (const uint8_t*)">", 1, 1, -1);
-			task_attributes_count = target_evaluate_task(project, &task_arguments, attributes_finish, element_finish,
-									verbose);
+									attributes_finish + 1, element_finish, &lt, 1, 1, 1);
+			element_finish = find_any_symbol_like_or_not_like_that(
+								 element_finish - 1, attributes_finish, &lt, 1, 1, -1);
+			element_finish = find_any_symbol_like_or_not_like_that(
+								 element_finish - 1, attributes_finish, &gt, 1, 1, -1);
+			task_attributes_count = target_evaluate_task(
+										project, &task_arguments, attributes_finish, element_finish, verbose);
+			break;
+
+		case touch_task:
+			if (!touch_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = touch_evaluate_task(&task_arguments, verbose);
 			break;
 #if 0
-
-		case touch_:
-			break;
 
 		case trycatch_:
 			break;

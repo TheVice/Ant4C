@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -54,19 +54,13 @@
 #endif
 #endif
 
-#ifndef _WIN32
-#include <unistd.h>
-
-static pid_t pid = 0;
-#endif
-
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
 #define LOGO (const uint8_t*)"Program version "PROGRAM_VERSION"\n"	\
 	"The MIT License (MIT)\n"						\
-	"Copyright(c) 2019 https://github.com/TheVice/"
+	"Copyright (c) 2019 - 2020 https://github.com/TheVice/"
 #define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
 #define SAMPLE_USING (const uint8_t*)"Sample using - [options]          ..." /*<target>*/
 #define SAMPLE_USING_LENGTH 37
@@ -80,14 +74,6 @@ static pid_t pid = 0;
 
 uint8_t print_status(int status)
 {
-#ifndef _WIN32
-
-	if (getpid() != pid)
-	{
-		return 0;
-	}
-
-#endif
 	return 8 == echo(0, Default, NULL,
 					 status ? Info : Error,
 					 status ? (const uint8_t*)"SUCCESS." : (const uint8_t*)"FAILURE.",
@@ -106,28 +92,6 @@ int main(int argc, char** argv)
 #endif
 #endif
 #if 0
-#ifndef _WIN32
-	pid = getpid();
-#endif
-	/*uint64_t time_now = datetime_now();*/
-
-	/*if (argc < 2)
-	{
-		TODO: list current directory.
-	}*/
-
-	if (argc < 2)
-	{
-		if (!echo(0, Default, NULL, NoLevel, LOGO, LOGO_LENGTH, 1, 0) ||
-			!echo(0, Default, NULL, Info, SAMPLE_USING, SAMPLE_USING_LENGTH, 1, 0) ||
-			!echo(0, Default, NULL, Info, OPTIONS, OPTIONS_LENGTH, 1, 0))
-		{
-			return EXIT_FAILURE;
-		}
-
-		return EXIT_SUCCESS;
-	}
-
 #if defined(_MSC_VER)
 
 	if (!argument_parser_wchar_t(1, argc, argv))
@@ -157,6 +121,48 @@ int main(int argc, char** argv)
 			argument_parser_release();
 			return EXIT_FAILURE;
 		}
+	}
+
+	struct buffer* build_files = argument_parser_get_build_files();
+
+	if (!buffer_size(build_files))
+	{
+		struct buffer current_directory;
+		SET_NULL_TO_BUFFER(current_directory);
+
+		if (!path_get_directory_for_current_process(&current_directory))
+		{
+			buffer_release(&current_directory);
+			argument_parser_release();
+			return EXIT_FAILURE;
+		}
+
+		static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
+
+		if (!path_combine_in_place(&current_directory, 0, file_extension, file_extension + 8))
+		{
+			buffer_release(&current_directory);
+			argument_parser_release();
+			return EXIT_FAILURE;
+		}
+
+		if (!directory_enumerate_file_system_entries(&current_directory, 1, 0, build_files))
+		{
+			buffer_resize(build_files, 0);
+		}
+		else
+		{
+			if (!argument_parser_create_ranges_for_the_build_files(buffer_size(build_files)))
+			{
+				/*TODO: echo*/
+				buffer_release(&current_directory);
+				argument_parser_release();
+				return EXIT_FAILURE;
+			}
+		}
+
+		buffer_release(&current_directory);
+		build_files = NULL;
 	}
 
 	if (argument_parser_get_help() || NULL == argument_parser_get_build_file(0))

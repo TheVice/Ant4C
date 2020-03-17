@@ -8,11 +8,11 @@
 #include "exec.h"
 #include "argument_parser.h"
 #include "buffer.h"
-#include "conversion.h"
 #include "common.h"
+#include "conversion.h"
+#include "date_time.h"
 #include "echo.h"
 #include "file_system.h"
-#include "math_unit.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -439,7 +439,7 @@ uint8_t exec(
 
 uint8_t exec_posix_no_redirect(
 	const char* program, char** cmd, char** env, const char* working_dir,
-	void* pid_property, uint8_t verbose)
+	void* pid_property, void* result_property, uint8_t verbose)
 {
 	if (NULL == program ||
 		NULL == cmd ||
@@ -465,11 +465,27 @@ uint8_t exec_posix_no_redirect(
 	{
 		if (NULL != working_dir && -1 == chdir(working_dir))
 		{
-			return 0;/*TODO:*/
+			exit(EXIT_FAILURE);
 		}
 
-		NULL == env ? execv(program, cmd) : execve(program, cmd, env);
-		return 0;/*TODO: exit EXIT_SUCCESS*/
+		int status = EXIT_SUCCESS;
+
+		if (NULL == env)
+		{
+			status = execv(program, cmd);
+		}
+		else
+		{
+			status = execve(program, cmd, env);
+		}
+
+		if (NULL != result_property)
+		{
+			property_set_by_pointer(result_property, (const void*)&status, sizeof(status),
+									property_value_is_integer, 0, 0, verbose);
+		}
+
+		exit(status);
 	}
 
 	return 1;
@@ -477,7 +493,7 @@ uint8_t exec_posix_no_redirect(
 
 uint8_t exec_posix_with_redirect(
 	const char* program, char** cmd, char** env, const char* working_dir,
-	const uint8_t* file, struct buffer* tmp, uint32_t time_out, uint8_t verbose)
+	const uint8_t* file, struct buffer* tmp, uint32_t time_out, void* result_property, uint8_t verbose)
 {
 	(void)time_out;
 
@@ -512,11 +528,27 @@ uint8_t exec_posix_with_redirect(
 
 		if (NULL != working_dir && -1 == chdir(working_dir))
 		{
-			return 0;/*TODO:*/
+			exit(EXIT_FAILURE);
 		}
 
-		NULL == env ? execv(program, cmd) : execve(program, cmd, env);
-		return 0;/*TODO: exit EXIT_SUCCESS*/
+		int status = EXIT_SUCCESS;
+
+		if (NULL == env)
+		{
+			status = execv(program, cmd);
+		}
+		else
+		{
+			status = execve(program, cmd, env);
+		}
+
+		if (NULL != result_property)
+		{
+			property_set_by_pointer(result_property, (const void*)&status, sizeof(status),
+									property_value_is_integer, 0, 0, verbose);
+		}
+
+		exit(status);
 	}
 
 	close(file_des[1]);
@@ -689,15 +721,14 @@ uint8_t exec(
 	if (spawn)
 	{
 		spawn = exec_posix_no_redirect((const char*)buffer_data(&application, 0), cmd, env, work,
-									   pid_property, verbose);
+									   pid_property, result_property, verbose);
 	}
 	else
 	{
 		spawn = exec_posix_with_redirect((const char*)buffer_data(&application, 0), cmd, env, work,
-										 file, &application, time_out, verbose);
+										 file, &application, time_out, result_property, verbose);
 	}
 
-	(void)result_property;
 	buffer_release(&application);
 	return spawn;
 }
@@ -765,11 +796,6 @@ uint8_t exec_get_attributes_and_arguments_for_task(
 	}
 
 	return 1;
-}
-
-int64_t exec_millisecond_to_second(int64_t millisecond)
-{
-	return math_truncate(math_ceiling((double)millisecond / 1000));
 }
 
 uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose)
@@ -926,7 +952,7 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 
 		if (1000 < data)
 		{
-			data = exec_millisecond_to_second(data);
+			data = date_time_millisecond_to_second(data);
 
 			if (data < 5)
 			{

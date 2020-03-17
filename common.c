@@ -57,14 +57,14 @@ const uint8_t* find_any_symbol_like_or_not_like_that(
 {
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
 }
-
+#if defined(_WIN32)
 const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(
 	const wchar_t* start, const wchar_t* finish, const wchar_t* that,
 	ptrdiff_t that_length, uint8_t like, int8_t step)
 {
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
 }
-
+#endif
 uint8_t common_replace_double_byte_by_single(uint8_t* input, ptrdiff_t* size, uint8_t to_be_replaced)
 {
 	ptrdiff_t match = 0;
@@ -101,31 +101,6 @@ uint8_t common_replace_double_byte_by_single(uint8_t* input, ptrdiff_t* size, ui
 
 	return 1;
 }
-
-/*uint8_t common_string_to_enum_(const uint8_t* string_start, const uint8_t* string_finish,
-							   const uint8_t** reference_strings,
-							   const ptrdiff_t* reference_strings_lengths,
-							   uint8_t max_enum_value)
-{
-	if (range_in_parts_is_null_or_empty(string_start, string_finish) ||
-		NULL == reference_strings ||
-		NULL == reference_strings_lengths ||
-		0 == max_enum_value)
-	{
-		return max_enum_value;
-	}
-
-	for (uint8_t i = 0; i < max_enum_value; ++i)
-	{
-		if (string_equal(string_start, string_finish,
-			reference_strings[i], reference_strings[i] + reference_strings_lengths[i]))
-		{
-			return i;
-		}
-	}
-
-	return max_enum_value;
-}*/
 
 ptrdiff_t common_count_bytes_until(const uint8_t* bytes, uint8_t until)
 {
@@ -186,7 +161,7 @@ uint8_t common_unbox_char_data(const struct buffer* box_with_data, uint8_t i, ui
 
 	if (NULL == box_with_data ||
 		NULL == data ||
-		(0 != terminate && 1 != terminate))
+		1 < terminate)
 	{
 		return 0;
 	}
@@ -209,7 +184,13 @@ uint8_t common_unbox_char_data(const struct buffer* box_with_data, uint8_t i, ui
 		return 0;
 	}
 
-	data->finish = data->start + buffer_size(boxed_data);
+	data->finish = buffer_data(boxed_data, 0) + buffer_size(boxed_data);
+
+	if (terminate && data->start < data->finish)
+	{
+		data->finish -= terminate;
+	}
+
 	return 1;
 }
 

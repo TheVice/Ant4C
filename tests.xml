@@ -3394,7 +3394,7 @@
       <output>exists('target') -> True </output>
       <output>exists('tlbexp') -> False </output>
       <output>exists('tlbimp') -> False </output>
-      <output>exists('touch') -> False </output>
+      <output>exists('touch') -> True </output>
       <output>exists('trycatch') -> False </output>
       <output>exists('tstamp') -> False </output>
       <output>exists('untar') -> False </output>
@@ -4285,13 +4285,21 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>loadfile sample</name>
     </project_load_from_content>
-    <project_load_from_build_file>
-      <content>
-        <![CDATA[
-        ]]>
-      </content>
-      <return>0</return>
-    </project_load_from_build_file>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <touch />
+        <property name="file" value="${path::get-temp-file-name()}" overwrite="true" readonly="true" />
+        <echo message="${property::get-value('file')}" file="${property::get-value('file')}" />
+        <touch file="${property::get-value('file')}" />
+        <touch file="${property::get-value('file')}" datetime="15.09.2019 12:35:46" />
+        <!-- ${datetime::parse('15.09.2019 12:35:46')} -->
+        <touch file="${property::get-value('file')}" millis="1569840495" />
+        <touch file="${property::get-value('file')}" datetime="15.09.2019 12:35:46" millis="1569840495" />
+      </project>
+      ]]></content>
+      <return>1</return>
+    </project_load_from_content>
     <project_load_from_build_file>
       <content>
         <![CDATA[

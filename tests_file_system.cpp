@@ -411,6 +411,40 @@ TEST(TestFileSystem_, directory_move)
 	buffer_release(&path);
 }
 
+TEST(TestFileSystem_, directory_set_current_directory)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	//
+	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+	auto path_in_range(buffer_to_range(&path));
+	//
+	auto returned = path_get_path_root(path_in_range.start, path_in_range.finish, &path_in_range);
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	returned = buffer_resize(&path, range_size(&path_in_range));
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+	//
+	returned = directory_set_current_directory(buffer_data(&path, 0));
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	returned = buffer_resize(&path, buffer_size(&path) - 1);
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	const auto path_that_was_set(buffer_to_string(&path));
+	//
+	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+	returned = directory_get_current_directory(NULL, NULL, &path);
+	ASSERT_TRUE(returned) << buffer_free(&path);
+	//
+	const auto current_path(buffer_to_string(&path));
+	//
+	ASSERT_EQ(path_that_was_set, current_path) << buffer_free(&path);
+	//
+	buffer_release(&path);
+}
+
 TEST(TestFileSystem_, file_copy)
 {
 	buffer path;
@@ -619,18 +653,83 @@ TEST(TestFileSystem_, file_up_to_date)
 {
 	buffer paths;
 	SET_NULL_TO_BUFFER(paths);
+	//
 	ASSERT_TRUE(path_get_temp_file_name(&paths)) << buffer_free(&paths);
 	ASSERT_TRUE(buffer_push_back(&paths, 0)) << buffer_free(&paths);
-	//
+
+	if (!file_exists(buffer_data(&paths, 0)))
+	{
+		ASSERT_TRUE(file_create(buffer_data(&paths, 0))) << buffer_free(&paths);
+	}
+
 	const auto size = buffer_size(&paths);
 	ASSERT_TRUE(path_get_temp_file_name(&paths)) << buffer_free(&paths);
 	ASSERT_TRUE(buffer_push_back(&paths, 0)) << buffer_free(&paths);
-	//
+
+	if (!file_exists(buffer_data(&paths, size)))
+	{
+		ASSERT_TRUE(file_create(buffer_data(&paths, size))) << buffer_free(&paths);
+	}
+
 	const auto src_file = buffer_data(&paths, 0);
 	const auto target_file = buffer_data(&paths, size);
 	ASSERT_TRUE(file_up_to_date(src_file, target_file)) << buffer_free(&paths);
 	//
+	ASSERT_TRUE(file_delete(src_file)) << buffer_free(&paths);
+	ASSERT_TRUE(file_delete(target_file)) << buffer_free(&paths);
+	//
 	buffer_release(&paths);
+}
+
+TEST(TestFileSystem_, file_set_last_access_time)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	//
+	ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+
+	if (!file_exists(buffer_data(&path, 0)))
+	{
+		ASSERT_TRUE(file_create(buffer_data(&path, 0))) << buffer_free(&path);
+	}
+
+	const int64_t time_to_set = 1569840495;
+	ASSERT_TRUE(file_set_last_access_time_utc(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
+	ASSERT_TRUE(file_set_last_access_time(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
+	const int64_t time = file_get_last_access_time(buffer_data(&path, 0));
+	//
+	ASSERT_EQ(time_to_set, time) << buffer_free(&path);
+	//
+	ASSERT_TRUE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
+	buffer_release(&path);
+}
+
+TEST(TestFileSystem_, file_set_last_write_time)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	//
+	ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+
+	if (!file_exists(buffer_data(&path, 0)))
+	{
+		ASSERT_TRUE(file_create(buffer_data(&path, 0))) << buffer_free(&path);
+	}
+
+	const int64_t time_to_set = 1569840495;
+	ASSERT_TRUE(file_set_last_write_time_utc(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
+	ASSERT_TRUE(file_set_last_write_time(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
+	const int64_t time = file_get_last_write_time(buffer_data(&path, 0));
+	//
+	ASSERT_EQ(time_to_set, time) << buffer_free(&path);
+	//
+	ASSERT_TRUE(file_set_creation_time_utc(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
+	ASSERT_TRUE(file_set_creation_time(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
+	//
+	ASSERT_TRUE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
+	buffer_release(&path);
 }
 
 TEST(TestFileSystem_, file_write_all_bytes)

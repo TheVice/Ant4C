@@ -207,6 +207,58 @@ uint16_t argument_parser_get_encoding_from_name(const char* start, const char* f
 	return result;
 }
 
+struct buffer* argument_parser_get_build_files()
+{
+	return &build_files;
+}
+
+uint8_t argument_parser_create_ranges_for_the_build_files(ptrdiff_t size)
+{
+	build_files_size = size;
+
+	if (0 < build_files_size &&
+		build_files_size <= buffer_size(&build_files))
+	{
+		const uint8_t* start = buffer_data(&build_files, 0);
+		const uint8_t* finish = start + build_files_size;
+		size = 1;
+
+		while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1)))
+		{
+			start = find_any_symbol_like_or_not_like_that(start + 1, finish, &zero_symbol, 1, 0, 1);
+			++size;
+		}
+
+		if (!buffer_append_range(&build_files, NULL, size) ||
+			!buffer_resize(&build_files, build_files_size))
+		{
+			buffer_release(&build_files);
+			return 0;
+		}
+
+		start = buffer_data(&build_files, 0);
+		finish = start + build_files_size;
+		const uint8_t* start_ = start;
+
+		while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1)))
+		{
+			struct range build_file;
+			build_file.start = start_;
+			build_file.finish = start;
+			start = find_any_symbol_like_or_not_like_that(start + 1, finish, &zero_symbol, 1, 0, 1);
+			start_ = start;
+
+			if (!buffer_append_range(&build_files, &build_file, 1))
+			{
+				buffer_release(&build_files);
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
 uint8_t argument_parser_char(int i, int argc, char** argv)
 {
 	argument_parser_get_verbose_char(argc, argv);
@@ -354,45 +406,9 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		}
 	}
 
-	build_files_size = build_files_size < 0 ? -1 : buffer_size(&build_files);
-
-	if (0 < build_files_size)
+	if (!argument_parser_create_ranges_for_the_build_files(build_files_size < 0 ? -1 : buffer_size(&build_files)))
 	{
-		const uint8_t* start = buffer_data(&build_files, 0);
-		const uint8_t* finish = buffer_data(&build_files, 0) + build_files_size;
-		int count = 1;
-
-		while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1)))
-		{
-			start = find_any_symbol_like_or_not_like_that(start + 1, finish, &zero_symbol, 1, 0, 1);
-			++count;
-		}
-
-		if (!buffer_append(&build_files, NULL, count * sizeof(struct range)) ||
-			!buffer_resize(&build_files, build_files_size))
-		{
-			buffer_release(&build_files);
-			return 0;
-		}
-
-		start = buffer_data(&build_files, 0);
-		finish = buffer_data(&build_files, 0) + build_files_size;
-		const uint8_t* start_ = start;
-
-		while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1)))
-		{
-			struct range build_file;
-			build_file.start = start_;
-			build_file.finish = start;
-			start = find_any_symbol_like_or_not_like_that(start + 1, finish, &zero_symbol, 1, 0, 1);
-			start_ = start;
-
-			if (!buffer_append_range(&build_files, &build_file, 1))
-			{
-				buffer_release(&build_files);
-				return 0;
-			}
-		}
+		return 0;
 	}
 
 	log_file_size = log_file_size < 0 ? -1 : buffer_size(&log_file);
@@ -418,7 +434,15 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv)
 {
 	argument_parser_get_verbose_wchar_t(argc, argv);
-	/**/
+
+	if (!is_argument_init)
+	{
+		SET_NULL_TO_BUFFER(build_files);
+		SET_NULL_TO_BUFFER(properties);
+		SET_NULL_TO_BUFFER(log_file);
+		is_argument_init = 1;
+	}
+
 	build_files_size = -1;
 	log_file_size = -1;
 	/**/

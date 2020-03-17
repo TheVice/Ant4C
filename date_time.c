@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "math_unit.h"
 #include "range.h"
 
 #include <time.h>
@@ -234,6 +235,37 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 	}
 
 	return (0 < *day && *day < 32 && 1 < *month && *month < 31 && *hour < 24 && *minute < 60 && *second < 60);
+}
+
+uint8_t datetime_parse_buffer(struct buffer* input_output)
+{
+	const ptrdiff_t size = buffer_size(input_output);
+
+	if (!size)
+	{
+		return 0;
+	}
+
+	if (!buffer_append(input_output, NULL, sizeof(uint32_t) + 5 * sizeof(uint8_t)))
+	{
+		return 0;
+	}
+
+	const uint8_t* ptr = buffer_data(input_output, 0);
+	uint32_t* year = (uint32_t*)buffer_data(input_output, size);
+	uint8_t* month = (uint8_t*)buffer_data(input_output, size + sizeof(uint32_t));
+	uint8_t* day = month + sizeof(uint8_t);
+	uint8_t* hour = day + sizeof(uint8_t);
+	uint8_t* minute = hour + sizeof(uint8_t);
+	uint8_t* second = minute + sizeof(uint8_t);
+
+	if (!datetime_parse(ptr, ptr + size, year, month, day, hour, minute, second))
+	{
+		return 0;
+	}
+
+	*((int64_t*)year) = datetime_encode(*year, *month, *day, *hour, *minute, *second);
+	return buffer_resize(input_output, size + sizeof(int64_t));
 }
 
 uint8_t datetime_to_char_array(const struct tm* tm_, char* output)
@@ -589,6 +621,11 @@ long datetime_get_bias()
 	return (long)(mktime(tm_u) - mktime(tm_)) / 60 - (tm_u->tm_isdst ? 0 : 60);
 }
 #endif
+int64_t date_time_millisecond_to_second(int64_t millisecond)
+{
+	return math_truncate(math_ceiling((double)millisecond / 1000));
+}
+
 int64_t timespan_from_days(double input)
 {
 	return (int64_t)((double)seconds_per_day * input);

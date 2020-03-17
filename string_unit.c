@@ -672,7 +672,7 @@ uint8_t string_exec_function(uint8_t function,
 		case pad_left:
 		case pad_right:
 			return (3 == arguments_count) &&
-				   string_pad(argument1.start, argument1.finish - 1, argument3.start, argument3.finish,
+				   string_pad(argument1.start, argument1.finish, argument3.start, argument3.finish,
 							  (ptrdiff_t)int64_parse(argument2.start), output, function);
 
 		case replace:
@@ -720,7 +720,7 @@ uint8_t string_exec_function(uint8_t function,
 				}
 			}
 
-			return string_substring(argument1.start, argument1.finish - 1, index, length, output);
+			return string_substring(argument1.start, argument1.finish, index, length, output);
 		}
 
 		case to_lower:

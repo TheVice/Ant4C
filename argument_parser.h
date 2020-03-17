@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -16,6 +16,9 @@
 
 struct buffer;
 struct range;
+
+struct buffer* argument_parser_get_build_files();
+uint8_t argument_parser_create_ranges_for_the_build_files(ptrdiff_t size);
 
 uint8_t argument_parser_char(int i, int argc, char** argv);
 #if defined(_WIN32)
