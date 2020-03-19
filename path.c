@@ -526,6 +526,12 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 
 	if (path_is_path_rooted(temp_file_path, temp_file_path + length))
 	{
+		if (!buffer_resize(temp_file_name, size + length) ||
+			!buffer_push_back(temp_file_name, 0))
+		{
+			return 0;
+		}
+
 		return buffer_resize(temp_file_name, size + length);
 	}
 
@@ -567,6 +573,13 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 #else
 	memcpy(temp_file_path, temp_path_, length);
 #endif
+
+	if (!buffer_resize(temp_file_name, size + length) ||
+		!buffer_push_back(temp_file_name, 0))
+	{
+		return 0;
+	}
+
 	return buffer_resize(temp_file_name, size + length);
 #endif
 }
@@ -1036,7 +1049,11 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 				   buffer_append_data_from_range(output, &argument2);
 
 		case path_get_temp_file_name_function:
+#if defined(_WIN32)
+			return !arguments_count && path_get_temp_file_name(output) && file_create(buffer_data(output, 0));
+#else
 			return !arguments_count && path_get_temp_file_name(output);
+#endif
 
 		case path_get_temp_path_function:
 			return !arguments_count && path_get_temp_path(output);

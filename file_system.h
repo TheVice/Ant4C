@@ -63,6 +63,7 @@ uint8_t file_seek(void* stream, long offset, int32_t origin);
 long file_tell(void* stream);
 size_t file_write(const void* content, const size_t size_of_content_element,
 				  const size_t count_of_elements, void* stream);
+uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes);
 int64_t file_get_creation_time(const uint8_t* path);
 int64_t file_get_creation_time_utc(const uint8_t* path);
 int64_t file_get_last_access_time(const uint8_t* path);
@@ -76,18 +77,26 @@ size_t file_read(void* content, const size_t size_of_content_element,
 				 const size_t count_of_elements, void* stream);
 uint8_t file_read_all_bytes(const uint8_t* path, struct buffer* output);
 uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file);
+uint8_t file_set_attributes(
+	const uint8_t* path, uint8_t archive, uint8_t hidden, uint8_t normal, uint8_t readonly,
+	uint8_t system_attribute);
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time);
 uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time);
 uint8_t file_set_last_access_time(const uint8_t* path, int64_t time);
 uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time);
 uint8_t file_set_last_write_time(const uint8_t* path, int64_t time);
 uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time);
-uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* output);
+uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* content);
 
 uint8_t dir_get_id_of_get_current_directory_function();
 uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t dir_exec_function(
 	uint8_t function, const struct buffer* arguments, uint8_t arguments_count, struct buffer* output);
+
+uint8_t attrib_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
 
 uint8_t delete_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

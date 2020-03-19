@@ -22,6 +22,7 @@
 #include "project.h"
 #include "property.h"
 #include "range.h"
+#include "sleep_unit.h"
 #include "string_unit.h"
 #include "target.h"
 #include "text_encoding.h"
@@ -1200,10 +1201,24 @@ uint8_t interpreter_get_environments(
 	return 1;
 }
 
+uint8_t fail_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	static const uint8_t* fail_attributes[] = { (const uint8_t*)"message" };
+	static const uint8_t fail_attributes_lengths[] = { 7 };
+	/**/
+	return common_get_attributes_and_arguments_for_task(
+			   fail_attributes, fail_attributes_lengths,
+			   COUNT_OF(fail_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
 static const uint8_t* interpreter_task_str[] =
 {
-#if 0
 	(const uint8_t*)"attrib",
+#if 0
 	(const uint8_t*)"call",
 	(const uint8_t*)"choose",
 #endif
@@ -1212,10 +1227,9 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"description",
 	(const uint8_t*)"echo",
 	(const uint8_t*)"exec",
-#if 0
 	(const uint8_t*)"fail",
+#if 0
 	(const uint8_t*)"foreach",
-	(const uint8_t*)"get",
 	(const uint8_t*)"gunzip",
 	(const uint8_t*)"if",
 	(const uint8_t*)"include",
@@ -1223,7 +1237,6 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"loadfile",
 #if 0
 	(const uint8_t*)"loadtasks",
-	(const uint8_t*)"mail",
 #endif
 	(const uint8_t*)"mkdir",
 	(const uint8_t*)"move",
@@ -1234,17 +1247,13 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"regex",
 	(const uint8_t*)"script",
 	(const uint8_t*)"setenv",
-	(const uint8_t*)"sleep",
-	(const uint8_t*)"style",
-	(const uint8_t*)"tar",
 #endif
+	(const uint8_t*)"sleep",
 	(const uint8_t*)"target",
 	(const uint8_t*)"touch",
 #if 0
 	(const uint8_t*)"trycatch",
 	(const uint8_t*)"tstamp",
-	(const uint8_t*)"untar",
-	(const uint8_t*)"unzip",
 	(const uint8_t*)"uptodate",
 	(const uint8_t*)"xmlpeek",
 	(const uint8_t*)"xmlpoke",
@@ -1254,8 +1263,8 @@ static const uint8_t* interpreter_task_str[] =
 
 enum interpreter_task
 {
-#if 0
 	attrib_task,
+#if 0
 	call_task,
 	choose_task,
 #endif
@@ -1264,18 +1273,15 @@ enum interpreter_task
 	description_task,
 	echo_task,
 	exec_task,
-#if 0
 	fail_task,
+#if 0
 	foreach_task,
-	get_task,
-	gunzip_task,
 	if_task,
 	include_task,
 #endif
 	loadfile_task,
 #if 0
 	loadtasks_task,
-	mail_task,
 #endif
 	mkdir_task,
 	move_task,
@@ -1286,17 +1292,13 @@ enum interpreter_task
 	regex_task,
 	script_task,
 	setenv_task,
-	sleep_task,
-	style_task,
-	tar_task,
 #endif
+	sleep_task,
 	target_task,
 	touch_task,
 #if 0
 	trycatch_task,
 	tstamp_task,
-	untar_task,
-	unzip_task,
 	uptodate_task,
 	xmlpeek_task,
 	xmlpoke_task,
@@ -1357,10 +1359,25 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 	switch (command)
 	{
-#if 0
+		case attrib_task:
+			if (!attrib_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
 
-		case attrib_:
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = attrib_evaluate_task(&task_arguments, verbose);
 			break;
+#if 0
 
 		case call_:
 			break;
@@ -1473,18 +1490,49 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			task_attributes_count = exec_evaluate_task(project, &task_arguments, verbose);
 			break;
+
+		case fail_task:
+		{
+			if (!fail_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			struct buffer* message = buffer_buffer_data(&task_arguments, task_attributes_count - 1);
+
+			if (!buffer_size(message))
+			{
+				if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message, verbose))
+				{
+					task_attributes_count = 0;
+					break;
+				}
+			}
+
+			task_attributes_count = echo(
+										0, UTF8, NULL, Error, buffer_data(message, 0), buffer_size(message), 1, verbose);
+
+			if (!task_attributes_count)
+			{
+				break;
+			}
+
+			task_attributes_count = 0;
+		}
+		break;
 #if 0
 
-		case fail_:
-			break;
-
 		case foreach_:
-			break;
-
-		case get_:
-			break;
-
-		case gunzip_:
 			break;
 
 		case if_:
@@ -1515,9 +1563,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 #if 0
 
 		case loadtasks_:
-			break;
-
-		case mail_:
 			break;
 #endif
 
@@ -1653,16 +1698,26 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case setenv_:
 			break;
-
-		case sleep_:
-			break;
-
-		case style_:
-			break;
-
-		case tar_:
-			break;
 #endif
+
+		case sleep_task:
+			if (!sleep_unit_get_attributes_and_arguments_for_task(
+					&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = sleep_unit_evaluate_task(&task_arguments, verbose);
+			break;
 
 		case target_task:
 			if (!target_get_attributes_and_arguments_for_task(
@@ -1716,12 +1771,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 		case tstamp_:
 			break;
 
-		case untar_:
-			break;
-
-		case unzip_:
-			break;
-
 		case uptodate_:
 			break;
 
@@ -1729,9 +1778,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 
 		case xmlpoke_:
-			break;
-
-		case zip_:
 			break;
 #endif
 

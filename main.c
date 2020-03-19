@@ -23,6 +23,7 @@
 #include "project.h"
 #include "property.h"
 #include "range.h"
+#include "sleep_unit.h"
 #include "string_unit.h"
 #include "target.h"
 #include "text_encoding.h"
@@ -70,7 +71,7 @@
 	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"	\
 	"\t-nologo - do not display program version, license and copyright information.\n"	\
 	"\t-help - print this message. Short form -h."
-#define OPTIONS_LENGTH 377
+#define OPTIONS_LENGTH common_count_bytes_until(OPTIONS, 0)
 
 uint8_t print_status(int status)
 {
@@ -92,6 +93,7 @@ int main(int argc, char** argv)
 #endif
 #endif
 #if 0
+	uint64_t time_now = datetime_now();
 #if defined(_MSC_VER)
 
 	if (!argument_parser_wchar_t(1, argc, argv))
@@ -119,6 +121,7 @@ int main(int argc, char** argv)
 		if (!echo(0, Default, NULL, NoLevel, LOGO, LOGO_LENGTH, 1, argument_parser_get_verbose()))
 		{
 			argument_parser_release();
+			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 	}
@@ -143,18 +146,30 @@ int main(int argc, char** argv)
 		{
 			buffer_release(&current_directory);
 			argument_parser_release();
+			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 
 		if (!directory_enumerate_file_system_entries(&current_directory, 1, 0, build_files))
 		{
-			buffer_resize(build_files, 0);
+			if (!buffer_resize(build_files, 0))
+			{
+				buffer_release(&current_directory);
+				argument_parser_release();
+				/*TODO: echo.*/
+				return EXIT_FAILURE;
+			}
 		}
 		else
 		{
 			if (!argument_parser_create_ranges_for_the_build_files(buffer_size(build_files)))
 			{
-				/*TODO: echo*/
+				if (!echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create ranges for the build files paths.", 50,
+						  1, 0))
+				{
+					argc = 0;
+				}
+
 				buffer_release(&current_directory);
 				argument_parser_release();
 				return EXIT_FAILURE;
@@ -162,7 +177,6 @@ int main(int argc, char** argv)
 		}
 
 		buffer_release(&current_directory);
-		build_files = NULL;
 	}
 
 	if (argument_parser_get_help() || NULL == argument_parser_get_build_file(0))
@@ -216,11 +230,49 @@ int main(int argc, char** argv)
 		project_unload(project);
 	}
 
+	time_now = datetime_now() - time_now;
+
+	if (10 < time_now)
+	{
+		if (!buffer_resize(build_files, 0))
+		{
+			argument_parser_release();
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+
+		if (!buffer_append_char(build_files, "Total time: ", 12))
+		{
+			argument_parser_release();
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+
+		if (!int64_to_string(time_now, build_files))
+		{
+			argument_parser_release();
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+
+		if (!buffer_append_char(build_files, " second(s).", 11))
+		{
+			argument_parser_release();
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+
+		if (!echo(0, Default, NULL, Info, buffer_data(build_files, 0), buffer_size(build_files), 1, 0))
+		{
+			argument_parser_release();
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+	}
+
 	argument_parser_release();
-	/*time_now = datetime_now() - time_now;
-	printf("Total time: %"PRId64" second(s).\n", time_now);*/
 	argc = 0 < argc;
-	print_status(argc);
+	argc = print_status(argc) ? argc : 0;
 	return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
 	(void)argc;

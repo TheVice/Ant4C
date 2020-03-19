@@ -681,6 +681,57 @@ TEST(TestFileSystem_, file_up_to_date)
 	buffer_release(&paths);
 }
 
+TEST(TestFileSystem_, file_set_attributes)
+{
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	//
+	ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
+
+	if (!file_exists(buffer_data(&path, 0)))
+	{
+		ASSERT_TRUE(file_create(buffer_data(&path, 0))) << buffer_free(&path);
+	}
+
+#if defined(_WIN32)
+
+	for (uint8_t archive = 0; archive < 2; ++archive)
+	{
+		for (uint8_t hidden = 0; hidden < 2; ++hidden)
+		{
+			for (uint8_t normal = 0; normal < 2; ++normal)
+			{
+				for (uint8_t readonly = 0; readonly < 2; ++readonly)
+				{
+					for (uint8_t system_attribute = 0; system_attribute < 2; ++system_attribute)
+					{
+						ASSERT_TRUE(file_set_attributes(
+										buffer_data(&path, 0), archive, hidden, normal, readonly, system_attribute)) << buffer_free(&path);
+#if TODO
+						unsigned long attributes = 0;
+						ASSERT_TRUE(file_get_attributes(buffer_data(&path, 0), &attributes)) << buffer_free(&path);
+						//
+						ASSERT_EQ(archive, IS_ARCHIVE(attributes)) << buffer_free(&path);
+						ASSERT_EQ(hidden, IS_HIDDEN(attributes)) << buffer_free(&path);
+						ASSERT_EQ(normal, IS_NORMAL(attributes)) << buffer_free(&path);
+						ASSERT_EQ(readonly, IS_READ_ONLY(attributes)) << buffer_free(&path);
+						ASSERT_EQ(system_attribute, IS_SYSTEM(attributes)) << buffer_free(&path);
+#endif
+					}
+				}
+			}
+		}
+	}
+
+	ASSERT_FALSE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
+	ASSERT_TRUE(file_set_attributes(buffer_data(&path, 0), 0, 0, 1, 0, 0)) << buffer_free(&path);
+#endif
+	ASSERT_TRUE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
+	/**/
+	buffer_release(&path);
+}
+
 TEST(TestFileSystem_, file_set_last_access_time)
 {
 	buffer path;

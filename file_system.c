@@ -1342,6 +1342,45 @@ size_t file_write(const void* content, const size_t size_of_content_element,
 {
 	return fwrite(content, size_of_content_element, count_of_elements, stream);
 }
+#if defined(_WIN32)
+uint8_t file_get_attributes_wchar_t(const wchar_t* path, unsigned long* attributes)
+{
+	if (NULL == path ||
+		NULL == attributes)
+	{
+		return 0;
+	}
+
+	(*attributes) = GetFileAttributesW(path);
+	return INVALID_FILE_ATTRIBUTES != (*attributes);
+}
+#endif
+uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes)
+{
+	if (NULL == path ||
+		NULL == attributes)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = file_get_attributes_wchar_t(buffer_wchar_t_data(&pathW, 0), attributes);
+	buffer_release(&pathW);
+	return returned;
+#else
+	(*attributes) = 0;
+	return 0;
+#endif
+}
 
 int64_t file_get_creation_time(const uint8_t* path)
 {
@@ -1631,6 +1670,96 @@ uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file)
 	return file_get_last_write_time_utc(src_file) <= file_get_last_write_time_utc(target_file);
 }
 #if defined(_WIN32)
+uint8_t file_set_attributes_wchar_t(const wchar_t* path,
+									uint8_t archive, uint8_t hidden, uint8_t normal, uint8_t readonly, uint8_t system_attribute)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+	unsigned long attributes = 0;
+
+	if (!file_get_attributes_wchar_t(path, &attributes))
+	{
+		return 0;
+	}
+
+	if (archive)
+	{
+		attributes |= FILE_ATTRIBUTE_ARCHIVE;
+	}
+	else
+	{
+		attributes &= ~FILE_ATTRIBUTE_ARCHIVE;
+	}
+
+	if (hidden)
+	{
+		attributes |= FILE_ATTRIBUTE_HIDDEN;
+	}
+	else
+	{
+		attributes &= ~FILE_ATTRIBUTE_HIDDEN;
+	}
+
+	if (normal)
+	{
+		attributes |= FILE_ATTRIBUTE_NORMAL;
+	}
+	else
+	{
+		attributes &= ~FILE_ATTRIBUTE_NORMAL;
+	}
+
+	if (readonly)
+	{
+		attributes |= FILE_ATTRIBUTE_READONLY;
+	}
+	else
+	{
+		attributes &= ~FILE_ATTRIBUTE_READONLY;
+	}
+
+	if (system_attribute)
+	{
+		attributes |= FILE_ATTRIBUTE_SYSTEM;
+	}
+	else
+	{
+		attributes &= ~FILE_ATTRIBUTE_SYSTEM;
+	}
+
+	return 0 != SetFileAttributesW(path, attributes);
+}
+#endif
+uint8_t file_set_attributes(const uint8_t* path,
+							uint8_t archive, uint8_t hidden, uint8_t normal, uint8_t readonly, uint8_t system_attribute)
+{
+	if (NULL == path)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	struct buffer pathW;
+	SET_NULL_TO_BUFFER(pathW);
+
+	if (!file_system_path_to_pathW(path, &pathW))
+	{
+		buffer_release(&pathW);
+		return 0;
+	}
+
+	const uint8_t returned = file_set_attributes_wchar_t(
+								 buffer_wchar_t_data(&pathW, 0), archive, hidden, normal, readonly, system_attribute);
+	buffer_release(&pathW);
+	return returned;
+#else
+	return 1;
+#endif
+}
+#if defined(_WIN32)
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
 {
 	return file_system_set_time(path, time, 0/*TODO*/);
@@ -1723,10 +1852,10 @@ uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 	return file_set_time_utc(path, time, 2/*TODO*/);
 }
 #endif
-uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* output)
+uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* content)
 {
 	if (NULL == path ||
-		NULL == output)
+		NULL == content)
 	{
 		return 0;
 	}
@@ -1738,12 +1867,12 @@ uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* output)
 		return 0;
 	}
 
-	ptrdiff_t size = buffer_size(output);
+	ptrdiff_t size = buffer_size(content);
 
 	if (0 < size)
 	{
 		size_t written = 0;
-		uint8_t* ptr = buffer_data(output, 0);
+		uint8_t* ptr = buffer_data(content, 0);
 
 		while (0 < (written = file_write(ptr, sizeof(uint8_t), MIN(4096, size), stream)))
 		{
@@ -1919,6 +2048,97 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 	}
 
 	return 0;
+}
+
+#define ATTRIB_ARCHIVE_POSITION		0
+#define ATTRIB_FILE_POSITION		1
+#define ATTRIB_HIDDEN_POSITION		2
+#define ATTRIB_NORMAL_POSITION		3
+#define ATTRIB_READ_ONLY_POSITION	4
+#define ATTRIB_SYSTEM_POSITION		5
+
+#define ATTRIB_MAX_POSITION			(ATTRIB_SYSTEM_POSITION + 1)
+
+static const uint8_t* attrib_attributes[] =
+{
+	(const uint8_t*)"archive",
+	(const uint8_t*)"file",
+	(const uint8_t*)"hidden",
+	(const uint8_t*)"normal",
+	(const uint8_t*)"readonly",
+	(const uint8_t*)"system"
+};
+
+static const uint8_t attrib_attributes_lengths[] = { 7, 4, 6, 6, 8, 6 };
+
+uint8_t attrib_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   attrib_attributes, attrib_attributes_lengths,
+			   COUNT_OF(attrib_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	(void)verbose;
+
+	if (NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	struct buffer* file_path_in_a_buffer = buffer_buffer_data(task_arguments, ATTRIB_FILE_POSITION);
+
+	if (buffer_size(file_path_in_a_buffer))
+	{
+		if (!buffer_push_back(file_path_in_a_buffer, 0))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		return 1;
+	}
+
+	uint8_t attributes[ATTRIB_MAX_POSITION];
+
+	for (uint8_t i = 0, count = ATTRIB_MAX_POSITION; i < count; ++i)
+	{
+		if (ATTRIB_FILE_POSITION == i)
+		{
+			continue;
+		}
+
+		const struct buffer* data = buffer_buffer_data(task_arguments, i);
+
+		if (NULL == data)
+		{
+			return 0;
+		}
+
+		attributes[ATTRIB_FILE_POSITION] = (uint8_t)buffer_size(data);
+
+		if (!attributes[ATTRIB_FILE_POSITION])
+		{
+			attributes[i] = 0;
+			continue;
+		}
+
+		if (!bool_parse(buffer_data(data, 0), attributes[ATTRIB_FILE_POSITION], &(attributes[i])))
+		{
+			return 0;
+		}
+	}
+
+	return file_set_attributes(buffer_data(file_path_in_a_buffer, 0),
+							   attributes[ATTRIB_ARCHIVE_POSITION], attributes[ATTRIB_HIDDEN_POSITION],
+							   attributes[ATTRIB_NORMAL_POSITION], attributes[ATTRIB_READ_ONLY_POSITION],
+							   attributes[ATTRIB_SYSTEM_POSITION]);
 }
 
 #define DELETE_DIR_POSITION		0
