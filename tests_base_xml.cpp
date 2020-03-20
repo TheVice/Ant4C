@@ -158,14 +158,7 @@ uint8_t buffer_free(buffer* input)
 
 uint8_t buffer_resize_and_free_inner_buffers(buffer* storage)
 {
-	ptrdiff_t i = 0;
-	buffer* ptr = NULL;
-
-	while (NULL != (ptr = buffer_buffer_data(storage, i++)))
-	{
-		buffer_release(ptr);
-	}
-
+	buffer_release_inner_buffers(storage);
 	return buffer_resize(storage, 0);
 }
 

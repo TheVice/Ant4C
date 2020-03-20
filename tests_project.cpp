@@ -11,7 +11,7 @@ extern "C" {
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
-#include "echo.h"
+#include "file_system.h"
 #include "load_file.h"
 #include "path.h"
 #include "project.h"
@@ -92,7 +92,7 @@ TEST_F(TestProject, project_property_set_value)
 
 TEST_F(TestProject, project_load_from_content)
 {
-	struct buffer output;
+	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
 	for (const auto& node : nodes)
@@ -174,14 +174,18 @@ extern "C" {
 
 TEST_F(TestProject, project_load_from_build_file)
 {
-	struct buffer tmp;
+	buffer tmp;
 	SET_NULL_TO_BUFFER(tmp);
+	//
+	ASSERT_TRUE(path_get_directory_for_current_process(&tmp)) << buffer_free(&tmp);
+	const auto current_path(buffer_to_string(&tmp));
+	const auto current_path_in_range(string_to_range(current_path));
 
 	for (const auto& node : nodes)
 	{
 		const std::string content(node.node().select_node("content").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(
-											node.node().select_node("return").node().child_value());
+		const auto expected_return = (uint8_t)INT_PARSE(
+										 node.node().select_node("return").node().child_value());
 		const std::string str_encoding(node.node().select_node("encoding").node().child_value());
 		const auto encoding_in_range(string_to_range(str_encoding));
 		auto encoding = argument_parser_get_encoding_from_name(
@@ -194,20 +198,22 @@ TEST_F(TestProject, project_load_from_build_file)
 
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
-		const std::string tmp_path(buffer_to_string(&tmp));
-		ASSERT_TRUE(buffer_push_back(&tmp, 0)) << buffer_free(&tmp);
+		const auto path(buffer_to_string(&tmp));
 		//
-		ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), Info,
-						 (const uint8_t*)content.c_str(), content.size(), 0, verbose))
-				<< tmp_path << std::endl << buffer_free(&tmp);
+		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
+		ASSERT_TRUE(string_to_buffer(content, &tmp)) << buffer_free(&tmp);
+		//
+		ASSERT_TRUE(file_write_all_bytes((const uint8_t*)path.c_str(), &tmp)) << buffer_free(&tmp);
 		//
 		void* project = NULL;
 		ASSERT_TRUE(project_new(&project)) << buffer_free(&tmp) << project_free(project);
 		//
-		const uint8_t returned = project_load_from_build_file(
-									 buffer_data(&tmp, 0), encoding, project, verbose);
+		const auto path_in_range(string_to_range(path));
+		const auto returned = project_load_from_build_file(
+								  &path_in_range, &current_path_in_range, encoding, project, verbose);
+		//
 		ASSERT_EQ(expected_return, returned)
-				<< tmp_path << std::endl << buffer_free(&tmp) << project_free(project);
+				<< path << std::endl << buffer_free(&tmp) << project_free(project);
 		//
 		project_unload(project);
 		//
@@ -219,7 +225,7 @@ TEST_F(TestProject, project_load_from_build_file)
 //project_exec_function
 TEST(TestProgram, program_exec_function)
 {
-	struct buffer output;
+	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
 	const uint8_t* version = (const uint8_t*)"version";

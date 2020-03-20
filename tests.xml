@@ -5093,6 +5093,17 @@ Approximate round trip times in milli-seconds:
       <return>1</return>
       <output><![CDATA[project><!-- A --> <tag comment="Hello! Look -> here."></tag> </project]]></output>
     </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<description>123</description><echo /><echo></echo><property></property><property /><target></target>]]></input>
+      <sub_node>description</sub_node>
+      <sub_node>property</sub_node>
+      <sub_node>target</sub_node>
+      <return>4</return>
+      <output><![CDATA[description>123</description]]></output>
+      <output><![CDATA[property></property]]></output>
+      <output><![CDATA[property /]]></output>
+      <output><![CDATA[target></target]]></output>
+    </xml_get_sub_nodes_elements>
     <xml_get_tag_name>
       <input></input>
       <output></output>

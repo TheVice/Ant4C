@@ -1036,7 +1036,7 @@ uint8_t interpreter_get_environments(
 		return 0;
 	}
 
-	uint16_t count = xml_get_sub_nodes_elements(attributes_finish, element_finish, &elements);
+	uint16_t count = xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, &elements);
 
 	if (!count)
 	{
@@ -1078,7 +1078,7 @@ uint8_t interpreter_get_environments(
 		return 0;
 	}
 
-	count = xml_get_sub_nodes_elements(name.start, name.finish, &elements);
+	count = xml_get_sub_nodes_elements(name.start, name.finish, NULL, &elements);
 
 	if (!count)
 	{

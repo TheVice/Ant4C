@@ -126,20 +126,30 @@ int main(int argc, char** argv)
 		}
 	}
 
+	struct buffer current_directory;
+
+	SET_NULL_TO_BUFFER(current_directory);
+
+	if (!path_get_directory_for_current_process(&current_directory))
+	{
+		buffer_release(&current_directory);
+		argument_parser_release();
+		/*TODO: echo.*/
+		return EXIT_FAILURE;
+	}
+
+	struct range current_directory_;
+
+	current_directory_.start = buffer_data(&current_directory, 0);
+
+	current_directory_.finish = current_directory_.start + buffer_size(&current_directory);
+
+	/**/
 	struct buffer* build_files = argument_parser_get_build_files();
 
+#if defined(_WIN32)
 	if (!buffer_size(build_files))
 	{
-		struct buffer current_directory;
-		SET_NULL_TO_BUFFER(current_directory);
-
-		if (!path_get_directory_for_current_process(&current_directory))
-		{
-			buffer_release(&current_directory);
-			argument_parser_release();
-			return EXIT_FAILURE;
-		}
-
 		static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
 
 		if (!path_combine_in_place(&current_directory, 0, file_extension, file_extension + 8))
@@ -175,9 +185,9 @@ int main(int argc, char** argv)
 				return EXIT_FAILURE;
 			}
 		}
-
-		buffer_release(&current_directory);
 	}
+
+#endif
 
 	if (argument_parser_get_help() || NULL == argument_parser_get_build_file(0))
 	{
@@ -187,6 +197,7 @@ int main(int argc, char** argv)
 			argc = 0;
 		}
 
+		buffer_release(&current_directory);
 		argument_parser_release();
 		argc = 0 < argc;
 		return argc ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -217,7 +228,8 @@ int main(int argc, char** argv)
 		}
 
 		const uint8_t is_loaded = project_load_from_build_file(
-									  build_file->start, argument_parser_get_encoding(),
+									  build_file, &current_directory_,
+									  argument_parser_get_encoding(),
 									  project, argument_parser_get_verbose());
 
 		if (!is_loaded)
@@ -230,6 +242,7 @@ int main(int argc, char** argv)
 		project_unload(project);
 	}
 
+	buffer_release(&current_directory);
 	time_now = datetime_now() - time_now;
 
 	if (10 < time_now)

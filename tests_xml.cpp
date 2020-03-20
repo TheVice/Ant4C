@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -13,6 +13,12 @@ extern "C" {
 #include "range.h"
 #include "xml.h"
 };
+
+#include <list>
+#include <string>
+#include <cstddef>
+#include <cstdint>
+#include <ostream>
 
 class TestXml : public TestsBaseXml
 {
@@ -48,23 +54,87 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 {
 	buffer elements;
 	SET_NULL_TO_BUFFER(elements);
+	//
+	buffer sub_nodes_names;
+	SET_NULL_TO_BUFFER(sub_nodes_names);
+	//
 	buffer expected_elements;
 	SET_NULL_TO_BUFFER(expected_elements);
 
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
+		//
+		std::string sub_nodes;
+		std::list<std::size_t> positions;
+
+		for (const auto& sub_node : node.node().select_nodes("sub_node"))
+		{
+			sub_nodes.append(sub_node.node().child_value());
+			positions.push_back(sub_nodes.size());
+		}
+
+		ASSERT_TRUE(buffer_resize(&sub_nodes_names, 0)) <<
+				buffer_free(&elements) <<
+				buffer_free(&sub_nodes_names) <<
+				buffer_free_with_inner_buffers(&expected_elements);
+
+		if (!sub_nodes.empty())
+		{
+			auto sub_node = string_to_range(sub_nodes);
+
+			for (const auto& position : positions)
+			{
+				sub_node.finish = (const uint8_t*)sub_nodes.data();
+				sub_node.finish += position;
+				//
+				ASSERT_TRUE(buffer_append_range(&sub_nodes_names, &sub_node, 1)) <<
+						buffer_free(&elements) <<
+						buffer_free(&sub_nodes_names) <<
+						buffer_free_with_inner_buffers(&expected_elements);
+				//
+				sub_node.start = sub_node.finish;
+			}
+		}
+
 		ASSERT_TRUE(buffer_resize_and_free_inner_buffers(&expected_elements)) <<
-				buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
+				buffer_free(&elements) <<
+				buffer_free(&sub_nodes_names) <<
+				buffer_free_with_inner_buffers(&expected_elements);
+		ptrdiff_t i = 0;
 
 		for (const auto& output : node.node().select_nodes("output"))
 		{
+			i = buffer_size(&expected_elements);
+			//
+			ASSERT_TRUE(buffer_append_buffer(&expected_elements, NULL, 1)) <<
+					buffer_free(&elements) <<
+					buffer_free(&sub_nodes_names) <<
+					buffer_free_with_inner_buffers(&expected_elements);
+			//
+			buffer* buffer_for_expected_output = (buffer*)buffer_data(&expected_elements, i);
+			//
+			ASSERT_TRUE(buffer_resize(&expected_elements, i)) <<
+					buffer_free(&elements) <<
+					buffer_free(&sub_nodes_names) <<
+					buffer_free_with_inner_buffers(&expected_elements);
+			//
+			ASSERT_NE(nullptr, buffer_for_expected_output) <<
+					buffer_free(&elements) <<
+					buffer_free(&sub_nodes_names) <<
+					buffer_free_with_inner_buffers(&expected_elements);
+			SET_NULL_TO_BUFFER(*buffer_for_expected_output);
+			//
+			ASSERT_TRUE(buffer_resize(&expected_elements, i + sizeof(buffer))) <<
+					buffer_free(&elements) <<
+					buffer_free(&sub_nodes_names) <<
+					buffer_free_with_inner_buffers(&expected_elements);
+			//
 			const std::string expected_output(output.node().child_value());
-			buffer buffer_for_expected_output;
-			SET_NULL_TO_BUFFER(buffer_for_expected_output);
-			string_to_buffer(expected_output, &buffer_for_expected_output);
-			ASSERT_TRUE(buffer_append_buffer(&expected_elements, &buffer_for_expected_output, 1)) <<
-					buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
+			ASSERT_TRUE(string_to_buffer(expected_output, buffer_for_expected_output)) <<
+					buffer_free(&elements) <<
+					buffer_free(&sub_nodes_names) <<
+					buffer_free_with_inner_buffers(&expected_elements);
 		}
 
 		const uint16_t expected_return = (uint16_t)INT_PARSE(
@@ -73,13 +143,19 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 		const range input_in_range = string_to_range(input);
 		//
 		ASSERT_TRUE(buffer_resize(&elements, 0)) <<
-				buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
-		const uint16_t returned = xml_get_sub_nodes_elements(input_in_range.start, input_in_range.finish, &elements);
+				buffer_free(&elements) <<
+				buffer_free(&sub_nodes_names) <<
+				buffer_free_with_inner_buffers(&expected_elements);
+		//
+		const uint16_t returned = xml_get_sub_nodes_elements(
+									  input_in_range.start, input_in_range.finish, &sub_nodes_names, &elements);
 		//
 		ASSERT_EQ(expected_return, returned) <<
-											 buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
+											 buffer_free(&elements) <<
+											 buffer_free(&sub_nodes_names) <<
+											 buffer_free_with_inner_buffers(&expected_elements);
 		//
-		ptrdiff_t i = 0;
+		i = 0;
 		range* element = NULL;
 		buffer* expected_element = NULL;
 
@@ -87,20 +163,27 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 		{
 			element = buffer_range_data(&elements, i);
 			ASSERT_NE(nullptr, element) <<
-										buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
+										buffer_free(&elements) <<
+										buffer_free(&sub_nodes_names) <<
+										buffer_free_with_inner_buffers(&expected_elements);
 			++i;
 			ASSERT_EQ(buffer_to_string(expected_element), range_to_string(element->start, element->finish)) <<
-					buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
+					buffer_free(&elements) <<
+					buffer_free(&sub_nodes_names) <<
+					buffer_free_with_inner_buffers(&expected_elements);
 		}
 
 		element = buffer_range_data(&elements, i);
 		ASSERT_EQ(nullptr, element) <<
-									buffer_free(&elements) << buffer_free_with_inner_buffers(&expected_elements);
+									buffer_free(&elements) <<
+									buffer_free(&sub_nodes_names) <<
+									buffer_free_with_inner_buffers(&expected_elements);
 		//
 		--node_count;
 	}
 
 	buffer_release(&elements);
+	buffer_release(&sub_nodes_names);
 	buffer_release_with_inner_buffers(&expected_elements);
 }
 

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -106,7 +106,8 @@ const uint8_t* xml_get_tag_finish_pos(const uint8_t* start, const uint8_t* finis
 	return start;
 }
 
-uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish, struct buffer* elements)
+uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
+									const struct buffer* sub_nodes_names, struct buffer* elements)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == elements)
@@ -187,6 +188,38 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 		{
 			struct range* element = buffer_range_data(elements, count - 1);
 			element->finish = tag_finish_pos;
+
+			if (0 != buffer_size(sub_nodes_names))
+			{
+				ptrdiff_t i = 0;
+				const struct range* sub_node_name = NULL;
+
+				while (NULL != (sub_node_name = buffer_range_data(sub_nodes_names, i++)))
+				{
+					struct range tag_name;
+
+					if (!xml_get_tag_name(element->start, element->finish, &tag_name))
+					{
+						return 0;
+					}
+
+					if (string_equal(tag_name.start, tag_name.finish, sub_node_name->start, sub_node_name->finish))
+					{
+						i = -1;
+						break;
+					}
+				}
+
+				if (0 < i)
+				{
+					if (!buffer_resize(elements, buffer_size(elements) - sizeof(struct range)))
+					{
+						return 0;
+					}
+
+					count -= 1;
+				}
+			}
 		}
 
 		start = tag_finish_pos;

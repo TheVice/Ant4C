@@ -283,7 +283,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 
 	SET_NULL_TO_BUFFER(elements);
 
-	if (1 != xml_get_sub_nodes_elements(content_start, content_finish, &elements))
+	if (1 != xml_get_sub_nodes_elements(content_start, content_finish, NULL, &elements))
 	{
 		buffer_release(&elements);
 		return 0;
@@ -321,7 +321,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 		return 0;
 	}
 
-	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, &elements) &&
+	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, NULL, &elements) &&
 		!interpreter_evaluate_tasks(project, NULL, &elements, verbose))
 	{
 		buffer_release(&elements);
@@ -332,14 +332,13 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	return 1;
 }
 
-uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, uint16_t encoding, void* project,
-									 uint8_t verbose)
+uint8_t project_load_from_build_file(const struct range* path_to_build_file,
+									 const struct range* current_directory,
+									 uint16_t encoding, void* project, uint8_t verbose)
 {
-	ptrdiff_t path_length = 0;
-
-	if (NULL == path_to_build_file ||
-		NULL == project ||
-		0 == (path_length = common_count_bytes_until(path_to_build_file, 0)))
+	if (range_is_null_or_empty(path_to_build_file) ||
+		range_is_null_or_empty(current_directory) ||
+		NULL == project)
 	{
 		return 0;
 	}
@@ -348,75 +347,44 @@ uint8_t project_load_from_build_file(const uint8_t* path_to_build_file, uint16_t
 
 	SET_NULL_TO_BUFFER(content);
 
-	if (!path_get_directory_for_current_process(&content))
-	{
-		buffer_release(&content);
-		return 0;
-	}
-
-	ptrdiff_t addition_path_length = buffer_size(&content);
-
-	if (!buffer_append(&content, NULL, addition_path_length + path_length + 2) ||
-		!buffer_resize(&content, addition_path_length))
-	{
-		buffer_release(&content);
-		return 0;
-	}
-
-	uint8_t* dst = buffer_data(&content, 0);
-	const uint8_t* src = dst + addition_path_length;
-
-	if (!path_get_full_path(dst, src, path_to_build_file, path_to_build_file + path_length, &content))
-	{
-		buffer_release(&content);
-		return 0;
-	}
-
-	path_length = buffer_size(&content) - addition_path_length;
-	dst = buffer_data(&content, 0);
-	src = dst + addition_path_length;
-	MEM_CPY(dst, src, path_length);
-
-	if (!buffer_resize(&content, path_length) ||
+	if (!path_get_full_path(
+			current_directory->start, current_directory->finish,
+			path_to_build_file->start, path_to_build_file->finish,
+			&content) ||
 		!buffer_push_back(&content, 0))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	dst = buffer_data(&content, 0);
+	const uint8_t* path = buffer_data(&content, 0);
 
-	if (!file_exists(dst))
+	if (!file_exists(path))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	path_length = buffer_size(&content);
-
 	if (!project_property_set_value(project,
 									project_properties[BUILD_FILE_POSITION],
 									project_properties_lengths[BUILD_FILE_POSITION],
-									dst, path_length - 1,
+									path, buffer_size(&content) - 1,
 									0, 1, 1, verbose))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	dst = buffer_data(&content, 0);
-
 	if (!buffer_resize(&content, 0) ||
-		!load_file_to_buffer(dst, encoding, &content, verbose))
+		!load_file_to_buffer(path, encoding, &content, verbose))
 	{
 		buffer_release(&content);
 		return 0;
 	}
 
-	dst = buffer_data(&content, 0);
-	src = buffer_data(&content, 0) + buffer_size(&content);
+	path = buffer_data(&content, 0);
 
-	if (!project_load_from_content(dst, src, project, verbose))
+	if (!project_load_from_content(path, path + buffer_size(&content), project, verbose))
 	{
 		buffer_release(&content);
 		return 0;
