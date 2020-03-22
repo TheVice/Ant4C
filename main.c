@@ -65,11 +65,12 @@
 #define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
 #define SAMPLE_USING (const uint8_t*)"Sample using - [options]          ..." /*<target>*/
 #define SAMPLE_USING_LENGTH 37
-#define OPTIONS (const uint8_t*)"Options:\n"															\
-	"\t-buildfile: - set path to project file. Short form /f:.\n"						\
+#define OPTIONS (const uint8_t*)"Options:\n"																					\
+	"\t-buildfile: - set path to project file. Short form /f:.\n"																\
 	"\t-encoding: - set encoding of input file. Can be ASCII, UTF8, Unicode, UTF16LE, UTF32 or UTF32LE in any letter case.\n"	\
-	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"	\
-	"\t-nologo - do not display program version, license and copyright information.\n"	\
+	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"											\
+	"\t-projecthelp - show description of project and target(s).\n"																\
+	"\t-nologo - do not display program version, license and copyright information.\n"											\
 	"\t-help - print this message. Short form -h."
 #define OPTIONS_LENGTH common_count_bytes_until(OPTIONS, 0)
 
@@ -138,13 +139,10 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	struct range current_directory_;
+	struct range current_directory_in_range;
 
-	current_directory_.start = buffer_data(&current_directory, 0);
+	BUFFER_TO_RANGE(current_directory_in_range, &current_directory);
 
-	current_directory_.finish = current_directory_.start + buffer_size(&current_directory);
-
-	/**/
 	struct buffer* build_files = argument_parser_get_build_files();
 
 #if defined(_WIN32)
@@ -228,9 +226,10 @@ int main(int argc, char** argv)
 		}
 
 		const uint8_t is_loaded = project_load_from_build_file(
-									  build_file, &current_directory_,
+									  build_file, &current_directory_in_range,
 									  argument_parser_get_encoding(),
-									  project, argument_parser_get_verbose());
+									  project, argument_parser_get_project_help(),
+									  argument_parser_get_verbose());
 
 		if (!is_loaded)
 		{

@@ -270,8 +270,48 @@ uint8_t project_new(void** project)
 	return 1;
 }
 
+uint8_t project_load_names_of_sub_nodes_for_project_help(struct buffer* sub_nodes_names)
+{
+	if (NULL == sub_nodes_names)
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(sub_nodes_names, 0) ||
+		!buffer_append_range(sub_nodes_names, NULL, 3) ||
+		!buffer_append_char(sub_nodes_names, "project\0target\0description\0", 27))
+	{
+		return 0;
+	}
+
+	const uint8_t* ptr = (const uint8_t*)buffer_range_data(sub_nodes_names, 3);
+
+	if (NULL == ptr ||
+		!buffer_resize(sub_nodes_names, 3 * sizeof(struct range)))
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 0; i < 3; ++i)
+	{
+		struct range* element = buffer_range_data(sub_nodes_names, i);
+
+		if (NULL == element)
+		{
+			buffer_release(sub_nodes_names);
+			return 0;
+		}
+
+		element->start = ptr;
+		element->finish = element->start + common_count_bytes_until(element->start, 0);
+		ptr = element->finish + 1;
+	}
+
+	return 1;
+}
+
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
-								  void* project, uint8_t verbose)
+								  void* project, uint8_t project_help, uint8_t verbose)
 {
 	if (range_in_parts_is_null_or_empty(content_start, content_finish) ||
 		NULL == project)
@@ -279,13 +319,25 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 		return 0;
 	}
 
+	struct buffer sub_nodes_names;
+
+	SET_NULL_TO_BUFFER(sub_nodes_names);
+
+	if (project_help &&
+		!project_load_names_of_sub_nodes_for_project_help(&sub_nodes_names))
+	{
+		buffer_release(&sub_nodes_names);
+		return 0;
+	}
+
 	struct buffer elements;
 
 	SET_NULL_TO_BUFFER(elements);
 
-	if (1 != xml_get_sub_nodes_elements(content_start, content_finish, NULL, &elements))
+	if (1 != xml_get_sub_nodes_elements(content_start, content_finish, &sub_nodes_names, &elements))
 	{
 		buffer_release(&elements);
+		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
@@ -294,6 +346,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	if (NULL == (element = buffer_range_data(&elements, 0)))
 	{
 		buffer_release(&elements);
+		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
@@ -302,6 +355,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	if (!xml_get_tag_name(element->start, element->finish, &tag_name))
 	{
 		buffer_release(&elements);
+		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
@@ -309,32 +363,38 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	const uint8_t* element_finish = element->finish;
 
 	if (!interpreter_evaluate_task(project, NULL, root_task_id,
-								   tag_name.finish, element_finish, verbose))
+								   tag_name.finish, element_finish,
+								   project_help, verbose))
 	{
 		buffer_release(&elements);
+		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
 	if (!buffer_resize(&elements, 0))
 	{
 		buffer_release(&elements);
+		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
-	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, NULL, &elements) &&
-		!interpreter_evaluate_tasks(project, NULL, &elements, verbose))
+	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, &sub_nodes_names, &elements) &&
+		!interpreter_evaluate_tasks(project, NULL, &elements, project_help, verbose))
 	{
 		buffer_release(&elements);
+		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
 	buffer_release(&elements);
+	buffer_release(&sub_nodes_names);
 	return 1;
 }
 
 uint8_t project_load_from_build_file(const struct range* path_to_build_file,
 									 const struct range* current_directory,
-									 uint16_t encoding, void* project, uint8_t verbose)
+									 uint16_t encoding, void* project,
+									 uint8_t project_help, uint8_t verbose)
 {
 	if (range_is_null_or_empty(path_to_build_file) ||
 		range_is_null_or_empty(current_directory) ||
@@ -384,7 +444,7 @@ uint8_t project_load_from_build_file(const struct range* path_to_build_file,
 
 	path = buffer_data(&content, 0);
 
-	if (!project_load_from_content(path, path + buffer_size(&content), project, verbose))
+	if (!project_load_from_content(path, path + buffer_size(&content), project, project_help, verbose))
 	{
 		buffer_release(&content);
 		return 0;

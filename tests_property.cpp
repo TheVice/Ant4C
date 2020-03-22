@@ -91,7 +91,7 @@ TEST(TestProperty_, property_at_all)
 TEST_F(TestProperty, property_task)
 {
 	static const uint8_t* property_str = (const uint8_t*)"property";
-	static const uint8_t task_id = interpreter_get_task(property_str, property_str + 8);
+	static const auto task_id = interpreter_get_task(property_str, property_str + 8);
 	//
 	buffer properties;
 	SET_NULL_TO_BUFFER(properties);
@@ -103,7 +103,8 @@ TEST_F(TestProperty, property_task)
 				<< properties_free(&properties);
 		//
 		const std::string record(node.node().select_node("record").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto record_in_range(string_to_range(record));
+		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const auto output_properties = node.node().select_nodes("output_properties/property");
 		//
 		void* project = NULL;
@@ -112,8 +113,8 @@ TEST_F(TestProperty, property_task)
 		ASSERT_TRUE(property_add_at_project(project, &properties,
 											verbose)) << properties_free(&properties) << project_free(project);
 		//
-		const uint8_t returned = interpreter_evaluate_task(project, NULL, task_id,
-								 (const uint8_t*)record.c_str(), (const uint8_t*)record.c_str() + record.size(), verbose);
+		const auto returned = interpreter_evaluate_task(project, NULL, task_id,
+							  record_in_range.start, record_in_range.finish, 0, verbose);
 		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << project_free(project);
 		property_clear(&properties);
 

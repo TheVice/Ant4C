@@ -116,7 +116,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		ASSERT_TRUE(returned)
 				<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
 		//
-		returned = project_load_from_content(content.start, content.finish, project, verbose);
+		returned = project_load_from_content(content.start, content.finish, project, 0, verbose);
 		ASSERT_TRUE(returned)
 				<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
 
@@ -810,7 +810,7 @@ TEST(TestFileSystem_, file_write_all_bytes)
 		//
 		ASSERT_TRUE(file_write_all_bytes(ptr, &path));
 		//
-		size = file_get_length((const uint8_t*)path_str.c_str());
+		size = (ptrdiff_t)file_get_length((const uint8_t*)path_str.c_str());
 		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
 	}
 

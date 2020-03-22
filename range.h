@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -27,5 +27,9 @@ uint8_t buffer_append_data_from_range(struct buffer* storage, const struct range
 
 uint8_t buffer_append_range(struct buffer* ranges, const struct range* data, ptrdiff_t data_count);
 struct range* buffer_range_data(const struct buffer* ranges, ptrdiff_t data_position);
+
+#define BUFFER_TO_RANGE(R, B)				\
+	(R).start = buffer_data((B), 0);		\
+	(R).finish = (R).start + buffer_size(B);
 
 #endif

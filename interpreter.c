@@ -1314,7 +1314,8 @@ uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task
 }
 
 uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish, uint8_t verbose)
+								  const uint8_t* attributes_start, const uint8_t* element_finish,
+								  uint8_t project_help, uint8_t verbose)
 {
 	if (UNKNOWN_TASK < command || range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
@@ -1425,8 +1426,24 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 
 		case description_task:
-			/*TODO:*/
-			task_attributes_count = 1;
+			if (project_help)
+			{
+				if (!buffer_resize(&task_arguments, 0) ||
+					!xml_get_element_value(attributes_finish, element_finish, &task_arguments))
+				{
+					task_attributes_count = 0;
+					break;
+				}
+
+				task_attributes_count =
+					echo(0, UTF8, NULL, NoLevel, buffer_data(&task_arguments, 0), buffer_size(&task_arguments), 1, verbose);
+				buffer_release(&task_arguments);
+			}
+			else
+			{
+				task_attributes_count = 1;
+			}
+
 			break;
 
 		case echo_task:
@@ -1727,6 +1744,11 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				break;
 			}
 
+			if (!project_help)
+			{
+				task_attributes_count -= 1;
+			}
+
 			if (!interpreter_get_arguments_from_xml_tag_record(
 					project, target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
@@ -1735,14 +1757,86 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				break;
 			}
 
-			attributes_finish = find_any_symbol_like_or_not_like_that(
-									attributes_finish + 1, element_finish, &lt, 1, 1, 1);
-			element_finish = find_any_symbol_like_or_not_like_that(
-								 element_finish - 1, attributes_finish, &lt, 1, 1, -1);
-			element_finish = find_any_symbol_like_or_not_like_that(
-								 element_finish - 1, attributes_finish, &gt, 1, 1, -1);
-			task_attributes_count = target_evaluate_task(
-										project, &task_arguments, attributes_finish, element_finish, verbose);
+			if (project_help)
+			{
+				struct buffer* task_name = buffer_buffer_data(&task_arguments, 0);
+				task_attributes_count = echo(
+											0, UTF8, NULL, NoLevel, buffer_data(task_name, 0), buffer_size(task_name), 0, verbose);
+
+				if (!task_attributes_count)
+				{
+					break;
+				}
+
+				struct buffer* task_description = buffer_buffer_data(&task_arguments, 2);
+
+				if (buffer_size(task_description))
+				{
+					task_attributes_count = echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose);
+
+					if (!task_attributes_count)
+					{
+						break;
+					}
+
+					task_attributes_count = echo(0, UTF8, NULL, NoLevel, buffer_data(task_description, 0),
+												 buffer_size(task_description), 1, verbose);
+				}
+				else
+				{
+					if (!buffer_resize(task_name, 0) ||
+						!buffer_append_range(task_name, NULL, 1) ||
+						!buffer_append_char(task_name, "description", 11) ||
+						!buffer_resize(task_description, 0))
+					{
+						task_attributes_count = 0;
+						break;
+					}
+
+					struct range* sub_nodes_name_in_range = buffer_range_data(task_name, 0);
+
+					const uint8_t* ptr = (const uint8_t*)buffer_range_data(task_name, 1);
+
+					if (NULL == sub_nodes_name_in_range ||
+						NULL == ptr ||
+						!buffer_resize(task_name, sizeof(struct range)))
+					{
+						task_attributes_count = 0;
+						break;
+					}
+
+					sub_nodes_name_in_range->start = ptr;
+					sub_nodes_name_in_range->finish = ptr + 11;
+
+					if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, task_name, task_description))
+					{
+						task_attributes_count = 1;
+						break;
+					}
+
+					task_attributes_count = echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose);
+
+					if (!task_attributes_count)
+					{
+						break;
+					}
+
+					task_attributes_count = interpreter_evaluate_tasks(project, target, task_description, project_help, verbose);
+				}
+			}
+			else
+			{
+				attributes_finish = find_any_symbol_like_or_not_like_that(
+										attributes_finish + 1, element_finish, &lt, 1, 1, 1);
+				element_finish = find_any_symbol_like_or_not_like_that(
+									 element_finish - 1, attributes_finish, &lt, 1, 1, -1);
+				element_finish = find_any_symbol_like_or_not_like_that(
+									 element_finish - 1, attributes_finish, &gt, 1, 1, -1);
+				/**/
+				task_attributes_count = target_evaluate_task(
+											project, &task_arguments, attributes_finish, element_finish, verbose);
+			}
+
 			break;
 
 		case touch_task:
@@ -1806,7 +1900,8 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 }
 
 uint8_t interpreter_evaluate_tasks(void* project, const void* target,
-								   const struct buffer* elements, uint8_t verbose)
+								   const struct buffer* elements,
+								   uint8_t project_help, uint8_t verbose)
 {
 	ptrdiff_t i = 0;
 	struct range* element = NULL;
@@ -1824,7 +1919,7 @@ uint8_t interpreter_evaluate_tasks(void* project, const void* target,
 		if (!interpreter_evaluate_task(project, target,
 									   interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish),
 									   tag_name_or_content.finish,
-									   element->finish, verbose))
+									   element->finish, project_help, verbose))
 		{
 			i = 0;
 			break;

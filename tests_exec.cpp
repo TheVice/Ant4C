@@ -346,7 +346,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			const auto exec_code_in_range = string_to_range(exec_code);
 			//
 			returned = interpreter_evaluate_task(NULL, NULL, exec_task_id,
-												 exec_code_in_range.start + 1 + exec_str.size(), exec_code_in_range.finish, verbose_);
+												 exec_code_in_range.start + 1 + exec_str.size(),
+												 exec_code_in_range.finish, 0, verbose_);
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl
 					<< buffer_free(&temp_file_name);

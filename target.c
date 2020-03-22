@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -181,17 +181,20 @@ void target_clear(struct buffer* targets)
 const uint8_t* target_attributes[] =
 {
 	(const uint8_t*)"name",
-	(const uint8_t*)"depends"
+	(const uint8_t*)"depends",
+	(const uint8_t*)"description",
 };
 
 const uint8_t target_attributes_lengths[] =
 {
 	4,
-	7
+	7,
+	11
 };
 
 #define NAME_POSITION			0
 #define DEPENDS_POSITION		1
+#define DESCRIPTION_POSITION	2
 
 uint8_t target_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

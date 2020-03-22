@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -29,9 +29,11 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 		uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose);
 uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish);
 uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish, uint8_t verbose);
+								  const uint8_t* attributes_start, const uint8_t* element_finish,
+								  uint8_t project_help, uint8_t verbose);
 uint8_t interpreter_evaluate_tasks(void* project, const void* target,
-								   const struct buffer* elements, uint8_t verbose);
+								   const struct buffer* elements,
+								   uint8_t project_help, uint8_t verbose);
 
 uint8_t task_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t task_exec_function(uint8_t function, const struct buffer* arguments,

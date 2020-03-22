@@ -20,6 +20,12 @@ extern "C" {
 #include "text_encoding.h"
 };
 
+#include <string>
+#include <cstddef>
+#include <cstdint>
+#include <ostream>
+#include <iostream>
+
 class TestProject : public TestsBaseXml
 {
 };
@@ -37,7 +43,7 @@ TEST_F(TestProject, project_property_set_value)
 		ASSERT_NE(nullptr, project) << project_free(project);
 		//
 		ASSERT_NE(code.empty(), project_load_from_content(
-					  code_in_range.start, code_in_range.finish, project, verbose)) << project_free(project);
+					  code_in_range.start, code_in_range.finish, project, 0, verbose)) << project_free(project);
 
 		for (const auto& property : node.node().select_nodes("property"))
 		{
@@ -97,11 +103,15 @@ TEST_F(TestProject, project_load_from_content)
 
 	for (const auto& node : nodes)
 	{
+		std::cout << "[ RUN      ]" << std::endl;
+		//
 		const void* the_property = NULL;
 		//
 		const std::string content(node.node().select_node("content").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(
-											node.node().select_node("return").node().child_value());
+		const auto project_help = (uint8_t)INT_PARSE(
+									  node.node().select_node("project_help").node().child_value());
+		const auto expected_return = (uint8_t)INT_PARSE(
+										 node.node().select_node("return").node().child_value());
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
 		const std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
@@ -116,7 +126,7 @@ TEST_F(TestProject, project_load_from_content)
 				<< buffer_free(&output) << project_free(project);
 		//
 		const uint8_t returned = project_load_from_content(content_in_range.start, content_in_range.finish,
-								 project, verbose);
+								 project, project_help, verbose);
 		ASSERT_EQ(expected_return, returned)
 				<< content << std::endl << buffer_free(&output) << project_free(project);
 
@@ -161,6 +171,8 @@ TEST_F(TestProject, project_load_from_content)
 		}*/
 		project_unload(project);
 		project = NULL;
+		//
+		std::cout << "[       OK ]" << std::endl;
 		//
 		--node_count;
 	}
@@ -210,7 +222,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		//
 		const auto path_in_range(string_to_range(path));
 		const auto returned = project_load_from_build_file(
-								  &path_in_range, &current_path_in_range, encoding, project, verbose);
+								  &path_in_range, &current_path_in_range, encoding, project, 0, verbose);
 		//
 		ASSERT_EQ(expected_return, returned)
 				<< path << std::endl << buffer_free(&tmp) << project_free(project);
