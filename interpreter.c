@@ -58,8 +58,8 @@ static const uint8_t* interpreter_string_enumeration_unit[] =
 #endif
 	(const uint8_t*)"double",
 	(const uint8_t*)"environment",
-#if 0
 	(const uint8_t*)"file",
+#if 0
 	(const uint8_t*)"fileversioninfo",
 #endif
 	(const uint8_t*)"hash",
@@ -91,8 +91,8 @@ enum interpreter_enumeration_unit
 #endif
 	double_unit,
 	environment_unit,
-#if 0
 	file_unit,
+#if 0
 	fileversioninfo_unit,
 #endif
 	hash_unit,
@@ -350,7 +350,7 @@ uint8_t interpreter_get_value_for_argument(
 		}
 	}
 
-	/*TODO: value can be represent the quot or property name, recursion in this case should be used at else.*/
+	/*TODO: value can be represent the quote or property name, recursion in this case should be used at else.*/
 	return buffer_append_buffer(values, &value, 1);
 }
 
@@ -501,10 +501,13 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 							   environment_get_function(name.start, name.finish),
 							   &values, values_count, return_of_function);
 			break;
-#if 0
 
-		case file_:
+		case file_unit:
+			values_count = file_exec_function(
+							   file_get_function(name.start, name.finish),
+							   &values, values_count, return_of_function);
 			break;
+#if 0
 
 		case fileversioninfo_:
 			break;

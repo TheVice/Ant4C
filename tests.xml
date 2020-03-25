@@ -4223,6 +4223,28 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <name>Hello descriptions!</name>
       <default>foo</default>
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="File functions">
+        <property name="file" value="${path::get-temp-file-name()}" />
+
+        <property name="file_exists" value="${file::exists(property::get-value('file'))}" />
+        <property name="file_get-creation-time" value="${file::get-creation-time(property::get-value('file'))}" />
+        <property name="file_get-creation-time-utc" value="${file::get-creation-time-utc(property::get-value('file'))}" />
+        <property name="file_get-last-access-time" value="${file::get-last-access-time(property::get-value('file'))}" />
+        <property name="file_get-last-access-time-utc" value="${file::get-last-access-time-utc(property::get-value('file'))}" />
+        <property name="file_get-last-write-time" value="${file::get-last-write-time(property::get-value('file'))}" />
+        <property name="file_get-last-write-time-utc" value="${file::get-last-write-time-utc(property::get-value('file'))}" />
+        <property name="file_get-length" value="${file::get-length(property::get-value('file'))}" />
+
+        <property name="new_file" value="${path::get-temp-file-name()}" />
+
+        <property name="file_up-to-date" value="${file::up-to-date(property::get-value('file'), property::get-value('new_file'))}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>File functions</name>
+    </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[
       <project name="project-properties" default="some_target">

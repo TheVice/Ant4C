@@ -1910,15 +1910,15 @@ static const uint8_t* dir_function_str[] =
 enum dir_function
 {
 	enumerate_file_system_entries,
-	exists,
-	get_creation_time,
-	get_creation_time_utc,
+	dir_exists,
+	dir_get_creation_time,
+	dir_get_creation_time_utc,
 	get_current_directory,
 	get_directory_root,
-	get_last_access_time,
-	get_last_access_time_utc,
-	get_last_write_time,
-	get_last_write_time_utc,
+	dir_get_last_access_time,
+	dir_get_last_access_time_utc,
+	dir_get_last_write_time,
+	dir_get_last_write_time_utc,
 	get_logical_drives,
 	get_parent_directory,
 	UNKNOWN_DIR_FUNCTION
@@ -2006,33 +2006,30 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 			return directory_enumerate_file_system_entries(buffer_buffer_data(arguments, 0), entry_type, recurse, output);
 		}
 
-		case exists:
+		case dir_exists:
 			return 1 == arguments_count && bool_to_string(directory_exists(argument1.start), output);
 
-		case get_creation_time:
+		case dir_get_creation_time:
 			return 1 == arguments_count && int64_to_string(directory_get_creation_time(argument1.start), output);
 
-		case get_creation_time_utc:
+		case dir_get_creation_time_utc:
 			return 1 == arguments_count && int64_to_string(directory_get_creation_time_utc(argument1.start), output);
-
-		/*case get_current_directory:
-			return 0 == arguments_count && directory_get_current_directory(project, the_property, output);*/
 
 		case get_directory_root:
 			return 1 == arguments_count &&
 				   directory_get_directory_root(argument1.start, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
 
-		case get_last_access_time:
+		case dir_get_last_access_time:
 			return 1 == arguments_count && int64_to_string(directory_get_last_access_time(argument1.start), output);
 
-		case get_last_access_time_utc:
+		case dir_get_last_access_time_utc:
 			return 1 == arguments_count && int64_to_string(directory_get_last_access_time_utc(argument1.start), output);
 
-		case get_last_write_time:
+		case dir_get_last_write_time:
 			return 1 == arguments_count && int64_to_string(directory_get_last_write_time(argument1.start), output);
 
-		case get_last_write_time_utc:
+		case dir_get_last_write_time_utc:
 			return 1 == arguments_count && int64_to_string(directory_get_last_write_time_utc(argument1.start), output);
 
 		case get_logical_drives:
@@ -2044,6 +2041,117 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 				   buffer_append_data_from_range(output, &argument2);
 
 		case UNKNOWN_DIR_FUNCTION:
+		default:
+			break;
+	}
+
+	return 0;
+}
+
+static const uint8_t* file_function_str[] =
+{
+	(const uint8_t*)"exists",
+	(const uint8_t*)"get-creation-time",
+	(const uint8_t*)"get-creation-time-utc",
+	(const uint8_t*)"get-last-access-time",
+	(const uint8_t*)"get-last-access-time-utc",
+	(const uint8_t*)"get-last-write-time",
+	(const uint8_t*)"get-last-write-time-utc",
+	(const uint8_t*)"get-length",
+	(const uint8_t*)"up-to-date"
+};
+
+enum file_function
+{
+	file_exists_,
+	file_get_creation_time_,
+	file_get_creation_time_utc_,
+	file_get_last_access_time_,
+	file_get_last_access_time_utc_,
+	file_get_last_write_time_,
+	file_get_last_write_time_utc_,
+	get_length,
+	up_to_date,
+	UNKNOWN_FILE_FUNCTION
+};
+
+uint8_t file_get_function(const uint8_t* name_start, const uint8_t* name_finish)
+{
+	return common_string_to_enum(name_start, name_finish, file_function_str, UNKNOWN_FILE_FUNCTION);
+}
+
+uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+						   struct buffer* output)
+{
+	if (UNKNOWN_FILE_FUNCTION <= function ||
+		NULL == arguments ||
+		2 < arguments_count ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	struct range argument1;
+
+	struct range argument2;
+
+	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
+
+	if (1 == arguments_count)
+	{
+		if (!common_get_one_argument(arguments, &argument1, 1))
+		{
+			return 0;
+		}
+	}
+	else if (2 == arguments_count)
+	{
+		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
+		{
+			return 0;
+		}
+	}
+
+	switch (function)
+	{
+		case file_exists_:
+			return 1 == arguments_count &&
+				   bool_to_string(file_exists(argument1.start), output);
+
+		case file_get_creation_time_:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_creation_time(argument1.start), output);
+
+		case file_get_creation_time_utc_:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_creation_time_utc(argument1.start), output);
+
+		case file_get_last_access_time_:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_last_access_time(argument1.start), output);
+
+		case file_get_last_access_time_utc_:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_last_access_time_utc(argument1.start), output);
+
+		case file_get_last_write_time_:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_last_write_time(argument1.start), output);
+
+		case file_get_last_write_time_utc_:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_last_write_time_utc(argument1.start), output);
+
+		case get_length:
+			return 1 == arguments_count &&
+				   int64_to_string(file_get_length(argument1.start), output);
+
+		case up_to_date:
+			return 2 == arguments_count &&
+				   bool_to_string(file_up_to_date(argument1.start, argument2.start), output);
+
+		case UNKNOWN_FILE_FUNCTION:
+		default:
 			break;
 	}
 
@@ -2354,7 +2462,7 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			return 0;
 		}
 
-		seconds = *(const int64_t*)buffer_data(date_time_in_buffer, seconds);
+		seconds = *(const int64_t*)buffer_data(date_time_in_buffer, (ptrdiff_t)seconds);
 	}
 	else if (buffer_size(millis_in_buffer))
 	{

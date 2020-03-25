@@ -126,7 +126,7 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 
 		if (!xml_skip_comment(&start, finish))
 		{
-			return count;
+			return 0 == depth ? count : 0;
 		}
 		else
 		{
@@ -225,7 +225,7 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 		start = tag_finish_pos;
 	}
 
-	return count;
+	return 0 == depth ? count : 0;
 }
 
 uint8_t xml_get_tag_name(const uint8_t* start, const uint8_t* finish, struct range* name)
