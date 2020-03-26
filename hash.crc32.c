@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -12,13 +12,9 @@
  */
 
 #include "hash.h"
+#include "common.h"
 
 #include <stddef.h>
-
-#define XCHG(A, Z)	\
-	(A) -= (Z);		\
-	(Z) += (A);		\
-	(A) = (Z) - (A);
 
 uint8_t hash_algorithm_crc32(const uint8_t* start, const uint8_t* finish, uint32_t* output, uint8_t order)
 {

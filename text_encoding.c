@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -18,6 +18,7 @@ static const uint8_t UTF32BE_BOM[] = { 0x00, 0x00, 0xFE, 0xFF };
 static const uint8_t UTF32LE_BOM[] = { 0xFF, 0xFE, 0x00, 0x00 };
 
 static const uint8_t UTF8_UNKNOWN_CHAR[] = { 0xEF, 0xBF, 0xBD };
+static const uint16_t UTF16BE_UNKNOWN_CHAR = 0xFDFF;
 static const uint16_t UTF16LE_UNKNOWN_CHAR = 0xFFFD;
 
 static const uint8_t unknown_ASCII_char = 0x3F;
@@ -140,6 +141,16 @@ static const uint16_t codes_1258[] =
 
 enum Endian { Little, Big };
 
+void text_encoding_xchange_uint16_t_bytes(uint8_t* input)
+{
+	XCHG(input[0], input[1]);
+}
+
+void text_encoding_xchange_uint32_t_bytes(uint16_t* input)
+{
+	XCHG(input[0], input[1]);
+}
+
 uint8_t text_encoding_get_BOM(
 	uint8_t encoding, struct buffer* output)
 {
@@ -180,7 +191,7 @@ uint8_t text_encoding_get_BOM(
 	return 1;
 }
 
-uint8_t text_encoding_get_data_encoding_by_BOM(const uint8_t* data, ptrdiff_t data_length)
+uint8_t text_encoding_get_one_of_data_by_BOM(const uint8_t* data, ptrdiff_t data_length)
 {
 	if (NULL == data ||
 		data_length < 2)
@@ -223,8 +234,46 @@ uint8_t text_encoding_get_data_encoding_by_BOM(const uint8_t* data, ptrdiff_t da
 	return ASCII;
 }
 
-uint8_t text_encoding_UTF16_from_ASCII(const uint8_t* data_start, const uint8_t* data_finish,
-									   uint8_t endian, struct buffer* output)
+uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const uint16_t* input_finish,
+		uint32_t* output);
+uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const uint16_t* input_finish,
+		uint32_t* output);
+uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uint32_t* input_finish,
+		uint32_t* output);
+uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const uint32_t* input_finish,
+		uint32_t* output);
+
+#define UTF_TO_ASCII(START, FINISH, SIZE, DECODE, TYPE, OUT, OUTPUT)			\
+	while ((const TYPE*)(START) < (const TYPE*)(FINISH))						\
+	{																			\
+		(*(OUT)) = unknown_ASCII_char;											\
+		(SIZE) = DECODE((const TYPE*)(START), (const TYPE*)(FINISH), (OUT));	\
+		\
+		if (!(SIZE))															\
+		{																		\
+			return 0;															\
+		}																		\
+		else if (1 < (SIZE) || max_ASCII_char < (*(OUT)))						\
+		{																		\
+			if (!buffer_push_back((OUTPUT), unknown_ASCII_char))				\
+			{																	\
+				return 0;														\
+			}																	\
+		}																		\
+		else																	\
+		{																		\
+			if (!buffer_push_back((OUTPUT), (uint8_t)(*OUT)))					\
+			{																	\
+				return 0;														\
+			}																	\
+		}																		\
+		\
+		START += (SIZE) * sizeof(TYPE);											\
+	}
+
+uint8_t text_encoding_UTF_to_ASCII(
+	const uint8_t* data_start, const uint8_t* data_finish,
+	uint8_t encoding, struct buffer* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -239,46 +288,43 @@ uint8_t text_encoding_UTF16_from_ASCII(const uint8_t* data_start, const uint8_t*
 		return 1;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
+	ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, sizeof(uint16_t) * (data_finish - data_start)) ||
-		!buffer_resize(output, size))
+	if (!buffer_append(output, NULL, (data_finish - data_start) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	switch (endian)
+	uint32_t* out = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+
+	if (!buffer_resize(output, size))
 	{
-		case Little:
-			while (data_start < data_finish)
-			{
-				const uint8_t* code = max_ASCII_char < (*data_start) ? &unknown_ASCII_char : data_start;
+		return 0;
+	}
 
-				if (!buffer_append(output, code, 1) ||
-					!buffer_push_back(output, 0))
-				{
-					return 0;
-				}
-
-				++data_start;
-			}
-
+	switch (encoding)
+	{
+		case UTF8:
+			UTF_TO_ASCII(data_start, data_finish, size, text_encoding_decode_UTF8_single, uint8_t, out, output);
 			break;
 
-		case Big:
-			while (data_start < data_finish)
-			{
-				const uint8_t* code = max_ASCII_char < (*data_start) ? &unknown_ASCII_char : data_start;
+		case BigEndianUnicode:
+		case UTF16BE:
+			UTF_TO_ASCII(data_start, data_finish, size, text_encoding_decode_UTF16BE_single, uint16_t, out, output);
+			break;
 
-				if (!buffer_push_back(output, 0) ||
-					!buffer_append(output, code, 1))
-				{
-					return 0;
-				}
+		case Unicode:
+		case UTF16LE:
+			UTF_TO_ASCII(data_start, data_finish, size, text_encoding_decode_UTF16LE_single, uint16_t, out, output);
+			break;
 
-				++data_start;
-			}
+		case UTF32BE:
+			UTF_TO_ASCII(data_start, data_finish, size, text_encoding_change_UTF32_endian, uint32_t, out, output);
+			break;
 
+		case UTF32:
+		case UTF32LE:
+			UTF_TO_ASCII(data_start, data_finish, size, text_encoding_decode_UTF32LE_single, uint32_t, out, output);
 			break;
 
 		default:
@@ -288,16 +334,79 @@ uint8_t text_encoding_UTF16_from_ASCII(const uint8_t* data_start, const uint8_t*
 	return 1;
 }
 
-uint8_t text_encoding_UTF16LE_from_ASCII(
-	const uint8_t* data_start, const uint8_t* data_finish, struct buffer* output)
-{
-	return text_encoding_UTF16_from_ASCII(data_start, data_finish, Little, output);
-}
+#define ASCII_TO_UTF(START, FINISH, INPUT_TYPE, PRE, POST, OUTPUT)							\
+	{																						\
+		const ptrdiff_t size = buffer_size(OUTPUT);											\
+		\
+		if (!buffer_append((OUTPUT), NULL, sizeof(INPUT_TYPE) * ((FINISH) - (START))) ||	\
+			!buffer_resize((OUTPUT), size))													\
+		{																					\
+			return 0;																		\
+		}																					\
+	}																						\
+	while ((START) < (FINISH))																\
+	{																						\
+		static const uint8_t empty[] = { 0, 0, 0 };											\
+		\
+		const uint8_t* code = max_ASCII_char < (*(START)) ? &unknown_ASCII_char : (START);	\
+		\
+		if (!buffer_append(output, empty, (PRE)) ||											\
+			!buffer_append(output, code, 1) ||												\
+			!buffer_append(output, empty, (POST)))											\
+		{																					\
+			return 0;																		\
+		}																					\
+		\
+		++(START);																			\
+	}
 
-uint8_t text_encoding_UTF16BE_from_ASCII(
-	const uint8_t* data_start, const uint8_t* data_finish, struct buffer* output)
+uint8_t text_encoding_UTF_from_ASCII(
+	const uint8_t* data_start, const uint8_t* data_finish,
+	uint8_t encoding, struct buffer* output)
 {
-	return text_encoding_UTF16_from_ASCII(data_start, data_finish, Big, output);
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish < data_start)
+	{
+		return 0;
+	}
+
+	if (data_finish == data_start)
+	{
+		return 1;
+	}
+
+	switch (encoding)
+	{
+		case UTF8:
+			ASCII_TO_UTF(data_start, data_finish, uint8_t, 0, 0, output);
+			break;
+
+		case BigEndianUnicode:
+		case UTF16BE:
+			ASCII_TO_UTF(data_start, data_finish, uint16_t, 1, 0, output);
+			break;
+
+		case Unicode:
+		case UTF16LE:
+			ASCII_TO_UTF(data_start, data_finish, uint16_t, 0, 1, output);
+			break;
+
+		case UTF32BE:
+			ASCII_TO_UTF(data_start, data_finish, uint32_t, 3, 0, output);
+			break;
+
+		case UTF32:
+		case UTF32LE:
+			ASCII_TO_UTF(data_start, data_finish, uint32_t, 0, 3, output);
+			break;
+
+		default:
+			return 0;
+	}
+
+	return 1;
 }
 
 uint8_t text_encoding_UTF16LE_from_code_page(
@@ -621,6 +730,41 @@ uint8_t text_encoding_decode_UTF8(
 	return 1;
 }
 
+uint8_t text_encoding_encode_UTF16BE_single(uint32_t input_32LE, uint16_t* output)
+{
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	if ((0xD7FF < input_32LE && input_32LE < 0xE000) || 0x10FFFF < input_32LE)
+	{
+		output[0] = UTF16BE_UNKNOWN_CHAR;
+		return 1;
+	}
+	else if (input_32LE < 0x10000)
+	{
+		output[0] = input_32LE & 0xFFFF;
+		text_encoding_xchange_uint16_t_bytes((uint8_t*)(&(output[0])));
+		return 1;
+	}
+
+	input_32LE -= 0x10000;
+	/**/
+	output[1] = (input_32LE & 0x3FF) & 0xFFFF;
+	output[0] = (10 >> input_32LE) & 0xFFFF;
+	/**/
+	output[0] += 0xD800;
+	output[1] += 0xDC00;
+
+	for (input_32LE = 0; input_32LE < 2; ++input_32LE)
+	{
+		text_encoding_xchange_uint16_t_bytes((uint8_t*)(&(output[input_32LE])));
+	}
+
+	return 2;
+}
+
 uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
 {
 	if (NULL == output)
@@ -650,9 +794,9 @@ uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
 	return 2;
 }
 
-uint8_t text_encoding_encode_UTF16LE(
+uint8_t text_encoding_encode_UTF16(
 	const uint32_t* data_start, const uint32_t* data_finish,
-	struct buffer* output)
+	uint8_t endian, struct buffer* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -662,6 +806,8 @@ uint8_t text_encoding_encode_UTF16LE(
 		return 0;
 	}
 
+	uint8_t(*encode_function)(uint32_t, uint16_t*) =
+		(Little == endian) ? &text_encoding_encode_UTF16LE_single : &text_encoding_encode_UTF16BE_single;
 	ptrdiff_t size = buffer_size(output);
 
 	if (!buffer_append(output, NULL, 2 * sizeof(uint16_t) * (data_finish - data_start)) ||
@@ -678,7 +824,7 @@ uint8_t text_encoding_encode_UTF16LE(
 		}
 
 		uint16_t* out = (uint16_t*)buffer_data(output, size);
-		size += sizeof(uint16_t) * text_encoding_encode_UTF16LE_single(*data_start, out);
+		size += sizeof(uint16_t) * (encode_function)(*data_start, out);
 
 		if (!buffer_resize(output, size))
 		{
@@ -689,6 +835,57 @@ uint8_t text_encoding_encode_UTF16LE(
 	}
 
 	return 1;
+}
+
+uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const uint16_t* input_finish,
+		uint32_t* output)
+{
+	if (NULL == input_start ||
+		NULL == input_finish ||
+		NULL == output ||
+		input_finish <= input_start)
+	{
+		return 0;
+	}
+
+	uint16_t input_16LE = (*input_start);
+	text_encoding_xchange_uint16_t_bytes((uint8_t*)&input_16LE);
+
+	if (input_16LE < 0xD800 || 0xDFFF < input_16LE)
+	{
+		(*output) = input_16LE;
+		return 1;
+	}
+	else if (0xDBFF < input_16LE)
+	{
+		(*output) = UTF16LE_UNKNOWN_CHAR;
+		return 1;
+	}
+
+	(*output) = input_16LE & 0x3FF;
+	(*output) = (*output) << 10;
+	++input_start;
+
+	if (input_start == input_finish)
+	{
+		(*output) = UTF16LE_UNKNOWN_CHAR;
+	}
+	else
+	{
+		input_16LE = (*input_start);
+
+		if (input_16LE < 0xDC00 || 0xDFFF < input_16LE)
+		{
+			(*output) = UTF16LE_UNKNOWN_CHAR;
+		}
+		else
+		{
+			(*output) += (input_16LE & 0x3FF);
+			(*output) += 0x10000;
+		}
+	}
+
+	return 2;
 }
 
 uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const uint16_t* input_finish,
@@ -737,9 +934,9 @@ uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const u
 	return 2;
 }
 
-uint8_t text_encoding_decode_UTF16LE(
+uint8_t text_encoding_decode_UTF16(
 	const uint16_t* data_start, const uint16_t* data_finish,
-	struct buffer* output)
+	uint8_t endian, struct buffer* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -749,6 +946,8 @@ uint8_t text_encoding_decode_UTF16LE(
 		return 0;
 	}
 
+	uint8_t(*decode_function)(const uint16_t*, const uint16_t*, uint32_t*) =
+		(Little == endian) ? &text_encoding_decode_UTF16LE_single : &text_encoding_decode_UTF16BE_single;
 	ptrdiff_t size = buffer_size(output);
 
 	if (!buffer_append(output, NULL, data_finish - data_start) ||
@@ -765,8 +964,342 @@ uint8_t text_encoding_decode_UTF16LE(
 		}
 
 		uint32_t* out = (uint32_t*)buffer_data(output, size);
-		data_start += text_encoding_decode_UTF16LE_single(data_start, data_finish, out);
+		data_start += (decode_function)(data_start, data_finish, out);
 		size += sizeof(uint32_t);
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uint32_t* input_finish,
+		uint32_t* output)
+{
+	if (NULL == input_start ||
+		NULL == input_finish ||
+		NULL == output ||
+		input_finish <= input_start)
+	{
+		return 0;
+	}
+
+	(*output) = (*input_start);
+	/**/
+	uint16_t* out = (uint16_t*)output;
+	text_encoding_xchange_uint16_t_bytes((uint8_t*)(out));
+	text_encoding_xchange_uint16_t_bytes((uint8_t*)(out + 1));
+	text_encoding_xchange_uint32_t_bytes(out);
+	/**/
+	return 1;
+}
+
+uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const uint32_t* input_finish,
+		uint32_t* output)
+{
+	if (NULL == input_start ||
+		NULL == input_finish ||
+		NULL == output ||
+		input_finish <= input_start)
+	{
+		return 0;
+	}
+
+	(*output) = (*input_start);
+	/**/
+	return 1;
+}
+
+uint8_t text_encoding_UTF8_to_code_page(
+	const uint8_t* data_start, const uint8_t* data_finish,
+	uint16_t code_page, struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish <= data_start)
+	{
+		return 0;
+	}
+
+	const uint16_t* ptr = NULL;
+	const uint8_t max_index = Windows_874 == code_page ? 32 : 128;
+
+	switch (code_page)
+	{
+		case Windows_874:
+			ptr = codes_874;
+			break;
+
+		case Windows_1250:
+			ptr = codes_1250;
+			break;
+
+		case Windows_1251:
+			ptr = codes_1251;
+			break;
+
+		case Windows_1252:
+			ptr = codes_1252;
+			break;
+
+		case Windows_1253:
+			ptr = codes_1253;
+			break;
+
+		case Windows_1254:
+			ptr = codes_1254;
+			break;
+
+		case Windows_1255:
+			ptr = codes_1255;
+			break;
+
+		case Windows_1256:
+			ptr = codes_1256;
+			break;
+
+		case Windows_1257:
+			ptr = codes_1257;
+			break;
+
+		case Windows_1258:
+			ptr = codes_1258;
+			break;
+
+		default:
+			return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, (data_finish - data_start) + sizeof(uint32_t)) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		if (!buffer_push_back_uint32(output, 0))
+		{
+			return 0;
+		}
+
+		uint32_t* out = (uint32_t*)buffer_data(output, size);
+		uint32_t code = text_encoding_decode_UTF8_single(data_start, data_finish, out);
+
+		if (!code || !buffer_resize(output, size))
+		{
+			return 0;
+		}
+
+		data_start += code;
+		code = *out;
+
+		if (code < min_non_ASCII_char)
+		{
+			if (!buffer_push_back(output, (uint8_t)code))
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			for (uint8_t i = 0; i < max_index; ++i)
+			{
+				if (UTF16LE_UNKNOWN_CHAR == ptr[i])
+				{
+					continue;
+				}
+
+				if (!text_encoding_decode_UTF16LE_single(&(ptr[i]), &(ptr[i]) + 1, out))
+				{
+					return 0;
+				}
+
+				if ((*out) == code)
+				{
+					if (!buffer_push_back(output, min_non_ASCII_char + i))
+					{
+						return 0;
+					}
+
+					code = 0;
+					break;
+				}
+			}
+
+			if (0 != code)
+			{
+				if (!buffer_push_back(output, unknown_ASCII_char))
+				{
+					return 0;
+				}
+			}
+		}
+
+		++size;
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_UTF8_from_code_page(
+	const uint8_t* data_start, const uint8_t* data_finish,
+	uint16_t code_page, struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish <= data_start)
+	{
+		return 0;
+	}
+
+	const uint16_t* ptr = NULL;
+	const uint8_t max_index = Windows_874 == code_page ? 32 : 128;
+
+	switch (code_page)
+	{
+		case Windows_874:
+			ptr = codes_874;
+			break;
+
+		case Windows_1250:
+			ptr = codes_1250;
+			break;
+
+		case Windows_1251:
+			ptr = codes_1251;
+			break;
+
+		case Windows_1252:
+			ptr = codes_1252;
+			break;
+
+		case Windows_1253:
+			ptr = codes_1253;
+			break;
+
+		case Windows_1254:
+			ptr = codes_1254;
+			break;
+
+		case Windows_1255:
+			ptr = codes_1255;
+			break;
+
+		case Windows_1256:
+			ptr = codes_1256;
+			break;
+
+		case Windows_1257:
+			ptr = codes_1257;
+			break;
+
+		case Windows_1258:
+			ptr = codes_1258;
+			break;
+
+		default:
+			return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+	uint32_t* out = NULL;
+
+	if (!buffer_append(output, NULL, (data_finish - data_start) + sizeof(uint32_t)) ||
+		NULL == (out = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t))) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		uint8_t code = (*data_start);
+
+		if (code < min_non_ASCII_char)
+		{
+			if (!buffer_push_back(output, code))
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			if (code < min_non_ASCII_char + max_index &&
+				UTF16LE_UNKNOWN_CHAR != ptr[code - min_non_ASCII_char])
+			{
+				(*out) = ptr[code - min_non_ASCII_char];
+
+				if (!text_encoding_decode_UTF16LE_single((const uint16_t*)out, (const uint16_t*)out + 1, out))
+				{
+					return 0;
+				}
+
+				size = text_encoding_encode_UTF8_single((*out), (uint8_t*)out);
+
+				if (!size ||
+					!buffer_append(output, (const uint8_t*)out, size))
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				if (!buffer_push_back(output, unknown_ASCII_char))
+				{
+					return 0;
+				}
+			}
+		}
+
+		data_start++;
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_UTF8_to_UTF16BE(const uint8_t* data_start, const uint8_t* data_finish,
+									  struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		data_finish <= data_start ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, sizeof(uint16_t) * (data_finish - data_start) + sizeof(uint32_t)))
+	{
+		return 0;
+	}
+
+	uint32_t* decoded_UTF8 = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		if (!buffer_append(output, NULL, 2 * sizeof(uint16_t)))
+		{
+			return 0;
+		}
+
+		uint16_t* out = (uint16_t*)buffer_data(output, size);
+		data_start += text_encoding_decode_UTF8_single(data_start, data_finish, decoded_UTF8);
+		size += sizeof(uint16_t) * text_encoding_encode_UTF16BE_single(*decoded_UTF8, out);
+
+		if (!buffer_resize(output, size))
+		{
+			return 0;
+		}
 	}
 
 	return 1;
@@ -816,10 +1349,52 @@ uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* 
 
 	return 1;
 }
-#if 0
+
 uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
 									  struct buffer* output)
-#endif
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		data_finish <= data_start ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 4 * (data_finish - data_start) + sizeof(uint32_t)))
+	{
+		return 0;
+	}
+
+	uint32_t* decoded_UTF16LE = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		if (!buffer_append(output, NULL, 4))
+		{
+			return 0;
+		}
+
+		uint8_t* out = buffer_data(output, size);
+		data_start += text_encoding_decode_UTF16BE_single(data_start, data_finish, decoded_UTF16LE);
+		size += text_encoding_encode_UTF8_single(*decoded_UTF16LE, out);
+
+		if (!buffer_resize(output, size))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
 									  struct buffer* output)
 {
@@ -860,6 +1435,93 @@ uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t
 		{
 			return 0;
 		}
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_UTF8_to_UTF32BE(const uint8_t* data_start, const uint8_t* data_finish,
+									  struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish <= data_start)
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, data_finish - data_start) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		if (!buffer_push_back_uint32(output, 0))
+		{
+			return 0;
+		}
+
+		uint32_t* out = (uint32_t*)buffer_data(output, size);
+		data_start += text_encoding_decode_UTF8_single(data_start, data_finish, out);
+
+		if (!text_encoding_change_UTF32_endian(out, out + 1, out))
+		{
+			return 0;
+		}
+
+		size += sizeof(uint32_t);
+	}
+
+	return 1;
+}
+
+uint8_t text_encoding_UTF32BE_to_UTF8(const uint32_t* data_start, const uint32_t* data_finish,
+									  struct buffer* output)
+{
+	if (NULL == data_start ||
+		NULL == data_finish ||
+		NULL == output ||
+		data_finish <= data_start)
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 4 * (data_finish - data_start)) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	while (data_start < data_finish)
+	{
+		if (!buffer_append(output, NULL, 4))
+		{
+			return 0;
+		}
+
+		uint32_t data_start_32LE = *data_start;
+
+		if (!text_encoding_change_UTF32_endian(&data_start_32LE, &data_start_32LE + 1, &data_start_32LE))
+		{
+			return 0;
+		}
+
+		uint8_t* out = buffer_data(output, size);
+		size += text_encoding_encode_UTF8_single(data_start_32LE, out);
+
+		if (!buffer_resize(output, size))
+		{
+			return 0;
+		}
+
+		++data_start;
 	}
 
 	return 1;

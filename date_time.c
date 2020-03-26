@@ -847,8 +847,8 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 		case ticks:
 			if (!arguments_count)
 			{
-				const int64_t ticks = datetime_ticks();
-				return /*0 < ticks && */int64_to_string(0 < ticks ? ticks : 0, output);
+				const int64_t ticks_ = datetime_ticks();
+				return /*0 < ticks_ && */int64_to_string(0 < ticks_ ? ticks_ : 0, output);
 			}
 
 			break;

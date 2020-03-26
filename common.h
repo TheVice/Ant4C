@@ -54,6 +54,11 @@ uint8_t common_get_attributes_and_arguments_for_task(
 void* common_get_output_stream();
 void* common_get_error_output_stream();
 
+#define XCHG(A, Z)	\
+	(A) -= (Z);		\
+	(Z) += (A);		\
+	(A) = (Z) - (A);
+
 #define COUNT_OF(A) (sizeof(A) / sizeof(*(A)))
 
 #define MEM_CPY(DST, SRC, LENGTH)								\

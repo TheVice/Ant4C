@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -14,9 +14,12 @@ extern "C" {
 #include "text_encoding.h"
 }
 
+#include <limits>
 #include <string>
+#include <vector>
 #include <cstdint>
 #include <cstdlib>
+#include <ostream>
 
 class TestTextEncoding : public TestsBaseXml
 {
@@ -29,7 +32,11 @@ TEST(TestTextEncoding_, text_encoding_get_BOM)
 	//
 	ASSERT_TRUE(text_encoding_get_BOM(ASCII, &output)) << buffer_free(&output);
 	ASSERT_FALSE(text_encoding_get_BOM(UTF7, &output)) << buffer_free(&output); //TODO:
+	//
+	ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF8, &output)) << buffer_free(&output);
+	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
+	//
 	ASSERT_TRUE(text_encoding_get_BOM(BigEndianUnicode, &output)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF16BE, &output)) << buffer_free(&output);
 	ASSERT_TRUE(text_encoding_get_BOM(UTF16LE, &output)) << buffer_free(&output);
@@ -41,7 +48,7 @@ TEST(TestTextEncoding_, text_encoding_get_BOM)
 	buffer_release(&output);
 }
 
-TEST(TestTextEncoding_, text_encoding_get_data_encoding_by_BOM)
+TEST(TestTextEncoding_, text_encoding_get_one_of_data_by_BOM)
 {
 	const uint8_t data[][4] =
 	{
@@ -62,15 +69,117 @@ TEST(TestTextEncoding_, text_encoding_get_data_encoding_by_BOM)
 
 	for (uint8_t i = 0, count = sizeof(data) / sizeof(*data); i < count; ++i)
 	{
-		const uint8_t returned_encoding = text_encoding_get_data_encoding_by_BOM(data[i], 4);
+		const uint8_t returned_encoding = text_encoding_get_one_of_data_by_BOM(data[i], 4);
 		ASSERT_EQ(expected_encoding[i], returned_encoding) << (int)i;
 	}
 }
 
-TEST(TestTextEncoding_, text_encoding_UTF16_from_ASCII)
+TEST(TestTextEncoding_, text_encoding_UTF_to_ASCII)
+{
+	static const uint8_t encodings[] =
+	{
+		UTF8,
+		UTF16BE,
+		UTF16LE,
+		UTF32BE,
+		UTF32LE
+	};
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+	//
+	std::string input;
+	std::string expected_output;
+
+	for (uint8_t i = 0; i < UINT8_MAX; ++i)
+	{
+		if (INT8_MAX < i)
+		{
+			expected_output.push_back(63);
+		}
+		else
+		{
+			expected_output.push_back(i);
+		}
+	}
+
+	for (const auto& encoding : encodings)
+	{
+		input.clear();
+
+		switch (encoding)
+		{
+			case UTF8:
+				for (uint8_t i = 0; i < UINT8_MAX; ++i)
+				{
+					input.push_back(i);
+				}
+
+				break;
+
+			case UTF16BE:
+				for (uint8_t i = 0; i < UINT8_MAX; ++i)
+				{
+					input.push_back(0);
+					input.push_back(i);
+				}
+
+				break;
+
+			case UTF16LE:
+				for (uint8_t i = 0; i < UINT8_MAX; ++i)
+				{
+					input.push_back(i);
+					input.push_back(0);
+				}
+
+				break;
+
+			case UTF32BE:
+				for (uint8_t i = 0; i < UINT8_MAX; ++i)
+				{
+					input.push_back(0);
+					input.push_back(0);
+					input.push_back(0);
+					input.push_back(i);
+				}
+
+				break;
+
+			case UTF32LE:
+				for (uint8_t i = 0; i < UINT8_MAX; ++i)
+				{
+					input.push_back(i);
+					input.push_back(0);
+					input.push_back(0);
+					input.push_back(0);
+				}
+
+				break;
+
+			default:
+				break;
+		}
+
+		const auto input_in_range(string_to_range(input));
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		//
+		ASSERT_TRUE(
+			text_encoding_UTF_to_ASCII(
+				input_in_range.start, input_in_range.finish, encoding, &output))
+				<< buffer_free(&output);
+		//
+		ASSERT_EQ(expected_output, buffer_to_string(&output)) << (int)encoding << std::endl <<
+				buffer_free(&output);
+	}
+
+	buffer_release(&output);
+}
+
+TEST(TestTextEncoding_, text_encoding_UTF_from_ASCII)
 {
 	buffer input;
 	SET_NULL_TO_BUFFER(input);
+	//
 	ASSERT_TRUE(buffer_append(&input, NULL, UINT8_MAX + 1)) << buffer_free(&input);
 	ASSERT_TRUE(buffer_resize(&input, 0)) << buffer_free(&input);
 
@@ -87,6 +196,7 @@ TEST(TestTextEncoding_, text_encoding_UTF16_from_ASCII)
 
 	const range input_in_range = buffer_to_range(&input);
 	const ptrdiff_t expected_size = (ptrdiff_t)(sizeof(uint16_t) * (UINT8_MAX + sizeof(uint16_t)));
+	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
@@ -97,17 +207,19 @@ TEST(TestTextEncoding_, text_encoding_UTF16_from_ASCII)
 		if (a)
 		{
 			ASSERT_TRUE(
-				text_encoding_UTF16BE_from_ASCII(input_in_range.start,
-												 input_in_range.finish,
-												 &output))
+				text_encoding_UTF_from_ASCII(input_in_range.start,
+											 input_in_range.finish,
+											 UTF16BE,
+											 &output))
 					<< buffer_free(&output) << buffer_free(&input);
 		}
 		else
 		{
 			ASSERT_TRUE(
-				text_encoding_UTF16LE_from_ASCII(input_in_range.start,
-												 input_in_range.finish,
-												 &output))
+				text_encoding_UTF_from_ASCII(input_in_range.start,
+											 input_in_range.finish,
+											 UTF16LE,
+											 &output))
 					<< buffer_free(&output) << buffer_free(&input);
 		}
 
@@ -135,56 +247,32 @@ TEST(TestTextEncoding_, text_encoding_UTF16_from_ASCII)
 	buffer_release(&input);
 }
 
-std::string string_hex_to_string(const char* str)
+template<typename T>
+void string_hex_parse(const char* input, T& output)
 {
-	std::string output;
-
-	if (NULL == str || '\0' == *str)
+	if (NULL == input)
 	{
-		return output;
+		return;
 	}
 
-	while (NULL != (str = strstr(str, "0x")))
+	const typename T::value_type max = std::numeric_limits<typename T::value_type>::max();
+	//
+	const auto size = output.size();
+	output.reserve(size + strlen(input));
+
+	while (NULL != (input = strstr(input, "0x")))
 	{
 		char* pos = NULL;
-		const long value = strtol(str, &pos, 16);
-		str += pos - str;
+		const auto value = strtol(input, &pos, 16);
+		input += pos - input;
 
-		if (value < 0 || UINT8_MAX < value)
+		if (value < 0 || max < value)
 		{
 			break;
 		}
 
-		output.push_back((char)value);
+		output.push_back((typename T::value_type)value);
 	}
-
-	return output;
-}
-
-std::wstring string_hex_to_wstring(const char* str)
-{
-	std::wstring output;
-
-	if (NULL == str || '\0' == *str)
-	{
-		return output;
-	}
-
-	while (NULL != (str = strstr(str, "0x")))
-	{
-		char* pos = NULL;
-		const long value = strtol(str, &pos, 16);
-		str += pos - str;
-
-		if (value < 0 || UINT16_MAX < value)
-		{
-			break;
-		}
-
-		output.push_back((uint16_t)value);
-	}
-
-	return output;
 }
 
 TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
@@ -196,29 +284,50 @@ TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
 	{
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const std::string input_hex(get_data_from_nodes(node, "input"));
-		const std::string input(string_hex_to_string(input_hex.c_str()));
-		const uint16_t code_page = (uint16_t)INT_PARSE(
-									   node.node().select_node("code_page").node().child_value());
-		const std::string output_hex(get_data_from_nodes(node, "output"));
-		const std::wstring expected_output(string_hex_to_wstring(output_hex.c_str()));
+		const auto input_hex(get_data_from_nodes(node, "input"));
+		std::vector<uint8_t> input;
+		string_hex_parse(input_hex.c_str(), input);
 		//
-		const range input_in_range = string_to_range(input);
+		auto code_page = (uint16_t)INT_PARSE(
+							 node.node().select_node("code_page").node().child_value());
+		//
+		const auto output_hex(get_data_from_nodes(node, "output"));
+		std::vector<uint16_t> expected_output;
+		string_hex_parse(output_hex.c_str(), expected_output);
 		//
 		ASSERT_TRUE(text_encoding_UTF16LE_from_code_page(
-						input_in_range.start,
-						input_in_range.finish,
+						input.data(),
+						input.data() + input.size(),
 						code_page,
 						&output)) << buffer_free(&output);
 		//
-		ASSERT_EQ(expected_output, buffer_to_u16string(&output)) << buffer_free(&output);
+		code_page = 0;
+		const uint16_t* ptr = NULL;
+
+		for (const auto& expected_code : expected_output)
+		{
+			ptr = buffer_uint16_data(&output, code_page);
+			ASSERT_NE(nullptr, ptr) << buffer_free(&output);
+			//
+			ASSERT_EQ(expected_code, (*ptr))
+					<< code_page << std::endl
+					<< buffer_free(&output);
+			//
+			++code_page;
+		}
+
+		ptr = buffer_uint16_data(&output, code_page);
+		ASSERT_EQ(nullptr, ptr) << buffer_free(&output);
 		//
 		--node_count;
 	}
 
 	buffer_release(&output);
 }
-
+/*
+text_encoding_encode_UTF8_single
+text_encoding_decode_UTF8_single
+*/
 TEST(TestTextEncoding_, text_encoding_encode_UTF8)
 {
 	buffer input;
@@ -290,7 +399,7 @@ TEST(TestTextEncoding_, text_encoding_encode_UTF8)
 
 TEST(TestTextEncoding_, text_encoding_decode_UTF8)
 {
-	struct buffer output;
+	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	ASSERT_TRUE(buffer_append(&output, NULL, 4 * sizeof(uint32_t))) << buffer_free(&output);
 
@@ -439,7 +548,7 @@ TEST(TestTextEncoding_, text_encoding_encode_UTF16LE)
 
 		const uint32_t* start = (const uint32_t*)buffer_data(&input, 0);
 		const uint32_t* finish = start + buffer_size(&input) / sizeof(uint32_t);
-		ASSERT_TRUE(text_encoding_encode_UTF16LE(start, finish, &encode_output))
+		ASSERT_TRUE(text_encoding_encode_UTF16(start, finish, 0, &encode_output))
 				<< buffer_free(&input) << buffer_free(&encode_output) << buffer_free(&decode_output);
 
 		if (0xD7FF < i - 1024 && i - 1024 < 0xE000)
@@ -460,7 +569,7 @@ TEST(TestTextEncoding_, text_encoding_encode_UTF16LE)
 
 		const uint16_t* start_for_decode = (const uint16_t*)buffer_data(&encode_output, 0);
 		const uint16_t* finish_for_decode = start_for_decode + buffer_size(&encode_output) / sizeof(uint16_t);
-		ASSERT_TRUE(text_encoding_decode_UTF16LE(start_for_decode, finish_for_decode, &decode_output))
+		ASSERT_TRUE(text_encoding_decode_UTF16(start_for_decode, finish_for_decode, 0, &decode_output))
 				<< buffer_free(&input) << buffer_free(&encode_output) << buffer_free(&decode_output);
 		//
 		ASSERT_EQ(buffer_to_string(&input), buffer_to_string(&decode_output)) << range_max
@@ -555,10 +664,10 @@ TEST(TestTextEncoding_, text_encoding_UTF8_to_UTF16LE)
 							  0)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) << buffer_free(
 									  &decoded_UTF8) << buffer_free(&decoded_UTF16LE);
 	//
-	ASSERT_TRUE(text_encoding_decode_UTF16LE(buffer_uint16_data(&returned_UTF16LE, 0),
-				(const uint16_t*)(buffer_data(&returned_UTF16LE, 0) + buffer_size(&returned_UTF16LE)),
-				&decoded_UTF16LE)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) << buffer_free(
-									   &decoded_UTF8) << buffer_free(&decoded_UTF16LE);
+	ASSERT_TRUE(text_encoding_decode_UTF16(buffer_uint16_data(&returned_UTF16LE, 0),
+										   (const uint16_t*)(buffer_data(&returned_UTF16LE, 0) + buffer_size(&returned_UTF16LE)),
+										   0, &decoded_UTF16LE)) << buffer_free(&input_UTF8) << buffer_free(&returned_UTF16LE) << buffer_free(
+												   &decoded_UTF8) << buffer_free(&decoded_UTF16LE);
 	uint32_t expected_return = 0x0;
 
 	for (; expected_return < 0x10000; ++expected_return)
@@ -666,3 +775,121 @@ TEST(TestTextEncoding_, text_encoding_UTF8_to_UTF16LE)
 	buffer_release(&returned_UTF16LE);
 	buffer_release(&input_UTF8);
 }
+
+TEST_F(TestTextEncoding, text_encoding_UTF8_to_code_page)
+{
+	std::vector<uint16_t> input_utf16le;
+	//
+	buffer input;
+	SET_NULL_TO_BUFFER(input);
+	//
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+
+	for (const auto& node : nodes)
+	{
+		input_utf16le.resize(0);
+		const auto input_hex(get_data_from_nodes(node, "input"));
+		string_hex_parse(input_hex.c_str(), input_utf16le);
+		//
+		ASSERT_TRUE(buffer_resize(&input, 0)) << buffer_free(&output) << buffer_free(&input);
+		ASSERT_TRUE(
+			text_encoding_UTF16LE_to_UTF8(input_utf16le.data(), input_utf16le.data() + input_utf16le.size(), &input))
+				<< buffer_free(&output) << buffer_free(&input);
+		ASSERT_FALSE(node.node().select_node("output").node().empty())
+				<< buffer_free(&output) << buffer_free(&input);
+
+		for (const auto& output_node : node.node().select_nodes("output"))
+		{
+			const auto code_page = (uint16_t)output_node.node().attribute("code").as_int();
+			auto expected_return = output_node.node().attribute("return").as_int();
+			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output) << buffer_free(&input);
+			//
+			ASSERT_EQ(expected_return,
+					  text_encoding_UTF8_to_code_page(
+						  buffer_data(&input, 0),
+						  buffer_data(&input, 0) + buffer_size(&input),
+						  code_page, &output)) << buffer_free(&output) << buffer_free(&input);
+			//
+			input_utf16le.resize(0);
+			string_hex_parse(output_node.node().child_value(), input_utf16le);
+			//
+			ASSERT_EQ((ptrdiff_t)input_utf16le.size(), buffer_size(&output))
+					<< buffer_free(&output) << buffer_free(&input);
+			const uint8_t* ptr = buffer_data(&output, 0);
+			expected_return = 0;
+
+			for (const auto& expected_code : input_utf16le)
+			{
+				ASSERT_EQ(expected_code, (*ptr))
+						<< expected_return << std::endl
+						<< buffer_free(&output) << buffer_free(&input);
+				++ptr;
+				++expected_return;
+			}
+		}
+
+		--node_count;
+	}
+
+	buffer_release(&output);
+	buffer_release(&input);
+}
+
+TEST_F(TestTextEncoding, text_encoding_UTF8_from_code_page)
+{
+	std::vector<uint8_t> input_ascii;
+	std::vector<uint8_t> expected_output;
+	//
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+
+	for (const auto& node : nodes)
+	{
+		input_ascii.resize(0);
+		const auto input_hex(get_data_from_nodes(node, "input"));
+		string_hex_parse(input_hex.c_str(), input_ascii);
+		//
+		ASSERT_FALSE(node.node().select_node("output").node().empty())
+				<< buffer_free(&output);
+
+		for (const auto& output_node : node.node().select_nodes("output"))
+		{
+			const auto code_page = (uint16_t)output_node.node().attribute("code").as_int();
+			auto expected_return = output_node.node().attribute("return").as_int();
+			//
+			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+			ASSERT_EQ(expected_return,
+					  text_encoding_UTF8_from_code_page(input_ascii.data(),
+							  input_ascii.data() + input_ascii.size(), code_page, &output)) << buffer_free(&output);
+			//
+			expected_output.clear();
+			string_hex_parse(output_node.node().child_value(), expected_output);
+			//
+			ASSERT_EQ((ptrdiff_t)expected_output.size(), buffer_size(&output))
+					<< buffer_free(&output);
+			const uint8_t* ptr = buffer_data(&output, 0);
+			expected_return = 0;
+
+			for (const auto& expected_code : expected_output)
+			{
+				ASSERT_EQ(expected_code, (*ptr))
+						<< expected_return << std::endl
+						<< buffer_free(&output);
+				++ptr;
+				++expected_return;
+			}
+		}
+
+		--node_count;
+	}
+
+	buffer_release(&output);
+}
+/*
+text_encoding_UTF8_to_UTF16BE
+text_encoding_UTF16BE_to_UTF8
+text_encoding_UTF8_to_UTF32BE
+text_encoding_UTF32BE_to_UTF8
+text_encoding_get_one
+*/
