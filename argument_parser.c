@@ -484,6 +484,7 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv)
 void argument_parser_release()
 {
 	argument_parser_debug = 0;
+	argument_parser_encoding = UTF8;
 	argument_parser_help = 0;
 	argument_parser_indent = 0;
 	argument_parser_no_logo = 0;

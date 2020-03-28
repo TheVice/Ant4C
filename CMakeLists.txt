@@ -96,6 +96,7 @@ set(SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_file_system.cpp"
             "${CMAKE_SOURCE_DIR}/tests_hash.cpp"
             "${CMAKE_SOURCE_DIR}/tests_interpreter.cpp"
+            "${CMAKE_SOURCE_DIR}/tests_load_file.cpp"
             "${CMAKE_SOURCE_DIR}/tests_math_unit.cpp"
             "${CMAKE_SOURCE_DIR}/tests_path.cpp"
             "${CMAKE_SOURCE_DIR}/tests_project.cpp"

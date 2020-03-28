@@ -215,7 +215,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 		ASSERT_TRUE(string_to_buffer(content, &tmp)) << buffer_free(&tmp);
 		//
-		ASSERT_TRUE(file_write_all_bytes((const uint8_t*)path.c_str(), &tmp)) << buffer_free(&tmp);
+		ASSERT_TRUE(file_write_all((const uint8_t*)path.c_str(), &tmp)) << buffer_free(&tmp);
 		//
 		void* project = NULL;
 		ASSERT_TRUE(project_new(&project)) << buffer_free(&tmp) << project_free(project);

@@ -11,13 +11,11 @@
 #include "conversion.h"
 #include "date_time.h"
 #include "path.h"
-#include "property.h"
 #include "project.h"
+#include "property.h"
 #include "range.h"
 #include "string_unit.h"
-#if defined(_WIN32)
 #include "text_encoding.h"
-#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -1127,6 +1125,30 @@ int32_t _file_fileno(void* stream)
 	return _fileno(stream);
 }
 #endif
+
+uint8_t file_append(const uint8_t* path, const struct range* data, uint16_t encoding)
+{
+	if (NULL == path ||
+		range_is_null_or_empty(data))
+	{
+		return 0;
+	}
+
+	void* file = NULL;
+
+	if (!file_open(path, (const uint8_t*)"ab", &file))
+	{
+		return 0;
+	}
+
+	if (!file_write_with_encoding(data, encoding, file))
+	{
+		return 0;
+	}
+
+	return file_close(file);
+}
+
 uint8_t file_close(void* stream)
 {
 	return NULL != stream &&
@@ -1589,6 +1611,12 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 size_t file_read(void* content, const size_t size_of_content_element,
 				 const size_t count_of_elements, void* stream)
 {
+	if (NULL == content ||
+		NULL == stream)
+	{
+		return 0;
+	}
+
 #if __STDC_SEC_API__ && defined(_MSC_VER)
 	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, stream);
 #else
@@ -1596,7 +1624,41 @@ size_t file_read(void* content, const size_t size_of_content_element,
 #endif
 }
 
-uint8_t file_read_all_bytes(const uint8_t* path, struct buffer* output)
+uint8_t file_read_with_several_steps(void* stream, struct buffer* content)
+{
+	if (NULL == stream ||
+		NULL == content)
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(content);
+
+	if (!buffer_append(content, NULL, 4096))
+	{
+		return 0;
+	}
+
+	size_t readed = 0;
+	uint8_t* ptr = buffer_data(content, size);
+
+	while (0 < (readed = file_read(ptr, sizeof(uint8_t), 4096, stream)))
+	{
+		size += (ptrdiff_t)readed;
+
+		if (!buffer_resize(content, size) ||
+			(4096 == readed && !buffer_append(content, NULL, 4096)))
+		{
+			return 0;
+		}
+
+		ptr = buffer_data(content, size);
+	}
+
+	return buffer_resize(content, size);
+}
+
+uint8_t file_read_all(const uint8_t* path, struct buffer* output)
 {
 	if (NULL == path ||
 		NULL == output)
@@ -1611,32 +1673,13 @@ uint8_t file_read_all_bytes(const uint8_t* path, struct buffer* output)
 		return 0;
 	}
 
-	ptrdiff_t size = buffer_size(output);
-
-	if (!buffer_append(output, NULL, 4096))
+	if (!file_read_with_several_steps(stream, output))
 	{
 		file_close(stream);
 		return 0;
 	}
 
-	uint64_t readed = 0;
-	uint8_t* ptr = buffer_data(output, size);
-
-	while (0 < (readed = file_read(ptr, sizeof(uint8_t), 4096, stream)))
-	{
-		size += (ptrdiff_t)readed;
-
-		if (!buffer_resize(output, size) ||
-			!buffer_append(output, NULL, 4096))
-		{
-			file_close(stream);
-			return 0;
-		}
-
-		ptr = buffer_data(output, size);
-	}
-
-	return file_close(stream) && buffer_resize(output, size);
+	return file_close(stream);
 }
 
 uint64_t file_get_length(const uint8_t* path)
@@ -1852,21 +1895,9 @@ uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 	return file_set_time_utc(path, time, 2/*TODO*/);
 }
 #endif
-uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* content)
+
+uint8_t file_write_with_several_steps(const struct buffer* content, void* stream)
 {
-	if (NULL == path ||
-		NULL == content)
-	{
-		return 0;
-	}
-
-	void* stream = NULL;
-
-	if (!file_open(path, (const uint8_t*)"wb", &stream))
-	{
-		return 0;
-	}
-
 	ptrdiff_t size = buffer_size(content);
 
 	if (0 < size)
@@ -1881,7 +1912,110 @@ uint8_t file_write_all_bytes(const uint8_t* path, const struct buffer* content)
 		}
 	}
 
+	return 0 == size;
+}
+
+uint8_t file_write_all(const uint8_t* path, const struct buffer* content)
+{
+	if (NULL == path ||
+		NULL == content)
+	{
+		return 0;
+	}
+
+	void* stream = NULL;
+
+	if (!file_open(path, (const uint8_t*)"wb", &stream))
+	{
+		return 0;
+	}
+
+	if (!file_write_with_several_steps(content, stream))
+	{
+		file_close(stream);
+		return 0;
+	}
+
 	return file_close(stream);
+}
+
+uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, void* stream)
+{
+	if (UTF8 == encoding || Default == encoding)
+	{
+		const ptrdiff_t size = range_size(data);
+
+		if (size != (ptrdiff_t)file_write(data->start, sizeof(uint8_t), size, stream))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		struct buffer output;
+		SET_NULL_TO_BUFFER(output);
+
+		switch (encoding)
+		{
+			case ASCII:
+				encoding = text_encoding_UTF_to_ASCII(data->start, data->finish, UTF8, &output);
+				break;
+
+			case BigEndianUnicode:
+			case UTF16BE:
+				encoding = text_encoding_UTF8_to_UTF16BE(data->start, data->finish, &output);
+				break;
+
+			case Unicode:
+			case UTF16LE:
+				encoding = text_encoding_UTF8_to_UTF16LE(data->start, data->finish, &output);
+				break;
+
+			case UTF32BE:
+				encoding = text_encoding_UTF8_to_UTF32BE(data->start, data->finish, &output);
+				break;
+
+			case UTF32:
+			case UTF32LE:
+				encoding = text_encoding_decode_UTF8(data->start, data->finish, &output);
+				break;
+
+			case Windows_874:
+			case Windows_1250:
+			case Windows_1251:
+			case Windows_1252:
+			case Windows_1253:
+			case Windows_1254:
+			case Windows_1255:
+			case Windows_1256:
+			case Windows_1257:
+			case Windows_1258:
+				encoding = text_encoding_UTF8_to_code_page(data->start, data->finish, encoding, &output);
+				break;
+
+			default:
+				encoding = 0;
+				break;
+		}
+
+		if (!encoding)
+		{
+			buffer_release(&output);
+			return 0;
+		}
+		else
+		{
+			if (!file_write_with_several_steps(&output, stream))
+			{
+				buffer_release(&output);
+				return 0;
+			}
+		}
+
+		buffer_release(&output);
+	}
+
+	return 1;
 }
 
 static const uint8_t* entry_types_str[] =

@@ -133,7 +133,18 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 
 		if (result)
 		{
-			result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+			if (NULL != file)
+			{
+				struct range message_in_range;
+				message_in_range.start = message;
+				message_in_range.finish = message + message_length;
+				/**/
+				result = file_write_with_encoding(&message_in_range, encoding, file_stream);
+			}
+			else
+			{
+				result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+			}
 		}
 
 #if defined(_WIN32)
@@ -163,7 +174,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	}
 	else if (result && new_line)
 	{
-		result = result && (1 == file_write("\n", sizeof(uint8_t), 1, file_stream));
+		result = result && (1 == file_write((const uint8_t*)"\n", sizeof(uint8_t), 1, file_stream));
 	}
 
 	file_stream = NULL;

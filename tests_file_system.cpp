@@ -808,7 +808,7 @@ TEST(TestFileSystem_, file_write_all_bytes)
 		ptrdiff_t size = buffer_size(&path);
 		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
 		//
-		ASSERT_TRUE(file_write_all_bytes(ptr, &path));
+		ASSERT_TRUE(file_write_all(ptr, &path));
 		//
 		size = (ptrdiff_t)file_get_length((const uint8_t*)path_str.c_str());
 		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
