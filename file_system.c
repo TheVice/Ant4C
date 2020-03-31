@@ -454,11 +454,86 @@ uint8_t directory_create(const uint8_t* path)
 		return 0;
 	}
 
-	const uint8_t returned = directory_create_wchar_t(buffer_wchar_t_data(&pathW, 0));
+	wchar_t* path_start = buffer_wchar_t_data(&pathW, 0);
+	/**/
+	const wchar_t* start = buffer_wchar_t_data(&pathW, 0);
+	const wchar_t* finish = (const wchar_t*)(buffer_data(&pathW, 0) + buffer_size(&pathW));
+	/**/
+	file_system_set_position_after_pre_root_wchar_t(&start);
+
+	while (finish != (start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\\", 1, 1, 1)))
+	{
+		wchar_t* pos = path_start + (start - path_start);
+		++start;
+
+		if (L':' == *(pos - 1))
+		{
+			continue;
+		}
+
+		(*pos) = L'\0';
+
+		if (!directory_exists_wchar_t(path_start))
+		{
+			if (!directory_create_wchar_t(path_start))
+			{
+				buffer_release(&pathW);
+				return 0;
+			}
+		}
+
+		(*pos) = L'\\';
+	}
+
+	const uint8_t returned = directory_create_wchar_t(path_start);
 	buffer_release(&pathW);
 	return returned;
 #else
 	static const mode_t mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
+	/**/
+	const uint8_t* start = path;
+	const uint8_t* finish = path + common_count_bytes_until(path, 0);
+	/**/
+	struct buffer current_directory;
+	SET_NULL_TO_BUFFER(current_directory);
+
+	if (!buffer_append(&current_directory, NULL, finish - start) ||
+		!buffer_resize(&current_directory, 0))
+	{
+		buffer_release(&current_directory);
+		return 0;
+	}
+
+	while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &path_posix_delimiter, 1, 1,
+							  1)))
+	{
+		if (start == path)
+		{
+			++start;
+			continue;
+		}
+
+		if (!buffer_resize(&current_directory, 0) ||
+			!buffer_append(&current_directory, path, start - path) ||
+			!buffer_push_back(&current_directory, 0))
+		{
+			buffer_release(&current_directory);
+			return 0;
+		}
+
+		++start;
+
+		if (!directory_exists(buffer_data(&current_directory, 0)))
+		{
+			if (0 != mkdir((const char*)buffer_data(&current_directory, 0), mode))
+			{
+				buffer_release(&current_directory);
+				return 0;
+			}
+		}
+	}
+
+	buffer_release(&current_directory);
 	return 0 == mkdir((const char*)path, mode);
 #endif
 }

@@ -74,6 +74,11 @@ TEST(TestFileSystem_, directory_create_and_delete)
 	SET_NULL_TO_BUFFER(path);
 	//
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
+	//
+	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
+	ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
+	const auto size = buffer_size(&path);
+	//
 	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
 	ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
 	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
@@ -82,6 +87,10 @@ TEST(TestFileSystem_, directory_create_and_delete)
 	ASSERT_FALSE(directory_exists(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
 	ASSERT_TRUE(directory_create(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
 	ASSERT_TRUE(directory_exists(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
+	//
+	ASSERT_TRUE(buffer_resize(&path, size)) << (const char*)ptr << std::endl << buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << (const char*)ptr << buffer_free(&path);
+	//
 	ASSERT_TRUE(directory_delete(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
 	ASSERT_FALSE(directory_exists(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
 	//
