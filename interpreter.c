@@ -14,10 +14,10 @@
 #include "environment.h"
 #include "exec.h"
 #include "file_system.h"
-#include "math_unit.h"
-#include "operating_system.h"
 #include "hash.h"
 #include "load_file.h"
+#include "math_unit.h"
+#include "operating_system.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -47,21 +47,18 @@ static const uint8_t namespace_border[] = { ':', ':' };
 static const uint8_t function_call_start[] = { '$', '{' };
 #define FUNCTION_CALL_START_LENGTH COUNT_OF(function_call_start)
 
+static const uint8_t* test = (const uint8_t*)"test";
+static const uint8_t test_length = 4;
+
 static const uint8_t* interpreter_string_enumeration_unit[] =
 {
 	(const uint8_t*)"bool",
 	(const uint8_t*)"cygpath",
 	(const uint8_t*)"datetime",
 	(const uint8_t*)"directory",
-#if 0
-	(const uint8_t*)"dns",
-#endif
 	(const uint8_t*)"double",
 	(const uint8_t*)"environment",
 	(const uint8_t*)"file",
-#if 0
-	(const uint8_t*)"fileversioninfo",
-#endif
 	(const uint8_t*)"hash",
 	(const uint8_t*)"int",
 	(const uint8_t*)"int64",
@@ -86,15 +83,9 @@ enum interpreter_enumeration_unit
 	cygpath_unit,
 	datetime_unit,
 	directory_unit,
-#if 0
-	dns_unit,
-#endif
 	double_unit,
 	environment_unit,
 	file_unit,
-#if 0
-	fileversioninfo_unit,
-#endif
 	hash_unit,
 	int_unit,
 	int64_unit,
@@ -484,11 +475,6 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			}
 		}
 		break;
-#if 0
-
-		case dns_:
-			break;
-#endif
 
 		case double_unit:
 			values_count = double_exec_function(
@@ -507,11 +493,6 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 							   file_get_function(name.start, name.finish),
 							   &values, values_count, return_of_function);
 			break;
-#if 0
-
-		case fileversioninfo_:
-			break;
-#endif
 
 		case hash_unit:
 			values_count = hash_algorithm_exec_function(
@@ -567,7 +548,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 					path.start = path.finish = (const uint8_t*)&path;
 				}
 
-				ptrdiff_t size = buffer_size(return_of_function);
+				const ptrdiff_t size = buffer_size(return_of_function);
 				const void* the_property = NULL;
 
 				if (!directory_get_current_directory(project, &the_property, return_of_function))
@@ -621,7 +602,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 		case project_unit:
 		{
 			const void* the_property = NULL;
-			ptrdiff_t size = buffer_size(return_of_function);
+			const ptrdiff_t size = buffer_size(return_of_function);
 
 			if (!project_exec_function(
 					project,
@@ -643,7 +624,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 		{
 			const void* the_property = NULL;
 			const uint8_t property_function_id = property_get_function(name.start, name.finish);
-			ptrdiff_t size = buffer_size(return_of_function);
+			const ptrdiff_t size = buffer_size(return_of_function);
 
 			if (!property_exec_function(project, property_function_id, &values, values_count, &the_property,
 										return_of_function, verbose))
@@ -1204,6 +1185,131 @@ uint8_t interpreter_get_environments(
 	return 1;
 }
 
+uint8_t choose_evaluate_task(
+	void* project, const void* target,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	struct buffer* task_arguments, uint8_t verbose)
+{
+	(void)verbose;
+	buffer_release_inner_buffers(task_arguments);
+
+	if (!buffer_resize(task_arguments, 0) ||
+		!buffer_append_buffer(task_arguments, NULL, 3))
+	{
+		return 0;
+	}
+
+	struct buffer* sub_nodes_names = buffer_buffer_data(task_arguments, 0);
+
+	SET_NULL_TO_BUFFER(*sub_nodes_names);
+
+	struct buffer* elements = buffer_buffer_data(task_arguments, 1);
+
+	SET_NULL_TO_BUFFER(*elements);
+
+	struct buffer* attribute_value = buffer_buffer_data(task_arguments, 2);
+
+	SET_NULL_TO_BUFFER(*attribute_value);
+
+	if (!range_from_string((const uint8_t*)"when\0otherwise\0", 15, 2, sub_nodes_names))
+	{
+		return 0;
+	}
+
+	const uint16_t count = xml_get_sub_nodes_elements(
+							   attributes_finish, element_finish, sub_nodes_names, elements);
+
+	if (!count)
+	{
+		return 1;
+	}
+
+	uint16_t otherwise_index = count + 1;
+
+	if (!buffer_append_buffer(attribute_value, NULL, 1))
+	{
+		return 0;
+	}
+
+	struct buffer* test_value_in_buffer = buffer_buffer_data(attribute_value, 0);
+
+	SET_NULL_TO_BUFFER(*buffer_buffer_data(attribute_value, 0));
+
+	struct range* tag_name = buffer_range_data(sub_nodes_names, 0);
+
+	for (uint16_t i = 0; i < count; ++i)
+	{
+		struct range current_tag_name;
+		struct range* element = buffer_range_data(elements, i);
+
+		if (!xml_get_tag_name(element->start, element->finish, &current_tag_name))
+		{
+			buffer_release_inner_buffers(attribute_value);
+			return 0;
+		}
+
+		if (!string_equal(tag_name->start, tag_name->finish, current_tag_name.start, current_tag_name.finish))
+		{
+			otherwise_index = count < otherwise_index ? i : otherwise_index;
+			continue;
+		}
+
+		if (!interpreter_get_arguments_from_xml_tag_record(project, target, current_tag_name.start, element->finish,
+				&test, &test_length, 0, 1, attribute_value, verbose))
+		{
+			buffer_release_inner_buffers(attribute_value);
+			return 0;
+		}
+
+		uint8_t test_value = 0;
+
+		if (!bool_parse(buffer_data(test_value_in_buffer, 0), buffer_size(test_value_in_buffer),
+						&test_value))
+		{
+			buffer_release_inner_buffers(attribute_value);
+			return 0;
+		}
+
+		if (!test_value)
+		{
+			continue;
+		}
+
+		buffer_release_inner_buffers(attribute_value);
+		current_tag_name.finish = element->finish;
+
+		if (!buffer_resize(elements, 0))
+		{
+			return 0;
+		}
+
+		return xml_get_sub_nodes_elements(current_tag_name.start, current_tag_name.finish, NULL, elements) ?
+			   interpreter_evaluate_tasks(project, target, elements, 0, verbose) : 1;
+	}
+
+	buffer_release_inner_buffers(attribute_value);
+
+	if (otherwise_index < count)
+	{
+		struct range* element = buffer_range_data(elements, otherwise_index);
+		struct range tag;
+		tag.start = element->start;
+		tag.finish = element->finish;
+
+		if (!buffer_resize(elements, 0))
+		{
+			return 0;
+		}
+
+		return xml_get_sub_nodes_elements(tag.start, tag.finish, NULL, elements) ?
+			   interpreter_evaluate_tasks(project, target, elements, 0, verbose) : 1;
+	}
+
+	return 1;
+}
+
+#define FAIL_MESSAGE_POSITION		0
+
 uint8_t fail_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments)
@@ -1218,13 +1324,83 @@ uint8_t fail_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
+uint8_t fail_evaluate_task(
+	const void* project, const void* target,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	struct buffer* message, uint8_t verbose)
+{
+	if (!buffer_size(message))
+	{
+		if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message, verbose))
+		{
+			return 0;
+		}
+	}
+
+	echo(0, UTF8, NULL, Error, buffer_data(message, 0), buffer_size(message), 1, verbose);
+	return 0;
+}
+
+#define IF_TEST_POSITION		0
+
+uint8_t if_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
+{
+	return common_get_attributes_and_arguments_for_task(
+			   &test, &test_length, 1,
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t if_evaluate_task(
+	void* project, const void* target, struct buffer* task_arguments,
+	const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
+{
+	if (NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	struct buffer* test_in_a_buffer = buffer_buffer_data(task_arguments, IF_TEST_POSITION);
+
+	if (!buffer_size(test_in_a_buffer))
+	{
+		return 1;
+	}
+
+	uint8_t test_value = 0;
+
+	if (!bool_parse(buffer_data(test_in_a_buffer, 0), buffer_size(test_in_a_buffer), &test_value))
+	{
+		return 0;
+	}
+
+	if (!test_value)
+	{
+		return 1;
+	}
+
+	if (!buffer_resize(test_in_a_buffer, 0))
+	{
+		return 0;
+	}
+
+	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, test_in_a_buffer))
+	{
+		return 1;
+	}
+
+	return interpreter_evaluate_tasks(project, target, test_in_a_buffer, 0, verbose);
+}
+
 static const uint8_t* interpreter_task_str[] =
 {
 	(const uint8_t*)"attrib",
 #if 0
 	(const uint8_t*)"call",
-	(const uint8_t*)"choose",
 #endif
+	(const uint8_t*)"choose",
 	(const uint8_t*)"copy",
 	(const uint8_t*)"delete",
 	(const uint8_t*)"description",
@@ -1233,8 +1409,9 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"fail",
 #if 0
 	(const uint8_t*)"foreach",
-	(const uint8_t*)"gunzip",
+#endif
 	(const uint8_t*)"if",
+#if 0
 	(const uint8_t*)"include",
 #endif
 	(const uint8_t*)"loadfile",
@@ -1243,6 +1420,9 @@ static const uint8_t* interpreter_task_str[] =
 #endif
 	(const uint8_t*)"mkdir",
 	(const uint8_t*)"move",
+#if 0
+	(const uint8_t*)"program",
+#endif
 	(const uint8_t*)"project",
 	(const uint8_t*)"property",
 #if 0
@@ -1259,8 +1439,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"tstamp",
 	(const uint8_t*)"uptodate",
 	(const uint8_t*)"xmlpeek",
-	(const uint8_t*)"xmlpoke",
-	(const uint8_t*)"zip"
+	(const uint8_t*)"xmlpoke"
 #endif
 };
 
@@ -1269,8 +1448,8 @@ enum interpreter_task
 	attrib_task,
 #if 0
 	call_task,
-	choose_task,
 #endif
+	choose_task,
 	copy_task,
 	delete_task,
 	description_task,
@@ -1279,7 +1458,9 @@ enum interpreter_task
 	fail_task,
 #if 0
 	foreach_task,
+#endif
 	if_task,
+#if 0
 	include_task,
 #endif
 	loadfile_task,
@@ -1288,6 +1469,9 @@ enum interpreter_task
 #endif
 	mkdir_task,
 	move_task,
+#if 0
+	program_task,
+#endif
 	project_task,
 	property_task,
 #if 0
@@ -1305,7 +1489,6 @@ enum interpreter_task
 	uptodate_task,
 	xmlpeek_task,
 	xmlpoke_task,
-	zip_task,
 #endif
 	UNKNOWN_TASK
 };
@@ -1385,10 +1568,12 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 		case call_:
 			break;
-
-		case choose_:
-			break;
 #endif
+
+		case choose_task:
+			task_attributes_count = choose_evaluate_task(project, target, attributes_finish, element_finish,
+									&task_arguments, verbose);
+			break;
 
 		case copy_task:
 			if (!copy_move_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -1512,7 +1697,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 
 		case fail_task:
-		{
 			if (!fail_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
 					&task_attributes_count, &task_arguments))
 			{
@@ -1528,35 +1712,35 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				break;
 			}
 
-			struct buffer* message = buffer_buffer_data(&task_arguments, task_attributes_count - 1);
-
-			if (!buffer_size(message))
-			{
-				if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message, verbose))
-				{
-					task_attributes_count = 0;
-					break;
-				}
-			}
-
-			task_attributes_count = echo(
-										0, UTF8, NULL, Error, buffer_data(message, 0), buffer_size(message), 1, verbose);
-
-			if (!task_attributes_count)
-			{
-				break;
-			}
-
-			task_attributes_count = 0;
-		}
-		break;
+			task_attributes_count = fail_evaluate_task(project, target, attributes_finish, element_finish,
+									buffer_buffer_data(&task_arguments, FAIL_MESSAGE_POSITION), verbose);
+			break;
 #if 0
 
 		case foreach_:
 			break;
+#endif
 
-		case if_:
+		case if_task:
+			if (!if_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					project, target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = if_evaluate_task(
+										project, target, &task_arguments, attributes_finish, element_finish, verbose);
 			break;
+#if 0
 
 		case include_:
 			break;
@@ -1787,29 +1971,12 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				}
 				else
 				{
-					if (!buffer_resize(task_name, 0) ||
-						!buffer_append_range(task_name, NULL, 1) ||
-						!buffer_append_char(task_name, "description", 11) ||
+					if (!range_from_string((const uint8_t*)"description\0", 12, 1, task_name) ||
 						!buffer_resize(task_description, 0))
 					{
 						task_attributes_count = 0;
 						break;
 					}
-
-					struct range* sub_nodes_name_in_range = buffer_range_data(task_name, 0);
-
-					const uint8_t* ptr = (const uint8_t*)buffer_range_data(task_name, 1);
-
-					if (NULL == sub_nodes_name_in_range ||
-						NULL == ptr ||
-						!buffer_resize(task_name, sizeof(struct range)))
-					{
-						task_attributes_count = 0;
-						break;
-					}
-
-					sub_nodes_name_in_range->start = ptr;
-					sub_nodes_name_in_range->finish = ptr + 11;
 
 					if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, task_name, task_description))
 					{

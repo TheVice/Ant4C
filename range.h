@@ -23,6 +23,9 @@ ptrdiff_t range_size(const struct range* range);
 uint8_t range_is_null_or_empty(const struct range* range);
 uint8_t range_in_parts_is_null_or_empty(const uint8_t* range_start, const uint8_t* range_finish);
 
+uint8_t range_from_string(const uint8_t* input, ptrdiff_t size, ptrdiff_t count_of_sub_strings,
+						  struct buffer* output);
+
 uint8_t buffer_append_data_from_range(struct buffer* storage, const struct range* data);
 
 uint8_t buffer_append_range(struct buffer* ranges, const struct range* data, ptrdiff_t data_count);

@@ -270,46 +270,6 @@ uint8_t project_new(void** project)
 	return 1;
 }
 
-uint8_t project_load_names_of_sub_nodes_for_project_help(struct buffer* sub_nodes_names)
-{
-	if (NULL == sub_nodes_names)
-	{
-		return 0;
-	}
-
-	if (!buffer_resize(sub_nodes_names, 0) ||
-		!buffer_append_range(sub_nodes_names, NULL, 3) ||
-		!buffer_append_char(sub_nodes_names, "project\0target\0description\0", 27))
-	{
-		return 0;
-	}
-
-	const uint8_t* ptr = (const uint8_t*)buffer_range_data(sub_nodes_names, 3);
-
-	if (NULL == ptr ||
-		!buffer_resize(sub_nodes_names, 3 * sizeof(struct range)))
-	{
-		return 0;
-	}
-
-	for (uint8_t i = 0; i < 3; ++i)
-	{
-		struct range* element = buffer_range_data(sub_nodes_names, i);
-
-		if (NULL == element)
-		{
-			buffer_release(sub_nodes_names);
-			return 0;
-		}
-
-		element->start = ptr;
-		element->finish = element->start + common_count_bytes_until(element->start, 0);
-		ptr = element->finish + 1;
-	}
-
-	return 1;
-}
-
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
 								  void* project, uint8_t project_help, uint8_t verbose)
 {
@@ -324,7 +284,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	SET_NULL_TO_BUFFER(sub_nodes_names);
 
 	if (project_help &&
-		!project_load_names_of_sub_nodes_for_project_help(&sub_nodes_names))
+		!range_from_string((const uint8_t*)"project\0target\0description\0", 27, 3, &sub_nodes_names))
 	{
 		buffer_release(&sub_nodes_names);
 		return 0;

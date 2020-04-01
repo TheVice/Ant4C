@@ -3252,7 +3252,7 @@
       <code>exists('uptodate') -> ${task::exists('uptodate')} </code>
       <output>exists('attrib') -> True </output>
       <output>exists('call') -> False </output>
-      <output>exists('choose') -> False </output>
+      <output>exists('choose') -> True </output>
       <output>exists('copy') -> True </output>
       <output>exists('delete') -> True </output>
       <output>exists('description') -> True </output>
@@ -3260,7 +3260,7 @@
       <output>exists('exec') -> True </output>
       <output>exists('fail') -> True </output>
       <output>exists('foreach') -> False </output>
-      <output>exists('if') -> False </output>
+      <output>exists('if') -> True </output>
       <output>exists('include') -> False </output>
       <output>exists('loadfile') -> True </output>
       <output>exists('loadtasks') -> False </output>
@@ -4120,7 +4120,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_content>
       <content><![CDATA[
       <project name="fail sample 1">
-        <fail message="Failed to continue interpreting script." />
+        <fail message="${project::get-name()} - failed to continue interpreting script." />
       </project>
       ]]></content>
       <return>0</return>
@@ -4129,7 +4129,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_content>
       <content><![CDATA[
       <project name="fail sample 2">
-        <fail>Failed to continue interpreting script.</fail>
+        <fail>${project::get-name()} - failed to continue interpreting script.</fail>
       </project>
       ]]></content>
       <return>0</return>
@@ -4244,6 +4244,97 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>File functions</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="If task sample">
+        <property name="i" value="0" />
+        <if test="true">
+          <property name="i" value="${math::addition('1', property::get-value('i'))}" />
+          <if test="false" />
+          <if test="true" />
+          <if test="false"/>
+          <if test="true"/>
+          <if test="true">
+            <property name="i" value="${math::addition('2', property::get-value('i'))}" />
+          </if>
+        </if>
+        <fail unless="${string::equal('3', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 3." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>If task sample</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Choose task sample">
+        <property name="i" value="0" />
+
+        <choose>
+          <when test="true">
+            <property name="i" value="${math::addition('1', property::get-value('i'))}" />
+          </when>
+          <when test="true">
+            <property name="i" value="${math::addition('2', property::get-value('i'))}" />
+          </when>
+          <otherwise>
+            <property name="i" value="${math::addition('3', property::get-value('i'))}" />
+          </otherwise>
+        </choose>
+        <fail unless="${string::equal('1', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 1." />
+
+        <choose>
+          <when test="false">
+            <property name="i" value="${math::addition('4', property::get-value('i'))}" />
+          </when>
+          <when test="false">
+            <property name="i" value="${math::addition('5', property::get-value('i'))}" />
+          </when>
+          <otherwise>
+            <property name="i" value="${math::addition('6', property::get-value('i'))}" />
+          </otherwise>
+        </choose>
+        <fail unless="${string::equal('7', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 7." />
+
+        <choose>
+          <when test="false">
+            <property name="i" value="${math::addition('7', property::get-value('i'))}" />
+          </when>
+          <when test="true">
+            <property name="i" value="${math::addition('8', property::get-value('i'))}" />
+          </when>
+          <otherwise>
+            <property name="i" value="${math::addition('9', property::get-value('i'))}" />
+          </otherwise>
+        </choose>
+        <fail unless="${string::equal('15', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 15." />
+
+        <choose>
+          <when test="false">
+            <property name="i" value="${math::addition('10', property::get-value('i'))}" />
+          </when>
+          <when test="false">
+            <property name="i" value="${math::addition('11', property::get-value('i'))}" />
+          </when>
+        </choose>
+        <fail unless="${string::equal('15', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 15." />
+
+        <choose>
+          <otherwise>
+            <property name="i" value="${math::addition('12', property::get-value('i'))}" />
+          </otherwise>
+          <otherwise>
+            <property name="i" value="${math::addition('13', property::get-value('i'))}" />
+          </otherwise>
+        </choose>
+        <fail unless="${string::equal('27', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 27." />
+
+        <choose></choose>
+        <choose />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Choose task sample</name>
     </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[
@@ -5340,6 +5431,11 @@ Approximate round trip times in milli-seconds:
       <output><![CDATA[property></property]]></output>
       <output><![CDATA[property /]]></output>
       <output><![CDATA[target></target]]></output>
+    </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<!-- A --><tag><tag /><tag comment="Hello! Look -> here."></tag><tag /></tag>]]></input>
+      <return>1</return>
+      <output><![CDATA[tag><tag /><tag comment="Hello! Look -> here."></tag><tag /></tag]]></output>
     </xml_get_sub_nodes_elements>
     <xml_get_tag_name>
       <input></input>
