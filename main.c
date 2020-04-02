@@ -63,7 +63,7 @@
 	"The MIT License (MIT)\n"						\
 	"Copyright (c) 2019 - 2020 https://github.com/TheVice/"
 #define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
-#define SAMPLE_USING (const uint8_t*)"Sample using - [options]          ..." /*<target>*/
+#define SAMPLE_USING (const uint8_t*)"Sample using - [options] <target> ..."
 #define SAMPLE_USING_LENGTH 37
 #define OPTIONS (const uint8_t*)"Options:\n"																					\
 	"\t-buildfile: - set path to project file. Short form /f:.\n"																\
@@ -158,6 +158,14 @@ int main(int argc, char** argv)
 			return EXIT_FAILURE;
 		}
 
+		if (!buffer_append(build_files, NULL, INT8_MAX * sizeof(struct range)))
+		{
+			buffer_release(&current_directory);
+			argument_parser_release();
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+
 		if (!directory_enumerate_file_system_entries(&current_directory, 1, 0, build_files))
 		{
 			if (!buffer_resize(build_files, 0))
@@ -170,7 +178,7 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			if (!argument_parser_create_ranges_for_the_build_files(buffer_size(build_files)))
+			if (!argument_parser_fill_ranges_at_storage(build_files, INT8_MAX * sizeof(struct range)))
 			{
 				if (!echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create ranges for the build files paths.", 50,
 						  1, 0))

@@ -220,28 +220,8 @@ uint8_t project_free(void* project)
 
 std::string property_to_string(const void* the_property, buffer* value)
 {
-	if (NULL == the_property || !buffer_resize(value, 0))
-	{
-		return buffer_to_string(NULL);
-	}
-
-	const auto returned = property_get_by_pointer(the_property, value);
-
-	if (!returned)
-	{
-		return buffer_to_string(NULL);
-	}
-
-	return buffer_to_string(value);
-}
-
-std::string property_to_string(const void* the_property)
-{
-	buffer value;
-	SET_NULL_TO_BUFFER(value);
-	const auto returned(property_to_string(the_property, &value));
-	buffer_release(&value);
-	return returned;
+	return buffer_resize(value, 0) && property_get_by_pointer(the_property, value) ?
+		   buffer_to_string(value) : std::string();
 }
 
 void property_load_from_node(const pugi::xml_node& property,

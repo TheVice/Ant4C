@@ -48,7 +48,7 @@ std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::
 uint8_t project_free(void* project);
 
 std::string property_to_string(const void* the_property, buffer* value);
-std::string property_to_string(const void* the_property);
+
 void property_load_from_node(const pugi::xml_node& property,
 							 std::string& name, std::string& value,
 							 uint8_t& dynamic, uint8_t& over_write,

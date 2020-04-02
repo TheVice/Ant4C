@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -112,11 +112,31 @@ uint8_t argument_parser_free()
 		const range* returned_build_file =  argument_parser_get_build_file(i++);				\
 		ASSERT_EQ(std::string(build_file.node().child_value()),									\
 				  range_to_string(returned_build_file)) <<										\
-						  (INPUT) << std::endl <<												\
+						  (INPUT) << std::endl << i - 1 << std::endl <<							\
 						  buffer_free(&property_value) <<										\
 						  buffer_free(&command_arguments) <<									\
 						  argument_parser_free();												\
 	}																							\
+	/**/																						\
+	i = 0;																						\
+	\
+	ASSERT_EQ(targets.empty(), NULL == argument_parser_get_target(i)) <<						\
+			(INPUT) << std::endl <<																\
+			buffer_free(&property_value) <<														\
+			buffer_free(&command_arguments) <<													\
+			argument_parser_free();																\
+	\
+	for (const auto& target : targets)															\
+	{																							\
+		const range* returned_target = argument_parser_get_target(i++);							\
+		ASSERT_EQ(std::string(target.node().child_value()),										\
+				  range_to_string(returned_target)) <<											\
+						  (INPUT) << std::endl << i - 1 << std::endl <<							\
+						  buffer_free(&property_value) <<										\
+						  buffer_free(&command_arguments) <<									\
+						  argument_parser_free();												\
+	}																							\
+	\
 	/**/																						\
 	ASSERT_EQ(expected_pause, argument_parser_get_pause())  <<									\
 			(INPUT) << std::endl <<																\
@@ -249,19 +269,21 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 	for (const auto& node : nodes)
 	{
 		const auto input(get_data_from_nodes(node, "input"));
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		//
 		const auto build_files = node.node().select_nodes("build_file");
-		const uint8_t expected_pause = (uint8_t)INT_PARSE(node.node().select_node("pause").node().child_value());
-		const uint8_t expected_verbose = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
-		const uint8_t expected_debug = (uint8_t)INT_PARSE(node.node().select_node("debug").node().child_value());
-		const uint8_t expected_quiet = (uint8_t)INT_PARSE(node.node().select_node("quiet").node().child_value());
-		const uint8_t expected_indent = (uint8_t)INT_PARSE(node.node().select_node("indent").node().child_value());
+		const auto expected_debug = (uint8_t)INT_PARSE(node.node().select_node("debug").node().child_value());
+		const auto expected_help = (uint8_t)INT_PARSE(node.node().select_node("help").node().child_value());
+		const auto expected_indent = (uint8_t)INT_PARSE(node.node().select_node("indent").node().child_value());
+		const auto expected_no_logo = (uint8_t)INT_PARSE(node.node().select_node("no_logo").node().child_value());
+		const auto expected_pause = (uint8_t)INT_PARSE(node.node().select_node("pause").node().child_value());
+		const auto expected_project_help =
+			(uint8_t)INT_PARSE(node.node().select_node("project_help").node().child_value());
+		const auto expected_quiet = (uint8_t)INT_PARSE(node.node().select_node("quiet").node().child_value());
+		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_verbose = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
 		const auto properties = node.node().select_nodes("properties/property");
+		const auto targets = node.node().select_nodes("target");
 		const std::string expected_log_file(node.node().select_node("log_file").node().child_value());
-		const uint8_t expected_project_help = (uint8_t)INT_PARSE(
-				node.node().select_node("project_help").node().child_value());
-		const uint8_t expected_no_logo = (uint8_t)INT_PARSE(node.node().select_node("no_logo").node().child_value());
-		const uint8_t expected_help = (uint8_t)INT_PARSE(node.node().select_node("help").node().child_value());
 #if defined(_WIN32)
 		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
 				buffer_free(&property_value) <<
@@ -496,17 +518,19 @@ TEST_F(TestArgumentParser, argument_parser_get_log_file)
 		GET_CHAR_ARGV(argument, input);
 		//
 		uint8_t returned = argument_parser_char(0, 1, argv);
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&argument);
-		ASSERT_STREQ(expected_output, range_to_string(argument_parser_get_log_file()).c_str()) << input << std::endl
-				<< buffer_free(&argument);
+		ASSERT_EQ(expected_return, returned)
+				<< input << std::endl << argument_parser_free() << buffer_free(&argument);
+		ASSERT_STREQ(expected_output, range_to_string(argument_parser_get_log_file()).c_str())
+				<< input << std::endl << argument_parser_free() << buffer_free(&argument);
 #if defined(_WIN32)
 		argument_parser_release();
 		GET_WCHAR_T_ARGVW(argument, input);
 		//
 		returned = argument_parser_wchar_t(0, 1, argvW);
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&argument);
-		ASSERT_STREQ(expected_output, range_to_string(argument_parser_get_log_file()).c_str()) << input << std::endl
-				<< buffer_free(&argument);
+		ASSERT_EQ(expected_return, returned)
+				<< input << std::endl << argument_parser_free() << buffer_free(&argument);
+		ASSERT_STREQ(expected_output, range_to_string(argument_parser_get_log_file()).c_str())
+				<< input << std::endl << argument_parser_free() << buffer_free(&argument);
 #endif
 		--node_count;
 	}

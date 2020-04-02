@@ -144,6 +144,14 @@
       <return>1</return>
       <help>1</help>
     </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input> foo -logfile:C:\1.txt -buildfile:1.build bar</input>
+      <target>foo</target>
+      <log_file>C:\1.txt</log_file>
+      <build_file>1.build</build_file>
+      <target>bar</target>
+      <return>1</return>
+    </argument_parser_at_all>
     <argument_append_arguments>
       <argument></argument>
       <output></output>
@@ -4081,6 +4089,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <project name="project-properties" default="some_target">
         <echo message="Default target - ${project::get-default-target()}." level="None" />
         <echo message="Project name - ${project::get-name()}." level="None" />
+        <target name="some_target" />
       </project>
       ]]></content>
       <return>1</return>
@@ -4216,12 +4225,18 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
           <description>Publish the output of project</description>
           <foo_tag />
         </target>
+        <target name="foo" />
+        <foo_tag />
       </project>
       ]]></content>
       <project_help>1</project_help>
       <return>1</return>
       <name>Hello descriptions!</name>
       <default>foo</default>
+      <target>foo</target>
+      <target>clean</target>
+      <target>build</target>
+      <target>publish</target>
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -4344,7 +4359,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
         <echo message="Build file uri - '${project::get-buildfile-uri()}'." level="Info" />
         <echo message="Default target - '${project::get-default-target()}'." level="Info" />
         <echo message="Project name - '${project::get-name()}'." level="Info" />
-        <!--echo message="Program version - '${program::version()}'." level="Info" /-->
+        <echo message="Program version - '${program::version()}'." level="Info" failonerror="false" />
         <echo message="Current directory - '${program::current-directory()}'." level="Info" />
         <target name="some_target">
           <echo message="Hello from target '${target::get-current-target()}'." level="Info" />

@@ -18,7 +18,7 @@ struct buffer;
 struct range;
 
 struct buffer* argument_parser_get_build_files();
-uint8_t argument_parser_create_ranges_for_the_build_files(ptrdiff_t size);
+uint8_t argument_parser_fill_ranges_at_storage(struct buffer* storage, ptrdiff_t max_size);
 
 uint8_t argument_parser_char(int i, int argc, char** argv);
 #if defined(_WIN32)
@@ -38,8 +38,8 @@ uint8_t argument_create_arguments_wchar_t(struct buffer* output, int* argc, wcha
 uint8_t argument_from_wchar_t(const wchar_t* input_start, const wchar_t* input_finish,
 							  struct buffer* output, int* argc, wchar_t*** argv);
 #endif
+
 uint8_t argument_parser_get_debug();
-uint16_t argument_parser_get_encoding();
 uint8_t argument_parser_get_help();
 uint8_t argument_parser_get_indent();
 uint8_t argument_parser_get_no_logo();
@@ -47,9 +47,11 @@ uint8_t argument_parser_get_pause();
 uint8_t argument_parser_get_project_help();
 uint8_t argument_parser_get_quiet();
 uint8_t argument_parser_get_verbose();
+uint16_t argument_parser_get_encoding();
 
 const struct buffer* argument_parser_get_properties();
 const struct range* argument_parser_get_build_file(int index);
 const struct range* argument_parser_get_log_file();
+const struct range* argument_parser_get_target(int index);
 
 #endif
