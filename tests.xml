@@ -3259,7 +3259,7 @@
       <code>exists('tstamp') -> ${task::exists('tstamp')} </code>
       <code>exists('uptodate') -> ${task::exists('uptodate')} </code>
       <output>exists('attrib') -> True </output>
-      <output>exists('call') -> False </output>
+      <output>exists('call') -> True </output>
       <output>exists('choose') -> True </output>
       <output>exists('copy') -> True </output>
       <output>exists('delete') -> True </output>
@@ -3988,13 +3988,13 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
-      <project name="property_test-110-issuecomment-68567200">
+      <project name="property_test">
         <echo message="Message one - '${property.one}'." if="${property::exists('property.one')}"/>
         <echo message="Second message. Only this message will be displayed if no property set." level="None"/>
       </project>
       ]]></content>
       <return>1</return>
-      <name>property_test-110-issuecomment-68567200</name>
+      <name>property_test</name>
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -4350,6 +4350,112 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>Choose task sample</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Property in the expression.">
+        <property name="a" value="test" />
+        <property name="b" value="${a}" />
+        <fail unless="${string::equal('test', b)}" message="${project::get-name()} - property value of b (${b}) is not equal to the 'test'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Property in the expression.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 1">
+        <target name="A">
+        </target>
+        <target name="A" />
+      </project>
+      ]]></content>
+      <return>0</return>
+      <name>Target task sample 1</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 2">
+        <target name="A">
+        </target>
+        <target name="B" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 2</name>
+      <target>A</target>
+      <target>B</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 3">
+        <target name="A" />
+        <target name="B" depends="A" />
+        <target name="C" depends="B" />
+        <target name="D" depends="C,B,A" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 3</name>
+      <target>A</target>
+      <target>B</target>
+      <target>C</target>
+      <target>D</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 4" default="D">
+        <property name="i" value="0" />
+        <property name="stack" value="" />
+        <target name="A">
+          <property name="i" value="${math::addition('1', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="B" depends="A">
+          <property name="i" value="${math::addition('20', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="C" depends="B">
+          <property name="i" value="${math::addition('300', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="D" depends="C,B,A">
+          <property name="i" value="${math::addition('4000', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+          <fail unless="${string::equal('4321', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 4321." />
+          <fail unless="${string::equal('ABCD', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ABCD." />
+        </target>
+        <fail unless="${string::equal('0', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 0." />
+        <fail unless="${string::equal('', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ''." />
+        <fail unless="${string::empty(stack)}" message="${project::get-name()} - property value of stack (${stack}) is not empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 4</name>
+      <default>D</default>
+      <target>A</target>
+      <target>B</target>
+      <target>C</target>
+      <target>D</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Call task sample" default="B">
+        <target name="A">
+          <property name="i" value="${math::addition('1', property::get-value('i'))}" />
+        </target>
+        <target name="B">
+          <call target="A" />
+          <property name="i" value="${math::addition('2', property::get-value('i'))}" />
+          <fail unless="${string::equal('3', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 3." />
+        </target>
+        <property name="i" value="0" />
+        <fail unless="${string::equal('0', math::truncate(property::get-value('i')))}" message="${project::get-name()} - property value of i (${property::get-value('i')}) is not equal to the 0." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Call task sample</name>
+      <default>B</default>
     </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[

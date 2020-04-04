@@ -218,17 +218,17 @@ int main(int argc, char** argv)
 			break;
 		}
 
-		void* project = NULL;
+		void* the_project = NULL;
 
-		if (!project_new(&project))
+		if (!project_new(&the_project))
 		{
 			argc = 0;
 			break;
 		}
 
-		if (!property_add_at_project(project, argument_parser_get_properties(), argument_parser_get_verbose()))
+		if (!property_add_at_project(the_project, argument_parser_get_properties(), argument_parser_get_verbose()))
 		{
-			project_unload(project);
+			project_unload(the_project);
 			argc = 0;
 			break;
 		}
@@ -236,17 +236,17 @@ int main(int argc, char** argv)
 		const uint8_t is_loaded = project_load_from_build_file(
 									  build_file, &current_directory_in_range,
 									  argument_parser_get_encoding(),
-									  project, argument_parser_get_project_help(),
+									  the_project, argument_parser_get_project_help(),
 									  argument_parser_get_verbose());
 
 		if (!is_loaded)
 		{
-			project_unload(project);
+			project_unload(the_project);
 			argc = 0;
 			break;
 		}
 
-		project_unload(project);
+		project_unload(the_project);
 	}
 
 	buffer_release(&current_directory);

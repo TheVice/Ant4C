@@ -35,9 +35,6 @@ static const uint8_t function_call_finish = '}';
 
 static const uint8_t arguments_delimiter = ',';
 
-static const uint8_t lt = '<';
-static const uint8_t gt = '>';
-
 static const uint8_t space_and_tab[] = { ' ', '\t' };
 #define SPACE_AND_TAB_LENGTH COUNT_OF(space_and_tab)
 
@@ -205,7 +202,7 @@ uint8_t interpreter_get_function_from_argument(
 }
 
 uint8_t interpreter_evaluate_argument_area(
-	const void* project, const void* target,
+	const void* the_project, const void* the_target,
 	const struct range* argument_area, struct buffer* output, uint8_t verbose)
 {
 	ptrdiff_t index = 0;
@@ -223,7 +220,7 @@ uint8_t interpreter_evaluate_argument_area(
 		if (!string_trim(&function) ||
 			!interpreter_get_function_from_argument(&function) ||
 			!buffer_append(output, pos, function.start - pos) ||
-			!interpreter_evaluate_function(project, target, &function, output, verbose))
+			!interpreter_evaluate_function(the_project, the_target, &function, output, verbose))
 		{
 			return 0;
 		}
@@ -234,9 +231,10 @@ uint8_t interpreter_evaluate_argument_area(
 	return (pos != argument_area->start) ? buffer_append(output, pos, argument_area->finish - pos) : 1;
 }
 
-uint8_t interpreter_actualize_property_value(const void* project, const void* target,
-		uint8_t property_function_id, const void* the_property,
-		ptrdiff_t size, struct buffer* return_of_function, uint8_t verbose)
+uint8_t interpreter_actualize_property_value(
+	const void* the_project, const void* the_target,
+	uint8_t property_function_id, const void* the_property,
+	ptrdiff_t size, struct buffer* return_of_function, uint8_t verbose)
 {
 	if (property_get_id_of_get_value_function() != property_function_id)
 	{
@@ -273,7 +271,7 @@ uint8_t interpreter_actualize_property_value(const void* project, const void* ta
 
 	code.finish = code.start + buffer_size(&code_in_buffer);
 
-	if (!interpreter_evaluate_code(project, target, &code, return_of_function, verbose))
+	if (!interpreter_evaluate_code(the_project, the_target, &code, return_of_function, verbose))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -284,7 +282,7 @@ uint8_t interpreter_actualize_property_value(const void* project, const void* ta
 }
 
 uint8_t interpreter_get_value_for_argument(
-	const void* project, const void* target,
+	const void* the_project, const void* the_target,
 	struct range* argument_area, struct buffer* values, uint8_t verbose)
 {
 	struct buffer value;
@@ -303,7 +301,7 @@ uint8_t interpreter_get_value_for_argument(
 		return 0;
 	}
 
-	if (!interpreter_evaluate_argument_area(project, target, argument_area, &value, verbose))
+	if (!interpreter_evaluate_argument_area(the_project, the_target, argument_area, &value, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -311,19 +309,20 @@ uint8_t interpreter_get_value_for_argument(
 
 	if (!buffer_size(&value))
 	{
-		if (project_property_get_by_name(project, argument_area->start, (uint8_t)range_size(argument_area), &value,
-										 verbose))
-		{
-			void* the_property = NULL;
+		void* the_property = NULL;
 
-			if (!project_property_exists(project, argument_area->start, (uint8_t)range_size(argument_area),
-										 &the_property, verbose))
+		if (project_property_exists(the_project, argument_area->start, (uint8_t)range_size(argument_area),
+									&the_property, verbose))
+		{
+			if (!property_get_by_pointer(the_property, &value))
 			{
 				buffer_release(&value);
 				return 0;
 			}
 
-			if (!interpreter_actualize_property_value(project, target, 1, the_property, 0, &value, verbose))
+			if (!interpreter_actualize_property_value(
+					the_project, the_target, property_get_id_of_get_value_function(),
+					the_property, 0, &value, verbose))
 			{
 				buffer_release(&value);
 				return 0;
@@ -346,7 +345,7 @@ uint8_t interpreter_get_value_for_argument(
 }
 
 uint8_t interpreter_get_values_for_arguments(
-	const void* project, const void* target,
+	const void* the_project, const void* the_target,
 	const struct range* arguments_area, struct buffer* values, uint8_t verbose)
 {
 	if (range_is_null_or_empty(arguments_area) || NULL == values)
@@ -368,7 +367,7 @@ uint8_t interpreter_get_values_for_arguments(
 		{
 			const uint8_t* pos = argument_area.finish + 1;/*TODO: MIN(pos, arguments_area->finish)*/
 
-			if (!interpreter_get_value_for_argument(project, target, &argument_area, values, verbose))
+			if (!interpreter_get_value_for_argument(the_project, the_target, &argument_area, values, verbose))
 			{
 				return 0;
 			}
@@ -401,7 +400,7 @@ uint8_t interpreter_get_values_for_arguments(
 		++argument_area.finish;
 	}
 
-	if (!interpreter_get_value_for_argument(project, target, &argument_area, values, verbose))
+	if (!interpreter_get_value_for_argument(the_project, the_target, &argument_area, values, verbose))
 	{
 		return 0;
 	}
@@ -410,7 +409,8 @@ uint8_t interpreter_get_values_for_arguments(
 	return count;
 }
 
-uint8_t interpreter_evaluate_function(const void* project, const void* target, const struct range* function,
+uint8_t interpreter_evaluate_function(const void* the_project, const void* the_target,
+									  const struct range* function,
 									  struct buffer* return_of_function, uint8_t verbose)
 {
 	struct buffer values;
@@ -426,7 +426,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 	}
 
 	uint8_t values_count = interpreter_get_values_for_arguments(
-							   project, target, &arguments_area, &values, verbose);
+							   the_project, the_target, &arguments_area, &values, verbose);
 
 	switch (interpreter_get_unit(name_space.start, name_space.finish))
 	{
@@ -458,15 +458,14 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				const ptrdiff_t size = buffer_size(return_of_function);
 				const void* the_property = NULL;
 
-				if (!directory_get_current_directory(project, &the_property, return_of_function))
+				if (!directory_get_current_directory(the_project, &the_property, return_of_function))
 				{
 					values_count = 0;
 					break;
 				}
 
 				values_count = interpreter_actualize_property_value(
-								   project, target,
-								   property_get_id_of_get_value_function(),
+								   the_project, the_target, property_get_id_of_get_value_function(),
 								   &the_property, size, return_of_function, verbose);
 			}
 			else
@@ -551,15 +550,15 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 				const ptrdiff_t size = buffer_size(return_of_function);
 				const void* the_property = NULL;
 
-				if (!directory_get_current_directory(project, &the_property, return_of_function))
+				if (!directory_get_current_directory(the_project, &the_property, return_of_function))
 				{
 					values_count = 0;
 					break;
 				}
 
-				if (!interpreter_actualize_property_value(project, target, property_get_id_of_get_value_function(),
-						&the_property, size,
-						return_of_function, verbose))
+				if (!interpreter_actualize_property_value(
+						the_project, the_target, property_get_id_of_get_value_function(),
+						&the_property, size, return_of_function, verbose))
 				{
 					values_count = 0;
 					break;
@@ -584,7 +583,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			}
 			else
 			{
-				values_count = path_exec_function(project, path_function_id, &values, values_count, return_of_function);
+				values_count = path_exec_function(the_project, path_function_id, &values, values_count, return_of_function);
 			}
 		}
 		break;
@@ -605,7 +604,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			const ptrdiff_t size = buffer_size(return_of_function);
 
 			if (!project_exec_function(
-					project,
+					the_project,
 					project_get_function(name.start, name.finish),
 					&values, values_count, &the_property, return_of_function))
 			{
@@ -614,8 +613,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			}
 
 			values_count = interpreter_actualize_property_value(
-							   project, target,
-							   property_get_id_of_get_value_function(),
+							   the_project, the_target, property_get_id_of_get_value_function(),
 							   the_property, size, return_of_function, verbose);
 		}
 		break;
@@ -626,7 +624,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			const uint8_t property_function_id = property_get_function(name.start, name.finish);
 			const ptrdiff_t size = buffer_size(return_of_function);
 
-			if (!property_exec_function(project, property_function_id, &values, values_count, &the_property,
+			if (!property_exec_function(the_project, property_function_id, &values, values_count, &the_property,
 										return_of_function, verbose))
 			{
 				values_count = 0;
@@ -634,8 +632,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 			}
 
 			values_count = interpreter_actualize_property_value(
-							   project, target,
-							   property_function_id,
+							   the_project, the_target, property_function_id,
 							   the_property, size, return_of_function, verbose);
 		}
 		break;
@@ -648,7 +645,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 
 		case target_unit:
 			values_count = target_exec_function(
-							   project, target,
+							   the_project, the_target,
 							   target_get_function(name.start, name.finish),
 							   &values, values_count, return_of_function);
 			break;
@@ -681,7 +678,7 @@ uint8_t interpreter_evaluate_function(const void* project, const void* target, c
 	return values_count;
 }
 
-uint8_t interpreter_evaluate_code(const void* project, const void* target,
+uint8_t interpreter_evaluate_code(const void* the_project, const void* the_target,
 								  const struct range* code, struct buffer* output, uint8_t verbose)
 {
 	if (range_is_null_or_empty(code) || NULL == output)
@@ -727,11 +724,32 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 		}
 
 		function.start += 2;
+		void* the_property = NULL;
 
-		if (!interpreter_evaluate_function(project, target, &function, &return_of_function, verbose))
+		if (project_property_exists(the_project, function.start, (uint8_t)range_size(&function), &the_property,
+									verbose))
 		{
-			buffer_release(&return_of_function);
-			return 0;
+			if (!property_get_by_pointer(the_property, &return_of_function))
+			{
+				buffer_release(&return_of_function);
+				return 0;
+			}
+
+			if (!interpreter_actualize_property_value(
+					the_project, the_target, property_get_id_of_get_value_function(),
+					the_property, 0, &return_of_function, verbose))
+			{
+				buffer_release(&return_of_function);
+				return 0;
+			}
+		}
+		else
+		{
+			if (!interpreter_evaluate_function(the_project, the_target, &function, &return_of_function, verbose))
+			{
+				buffer_release(&return_of_function);
+				return 0;
+			}
 		}
 
 		if (!buffer_append(output, return_of_function.data, buffer_size(&return_of_function)))
@@ -748,12 +766,16 @@ uint8_t interpreter_evaluate_code(const void* project, const void* target,
 	return buffer_append(output, previous_pos, code_length - (previous_pos - code->start));
 }
 
+#define IF_POSITION		0
+#define UNLESS_POSITION	1
+
 uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-	const void* project,
-	const void* target,
+	const void* the_project,
+	const void* the_target,
 	const uint8_t* start_of_attributes,
 	const uint8_t* finish_of_attributes,
 	uint8_t* skip,
+	struct buffer* attributes,
 	uint8_t verbose)
 {
 	static const uint8_t* if_and_unless[] =
@@ -762,13 +784,8 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 		(const uint8_t*)"unless"
 	};
 	/**/
-	static const uint8_t if_and_unless_lengths[] =
-	{
-		2, 6
-	};
-	/**/
+	static const uint8_t if_and_unless_lengths[] = { 2, 6 };
 	static const uint8_t bool_values_to_pass[] = { 1, 0 };
-	/**/
 	static const uint8_t count_of_attributes = 2;
 
 	if (NULL == skip)
@@ -776,49 +793,48 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 		return 0;
 	}
 
-	/*TODO: can be from outside.*/
-	struct buffer attributes;
-	SET_NULL_TO_BUFFER(attributes);
-
-	if (!buffer_append_buffer(&attributes, NULL, count_of_attributes))
+	if (range_in_parts_is_null_or_empty(start_of_attributes, finish_of_attributes))
 	{
-		buffer_release_with_inner_buffers(&attributes);
+		*skip = 0;
+		return 1;
+	}
+
+	if (NULL == attributes)
+	{
+		return 0;
+	}
+
+	if (!common_get_attributes_and_arguments_for_task(
+			NULL, NULL, count_of_attributes,
+			NULL, NULL, NULL, attributes))
+	{
 		return 0;
 	}
 
 	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
-		struct buffer* attribute = buffer_buffer_data(&attributes, i);
-		SET_NULL_TO_BUFFER(*attribute);
-	}
-
-	for (uint8_t i = 0; i < count_of_attributes; ++i)
-	{
-		struct buffer* attribute = buffer_buffer_data(&attributes, i);
+		struct buffer* attribute = buffer_buffer_data(attributes, i);
 
 		if (NULL == attribute || !bool_to_string(bool_values_to_pass[i], attribute))
 		{
-			buffer_release_with_inner_buffers(&attributes);
 			return 0;
 		}
 	}
 
 	if (!interpreter_get_arguments_from_xml_tag_record(
-			project, target, start_of_attributes, finish_of_attributes,
-			if_and_unless, if_and_unless_lengths, 0, count_of_attributes, &attributes, verbose))
+			the_project, the_target, start_of_attributes, finish_of_attributes,
+			if_and_unless, if_and_unless_lengths, 0, count_of_attributes, attributes, verbose))
 	{
-		buffer_release_with_inner_buffers(&attributes);
 		return 0;
 	}
 
 	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
-		const struct buffer* attribute = buffer_buffer_data(&attributes, i);
+		const struct buffer* attribute = buffer_buffer_data(attributes, i);
 		uint8_t bool_value = 0;
 
 		if (!bool_parse(buffer_data(attribute, 0), buffer_size(attribute), &bool_value))
 		{
-			buffer_release_with_inner_buffers(&attributes);
 			return 0;
 		}
 
@@ -827,79 +843,61 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 			continue;
 		}
 
-		buffer_release_with_inner_buffers(&attributes);
 		*skip = 1;
 		return 1;
 	}
 
-	buffer_release_with_inner_buffers(&attributes);
 	*skip = 0;
 	return 1;
 }
 
 uint8_t interpreter_get_xml_tag_attribute_values(
-	const void* project,
-	const void* target,
+	const void* the_project,
+	const void* the_target,
 	const uint8_t* start_of_attributes,
 	const uint8_t* finish_of_attributes,
 	uint8_t* fail_on_error,
-	uint8_t* verbose_value,
+	uint8_t* task_verbose,
+	struct buffer* attributes,
 	uint8_t verbose)
 {
-	static const uint8_t* attributes[] =
+	static const uint8_t* task_attributes[] =
 	{
 		(const uint8_t*)"failonerror",
 		(const uint8_t*)"verbose"
 	};
-	/**/
-	static const uint8_t attributes_lengths[] =
-	{
-		11, 7
-	};
+	static const uint8_t task_attributes_lengths[] = { 11, 7 };
 
-	if (NULL == fail_on_error || NULL == verbose_value)
+	if (NULL == fail_on_error ||
+		NULL == task_verbose ||
+		NULL == attributes)
 	{
 		return 0;
 	}
 
-	const uint8_t count_of_attributes = (0 == (*verbose_value) ? 2 : 1);
-	/*TODO: can be from outside.*/
-	struct buffer values;
-	SET_NULL_TO_BUFFER(values);
+	const uint8_t count_of_attributes = (0 == (*task_verbose) ? 2 : 1);
 
-	if (!buffer_append_buffer(&values, NULL, count_of_attributes))
+	if (!common_get_attributes_and_arguments_for_task(
+			NULL, NULL, count_of_attributes,
+			NULL, NULL, NULL, attributes))
 	{
-		buffer_release(&values);
 		return 0;
 	}
 
-	ptrdiff_t i = 0;
-	struct buffer* ptr = NULL;
-
-	while (NULL != (ptr = buffer_buffer_data(&values, i++)))
+	if (!interpreter_get_arguments_from_xml_tag_record(the_project, the_target, start_of_attributes,
+			finish_of_attributes,
+			task_attributes, task_attributes_lengths, 0, count_of_attributes, attributes, verbose))
 	{
-		SET_NULL_TO_BUFFER(*ptr);
-	}
-
-	if (count_of_attributes != i - 1)
-	{
-		buffer_release(&values);
 		return 0;
 	}
 
-	if (!interpreter_get_arguments_from_xml_tag_record(project, target, start_of_attributes, finish_of_attributes,
-			attributes, attributes_lengths, 0, count_of_attributes, &values, verbose))
-	{
-		buffer_release_with_inner_buffers(&values);
-		return 0;
-	}
-
+	const struct buffer* ptr = NULL;
 	uint8_t* outputs[2];
 	outputs[0] = fail_on_error;
-	outputs[1] = verbose_value;
-	i = 0;
+	outputs[1] = task_verbose;
+	uint8_t i = 0;
 
-	while (NULL != (ptr = buffer_buffer_data(&values, i++)))
+	while (NULL != (ptr = buffer_buffer_data(attributes, i++)))
 	{
 		if (!buffer_size(ptr))
 		{
@@ -908,16 +906,14 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 
 		if (!bool_parse(buffer_data(ptr, 0), buffer_size(ptr), outputs[i - 1]))
 		{
-			buffer_release_with_inner_buffers(&values);
 			return 0;
 		}
 	}
 
-	buffer_release_with_inner_buffers(&values);
 	return 1;
 }
 
-uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const void* target,
+uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, const void* the_target,
 		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
 		const uint8_t** attributes, const uint8_t* attributes_lengths,
 		uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose)
@@ -951,7 +947,7 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 
 		if (!buffer_resize(argument, 0) ||
 			((code.start < code.finish) &&
-			 !interpreter_evaluate_code(project, target, &code, argument, verbose)))
+			 !interpreter_evaluate_code(the_project, the_target, &code, argument, verbose)))
 		{
 			buffer_release(&attribute_value);
 			return 0;
@@ -963,8 +959,8 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* project, const
 }
 
 uint8_t interpreter_get_xml_element_value(
-	const void* project,
-	const void* target,
+	const void* the_project,
+	const void* the_target,
 	const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
 	struct buffer* output,
@@ -986,7 +982,7 @@ uint8_t interpreter_get_xml_element_value(
 	code.finish = code.start + buffer_size(&value);
 
 	if (!range_is_null_or_empty(&code) &&
-		!interpreter_evaluate_code(project, target, &code, output, verbose))
+		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -997,8 +993,8 @@ uint8_t interpreter_get_xml_element_value(
 }
 
 uint8_t interpreter_get_environments(
-	const void* project,
-	const void* target,
+	const void* the_project,
+	const void* the_target,
 	const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
 	struct buffer* environments,
@@ -1140,7 +1136,7 @@ uint8_t interpreter_get_environments(
 			name.start = buffer_data(&attribute_value, 0);
 			name.finish = name.start + buffer_size(&attribute_value);
 
-			if (!interpreter_evaluate_code(project, target, &name, environments, verbose))
+			if (!interpreter_evaluate_code(the_project, the_target, &name, environments, verbose))
 			{
 				buffer_release(&attribute_value);
 				buffer_release(&elements);
@@ -1186,7 +1182,7 @@ uint8_t interpreter_get_environments(
 }
 
 uint8_t choose_evaluate_task(
-	void* project, const void* target,
+	void* the_project, const void* the_target,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
 	struct buffer* task_arguments, uint8_t verbose)
 {
@@ -1254,7 +1250,8 @@ uint8_t choose_evaluate_task(
 			continue;
 		}
 
-		if (!interpreter_get_arguments_from_xml_tag_record(project, target, current_tag_name.start, element->finish,
+		if (!interpreter_get_arguments_from_xml_tag_record(the_project, the_target, current_tag_name.start,
+				element->finish,
 				&test, &test_length, 0, 1, attribute_value, verbose))
 		{
 			buffer_release_inner_buffers(attribute_value);
@@ -1284,7 +1281,7 @@ uint8_t choose_evaluate_task(
 		}
 
 		return xml_get_sub_nodes_elements(current_tag_name.start, current_tag_name.finish, NULL, elements) ?
-			   interpreter_evaluate_tasks(project, target, elements, 0, verbose) : 1;
+			   interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose) : 1;
 	}
 
 	buffer_release_inner_buffers(attribute_value);
@@ -1302,7 +1299,7 @@ uint8_t choose_evaluate_task(
 		}
 
 		return xml_get_sub_nodes_elements(tag.start, tag.finish, NULL, elements) ?
-			   interpreter_evaluate_tasks(project, target, elements, 0, verbose) : 1;
+			   interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose) : 1;
 	}
 
 	return 1;
@@ -1325,13 +1322,14 @@ uint8_t fail_get_attributes_and_arguments_for_task(
 }
 
 uint8_t fail_evaluate_task(
-	const void* project, const void* target,
+	const void* the_project, const void* the_target,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
 	struct buffer* message, uint8_t verbose)
 {
 	if (!buffer_size(message))
 	{
-		if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message, verbose))
+		if (!interpreter_get_xml_element_value(the_project, the_target, attributes_finish, element_finish, message,
+											   verbose))
 		{
 			return 0;
 		}
@@ -1354,7 +1352,7 @@ uint8_t if_get_attributes_and_arguments_for_task(
 }
 
 uint8_t if_evaluate_task(
-	void* project, const void* target, struct buffer* task_arguments,
+	void* the_project, const void* the_target, struct buffer* task_arguments,
 	const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
 {
 	if (NULL == task_arguments)
@@ -1391,15 +1389,13 @@ uint8_t if_evaluate_task(
 		return 1;
 	}
 
-	return interpreter_evaluate_tasks(project, target, test_in_a_buffer, 0, verbose);
+	return interpreter_evaluate_tasks(the_project, the_target, test_in_a_buffer, 0, verbose);
 }
 
 static const uint8_t* interpreter_task_str[] =
 {
 	(const uint8_t*)"attrib",
-#if 0
 	(const uint8_t*)"call",
-#endif
 	(const uint8_t*)"choose",
 	(const uint8_t*)"copy",
 	(const uint8_t*)"delete",
@@ -1446,9 +1442,7 @@ static const uint8_t* interpreter_task_str[] =
 enum interpreter_task
 {
 	attrib_task,
-#if 0
 	call_task,
-#endif
 	choose_task,
 	copy_task,
 	delete_task,
@@ -1499,55 +1493,87 @@ uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task
 								 interpreter_task_str, UNKNOWN_TASK);
 }
 
-uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t command,
+uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uint8_t command,
 								  const uint8_t* attributes_start, const uint8_t* element_finish,
-								  uint8_t project_help, uint8_t verbose)
+								  uint8_t target_help, uint8_t verbose)
 {
 	if (UNKNOWN_TASK < command || range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
 		return 0;
 	}
 
-	uint8_t fail_on_error = 1;
+	const uint8_t** task_attributes = NULL;
+	const uint8_t* task_attributes_lengths = NULL;
 	uint8_t task_attributes_count = 0;
+	/**/
 	const uint8_t* attributes_finish = xml_get_tag_finish_pos(attributes_start, element_finish);
-
-	if (!range_in_parts_is_null_or_empty(attributes_start, attributes_finish))
-	{
-		uint8_t task_verbose = verbose;
-
-		if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-				project, target, attributes_start, attributes_finish, &task_attributes_count, verbose))
-		{
-			return 0;
-		}
-
-		if (task_attributes_count)
-		{
-			return 1;
-		}
-
-		if (!interpreter_get_xml_tag_attribute_values(
-				project, target, attributes_start, attributes_finish, &fail_on_error, &task_verbose, verbose))
-		{
-			return 0;
-		}
-
-		verbose = verbose < task_verbose ? task_verbose : verbose;
-	}
-
+	/**/
 	struct buffer task_arguments;
-
 	SET_NULL_TO_BUFFER(task_arguments);
 
-	const uint8_t** task_attributes = NULL;
+	if (target_task == command)
+	{
+		if (!target_get_attributes_and_arguments_for_task(
+				&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments) ||
+			task_attributes_count < 1)
+		{
+			buffer_release_with_inner_buffers(&task_arguments);
+			return 0;
+		}
 
-	const uint8_t* task_attributes_lengths = NULL;
+		if (!target_help)
+		{
+			task_attributes_count -= 1;
+		}
+
+		if (!interpreter_get_arguments_from_xml_tag_record(
+				the_project, the_target, attributes_start, attributes_finish,
+				task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+		{
+			buffer_release_with_inner_buffers(&task_arguments);
+			return 0;
+		}
+
+		task_attributes_count = target_evaluate_task(
+									the_project, &task_arguments, target_help,
+									attributes_start, attributes_finish, element_finish, verbose);
+		buffer_release_with_inner_buffers(&task_arguments);
+		/**/
+		return task_attributes_count;
+	}
+
+	if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
+			the_project, the_target, attributes_start, attributes_finish,
+			&task_attributes_count, &task_arguments, verbose))
+	{
+		buffer_release_with_inner_buffers(&task_arguments);
+		return 0;
+	}
+
+	if (task_attributes_count)
+	{
+		buffer_release_with_inner_buffers(&task_arguments);
+		return 1;
+	}
+
+	buffer_release_inner_buffers(&task_arguments);
+	uint8_t fail_on_error = 1;
+
+	if (!interpreter_get_xml_tag_attribute_values(
+			the_project, the_target, attributes_start, attributes_finish, &fail_on_error, &verbose, &task_arguments,
+			verbose))
+	{
+		buffer_release_with_inner_buffers(&task_arguments);
+		return 0;
+	}
+
+	buffer_release_inner_buffers(&task_arguments);
 
 	switch (command)
 	{
 		case attrib_task:
-			if (!attrib_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+			if (!attrib_get_attributes_and_arguments_for_task(
+					&task_attributes, &task_attributes_lengths,
 					&task_attributes_count, &task_arguments))
 			{
 				task_attributes_count = 0;
@@ -1555,7 +1581,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1564,14 +1590,29 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 			task_attributes_count = attrib_evaluate_task(&task_arguments, verbose);
 			break;
-#if 0
 
-		case call_:
+		case call_task:
+			if (!call_get_attributes_and_arguments_for_task(
+					&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					the_project, the_target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = call_evaluate_task(the_project, &task_arguments, verbose);
 			break;
-#endif
 
 		case choose_task:
-			task_attributes_count = choose_evaluate_task(project, target, attributes_finish, element_finish,
+			task_attributes_count = choose_evaluate_task(the_project, the_target, attributes_finish, element_finish,
 									&task_arguments, verbose);
 			break;
 
@@ -1584,7 +1625,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1603,7 +1644,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1614,7 +1655,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			break;
 
 		case description_task:
-			if (project_help)
+			if (target_help)
 			{
 				if (!buffer_resize(&task_arguments, 0) ||
 					!xml_get_element_value(attributes_finish, element_finish, &task_arguments))
@@ -1643,7 +1684,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1655,7 +1696,8 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 
 				if (!buffer_size(message))
 				{
-					if (!interpreter_get_xml_element_value(project, target, attributes_finish, element_finish, message, verbose))
+					if (!interpreter_get_xml_element_value(the_project, the_target, attributes_finish, element_finish, message,
+														   verbose))
 					{
 						task_attributes_count = 0;
 						break;
@@ -1675,7 +1717,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1686,14 +1728,15 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			{
 				struct buffer* environments = buffer_buffer_data(&task_arguments, task_attributes_count);
 
-				if (!interpreter_get_environments(project, target, attributes_finish, element_finish, environments, verbose))
+				if (!interpreter_get_environments(the_project, the_target, attributes_finish, element_finish, environments,
+												  verbose))
 				{
 					task_attributes_count = 0;
 					break;
 				}
 			}
 
-			task_attributes_count = exec_evaluate_task(project, &task_arguments, verbose);
+			task_attributes_count = exec_evaluate_task(the_project, &task_arguments, verbose);
 			break;
 
 		case fail_task:
@@ -1705,14 +1748,14 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
 			}
 
-			task_attributes_count = fail_evaluate_task(project, target, attributes_finish, element_finish,
+			task_attributes_count = fail_evaluate_task(the_project, the_target, attributes_finish, element_finish,
 									buffer_buffer_data(&task_arguments, FAIL_MESSAGE_POSITION), verbose);
 			break;
 #if 0
@@ -1730,7 +1773,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1738,7 +1781,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			task_attributes_count = if_evaluate_task(
-										project, target, &task_arguments, attributes_finish, element_finish, verbose);
+										the_project, the_target, &task_arguments, attributes_finish, element_finish, verbose);
 			break;
 #if 0
 
@@ -1755,14 +1798,14 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
 			}
 
-			task_attributes_count = load_file_evaluate_task(project, &task_arguments, verbose);
+			task_attributes_count = load_file_evaluate_task(the_project, &task_arguments, verbose);
 			break;
 #if 0
 
@@ -1779,7 +1822,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1798,7 +1841,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1817,14 +1860,14 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
 				break;
 			}
 
-			task_attributes_count = project_evaluate_task(project, &task_arguments, verbose);
+			task_attributes_count = project_evaluate_task(the_project, &task_arguments, verbose);
 			break;
 
 		case property_task:
@@ -1836,7 +1879,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, 1, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1857,7 +1900,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				if (dynamic)
 				{
 					if (!interpreter_get_arguments_from_xml_tag_record(
-							project, target, attributes_start, attributes_finish,
+							the_project, the_target, attributes_start, attributes_finish,
 							task_attributes, task_attributes_lengths,
 							1, task_attributes_count - 1, &task_arguments, verbose))
 					{
@@ -1878,7 +1921,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 					}
 				}
 				else if (!interpreter_get_arguments_from_xml_tag_record(
-							 project, target, attributes_start, attributes_finish,
+							 the_project, the_target, attributes_start, attributes_finish,
 							 task_attributes, task_attributes_lengths,
 							 1, task_attributes_count, &task_arguments, verbose))
 				{
@@ -1887,7 +1930,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 				}
 			}
 
-			task_attributes_count = property_evaluate_task(project, &task_arguments, verbose);
+			task_attributes_count = property_evaluate_task(the_project, &task_arguments, verbose);
 			break;
 #if 0
 
@@ -1913,7 +1956,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -1921,92 +1964,6 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			task_attributes_count = sleep_unit_evaluate_task(&task_arguments, verbose);
-			break;
-
-		case target_task:
-			if (!target_get_attributes_and_arguments_for_task(
-					&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments))
-			{
-				task_attributes_count = 0;
-				break;
-			}
-
-			if (!project_help)
-			{
-				task_attributes_count -= 1;
-			}
-
-			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
-			{
-				task_attributes_count = 0;
-				break;
-			}
-
-			if (project_help)
-			{
-				struct buffer* task_name = buffer_buffer_data(&task_arguments, 0);
-				task_attributes_count = echo(
-											0, UTF8, NULL, NoLevel, buffer_data(task_name, 0), buffer_size(task_name), 0, verbose);
-
-				if (!task_attributes_count)
-				{
-					break;
-				}
-
-				struct buffer* task_description = buffer_buffer_data(&task_arguments, 2);
-
-				if (buffer_size(task_description))
-				{
-					task_attributes_count = echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose);
-
-					if (!task_attributes_count)
-					{
-						break;
-					}
-
-					task_attributes_count = echo(0, UTF8, NULL, NoLevel, buffer_data(task_description, 0),
-												 buffer_size(task_description), 1, verbose);
-				}
-				else
-				{
-					if (!range_from_string((const uint8_t*)"description\0", 12, 1, task_name) ||
-						!buffer_resize(task_description, 0))
-					{
-						task_attributes_count = 0;
-						break;
-					}
-
-					if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, task_name, task_description))
-					{
-						task_attributes_count = 1;
-						break;
-					}
-
-					task_attributes_count = echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose);
-
-					if (!task_attributes_count)
-					{
-						break;
-					}
-
-					task_attributes_count = interpreter_evaluate_tasks(project, target, task_description, project_help, verbose);
-				}
-			}
-			else
-			{
-				attributes_finish = find_any_symbol_like_or_not_like_that(
-										attributes_finish + 1, element_finish, &lt, 1, 1, 1);
-				element_finish = find_any_symbol_like_or_not_like_that(
-									 element_finish - 1, attributes_finish, &lt, 1, 1, -1);
-				element_finish = find_any_symbol_like_or_not_like_that(
-									 element_finish - 1, attributes_finish, &gt, 1, 1, -1);
-				/**/
-				task_attributes_count = target_evaluate_task(
-											project, &task_arguments, attributes_finish, element_finish, verbose);
-			}
-
 			break;
 
 		case touch_task:
@@ -2018,7 +1975,7 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 			}
 
 			if (!interpreter_get_arguments_from_xml_tag_record(
-					project, target, attributes_start, attributes_finish,
+					the_project, the_target, attributes_start, attributes_finish,
 					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 			{
 				task_attributes_count = 0;
@@ -2069,9 +2026,9 @@ uint8_t interpreter_evaluate_task(void* project, const void* target, uint8_t com
 	return task_attributes_count;
 }
 
-uint8_t interpreter_evaluate_tasks(void* project, const void* target,
+uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 								   const struct buffer* elements,
-								   uint8_t project_help, uint8_t verbose)
+								   uint8_t target_help, uint8_t verbose)
 {
 	ptrdiff_t i = 0;
 	struct range* element = NULL;
@@ -2086,10 +2043,10 @@ uint8_t interpreter_evaluate_tasks(void* project, const void* target,
 			break;
 		}
 
-		if (!interpreter_evaluate_task(project, target,
+		if (!interpreter_evaluate_task(the_project, the_target,
 									   interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish),
 									   tag_name_or_content.finish,
-									   element->finish, project_help, verbose))
+									   element->finish, target_help, verbose))
 		{
 			i = 0;
 			break;

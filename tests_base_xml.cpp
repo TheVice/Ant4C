@@ -212,9 +212,9 @@ std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::
 	return output;
 }
 
-uint8_t project_free(void* project)
+uint8_t project_free(void* the_project)
 {
-	project_unload(project);
+	project_unload(the_project);
 	return 0;
 }
 

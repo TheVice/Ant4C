@@ -45,7 +45,7 @@ uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* 
 		uint8_t verbose);
 std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::string& name_of_nodes);
 
-uint8_t project_free(void* project);
+uint8_t project_free(void* the_project);
 
 std::string property_to_string(const void* the_property, buffer* value);
 
