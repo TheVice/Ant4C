@@ -50,6 +50,8 @@ uint8_t project_load_from_build_file(const struct range* path_to_build_file,
 									 const struct range* current_directory,
 									 uint16_t encoding, void* the_project,
 									 uint8_t project_help, uint8_t verbose);
+uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose);
+void project_clear(void* the_project);
 void project_unload(void* the_project);
 
 uint8_t project_get_attributes_and_arguments_for_task(

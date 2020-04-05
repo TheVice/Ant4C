@@ -85,7 +85,7 @@ TEST(TestProperty_, property_at_all)
 			<< buffer_free(&output) << properties_free(&properties);
 	//
 	buffer_release(&output);
-	property_clear(&properties);
+	property_release(&properties);
 }
 
 TEST_F(TestProperty, property_task)
@@ -98,7 +98,7 @@ TEST_F(TestProperty, property_task)
 
 	for (const auto& node : nodes)
 	{
-		property_clear(&properties);
+		property_release(&properties);
 		ASSERT_TRUE(properties_load_from_node(node, "properties/property", &properties))
 				<< properties_free(&properties);
 		//
@@ -116,7 +116,7 @@ TEST_F(TestProperty, property_task)
 		const auto returned = interpreter_evaluate_task(project, NULL, task_id,
 							  record_in_range.start, record_in_range.finish, 0, verbose);
 		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << project_free(project);
-		property_clear(&properties);
+		property_release(&properties);
 
 		for (const auto& property : output_properties)
 		{
@@ -160,5 +160,5 @@ TEST_F(TestProperty, property_task)
 		--node_count;
 	}
 
-	property_clear(&properties);
+	property_release(&properties);
 }

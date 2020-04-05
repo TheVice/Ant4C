@@ -523,7 +523,7 @@ void argument_parser_release()
 	if (is_argument_init)
 	{
 		buffer_release(&build_files);
-		property_clear(&properties);
+		property_release(&properties);
 		buffer_release(&log_file);
 		buffer_release(&targets);
 	}

@@ -209,46 +209,91 @@ int main(int argc, char** argv)
 		return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
+	void* the_project = NULL;
+
+	if (!project_new(&the_project))
+	{
+		argc = 0;
+	}
+
 	for (argc = 0; ; ++argc)
 	{
 		const struct range* build_file = argument_parser_get_build_file(argc);
 
 		if (NULL == build_file)
 		{
+			/*TODO: echo.*/
 			break;
 		}
 
-		void* the_project = NULL;
-
-		if (!project_new(&the_project))
+		if (!argument_parser_get_project_help())
 		{
-			argc = 0;
-			break;
+			if (!property_add_at_project(the_project, argument_parser_get_properties(), argument_parser_get_verbose()))
+			{
+				/*TODO: echo.*/
+				argc = 0;
+				break;
+			}
 		}
 
-		if (!property_add_at_project(the_project, argument_parser_get_properties(), argument_parser_get_verbose()))
-		{
-			project_unload(the_project);
-			argc = 0;
-			break;
-		}
-
-		const uint8_t is_loaded = project_load_from_build_file(
-									  build_file, &current_directory_in_range,
-									  argument_parser_get_encoding(),
-									  the_project, argument_parser_get_project_help(),
-									  argument_parser_get_verbose());
+		uint8_t is_loaded = project_load_from_build_file(
+								build_file, &current_directory_in_range,
+								argument_parser_get_encoding(),
+								the_project, argument_parser_get_project_help(),
+								argument_parser_get_verbose());
 
 		if (!is_loaded)
 		{
-			project_unload(the_project);
+			/*TODO: echo.*/
 			argc = 0;
 			break;
 		}
 
-		project_unload(the_project);
+		if (argument_parser_get_project_help())
+		{
+			project_clear(the_project);
+			continue;
+		}
+
+		if (argument_parser_get_target(0))
+		{
+			int index = 0;
+			const struct range* target_name = NULL;
+
+			while (NULL != (target_name = argument_parser_get_target(index++)))
+			{
+				is_loaded = target_evaluate_by_name(the_project, target_name,  argument_parser_get_verbose());
+
+				if (!is_loaded)
+				{
+					/*TODO: echo.*/
+					break;
+				}
+			}
+
+			if (!is_loaded)
+			{
+				/*TODO: echo.*/
+				argc = 0;
+				break;
+			}
+		}
+		else
+		{
+			is_loaded = project_evaluate_default_target(the_project, argument_parser_get_verbose());
+
+			if (!is_loaded)
+			{
+				/*TODO: echo.*/
+				argc = 0;
+				break;
+			}
+		}
+
+		project_clear(the_project);
 	}
 
+	project_unload(the_project);
 	buffer_release(&current_directory);
 	time_now = datetime_now() - time_now;
 

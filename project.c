@@ -24,6 +24,7 @@
 
 struct project
 {
+	struct buffer content;
 	struct buffer properties;
 	struct buffer targets;
 };
@@ -288,17 +289,27 @@ uint8_t project_new(void** the_project)
 		return 0;
 	}
 
+	SET_NULL_TO_BUFFER(gProject.content);
 	SET_NULL_TO_BUFFER(gProject.properties);
 	SET_NULL_TO_BUFFER(gProject.targets);
 	(*the_project) = &gProject;
 	return 1;
 }
 
-uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
-								  void* the_project, uint8_t project_help, uint8_t verbose)
+uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 {
-	if (range_in_parts_is_null_or_empty(content_start, content_finish) ||
-		NULL == the_project)
+	if (NULL == the_project)
+	{
+		return 0;
+	}
+
+	struct range tag_name;
+
+	struct project* pro = (struct project*)the_project;
+
+	BUFFER_TO_RANGE(tag_name, &pro->content);
+
+	if (range_is_null_or_empty(&tag_name))
 	{
 		return 0;
 	}
@@ -318,7 +329,7 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 
 	SET_NULL_TO_BUFFER(elements);
 
-	if (1 != xml_get_sub_nodes_elements(content_start, content_finish, &sub_nodes_names, &elements))
+	if (1 != xml_get_sub_nodes_elements(tag_name.start, tag_name.finish, &sub_nodes_names, &elements))
 	{
 		buffer_release(&elements);
 		buffer_release(&sub_nodes_names);
@@ -333,8 +344,6 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 		buffer_release(&sub_nodes_names);
 		return 0;
 	}
-
-	struct range tag_name;
 
 	if (!xml_get_tag_name(element->start, element->finish, &tag_name))
 	{
@@ -370,62 +379,29 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 		return 0;
 	}
 
-	const void* the_property = NULL;
-
-	if (project_get_default_target(the_project, &the_property))
-	{
-		if (!buffer_resize(&sub_nodes_names, 0))
-		{
-			buffer_release(&elements);
-			buffer_release(&sub_nodes_names);
-			return 0;
-		}
-
-		if (!property_get_by_pointer(the_property, &sub_nodes_names))
-		{
-			buffer_release(&elements);
-			buffer_release(&sub_nodes_names);
-			return 0;
-		}
-
-		if (!interpreter_actualize_property_value(
-				the_project, NULL, property_get_id_of_get_value_function(),
-				the_property, 0, &sub_nodes_names, verbose))
-		{
-			buffer_release(&elements);
-			buffer_release(&sub_nodes_names);
-			return 0;
-		}
-
-		void* the_target = NULL;
-
-		if (!project_target_get(the_project,
-								buffer_data(&sub_nodes_names, 0),
-								(uint8_t)buffer_size(&sub_nodes_names), &the_target, verbose))
-		{
-			buffer_release(&elements);
-			buffer_release(&sub_nodes_names);
-			return 0;
-		}
-
-		if (!buffer_resize(&sub_nodes_names, 0))
-		{
-			buffer_release(&elements);
-			buffer_release(&sub_nodes_names);
-			return 0;
-		}
-
-		if (!target_evaluate(the_project, the_target, &sub_nodes_names, project_help, 1, verbose))
-		{
-			buffer_release(&elements);
-			buffer_release(&sub_nodes_names);
-			return 0;
-		}
-	}
-
 	buffer_release(&elements);
 	buffer_release(&sub_nodes_names);
 	return 1;
+}
+
+uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
+								  void* the_project, uint8_t project_help, uint8_t verbose)
+{
+	if (range_in_parts_is_null_or_empty(content_start, content_finish) ||
+		NULL == the_project)
+	{
+		return 0;
+	}
+
+	struct project* pro = (struct project*)the_project;
+
+	if (!buffer_resize(&pro->content, 0) ||
+		!buffer_append(&pro->content, content_start, content_finish - content_start))
+	{
+		return 0;
+	}
+
+	return project_load(the_project, project_help, verbose);
 }
 
 uint8_t project_load_from_build_file(const struct range* path_to_build_file,
@@ -440,55 +416,109 @@ uint8_t project_load_from_build_file(const struct range* path_to_build_file,
 		return 0;
 	}
 
-	struct buffer content;
-
-	SET_NULL_TO_BUFFER(content);
+	struct buffer* content = &((struct project*)the_project)->content;
 
 	if (!path_get_full_path(
 			current_directory->start, current_directory->finish,
 			path_to_build_file->start, path_to_build_file->finish,
-			&content) ||
-		!buffer_push_back(&content, 0))
+			content) ||
+		!buffer_push_back(content, 0))
 	{
-		buffer_release(&content);
 		return 0;
 	}
 
-	const uint8_t* path = buffer_data(&content, 0);
+	const uint8_t* path = buffer_data(content, 0);
 
 	if (!file_exists(path))
 	{
-		buffer_release(&content);
 		return 0;
 	}
 
 	if (!project_property_set_value(the_project,
 									project_properties[BUILD_FILE_POSITION],
 									project_properties_lengths[BUILD_FILE_POSITION],
-									path, buffer_size(&content) - 1,
+									path, buffer_size(content) - 1,
 									0, 1, 1, verbose))
 	{
-		buffer_release(&content);
 		return 0;
 	}
 
-	if (!buffer_resize(&content, 0) ||
-		!load_file_to_buffer(path, encoding, &content, verbose))
+	if (!buffer_resize(content, 0) ||
+		!load_file_to_buffer(path, encoding, content, verbose))
 	{
-		buffer_release(&content);
 		return 0;
 	}
 
-	path = buffer_data(&content, 0);
-
-	if (!project_load_from_content(path, path + buffer_size(&content), the_project, project_help, verbose))
+	if (!project_load(the_project, project_help, verbose))
 	{
-		buffer_release(&content);
 		return 0;
 	}
 
-	buffer_release(&content);
 	return 1;
+}
+
+uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
+{
+	if (NULL == the_project)
+	{
+		return 0;
+	}
+
+	const void* the_property = NULL;
+
+	if (project_get_default_target(the_project, &the_property))
+	{
+		struct buffer property_value;
+		SET_NULL_TO_BUFFER(property_value);
+
+		if (!property_get_by_pointer(the_property, &property_value))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		if (!interpreter_actualize_property_value(
+				the_project, NULL, property_get_id_of_get_value_function(),
+				the_property, 0, &property_value, verbose))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		struct range target_name;
+
+		BUFFER_TO_RANGE(target_name, &property_value);
+
+		if (!target_evaluate_by_name(the_project, &target_name, verbose))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		buffer_release(&property_value);
+	}
+
+	return 1;
+}
+
+void project_clear(void* the_project)
+{
+	if (NULL == the_project || &gProject != the_project)
+	{
+		return;
+	}
+
+	struct project* pro = (struct project*)the_project;
+
+	buffer_resize(&pro->content, 0);
+
+	property_release_inner(&pro->properties);
+
+	buffer_resize(&pro->properties, 0);
+
+	target_release_inner(&pro->targets);
+
+	buffer_resize(&pro->targets, 0);
 }
 
 void project_unload(void* the_project)
@@ -500,9 +530,11 @@ void project_unload(void* the_project)
 
 	struct project* pro = (struct project*)the_project;
 
-	property_clear(&pro->properties);
+	buffer_release(&pro->content);
 
-	target_clear(&pro->targets);
+	property_release(&pro->properties);
+
+	target_release(&pro->targets);
 }
 
 uint8_t project_get_attributes_and_arguments_for_task(

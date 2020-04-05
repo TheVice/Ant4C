@@ -39,14 +39,15 @@ uint8_t property_set_from_file(void* the_property,
 uint8_t property_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t property_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose);
+uint8_t property_evaluate_task(void* the_project, const struct buffer* task_arguments, uint8_t verbose);
 
-uint8_t property_add_at_project(void* project, const struct buffer* properties, uint8_t verbose);
-void property_clear(struct buffer* properties);
+uint8_t property_add_at_project(void* the_project, const struct buffer* properties, uint8_t verbose);
+void property_release_inner(struct buffer* properties);
+void property_release(struct buffer* properties);
 
 uint8_t property_get_id_of_get_value_function();
 uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t property_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
+uint8_t property_exec_function(const void* the_project, uint8_t function, const struct buffer* arguments,
 							   uint8_t arguments_count, const void** the_property, struct buffer* output, uint8_t verbose);
 
 #endif

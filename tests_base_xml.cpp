@@ -291,7 +291,7 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 
 uint8_t properties_free(buffer* properties)
 {
-	property_clear(properties);
+	property_release(properties);
 	return 0;
 }
 

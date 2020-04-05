@@ -302,22 +302,31 @@ const struct range* target_get_depend(const void* the_target, uint16_t index)
 	return buffer_range_data(&((const struct target*)the_target)->depends, index);
 }
 
-void target_clear(struct buffer* targets)
+void target_release_inner(struct buffer* targets)
 {
-	ptrdiff_t i = 0;
-	struct target* the_target = NULL;
-
 	if (NULL == targets)
 	{
 		return;
 	}
+
+	ptrdiff_t i = 0;
+	struct target* the_target = NULL;
 
 	while (NULL != (the_target = buffer_target_data(targets, i++)))
 	{
 		buffer_release(&the_target->depends);
 		buffer_release(&the_target->tasks);
 	}
+}
 
+void target_release(struct buffer* targets)
+{
+	if (NULL == targets)
+	{
+		return;
+	}
+
+	target_release_inner(targets);
 	buffer_release(targets);
 }
 
@@ -394,14 +403,14 @@ uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
 			return 1;
 		}
 
-		index += sizeof(void*);
+		index += sizeof(void**);
 	}
 
 	return 0;
 }
 
 uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stack,
-						uint8_t target_help, uint8_t cascade, uint8_t verbose)
+						uint8_t cascade, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == the_target ||
@@ -452,14 +461,14 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 				return 0;
 			}
 
-			if (!target_evaluate(the_project, target_dep, stack, target_help, cascade, verbose))
+			if (!target_evaluate(the_project, target_dep, stack, cascade, verbose))
 			{
 				return 0;
 			}
 		}
 	}
 
-	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), target_help, verbose))
+	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), 0, verbose))
 	{
 		buffer_release(&tmp);
 		return 0;
@@ -467,6 +476,36 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 
 	the_real_target->has_executed = 1;
 	return buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
+}
+
+uint8_t target_evaluate_by_name(void* the_project, const struct range* target_name, uint8_t verbose)
+{
+	if (NULL == the_project ||
+		range_is_null_or_empty(target_name))
+	{
+		return 0;
+	}
+
+	void* the_target = NULL;
+
+	if (!project_target_get(the_project, target_name->start,
+							(uint8_t)range_size(target_name), &the_target, verbose))
+	{
+		return 0;
+	}
+
+	struct buffer stack;
+
+	SET_NULL_TO_BUFFER(stack);
+
+	if (!target_evaluate(the_project, the_target, &stack, 1, verbose))
+	{
+		buffer_release(&stack);
+		return 0;
+	}
+
+	buffer_release(&stack);
+	return 1;
 }
 
 enum target_function
@@ -591,5 +630,5 @@ uint8_t call_evaluate_task(void* the_project, struct buffer* task_arguments, uin
 		}
 	}
 
-	return target_evaluate(the_project, the_target, cascade_in_a_buffer, 0, cascade_value, verbose);
+	return target_evaluate(the_project, the_target, cascade_in_a_buffer, cascade_value, verbose);
 }
