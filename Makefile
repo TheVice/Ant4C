@@ -1,32 +1,44 @@
 all: main
 
-buffer.c.obj: buffer.c buffer.h
-	cc -c buffer.c -o buffer.c.obj
+buffer.obj: buffer.c buffer.h
+	cc -c buffer.c -o buffer.obj
 
-hash.crc32.c.obj: hash.crc32.c hash.h
-	cc -c hash.crc32.c -o hash.crc32.c.obj
+common.obj: common.c common.h
+	cc -c common.c -o common.obj
 
-hash.blake2.c.obj: hash.blake2.c hash.h
-	cc -c hash.blake2.c -o hash.blake2.c.obj
+file_system.obj: file_system.c file_system.h
+	cc -c file_system.c -o file_system.obj
 
-hash.blake3.c.obj: hash.blake3.c hash.h
-	cc -c hash.blake3.c -o hash.blake3.c.obj
+hash.crc32.obj: hash.crc32.c hash.h
+	cc -c hash.crc32.c -o hash.crc32.obj
 
-hash.sha3.c.obj: hash.sha3.c hash.h
-	cc -c hash.sha3.c -o hash.sha3.c.obj
+hash.blake2.obj: hash.blake2.c hash.h
+	cc -c hash.blake2.c -o hash.blake2.obj
 
-hash.c.obj: hash.c hash.h
-	cc -c hash.c -o hash.c.obj
+hash.blake3.obj: hash.blake3.c hash.h
+	cc -c hash.blake3.c -o hash.blake3.obj
 
-hash.a: buffer.c.obj hash.c.obj hash.crc32.c.obj hash.blake2.c.obj hash.blake3.c.obj hash.sha3.c.obj
-	ar rcs hash.a buffer.c.obj hash.c.obj hash.crc32.c.obj hash.blake2.c.obj hash.blake3.c.obj hash.sha3.c.obj
+hash.sha3.obj: hash.sha3.c hash.h
+	cc -c hash.sha3.c -o hash.sha3.obj
 
-main.c.obj: main.c
-	cc -c main.c -o main.c.obj
+path.obj: path.c path.h
+	cc -c path.c -o path.obj
 
-main: hash.a main.c.obj
-	cc main.c.obj hash.a -o main
+range.obj: range.c range.h
+	cc -c range.c -o range.obj
+
+hash.obj: hash.c hash.h
+	cc -c hash.c -o hash.obj
+
+hash.a: buffer.obj common.obj file_system.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj path.obj range.obj hash.obj
+	ar rcs hash.a buffer.obj common.obj file_system.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj path.obj range.obj hash.obj
+
+main.obj: main.c
+	cc -c main.c -o main.obj
+
+main: hash.a main.obj
+	cc main.obj hash.a -o main
 
 clean:
-	rm buffer.c.obj hash.c.obj hash.crc32.c.obj hash.blake2.c.obj hash.blake3.c.obj hash.sha3.c.obj hash.a main.c.obj main
+	rm buffer.obj common.obj file_system.obj hash.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj hash.a main.obj path.obj range.obj main
 .PHONY: clean

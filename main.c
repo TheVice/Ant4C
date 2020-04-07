@@ -6,7 +6,10 @@
  */
 
 #include "buffer.h"
+#include "file_system.h"
 #include "hash.h"
+#include "path.h"
+#include "range.h"
 
 #include <math.h>
 #include <time.h>
@@ -232,6 +235,187 @@ uint8_t Test_bytes_to_string(struct buffer* output)
 	bytes_to_string(ptr, UINT8_MAX, expected);
 	bytes_to_string(ptr + UINT8_MAX, 1, expected + 2 * UINT8_MAX);
 	return 0 == memcmp(expected, ptr + 1 + UINT8_MAX, 2 * UINT8_MAX + 2);
+}
+
+uint8_t Test_BLAKE2b()
+{
+	struct buffer input;
+	SET_NULL_TO_BUFFER(input);
+
+	if (!buffer_append(&input, NULL, 31745 + 3 * 4096) ||
+		!buffer_resize(&input, 31745))
+	{
+		buffer_release(&input);
+		return 0;
+	}
+
+	uint8_t* in = buffer_data(&input, 0);
+
+	for (uint16_t i = 0, j = 0; i < 31745; ++i, j = j < 250 ? j + 1 : 0)
+	{
+		in[i] = (uint8_t)j;
+	}
+
+	const uint16_t lengths[] =
+	{
+		0,
+		1,
+		69,
+		70,
+		71,
+		101,
+		102,
+		103,
+		133,
+		134,
+		135,
+		141,
+		142,
+		143,
+		1023,
+		1024,
+		1025,
+		2048,
+		2049,
+		3072,
+		3073,
+		4096,
+		4097,
+		5120,
+		5121,
+		6144,
+		6145,
+		7168,
+		7169,
+		8192,
+		8193,
+		16384,
+		31744,
+	};
+	/**/
+	const uint8_t* expected_outputs[] =
+	{
+		"786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce",
+		"2fa3f686df876995167e7c2e5d74c4c7b6e48f8068fe0e44208344d480f7904c36963e44115fe3eb2a3ac8694c28bcb4f5a0f3276f2e79487d8219057a506e4b",
+		"78a9fc048e25c6dcb5de45667de8ffdd3a93711141d594e9fa62a959475da6075ea8f0916e84e45ad911b75467077ee52d2c9aebf4d58f20ce4a3a00458b05d4",
+		"45813f441769ab6ed37d349ff6e72267d76ae6bb3e3c612ec05c6e02a12af5a37c918b52bf74267c3f6a3f183a8064ff84c07b193d08066789a01accdb6f9340",
+		"956da1c68d83a7b881e01b9a966c3c0bf27f68606a8b71d457bd016d4c41dd8a380c709a296cb4c6544792920fd788835771a07d4a16fb52ed48050331dc4c8b",
+		"965f20f139765fcc4ce4ba3794675863cac24db472cd2b799d035bce3dbea502da7b524865f6b811d8c5828d3a889646fe64a380da1aa7c7044e9f245dced128",
+		"ec295b5783601244c30e4641e3b45be222c4dce77a58700f53bc8ec52a941690b4d0b087fb6fcb3f39832b9de8f75ec20bd43079811749cdc907edb94157d180",
+		"61c72f8ccc91dbb54ca6750bc489672de09faedb8fdd4f94ff2320909a303f5d5a98481c0bc1a625419fb4debfbf7f8a53bb07ec3d985e8ea11e72d559940780",
+		"e59b9987d428b3eda37d80abdb16cd2b0aef674c2b1dda4432ea91ee6c935c684b48b4428a8cc740e579a30deff35a803013820dd23f14ae1d8413b5c8672aec",
+		"cd9fcc99f99d4cc16d031900b2a736e1508db4b586814e6345857f354a70ccecb1df3b50a19adaf43c278efa423ff4bb6c523ec7fd7859b97b168a7ebff8467c",
+		"0602185d8c3a78738b99164b8bc6ffb21c7debebbf806372e0da44d121545597b9c662a255dc31542cf995ecbe6a50fb5e6e0ee4ef240fe557eded1188087e86",
+		"75351313b52a8529298d8c186b1768666dcca8595317d7a4816eb88c062020c0c8efc554bb341b64688db5ccafc35f3c3cd09d6564b36d7b04a248e146980d4b",
+		"e3128b1d311d02179d7f25f97a5a8bee2cc8c86303644fcd664e157d1fef00f23e46f9a5e8e5c890ce565bb6abd4302ce06469d52a5bd53e1c5a54d04649dc03",
+		"c2382a72d2d3ace9d5933d00b60827ed380cda08d0ba5f6dd41e29ee6dbe8ecb9235f06be95d83b6816a2fb7a5ad47035e8a4b69a4884b99e4bece58cab25d44",
+		"e55fd611a16696f8295ea5120a151e312e5dfb1488ac74be64118ffe1bc1d539e725ad0440e5213de297ba435d381c66edf88eebf28b8d640e31103842d3be29",
+		"8d1090909017add40e749df2d0ebac43273d6fc816bc4ffaf2a6dfabe4206dea13677d2002399e4a38e700d8083db4af8341ee9b3a5147110b6a963a3894e4e2",
+		"7a9e5283a15d13b995755360fde4c65c2ae1bc0cf33e8db2ce8416e5d10697c73fc4b2622a29b938a1faec43d931b02e71ad8635e071265633643a9d9396ec28",
+		"84ef376f8080d5d19a6914c9b8e8eaf71b3f716f5b4f0da4fdf81b6c465a5656e01b52807011e1fce05e77729aae5422c6424fe241f7ba93da39456e5c5448d9",
+		"146560fd774a01704fcce96f5f9b4b042ae43c928ad6546fb070b0ec18d2a4ac592578af038a1f6c5b79144fb16a0c6428999d518384d8349a3ec3707aa50ac2",
+		"6a4fd5fd8cc0a8e717b28757c896096b0452750684cf7c6c3636f51a98beb32c88f32c9ed7140f90a2cdff2fc4ff49bcaa257f14a6bf6f926530cb47cc7aa340",
+		"8f204a6e0204733471290db377aff78f069bc2d3d943de81f9a0b71764204c71fb3b1c09a3cd7f3b9f290b7325afb591597ebebc853657acff0fdb242f745d16",
+		"c7a3d6a53bd11772ecf077c1dc9633a39c6fe691ec07a530e0e765c0a9d5a01a16f00995536578b83e54c2821766ac7ac6ae86e22269a5d14208ccac954cc95f",
+		"a1aca2bd515e5a87ed22476d9209f748754ebaeddef9cd1e1d57c12cc4b9029342cb74899a9f23cfece0ee8be2fd86e9e72a9289921231a6e40883d01694e0dd",
+		"c4ce856743cab7efd10591a0b43e0049dee967baaf0ac042fe571a62b01687c99ac345fd6bb3a5ffec83b31f96f92bd00337a59bb6f066696c2968e624461644",
+		"92fecb457c0e6c3de55bf61fbabdcf805191fd53aa8d46efbf7a4e76828ac79cd10b5a00aab74e3c9c5bc053cfb742e8170604a85087bf9aa634729b2a7939c6",
+		"71b0c49f685263009535c8d90d3cb3983eb39840f5b6e32072ac239f2a5f7fc72d1ef13a5a765a82f1485dfe63b0f5145726940848ca2390a57dc5e719f17b4e",
+		"39b663dd381569a0b708005e423b1813dd90e2a0b3716995a7366ce226f2d624c5826aa40b5eee94003ccab32ddf940d3b8bb7312643d1e1bb3ae10228fd0d84",
+		"643e53172be0fd9c4a9480ee718205fa593b0c0ee325d92248bceac3f8c7b31a4fb23b9465df1df8f822da17b7f7ec0d538e5a462e2b559578b313b84392ea2e",
+		"ec21a001756ee29de1e67ad1b5fa4e5f5ef702332ac30a38fd3e8765355bdbcd8052ef4343bd9b9f9ef577cd93b8c20c64646ab48950922d0a64f11aa60abc04",
+		"6e02a28235a5fea5bb41fe376b384a8f83376b633ae67572d73b4152c94b07a5fadb1478a2debefb3ac30cb5594e0352b108b73163f9e09f260e4f483900a039",
+		"00f382e50aa061d8e3eac0a7bec89c711d2ec4c315d894fef92a8c71d79b4f9b8b6182bd2965b2428c12001c0748efff0e7a9610cea33f83a055c695d5ab767f",
+		"fdaf9dca1aaf9c01e65379b5b17dffc40f890721627bf5eca54558245324ad8983b7f445a642f9d9388367226e4a1d2fb15591ac0cbeec886c247eee76d3a576",
+		"c3494504df969632ed8a0827ab8508354f31059e7cd44ae21a27a510793cffb53fc21dd1a42efbb0dfe7b22435450056443a2090992ff6043818fb0b25b1d5d0"
+	};
+	/**/
+	const uint8_t count = (uint8_t)(sizeof(lengths) / sizeof(*lengths));
+
+	if (count != sizeof(expected_outputs) / sizeof(*expected_outputs))
+	{
+		printf("%i %s\n", __LINE__, "FAILURE");
+		buffer_release(&input);
+		return 0;
+	}
+
+	if (!path_get_temp_file_name(&input))
+	{
+		printf("%i %s\n", __LINE__, "FAILURE");
+		buffer_release(&input);
+		return 0;
+	}
+
+	static const uint8_t* algorithm = (const uint8_t*)"blake2b-512";
+	struct range algorithm_in_range;
+	algorithm_in_range.start = algorithm;
+	algorithm_in_range.finish = algorithm + 11;
+	/**/
+	const uint8_t* path = buffer_data(&input, 31745);
+
+	for (uint8_t i = 0; i < count; ++i)
+	{
+		if (31744 < lengths[i])
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			buffer_release(&input);
+			return 0;
+		}
+
+		void* file = NULL;
+
+		if (!file_open(path, (const uint8_t*)"wb", &file))
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			buffer_release(&input);
+			return 0;
+		}
+
+		if (lengths[i] != file_write(in, sizeof(uint8_t), lengths[i], file))
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			buffer_release(&input);
+			file_close(file);
+			return 0;
+		}
+
+		if (!file_close(file))
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			buffer_release(&input);
+			return 0;
+		}
+
+		const ptrdiff_t size = buffer_size(&input);
+
+		if (!file_get_checksum(path, &algorithm_in_range, &input) ||
+			!buffer_push_back(&input, 0))
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			buffer_release(&input);
+			return 0;
+		}
+
+		const uint8_t* ptr = buffer_data(&input, size);
+
+		if (strlen(expected_outputs[i]) != strlen(ptr) ||
+			0 != memcmp(expected_outputs[i], ptr, strlen(expected_outputs[i])))
+		{
+			printf("%i\nexpected: '%s'\nreturned: '%s'\n%s\n", i, expected_outputs[i], ptr, "FAILURE");
+			buffer_release(&input);
+			return 0;
+		}
+
+		if (!buffer_resize(&input, size))
+		{
+			printf("%i %s\n", __LINE__, "FAILURE");
+			buffer_release(&input);
+			return 0;
+		}
+	}
+
+	buffer_release(&input);
+	return 1;
 }
 
 uint8_t Test_BLAKE3()
@@ -534,13 +718,14 @@ uint8_t Test_SHA3()
 	};
 	const uint8_t count = (uint8_t)(sizeof(lengths) / sizeof(*lengths));
 
-	if (4 * count != (sizeof(expected_outputs) / sizeof(*expected_outputs)))
+	if (4 * (size_t)count != (sizeof(expected_outputs) / sizeof(*expected_outputs)))
 	{
 		printf("%i %s\n", __LINE__, "FAILURE");
 		return 0;
 	}
 
 	struct buffer output;
+
 	SET_NULL_TO_BUFFER(output);
 
 	for (uint8_t i = 0; i < count; ++i)
@@ -732,6 +917,12 @@ int main(int argc, char** argv)
 
 	buffer_release(&output);
 
+	if (!Test_BLAKE2b())
+	{
+		printf("%i %s\n", __LINE__, "FAILURE");
+		return EXIT_FAILURE;
+	}
+
 	if (!Test_BLAKE3())
 	{
 		printf("%i %s\n", __LINE__, "FAILURE");
@@ -748,5 +939,6 @@ int main(int argc, char** argv)
 	/**/
 	(void)argc;
 	(void)argv;
+	/**/
 	return EXIT_SUCCESS;
 }
