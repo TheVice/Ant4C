@@ -10,12 +10,16 @@
 extern "C" {
 #include "buffer.h"
 #include "conversion.h"
+#include "echo.h"
 #include "hash.h"
+#include "path.h"
 #include "range.h"
+#include "text_encoding.h"
 };
 
 #include <string>
 #include <cstdint>
+#include <iostream>
 
 class TestHashAlgorithm : public TestsBaseXml
 {
@@ -91,6 +95,11 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 		&hash_algorithm_blake2b_384, &hash_algorithm_blake2b_512
 	};
 	//
+	static const uint8_t hash_sizes[] =
+	{
+		20, 32, 48, 64
+	};
+	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
@@ -135,6 +144,37 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 			//
 			const std::string str_output(buffer_to_string(&output).substr(range_size(&input_in_range)));
 			ASSERT_EQ(*(outputs[i]), str_output) << input << std::endl << (int)i << buffer_free(&output);
+			//
+			ptrdiff_t bytes_compressed = 0;
+			//
+			ASSERT_TRUE(buffer_resize(&output, 128)) << buffer_free(&output);
+			ASSERT_TRUE(BLAKE2b_init(hash_sizes[i], (uint64_t*)buffer_data(&output, 0))) << buffer_free(&output);
+			//
+			input_in_range = string_to_range(input);
+			null_range_to_empty(input_in_range);
+
+			if (128 < input.size())
+			{
+				const ptrdiff_t bytes_to_compress = 128 * (input.size() / 128);
+				//
+				ASSERT_TRUE(BLAKE2b_core(input_in_range.start, input_in_range.start + bytes_to_compress,
+										 &bytes_compressed, (uint64_t*)buffer_data(&output, 0))) << buffer_free(&output);
+				//
+				input_in_range.start += bytes_to_compress;
+			}
+
+			ASSERT_TRUE(BLAKE2b_final(input_in_range.start, &bytes_compressed,
+									  (uint8_t)range_size(&input_in_range), (uint64_t*)buffer_data(&output, 0))) << buffer_free(&output);
+			//
+			ASSERT_EQ(bytes_compressed, (ptrdiff_t)input.size()) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(&output, hash_sizes[i])) << buffer_free(&output);
+			//
+			input_in_range = buffer_to_range(&output);
+			returned = hash_algorithm_bytes_to_string(input_in_range.start, input_in_range.finish, &output);
+			ASSERT_EQ(expected_return, returned) << input << std::endl << (int)i << buffer_free(&output);
+			//
+			const std::string str_output_(buffer_to_string(&output).substr(range_size(&input_in_range)));
+			ASSERT_EQ(*(outputs[i]), str_output_) << input << std::endl << (int)i << buffer_free(&output);
 		}
 
 		ASSERT_NE(0, buffer_size(&output)) << buffer_free(&output);
@@ -402,6 +442,47 @@ TEST_F(TestHashAlgorithm, sha3)
 		ASSERT_NE(0, buffer_size(&output)) << buffer_free(&output);
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
+		--node_count;
+	}
+
+	buffer_release(&output);
+}
+
+TEST_F(TestHashAlgorithm, file_get_checksum)
+{
+	struct buffer output;
+	SET_NULL_TO_BUFFER(output);
+	//
+	ASSERT_TRUE(input_generator(&output, 31744)) << buffer_free(&output);
+	ASSERT_TRUE(buffer_append(&output, NULL, 3 * 4096)) << buffer_free(&output);
+	ASSERT_TRUE(buffer_resize(&output, 31744)) << buffer_free(&output);
+	ASSERT_TRUE(path_get_temp_file_name(&output)) << buffer_free(&output);
+	ASSERT_TRUE(buffer_push_back(&output, 0)) << buffer_free(&output);
+	const auto size = buffer_size(&output);
+	//
+	const uint8_t* input = buffer_data(&output, 0);
+	const uint8_t* path = buffer_data(&output, 31744);
+
+	for (const auto& node : nodes)
+	{
+		for (const auto& algorithm_node : node.node())
+		{
+			const std::string algorithm(algorithm_node.name());
+			const auto algorithm_in_range(string_to_range(algorithm));
+			const auto input_length = (uint16_t)algorithm_node.attribute("input").as_uint();
+			const std::string expected_output(algorithm_node.child_value());
+			//
+			ASSERT_LT(input_length, 31745) << buffer_free(&output);
+			//
+			ASSERT_TRUE(echo(0, Default, path, NoLevel, input, input_length, 0, verbose)) << buffer_free(&output);
+			//
+			ASSERT_TRUE(buffer_resize(&output, size)) << buffer_free(&output);
+			ASSERT_TRUE(file_get_checksum(path, &algorithm_in_range, &output)) << buffer_free(&output);
+			//
+			const std::string output_str((const char*)buffer_data(&output, size), buffer_size(&output) - size);
+			ASSERT_EQ(expected_output, output_str) << buffer_free(&output);
+		}
+
 		--node_count;
 	}
 

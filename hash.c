@@ -8,6 +8,7 @@
 #include "hash.h"
 #include "buffer.h"
 #include "common.h"
+#include "file_system.h"
 #include "range.h"
 
 #include <stdio.h>
@@ -210,5 +211,198 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 			break;
 	}
 
+	return 0;
+}
+
+uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm, struct buffer* output)
+{
+	if (NULL == path ||
+		range_is_null_or_empty(algorithm) ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	const uint8_t algorithm_value = common_string_to_enum(algorithm->start, algorithm->finish,
+									hash_function_str, UNKNOWN_HASH_FUNCTION);
+
+	if (blake3_256 == algorithm_value ||
+		bytes_to_string == algorithm_value ||
+		crc32 < algorithm_value)
+	{
+		return 0;
+	}
+
+	uint8_t hash_size = 0;
+	const ptrdiff_t size = buffer_size(output);
+	void* file = NULL;
+
+	if (!file_open(path, (const uint8_t*)"rb", &file))
+	{
+		return 0;
+	}
+
+	switch (algorithm_value)
+	{
+		case blake2b_160:
+			hash_size = 20;
+			break;
+
+		case blake2b_256:
+			hash_size = 32;
+			break;
+
+		case blake2b_384:
+			hash_size = 48;
+			break;
+
+		case blake2b_512:
+			hash_size = 64;
+			break;
+
+		case crc32:
+		{
+			uint32_t out = 0;
+
+			if (!hash_algorithm_crc32_init(&out))
+			{
+				file_close(file);
+				return 0;
+			}
+
+			if (!buffer_append(output, NULL, 4096))
+			{
+				file_close(file);
+				return 0;
+			}
+
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				if (!hash_algorithm_crc32_core(file_content, file_content + readed, &out))
+				{
+					file_close(file);
+					return 0;
+				}
+			}
+
+			if (!file_close(file) ||
+				!hash_algorithm_crc32_final(&out, 1))
+			{
+				file_close(file);
+				return 0;
+			}
+
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string((const uint8_t*)&out, ((const uint8_t*)&out) + sizeof(uint32_t), output);
+		}
+
+		default:
+			file_close(file);
+			return 0;
+	}
+
+	if (algorithm_value < blake3_256)
+	{
+		if (!buffer_append(output, NULL, 64 + 128 + 4096 + 128))
+		{
+			file_close(file);
+			return 0;
+		}
+
+		uint64_t* out = (uint64_t*)buffer_data(output, size + 64);
+
+		if (!BLAKE2b_init(hash_size, out))
+		{
+			file_close(file);
+			return 0;
+		}
+
+		size_t readed = 0;
+		uint8_t* last = NULL;
+		ptrdiff_t bytes_compressed = 0;
+		uint8_t* file_content = buffer_data(output, size + 64 + 128);
+
+		while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+		{
+			if (last && !BLAKE2b_core(last, last + 128, &bytes_compressed, out))
+			{
+				file_close(file);
+				return 0;
+			}
+
+			last = NULL;
+
+			if (4096 != readed)
+			{
+				if (128 < readed)
+				{
+					uint16_t bytes_to_compress = (uint16_t)(128 * (readed / 128));
+
+					if (0 == readed % 128)
+					{
+						bytes_to_compress -= 128;
+					}
+
+					if (!BLAKE2b_core(file_content, file_content + bytes_to_compress, &bytes_compressed, out))
+					{
+						file_close(file);
+						return 0;
+					}
+
+					readed -= bytes_compressed;
+					file_content += bytes_to_compress;
+				}
+
+				break;
+			}
+
+			if (!BLAKE2b_core(file_content, file_content + 4096 - 128, &bytes_compressed, out))
+			{
+				file_close(file);
+				return 0;
+			}
+
+			last = file_content + 4096;
+#if __STDC_SEC_API__
+			memcpy_s(last, 128, file_content + 4096 - 128, 128);
+#else
+			memcpy(last, file_content + 4096 - 128, 128);
+#endif
+		}
+
+		if (!file_close(file))
+		{
+			return 0;
+		}
+
+		if (last)
+		{
+			if (!readed)
+			{
+				file_content = last;
+				readed = 128;
+			}
+			else
+			{
+				if (!BLAKE2b_core(last, last + 128, &bytes_compressed, out))
+				{
+					return 0;
+				}
+			}
+		}
+
+		if (!BLAKE2b_final(file_content, &bytes_compressed, (uint8_t)readed, out))
+		{
+			return 0;
+		}
+
+		return buffer_resize(output, size) &&
+			   hash_algorithm_bytes_to_string((const uint8_t*)out, ((const uint8_t*)out) + hash_size, output);
+	}
+
+	file_close(file);
 	return 0;
 }

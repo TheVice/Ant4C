@@ -16,7 +16,18 @@
 
 #include <stddef.h>
 
-uint8_t hash_algorithm_crc32(const uint8_t* start, const uint8_t* finish, uint32_t* output, uint8_t order)
+uint8_t hash_algorithm_crc32_init(uint32_t* output)
+{
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	(*output) = UINT32_MAX;
+	return 1;
+}
+
+uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, uint32_t* output)
 {
 	if (NULL == start ||
 		NULL == finish ||
@@ -93,13 +104,21 @@ uint8_t hash_algorithm_crc32(const uint8_t* start, const uint8_t* finish, uint32
 		0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 		0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 	};
-	/**/
-	(*output) = UINT32_MAX;
 
 	for (; start < finish; ++start)
 	{
 		const uint8_t index = ((*output) ^ (*start)) & 0xFF;
 		(*output) = ((*output) >> 8) ^ table[index];
+	}
+
+	return 1;
+}
+
+uint8_t hash_algorithm_crc32_final(uint32_t* output, uint8_t order)
+{
+	if (NULL == output)
+	{
+		return 0;
 	}
 
 	(*output) = (*output) ^ UINT32_MAX;
@@ -115,4 +134,20 @@ uint8_t hash_algorithm_crc32(const uint8_t* start, const uint8_t* finish, uint32
 	}
 
 	return 1;
+}
+
+uint8_t hash_algorithm_crc32(
+	const uint8_t* start, const uint8_t* finish, uint32_t* output, uint8_t order)
+{
+	if (!hash_algorithm_crc32_init(output))
+	{
+		return 0;
+	}
+
+	if (!hash_algorithm_crc32_core(start, finish, output))
+	{
+		return 0;
+	}
+
+	return hash_algorithm_crc32_final(output, order);
 }

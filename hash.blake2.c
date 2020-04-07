@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -14,8 +14,13 @@
 
 #include "hash.h"
 #include "buffer.h"
+#include "range.h"
 
-#include <stddef.h>
+#include <string.h>
+
+#if !defined(__STDC_SEC_API__)
+#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
+#endif
 
 static const uint64_t IV[] =
 {
@@ -134,6 +139,91 @@ uint8_t BLAKE2b_Pad(const uint8_t* key, ptrdiff_t key_size, uint8_t result_size,
 	return 1;
 }
 #endif
+uint8_t BLAKE2b_init(uint8_t hash_length, uint64_t* output)
+{
+	if (NULL == output)
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 1; i < 8; ++i)
+	{
+		output[i] = IV[i];
+	}
+
+	output[0] = 0x01010000;
+	/*output[0] += (key_size << 2);*/
+	output[0] += hash_length;
+	output[0] = IV[0] ^ output[0];
+	/**/
+	return 1;
+}
+
+uint8_t BLAKE2b_core(const uint8_t* start, const uint8_t* finish, ptrdiff_t* bytes_compressed,
+					 uint64_t* output)
+{
+	if (range_in_parts_is_null_or_empty(start, finish) ||
+		0 != ((finish - start) % 128) ||
+		NULL == bytes_compressed ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	uint64_t t[2];
+	t[0] = t[1] = 0;/*NOTE: using of t[1] not implemented.*/
+
+	while (start < finish)
+	{
+		(*bytes_compressed) += 128;
+		t[0] = (*bytes_compressed);
+
+		if (!BLAKE2b_compress(output, (const uint64_t*)start, t, 0))
+		{
+			return 0;
+		}
+
+		start += 128;
+	}
+
+	return 1;
+}
+
+uint8_t BLAKE2b_final(const uint8_t* start, ptrdiff_t* bytes_compressed, uint8_t bytes_remaining,
+					  uint64_t* output)
+{
+	if (NULL == start ||
+		NULL == bytes_compressed ||
+		128 < bytes_remaining ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	uint64_t t[2];
+	t[0] = t[1] = 0;/*NOTE: using of t[1] not implemented.*/
+	uint8_t chunk[128];
+
+	if (0 < bytes_remaining)
+	{
+#if __STDC_SEC_API__
+		memcpy_s(chunk, 128, start, bytes_remaining);
+#else
+		memcpy(chunk, start, bytes_remaining);
+#endif
+		(*bytes_compressed) += bytes_remaining;
+	}
+
+	t[0] = (*bytes_compressed);
+
+	if (128 != bytes_remaining)
+	{
+		memset(chunk + bytes_remaining, 0, 128 - bytes_remaining);
+	}
+
+	return BLAKE2b_compress(output, (const uint64_t*)chunk, t, 1);
+}
+
 uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,
 				const uint8_t* key, ptrdiff_t key_size,
 				uint8_t hash_length,
@@ -171,7 +261,7 @@ uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,
 #else
 	(void)key;
 #endif
-	t[0] = t[1] = 0;
+	t[0] = t[1] = 0;/*NOTE: using of t[1] not implemented.*/
 
 	while (bytes_remaining > 128)
 	{

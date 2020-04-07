@@ -10,6 +10,7 @@
 #include "common.h"
 #include "conversion.h"
 #include "date_time.h"
+#include "hash.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -613,7 +614,7 @@ uint8_t directory_delete(const uint8_t* path)
 			{
 #if defined(_WIN32)
 
-				if (0 != DeleteFileW(start))
+				if (0 == DeleteFileW(start))
 #else
 				if (0 != remove((const char*)start))
 #endif
@@ -2260,6 +2261,7 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 static const uint8_t* file_function_str[] =
 {
 	(const uint8_t*)"exists",
+	(const uint8_t*)"get-checksum",
 	(const uint8_t*)"get-creation-time",
 	(const uint8_t*)"get-creation-time-utc",
 	(const uint8_t*)"get-last-access-time",
@@ -2273,6 +2275,7 @@ static const uint8_t* file_function_str[] =
 enum file_function
 {
 	file_exists_,
+	file_get_checksum_,
 	file_get_creation_time_,
 	file_get_creation_time_utc_,
 	file_get_last_access_time_,
@@ -2326,6 +2329,10 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 		case file_exists_:
 			return 1 == arguments_count &&
 				   bool_to_string(file_exists(argument1.start), output);
+
+		case file_get_checksum_:
+			return 2 == arguments_count &&
+				   file_get_checksum(argument1.start, &argument2, output);
 
 		case file_get_creation_time_:
 			return 1 == arguments_count &&
