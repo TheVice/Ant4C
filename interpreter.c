@@ -1339,6 +1339,13 @@ uint8_t fail_evaluate_task(
 	return 0;
 }
 
+uint8_t for_each_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
+							   const uint8_t* attributes_finish, const uint8_t* element_finish,
+							   struct buffer* task_arguments, uint8_t verbose);
+
 #define IF_TEST_POSITION		0
 
 uint8_t if_get_attributes_and_arguments_for_task(
@@ -1403,9 +1410,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"echo",
 	(const uint8_t*)"exec",
 	(const uint8_t*)"fail",
-#if 0
 	(const uint8_t*)"foreach",
-#endif
 	(const uint8_t*)"if",
 #if 0
 	(const uint8_t*)"include",
@@ -1450,9 +1455,7 @@ enum interpreter_task
 	echo_task,
 	exec_task,
 	fail_task,
-#if 0
 	foreach_task,
-#endif
 	if_task,
 #if 0
 	include_task,
@@ -1694,7 +1697,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			{
 				struct buffer* message = buffer_buffer_data(&task_arguments, task_attributes_count - 1);
 
-				if (!buffer_size(message))
+				if (!buffer_size(message) && attributes_finish < element_finish)
 				{
 					if (!interpreter_get_xml_element_value(the_project, the_target, attributes_finish, element_finish, message,
 														   verbose))
@@ -1758,11 +1761,26 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			task_attributes_count = fail_evaluate_task(the_project, the_target, attributes_finish, element_finish,
 									buffer_buffer_data(&task_arguments, FAIL_MESSAGE_POSITION), verbose);
 			break;
-#if 0
 
-		case foreach_:
+		case foreach_task:
+			if (!for_each_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					the_project, the_target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = for_each_evaluate_task(the_project, the_target, attributes_finish, element_finish,
+									&task_arguments, verbose);
 			break;
-#endif
 
 		case if_task:
 			if (!if_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,

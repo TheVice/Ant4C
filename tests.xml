@@ -3302,7 +3302,7 @@
       <output>exists('echo') -> True </output>
       <output>exists('exec') -> True </output>
       <output>exists('fail') -> True </output>
-      <output>exists('foreach') -> False </output>
+      <output>exists('foreach') -> True </output>
       <output>exists('if') -> True </output>
       <output>exists('include') -> False </output>
       <output>exists('loadfile') -> True </output>
@@ -4515,6 +4515,94 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>Call task sample</name>
       <default>B</default>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="For each sample 1.">
+        <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />
+
+        <mkdir dir="${folder}" unless="${directory::exists(folder)}" />
+        <touch file="${path::combine(folder, 'A')}" />
+        <touch file="${path::combine(folder, 'B')}" />
+        <touch file="${path::combine(folder, 'C')}" />
+
+        <property name="result" value="" />
+
+        <foreach item="File" in="${folder}" property="file_name">
+          <property name="result" value="${result}${path::get-file-name(file_name)}" />
+        </foreach>
+
+        <!--fail unless="${string::equal('ABC', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the ABC." /-->
+        <fail unless="${string::equal('3', string::get-length(result))}" message="${project::get-name()} - length of property value 'result' (${result}) should be equal to the 3." />
+        <fail unless="${string::contains(result, 'A')}" message="${project::get-name()} - property value of result (${result}) should contains 'A'." />
+        <fail unless="${string::contains(result, 'B')}" message="${project::get-name()} - property value of result (${result}) should contains 'B'." />
+        <fail unless="${string::contains(result, 'C')}" message="${project::get-name()} - property value of result (${result}) should contains 'C'." />
+
+        <fail unless="${string::empty(file_name)}" message="${project::get-name()} - property value of file_name (${file_name}) is not empty." />
+
+        <delete dir="${folder}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>For each sample 1.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="For each sample 2.">
+        <property name="file" value="${path::get-temp-file-name()}" />
+        <echo file="${file}">
+          A,a,1          
+          B,b,2          
+          C,c,3          
+        </echo>
+
+        <property name="result" value="" />
+        <foreach item="Line" in="${file}" property="line">
+          <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
+        </foreach>
+        <fail unless="${string::equal('000000005a9387236fc6e795ca253a38a3114325', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the 000000005a9387236fc6e795ca253a38a3114325." />
+
+        <property name="result" value="" />
+        <foreach item="Line" in="${file}" trim="Both" property="line">
+          <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
+        </foreach>
+        <fail unless="${string::equal('0000000068af5ce1b440c9d2ffe5bac300000000', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the 0000000068af5ce1b440c9d2ffe5bac300000000." />
+
+        <property name="result" value="" />
+        <foreach item="Line" in="${file}" trim="End" property="line">
+          <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
+        </foreach>
+        <fail unless="${string::equal('00000000ede72e083108bb3b7aadc82a00000000', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the 00000000ede72e083108bb3b7aadc82a00000000." />
+
+        <property name="result" value="" />
+        <foreach item="Line" in="${file}" trim="None" property="line">
+          <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
+        </foreach>
+        <fail unless="${string::equal('000000005a9387236fc6e795ca253a38a3114325', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the 000000005a9387236fc6e795ca253a38a3114325." />
+
+        <property name="result" value="" />
+        <foreach item="Line" in="${file}" trim="Start" property="line">
+          <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
+        </foreach>
+        <fail unless="${string::equal('000000006f6756c65a323670ffd1ebdd00000000', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the 000000006f6756c65a323670ffd1ebdd00000000." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>For each sample 2.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="For each sample 3.">
+        <property name="result" value="" />
+        <!--foreach item="String" in="a b;c" delim=" ;" property="element"-->
+        <foreach item="String" in="${directory::get-logical-drives()}" property="element">
+          <property name="result" value="${result}${element}" />
+        </foreach>
+        <fail if="${string::empty(result)}" message="${project::get-name()} - property value of result (${result}) should not be empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>For each sample 3.</name>
     </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[
