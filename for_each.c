@@ -75,24 +75,15 @@ uint8_t for_each_apply_trim(struct range* item, uint8_t trim_value)
 	return 0;
 }
 
-uint8_t for_each_with_trim(void* the_project, const void* the_target, void* the_property,
-						   const uint8_t* start, const uint8_t* finish, struct buffer* tmp,
-						   const uint8_t* attributes_finish, const uint8_t* element_finish,
-						   const uint8_t* delimiter, uint8_t trim_value, uint8_t verbose)
+uint8_t for_each_substring(void* the_project, const void* the_target, void* the_property,
+						   const uint8_t* start, const uint8_t* finish,
+						   const uint8_t* substing_start, const uint8_t* substing_finish,
+						   const struct buffer* elements, uint8_t trim_value, uint8_t verbose)
 {
-	if (!buffer_resize(tmp, 0))
-	{
-		return 0;
-	}
-
-	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, tmp))
-	{
-		return 1;
-	}
-
 	while (start < finish)
 	{
-		const uint8_t* pos = find_any_symbol_like_or_not_like_that(start, finish, delimiter, 1, 1, 1);
+		const ptrdiff_t index = string_index_of(start, finish, substing_start, substing_finish);
+		const uint8_t* pos = (-1 == index) ? finish : start + index;
 		/**/
 		struct range item;
 		item.start = start;
@@ -109,15 +100,63 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target, void* the_
 			return 0;
 		}
 
-		if (!interpreter_evaluate_tasks(the_project, the_target, tmp, 0, verbose))
+		if (!interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose))
+		{
+			return 0;
+		}
+
+		start = pos + 1;/*TODO:*/
+	}
+
+	return 1;
+}
+
+uint8_t for_each_with_trim(void* the_project, const void* the_target, void* the_property,
+						   const uint8_t* start, const uint8_t* finish,
+						   struct buffer* delim, struct buffer* tmp,
+						   const uint8_t* attributes_finish, const uint8_t* element_finish,
+						   const uint8_t* delimiter, uint8_t trim_value, uint8_t verbose)
+{
+	if (!buffer_resize(tmp, 0))
+	{
+		return 0;
+	}
+
+	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, tmp))
+	{
+		return 1;
+	}
+
+	struct range substing;
+
+	BUFFER_TO_RANGE(substing, delim);
+
+	if (1 == string_get_length(substing.start, substing.finish))
+	{
+		const uint8_t* pos = find_any_symbol_like_or_not_like_that(start, finish, delimiter, 1, 1, 1);
+		/**/
+		struct range item;
+		item.start = start;
+		item.finish = pos;
+
+		if (!for_each_apply_trim(&item, trim_value))
+		{
+			return 0;
+		}
+
+		if (!for_each_substring(
+				the_project, the_target, the_property, item.start, item.finish,
+				substing.start, substing.finish, tmp, trim_value, verbose))
 		{
 			return 0;
 		}
 
 		start = pos + 1;
+		return 1;
 	}
 
-	return 1;
+	return for_each_substring(the_project, the_target, the_property, start, finish,
+							  delimiter, delimiter + 1, tmp, trim_value, verbose);
 }
 
 uint8_t for_each_file_system_entries(void* the_project, const void* the_target, void* the_property,
@@ -183,7 +222,8 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target, 
 	static const uint8_t zero = 0;
 	/**/
 	return for_each_with_trim(the_project, the_target, the_property,
-							  start, finish, input, attributes_finish, element_finish,
+							  start, finish, NULL, input,
+							  attributes_finish, element_finish,
 							  &zero, None, verbose);
 }
 
@@ -217,11 +257,11 @@ uint8_t for_each_line(void* the_project, const void* the_target, void* the_prope
 
 	start = buffer_data(input, 0);
 	const uint8_t* finish = start + buffer_size(input);
-	(void)delim;
 	static const uint8_t n = '\n';
 	/**/
 	return for_each_with_trim(the_project, the_target, the_property,
-							  start, finish, tmp, attributes_finish, element_finish,
+							  start, finish, delim, tmp,
+							  attributes_finish, element_finish,
 							  &n, trim_value, verbose);
 }
 
@@ -237,11 +277,11 @@ uint8_t for_each_string(void* the_project, const void* the_target, void* the_pro
 
 	const uint8_t* start = buffer_data(input, 0);
 	const uint8_t* finish = start + buffer_size(input);
-	(void)delim;
 	static const uint8_t zero = 0;
 	/**/
 	return for_each_with_trim(the_project, the_target, the_property,
-							  start, finish, tmp, attributes_finish, element_finish,
+							  start, finish, delim, tmp,
+							  attributes_finish, element_finish,
 							  &zero, trim_value, verbose);
 }
 

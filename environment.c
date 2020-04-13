@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -517,6 +517,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 #include <pwd.h>
 #include <unistd.h>
+#include <sys/sysinfo.h>
 #include <sys/utsname.h>
 
 #include <stdio.h>
@@ -1077,6 +1078,18 @@ uint8_t environment_is64bit_operating_system()
 #endif
 }
 
+uint16_t environment_processor_count()
+{
+#if defined(_WIN32)
+	SYSTEM_INFO system_info;
+	memset(&system_info, 0, sizeof(SYSTEM_INFO));
+	GetSystemInfo(&system_info);
+	return MAX(1, (uint16_t)system_info.dwNumberOfProcessors);
+#else
+	return (uint16_t)get_nprocs();
+#endif
+}
+
 static const uint8_t* environment_str[] =
 {
 	(const uint8_t*)"get-folder-path",
@@ -1087,7 +1100,8 @@ static const uint8_t* environment_str[] =
 	(const uint8_t*)"newline",
 	(const uint8_t*)"variable-exists",
 	(const uint8_t*)"is64bit-process",
-	(const uint8_t*)"is64bit-operating-system"
+	(const uint8_t*)"is64bit-operating-system",
+	(const uint8_t*)"processor-count"
 };
 
 enum environment_function
@@ -1095,6 +1109,7 @@ enum environment_function
 	get_folder_path, get_machine_name, get_operating_system,
 	get_user_name, get_variable, newline, variable_exists,
 	is64bit_process, is64bit_operating_system,
+	processor_count,
 	UNKNOWN_ENVIRONMENT
 };
 
@@ -1214,6 +1229,9 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 
 		case is64bit_operating_system:
 			return !arguments_count && bool_to_string(environment_is64bit_operating_system(), output);
+
+		case processor_count:
+			return !arguments_count && int_to_string(environment_processor_count(), output);
 
 		case UNKNOWN_ENVIRONMENT:
 		default:

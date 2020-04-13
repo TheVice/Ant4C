@@ -228,7 +228,8 @@ int main(int argc, char** argv)
 
 		if (!argument_parser_get_project_help())
 		{
-			if (!property_add_at_project(the_project, argument_parser_get_properties(), argument_parser_get_verbose()))
+			if (!property_add_at_project(the_project, argument_parser_get_properties(), NULL,
+										 argument_parser_get_verbose()))
 			{
 				/*TODO: echo.*/
 				argc = 0;

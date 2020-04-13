@@ -1691,6 +1691,11 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>${math::less('0', environment::processor-count())} </code>
+      <output>True </output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>contains('Abc', 'a') -> ${string::contains('Abc', 'a')}</code>
       <output>contains('Abc', 'a') -> False</output>
       <return>1</return>
@@ -3515,6 +3520,16 @@
       <output>False</output>
       <return>1</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::contains('my ${file} is here', '${file}')}</code>
+      <output>True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::contains('my ${current file} is here', '${file}')}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
     <interpreter_evaluate_task>
       <code><![CDATA[<echo />]]></code>
       <return>1</return>
@@ -4604,6 +4619,41 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>For each sample 3.</name>
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Program sample 1.">
+        <property name="file" value="${path::get-temp-file-name()}" />
+        <echo file="${file}">
+          <project><echo>${file}</echo></project>
+        </echo>
+        <program buildfile="${file}" />
+        <loadfile file="${file}" property="content" />
+        <fail if="${string::contains(content, '${file}')}" message="${project::get-name()} sub project should not contains property expression." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Program sample 1.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Program sample 2.">
+        <property name="file" value="${path::get-temp-file-name()}" />
+        <echo file="${file}">
+          <project><echo>${file}</echo></project>
+        </echo>
+        <program buildfile="${file}">
+          <properties>
+            <property name="property_name" value="property value" />
+          </properties>
+        </program>
+        <loadfile file="${file}" property="content" />
+        <fail if="${string::contains(content, '${file}')}" message="${project::get-name()} sub project should not contains property expression." />
+        <fail if="${property::exists('property_name')}" message="${project::get-name()} this property ('property_name') should be able only for inner project." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Program sample 2.</name>
+    </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[
       <project name="project-properties" default="some_target">
@@ -4624,6 +4674,80 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <default>some_target</default>
     </project_load_from_build_file>
   </TestProject>
+  <TestProgram>
+    <program_get_properties>
+      <input><![CDATA[
+      <properties>
+        <property name="property_name_1" value="property value" dynamic="true" overwrite="true" readonly="true" failonerror="true" verbose="true" />
+        <property name="property_name_2" value="property value" dynamic="true" overwrite="true" readonly="true" failonerror="true" verbose="false" />
+        <property name="property_name_3" value="property value" dynamic="true" overwrite="true" readonly="true" failonerror="false" verbose="true" />
+        <property name="property_name_4" value="property value" dynamic="true" overwrite="true" readonly="true" failonerror="false" verbose="false" />
+        <property name="property_name_5" value="property value" dynamic="true" overwrite="true" readonly="false" failonerror="true" verbose="true" />
+        <property name="property_name_6" value="property value" dynamic="true" overwrite="true" readonly="false" failonerror="true" verbose="false" />
+        <property name="property_name_7" value="property value" dynamic="true" overwrite="true" readonly="false" failonerror="false" verbose="true" />
+        <property name="property_name_8" value="property value" dynamic="true" overwrite="true" readonly="false" failonerror="false" verbose="false" />
+        <property name="property_name_9" value="property value" dynamic="true" overwrite="false" readonly="true" failonerror="true" verbose="true" />
+        <property name="property_name_10" value="property value" dynamic="true" overwrite="false" readonly="true" failonerror="true" verbose="false" />
+        <property name="property_name_11" value="property value" dynamic="true" overwrite="false" readonly="true" failonerror="false" verbose="true" />
+        <property name="property_name_12" value="property value" dynamic="true" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+        <property name="property_name_13" value="property value" dynamic="true" overwrite="false" readonly="false" failonerror="true" verbose="true" />
+        <property name="property_name_14" value="property value" dynamic="true" overwrite="false" readonly="false" failonerror="true" verbose="false" />
+        <property name="property_name_15" value="property value" dynamic="true" overwrite="false" readonly="false" failonerror="false" verbose="true" />
+        <property name="property_name_16" value="property value" dynamic="true" overwrite="false" readonly="false" failonerror="false" verbose="false" />
+        <property name="property_name_17" value="property value" dynamic="false" overwrite="true" readonly="true" failonerror="true" verbose="true" />
+        <property name="property_name_18" value="property value" dynamic="false" overwrite="true" readonly="true" failonerror="true" verbose="false" />
+        <property name="property_name_19" value="property value" dynamic="false" overwrite="true" readonly="true" failonerror="false" verbose="true" />
+        <property name="property_name_20" value="property value" dynamic="false" overwrite="true" readonly="true" failonerror="false" verbose="false" />
+        <property name="property_name_21" value="property value" dynamic="false" overwrite="true" readonly="false" failonerror="true" verbose="true" />
+        <property name="property_name_22" value="property value" dynamic="false" overwrite="true" readonly="false" failonerror="true" verbose="false" />
+        <property name="property_name_23" value="property value" dynamic="false" overwrite="true" readonly="false" failonerror="false" verbose="true" />
+        <property name="property_name_24" value="property value" dynamic="false" overwrite="true" readonly="false" failonerror="false" verbose="false" />
+        <property name="property_name_25" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="true" verbose="true" />
+        <property name="property_name_26" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="true" verbose="false" />
+        <property name="property_name_27" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="true" />
+        <property name="property_name_28" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+        <property name="property_name_29" value="property value" dynamic="false" overwrite="false" readonly="false" failonerror="true" verbose="true" />
+        <property name="property_name_30" value="property value" dynamic="false" overwrite="false" readonly="false" failonerror="true" verbose="false" />
+        <property name="property_name_31" value="property value" dynamic="false" overwrite="false" readonly="false" failonerror="false" verbose="true" />
+        <property name="property_name_32" value="property value" dynamic="false" overwrite="false" readonly="false" failonerror="false" verbose="false" />
+      </properties>
+      ]]></input>
+      <properties>
+        <property name="property_name_1" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_2" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_3" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_4" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_5" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_6" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_7" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_8" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_9" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_10" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_11" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_12" value="property value" dynamic="true" readonly="true" />
+        <property name="property_name_13" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_14" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_15" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_16" value="property value" dynamic="true" readonly="false" />
+        <property name="property_name_17" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_18" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_19" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_20" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_21" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_22" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_23" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_24" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_25" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_26" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_27" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_28" value="property value" dynamic="false" readonly="true" />
+        <property name="property_name_29" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_30" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_31" value="property value" dynamic="false" readonly="false" />
+        <property name="property_name_32" value="property value" dynamic="false" readonly="false" />
+      </properties>
+    </program_get_properties>
+  </TestProgram>
   <TestProperty>
     <property_task>
       <properties>

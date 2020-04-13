@@ -220,6 +220,7 @@ uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffe
 	}
 
 	readed = text_encoding_get_one_of_data_by_BOM(data, (ptrdiff_t)readed);
+	const uint8_t use_offset = (UTF16BE == readed || UTF16LE == readed);
 
 	switch (readed)
 	{
@@ -248,25 +249,25 @@ uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffe
 
 		case UTF16BE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, 1, uint16_t, output,
+				file, data, path, readed, use_offset, uint16_t, output,
 				text_encoding_UTF16BE_to_UTF8);
 			return 1;
 
 		case UTF16LE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, 1, uint16_t, output,
+				file, data, path, readed, use_offset, uint16_t, output,
 				text_encoding_UTF16LE_to_UTF8);
 			return 1;
 
 		case UTF32BE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, 0, uint32_t, output,
+				file, data, path, readed, use_offset, uint32_t, output,
 				text_encoding_UTF32BE_to_UTF8);
 			return 1;
 
 		case UTF32LE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, 0, uint32_t, output,
+				file, data, path, readed, use_offset, uint32_t, output,
 				text_encoding_encode_UTF8);
 			return 1;
 

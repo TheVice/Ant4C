@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -75,6 +75,7 @@ uint8_t environment_newline(struct buffer* newline);
 uint8_t environment_variable_exists(const uint8_t* variable_name_start, const uint8_t* variable_name_finish);
 uint8_t environment_is64bit_process();
 uint8_t environment_is64bit_operating_system();
+uint16_t environment_processor_count();
 
 uint8_t environment_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t environment_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,

@@ -345,9 +345,11 @@ uint8_t property_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t property_evaluate_task(void* the_project, const struct buffer* task_arguments, uint8_t verbose)
+uint8_t property_evaluate_task(void* the_project, struct buffer* properties,
+							   const struct buffer* task_arguments, uint8_t verbose)
 {
-	if (NULL == the_project || NULL == task_arguments)
+	if ((NULL == the_project && NULL == properties) ||
+		NULL == task_arguments)
 	{
 		return 0;
 	}
@@ -394,33 +396,68 @@ uint8_t property_evaluate_task(void* the_project, const struct buffer* task_argu
 		return 0;
 	}
 
-	return project_property_set_value(
-			   the_project,
+	if (the_project)
+	{
+		return project_property_set_value(
+				   the_project,
+				   buffer_data(name, 0), name_length,
+				   value, buffer_size(value_in_a_buffer),
+				   dynamic, over_write, read_only, verbose);
+	}
+
+	return property_set_by_name(
+			   properties,
 			   buffer_data(name, 0), name_length,
 			   value, buffer_size(value_in_a_buffer),
+			   property_value_is_byte_array,
 			   dynamic, over_write, read_only, verbose);
 }
 
-uint8_t property_add_at_project(void* the_project, const struct buffer* properties, uint8_t verbose)
+uint8_t property_add_at_project(void* the_project, const struct buffer* properties,
+								uint8_t(*except_filter)(const uint8_t*, uint8_t), uint8_t verbose)
 {
 	if (NULL == the_project || NULL == properties)
 	{
 		return 0;
 	}
 
-	static const uint8_t over_write = 1;
 	ptrdiff_t i = 0;
-	struct property* prop = NULL;
+	const struct property* prop = NULL;
+	static const uint8_t over_write = 1;
 
-	while (NULL != (prop = buffer_property_data(properties, i++)))
+	if (except_filter)
 	{
-		const void* value = buffer_size(&prop->value) ? buffer_data(&prop->value, 0) : (void*)prop;
-
-		if (!project_property_set_value(the_project, prop->name, prop->name_length,
-										value, buffer_size(&prop->value), prop->dynamic,
-										over_write, prop->read_only, verbose))
+		while (NULL != (prop = buffer_property_data(properties, i++)))
 		{
-			return 0;
+			if (except_filter(prop->name, prop->name_length))
+			{
+				continue;
+			}
+
+			const ptrdiff_t size = buffer_size(&prop->value);
+			const void* value = size ? buffer_data(&prop->value, 0) : (const void*)prop;
+
+			if (!project_property_set_value(the_project, prop->name, prop->name_length,
+											value, size, prop->dynamic, over_write,
+											prop->read_only, verbose))
+			{
+				return 0;
+			}
+		}
+	}
+	else
+	{
+		while (NULL != (prop = buffer_property_data(properties, i++)))
+		{
+			const ptrdiff_t size = buffer_size(&prop->value);
+			const void* value = size ? buffer_data(&prop->value, 0) : (const void*)prop;
+
+			if (!project_property_set_value(the_project, prop->name, prop->name_length,
+											value, size, prop->dynamic, over_write,
+											prop->read_only, verbose))
+			{
+				return 0;
+			}
 		}
 	}
 

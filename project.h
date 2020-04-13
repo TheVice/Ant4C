@@ -67,4 +67,11 @@ uint8_t project_exec_function(const void* the_project,
 uint8_t program_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							  struct buffer* output);
 
+uint8_t program_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t program_evaluate_task(const void* the_project, const void* the_target,
+							  struct buffer* task_arguments, const uint8_t* attributes_finish,
+							  const uint8_t* element_finish, uint8_t verbose);
+
 #endif

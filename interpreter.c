@@ -234,9 +234,10 @@ uint8_t interpreter_evaluate_argument_area(
 uint8_t interpreter_actualize_property_value(
 	const void* the_project, const void* the_target,
 	uint8_t property_function_id, const void* the_property,
-	ptrdiff_t size, struct buffer* return_of_function, uint8_t verbose)
+	ptrdiff_t size, struct buffer* output, uint8_t verbose)
 {
-	if (property_get_id_of_get_value_function() != property_function_id)
+	if (property_get_id_of_get_value_function() != property_function_id ||
+		NULL == the_property)
 	{
 		return 1;
 	}
@@ -257,9 +258,9 @@ uint8_t interpreter_actualize_property_value(
 
 	SET_NULL_TO_BUFFER(code_in_buffer);
 
-	if (!buffer_append(&code_in_buffer, buffer_data(return_of_function, size),
-					   buffer_size(return_of_function) - size) ||
-		!buffer_resize(return_of_function, size))
+	if (!buffer_append(&code_in_buffer, buffer_data(output, size),
+					   buffer_size(output) - size) ||
+		!buffer_resize(output, size))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -271,7 +272,7 @@ uint8_t interpreter_actualize_property_value(
 
 	code.finish = code.start + buffer_size(&code_in_buffer);
 
-	if (!interpreter_evaluate_code(the_project, the_target, &code, return_of_function, verbose))
+	if (!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -707,9 +708,30 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 		}
 
 		function.start += index;
-		function.finish = find_any_symbol_like_or_not_like_that(
-							  function.start, code->finish,
-							  &function_call_finish, 1, 1, 1);
+		function.finish = function.start;
+
+		while (function.finish < code->finish)
+		{
+			static const uint8_t apos = '\'';
+
+			if (apos == (*function.finish))
+			{
+				function.finish = find_any_symbol_like_or_not_like_that(
+									  function.finish + 1, code->finish,
+									  &apos, 1, 1, 1);
+				function.finish = find_any_symbol_like_or_not_like_that(
+									  function.finish + 1, code->finish,
+									  &apos, 1, 0, 1);
+				continue;
+			}
+
+			if (function_call_finish == (*function.finish))
+			{
+				break;
+			}
+
+			++function.finish;
+		}
 
 		if (function.finish == code->finish && function_call_finish != *function.finish)
 		{
@@ -765,9 +787,6 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 	buffer_release(&return_of_function);
 	return buffer_append(output, previous_pos, code_length - (previous_pos - code->start));
 }
-
-#define IF_POSITION		0
-#define UNLESS_POSITION	1
 
 uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	const void* the_project,
@@ -1421,15 +1440,10 @@ static const uint8_t* interpreter_task_str[] =
 #endif
 	(const uint8_t*)"mkdir",
 	(const uint8_t*)"move",
-#if 0
 	(const uint8_t*)"program",
-#endif
 	(const uint8_t*)"project",
 	(const uint8_t*)"property",
 #if 0
-	(const uint8_t*)"readregistry",
-	(const uint8_t*)"regex",
-	(const uint8_t*)"script",
 	(const uint8_t*)"setenv",
 #endif
 	(const uint8_t*)"sleep",
@@ -1466,15 +1480,10 @@ enum interpreter_task
 #endif
 	mkdir_task,
 	move_task,
-#if 0
 	program_task,
-#endif
 	project_task,
 	property_task,
 #if 0
-	readregistry_task,
-	regex_task,
-	script_task,
 	setenv_task,
 #endif
 	sleep_task,
@@ -1494,6 +1503,81 @@ uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task
 {
 	return common_string_to_enum(task_name_start, task_name_finish,
 								 interpreter_task_str, UNKNOWN_TASK);
+}
+
+uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
+	const void* the_project, const void* the_target,
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	uint8_t verbose)
+{
+	if (NULL == the_project ||
+		NULL == task_attributes ||
+		NULL == task_attributes_lengths ||
+		NULL == task_attributes_count ||
+		NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	if (!property_get_attributes_and_arguments_for_task(
+			task_attributes, task_attributes_lengths,
+			task_attributes_count, task_arguments))
+	{
+		return 0;
+	}
+
+	if (!interpreter_get_arguments_from_xml_tag_record(
+			the_project, the_target, attributes_start, attributes_finish,
+			*task_attributes, *task_attributes_lengths, 0, 1, task_arguments, verbose))
+	{
+		return 0;
+	}
+
+	struct buffer* argument = buffer_buffer_data(task_arguments, 0);
+
+	uint8_t dynamic = (uint8_t)buffer_size(argument);
+
+	if (dynamic && !bool_parse(buffer_data(argument, 0), dynamic, &dynamic))
+	{
+		return 0;
+	}
+
+	if (dynamic)
+	{
+		dynamic = (*task_attributes_count) - 1;
+
+		if (!interpreter_get_arguments_from_xml_tag_record(
+				the_project, the_target, attributes_start, attributes_finish,
+				*task_attributes, *task_attributes_lengths,
+				1, dynamic, task_arguments, verbose))
+		{
+			return 0;
+		}
+
+		argument = buffer_buffer_data(task_arguments, dynamic);
+
+		if (!buffer_resize(argument, 0) ||
+			!xml_get_attribute_value(attributes_start, attributes_finish,
+									 (*task_attributes)[dynamic], (*task_attributes_lengths)[dynamic],
+									 argument))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		if (!interpreter_get_arguments_from_xml_tag_record(
+				the_project, the_target, attributes_start, attributes_finish,
+				*task_attributes, *task_attributes_lengths,
+				1, *task_attributes_count, task_arguments, verbose))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uint8_t command,
@@ -1869,6 +1953,26 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			task_attributes_count = move_evaluate_task(&task_arguments, verbose);
 			break;
 
+		case program_task:
+			if (!program_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					the_project, the_target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = program_evaluate_task(
+										the_project, the_target, &task_arguments, attributes_finish, element_finish, verbose);
+			break;
+
 		case project_task:
 			if (!project_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
 					&task_attributes_count, &task_arguments))
@@ -1889,77 +1993,18 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			break;
 
 		case property_task:
-			if (!property_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
-					&task_attributes_count, &task_arguments))
+			task_attributes_count = interpreter_prepare_attributes_and_arguments_for_property_task(
+										the_project, the_target,
+										&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments,
+										attributes_start, attributes_finish, verbose);
+
+			if (task_attributes_count)
 			{
-				task_attributes_count = 0;
-				break;
+				task_attributes_count = property_evaluate_task(the_project, NULL, &task_arguments, verbose);
 			}
 
-			if (!interpreter_get_arguments_from_xml_tag_record(
-					the_project, the_target, attributes_start, attributes_finish,
-					task_attributes, task_attributes_lengths, 0, 1, &task_arguments, verbose))
-			{
-				task_attributes_count = 0;
-				break;
-			}
-
-			{
-				struct buffer* argument = buffer_buffer_data(&task_arguments, 0);
-				uint8_t dynamic = 0;
-
-				if (buffer_size(argument) &&
-					!bool_parse(buffer_data(argument, 0), buffer_size(argument), &dynamic))
-				{
-					task_attributes_count = 0;
-					break;
-				}
-
-				if (dynamic)
-				{
-					if (!interpreter_get_arguments_from_xml_tag_record(
-							the_project, the_target, attributes_start, attributes_finish,
-							task_attributes, task_attributes_lengths,
-							1, task_attributes_count - 1, &task_arguments, verbose))
-					{
-						task_attributes_count = 0;
-						break;
-					}
-
-					argument = buffer_buffer_data(&task_arguments, task_attributes_count - 1);
-
-					if (!buffer_resize(argument, 0) ||
-						!xml_get_attribute_value(attributes_start, attributes_finish,
-												 task_attributes[task_attributes_count - 1],
-												 task_attributes_lengths[task_attributes_count - 1],
-												 argument))
-					{
-						task_attributes_count = 0;
-						break;
-					}
-				}
-				else if (!interpreter_get_arguments_from_xml_tag_record(
-							 the_project, the_target, attributes_start, attributes_finish,
-							 task_attributes, task_attributes_lengths,
-							 1, task_attributes_count, &task_arguments, verbose))
-				{
-					task_attributes_count = 0;
-					break;
-				}
-			}
-
-			task_attributes_count = property_evaluate_task(the_project, &task_arguments, verbose);
 			break;
 #if 0
-
-		case readregistry_:
-			break;
-
-		case regex_:
-			break;
-
-		case script_:
-			break;
 
 		case setenv_:
 			break;

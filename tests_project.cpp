@@ -19,6 +19,7 @@ extern "C" {
 #include "range.h"
 #include "target.h"
 #include "text_encoding.h"
+#include "xml.h"
 };
 
 #include <string>
@@ -265,7 +266,12 @@ TEST_F(TestProject, project_load_from_build_file)
 	buffer_release(&tmp);
 }
 //project_exec_function
-TEST(TestProgram, program_exec_function)
+
+class TestProgram : public TestsBaseXml
+{
+};
+
+TEST(TestProgram_, program_exec_function)
 {
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
@@ -281,4 +287,104 @@ TEST(TestProgram, program_exec_function)
 	ASSERT_LT(0, buffer_size(&output)) << buffer_free(&output);
 	//
 	buffer_release(&output);
+}
+
+extern "C" {
+	extern uint8_t program_get_properties(
+		const void* the_project,
+		const void* the_target,
+		const struct buffer* properties_elements,
+		struct buffer* properties,
+		uint8_t is_root, uint8_t verbose);
+};
+
+TEST_F(TestProgram, program_get_properties)
+{
+	struct buffer properties_elements;
+	SET_NULL_TO_BUFFER(properties_elements);
+	//
+	struct buffer properties;
+	SET_NULL_TO_BUFFER(properties);
+	//
+	void* the_project = NULL;
+	//
+	ASSERT_TRUE(project_new(&the_project))
+			<< buffer_free(&properties_elements)
+			<< properties_free(&properties)
+			<< project_free(the_project);
+
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().select_node("input").node().child_value());
+		const auto input_in_range(string_to_range(input));
+		//
+		ASSERT_TRUE(xml_get_sub_nodes_elements(
+						input_in_range.start, input_in_range.finish, NULL, &properties_elements))
+				<< buffer_free(&properties_elements)
+				<< properties_free(&properties)
+				<< project_free(the_project);
+		//
+		ASSERT_TRUE(program_get_properties(the_project, NULL, &properties_elements, &properties, 1, 0))
+				<< buffer_free(&properties_elements)
+				<< properties_free(&properties)
+				<< project_free(the_project);
+		//
+		ASSERT_TRUE(buffer_resize(&properties_elements, 0))
+				<< buffer_free(&properties_elements)
+				<< properties_free(&properties)
+				<< project_free(the_project);
+
+		for (const auto& property_node : node.node().select_nodes("properties/property"))
+		{
+			void* the_property = NULL;
+			const std::string property_name(property_node.node().attribute("name").as_string());
+			//
+			ASSERT_TRUE(property_exists(
+							&properties,
+							(const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &the_property))
+					<< property_name << std::endl
+					<< buffer_free(&properties_elements)
+					<< properties_free(&properties)
+					<< project_free(the_project);
+			//
+			const uint8_t expected_is_dynamic = property_node.node().attribute("dynamic").as_bool();
+			const uint8_t expected_is_read_only = property_node.node().attribute("readonly").as_bool();
+			//
+			uint8_t is_dynamic = 0;
+			uint8_t is_read_only = 0;
+			//
+			ASSERT_TRUE(property_is_dynamic(the_property, &is_dynamic))
+					<< property_name << std::endl
+					<< buffer_free(&properties_elements)
+					<< properties_free(&properties)
+					<< project_free(the_project);
+			//
+			ASSERT_EQ(expected_is_dynamic, is_dynamic)
+					<< property_name << std::endl
+					<< buffer_free(&properties_elements)
+					<< properties_free(&properties)
+					<< project_free(the_project);
+			//
+			ASSERT_TRUE(property_is_readonly(the_property, &is_read_only))
+					<< property_name << std::endl
+					<< buffer_free(&properties_elements)
+					<< properties_free(&properties)
+					<< project_free(the_project);
+			//
+			ASSERT_EQ(expected_is_read_only, is_read_only)
+					<< property_name << std::endl
+					<< buffer_free(&properties_elements)
+					<< properties_free(&properties)
+					<< project_free(the_project);
+		}
+
+		property_release_inner(&properties);
+		project_clear(the_project);
+		//
+		--node_count;
+	}
+
+	buffer_release(&properties_elements);
+	property_release(&properties);
+	project_unload(the_project);
 }
