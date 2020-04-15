@@ -18,6 +18,7 @@ uint8_t string_contains(const uint8_t* input_start, const uint8_t* input_finish,
 						const uint8_t* value_start, const uint8_t* value_finish);
 uint8_t string_ends_with(const uint8_t* input_start, const uint8_t* input_finish,
 						 const uint8_t* value_start, const uint8_t* value_finish);
+const uint8_t* string_enumerate(const uint8_t* input_start, const uint8_t* input_finish);
 ptrdiff_t string_get_length(const uint8_t* input_start, const uint8_t* input_finish);
 ptrdiff_t string_index_of(const uint8_t* input_start, const uint8_t* input_finish,
 						  const uint8_t* value_start, const uint8_t* value_finish);

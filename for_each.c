@@ -144,9 +144,9 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target, void* the_
 			return 0;
 		}
 
-		if (!for_each_substring(
-				the_project, the_target, the_property, item.start, item.finish,
-				substing.start, substing.finish, tmp, trim_value, verbose))
+		if (!for_each_substring(the_project, the_target, the_property,
+								item.start, item.finish, substing.start, substing.finish,
+								tmp, trim_value, verbose))
 		{
 			return 0;
 		}
@@ -155,8 +155,9 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target, void* the_
 		return 1;
 	}
 
-	return for_each_substring(the_project, the_target, the_property, start, finish,
-							  delimiter, delimiter + 1, tmp, trim_value, verbose);
+	return for_each_substring(the_project, the_target, the_property, start, finish, delimiter, delimiter + 1, tmp,
+							  trim_value,
+							  verbose);
 }
 
 uint8_t for_each_file_system_entries(void* the_project, const void* the_target, void* the_property,

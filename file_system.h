@@ -88,6 +88,10 @@ size_t file_read(void* content, const size_t size_of_content_element,
 uint8_t file_read_all(const uint8_t* path, struct buffer* output);
 uint8_t file_read_with_several_steps(void* stream, struct buffer* content);
 
+uint8_t file_replace(const uint8_t* path,
+					 const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
+					 const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish);
+
 uint8_t file_seek(void* stream, long offset, int32_t origin);
 
 uint8_t file_set_attributes(

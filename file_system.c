@@ -2094,6 +2094,170 @@ uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, vo
 	return 1;
 }
 
+uint8_t file_replace_with_same_length(
+	uint8_t* content, ptrdiff_t size, void* stream,
+	const uint8_t* to_be_replaced, const uint8_t* by_replacement, ptrdiff_t length)
+{
+	ptrdiff_t readed = 0;
+	const uint8_t* to_be_replaced_finish = to_be_replaced + length;
+
+	while (0 < (readed = file_read(content, sizeof(uint8_t), size, stream)))
+	{
+		long index = -1;
+		const uint8_t* sub_content = content;
+
+		while (-1 != (index = (long)string_index_of(sub_content, content + readed, to_be_replaced,
+							  to_be_replaced_finish)))
+		{
+			sub_content += index;
+			index = (long)((sub_content - content) - readed);
+
+			if (!file_seek(stream, index, SEEK_CUR))
+			{
+				return 0;
+			}
+
+			if (length != (ptrdiff_t)fwrite(by_replacement, sizeof(uint8_t), length, stream))
+			{
+				return 0;
+			}
+
+			index = (long)(readed - (sub_content - content) - length);
+
+			if (!file_seek(stream, index, SEEK_CUR))
+			{
+				return 0;
+			}
+
+			sub_content += length;
+		}
+
+		if (readed < size)
+		{
+			break;
+		}
+
+		if (length < size)
+		{
+			index = (long)(-length);
+
+			if (!file_seek(stream, index, SEEK_CUR))
+			{
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+uint8_t file_replace(const uint8_t* path,
+					 const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
+					 const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish)
+{
+	if (NULL == to_be_replaced_start || NULL == to_be_replaced_finish ||
+		to_be_replaced_finish <= to_be_replaced_start)
+	{
+		return 0;
+	}
+
+	void* stream = NULL;
+
+	if (!file_open(path, (const uint8_t*)"rb+", &stream))
+	{
+		return 0;
+	}
+
+	if (string_equal(to_be_replaced_start, to_be_replaced_finish, by_replacement_start, by_replacement_finish))
+	{
+		return file_close(stream);
+	}
+
+	const ptrdiff_t to_be_replaced_length = to_be_replaced_finish - to_be_replaced_start;
+	const ptrdiff_t by_replacement_length = (NULL == by_replacement_start || NULL == by_replacement_finish ||
+											by_replacement_finish < by_replacement_start) ? -1 : (by_replacement_finish - by_replacement_start);
+	const ptrdiff_t size = MAX(by_replacement_length, MAX(to_be_replaced_length, 4096));
+	/**/
+	struct buffer input;
+	SET_NULL_TO_BUFFER(input);
+
+	if (!buffer_resize(&input, size))
+	{
+		buffer_release(&input);
+		fclose(stream);
+		return 0;
+	}
+
+	uint8_t* content = buffer_data(&input, 0);
+
+	if (to_be_replaced_length == by_replacement_length)
+	{
+		if (!file_replace_with_same_length(content, size, stream,
+										   to_be_replaced_start, by_replacement_start, to_be_replaced_length))
+		{
+			buffer_release(&input);
+			file_close(stream);
+			return 0;
+		}
+	}
+	else
+	{
+		/*TODO:*/
+		if (!buffer_resize(&input, 0) ||
+			!file_read_with_several_steps(stream, &input))
+		{
+			buffer_release(&input);
+			file_close(stream);
+			return 0;
+		}
+
+		if (!file_close(stream))
+		{
+			buffer_release(&input);
+			return 0;
+		}
+
+		struct buffer output;
+
+		SET_NULL_TO_BUFFER(output);
+
+		struct range input_in_range;
+
+		BUFFER_TO_RANGE(input_in_range, &input);
+
+		if (!string_replace(input_in_range.start, input_in_range.finish,
+							to_be_replaced_start, to_be_replaced_finish,
+							by_replacement_start, by_replacement_finish, &output))
+		{
+			buffer_release(&input);
+			buffer_release(&output);
+			return 0;
+		}
+
+		buffer_release(&input);
+		stream = NULL;
+
+		if (!file_open(path, (const uint8_t*)"wb", &stream))
+		{
+			buffer_release(&output);
+			return 0;
+		}
+
+		if (!file_write_with_several_steps(&output, stream))
+		{
+			buffer_release(&output);
+			file_close(stream);
+			return 0;
+		}
+
+		buffer_release(&output);
+		return file_close(stream);
+	}
+
+	buffer_release(&input);
+	return file_close(stream);
+}
+
 static const uint8_t* entry_types_str[] =
 {
 	(const uint8_t*)"directory",

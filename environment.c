@@ -515,9 +515,17 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 #include "string_unit.h"
 
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <sys/param.h>
+#endif
+
 #include <pwd.h>
 #include <unistd.h>
+#if defined(BSD)
+#include <sys/sysctl.h>
+#else
 #include <sys/sysinfo.h>
+#endif
 #include <sys/utsname.h>
 
 #include <stdio.h>
@@ -1085,6 +1093,19 @@ uint16_t environment_processor_count()
 	memset(&system_info, 0, sizeof(SYSTEM_INFO));
 	GetSystemInfo(&system_info);
 	return MAX(1, (uint16_t)system_info.dwNumberOfProcessors);
+#elif defined(BSD)
+	int mib[2];
+	mib[0] = CTL_HW;
+	mib[1] = HW_NCPU;
+	int nproc = 0;
+	size_t size = sizeof(nproc);
+
+	if (0 == sysctl(mib, 2, &nproc, &size, NULL, 0))
+	{
+		return (uint16_t)nproc;
+	}
+
+	return 1;
 #else
 	return (uint16_t)get_nprocs();
 #endif
