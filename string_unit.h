@@ -24,6 +24,10 @@ ptrdiff_t string_index_of(const uint8_t* input_start, const uint8_t* input_finis
 						  const uint8_t* value_start, const uint8_t* value_finish);
 ptrdiff_t string_last_index_of(const uint8_t* input_start, const uint8_t* input_finish,
 							   const uint8_t* value_start, const uint8_t* value_finish);
+ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
+							  const uint8_t* value_start, const uint8_t* value_finish);
+ptrdiff_t string_last_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
+								   const uint8_t* value_start, const uint8_t* value_finish);
 uint8_t string_pad_left(const uint8_t* input_start, const uint8_t* input_finish,
 						const uint8_t* value_start, const uint8_t* value_finish,
 						ptrdiff_t result_length, struct buffer* output);

@@ -1798,6 +1798,26 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>index-of-any('AB', 'BA') -> ${string::index-of-any('AB', 'BA')}</code>
+      <output>index-of-any('AB', 'BA') -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>index-of-any('ABAB', 'AB') -> ${string::index-of-any('ABAB', 'AB')}</code>
+      <output>index-of-any('ABAB', 'AB') -> 0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>last-index-of-any('AB', 'BA') -> ${string::last-index-of-any('AB', 'BA')}</code>
+      <output>last-index-of-any('AB', 'BA') -> 1</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>last-index-of-any('ABAB', 'BA') -> ${string::last-index-of-any('ABAB', 'BA')}</code>
+      <output>last-index-of-any('ABAB', 'BA') -> 3</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>pad-left('Abc', ' ', '4') -> ${string::pad-left('Abc', 4, ' ')}</code>
       <output>pad-left('Abc', ' ', '4') ->  Abc</output>
       <return>1</return>
@@ -4798,48 +4818,114 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <input>&#x08a0;&#xffee;</input>
       <return>2</return>
     </string_get_length>
-    <string_index_of_any>
+    <string_get_length>
+      <input>&#x627;&#x644;&#x639;&#x631;&#x628;&#x64a;&#x629;</input>
+      <return>7</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#xd55c;&#xad6d;&#xc5b4;</input>
+      <return>3</return>
+    </string_get_length>
+    <string_get_length>
+      <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
+      <return>14</return>
+    </string_get_length>
+    <string_index_of_value>
       <input></input>
       <value></value>
       <step>1</step>
       <return>-1</return>
-    </string_index_of_any>
-    <string_index_of_any>
+    </string_index_of_value>
+    <string_index_of_value>
       <input>""</input>
       <value>""</value>
       <step>1</step>
       <return>0</return>
-    </string_index_of_any>
-    <string_index_of_any>
+    </string_index_of_value>
+    <string_index_of_value>
       <input>123</input>
       <value>3</value>
       <step>1</step>
       <return>2</return>
-    </string_index_of_any>
-    <string_index_of_any>
+    </string_index_of_value>
+    <string_index_of_value>
       <input></input>
       <value></value>
       <step>-1</step>
       <return>-1</return>
-    </string_index_of_any>
-    <string_index_of_any>
+    </string_index_of_value>
+    <string_index_of_value>
       <input>""</input>
       <value>""</value>
       <step>-1</step>
       <return>0</return>
-    </string_index_of_any>
-    <string_index_of_any>
+    </string_index_of_value>
+    <string_index_of_value>
       <input>123</input>
       <value>3</value>
       <step>-1</step>
       <return>2</return>
-    </string_index_of_any>
-    <string_index_of_any>
+    </string_index_of_value>
+    <string_index_of_value>
       <input>123</input>
       <value>1</value>
       <step>-1</step>
       <return>0</return>
+    </string_index_of_value>
+    <string_index_of_value>
+      <input>&#x08a0;&#xffee;</input>
+      <value>&#xffee;</value>
+      <step>1</step>
+      <return>1</return>
+    </string_index_of_value>
+    <string_index_of_value>
+      <input>&#x627;&#x644;&#x639;&#x631;&#x628;&#x64a;&#x629;</input>
+      <value>&#x628;</value>
+      <step>1</step>
+      <return>4</return>
+    </string_index_of_value>
+    <string_index_of_value>
+      <input>&#xd55c;&#xad6d;&#xc5b4;</input>
+      <value>&#xad6d;</value>
+      <step>1</step>
+      <return>1</return>
+    </string_index_of_value>
+    <string_index_of_value>
+      <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
+      <value>&#xa1ed;</value>
+      <step>1</step>
+      <return>10</return>
+    </string_index_of_value>
+    <string_index_of_any>
+      <input>&#x627;&#x644;&#x639;&#x631;&#x628;&#x64a;&#x629;</input>
+      <value>&#x629;&#x64a;&#x628;</value>
+      <return>4</return>
     </string_index_of_any>
+    <string_index_of_any>
+      <input>&#xd55c;&#xad6d;&#xc5b4;</input>
+      <value>&#xc5b4;&#xad6d;</value>
+      <return>1</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
+      <value>&#x29;&#xa1ed;&#xa1e9;</value>
+      <return>10</return>
+    </string_index_of_any>
+    <string_last_index_of_any>
+      <input>&#x627;&#x644;&#x639;&#x631;&#x628;&#x64a;&#x629;</input>
+      <value>&#x629;&#x64a;&#x628;</value>
+      <return>6</return>
+    </string_last_index_of_any>
+    <string_last_index_of_any>
+      <input>&#xd55c;&#xad6d;&#xc5b4;</input>
+      <value>&#xc5b4;&#xad6d;</value>
+      <return>2</return>
+    </string_last_index_of_any>
+    <string_last_index_of_any>
+      <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
+      <value>&#xa1e9;&#xa1ed;&#x29;</value>
+      <return>13</return>
+    </string_last_index_of_any>
     <string_pad>
       <input></input>
       <value> </value>

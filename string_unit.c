@@ -22,6 +22,7 @@
 enum string_function
 {
 	contains, ends_with, get_length, index_of, last_index_of,
+	index_of_any, last_index_of_any,
 	pad_left, pad_right, replace, starts_with, substring,
 	to_lower, to_upper, trim, trim_end, trim_start,
 	quote, un_quote, equal, empty,
@@ -30,8 +31,8 @@ enum string_function
 
 static const uint8_t* quote_symbols = (const uint8_t*)"\"'";
 
-ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
-							  const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
+ptrdiff_t string_index_of_value(const uint8_t* input_start, const uint8_t* input_finish,
+								const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
 {
 	if (NULL == input_start || NULL == input_finish ||
 		input_finish < input_start ||
@@ -71,7 +72,7 @@ ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_f
 		{
 			if (0 == memcmp(&input_start[i], value_start, value_length))
 			{
-				return i;
+				return string_get_length(input_start, input_start + i);
 			}
 		}
 	}
@@ -81,7 +82,7 @@ ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_f
 		{
 			if (0 == memcmp(&input_start[i], value_start, value_length))
 			{
-				return i;
+				return string_get_length(input_start, input_start + i);
 			}
 		}
 	}
@@ -92,7 +93,7 @@ ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_f
 uint8_t string_contains(const uint8_t* input_start, const uint8_t* input_finish,
 						const uint8_t* value_start, const uint8_t* value_finish)
 {
-	return -1 != string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
+	return -1 != string_index_of_value(input_start, input_finish, value_start, value_finish, 1);
 }
 
 uint8_t string_ends_with(const uint8_t* input_start, const uint8_t* input_finish,
@@ -100,7 +101,7 @@ uint8_t string_ends_with(const uint8_t* input_start, const uint8_t* input_finish
 {
 	ptrdiff_t index = 0;
 
-	if (-1 == (index = string_index_of_any(input_start, input_finish, value_start, value_finish, 1)))
+	if (-1 == (index = string_index_of_value(input_start, input_finish, value_start, value_finish, 1)))
 	{
 		return 0;
 	}
@@ -141,13 +142,63 @@ ptrdiff_t string_get_length(const uint8_t* input_start, const uint8_t* input_fin
 ptrdiff_t string_index_of(const uint8_t* input_start, const uint8_t* input_finish,
 						  const uint8_t* value_start, const uint8_t* value_finish)
 {
-	return string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
+	return string_index_of_value(input_start, input_finish, value_start, value_finish, 1);
 }
 
 ptrdiff_t string_last_index_of(const uint8_t* input_start, const uint8_t* input_finish,
 							   const uint8_t* value_start, const uint8_t* value_finish)
 {
-	return string_index_of_any(input_start, input_finish, value_start, value_finish, -1);
+	return string_index_of_value(input_start, input_finish, value_start, value_finish, -1);
+}
+
+ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
+							  const uint8_t* value_start, const uint8_t* value_finish)
+{
+	ptrdiff_t index = -1;
+	const uint8_t* pos = NULL;
+
+	while (NULL != (pos = string_enumerate(value_start, value_finish)))
+	{
+		const ptrdiff_t i = string_index_of_value(input_start, input_finish, value_start, pos, 1);
+		value_start = pos;
+
+		if (-1 == i)
+		{
+			continue;
+		}
+
+		if (-1 == index || i < index)
+		{
+			index = i;
+		}
+	}
+
+	return index;
+}
+
+ptrdiff_t string_last_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
+								   const uint8_t* value_start, const uint8_t* value_finish)
+{
+	ptrdiff_t index = -1;
+	const uint8_t* pos = NULL;
+
+	while (NULL != (pos = string_enumerate(value_start, value_finish)))
+	{
+		const ptrdiff_t i = string_index_of_value(input_start, input_finish, value_start, pos, -1);
+		value_start = pos;
+
+		if (-1 == i)
+		{
+			continue;
+		}
+
+		if (-1 == index || index < i)
+		{
+			index = i;
+		}
+	}
+
+	return index;
 }
 
 enum string_pad_side { string_pad_left_function = pad_left, string_pad_right_function = pad_right };
@@ -269,7 +320,7 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 	const ptrdiff_t by_replacement_length = (NULL == by_replacement_start || NULL == by_replacement_finish ||
 											by_replacement_finish < by_replacement_start) ? -1 : (by_replacement_finish - by_replacement_start);
 
-	while (-1 != (input_length = string_index_of_any(
+	while (-1 != (input_length = string_index_of_value(
 									 input_start, input_finish, to_be_replaced_start, to_be_replaced_finish, 1)))
 	{
 		if (!buffer_append(output, input_start, input_length))
@@ -292,7 +343,7 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_finish,
 						   const uint8_t* value_start, const uint8_t* value_finish)
 {
-	return 0 == string_index_of_any(input_start, input_finish, value_start, value_finish, 1);
+	return 0 == string_index_of_value(input_start, input_finish, value_start, value_finish, 1);
 }
 
 uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish,
@@ -824,6 +875,8 @@ static const uint8_t* string_function_str[] =
 	(const uint8_t*)"get-length",
 	(const uint8_t*)"index-of",
 	(const uint8_t*)"last-index-of",
+	(const uint8_t*)"index-of-any",
+	(const uint8_t*)"last-index-of-any",
 	(const uint8_t*)"pad-left",
 	(const uint8_t*)"pad-right",
 	(const uint8_t*)"replace",
@@ -936,13 +989,25 @@ uint8_t string_exec_function(uint8_t function,
 
 		case index_of:
 			return (2 == arguments_count) &&
-				   int64_to_string(string_index_of_any(argument1.start, argument1.finish, argument2.start, argument2.finish, 1),
+				   int64_to_string(string_index_of_value(argument1.start, argument1.finish, argument2.start, argument2.finish,
+								   1),
 								   output);
 
 		case last_index_of:
 			return (2 == arguments_count) &&
-				   int64_to_string(string_index_of_any(argument1.start, argument1.finish, argument2.start, argument2.finish, -1),
+				   int64_to_string(string_index_of_value(argument1.start, argument1.finish, argument2.start, argument2.finish,
+								   -1),
 								   output);
+
+		case index_of_any:
+			return (2 == arguments_count) &&
+				   int64_to_string(string_index_of_any(argument1.start, argument1.finish, argument2.start, argument2.finish),
+								   output);
+
+		case last_index_of_any:
+			return (2 == arguments_count) &&
+				   int64_to_string(string_last_index_of_any(argument1.start, argument1.finish, argument2.start,
+								   argument2.finish), output);
 
 		case pad_left:
 		case pad_right:

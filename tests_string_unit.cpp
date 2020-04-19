@@ -48,7 +48,7 @@ TEST_F(TestStringUnit, string_get_length)
 	}
 }
 
-TEST_F(TestStringUnit, string_index_of_any)
+TEST_F(TestStringUnit, string_index_of_value)
 {
 	for (const auto& node : nodes)
 	{
@@ -69,7 +69,55 @@ TEST_F(TestStringUnit, string_index_of_any)
 		ASSERT_EQ(expected_return, returned)
 				<< "'" << input << "'" << std::endl
 				<< "'" << value << "'" << std::endl
-				<< "'" << step << "'" << std::endl;
+				<< "'" << (int)step << "'" << std::endl;
+		//
+		--node_count;
+	}
+}
+
+TEST_F(TestStringUnit, string_index_of_any)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().select_node("input").node().child_value());
+		const std::string value(node.node().select_node("value").node().child_value());
+		const auto expected_return = (ptrdiff_t)INT_PARSE(
+										 node.node().select_node("return").node().child_value());
+		//
+		const auto input_in_range(string_to_range(input));
+		const auto value_in_range(string_to_range(value));
+		//
+		const auto returned = string_index_of_any(
+								  input_in_range.start, input_in_range.finish,
+								  value_in_range.start, value_in_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned)
+				<< "'" << input << "'" << std::endl
+				<< "'" << value << "'" << std::endl;
+		//
+		--node_count;
+	}
+}
+
+TEST_F(TestStringUnit, string_last_index_of_any)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().select_node("input").node().child_value());
+		const std::string value(node.node().select_node("value").node().child_value());
+		const auto expected_return = (ptrdiff_t)INT_PARSE(
+										 node.node().select_node("return").node().child_value());
+		//
+		const auto input_in_range(string_to_range(input));
+		const auto value_in_range(string_to_range(value));
+		//
+		const auto returned = string_last_index_of_any(
+								  input_in_range.start, input_in_range.finish,
+								  value_in_range.start, value_in_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned)
+				<< "'" << input << "'" << std::endl
+				<< "'" << value << "'" << std::endl;
 		//
 		--node_count;
 	}
