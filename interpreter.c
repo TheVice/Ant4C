@@ -32,6 +32,7 @@
 static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
 static const uint8_t function_call_finish = '}';
+static const uint8_t apos = '\'';
 
 static const uint8_t arguments_delimiter = ',';
 
@@ -205,27 +206,30 @@ uint8_t interpreter_evaluate_argument_area(
 	const void* the_project, const void* the_target,
 	const struct range* argument_area, struct buffer* output, uint8_t verbose)
 {
-	ptrdiff_t index = 0;
+	ptrdiff_t index = (apos == *(argument_area->start) && apos == *(argument_area->finish - 1));
 	const uint8_t* pos = argument_area->start;
 
-	while (-1 != (index = string_index_of(pos, argument_area->finish,
-										  namespace_border,
-										  namespace_border + NAMESPACE_BORDER_LENGTH)))
+	if (!index)
 	{
-		struct range function;
-		function.start = find_any_symbol_like_or_not_like_that(pos + index, pos, space_and_tab, SPACE_AND_TAB_LENGTH,
-						 1, -1);
-		function.finish = argument_area->finish;
-
-		if (!string_trim(&function) ||
-			!interpreter_get_function_from_argument(&function) ||
-			!buffer_append(output, pos, function.start - pos) ||
-			!interpreter_evaluate_function(the_project, the_target, &function, output, verbose))
+		while (-1 != (index = string_index_of(
+								  pos, argument_area->finish,
+								  namespace_border, namespace_border + NAMESPACE_BORDER_LENGTH)))
 		{
-			return 0;
-		}
+			struct range function;
+			function.start = find_any_symbol_like_or_not_like_that(pos + index, pos,
+							 space_and_tab, SPACE_AND_TAB_LENGTH, 1, -1);
+			function.finish = argument_area->finish;
 
-		pos = function.finish;
+			if (!string_trim(&function) ||
+				!interpreter_get_function_from_argument(&function) ||
+				!buffer_append(output, pos, function.start - pos) ||
+				!interpreter_evaluate_function(the_project, the_target, &function, output, verbose))
+			{
+				return 0;
+			}
+
+			pos = function.finish;
+		}
 	}
 
 	return (pos != argument_area->start) ? buffer_append(output, pos, argument_area->finish - pos) : 1;
@@ -272,7 +276,8 @@ uint8_t interpreter_actualize_property_value(
 
 	code.finish = code.start + buffer_size(&code_in_buffer);
 
-	if (!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
+	if (code.start < code.finish &&
+		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -712,8 +717,6 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 
 		while (function.finish < code->finish)
 		{
-			static const uint8_t apos = '\'';
-
 			if (apos == (*function.finish))
 			{
 				function.finish = find_any_symbol_like_or_not_like_that(

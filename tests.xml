@@ -2041,23 +2041,23 @@
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${project::get-base-directory()}</code>
-      <return>0</return>
+      <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${project::get-buildfile-path()}</code>
-      <return>0</return>
+      <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${project::get-buildfile-uri()}</code>
-      <return>0</return>
+      <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${project::get-default-target()}</code>
-      <return>0</return>
+      <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${project::get-name()}</code>
-      <return>0</return>
+      <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${program::version()}</code>
@@ -3550,6 +3550,11 @@
       <output>False</output>
       <return>1</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::replace(string::quote('{math::truncate(math::addition(a, b))}'), '{', '${')}</code>
+      <output>"${math::truncate(math::addition(a, b))}"</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
     <interpreter_evaluate_task>
       <code><![CDATA[<echo />]]></code>
       <return>1</return>
@@ -4629,7 +4634,6 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <content><![CDATA[
       <project name="For each sample 3.">
         <property name="result" value="" />
-        <!--foreach item="String" in="a b;c" delim=" ;" property="element"-->
         <foreach item="String" in="${directory::get-logical-drives()}" property="element">
           <property name="result" value="${result}${element}" />
         </foreach>
@@ -4638,6 +4642,122 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>For each sample 3.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="For each sample 4.">
+        <property name="result" value="" />
+        <foreach item="String" in="a b;c" delim=" ;" property="element">
+          <property name="result" value="${result}${element}" />
+        </foreach>
+        <fail unless="${string::equal('abc', result)}" message="${project::get-name()} - property value of result (${result}) should be equal to the 'abc'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>For each sample 4.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="For each sample 5.">
+        <property name="result" value="" />
+        <property name="C" value="${math::addition(a, b)}" dynamic="true" />
+        <foreach item="String" in="4,5" delim="," property="a">
+          <foreach item="String" in="8,9" delim="," property="b">
+            <property name="result" value="${result}${math::truncate(C)} " />
+          </foreach>
+        </foreach>
+        <fail unless="${string::equal('12 13 13 14', string::trim(result))}" message="${project::get-name()} - property value of result (${result}) is not equal to the '12 13 13 14'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>For each sample 5.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <foreach item="String" in="1" delim="," property="a">
+          <foreach item="String" in="3" delim="," property="b">
+            <foreach item="String" in="5" delim="," property="c">
+              <foreach item="String" in="7" delim="," property="d">
+                <foreach item="String" in="9" delim="," property="e">
+                  <foreach item="String" in="11" delim="," property="f">
+                    <foreach item="String" in="13" delim="," property="g">
+                      <foreach item="String" in="15" delim="," property="h">
+                        <foreach item="String" in="17" delim="," property="i">
+                          <foreach item="String" in="19" delim="," property="j">
+                            <foreach item="String" in="21" delim="," property="k">
+                              <foreach item="String" in="23" delim="," property="l">
+                                <foreach item="String" in="25" delim="," property="m">
+                                  <foreach item="String" in="27" delim="," property="n">
+                                    <foreach item="String" in="29" delim="," property="o">
+                                      <foreach item="String" in="31" delim="," property="p">
+                                        <foreach item="String" in="33" delim="," property="q">
+                                          <foreach item="String" in="35" delim="," property="r">
+                                            <foreach item="String" in="37" delim="," property="s">
+                                              <foreach item="String" in="39" delim="," property="t">
+                                                <foreach item="String" in="41" delim="," property="u">
+                                                  <foreach item="String" in="43" delim="," property="v">
+                                                    <foreach item="String" in="45" delim="," property="w">
+                                                      <foreach item="String" in="47" delim="," property="x">
+                                                        <foreach item="String" in="49" delim="," property="y">
+                                                          <foreach item="String" in="51" delim="," property="z">
+                                                            <property name="result" value="${a} ${b} ${c} ${d} ${e} ${f} ${g} ${h} ${i} ${j} ${k} ${l} ${m} ${n} ${o} ${p} ${q} ${r} ${s} ${t} ${u} ${v} ${w} ${x} ${y} ${z}" />
+                                                          </foreach>
+                                                        </foreach>
+                                                      </foreach>
+                                                    </foreach>
+                                                  </foreach>
+                                                </foreach>
+                                              </foreach>
+                                            </foreach>
+                                          </foreach>
+                                        </foreach>
+                                      </foreach>
+                                    </foreach>
+                                  </foreach>
+                                </foreach>
+                              </foreach>
+                            </foreach>
+                          </foreach>
+                        </foreach>
+                      </foreach>
+                    </foreach>
+                  </foreach>
+                </foreach>
+              </foreach>
+            </foreach>
+          </foreach>
+        </foreach>
+        <fail unless="${string::equal('1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 41 43 45 47 49 51', string::trim(result))}" message="For each sample - value of result property (${result}) should be equal to the '1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 41 43 45 47 49 51'." />
+        <fail unless="${string::empty(a)}" message="For each sample - value of 'a' property (${a}) should be empty." />
+        <fail unless="${string::empty(b)}" message="For each sample - value of 'b' property (${b}) should be empty." />
+        <fail unless="${string::empty(c)}" message="For each sample - value of 'c' property (${c}) should be empty." />
+        <fail unless="${string::empty(d)}" message="For each sample - value of 'd' property (${d}) should be empty." />
+        <fail unless="${string::empty(e)}" message="For each sample - value of 'e' property (${e}) should be empty." />
+        <fail unless="${string::empty(f)}" message="For each sample - value of 'f' property (${f}) should be empty." />
+        <fail unless="${string::empty(g)}" message="For each sample - value of 'g' property (${g}) should be empty." />
+        <fail unless="${string::empty(h)}" message="For each sample - value of 'h' property (${h}) should be empty." />
+        <fail unless="${string::empty(i)}" message="For each sample - value of 'i' property (${i}) should be empty." />
+        <fail unless="${string::empty(j)}" message="For each sample - value of 'j' property (${j}) should be empty." />
+        <fail unless="${string::empty(k)}" message="For each sample - value of 'k' property (${k}) should be empty." />
+        <fail unless="${string::empty(l)}" message="For each sample - value of 'l' property (${l}) should be empty." />
+        <fail unless="${string::empty(m)}" message="For each sample - value of 'm' property (${m}) should be empty." />
+        <fail unless="${string::empty(n)}" message="For each sample - value of 'n' property (${n}) should be empty." />
+        <fail unless="${string::empty(o)}" message="For each sample - value of 'o' property (${o}) should be empty." />
+        <fail unless="${string::empty(p)}" message="For each sample - value of 'p' property (${p}) should be empty." />
+        <fail unless="${string::empty(q)}" message="For each sample - value of 'q' property (${q}) should be empty." />
+        <fail unless="${string::empty(r)}" message="For each sample - value of 'r' property (${r}) should be empty." />
+        <fail unless="${string::empty(s)}" message="For each sample - value of 's' property (${s}) should be empty." />
+        <fail unless="${string::empty(t)}" message="For each sample - value of 't' property (${t}) should be empty." />
+        <fail unless="${string::empty(u)}" message="For each sample - value of 'u' property (${u}) should be empty." />
+        <fail unless="${string::empty(v)}" message="For each sample - value of 'v' property (${v}) should be empty." />
+        <fail unless="${string::empty(w)}" message="For each sample - value of 'w' property (${w}) should be empty." />
+        <fail unless="${string::empty(x)}" message="For each sample - value of 'x' property (${x}) should be empty." />
+        <fail unless="${string::empty(y)}" message="For each sample - value of 'y' property (${y}) should be empty." />
+        <fail unless="${string::empty(z)}" message="For each sample - value of 'z' property (${z}) should be empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -4673,6 +4793,44 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>Program sample 2.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property name="content" value="&lt;project&gt;&#10;" />
+        <property name="content" value="${content}  &lt;echo file=" />
+        <property name="content" value="${content}${string::replace(string::quote('{file}'), '{', '${')}" />
+        <property name="content" value="${content} append=" />
+        <property name="content" value="${content}${string::replace(string::quote('{append}'), '{', '${')}" />
+        <property name="content" value="${content} message=" />
+        <property name="content" value="${content}${string::replace(string::quote('{math::truncate(math::addition(a, b))} '), '{', '${')}" />
+        <property name="content" value="${content} /&gt;&#10;" />
+        <property name="content" value="${content}&lt;/project&gt;&#10;" />
+
+        <property name="content_crc32" value="${hash::bytes-to-string(hash::crc32(content))}" readonly="true" />
+
+        <property name="build-file" value="${path::get-temp-file-name()}" readonly="true" />
+        <echo message="${content}" file="${build-file}" />
+        <property name="file" value="${path::get-temp-file-name()}" readonly="true" />
+
+        <foreach item="String" in="4,5" delim="," property="a">
+          <foreach item="String" in="8,9" delim="," property="b">
+            <program buildfile="${build-file}">
+              <properties>
+                <property name="append" value="true" />
+              </properties>
+            </program>
+          </foreach>
+        </foreach>
+
+        <property name="file_content_crc32" value="${file::get-checksum(build-file, 'crc32')}" readonly="true" />
+
+        <loadfile file="${file}" property="content" />
+        <fail unless="${string::equal('12 13 13 14', string::trim(content))}" message="Program sample - property value of content (${content}) is not equal to the '12 13 13 14'." />
+        <fail unless="${string::equal(content_crc32, file_content_crc32)}" message="Program sample - crc32 of build file content (${file_content_crc32}) is not equal to the ${content_crc32}." />
+      </project>
+      ]]></content>
+      <return>1</return>
     </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[

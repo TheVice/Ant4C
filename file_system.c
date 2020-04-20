@@ -912,7 +912,7 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 		return path_get_directory_for_current_process(output);
 	}
 
-	return property_get_by_pointer(the_property, output);
+	return property_get_by_pointer(*the_property, output);
 }
 
 uint8_t directory_get_directory_root(const uint8_t* path, struct range* root)

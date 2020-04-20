@@ -660,23 +660,24 @@ uint8_t project_exec_function(const void* the_project,
 	switch (function)
 	{
 		case get_base_directory:
-			return project_get_base_directory(the_project, the_property) &&
-				   property_get_by_pointer(*the_property, output);
+			return project_get_base_directory(the_project, the_property) ?
+				   property_get_by_pointer(*the_property, output) : 1;
 
 		case get_buildfile_path:
-			return project_get_buildfile_path(the_project, the_property) &&
-				   property_get_by_pointer(*the_property, output);
+			return project_get_buildfile_path(the_project, the_property) ?
+				   property_get_by_pointer(*the_property, output) : 1;
 
 		case get_buildfile_uri:
-			return project_get_buildfile_path(the_project, the_property) &&
-				   project_get_buildfile_uri(*the_property, output);
+			return project_get_buildfile_path(the_project, the_property) ?
+				   project_get_buildfile_uri(*the_property, output) : 1;
 
 		case get_default_target:
-			return project_get_default_target(the_project, the_property) &&
-				   property_get_by_pointer(*the_property, output);
+			return project_get_default_target(the_project, the_property) ?
+				   property_get_by_pointer(*the_property, output) : 1;
 
 		case get_name:
-			return project_get_name(the_project, the_property) && property_get_by_pointer(*the_property, output);
+			return project_get_name(the_project, the_property) ?
+				   property_get_by_pointer(*the_property, output) : 1;
 
 		case UNKNOWN_PROJECT_FUNCTION:
 		default:
@@ -872,7 +873,7 @@ uint8_t program_get_properties(
 							break;
 						}
 
-						/*TODO:*/
+						/*TODO: add note about fail on error factor.*/
 						continue;
 					}
 
@@ -896,7 +897,7 @@ uint8_t program_get_properties(
 			{
 				if (!fail_on_error)
 				{
-					/*TODO:*/
+					/*TODO: add note about fail on error factor.*/
 					continue;
 				}
 
@@ -916,7 +917,7 @@ uint8_t project_is_property_private(const uint8_t* value, uint8_t size)
 {
 	if (size)
 	{
-		for (uint8_t i = 0, count = COUNT_OF(project_attributes_lengths); i < count; ++i)
+		for (uint8_t i = 0, count = COUNT_OF(project_properties_lengths); i < count; ++i)
 		{
 			if (string_equal(value, value + size, project_properties[i],
 							 project_properties[i] + project_properties_lengths[i]))

@@ -30,6 +30,12 @@ static const uint8_t predefined_lengths[] =
 };
 static const uint8_t characters[] = { '<', '>', '&', '\'', '"' };
 
+static const uint8_t* cdata_start = (const uint8_t*)"<![CDATA[";
+static const uint8_t cdata_start_length = 9;
+
+static const uint8_t* cdata_finish = (const uint8_t*)"]]>";
+static const uint8_t cdata_finish_length = 3;
+
 #define LESS_POSITION		0
 #define GREATER_POSITION	1
 #define AMPERSAND_POSITION	2
@@ -40,6 +46,9 @@ uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
 	static const uint8_t* comment_start = (const uint8_t*)"<!--";
 	static const uint8_t comment_start_length = 4;
 	/**/
+	static const uint8_t* comment_finish = (const uint8_t*)"-->";
+	static const uint8_t comment_finish_length = 3;
+	/**/
 	const uint8_t* start_ = NULL;
 
 	if (NULL == start || NULL == finish ||
@@ -48,30 +57,35 @@ uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
 		return 0;
 	}
 
-	if ((ptrdiff_t)comment_start_length < finish - start_ &&
-		string_equal(start_, start_ + comment_start_length, comment_start, comment_start + comment_start_length))
+	for (uint8_t i = 0; i < 2; ++i)
 	{
-		static const uint8_t* comment_end = (const uint8_t*)"-->";
-		static const uint8_t comment_end_length = 3;
+		const uint8_t* tag_start = i ? cdata_start : comment_start;
+		const uint8_t tag_start_length = i ? cdata_start_length : comment_start_length;
 		/**/
-		start_ += comment_start_length;
-		const ptrdiff_t index = string_index_of(start_, finish, comment_end, comment_end + comment_end_length);
+		const uint8_t* tag_finish = i ? cdata_finish : comment_finish;
+		const uint8_t tag_finish_length = i ? cdata_finish_length : comment_finish_length;
 
-		if (-1 == index)
+		if (string_starts_with(start_, finish, tag_start, tag_start + tag_start_length))
 		{
-			return 0;
+			start_ += tag_start_length;
+			const ptrdiff_t index = string_index_of(start_, finish, tag_finish, tag_finish + tag_finish_length);
+
+			if (-1 == index)
+			{
+				return 0;
+			}
+
+			start_ += index + tag_finish_length;
+
+			if (finish == (start_ = find_any_symbol_like_or_not_like_that(start_, finish,
+									&(characters[LESS_POSITION]), 1, 1, 1)))
+			{
+				return 0;
+			}
+
+			*start = start_;
+			return xml_skip_comment(start, finish);
 		}
-
-		start_ += index + comment_end_length;
-
-		if (finish == (start_ = find_any_symbol_like_or_not_like_that(start_, finish, &(characters[LESS_POSITION]), 1,
-								1, 1)))
-		{
-			return 0;
-		}
-
-		*start = start_;
-		return xml_skip_comment(start, finish);
 	}
 
 	return finish != start_;
@@ -452,9 +466,6 @@ uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
 
 uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struct buffer* value)
 {
-	static const uint8_t* cdata_start = (const uint8_t*)"<![CDATA[";
-	static const uint8_t cdata_start_length = 9;
-
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == value)
 	{
@@ -477,8 +488,6 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 	{
 		start = find_any_symbol_like_or_not_like_that(
 					start + 1, finish, &(characters[GREATER_POSITION]), 1, 0, 1);
-		finish = find_any_symbol_like_or_not_like_that(
-					 finish, start, &(characters[LESS_POSITION]), 1, 1, -1);
 	}
 
 	if (string_contains(start, finish, cdata_start, cdata_start + cdata_start_length))
@@ -487,10 +496,7 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 
 		while (-1 != (index = string_index_of(start, finish, cdata_start, cdata_start + cdata_start_length)))
 		{
-			static const uint8_t* cdata_finish = (const uint8_t*)"]]>";
-			static const uint8_t cdata_finish_length = 3;
-
-			if (!xml_read_ampersand_based_data(start, start + index, value))
+			if (index && !xml_read_ampersand_based_data(start, start + index, value))
 			{
 				return 0;
 			}
@@ -531,6 +537,9 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 	}
 	else
 	{
+		finish = find_any_symbol_like_or_not_like_that(
+					 finish, start, &(characters[LESS_POSITION]), 1, 1, -1);
+
 		if (!range_in_parts_is_null_or_empty(start, finish) &&
 			!xml_read_ampersand_based_data(start, finish, value))
 		{
