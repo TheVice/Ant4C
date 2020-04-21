@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "file_system.h"
 #include "load_file.h"
 #include "project.h"
 #include "range.h"
@@ -308,6 +309,38 @@ uint8_t property_set_from_file(
 	}
 
 	if (!load_file_to_buffer(file_name, encoding, &prop->value, verbose))
+	{
+		return 0;
+	}
+
+	prop->dynamic = 0 < dynamic;
+	prop->read_only = 0 < read_only;
+	return 1;
+}
+
+uint8_t property_set_from_stream(void* the_property, void* stream,
+								 uint8_t dynamic, uint8_t read_only, uint8_t verbose)
+{
+	if (NULL == the_property ||
+		NULL == stream)
+	{
+		return 0;
+	}
+
+	(void)verbose;/*TODO: */
+	struct property* prop = (struct property*)the_property;
+
+	if (prop->read_only)
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(&prop->value, 0))
+	{
+		return 0;
+	}
+
+	if (!file_read_with_several_steps(stream, &prop->value))
 	{
 		return 0;
 	}

@@ -35,6 +35,8 @@ uint8_t property_set_by_pointer(void* the_property,
 uint8_t property_set_from_file(void* the_property,
 							   const uint8_t* file_name, uint16_t encoding,
 							   uint8_t dynamic, uint8_t read_only, uint8_t verbose);
+uint8_t property_set_from_stream(void* the_property, void* stream,
+								 uint8_t dynamic, uint8_t read_only, uint8_t verbose);
 
 uint8_t property_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

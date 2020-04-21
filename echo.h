@@ -13,7 +13,7 @@
 
 struct buffer;
 
-enum Level { Debug, Error, Info, None, Verbose, Warning, NoLevel };
+enum Level { Debug, Error, Info, None, Verbose, Warning, NoLevel, Fail };
 
 uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file, uint8_t level,
 			 const uint8_t* message, ptrdiff_t message_length, uint8_t new_line, uint8_t verbose);

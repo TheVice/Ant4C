@@ -3306,11 +3306,9 @@
       <code>exists('loadtasks') -> ${task::exists('loadtasks')} </code>
       <code>exists('mkdir') -> ${task::exists('mkdir')} </code>
       <code>exists('move') -> ${task::exists('move')} </code>
+      <code>exists('program') -> ${task::exists('program')} </code>
       <code>exists('project') -> ${task::exists('project')} </code>
       <code>exists('property') -> ${task::exists('property')} </code>
-      <code>exists('readregistry') -> ${task::exists('readregistry')} </code>
-      <code>exists('regex') -> ${task::exists('regex')} </code>
-      <code>exists('script') -> ${task::exists('script')} </code>
       <code>exists('setenv') -> ${task::exists('setenv')} </code>
       <code>exists('sleep') -> ${task::exists('sleep')} </code>
       <code>exists('target') -> ${task::exists('target')} </code>
@@ -3334,16 +3332,14 @@
       <output>exists('loadtasks') -> False </output>
       <output>exists('mkdir') -> True </output>
       <output>exists('move') -> True </output>
+      <output>exists('program') -> True </output>
       <output>exists('project') -> True </output>
       <output>exists('property') -> True </output>
-      <output>exists('readregistry') -> False </output>
-      <output>exists('regex') -> False </output>
-      <output>exists('script') -> False </output>
       <output>exists('setenv') -> False </output>
       <output>exists('sleep') -> True </output>
       <output>exists('target') -> True </output>
       <output>exists('touch') -> True </output>
-      <output>exists('trycatch') -> False </output>
+      <output>exists('trycatch') -> True </output>
       <output>exists('tstamp') -> False </output>
       <output>exists('uptodate') -> False </output>
       <return>1</return>
@@ -4075,57 +4071,74 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <content><![CDATA[
       <project name="discriminant">
         <description>Calculate 'real' solution(s) of quadratic polynomial.</description>
+        <property name="D"
+          value="${math::subtraction(math::pow(b, '2'), math::multiplication('4', math::multiplication(a, c)))}"
+          dynamic="true" readonly="true" />
 
-        <!--property name="a" value="2" overwrite="false" readonly="true" />
-        <property name="b" value="0" overwrite="false" readonly="true" />
-        <property name="c" value="-64" overwrite="false" readonly="true" /-->
+        <property name="X1"
+          value="${math::division(math::addition(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}"
+          dynamic="true" readonly="true" />
 
-        <property name="a" value="1" overwrite="false" readonly="true" />
-        <property name="b" value="0" overwrite="false" readonly="true" />
-        <property name="c" value="-16" overwrite="false" readonly="true" />
+        <property name="X2"
+          value="${math::division(math::subtraction(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}"
+          dynamic="true" readonly="true" />
 
-        <!--property name="a" value="6" overwrite="false" readonly="true" />
-        <property name="b" value="11" overwrite="false" readonly="true" />
-        <property name="c" value="-35" overwrite="false" readonly="true" /-->
+        <property name="n" value="${environment::newline()}" />
+        <property name="n"
+                  value="${string::substring(n, math::subtraction(string::get-length(n), 1)), 1)}" />
 
-        <!--property name="a" value="2" overwrite="false" readonly="true" />
-        <property name="b" value="-4" overwrite="false" readonly="true" />
-        <property name="c" value="-2" overwrite="false" readonly="true" /-->
+        <property name="input" />
 
-        <!--property name="a" value="-4" overwrite="false" readonly="true" />
-        <property name="b" value="-7" overwrite="false" readonly="true" />
-        <property name="c" value="12" overwrite="false" readonly="true" /-->
+        <property name="input" value="${input}2,0,-64${n}" />
+        <property name="input" value="${input}1,0,-16${n}" />
+        <property name="input" value="${input}9,0,49${n}" />
+        <property name="input" value="${input}-2,0,-4${n}" />
+        <property name="input" value="${input}4,0,81${n}" />
+        <property name="input" value="${input}-1,0,-9${n}" />
+        <property name="input" value="${input}3,0,-36${n}" />
+        <property name="input" value="${input}6,0,144${n}" />
+        <property name="input" value="${input}1,0,-16${n}" />
 
-        <!--property name="a" value="20" overwrite="false" readonly="true" />
-        <property name="b" value="-15" overwrite="false" readonly="true" />
-        <property name="c" value="-10" overwrite="false" readonly="true" /-->
+        <property name="input" value="${input}6,11,-35${n}" />
+        <property name="input" value="${input}2,-4,-2${n}" />
+        <property name="input" value="${input}-4,-7,12${n}" />
+        <property name="input" value="${input}20,-15,-10${n}" />
+        <property name="input" value="${input}1,-1,-3${n}" />
+        <property name="input" value="${input}5,-2,-9${n}" />
+        <property name="input" value="${input}3,4,2${n}" />
+        <property name="input" value="${input}-1,6,18${n}" />
 
-        <!--property name="a" value="1" overwrite="false" readonly="true" />
-        <property name="b" value="-1" overwrite="false" readonly="true" />
-        <property name="c" value="-3" overwrite="false" readonly="true" /-->
+        <property name="input" value="${input}1,-7,0${n}" />
+        <property name="input" value="${input}2,8,0${n}" />
+        <property name="input" value="${input}-1,-9,0${n}" />
+        <property name="input" value="${input}1,2,0${n}" />
+        <property name="input" value="${input}-6,-3,0${n}" />
+        <property name="input" value="${input}-5,1,0${n}" />
+        <property name="input" value="${input}-12,13,0${n}" />
+        <property name="input" value="${input}11,-27,0${n}" />
 
-        <!-- D = b * b -->
-        <property
-          name="D" value="${math::subtraction(math::pow(property::get-value('b'), '2'), math::multiplication('4', math::multiplication(property::get-value('a'), property::get-value('c'))))}"
-          dynamic="true" overwrite="true" readonly="true" />
+        <foreach item="String" in="${input}" delim="${n}" property="line">
+          <property name="a" value="${string::substring(line, '0', string::index-of(line, ','))}" />
+          <property name="b" value="${string::substring(line, string::index-of(line, ','))}" />
 
-        <!--echo message="${property::get-value('D')}" /-->
+          <property name="b" value="${string::substring(b, 1)}" />
+          <property name="b" value="${string::substring(b, '0', string::index-of(b, ','))}" />
 
-        <!--property name="X1" value="${math::division(
-                                                      math::addition(-property::get-value('b'), math::sqrt(property::get-value('D')),
-                                                      math::multiplication('2', property::get-value('a'))
-                                                    )}"
-          dynamic="true" overwrite="true" readonly="true" /-->
+          <property name="c" value="${string::substring(line, string::last-index-of(line, ','))}" />
+          <property name="c" value="${string::substring(c, 1)}" />
 
-        <property name="X1" value="${math::division(math::addition(math::multiplication('-1', property::get-value('b')), math::sqrt(property::get-value('D'))), math::multiplication('2', property::get-value('a')))}"
-          dynamic="true" overwrite="true" readonly="true" />
-        <property name="X2" value="${math::division(math::subtraction(math::multiplication('-1', property::get-value('b')), math::sqrt(property::get-value('D'))), math::multiplication('2', property::get-value('a')))}"
-          dynamic="true" overwrite="true" readonly="true" />
+          <property name="line" />
+          <property name="line" value="The quadratic polynomial ${a}x^2 + ${b}x + ${c} = 0" />
+          <property name="line" value="${string::replace(line, '+ -', '- ')}" />
 
-        <echo message="The quadratic polynomial ${property::get-value('a')}x^2 + ${property::get-value('b')}x + ${property::get-value('c')} = 0 have next solution(s) X1 -> ${property::get-value('X1')} X2 -> ${property::get-value('X2')}"
-              level="None" />
-        <echo message="The quadratic polynomial ${property::get-value('a')}x^2 + ${property::get-value('b')}x + ${property::get-value('c')} = 0 have next solution(s) X1 -> ${math::truncate(property::get-value('X1'))} X2 -> ${math::truncate(property::get-value('X2'))}"
-              level="None" />
+          <property name="line" value="${line} have next solution(s):${n}X1 -> '${X1}' and X2 -> '${X2}'."
+                    if="${math::greater(D, '0')}" />
+          <property name="line"
+            value="${line} have discriminant:${n}'${D}' that less than zero, so no solution(s) for non complex numbers are available."
+                    unless="${string::contains(line, 'solution(s)')}" />
+
+          <echo>${line}</echo>
+        </foreach>
       </project>
       ]]></content>
       <return>1</return>
@@ -4142,7 +4155,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>tasks_to_skip</name>
     </project_load_from_content>
-    <project><!-- project_load_from_content -->
+    <project_load_from_content>
       <content><![CDATA[
       <project name="discriminant">
         <property name="a" value="1" overwrite="false" readonly="true" />
@@ -4153,12 +4166,12 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
         <property name="X1" value="${math::division(math::addition(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}" dynamic="true" overwrite="true" readonly="true" />
         <property name="X2" value="${math::division(math::subtraction(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}" dynamic="true" overwrite="true" readonly="true" />
 
-        <echo message="The quadratic polynomial ${property::get-value('a')}x^2 + ${property::get-value('b')}x + ${property::get-value('c')} = 0 have next solution(s) X1 -> ${math::truncate(X1)} X2 -> ${math::truncate(X2)}" level="None" />
+        <echo message="The quadratic polynomial ${a}x^2 + ${b}x + ${c} = 0 have next solution(s) X1 -> ${math::truncate(X1)} X2 -> ${math::truncate(X2)}" level="None" />
       </project>
       ]]></content>
       <return>1</return>
       <name>discriminant</name>
-    </project>
+    </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
       <project name="project-properties" default="some_target">
@@ -4572,7 +4585,6 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
           <property name="result" value="${result}${path::get-file-name(file_name)}" />
         </foreach>
 
-        <!--fail unless="${string::equal('ABC', result)}" message="${project::get-name()} - property value of result (${result}) is not equal to the ABC." /-->
         <fail unless="${string::equal('3', string::get-length(result))}" message="${project::get-name()} - length of property value 'result' (${result}) should be equal to the 3." />
         <fail unless="${string::contains(result, 'A')}" message="${project::get-name()} - property value of result (${result}) should contains 'A'." />
         <fail unless="${string::contains(result, 'B')}" message="${project::get-name()} - property value of result (${result}) should contains 'B'." />
@@ -4831,6 +4843,60 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="'Try catch' sample 1.">
+        <property name="expected"
+                  value="Entered 'try' section. Catch at the 'catch' section. Finally at the 'finally' section."
+                  readonly="true" />
+        <trycatch>
+          <try>
+            <property name="result" value="Entered 'try' section." />
+            <fail message="Fail!" />
+            <property name="result" />
+          </try>
+          <catch>
+            <property name="result" value="${result} Catch at the 'catch' section." />
+          </catch>
+          <finally>
+            <property name="result" value="${result} Finally at the 'finally' section." />
+          </finally>
+        </trycatch>
+        <fail unless="${string::equal(expected, result)}"
+              message="${project::get-name()} - value of result property(${result}) should be equal to the '${expected}'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>'Try catch' sample 1.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="'Try catch' sample 2.">
+        <trycatch>
+          <try>
+            <property name="result" value="Entered to the 'try' section." />
+            <fail message="Error happen at the try section." />
+            <property name="result" />
+          </try>
+          <catch property="the_problem_is">
+            <property name="result" value="${result} Here we are at the 'catch' section with next problem: ${the_problem_is}" />
+            <fail message="Here we go again in to the problem." />
+            <property name="the_problem_is" />
+          </catch>
+          <finally>
+            <property name="result" value="${result} And we entered into finally section." />
+            <property name="result" value="${result}&#10;- Is problem property exists?" />
+            <property name="result" value="${result}&#10;- Yes." if="${property::exists('the_problem_is')}" />
+            <property name="result" value="${result}&#10;- No." unless="${property::exists('the_problem_is')}" />
+          </finally>
+        </trycatch>
+      </project>
+      ]]></content>
+      <name>'Try catch' sample 2.</name>
+      <return>0</return>
+      <property name="result" value="Entered to the 'try' section. Here we are at the 'catch' section with next problem: Error happen at the try section.&#10; And we entered into finally section.&#10;- Is problem property exists?&#10;- Yes." />
+      <property name="the_problem_is" value="Error happen at the try section.&#10;" />
     </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[

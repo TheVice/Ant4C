@@ -51,8 +51,12 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	uint8_t* task_attributes_count,
 	struct buffer* task_arguments);
 
+void common_set_output_stream(void* stream);
+void common_set_error_output_stream(void* stream);
 void* common_get_output_stream();
 void* common_get_error_output_stream();
+uint8_t common_is_output_stream_standard();
+uint8_t common_is_error_output_stream_standard();
 
 #define XCHG(A, Z)	\
 	(A) -= (Z);		\

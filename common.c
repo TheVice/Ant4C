@@ -302,12 +302,35 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
+void* output_stream = NULL;
+void* error_output_stream = NULL;
+
+void common_set_output_stream(void* stream)
+{
+	output_stream = stream;
+}
+
+void common_set_error_output_stream(void* stream)
+{
+	error_output_stream = stream;
+}
+
 void* common_get_output_stream()
 {
-	return stdout;
+	return NULL == output_stream ? stdout : output_stream;
 }
 
 void* common_get_error_output_stream()
 {
-	return stderr;
+	return NULL == error_output_stream ? stderr : error_output_stream;
+}
+
+uint8_t common_is_output_stream_standard()
+{
+	return NULL == output_stream;
+}
+
+uint8_t common_is_error_output_stream_standard()
+{
+	return NULL == error_output_stream;
 }

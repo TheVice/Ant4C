@@ -117,6 +117,7 @@ TEST_F(TestProject, project_load_from_content)
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
 		const std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
+		const auto properties = node.node().select_nodes("property");
 		const auto targets = node.node().select_nodes("target");
 		//
 		const auto content_in_range(string_to_range(content));
@@ -172,6 +173,62 @@ TEST_F(TestProject, project_load_from_content)
 				  (const uint8_t*)expected_default_target.c_str(), (uint8_t)expected_default_target.size()))
 				<< buffer_free(&output) << project_free(the_project) << std::endl
 				<< expected_default_target;
+
+		for (const auto& property_node : properties)
+		{
+			void* the_project_property = NULL;
+			const std::string property_name(property_node.node().attribute("name").as_string());
+			//
+			ASSERT_TRUE(project_property_exists(the_project,
+												(const uint8_t*)property_name.c_str(),
+												(uint8_t)property_name.size(),
+												&the_project_property, verbose))
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			const uint8_t expected_is_dynamic = property_node.node().attribute("dynamic").as_bool();
+			const uint8_t expected_is_read_only = property_node.node().attribute("readonly").as_bool();
+			const std::string expected_property_value(property_node.node().attribute("value").as_string());
+			//
+			uint8_t is_dynamic = 0;
+			uint8_t is_read_only = 0;
+			//
+			ASSERT_TRUE(property_is_dynamic(the_project_property, &is_dynamic))
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			ASSERT_EQ(expected_is_dynamic, is_dynamic)
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			ASSERT_TRUE(property_is_readonly(the_project_property, &is_read_only))
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			ASSERT_EQ(expected_is_read_only, is_read_only)
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			ASSERT_TRUE(buffer_resize(&output, 0))
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			ASSERT_TRUE(property_get_by_pointer(the_project_property, &output))
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+			//
+			ASSERT_EQ(expected_property_value, buffer_to_string(&output))
+					<< property_name << std::endl
+					<< buffer_free(&output)
+					<< project_free(the_project);
+		}
 
 		for (const auto& target_name : targets)
 		{

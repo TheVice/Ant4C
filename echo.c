@@ -16,7 +16,6 @@
 #if defined(_WIN32)
 #include <io.h>
 #include <fcntl.h>
-#include <wchar.h>
 #endif
 
 #if !defined(__STDC_SEC_API__)
@@ -68,7 +67,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 {
 	(void)verbose;/*TODO: */
 
-	if (NoLevel < level)
+	if (Fail < level)
 	{
 		return 0;
 	}
@@ -87,9 +86,11 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	}
 	else
 	{
-		file_stream = (Error != level) ? common_get_output_stream() : common_get_error_output_stream();
+		file_stream = (Error != level &&
+					   Fail != level) ? common_get_output_stream() : common_get_error_output_stream();
 
-		if (NoLevel == level)
+		if (NoLevel == level ||
+			Fail == level)
 		{
 			result = 1;
 		}
@@ -108,11 +109,20 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	if (NULL != message && 0 < message_length)
 	{
 #if defined(_WIN32)
+
+		if (!file)
+		{
+			level = (Error != level &&
+					 Fail != level) ? common_is_output_stream_standard() : common_is_error_output_stream_standard();
+		}
+
 		struct buffer new_message;
+
 		SET_NULL_TO_BUFFER(new_message);
+
 		int mode = 0;
 
-		if (!file && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
+		if (!file && level && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
 		{
 			if (!buffer_assing_to_uint16(&new_message, message, message_length))
 			{
@@ -153,14 +163,14 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		{
 			uint8_t previous_result = result;
 			result = file_flush(file_stream);
-			previous_result = previous_result & result;
+			previous_result = previous_result && result;
 #if defined(_MSC_VER)
 			result = (_O_U8TEXT == _setmode(_file_fileno(file_stream), mode));
 #else
 			mode = _setmode(_file_fileno(file_stream), mode);
 			result = (_O_U8TEXT == mode || -1 != mode);
 #endif
-			result = result & previous_result;
+			result = result && previous_result;
 		}
 
 		buffer_release(&new_message);

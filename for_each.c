@@ -98,7 +98,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 		if (!project_property_set_value(the_project,
 										property_name, property_name_length,
 										item.start, range_size(&item),
-										1, 1, 0, verbose))
+										0, 1, 0, verbose))
 		{
 			return 0;
 		}

@@ -361,6 +361,7 @@ uint8_t interpreter_get_values_for_arguments(
 
 	uint8_t count = 0;
 	uint8_t depth = 0;
+	/**/
 	struct range argument_area;
 	argument_area.start = arguments_area->start;
 	argument_area.finish = arguments_area->start;
@@ -369,7 +370,15 @@ uint8_t interpreter_get_values_for_arguments(
 	{
 		const uint8_t ch = *argument_area.finish;
 
-		if (arguments_delimiter == ch && 0 == depth)
+		if (apos == ch)
+		{
+			argument_area.finish = find_any_symbol_like_or_not_like_that(
+									   argument_area.finish + 1, arguments_area->finish, &apos, 1, 1, 1);
+			argument_area.finish = find_any_symbol_like_or_not_like_that(
+									   argument_area.finish + 1, arguments_area->finish, &apos, 1, 0, 1);
+			continue;
+		}
+		else if (arguments_delimiter == ch && 0 == depth)
 		{
 			const uint8_t* pos = argument_area.finish + 1;/*TODO: MIN(pos, arguments_area->finish)*/
 
@@ -379,8 +388,9 @@ uint8_t interpreter_get_values_for_arguments(
 			}
 
 			++count;
+			/**/
 			argument_area.start = pos;
-			argument_area.finish = pos + 1;
+			argument_area.finish = pos;
 		}
 		else if (start_of_function_arguments_area == ch)
 		{
@@ -1357,7 +1367,9 @@ uint8_t fail_evaluate_task(
 		}
 	}
 
-	echo(0, UTF8, NULL, Error, buffer_data(message, 0), buffer_size(message), 1, verbose);
+	echo(0, UTF8, NULL,
+		 buffer_size(message) ? Fail : Error,
+		 buffer_data(message, 0), buffer_size(message), 1, verbose);
 	return 0;
 }
 
@@ -1421,6 +1433,11 @@ uint8_t if_evaluate_task(
 	return interpreter_evaluate_tasks(the_project, the_target, test_in_a_buffer, 0, verbose);
 }
 
+uint8_t try_catch_evaluate_task(
+	void* the_project, const void* the_target,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	struct buffer* task_arguments, uint8_t verbose);
+
 static const uint8_t* interpreter_task_str[] =
 {
 	(const uint8_t*)"attrib",
@@ -1452,8 +1469,8 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"sleep",
 	(const uint8_t*)"target",
 	(const uint8_t*)"touch",
-#if 0
 	(const uint8_t*)"trycatch",
+#if 0
 	(const uint8_t*)"tstamp",
 	(const uint8_t*)"uptodate",
 	(const uint8_t*)"xmlpeek",
@@ -1492,8 +1509,8 @@ enum interpreter_task
 	sleep_task,
 	target_task,
 	touch_task,
-#if 0
 	trycatch_task,
+#if 0
 	tstamp_task,
 	uptodate_task,
 	xmlpeek_task,
@@ -2050,10 +2067,13 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 
 			task_attributes_count = touch_evaluate_task(&task_arguments, verbose);
 			break;
-#if 0
 
-		case trycatch_:
+		case trycatch_task:
+			task_attributes_count = try_catch_evaluate_task(
+										the_project, the_target, attributes_finish, element_finish,
+										&task_arguments, verbose);
 			break;
+#if 0
 
 		case tstamp_:
 			break;

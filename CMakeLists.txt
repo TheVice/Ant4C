@@ -58,6 +58,7 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/target.h"
             "${CMAKE_SOURCE_DIR}/text_encoding.c"
             "${CMAKE_SOURCE_DIR}/text_encoding.h"
+            "${CMAKE_SOURCE_DIR}/try_catch.c"
             "${CMAKE_SOURCE_DIR}/version.c"
             "${CMAKE_SOURCE_DIR}/version.h"
             "${CMAKE_SOURCE_DIR}/xml.c"
