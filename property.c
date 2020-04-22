@@ -13,6 +13,8 @@
 #include "load_file.h"
 #include "project.h"
 #include "range.h"
+#include "string_unit.h"
+#include "text_encoding.h"
 
 #include <string.h>
 
@@ -46,23 +48,46 @@ uint8_t property_is_name_valid(const uint8_t* name, uint8_t name_length)
 		return 0;
 	}
 
-	for (uint8_t i = 0; i < name_length; ++i)
+	uint32_t out = 0;
+	const uint8_t* pos = NULL;
+	const uint8_t* name_start = name;
+	const uint8_t* name_finish = name + name_length;
+
+	while (NULL != (pos = string_enumerate(name, name_finish)))
 	{
-		const uint8_t is_letter = ('A' <= name[i] && name[i] <= 'Z') || ('a' <= name[i] && name[i] <= 'z');
-		const uint8_t is_digit = ('0' <= name[i] && name[i] <= '9');
-		const uint8_t is_underscore = ('_' == name[i]);
-		const uint8_t is_dash = ('-' == name[i]);
-		const uint8_t is_dot = ('.' == name[i]);
-
-		if (!is_letter && !is_digit && !is_underscore && !is_dash && !is_dot)
+		if (!text_encoding_decode_UTF8_single(name, pos, &out))
 		{
 			return 0;
 		}
 
-		if ((0 == i || name_length - 1 == i) && (is_dash || is_dot))
+		if (INT8_MAX < out)
 		{
-			return 0;
+			if (string_to_case(out, string_get_id_of_to_lower_function()) ==
+				string_to_case(out, string_get_id_of_to_upper_function()))
+			{
+				return 0;
+			}
 		}
+		else
+		{
+			const uint8_t is_letter = ('A' <= out && out <= 'Z') || ('a' <= out && out <= 'z');
+			const uint8_t is_digit = ('0' <= out && out <= '9');
+			const uint8_t is_underscore = ('_' == out);
+			const uint8_t is_dash = ('-' == out);
+			const uint8_t is_dot = ('.' == out);
+
+			if (!is_letter && !is_digit && !is_underscore && !is_dash && !is_dot)
+			{
+				return 0;
+			}
+
+			if ((name_start == name || pos == name_finish) && (is_dash || is_dot))
+			{
+				return 0;
+			}
+		}
+
+		name = pos;
 	}
 
 	return 1;

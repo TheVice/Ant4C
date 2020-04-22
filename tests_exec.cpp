@@ -16,10 +16,6 @@ extern "C" {
 #include "interpreter.h"
 #include "path.h"
 #include "range.h"
-
-	extern uint8_t argument_get_key_and_value(
-		const uint8_t* input_start, const uint8_t* input_finish,
-		struct range* key, struct range* value);
 };
 
 #include <string>
@@ -27,6 +23,12 @@ extern "C" {
 #include <cstdint>
 #include <sstream>
 #include <utility>
+
+extern "C" {
+	extern uint8_t argument_get_key_and_value(
+		const uint8_t* input_start, const uint8_t* input_finish,
+		struct range* key, struct range* value);
+};
 
 class TestExec : public TestsBaseXml
 {

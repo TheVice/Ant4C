@@ -107,8 +107,6 @@ TEST_F(TestProject, project_load_from_content)
 	{
 		std::cout << "[ RUN      ]" << std::endl;
 		//
-		const void* the_property = NULL;
-		//
 		const std::string content(node.node().select_node("content").node().child_value());
 		const auto project_help = (uint8_t)INT_PARSE(
 									  node.node().select_node("project_help").node().child_value());
@@ -116,6 +114,7 @@ TEST_F(TestProject, project_load_from_content)
 										 node.node().select_node("return").node().child_value());
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
+		const std::string target_to_run(node.node().select_node("target_to_run").node().child_value());
 		const std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
 		const auto properties = node.node().select_nodes("property");
 		const auto targets = node.node().select_nodes("target");
@@ -132,11 +131,20 @@ TEST_F(TestProject, project_load_from_content)
 							  the_project, project_help, verbose);
 		ASSERT_EQ(expected_return, returned)
 				<< content << std::endl << buffer_free(&output) << project_free(the_project);
-		//
-		ASSERT_TRUE(project_evaluate_default_target(the_project, verbose))
-				<< content << std::endl << buffer_free(&output) << project_free(the_project);
-		//
-		the_property = NULL;
+
+		if (target_to_run.empty())
+		{
+			ASSERT_TRUE(project_evaluate_default_target(the_project, verbose))
+					<< content << std::endl << buffer_free(&output) << project_free(the_project);
+		}
+		else
+		{
+			const auto target_to_run_in_range(string_to_range(target_to_run));
+			ASSERT_TRUE(target_evaluate_by_name(the_project, &target_to_run_in_range, verbose))
+					<< content << std::endl << buffer_free(&output) << project_free(the_project);
+		}
+
+		const void* the_property = NULL;
 		ASSERT_NE(expected_base_directory.empty(), project_get_base_directory(the_project, &the_property))
 				<< buffer_free(&output) << project_free(the_project);
 		//
@@ -169,10 +177,15 @@ TEST_F(TestProject, project_load_from_content)
 		ASSERT_EQ(expected_default_target, returned_default_target)
 				<< buffer_free(&output) << project_free(the_project);
 		//
-		ASSERT_NE(expected_default_target.empty(), project_target_exists(the_project,
-				  (const uint8_t*)expected_default_target.c_str(), (uint8_t)expected_default_target.size()))
-				<< buffer_free(&output) << project_free(the_project) << std::endl
-				<< expected_default_target;
+		static const uint8_t asterisk = '*';
+
+		if (!project_target_exists(the_project, &asterisk, 1))
+		{
+			ASSERT_NE(expected_default_target.empty(), project_target_exists(the_project,
+					  (const uint8_t*)expected_default_target.c_str(), (uint8_t)expected_default_target.size()))
+					<< buffer_free(&output) << project_free(the_project) << std::endl
+					<< expected_default_target;
+		}
 
 		for (const auto& property_node : properties)
 		{

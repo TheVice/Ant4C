@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -42,6 +42,7 @@ uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_fini
 						   const uint8_t* value_start, const uint8_t* value_finish);
 uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish,
 						 ptrdiff_t index, ptrdiff_t length, struct buffer* output);
+uint32_t string_to_case(uint32_t input, uint8_t required_case);
 uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output);
 uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output);
 uint8_t string_trim(struct range* input_output);
@@ -53,6 +54,8 @@ uint8_t string_un_quote(struct range* input_output);
 uint8_t string_equal(const uint8_t* input_1_start, const uint8_t* input_1_finish,
 					 const uint8_t* input_2_start, const uint8_t* input_2_finish);
 
+uint8_t string_get_id_of_to_lower_function();
+uint8_t string_get_id_of_to_upper_function();
 uint8_t string_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t string_exec_function(uint8_t function, const struct buffer* arguments,
 							 uint8_t arguments_count, struct buffer* output);

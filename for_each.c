@@ -473,3 +473,32 @@ uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 	return project_property_set_value(the_project, property_name, property_name_length,
 									  (const uint8_t*)&verbose, 0, 0, 1, 0, verbose);
 }
+
+uint8_t do_evaluate_task(void* the_project, const void* the_target,
+						 const uint8_t* attributes_finish, const uint8_t* element_finish,
+						 struct buffer* task_arguments, uint8_t verbose)
+{
+	if (NULL == task_arguments)
+	{
+		return 0;
+	}
+
+	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, 1, NULL, NULL, NULL, task_arguments))
+	{
+		return 0;
+	}
+
+	struct buffer* elements = buffer_buffer_data(task_arguments, 0);
+
+	if (!elements)
+	{
+		return 0;
+	}
+
+	if (xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, elements))
+	{
+		return interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose);
+	}
+
+	return 1;
+}

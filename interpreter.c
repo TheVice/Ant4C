@@ -1379,6 +1379,9 @@ uint8_t for_each_get_attributes_and_arguments_for_task(
 uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 							   const uint8_t* attributes_finish, const uint8_t* element_finish,
 							   struct buffer* task_arguments, uint8_t verbose);
+uint8_t do_evaluate_task(void* the_project, const void* the_target,
+						 const uint8_t* attributes_finish, const uint8_t* element_finish,
+						 struct buffer* task_arguments, uint8_t verbose);
 
 #define IF_TEST_POSITION		0
 
@@ -1446,6 +1449,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"copy",
 	(const uint8_t*)"delete",
 	(const uint8_t*)"description",
+	(const uint8_t*)"do",
 	(const uint8_t*)"echo",
 	(const uint8_t*)"exec",
 	(const uint8_t*)"fail",
@@ -1486,6 +1490,7 @@ enum interpreter_task
 	copy_task,
 	delete_task,
 	description_task,
+	do_task,
 	echo_task,
 	exec_task,
 	fail_task,
@@ -1780,6 +1785,11 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				task_attributes_count = 1;
 			}
 
+			break;
+
+		case do_task:
+			task_attributes_count = do_evaluate_task(
+										the_project, the_target, attributes_finish, element_finish, &task_arguments, verbose);
 			break;
 
 		case echo_task:

@@ -1082,6 +1082,29 @@ uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path)
 	return file_system_move_entry(current_path, new_path);
 #endif
 }
+
+enum file_function
+{
+	file_exists_,
+	file_get_checksum_,
+	file_get_creation_time_,
+	file_get_creation_time_utc_,
+	file_get_last_access_time_,
+	file_get_last_access_time_utc_,
+	file_get_last_write_time_,
+	file_get_last_write_time_utc_,
+	file_get_length_,
+	file_up_to_date_,
+	file_replace_,
+	UNKNOWN_FILE_FUNCTION,
+	file_set_creation_time_,
+	file_set_creation_time_utc_,
+	file_set_last_access_time_,
+	file_set_last_access_time_utc_,
+	file_set_last_write_time_,
+	file_set_last_write_time_utc_
+};
+
 #if defined(_WIN32)
 uint8_t file_system_set_time_utc_wchar_t(const wchar_t* path, const FILETIME* creationTime,
 		const FILETIME* lastAccessTime, const FILETIME* lastWriteTime)
@@ -1149,15 +1172,18 @@ uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t func
 	const wchar_t* ptr = buffer_wchar_t_data(&pathW, 0);
 	uint8_t returned = 0;
 
-	if (/*c*/ 0 == function)
+	if (file_set_creation_time_utc_ == function ||
+		file_set_creation_time_ == function)
 	{
 		returned = file_system_set_time_utc_wchar_t(ptr, &win32_time, NULL, NULL);
 	}
-	else if (/*a*/ 1 == function)
+	else if (file_set_last_access_time_utc_ == function ||
+			 file_set_last_access_time_ == function)
 	{
 		returned = file_system_set_time_utc_wchar_t(ptr, NULL, &win32_time, NULL);
 	}
-	else /*w*/
+	else if (file_set_last_write_time_utc_ == function ||
+			 file_set_last_write_time_ == function)
 	{
 		returned = file_system_set_time_utc_wchar_t(ptr, NULL, NULL, &win32_time);
 	}
@@ -1881,32 +1907,32 @@ uint8_t file_set_attributes(const uint8_t* path,
 #if defined(_WIN32)
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time(path, time, 0/*TODO*/);
+	return file_system_set_time(path, time, file_set_creation_time_);
 }
 
 uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time_utc(path, time, 0/*TODO*/);
+	return file_system_set_time_utc(path, time, file_set_creation_time_utc_);
 }
 
 uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time(path, time, 1/*TODO*/);
+	return file_system_set_time(path, time, file_set_last_access_time_);
 }
 
 uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time_utc(path, time, 1/*TODO*/);
+	return file_system_set_time_utc(path, time, file_set_last_access_time_utc_);
 }
 
 uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time(path, time, 2/*TODO*/);
+	return file_system_set_time(path, time, file_set_last_write_time_);
 }
 
 uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time_utc(path, time, 2/*TODO*/);
+	return file_system_set_time_utc(path, time, file_set_last_write_time_utc_);
 }
 #else
 uint8_t file_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
@@ -1918,19 +1944,26 @@ uint8_t file_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
 
 	struct utimbuf times;
 
-	if (/*a*/1 == function)
+	if (file_set_last_access_time_ == function ||
+		file_set_last_access_time_utc_ == function)
 	{
 		times.actime = time;
 		times.modtime = file_get_last_write_time_utc(path);
 	}
-	else if (/*w*/2 == function)
+	else if (file_set_last_write_time_ == function ||
+			 file_set_last_write_time_utc_ == function)
 	{
 		times.actime = file_get_last_access_time_utc(path);
 		times.modtime = time;
 	}
-	else
+	else if (file_set_creation_time_ == function ||
+			 file_set_creation_time_utc_ == function)
 	{
 		return 1;
+	}
+	else
+	{
+		return 0;
 	}
 
 	return 0 == utime((const char*)path, &times);
@@ -1943,32 +1976,32 @@ uint8_t file_set_time(const uint8_t* path, int64_t time, uint8_t function)
 
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
 {
-	return file_set_time(path, time, 0/*TODO*/);
+	return file_set_time(path, time, file_set_creation_time_);
 }
 
 uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_set_time_utc(path, time, 0/*TODO*/);
+	return file_set_time_utc(path, time, file_set_creation_time_utc_);
 }
 
 uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
 {
-	return file_set_time(path, time, 1/*TODO*/);
+	return file_set_time(path, time, file_set_last_access_time_);
 }
 
 uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_set_time_utc(path, time, 1/*TODO*/);
+	return file_set_time_utc(path, time, file_set_last_access_time_utc_);
 }
 
 uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
 {
-	return file_set_time(path, time, 2/*TODO*/);
+	return file_set_time(path, time, file_set_last_write_time_);
 }
 
 uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_set_time_utc(path, time, 2/*TODO*/);
+	return file_set_time_utc(path, time, file_set_last_write_time_utc_);
 }
 #endif
 
@@ -2433,22 +2466,8 @@ static const uint8_t* file_function_str[] =
 	(const uint8_t*)"get-last-write-time",
 	(const uint8_t*)"get-last-write-time-utc",
 	(const uint8_t*)"get-length",
-	(const uint8_t*)"up-to-date"
-};
-
-enum file_function
-{
-	file_exists_,
-	file_get_checksum_,
-	file_get_creation_time_,
-	file_get_creation_time_utc_,
-	file_get_last_access_time_,
-	file_get_last_access_time_utc_,
-	file_get_last_write_time_,
-	file_get_last_write_time_utc_,
-	get_length,
-	up_to_date,
-	UNKNOWN_FILE_FUNCTION
+	(const uint8_t*)"up-to-date",
+	(const uint8_t*)"replace"
 };
 
 uint8_t file_get_function(const uint8_t* name_start, const uint8_t* name_finish)
@@ -2461,7 +2480,8 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 {
 	if (UNKNOWN_FILE_FUNCTION <= function ||
 		NULL == arguments ||
-		2 < arguments_count ||
+		!arguments_count ||
+		3 < arguments_count ||
 		NULL == output)
 	{
 		return 0;
@@ -2471,7 +2491,10 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 
 	struct range argument2;
 
-	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
+	struct range argument3;
+
+	argument1.start = argument2.start = argument3.start =
+											argument1.finish = argument2.finish = argument3.finish = NULL;
 
 	if (1 == arguments_count)
 	{
@@ -2483,6 +2506,13 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 	else if (2 == arguments_count)
 	{
 		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, 1))
 		{
 			return 0;
 		}
@@ -2522,13 +2552,20 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 			return 1 == arguments_count &&
 				   int64_to_string(file_get_last_write_time_utc(argument1.start), output);
 
-		case get_length:
+		case file_get_length_:
 			return 1 == arguments_count &&
 				   int64_to_string(file_get_length(argument1.start), output);
 
-		case up_to_date:
+		case file_up_to_date_:
 			return 2 == arguments_count &&
 				   bool_to_string(file_up_to_date(argument1.start, argument2.start), output);
+
+		case file_replace_:
+			return 3 == arguments_count &&
+				   bool_to_string(
+					   file_replace(argument1.start,
+									argument2.start, argument2.finish,
+									argument3.start, argument3.finish), output);
 
 		case UNKNOWN_FILE_FUNCTION:
 		default:

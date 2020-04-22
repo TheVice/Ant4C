@@ -491,7 +491,12 @@ uint8_t target_evaluate_by_name(void* the_project, const struct range* target_na
 	if (!project_target_get(the_project, target_name->start,
 							(uint8_t)range_size(target_name), &the_target, verbose))
 	{
-		return 0;
+		static const uint8_t asterisk = '*';
+
+		if (!project_target_get(the_project, &asterisk, 1, &the_target, verbose))
+		{
+			return 0;
+		}
 	}
 
 	struct buffer stack;

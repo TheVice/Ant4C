@@ -893,6 +893,16 @@ static const uint8_t* string_function_str[] =
 	(const uint8_t*)"empty"
 };
 
+uint8_t string_get_id_of_to_lower_function()
+{
+	return to_lower;
+}
+
+uint8_t string_get_id_of_to_upper_function()
+{
+	return to_upper;
+}
+
 uint8_t string_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, string_function_str, UNKNOWN_STRING_FUNCTION);

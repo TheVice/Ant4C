@@ -4686,6 +4686,30 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
+      <project name="For each sample 6.">
+        <property name="result" value="" />
+        <property name="C" value="${math::addition(a, b)}" dynamic="true" />
+        <foreach item="String" in="4,5" delim="," property="a">
+          <foreach item="String" in="8,9" delim="," property="b">
+            <do>
+              <property name="result" value="${result}${math::truncate(C)} " />
+            </do>
+            <do unless="true">
+              <property name="result" value="1" />
+            </do>
+            <do if="false">
+              <property name="result" value="2" />
+            </do>
+          </foreach>
+        </foreach>
+        <fail unless="${string::equal('12 13 13 14', string::trim(result))}" message="${project::get-name()} - property value of result (${result}) is not equal to the '12 13 13 14'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>For each sample 6.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
       <project>
         <foreach item="String" in="1" delim="," property="a">
           <foreach item="String" in="3" delim="," property="b">
@@ -4898,6 +4922,46 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <property name="result" value="Entered to the 'try' section. Here we are at the 'catch' section with next problem: Error happen at the try section.&#10; And we entered into finally section.&#10;- Is problem property exists?&#10;- Yes." />
       <property name="the_problem_is" value="Error happen at the try section.&#10;" />
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="File replace sample.">
+        <property name="content" value="0101010101010101010101010101010101010101010101010101010101010101" readonly="true" />
+        <property name="expected_content" value="1010101010101010101010101010101010101010101010101010101010101010" readonly="true" />
+
+        <property name="file" value="${path::get-temp-file-name()}" readonly="true" />
+        <echo file="${file}" message="${content}" />
+
+        <fail unless="${file::replace(file, '01', '10')}"
+              message="${project::get-name()} - file replace function was failed." />
+
+        <loadfile file="${file}" property="new_content" />
+        <fail unless="${string::equal(expected_content, new_content)}"
+              message="${project::get-name()} - value of new_content property(${new_content}) should be equal to the '${content}'." />
+      </project>
+      ]]></content>
+      <name>File replace sample.</name>
+      <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Wild target sample 1." default="in_the_middle_of_nowhere">
+        <target name="*" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Wild target sample 1.</name>
+      <default>in_the_middle_of_nowhere</default>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Wild target sample 2.">
+        <target name="*" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Wild target sample 2.</name>
+      <target_to_run>in_the_middle_of_nowhere</target_to_run>
+    </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[
       <project name="project-properties" default="some_target">
@@ -4993,6 +5057,232 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </program_get_properties>
   </TestProgram>
   <TestProperty>
+    <property_task>
+      <record><![CDATA[name="0"]]></record>
+      <record><![CDATA[name="1"]]></record>
+      <record><![CDATA[name="2"]]></record>
+      <record><![CDATA[name="3"]]></record>
+      <record><![CDATA[name="4"]]></record>
+      <record><![CDATA[name="5"]]></record>
+      <record><![CDATA[name="6"]]></record>
+      <record><![CDATA[name="7"]]></record>
+      <record><![CDATA[name="8"]]></record>
+      <record><![CDATA[name="9"]]></record>
+      <record><![CDATA[name="A"]]></record>
+      <record><![CDATA[name="B"]]></record>
+      <record><![CDATA[name="C"]]></record>
+      <record><![CDATA[name="D"]]></record>
+      <record><![CDATA[name="E"]]></record>
+      <record><![CDATA[name="F"]]></record>
+      <record><![CDATA[name="G"]]></record>
+      <record><![CDATA[name="H"]]></record>
+      <record><![CDATA[name="I"]]></record>
+      <record><![CDATA[name="J"]]></record>
+      <record><![CDATA[name="K"]]></record>
+      <record><![CDATA[name="L"]]></record>
+      <record><![CDATA[name="M"]]></record>
+      <record><![CDATA[name="N"]]></record>
+      <record><![CDATA[name="O"]]></record>
+      <record><![CDATA[name="P"]]></record>
+      <record><![CDATA[name="Q"]]></record>
+      <record><![CDATA[name="R"]]></record>
+      <record><![CDATA[name="S"]]></record>
+      <record><![CDATA[name="T"]]></record>
+      <record><![CDATA[name="U"]]></record>
+      <record><![CDATA[name="V"]]></record>
+      <record><![CDATA[name="W"]]></record>
+      <record><![CDATA[name="X"]]></record>
+      <record><![CDATA[name="Y"]]></record>
+      <record><![CDATA[name="Z"]]></record>
+      <record><![CDATA[name="_"]]></record>
+      <record><![CDATA[name="a"]]></record>
+      <record><![CDATA[name="b"]]></record>
+      <record><![CDATA[name="c"]]></record>
+      <record><![CDATA[name="d"]]></record>
+      <record><![CDATA[name="e"]]></record>
+      <record><![CDATA[name="f"]]></record>
+      <record><![CDATA[name="g"]]></record>
+      <record><![CDATA[name="h"]]></record>
+      <record><![CDATA[name="i"]]></record>
+      <record><![CDATA[name="j"]]></record>
+      <record><![CDATA[name="k"]]></record>
+      <record><![CDATA[name="l"]]></record>
+      <record><![CDATA[name="m"]]></record>
+      <record><![CDATA[name="n"]]></record>
+      <record><![CDATA[name="o"]]></record>
+      <record><![CDATA[name="p"]]></record>
+      <record><![CDATA[name="q"]]></record>
+      <record><![CDATA[name="r"]]></record>
+      <record><![CDATA[name="s"]]></record>
+      <record><![CDATA[name="t"]]></record>
+      <record><![CDATA[name="u"]]></record>
+      <record><![CDATA[name="v"]]></record>
+      <record><![CDATA[name="w"]]></record>
+      <record><![CDATA[name="x"]]></record>
+      <record><![CDATA[name="y"]]></record>
+      <record><![CDATA[name="z"]]></record>
+      <record><![CDATA[name="a--b"]]></record>
+      <record><![CDATA[name="c-.d"]]></record>
+      <record><![CDATA[name="e.-f"]]></record>
+      <record><![CDATA[name="g..h"]]></record>
+      <record><![CDATA[name="&#x100;&#x100;"]]></record>
+      <record><![CDATA[name="&#x100;.&#x100;"]]></record>
+      <return>1</return>
+      <output_properties>
+        <property name="0" />
+        <property name="1" />
+        <property name="2" />
+        <property name="3" />
+        <property name="4" />
+        <property name="5" />
+        <property name="6" />
+        <property name="7" />
+        <property name="8" />
+        <property name="9" />
+        <property name="A" />
+        <property name="B" />
+        <property name="C" />
+        <property name="D" />
+        <property name="E" />
+        <property name="F" />
+        <property name="G" />
+        <property name="H" />
+        <property name="I" />
+        <property name="J" />
+        <property name="K" />
+        <property name="L" />
+        <property name="M" />
+        <property name="N" />
+        <property name="O" />
+        <property name="P" />
+        <property name="Q" />
+        <property name="R" />
+        <property name="S" />
+        <property name="T" />
+        <property name="U" />
+        <property name="V" />
+        <property name="W" />
+        <property name="X" />
+        <property name="Y" />
+        <property name="Z" />
+        <property name="_" />
+        <property name="a" />
+        <property name="b" />
+        <property name="c" />
+        <property name="d" />
+        <property name="e" />
+        <property name="f" />
+        <property name="g" />
+        <property name="h" />
+        <property name="i" />
+        <property name="j" />
+        <property name="k" />
+        <property name="l" />
+        <property name="m" />
+        <property name="n" />
+        <property name="o" />
+        <property name="p" />
+        <property name="q" />
+        <property name="r" />
+        <property name="s" />
+        <property name="t" />
+        <property name="u" />
+        <property name="v" />
+        <property name="w" />
+        <property name="x" />
+        <property name="y" />
+        <property name="z" />
+        <property name="a--b" />
+        <property name="c-.d" />
+        <property name="e.-f" />
+        <property name="g..h" />
+        <property name="&#x100;&#x100;" />
+        <property name="&#x100;.&#x100;" />
+      </output_properties>
+    </property_task>
+    <property_task>
+      <record><![CDATA[name=""]]></record>
+      <record><![CDATA[name="&#x0;"]]></record>
+      <record><![CDATA[name="&#x1;"]]></record>
+      <record><![CDATA[name="&#x2;"]]></record>
+      <record><![CDATA[name="&#x3;"]]></record>
+      <record><![CDATA[name="&#x4;"]]></record>
+      <record><![CDATA[name="&#x5;"]]></record>
+      <record><![CDATA[name="&#x6;"]]></record>
+      <record><![CDATA[name="&#x7;"]]></record>
+      <record><![CDATA[name="&#x8;"]]></record>
+      <record><![CDATA[name="&#x9;"]]></record>
+      <record><![CDATA[name="&#xa;"]]></record>
+      <record><![CDATA[name="&#xb;"]]></record>
+      <record><![CDATA[name="&#xc;"]]></record>
+      <record><![CDATA[name="&#xd;"]]></record>
+      <record><![CDATA[name="&#xe;"]]></record>
+      <record><![CDATA[name="&#xf;"]]></record>
+      <record><![CDATA[name="&#x10;"]]></record>
+      <record><![CDATA[name="&#x11;"]]></record>
+      <record><![CDATA[name="&#x12;"]]></record>
+      <record><![CDATA[name="&#x13;"]]></record>
+      <record><![CDATA[name="&#x14;"]]></record>
+      <record><![CDATA[name="&#x15;"]]></record>
+      <record><![CDATA[name="&#x16;"]]></record>
+      <record><![CDATA[name="&#x17;"]]></record>
+      <record><![CDATA[name="&#x18;"]]></record>
+      <record><![CDATA[name="&#x19;"]]></record>
+      <record><![CDATA[name="&#x1a;"]]></record>
+      <record><![CDATA[name="&#x1b;"]]></record>
+      <record><![CDATA[name="&#x1c;"]]></record>
+      <record><![CDATA[name="&#x1d;"]]></record>
+      <record><![CDATA[name="&#x1e;"]]></record>
+      <record><![CDATA[name="&#x1f;"]]></record>
+      <record><![CDATA[name=" "]]></record>
+      <record><![CDATA[name="!"]]></record>
+      <record><![CDATA[name="#"]]></record>
+      <record><![CDATA[name="$"]]></record>
+      <record><![CDATA[name="%"]]></record>
+      <record><![CDATA[name="'"]]></record>
+      <record><![CDATA[name="("]]></record>
+      <record><![CDATA[name=")"]]></record>
+      <record><![CDATA[name="*"]]></record>
+      <record><![CDATA[name="+"]]></record>
+      <record><![CDATA[name=","]]></record>
+      <record><![CDATA[name="-"]]></record>
+      <record><![CDATA[name="."]]></record>
+      <record><![CDATA[name="/"]]></record>
+      <record><![CDATA[name=":"]]></record>
+      <record><![CDATA[name=";"]]></record>
+      <record><![CDATA[name="<"]]></record>
+      <record><![CDATA[name="&#x63c;"]]></record>
+      <record><![CDATA[name="&gt;"]]></record>
+      <record><![CDATA[name="="]]></record>
+      <record><![CDATA[name=">"]]></record>
+      <record><![CDATA[name="&lt;"]]></record>
+      <record><![CDATA[name="?"]]></record>
+      <record><![CDATA[name="@"]]></record>
+      <record><![CDATA[name="["]]></record>
+      <record><![CDATA[name="\"]]></record>
+      <record><![CDATA[name="]"]]></record>
+      <record><![CDATA[name="^"]]></record>
+      <record><![CDATA[name="`"]]></record>
+      <record><![CDATA[name="{"]]></record>
+      <record><![CDATA[name="|"]]></record>
+      <record><![CDATA[name="}"]]></record>
+      <record><![CDATA[name="~"]]></record>
+      <record><![CDATA[name="--"]]></record>
+      <record><![CDATA[name="-."]]></record>
+      <record><![CDATA[name=".-"]]></record>
+      <record><![CDATA[name=".."]]></record>
+      <record><![CDATA[name="-a-b"]]></record>
+      <record><![CDATA[name="c-d."]]></record>
+      <record><![CDATA[name=".e-f"]]></record>
+      <record><![CDATA[name="g.h-"]]></record>
+      <record><![CDATA[name="&#x100;.&#x100;-"]]></record>
+      <record><![CDATA[name="&#x100;.&#x100;."]]></record>
+      <record><![CDATA[name="-&#x100;.&#x100;-"]]></record>
+      <record><![CDATA[name=".&#x100;.&#x100;."]]></record>
+      <record><![CDATA[name="-&#x100;.&#x100;"]]></record>
+      <record><![CDATA[name=".&#x100;.&#x100;"]]></record>
+      <return>0</return>
+    </property_task>
     <property_task>
       <properties>
         <property name="property_name" value="property value" dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" />

@@ -17,8 +17,10 @@ extern "C" {
 #include "string_unit.h"
 };
 
-#include <cstdint>
+#include <string>
 #include <cstddef>
+#include <cstdint>
+#include <ostream>
 
 class TestProperty : public TestsBaseXml
 {
@@ -102,8 +104,6 @@ TEST_F(TestProperty, property_task)
 		ASSERT_TRUE(properties_load_from_node(node, "properties/property", &properties))
 				<< properties_free(&properties);
 		//
-		const std::string record(node.node().select_node("record").node().child_value());
-		const auto record_in_range(string_to_range(record));
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const auto output_properties = node.node().select_nodes("output_properties/property");
 		//
@@ -113,10 +113,21 @@ TEST_F(TestProperty, property_task)
 		ASSERT_TRUE(property_add_at_project(project, &properties, NULL,
 											verbose)) << properties_free(&properties) << project_free(project);
 		//
-		const auto returned = interpreter_evaluate_task(project, NULL, task_id,
-							  record_in_range.start, record_in_range.finish, 0, verbose);
-		ASSERT_EQ(expected_return, returned) << properties_free(&properties) << project_free(project);
 		property_release(&properties);
+
+		for (const auto& record_node : node.node().select_nodes("record"))
+		{
+			const std::string record(record_node.node().child_value());
+			const auto record_in_range(string_to_range(record));
+			const auto returned = interpreter_evaluate_task(
+									  project, NULL, task_id,
+									  record_in_range.start, record_in_range.finish,
+									  0, verbose);
+			//
+			ASSERT_EQ(expected_return, returned)
+					<< record << std::endl
+					<< properties_free(&properties) << project_free(project);
+		}
 
 		for (const auto& property : output_properties)
 		{
