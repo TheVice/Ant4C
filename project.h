@@ -43,6 +43,9 @@ uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build
 uint8_t project_get_default_target(const void* the_project, const void** the_property);
 uint8_t project_get_name(const void* the_project, const void** the_property);
 
+uint8_t project_get_current_directory(const void* the_project, const void* the_target,
+									  struct buffer* output, ptrdiff_t size, uint8_t verbose);
+
 uint8_t project_new(void** the_project);
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
 								  void* the_project, uint8_t project_help, uint8_t verbose);

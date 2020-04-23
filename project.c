@@ -282,6 +282,31 @@ uint8_t project_get_name(const void* the_project, const void** the_property)
 	return returned;
 }
 
+uint8_t project_get_current_directory(const void* the_project, const void* the_target,
+									  struct buffer* output, ptrdiff_t size, uint8_t verbose)
+{
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	const void* current_directory_property = NULL;
+
+	if (!directory_get_current_directory(the_project, &current_directory_property, output))
+	{
+		return 0;
+	}
+
+	if (!interpreter_actualize_property_value(the_project, the_target,
+			property_get_id_of_get_value_function(), current_directory_property,
+			size, output, verbose))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 uint8_t project_new(void** the_project)
 {
 	/*NOTE: provide multi project support on a future release.*/
@@ -930,31 +955,6 @@ uint8_t project_is_property_private(const uint8_t* value, uint8_t size)
 	return 0;
 }
 
-uint8_t program_get_current_directory(const void* the_project, const void* the_target,
-									  struct buffer* output, uint8_t verbose)
-{
-	if (!buffer_resize(output, 0))
-	{
-		return 0;
-	}
-
-	const void* current_directory_property = NULL;
-
-	if (!directory_get_current_directory(the_project, &current_directory_property, output))
-	{
-		return 0;
-	}
-
-	if (!interpreter_actualize_property_value(the_project, the_target,
-			property_get_id_of_get_value_function(), current_directory_property,
-			0, output, verbose))
-	{
-		return 0;
-	}
-
-	return 1;
-}
-
 uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 							  struct buffer* task_arguments, const uint8_t* attributes_finish,
 							  const uint8_t* element_finish, uint8_t verbose)
@@ -1071,7 +1071,7 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 
 	BUFFER_TO_RANGE(build_file, build_file_in_a_buffer);
 
-	if (!program_get_current_directory(the_project, the_target, encoding_in_a_buffer, verbose))
+	if (!project_get_current_directory(the_project, the_target, encoding_in_a_buffer, 0, verbose))
 	{
 		project_unload((void*)the_new_project);
 		return 0;

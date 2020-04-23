@@ -187,16 +187,7 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 
 	if (!buffer_size(input))
 	{
-		const void* current_directory_property = NULL;
-
-		if (!directory_get_current_directory(the_project, &current_directory_property, input))
-		{
-			return 0;
-		}
-
-		if (!interpreter_actualize_property_value(the_project, the_target,
-				property_get_id_of_get_value_function(), current_directory_property,
-				0, input, verbose))
+		if (!project_get_current_directory(the_project, the_target, input, 0, verbose))
 		{
 			return 0;
 		}

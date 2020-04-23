@@ -4962,6 +4962,75 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <name>Wild target sample 2.</name>
       <target_to_run>in_the_middle_of_nowhere</target_to_run>
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move file sample 1.">
+        <property name="expected_content" value="The file number one." />
+
+        <property name="file_1" value="${path::get-temp-file-name()}" readonly="true" />
+        <echo file="${file_1}" message="${expected_content}" />
+
+        <property name="file_2" value="${path::get-temp-file-name()}" readonly="true" />
+
+        <delete file="${file_2}" />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is exists." />
+
+        <copy file="${file_1}" tofile="${file_2}" />
+        <fail unless="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' is not exists." />
+        <fail unless="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is not exists." />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_1}" />
+        <fail if="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' is exists." />
+
+        <move file="${file_2}" tofile="${file_1}" />
+        <fail unless="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' is not exists." />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' exists." />
+
+        <loadfile file="${file_1}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move file sample 1.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move file sample 2.">
+        <property name="file_1" value="${path::get-temp-file-name()}" readonly="true" />
+        <property name="file_name" value="${path::get-file-name(file_1)}" readonly="true" />
+        <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" readonly="true" />
+        <property name="file_2" value="${path::combine(folder, file_name)}" readonly="true" />
+
+        <property name="expected_content" value="The file number one." readonly="true" />
+        <echo file="${file_1}" message="${expected_content}" />
+
+        <fail if="${file::exists(file_2)}" message="${project::get-name()} - file '${file_name}' already exists at the target folder '${folder}'." />
+        <copy file="${file_1}" todir="${folder}" />
+        <fail unless="${file::exists(file_2)}" message="${project::get-name()} - file '${file_name}' not exists at the target folder '${folder}'." />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_1}" />
+        <fail if="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' is exists." />
+
+        <move file="${file_2}" todir="${path::get-temp-path()}" />
+        <fail unless="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' is not exists." />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' exists." />
+
+        <loadfile file="${file_1}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete dir="${folder}" />
+        <fail if="${directory::exists(folder)}" message="${project::get-name()} - folder '${content}' is exists." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move file sample 2.</name>
+    </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[
       <project name="project-properties" default="some_target">

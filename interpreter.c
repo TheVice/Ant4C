@@ -472,17 +472,9 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 				dir_get_id_of_get_current_directory_function() == dir_function_id)
 			{
 				const ptrdiff_t size = buffer_size(return_of_function);
-				const void* the_property = NULL;
-
-				if (!directory_get_current_directory(the_project, &the_property, return_of_function))
-				{
-					values_count = 0;
-					break;
-				}
-
-				values_count = interpreter_actualize_property_value(
-								   the_project, the_target, property_get_id_of_get_value_function(),
-								   &the_property, size, return_of_function, verbose);
+				values_count = project_get_current_directory(
+								   the_project, the_target,
+								   return_of_function, size, verbose);
 			}
 			else
 			{
@@ -564,19 +556,12 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 				}
 
 				const ptrdiff_t size = buffer_size(return_of_function);
-				const void* the_property = NULL;
+				values_count = project_get_current_directory(
+								   the_project, the_target,
+								   return_of_function, size, verbose);
 
-				if (!directory_get_current_directory(the_project, &the_property, return_of_function))
+				if (!values_count)
 				{
-					values_count = 0;
-					break;
-				}
-
-				if (!interpreter_actualize_property_value(
-						the_project, the_target, property_get_id_of_get_value_function(),
-						&the_property, size, return_of_function, verbose))
-				{
-					values_count = 0;
 					break;
 				}
 
@@ -1218,11 +1203,7 @@ uint8_t choose_evaluate_task(
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
 	struct buffer* task_arguments, uint8_t verbose)
 {
-	(void)verbose;
-	buffer_release_inner_buffers(task_arguments);
-
-	if (!buffer_resize(task_arguments, 0) ||
-		!buffer_append_buffer(task_arguments, NULL, 3))
+	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, 3, NULL, NULL, NULL, task_arguments))
 	{
 		return 0;
 	}
