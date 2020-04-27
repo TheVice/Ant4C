@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -14,6 +14,7 @@
 #include "project.h"
 #include "range.h"
 #include "string_unit.h"
+#include "text_encoding.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -36,32 +37,18 @@
 #define L_tmpnam_s L_tmpnam
 #endif
 
-static const char posix_delimiter = '/';
-static const char windows_delimiter = '\\';
+static const uint8_t point = '.';
+static const uint8_t tilde = '~';
 
 #if defined(_WIN32)
-static const char delimiter = '\\';
+static const uint8_t upper_level[] = { '\\', '.', '.' };
 #else
-static const char delimiter = '/';
+static const uint8_t upper_level[] = { '/', '.', '.' };
 #endif
+#define UPPER_LEVEL_LENGTH COUNT_OF(upper_level)
 
-char path_delimiter()
-{
-	return delimiter;
-}
-
-char path_posix_delimiter()
-{
-	return '/';
-}
-
-char path_windows_delimiter()
-{
-	return '\\';
-}
-
-uint8_t path_change_extension(const char* path_start, const char* path_finish,
-							  const char* ext_start, const char* ext_finish, struct buffer* path)
+uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_finish,
+							  const uint8_t* ext_start, const uint8_t* ext_finish, struct buffer* path)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish))
 	{
@@ -74,17 +61,17 @@ uint8_t path_change_extension(const char* path_start, const char* path_finish,
 	{
 		if (string_equal(cur_ext.start, cur_ext.finish, ext_start, ext_finish))
 		{
-			return buffer_append_char(path, path_start, path_finish - path_start);
+			return buffer_append(path, path_start, path_finish - path_start);
 		}
 
-		if (!buffer_append_char(path, path_start, cur_ext.start - path_start))
+		if (!buffer_append(path, path_start, cur_ext.start - path_start))
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		if (!buffer_append_char(path, path_start, path_finish - path_start))
+		if (!buffer_append(path, path_start, path_finish - path_start))
 		{
 			return 0;
 		}
@@ -92,7 +79,7 @@ uint8_t path_change_extension(const char* path_start, const char* path_finish,
 
 	if (!range_in_parts_is_null_or_empty(ext_start, ext_finish))
 	{
-		if (!buffer_append_char(path, ext_start, ext_finish - ext_start))
+		if (!buffer_append(path, ext_start, ext_finish - ext_start))
 		{
 			return 0;
 		}
@@ -101,59 +88,101 @@ uint8_t path_change_extension(const char* path_start, const char* path_finish,
 	return 1;
 }
 
-uint8_t path_combine(const char* path1_start, const char* path1_finish,
-					 const char* path2_start, const char* path2_finish, struct buffer* path)
+uint8_t path_combine_in_place(struct buffer* path1, const ptrdiff_t size,
+							  const uint8_t* path2_start, const uint8_t* path2_finish)
 {
-	if (NULL == path1_start || NULL == path1_finish ||
-		NULL == path2_start || NULL == path2_finish ||
-		NULL == path ||
-		path1_finish < path1_start || path2_finish < path2_start)
+	if (NULL == path1 ||
+		buffer_size(path1) < size ||
+		path2_finish < path2_start)
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(path);
-
-	if (!buffer_append_char(path, NULL,
-							path1_finish - path1_start + 1 + path2_finish - path2_start))
+	if (size < buffer_size(path1) && !buffer_push_back(path1, PATH_DELIMITER))
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(path, size))
+	if (!buffer_append(path1, path2_start, path2_finish - path2_start))
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(path, path1_start, path1_finish - path1_start))
+	ptrdiff_t new_size = buffer_size(path1) - size;
+
+	if (new_size)
 	{
-		return 0;
+#if defined(_WIN32)
+
+		if (!cygpath_get_windows_path(buffer_data(path1, size), buffer_data(path1, size) + new_size))
+#else
+		if (!cygpath_get_unix_path(buffer_data(path1, size), buffer_data(path1, size) + new_size))
+#endif
+		{
+			return 0;
+		}
+
+		if (!common_replace_double_byte_by_single(buffer_data(path1, size), &new_size, PATH_DELIMITER))
+		{
+			return 0;
+		}
 	}
 
-	if (!buffer_push_back(path, delimiter))
-	{
-		return 0;
-	}
-
-	if (!buffer_append_char(path, path2_start, path2_finish - path2_start))
-	{
-		return 0;
-	}
-
-	ptrdiff_t new_size = buffer_size(path) - size;
-	replace_double_char_by_single((char*)buffer_data(path, size), &new_size, delimiter);
-	return buffer_resize(path, size + new_size);
+	return new_size ? buffer_resize(path1, size + new_size) : 1;
 }
 
-uint8_t path_get_directory_name(const char* path_start, const char* path_finish, struct range* directory)
+uint8_t path_combine(const uint8_t* path1_start, const uint8_t* path1_finish,
+					 const uint8_t* path2_start, const uint8_t* path2_finish, struct buffer* output)
 {
-	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||  NULL == directory)
+	if (path1_finish < path1_start ||
+		path2_finish < path2_start ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	ptrdiff_t new_size = path1_finish - path1_start + path2_finish - path2_start;
+
+	if (path1_start < path1_finish && path2_start < path2_finish)
+	{
+		++new_size;
+	}
+
+	if (!new_size)
+	{
+		return 1;
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, new_size))
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	if (!buffer_append(output, path1_start, path1_finish - path1_start))
+	{
+		return 0;
+	}
+
+	return path_combine_in_place(output, size, path2_start, path2_finish);
+}
+
+uint8_t path_get_directory_name(const uint8_t* path_start, const uint8_t* path_finish,
+								struct range* directory)
+{
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) || NULL == directory)
 	{
 		return 0;
 	}
 
 	directory->finish = find_any_symbol_like_or_not_like_that(
-							path_finish - 1, path_start, &delimiter, 1, 1, -1);
+							path_finish - 1, path_start, &PATH_DELIMITER, 1, 1, -1);
 	directory->start = path_start;
 
 	if (!string_trim(directory))
@@ -161,7 +190,7 @@ uint8_t path_get_directory_name(const char* path_start, const char* path_finish,
 		return 0;
 	}
 
-	if (delimiter == (*directory->start) && range_is_null_or_empty(directory))
+	if (PATH_DELIMITER == (*directory->start) && range_is_null_or_empty(directory))
 	{
 		++directory->finish;
 	}
@@ -169,19 +198,19 @@ uint8_t path_get_directory_name(const char* path_start, const char* path_finish,
 	return !range_is_null_or_empty(directory);
 }
 
-uint8_t path_get_extension(const char* path_start, const char* path_finish, struct range* ext)
+uint8_t path_get_extension(const uint8_t* path_start, const uint8_t* path_finish, struct range* ext)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) || NULL == ext)
 	{
 		return 0;
 	}
 
-	const char* file_name_start = find_any_symbol_like_or_not_like_that(
-									  path_finish - 1, path_start, &delimiter, 1, 1, -1);
-	ext->start = find_any_symbol_like_or_not_like_that(path_finish - 1, file_name_start, ".", 1, 1, -1);
+	const uint8_t* file_name_start = find_any_symbol_like_or_not_like_that(
+										 path_finish - 1, path_start, &PATH_DELIMITER, 1, 1, -1);
+	ext->start = find_any_symbol_like_or_not_like_that(path_finish - 1, file_name_start, &point, 1, 1, -1);
 	ext->finish = path_finish;
 
-	if (!string_trim(ext) || '.' != (*ext->start))
+	if (!string_trim(ext) || point != (*ext->start))
 	{
 		return 0;
 	}
@@ -194,7 +223,7 @@ uint8_t path_get_extension(const char* path_start, const char* path_finish, stru
 	return ext->start < ext->finish;
 }
 
-uint8_t path_get_file_name(const char* path_start, const char* path_finish, struct range* file_name)
+uint8_t path_get_file_name(const uint8_t* path_start, const uint8_t* path_finish, struct range* file_name)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
 		NULL == file_name)
@@ -202,10 +231,10 @@ uint8_t path_get_file_name(const char* path_start, const char* path_finish, stru
 		return 0;
 	}
 
-	const char* file_name_start = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start,
-								  &delimiter, 1, 1, -1);
+	const uint8_t* file_name_start = find_any_symbol_like_or_not_like_that(path_finish - 1, path_start,
+									 &PATH_DELIMITER, 1, 1, -1);
 
-	if (delimiter == (*file_name_start) && file_name_start < path_finish)
+	if (PATH_DELIMITER == (*file_name_start) && file_name_start < path_finish)
 	{
 		++file_name_start;
 	}
@@ -215,7 +244,7 @@ uint8_t path_get_file_name(const char* path_start, const char* path_finish, stru
 	return string_trim(file_name);
 }
 
-uint8_t path_get_file_name_without_extension(const char* path_start, const char* path_finish,
+uint8_t path_get_file_name_without_extension(const uint8_t* path_start, const uint8_t* path_finish,
 		struct range* file_name)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
@@ -241,17 +270,9 @@ uint8_t path_get_file_name_without_extension(const char* path_start, const char*
 	return string_trim(file_name);
 }
 
-uint8_t path_get_full_path(const char* root_start, const char* root_finish,
-						   const char* path_start, const char* path_finish, struct buffer* full_path)
+uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish,
+						   const uint8_t* path_start, const uint8_t* path_finish, struct buffer* full_path)
 {
-#if defined(_WIN32)
-	static const char* upper_level = "\\..";
-#else
-	static const char* upper_level = "/..";
-#endif
-	static const ptrdiff_t upper_level_length = 3;
-	static const char tilde = '~';
-
 	if (NULL == path_start ||
 		NULL == path_finish ||
 		path_finish < path_start ||
@@ -276,7 +297,7 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 			return 0;
 		}
 
-		if (!buffer_append_char(full_path, root_start, root_finish - root_start))
+		if (!buffer_append(full_path, root_start, root_finish - root_start))
 		{
 			return 0;
 		}
@@ -286,19 +307,19 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 
 	if (0 < start_path_length)
 	{
-		if (!buffer_append_char(full_path, NULL, start_path_length + path_finish - path_start + 1) ||
+		if (!buffer_append(full_path, NULL, start_path_length + path_finish - path_start + 1) ||
 			!buffer_resize(full_path, size + start_path_length))
 		{
 			return 0;
 		}
 	}
 
-	char* start = NULL;
-	char* finish = NULL;
+	uint8_t* start = NULL;
+	uint8_t* finish = NULL;
 
 	if (0 < start_path_length)
 	{
-		start = (char*)buffer_data(full_path, size);
+		start = buffer_data(full_path, size);
 		finish = start + start_path_length;
 
 		if (!path_combine(start, finish, path_start, path_finish, full_path))
@@ -306,35 +327,36 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 			return 0;
 		}
 
-		start = (char*)buffer_data(full_path, size + 2 * start_path_length);
-		finish = (char*)(buffer_data(full_path, 0) + buffer_size(full_path));
+		start = buffer_data(full_path, size + 2 * start_path_length);
+		finish = buffer_data(full_path, 0) + buffer_size(full_path);
 
 		if (NULL == start || !buffer_resize(full_path, size + start_path_length))
 		{
 			return 0;
 		}
 
-		if (!buffer_append_char(full_path, start, finish - start))
+		if (!buffer_append(full_path, start, finish - start))
 		{
 			return 0;
 		}
 	}
 
-	start = (char*)buffer_data(full_path, size);
-	finish = 0 < buffer_size(full_path) ? (char*)(buffer_data(full_path, 0) + buffer_size(full_path)) : NULL;
+	start = buffer_data(full_path, size);
+	finish = 0 < buffer_size(full_path) ? (buffer_data(full_path, 0) + buffer_size(full_path)) : NULL;
 	ptrdiff_t index = 0;
-	const char* real_start = start;
+	const uint8_t* real_start = start;
 
-	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + upper_level_length)))
+	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + UPPER_LEVEL_LENGTH)))
 	{
 		if (0 == index)
 		{
 			return 0;
 		}
 
-		const char* start_ = find_any_symbol_like_or_not_like_that(start + index - 1, real_start, &delimiter, 1, 1,
-							 -1);
-		start = start + index + upper_level_length;
+		const uint8_t* start_ = find_any_symbol_like_or_not_like_that(start + index - 1, real_start, &PATH_DELIMITER,
+								1, 1,
+								-1);
+		start = start + index + UPPER_LEVEL_LENGTH;
 
 		if (!buffer_resize(full_path, size + start_ - real_start))
 		{
@@ -343,13 +365,13 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 
 		if (start < finish)
 		{
-			if (!buffer_append_char(full_path, start, finish - start))
+			if (!buffer_append(full_path, start, finish - start))
 			{
 				return 0;
 			}
 
-			start -= index + upper_level_length;
-			finish = (char*)(buffer_data(full_path, 0) + buffer_size(full_path));
+			start -= index + UPPER_LEVEL_LENGTH;
+			finish = (buffer_data(full_path, 0) + buffer_size(full_path));
 		}
 		else
 		{
@@ -360,14 +382,14 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 
 	if (size == buffer_size(full_path))
 	{
-		if (!buffer_append_char(full_path, path_start, path_finish - path_start))
+		if (!buffer_append(full_path, path_start, path_finish - path_start))
 		{
 			return 0;
 		}
 	}
 
-	start = (char*)buffer_data(full_path, size);
-	finish = 0 < buffer_size(full_path) ? (char*)(buffer_data(full_path, 0) + buffer_size(full_path)) : NULL;
+	start = buffer_data(full_path, size);
+	finish = 0 < buffer_size(full_path) ? (buffer_data(full_path, 0) + buffer_size(full_path)) : NULL;
 
 	if (!range_in_parts_is_null_or_empty(start, finish))
 	{
@@ -383,7 +405,11 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 	if (0 < index)
 	{
 		const ptrdiff_t current_index = index;
-		replace_double_char_by_single(start, &index, delimiter);
+
+		if (!common_replace_double_byte_by_single(start, &index, PATH_DELIMITER))
+		{
+			return 0;
+		}
 
 		if (current_index != index && !buffer_resize(full_path, size + index))
 		{
@@ -394,7 +420,7 @@ uint8_t path_get_full_path(const char* root_start, const char* root_finish,
 	return 1;
 }
 
-uint8_t path_get_path_root(const char* path_start, const char* path_finish, struct range* root)
+uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish, struct range* root)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) || NULL == root)
 	{
@@ -408,8 +434,8 @@ uint8_t path_get_path_root(const char* path_start, const char* path_finish, stru
 	if (1 < path_length && ':' == path_start[1])
 	{
 		if (2 < path_length &&
-			(delimiter == path_start[2] ||
-			 posix_delimiter == path_start[2]))
+			(PATH_DELIMITER == path_start[2] ||
+			 path_posix_delimiter == path_start[2]))
 		{
 			root->finish = 3 + root->start;
 		}
@@ -423,7 +449,7 @@ uint8_t path_get_path_root(const char* path_start, const char* path_finish, stru
 
 #else
 
-	if (path_start[0] == delimiter)
+	if (PATH_DELIMITER == path_start[0])
 	{
 		root->finish = 1 + root->start;
 		return 1;
@@ -444,8 +470,8 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 #if !defined(_WIN32)
 	int fd = -1;
 
-	if (!common_append_string_to_buffer("/tmp/fileXXXXXX", temp_file_name) ||
-		!buffer_push_back(temp_file_name, '\0'))
+	if (!buffer_append_char(temp_file_name, "/tmp/fileXXXXXX", 15) ||
+		!buffer_push_back(temp_file_name, 0))
 	{
 		return 0;
 	}
@@ -458,7 +484,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 	}
 
 	close(fd);
-	return buffer_resize(temp_file_name, size + strlen(temp_file_path));
+	return buffer_resize(temp_file_name, size + 15);
 #else
 
 	if (!buffer_append_char(temp_file_name, NULL, L_tmpnam_s))
@@ -466,31 +492,30 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 		return 0;
 	}
 
-	char* temp_file_path = (char*)buffer_data(temp_file_name, size);
+	uint8_t* temp_file_path = buffer_data(temp_file_name, size);
 #if __STDC_SEC_API__
 
-	if (0 != tmpnam_s(temp_file_path, L_tmpnam_s))
+	if (0 != tmpnam_s((char*)temp_file_path, L_tmpnam_s))
 	{
 		return 0;
 	}
 
 #else
-	tmpnam(temp_file_path);
+	tmpnam((char*)temp_file_path);
 #endif
-	ptrdiff_t length = strlen(temp_file_path);
+	ptrdiff_t length = common_count_bytes_until(temp_file_path, 0);
 
 	if (length < 1)
 	{
 		return 0;
 	}
 
-	if ('.' == temp_file_path[length - 1])
+	if (point == temp_file_path[length - 1])
 	{
-		static const char point = '.';
-		const char* ptr = find_any_symbol_like_or_not_like_that(
-							  temp_file_path + length - 2, temp_file_path, &point, 1, 0, -1);
+		const uint8_t* ptr = find_any_symbol_like_or_not_like_that(
+								 temp_file_path + length - 2, temp_file_path, &point, 1, 0, -1);
 
-		if (ptr == temp_file_path || delimiter == *ptr)
+		if (ptr == temp_file_path || PATH_DELIMITER == *ptr)
 		{
 			return 0;
 		}
@@ -501,6 +526,12 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 
 	if (path_is_path_rooted(temp_file_path, temp_file_path + length))
 	{
+		if (!buffer_resize(temp_file_name, size + length) ||
+			!buffer_push_back(temp_file_name, 0))
+		{
+			return 0;
+		}
+
 		return buffer_resize(temp_file_name, size + length);
 	}
 
@@ -518,9 +549,9 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 		return 0;
 	}
 
-	const char* temp_path = (const char*)buffer_data(temp_file_name, temp_path_start);
-	const char* temp_path_ = (const char*)buffer_data(temp_file_name, temp_path_finish);
-	temp_file_path = (char*)buffer_data(temp_file_name, size);
+	const uint8_t* temp_path = buffer_data(temp_file_name, temp_path_start);
+	const uint8_t* temp_path_ = buffer_data(temp_file_name, temp_path_finish);
+	temp_file_path = buffer_data(temp_file_name, size);
 
 	if (!buffer_resize(temp_file_name, temp_path_finish) ||
 		!path_combine(
@@ -542,7 +573,14 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 #else
 	memcpy(temp_file_path, temp_path_, length);
 #endif
-	return buffer_resize(temp_file_name, size + length) && buffer_push_back(temp_file_name, '\0');
+
+	if (!buffer_resize(temp_file_name, size + length) ||
+		!buffer_push_back(temp_file_name, 0))
+	{
+		return 0;
+	}
+
+	return buffer_resize(temp_file_name, size + length);
 #endif
 }
 
@@ -556,52 +594,50 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 #if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(temp_path);
 
-	if (!buffer_append_wchar_t(temp_path, NULL, 2))
+	if (!buffer_append(temp_path, NULL, 6 * FILENAME_MAX + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	wchar_t* w = (wchar_t*)buffer_data(temp_path, size);
-	DWORD length = GetTempPathW(2, w);
+	wchar_t* pathW = (wchar_t*)buffer_data(temp_path, size);
+	DWORD length = GetTempPathW(sizeof(wchar_t), pathW);
 
-	if (length < 3)
+	if (length < sizeof(wchar_t) + 1)
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(temp_path, NULL, length) ||
-		!buffer_append_wchar_t(temp_path, NULL, length))
+	if (!buffer_resize(temp_path, size) ||
+		!buffer_append(temp_path, NULL, (ptrdiff_t)6 * length + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(temp_path, size);
-	w = (wchar_t*)buffer_data(temp_path, size + length);
-	length = GetTempPathW(length, w);
+	pathW = (wchar_t*)buffer_data(temp_path,
+								  buffer_size(temp_path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
+	length = GetTempPathW(length, pathW);
 
-	if (!length || !buffer_resize(temp_path, size + length))
+	if (!buffer_resize(temp_path, size) ||
+		!text_encoding_UTF16LE_to_UTF8(pathW, pathW + length, temp_path))
 	{
 		return 0;
 	}
 
-	WIDE2MULTI(w, m, length);
+	struct range directory;
 
-	if (length < 1)
+	if (!path_get_directory_name(buffer_data(temp_path, size), buffer_data(temp_path, 0) + buffer_size(temp_path),
+								 &directory))
 	{
 		return 0;
 	}
 
-	ptrdiff_t length_ = buffer_size(temp_path) - size;
-	const char* m_ = find_any_symbol_like_or_not_like_that(m + length_ - 1, m, &delimiter, 1, 0, -1);
-	m_ = find_any_symbol_like_or_not_like_that(m_, m + length_, &delimiter, 1, 1, 1);
-	length_ = m_ - m;
-	return buffer_resize(temp_path, size + length_);
+	return buffer_resize(temp_path, size + range_size(&directory));
 #else
-	return common_append_string_to_buffer("/tmp", temp_path);
+	return buffer_append_char(temp_path, "/tmp", 4);
 #endif
 }
 
-uint8_t path_has_extension(const char* path_start, const char* path_finish)
+uint8_t path_has_extension(const uint8_t* path_start, const uint8_t* path_finish)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish))
 	{
@@ -613,7 +649,7 @@ uint8_t path_has_extension(const char* path_start, const char* path_finish)
 	return path_get_extension(path_start, path_finish, &ext);
 }
 
-uint8_t path_is_path_rooted(const char* path_start, const char* path_finish)
+uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finish)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish))
 	{
@@ -628,7 +664,7 @@ uint8_t path_is_path_rooted(const char* path_start, const char* path_finish)
 	}
 
 #endif
-	return (path_start[0] == posix_delimiter || path_start[0] == delimiter);
+	return (path_posix_delimiter == path_start[0] || PATH_DELIMITER == path_start[0]);
 }
 
 uint8_t path_get_directory_for_current_process(struct buffer* path)
@@ -641,48 +677,51 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 	const ptrdiff_t size = buffer_size(path);
 #if defined(_WIN32)
 
-	if (!buffer_append_wchar_t(path, NULL, 2))
+	if (!buffer_append(path, NULL, 6 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	wchar_t* w = (wchar_t*)buffer_data(path, size);
-	DWORD length = GetCurrentDirectoryW(2, w);
+	wchar_t* pathW = (wchar_t*)buffer_data(path, size);
+	const DWORD length = GetCurrentDirectoryW(2, pathW);
 
-	if (length == 0)
+	if (length < 2)
 	{
 		return 0;
 	}
 
-	if (2 < length)
+	if (FILENAME_MAX < length)
 	{
 		if (!buffer_resize(path, size) ||
-			!buffer_append_char(path, NULL, (ptrdiff_t)length + 1) ||
-			!buffer_append_wchar_t(path, NULL, (ptrdiff_t)length + 1))
-		{
-			return 0;
-		}
-
-		w = (wchar_t*)buffer_data(path, size + sizeof(char) * ((ptrdiff_t)length + 1));
-		length = GetCurrentDirectoryW(length + 1, w);
-
-		if (length == 0)
+			!buffer_append(path, NULL, (ptrdiff_t)6 * (length + (ptrdiff_t)1) + sizeof(uint32_t)))
 		{
 			return 0;
 		}
 	}
 
-	if (!buffer_resize(path, size + length))
+	pathW = (wchar_t*)buffer_data(path,
+								  buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
+	const DWORD returned_length = GetCurrentDirectoryW(length + 1, pathW);
+
+	if (returned_length < 2)
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(path, size);
-	WIDE2MULTI(w, m, length);
-	return 0 < length;
+	const wchar_t* start = (const wchar_t*)buffer_data(path,
+						   buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
+
+	if (!buffer_resize(path, size))
+	{
+		return 0;
+	}
+
+	const wchar_t* finish = start + returned_length;
+	file_system_set_position_after_pre_root_wchar_t(&start);
+	return text_encoding_UTF16LE_to_UTF8(start, finish, path);
 #else
 
-	while (1)
+	for (;;)
 	{
 		if (!buffer_append_char(path, NULL, FILENAME_MAX))
 		{
@@ -719,106 +758,86 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	const ptrdiff_t size = buffer_size(path);
 #if defined(_WIN32)
 
-	while (1)
+	while (buffer_append(path, NULL, sizeof(uint16_t) * FILENAME_MAX + sizeof(uint32_t)))
 	{
-		if (!buffer_append_wchar_t(path, NULL, FILENAME_MAX))
+		wchar_t* ptr = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
+		const ptrdiff_t expected_size = (buffer_size(path) - size) / sizeof(uint16_t) - sizeof(uint32_t);
+		const DWORD real_size = GetModuleFileNameW(NULL, ptr, (DWORD)expected_size);
+
+		if (!real_size)
 		{
 			return 0;
 		}
 
-		wchar_t* ptr = (wchar_t*)buffer_data(path, size);
-		const ptrdiff_t size_ = (buffer_size(path) - size) / sizeof(wchar_t);
-		const DWORD real_size = GetModuleFileNameW(NULL, ptr, (DWORD)size_);
+		if (expected_size < (ptrdiff_t)real_size)
+		{
+			continue;
+		}
 
-		if (0 == real_size)
+		if (!buffer_resize(path, size + real_size) ||
+			!buffer_append(path, NULL, (ptrdiff_t)4 * (real_size + (ptrdiff_t)1) + sizeof(uint32_t)))
 		{
 			return 0;
 		}
 
-		if (real_size < (DWORD)size_) /*TODO: move condition to while.*/
+		ptr = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
+
+		if (!buffer_resize(path, size))
 		{
-			if (!buffer_resize(path, size + real_size) ||
-				!buffer_append_wchar_t(path, NULL, (ptrdiff_t)2 + real_size))
-			{
-				return 0;
-			}
-
-			ptr = (wchar_t*)buffer_data(path, size);
-
-			if (!buffer_resize(path, size + real_size) ||
-				!buffer_append_wchar_t(path, ptr, real_size))
-			{
-				return 0;
-			}
-
-			ptr = (wchar_t*)buffer_data(path, size + real_size);
-			char* m = (char*)buffer_data(path, size);
-			uint16_t c = (uint16_t)real_size;
-			WIDE2MULTI(ptr, m, c);
-
-			if (!c)
-			{
-				return 0;
-			}
-
-			struct range directory;
-
-			if (!path_get_directory_name(m, m + real_size, &directory))
-			{
-				return 0;
-			}
-
-			if (!buffer_resize(path, size + range_size(&directory)))
-			{
-				return 0;
-			}
-
-			break;
+			return 0;
 		}
+
+		if (!text_encoding_UTF16LE_to_UTF8(ptr, ptr + real_size, path))
+		{
+			return 0;
+		}
+
+		struct range directory;
+
+		if (!path_get_directory_name(buffer_data(path, size), buffer_data(path, 0) + buffer_size(path), &directory))
+		{
+			return 0;
+		}
+
+		return buffer_resize(path, size + range_size(&directory));
 	}
 
-	return 1;
-#elif __linux
+#elif defined(__linux__)
 
-	while (1)
+	while (buffer_append_wchar_t(path, NULL, FILENAME_MAX))
 	{
-		if (!buffer_append_wchar_t(path, NULL, FILENAME_MAX))
-		{
-			return 0;
-		}
-
-		char* ptr = (char*)buffer_data(path, size);
-		const ptrdiff_t size_ = buffer_size(path) - size;
-		ptrdiff_t real_size = readlink("/proc/self/exe", ptr, size_);
+		uint8_t* ptr = buffer_data(path, size);
+		const ptrdiff_t expected_size = buffer_size(path) - size;
+		ptrdiff_t real_size = readlink("/proc/self/exe", (char*)ptr, expected_size);
 
 		if (-1 == real_size)
 		{
 			return 0;
 		}
 
-		if (real_size < size_)
+		if (expected_size < real_size)
 		{
-			struct range directory;
-
-			if (!path_get_directory_name(ptr, ptr + real_size, &directory) ||
-				!buffer_resize(path, size + range_size(&directory)))
-			{
-				return 0;
-			}
-
-			break;
+			continue;
 		}
+
+		struct range directory;
+
+		if (!path_get_directory_name(ptr, ptr + real_size, &directory))
+		{
+			return 0;
+		}
+
+		return buffer_resize(path, size + range_size(&directory));
 	}
 
-	return 1;
 #else
 	(void)size;
 	/*TODO:*/
-	return 0;
 #endif
+	return 0;
 }
 
-uint8_t cygpath_get_dos_path(const char* path_start, const char* path_finish, struct buffer* path)
+uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
 		NULL == path)
@@ -828,49 +847,43 @@ uint8_t cygpath_get_dos_path(const char* path_start, const char* path_finish, st
 
 #if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(path);
-	uint16_t count = (uint16_t)(path_finish - path_start);
 
-	if (!buffer_append_char(path, NULL, (ptrdiff_t)count + 1) ||
-		!buffer_append_wchar_t(path, NULL, 2 * ((ptrdiff_t)count + 1)))
+	if (!text_encoding_UTF8_to_UTF16LE(path_start, path_finish, path) ||
+		!buffer_push_back_uint16(path, 0))
 	{
 		return 0;
 	}
 
-	wchar_t* long_path = (wchar_t*)buffer_data(path, size + 1 + count);
+	const ptrdiff_t count = path_finish - path_start;
 
-	for (uint16_t i = 0; i < count; ++i)/*TODO: Use WIDE2MULTI*/
-	{
-		long_path[i] = path_start[i];
-	}
-
-	long_path[count] = L'\0';
-	ptrdiff_t index = size + 1 + count + sizeof(wchar_t) * ((ptrdiff_t)count + 1);
-	wchar_t* short_path = (wchar_t*)buffer_data(path, index);
-	count = (uint16_t)GetShortPathNameW(long_path, short_path, count + 1);
-
-	if (!count)
+	if (!buffer_append(path, NULL, 6 * (count + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(path, size);
-	m[count] = '\0';
-	index = count;
-	WIDE2MULTI(short_path, m, count)
+	const wchar_t* long_path = (const wchar_t*)buffer_data(path, size);
+	wchar_t* short_path = (wchar_t*)buffer_data(path,
+						  buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * count - sizeof(uint16_t));
+	/**/
+	const DWORD returned_count = GetShortPathNameW(long_path, short_path, (DWORD)(count + 1));
 
-	if (!count)
+	if (!returned_count)
 	{
 		return 0;
 	}
 
-	/*NOTE: for save terminate path in buffer + 1 to the index should be added.*/
-	return buffer_resize(path, size + index);
+	if (!buffer_resize(path, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(short_path, short_path + returned_count, path);
 #else
 	return 0;
 #endif
 }
 
-uint8_t cygpath_get_unix_path(char* path_start, char* path_finish)
+uint8_t cygpath_get_unix_path(uint8_t* path_start, uint8_t* path_finish)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish))
 	{
@@ -879,16 +892,16 @@ uint8_t cygpath_get_unix_path(char* path_start, char* path_finish)
 
 	for (; path_start < path_finish; ++path_start)
 	{
-		if (windows_delimiter == (*path_start))
+		if (path_windows_delimiter == (*path_start))
 		{
-			(*path_start) = posix_delimiter;
+			(*path_start) = path_posix_delimiter;
 		}
 	}
 
 	return 1;
 }
 
-uint8_t cygpath_get_windows_path(char* path_start, char* path_finish)
+uint8_t cygpath_get_windows_path(uint8_t* path_start, uint8_t* path_finish)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish))
 	{
@@ -897,77 +910,70 @@ uint8_t cygpath_get_windows_path(char* path_start, char* path_finish)
 
 	for (; path_start < path_finish; ++path_start)
 	{
-		if (posix_delimiter == (*path_start))
+		if (path_posix_delimiter == (*path_start))
 		{
-			(*path_start) = windows_delimiter;
+			(*path_start) = path_windows_delimiter;
 		}
 	}
 
 	return 1;
 }
 
-static const char* path_function_str[] =
+static const uint8_t* path_function_str[] =
 {
-	"change-extension", "combine", "get-directory-name",
-	"get-extension", "get-file-name",
-	"get-file-name-without-extension", "get-full-path",
-	"get-path-root", "get-temp-file-name",
-	"get-temp-path", "has-extension", "is-path-rooted",
-	"get-dos-path", "get-unix-path", "get-windows-path"
+	(const uint8_t*)"change-extension",
+	(const uint8_t*)"combine",
+	(const uint8_t*)"get-directory-name",
+	(const uint8_t*)"get-extension",
+	(const uint8_t*)"get-file-name",
+	(const uint8_t*)"get-file-name-without-extension",
+	(const uint8_t*)"get-full-path",
+	(const uint8_t*)"get-path-root",
+	(const uint8_t*)"get-temp-file-name",
+	(const uint8_t*)"get-temp-path",
+	(const uint8_t*)"has-extension",
+	(const uint8_t*)"is-path-rooted",
+	(const uint8_t*)"get-dos-path",
+	(const uint8_t*)"get-unix-path",
+	(const uint8_t*)"get-windows-path"
 };
 
 enum path_function
 {
-	change_extension, combine, get_directory_name,
-	get_extension, get_file_name,
-	get_file_name_without_extension, get_full_path,
-	get_path_root, get_temp_file_name,
-	get_temp_path, has_extension, is_path_rooted,
-	get_dos_path, get_unix_path, get_windows_path,
+	path_change_extension_function,
+	path_combine_function,
+	path_get_directory_name_function,
+	path_get_extension_function,
+	path_get_file_name_function,
+	path_get_file_name_without_extension_function,
+	path_get_full_path_function,
+	path_get_path_root_function,
+	path_get_temp_file_name_function,
+	path_get_temp_path_function,
+	path_has_extension_function,
+	path_is_path_rooted_function,
+	cygpath_get_dos_path_function,
+	cygpath_get_unix_path_function,
+	cygpath_get_windows_path_function,
 	UNKNOWN_PATH_FUNCTION
 };
 
-uint8_t path_get_function(const char* name_start, const char* name_finish)
+uint8_t path_get_id_of_get_full_path_function()
 {
-	return common_string_to_enum(name_start, name_finish, path_function_str, UNKNOWN_PATH_FUNCTION);
+	return path_get_full_path_function;
 }
 
-uint8_t path_get_full_path_(const void* project, const struct range* path, struct buffer* output)
+uint8_t path_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
-	const ptrdiff_t size = buffer_size(output);
-
-	if (!directory_get_current_directory(project, output))
-	{
-		return 0;
-	}
-
-	if (range_is_null_or_empty(path) || (1 == range_size(path) && '.' == *(path->start)))
-	{
-		return 1;
-	}
-
-	const ptrdiff_t size_ = buffer_size(output);
-
-	if (!buffer_append(output, NULL, size_ - size + range_size(path) + 4))
-	{
-		return 0;
-	}
-
-	struct range base_dir;
-
-	base_dir.start = (const char*)buffer_data(output, size);
-
-	base_dir.finish = base_dir.start + size_ - size;
-
-	return buffer_resize(output, size) &&
-		   path_get_full_path(base_dir.start, base_dir.finish,
-							  path->start, path->finish, output);
+	return common_string_to_enum(name_start, name_finish, path_function_str, UNKNOWN_PATH_FUNCTION);
 }
 
 uint8_t path_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
 						   uint8_t arguments_count,
 						   struct buffer* output)
 {
+	(void)project;
+
 	if (UNKNOWN_PATH_FUNCTION <= function ||
 		NULL == arguments ||
 		2 < arguments_count ||
@@ -990,12 +996,6 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 		case 1:
 			if (!common_get_one_argument(arguments, &argument1, 0))
 			{
-				if (get_full_path == function)
-				{
-					argument1.start = argument1.finish = NULL;
-					break;
-				}
-
 				return 0;
 			}
 
@@ -1015,56 +1015,58 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 	switch (function)
 	{
-		case change_extension:
+		case path_change_extension_function:
 			return (2 == arguments_count) &&
 				   path_change_extension(argument1.start, argument1.finish, argument2.start, argument2.finish, output);
 
-		case combine:
+		case path_combine_function:
 			return (2 == arguments_count) &&
 				   path_combine(argument1.start, argument1.finish, argument2.start, argument2.finish, output);
 
-		case get_directory_name:
+		case path_get_directory_name_function:
 			return (1 == arguments_count) &&
 				   path_get_directory_name(argument1.start, argument1.finish, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
 
-		case get_extension:
+		case path_get_extension_function:
 			return (1 == arguments_count) &&
 				   path_get_extension(argument1.start, argument1.finish, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
 
-		case get_file_name:
+		case path_get_file_name_function:
 			return (1 == arguments_count) &&
 				   path_get_file_name(argument1.start, argument1.finish, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
 
-		case get_file_name_without_extension:
+		case path_get_file_name_without_extension_function:
 			return (1 == arguments_count) &&
 				   path_get_file_name_without_extension(argument1.start, argument1.finish, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
 
-		case get_full_path:
-			return (1 == arguments_count) && path_get_full_path_(project, &argument1, output);
-
-		case get_path_root:
+		case path_get_path_root_function:
 			return (1 == arguments_count) &&
 				   path_get_path_root(argument1.start, argument1.finish, &argument2) &&
 				   buffer_append_data_from_range(output, &argument2);
 
-		case get_temp_file_name:
+		case path_get_temp_file_name_function:
+#if defined(_WIN32)
+			return !arguments_count && path_get_temp_file_name(output) && file_create(buffer_data(output, 0));
+#else
 			return !arguments_count && path_get_temp_file_name(output);
+#endif
 
-		case get_temp_path:
+		case path_get_temp_path_function:
 			return !arguments_count && path_get_temp_path(output);
 
-		case has_extension:
+		case path_has_extension_function:
 			return (1 == arguments_count) &&
 				   bool_to_string(path_has_extension(argument1.start, argument1.finish), output);
 
-		case is_path_rooted:
+		case path_is_path_rooted_function:
 			return (1 == arguments_count) &&
 				   bool_to_string(path_is_path_rooted(argument1.start, argument1.finish), output);
 
+		case path_get_full_path_function:
 		case UNKNOWN_PATH_FUNCTION:
 		default:
 			break;
@@ -1095,18 +1097,18 @@ uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, 
 
 	switch (function)
 	{
-		case get_dos_path:
+		case cygpath_get_dos_path_function:
 			return cygpath_get_dos_path(argument.start, argument.finish, output);
 
-		case get_unix_path:
+		case cygpath_get_unix_path_function:
 			return buffer_append_data_from_range(output, &argument) &&
-				   cygpath_get_unix_path((char*)buffer_data(output, size),
-										 (char*)(buffer_data(output, size)) + range_size(&argument));
+				   cygpath_get_unix_path(buffer_data(output, size),
+										 buffer_data(output, size) + range_size(&argument));
 
-		case get_windows_path:
+		case cygpath_get_windows_path_function:
 			return buffer_append_data_from_range(output, &argument) &&
-				   cygpath_get_windows_path((char*)buffer_data(output, size),
-											(char*)(buffer_data(output, size)) + range_size(&argument));
+				   cygpath_get_windows_path(buffer_data(output, size),
+											buffer_data(output, size) + range_size(&argument));
 
 		case UNKNOWN_PATH_FUNCTION:
 		default:

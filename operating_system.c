@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -13,16 +13,16 @@
 #include "range.h"
 #include "string_unit.h"
 
-uint8_t operating_system_parse(const char* start, const char* finish, struct OperatingSystem* os)
+uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, struct OperatingSystem* os)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == os ||
-		sizeof(os->VersionString) / sizeof(*os->VersionString) < (size_t)(finish - start))
+		COUNT_OF(os->VersionString) < (size_t)(finish - start))
 	{
 		return 0;
 	}
 
-	static const char* windows_label = Win32NT_str;
+	static const uint8_t* windows_label = (const uint8_t*)(Win32NT_str);
 
 	if (string_starts_with(start, finish, windows_label, windows_label + Win32NT_str_length))
 	{
@@ -40,7 +40,8 @@ uint8_t operating_system_parse(const char* start, const char* finish, struct Ope
 		return 0;
 	}
 
-	for (uint16_t i = 0, count = sizeof(os->VersionString) / sizeof(*os->VersionString); i < count; ++i)
+	/*TODO: memcpy*/
+	for (uint16_t i = 0, count = COUNT_OF(os->VersionString); i < count; ++i)
 	{
 		if (start + i < finish)
 		{
@@ -78,7 +79,7 @@ struct Version operating_system_get_version(const struct OperatingSystem* os)
 	return os->Version;
 }
 
-const char* operating_system_to_string(const struct OperatingSystem* os)
+const uint8_t* operating_system_to_string(const struct OperatingSystem* os)
 {
 	if (NULL == os)
 	{
@@ -88,7 +89,7 @@ const char* operating_system_to_string(const struct OperatingSystem* os)
 	return os->VersionString;
 }
 
-const char* platform_get_name()
+const uint8_t* platform_get_name()
 {
 	const struct OperatingSystem* os = environment_get_operating_system();
 
@@ -110,9 +111,14 @@ uint8_t platform_is_windows()
 	return Win32 == operating_system_get_platform(environment_get_operating_system());
 }
 
-static const char* os_function_str[] =
+static const uint8_t* os_function_str[] =
 {
-	"get-platform", "get-version", "to-string", "get-name", "is-unix", "is-windows"
+	(const uint8_t*)"get-platform",
+	(const uint8_t*)"get-version",
+	(const uint8_t*)"to-string",
+	(const uint8_t*)"get-name",
+	(const uint8_t*)"is-unix",
+	(const uint8_t*)"is-windows"
 };
 
 enum os_function
@@ -121,7 +127,7 @@ enum os_function
 	UNKNOWN_OS_FUNCTION
 };
 
-uint8_t os_get_function(const char* name_start, const char* name_finish)
+uint8_t os_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, os_function_str, UNKNOWN_OS_FUNCTION);
 }
@@ -157,10 +163,10 @@ uint8_t os_exec_function(uint8_t function, const struct buffer* arguments, uint8
 			switch (operating_system_get_platform(&os))
 			{
 				case Win32:
-					return common_append_string_to_buffer("Win32", output);
+					return common_append_string_to_buffer((const uint8_t*)"Win32", output);
 
 				case Unix:
-					return common_append_string_to_buffer("Unix", output);
+					return common_append_string_to_buffer((const uint8_t*)"Unix", output);
 
 				/*TODO: case MacOSX:*/
 				default:

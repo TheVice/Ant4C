@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -9,354 +9,277 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
-#include "interpreter.h"
+#include "file_system.h"
 #include "range.h"
-#include "xml.h"
+#include "text_encoding.h"
 
-#include <stdio.h>
+#if defined(_WIN32)
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-#define INFO_LABEL				"[Info]: "
-#define DEBUG_LABEL				"[Debug]: "
-#define ERROR_LABEL				"[Error]: "
-#define VERBOSE_LABEL			"[Verbose]: "
-#define WARNING_LABEL			"[Warning]: "
+#if defined(_WIN32)
+#define REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(A) (Default != (A) && ASCII != (A))
+#endif
 
-#define INFO_LENGTH				8
-#define DEBUG_LENGTH			9
-#define ERROR_LENGTH			9
-#define VERBOSE_LENGTH			11
-#define WARNING_LENGTH			11
+static const uint8_t* echo_attributes[] =
+{
+	(const uint8_t*)"append",
+	(const uint8_t*)"encoding",
+	(const uint8_t*)"file",
+	(const uint8_t*)"level",
+	(const uint8_t*)"message"
+};
 
-uint8_t echo(uint8_t append, uint8_t encoding, const char* file,
-			 uint8_t level, const char* message, ptrdiff_t message_length,
+static const uint8_t echo_attributes_lengths[] = { 6, 8, 4, 5, 7 };
+
+static const uint8_t* echo_levels[] =
+{
+	(const uint8_t*)"Debug",
+	(const uint8_t*)"Error",
+	(const uint8_t*)"Info",
+	(const uint8_t*)"None",
+	(const uint8_t*)"Verbose",
+	(const uint8_t*)"Warning",
+	(const uint8_t*)"NoLevel"
+};
+
+static const uint8_t* echo_labels[] =
+{
+	(const uint8_t*)"[Debug]: ",
+	(const uint8_t*)"[Error]: ",
+	(const uint8_t*)"[Info]: ",
+	(const uint8_t*)"",/*None*/
+	(const uint8_t*)"[Verbose]: ",
+	(const uint8_t*)"[Warning]: ",
+	(const uint8_t*)""/*NoLevel*/
+};
+
+static const uint8_t echo_labels_lengths[] = { 9, 9, 8, 0, 11, 11, 0 };
+
+uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
+			 uint8_t level, const uint8_t* message, ptrdiff_t message_length,
 			 uint8_t new_line, uint8_t verbose)
 {
-	uint8_t result = 0;
-	FILE* file_stream = NULL;
-	/**/
-	(void)encoding;
 	(void)verbose;/*TODO: */
+
+	if (Fail < level)
+	{
+		return 0;
+	}
 
 	if (None == level)
 	{
 		return 1;
 	}
 
+	uint8_t result = 0;
+	void* file_stream = NULL;
+
 	if (NULL != file)
 	{
-#if __STDC_SEC_API__
-		result = (0 == fopen_s(&file_stream, file, append ? "ab" : "wb") && NULL != file_stream);
-#else
-		file_stream = fopen(file, append ? "ab" : "wb");
-		result = (NULL != file_stream);
-#endif
+		result = file_open(file, append ? (const uint8_t*)"ab" : (const uint8_t*)"wb", &file_stream);
 	}
 	else
 	{
-		size_t was_written = 0;
-		file_stream = (Error != level) ? stdout : stderr;
+		file_stream = (Error != level &&
+					   Fail != level) ? common_get_output_stream() : common_get_error_output_stream();
 
-		switch (level)
+		if (NoLevel == level ||
+			Fail == level)
 		{
-			case Error:
-				was_written = fwrite(ERROR_LABEL, sizeof(char), ERROR_LENGTH, file_stream);
-				result = (ERROR_LENGTH == was_written);
-				break;
-
-			case Debug:
-				was_written = fwrite(DEBUG_LABEL, sizeof(char), DEBUG_LENGTH, file_stream);
-				result = (DEBUG_LENGTH == was_written);
-				break;
-
-			case Info:
-				was_written = fwrite(INFO_LABEL, sizeof(char), INFO_LENGTH, file_stream);
-				result = (INFO_LENGTH == was_written);
-				break;
-
-			case Verbose:
-				was_written = fwrite(VERBOSE_LABEL, sizeof(char), VERBOSE_LENGTH, file_stream);
-				result = (VERBOSE_LENGTH == was_written);
-				break;
-
-			case Warning:
-				was_written = fwrite(WARNING_LABEL, sizeof(char), WARNING_LENGTH, file_stream);
-				result = (WARNING_LENGTH == was_written);
-				break;
-
-			case NoLevel:
-				result = 1;
-				break;
-
-			default:
-				return 0;
+			result = 1;
+		}
+		else
+		{
+			result = (echo_labels_lengths[level] == file_write(echo_labels[level], sizeof(uint8_t),
+					  echo_labels_lengths[level], file_stream));
 		}
 	}
 
-	if (result)
-	{
-		if (NULL != message &&
-			0 < message_length)
-		{
-			result = (message_length == (ptrdiff_t)fwrite(message, sizeof(char), message_length, file_stream));
-		}
-	}
-	else
+	if (!result)
 	{
 		return 0;
 	}
 
+	if (NULL != message && 0 < message_length)
+	{
+#if defined(_WIN32)
+
+		if (!file)
+		{
+			level = (Error != level &&
+					 Fail != level) ? common_is_output_stream_standard() : common_is_error_output_stream_standard();
+		}
+
+		struct buffer new_message;
+
+		SET_NULL_TO_BUFFER(new_message);
+
+		int mode = 0;
+
+		if (!file && level && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
+		{
+			if (!buffer_assing_to_uint16(&new_message, message, message_length))
+			{
+				return 0;
+			}
+
+			result = file_flush(file_stream);
+
+			if (result)
+			{
+				mode = _setmode(_file_fileno(file_stream), _O_U8TEXT);
+				message = buffer_data(&new_message, 0);
+				message_length = buffer_size(&new_message);
+			}
+		}
+
+#endif
+
+		if (result)
+		{
+			if (NULL != file)
+			{
+				struct range message_in_range;
+				message_in_range.start = message;
+				message_in_range.finish = message + message_length;
+				/**/
+				result = file_write_with_encoding(&message_in_range, encoding, file_stream);
+			}
+			else
+			{
+				result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+			}
+		}
+
+#if defined(_WIN32)
+
+		if (0 < mode)
+		{
+			uint8_t previous_result = result;
+			result = file_flush(file_stream);
+			previous_result = previous_result && result;
+#if defined(_MSC_VER)
+			result = (_O_U8TEXT == _setmode(_file_fileno(file_stream), mode));
+#else
+			mode = _setmode(_file_fileno(file_stream), mode);
+			result = (_O_U8TEXT == mode || -1 != mode);
+#endif
+			result = result && previous_result;
+		}
+
+		buffer_release(&new_message);
+#endif
+	}
+
 	if (NULL != file)
 	{
-		result = result && (0 == fclose(file_stream));
+		const uint8_t previous_result = file_close(file_stream);
+		result = result && previous_result;
 	}
 	else if (result && new_line)
 	{
-		result = result && (1 == fwrite("\n", sizeof(char), 1, file_stream));
+		result = result && (1 == file_write((const uint8_t*)"\n", sizeof(uint8_t), 1, file_stream));
 	}
 
 	file_stream = NULL;
 	return result;
 }
 
+#define ECHO_UNKNOWN_LEVEL (NoLevel + 1)
+
 #define APPEND_POSITION			0
 #define ENCODING_POSITION		1
 #define FILE_POSITION			2
 #define LEVEL_POSITION			3
 #define MESSAGE_POSITION		4
-#define FAIL_ON_ERROR_POSITION	5
-#define VERBOSE_POSITION		6
 
-uint8_t echo_get_arguments_for_task(
-	const void* project,
-	const void* target,
-	const char* attributes_start,
-	const char* attributes_finish,
-	const char* element_finish,
-	struct buffer* arguments)
+uint8_t echo_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments)
 {
-	if (range_in_parts_is_null_or_empty(attributes_start, attributes_finish) ||
-		NULL == element_finish || element_finish < attributes_finish ||
-		NULL == arguments)
+	return common_get_attributes_and_arguments_for_task(
+			   echo_attributes, echo_attributes_lengths,
+			   COUNT_OF(echo_attributes),
+			   task_attributes, task_attributes_lengths,
+			   task_attributes_count, task_arguments);
+}
+
+uint8_t echo_get_level(const uint8_t* level_start, const uint8_t* level_finish)
+{
+	return common_string_to_enum(level_start, level_finish, echo_levels, ECHO_UNKNOWN_LEVEL);
+}
+
+uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+{
+	if (NULL == task_arguments)
 	{
 		return 0;
 	}
 
-	static const char* attributes[] = { "append", "encoding", "file", "level", "message", "failonerror", "verbose" };
-	static const uint8_t attributes_lengths[] = { 6, 8, 4, 5, 7, 11, 7 };
+	const struct buffer* append_in_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
+	const struct buffer* encoding_in_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
+	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
+	const struct buffer* level_in_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
+	const struct buffer* message_in_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
 	/**/
-	static const uint8_t default_append_value = 0;
-	static const char* default_encoding_value = "UTF8";
-	static const uint8_t default_encoding_value_length = 4;
-	static const char* default_file_value = NULL;
-	static const char* defalut_level_value = "Info";
-	static const uint8_t defalut_level_value_length = 4;
-	static const char* default_message_value = NULL;
-	static const uint8_t default_fail_on_error_value = 1;
-	static const uint8_t default_verbose_value = 0;
-	/**/
-	struct buffer argument;
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!bool_to_string(default_append_value, &argument) || !buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!buffer_append_char(&argument, default_encoding_value, default_encoding_value_length) ||
-		!buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!buffer_append_char(&argument, default_file_value, 0) || !buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!buffer_append_char(&argument, defalut_level_value, defalut_level_value_length) ||
-		!buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!buffer_append_char(&argument, default_message_value, 0) ||
-		!buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!bool_to_string(default_fail_on_error_value, &argument) || !buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	SET_NULL_TO_BUFFER(argument);
-
-	if (!bool_to_string(default_verbose_value, &argument) || !buffer_append_buffer(arguments, &argument, 1))
-	{
-		buffer_release(&argument);
-		return 0;
-	}
-
-	if (!interpreter_get_arguments_from_xml_tag_record(project, target, attributes_start, attributes_finish,
-			attributes, attributes_lengths, sizeof(attributes_lengths) / sizeof(*attributes_lengths), arguments))
-	{
-		return 0;
-	}
-
-	struct buffer* message = buffer_buffer_data(arguments, MESSAGE_POSITION);
-
-	if (NULL == message)
-	{
-		return 0;
-	}
-
-	if (default_message_value == buffer_char_data(message, 0))
-	{
-		struct range value;
-
-		if (!xml_get_element_value_from_parts(attributes_finish, element_finish, &value))
-		{
-			return 0;
-		}
-
-		if ((value.start < value.finish) && (!buffer_resize(message, 0) ||
-											 !buffer_append_data_from_range(message, &value)))
-		{
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
-static const char* echo_encoding_str[] = { "UTF7", "BigEndianUnicode", "Unicode", "Default", "ASCII", "UTF8", "UTF32" };
-#define ECHO_UNKNOWN_ENCODING (UTF32 + 1)
-
-uint8_t echo_get_encoding(const char* encoding_start, const char* encoding_finish)
-{
-	return common_string_to_enum(encoding_start, encoding_finish, echo_encoding_str, ECHO_UNKNOWN_ENCODING);
-}
-
-static const char* echo_level_str[] = { "Debug", "Error", "Info", "None", "Verbose", "Warning", "NoLevel" };
-#define ECHO_UNKNOWN_LEVEL (NoLevel + 1)
-
-uint8_t echo_get_level(const char* level_start, const char* level_finish)
-{
-	return common_string_to_enum(level_start, level_finish, echo_level_str, ECHO_UNKNOWN_LEVEL);
-}
-
-uint8_t echo_evaluate_task(const void* project, const void* target,
-						   const char* attributes_start, const char* attributes_finish,
-						   const char* element_finish)
-{
-	struct buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
-
-	if (!buffer_resize(&arguments, UINT8_MAX) || !buffer_resize(&arguments, 0))
-	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
-	}
-
-	if (!echo_get_arguments_for_task(project, target,
-									 attributes_start, attributes_finish, element_finish, &arguments))
-	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
-	}
-
 	uint8_t append = 0;
 
-	if (!common_unbox_bool_data(&arguments, APPEND_POSITION, 0, &append))
+	if (buffer_size(append_in_buffer) &&
+		!bool_parse(buffer_data(append_in_buffer, 0), buffer_size(append_in_buffer), &append))
 	{
-		buffer_release_with_inner_buffers(&arguments);
 		return 0;
 	}
 
-	struct range value;
+	uint8_t encoding = UTF8;
 
-	value.start = value.finish = NULL;
-
-	if (!common_unbox_char_data(&arguments, ENCODING_POSITION, 0, &value, 0))
+	if (buffer_size(encoding_in_buffer))
 	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
+		struct range value;
+		value.start = buffer_data(encoding_in_buffer, 0);
+		value.finish = value.start + buffer_size(encoding_in_buffer);
+		/**/
+		encoding = text_encoding_get_one(value.start, value.finish);
 	}
 
-	const uint8_t encoding = echo_get_encoding(value.start, value.finish);
+	const uint8_t* file = NULL;
 
-	if (ECHO_UNKNOWN_ENCODING == encoding)
+	if (buffer_size(file_path_in_buffer))
 	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
+		if (!buffer_push_back(file_path_in_buffer, 0))
+		{
+			return 0;
+		}
+
+		file = buffer_data(file_path_in_buffer, 0);
 	}
 
-	const char* file = NULL;
+	uint8_t level = Info;
 
-	if (common_unbox_char_data(&arguments, FILE_POSITION, 0, &value, 1))
+	if (buffer_size(level_in_buffer))
 	{
-		file = value.start;
+		struct range value;
+		value.start = buffer_data(level_in_buffer, 0);
+		value.finish = value.start + buffer_size(level_in_buffer);
+		/**/
+		level = echo_get_level(value.start, value.finish);
 	}
 
-	if (!common_unbox_char_data(&arguments, LEVEL_POSITION, 0, &value, 0))
+	const uint8_t* message = NULL;
+	ptrdiff_t message_length = 0;
+
+	if (buffer_size(message_in_buffer))
 	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
+		/*TODO: string_trim for 'NULL == file'.*/
+		message = buffer_data(message_in_buffer, 0);
+		message_length = buffer_size(message_in_buffer);
 	}
 
-	const uint8_t level = echo_get_level(value.start, value.finish);
-
-	if (ECHO_UNKNOWN_LEVEL == level)
-	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
-	}
-
-	if (!common_unbox_char_data(&arguments, MESSAGE_POSITION, 0, &value, 0))
-	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
-	}
-
-	const char* message = value.start;
-	const ptrdiff_t message_length = range_size(&value);
-	/**/
-	uint8_t fail_on_error = 1;
 	uint8_t new_line = 1;
-	uint8_t verbose = 0;
-
-	if (!common_unbox_bool_data(&arguments, FAIL_ON_ERROR_POSITION, 0, &fail_on_error) ||
-		!common_unbox_bool_data(&arguments, VERBOSE_POSITION, 0, &verbose))
-	{
-		buffer_release_with_inner_buffers(&arguments);
-		return 0;
-	}
-
-	new_line = echo(append, encoding, file, level, message, message_length, new_line, verbose);
-	buffer_release_with_inner_buffers(&arguments);
-	/*TODO: comment about fail_on_error, if verbose mode,
-	and manipulate of return value.
-	return fail_on_error ? new_line : 1;*/
-	return new_line;
+	return echo(append, encoding, file, level, message, message_length, new_line, verbose);
 }

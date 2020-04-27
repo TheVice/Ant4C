@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -14,6 +14,10 @@
 
 #include <math.h>
 #include <float.h>
+
+static const double E = 2.7182818284590451;
+static const double PI = 3.1415926535897931;
+static const uint8_t D180 = 180;
 
 double math_abs(double value)
 {
@@ -150,9 +154,6 @@ int64_t math_truncate(double value)
 	return (int64_t)value;
 }
 
-static const double PI = 3.1415926535897931;
-static const uint8_t D180 = 180;
-
 double math_degrees(double r)
 {
 	return r * D180 / PI;
@@ -163,14 +164,50 @@ double math_radians(double d)
 	return d * PI / D180;
 }
 
-static const char* math_function_str[] =
+uint8_t math_double_near(double value1, double value2, double epsilon)
 {
-	"abs", "ceiling", "floor", "round", "acos", "asin", "atan", "atan2",
-	"cos", "cosh", "exp", "log", "log10", "max", "min", "pow", "sign",
-	"sin", "sinh", "sqrt", "tan", "tanh", "cot", "coth",
-	"truncate", "PI", "E",	"degrees", "radians",
-	"addition", "subtraction", "multiplication", "division",
-	"near", "less", "greater"
+	return (value2 - epsilon < value1 && value1 < value2 + epsilon);
+}
+
+static const uint8_t* math_function_str[] =
+{
+	(const uint8_t*)"abs",
+	(const uint8_t*)"ceiling",
+	(const uint8_t*)"floor",
+	(const uint8_t*)"round",
+	(const uint8_t*)"acos",
+	(const uint8_t*)"asin",
+	(const uint8_t*)"atan",
+	(const uint8_t*)"atan2",
+	(const uint8_t*)"cos",
+	(const uint8_t*)"cosh",
+	(const uint8_t*)"exp",
+	(const uint8_t*)"log",
+	(const uint8_t*)"log10",
+	(const uint8_t*)"max",
+	(const uint8_t*)"min",
+	(const uint8_t*)"pow",
+	(const uint8_t*)"sign",
+	(const uint8_t*)"sin",
+	(const uint8_t*)"sinh",
+	(const uint8_t*)"sqrt",
+	(const uint8_t*)"tan",
+	(const uint8_t*)"tanh",
+	(const uint8_t*)"cot",
+	(const uint8_t*)"coth",
+	(const uint8_t*)"truncate",
+	(const uint8_t*)"PI",
+	(const uint8_t*)"E",
+	(const uint8_t*)"degrees",
+	(const uint8_t*)"radians",
+	(const uint8_t*)"addition",
+	(const uint8_t*)"subtraction",
+	(const uint8_t*)"multiplication",
+	(const uint8_t*)"division",
+	(const uint8_t*)"double_epsilon",
+	(const uint8_t*)"near",
+	(const uint8_t*)"less",
+	(const uint8_t*)"greater"
 };
 
 enum math_function
@@ -180,30 +217,19 @@ enum math_function
 	sin_, sinh_, sqrt_, tan_, tanh_, cot_, coth_,
 	truncate_, PI_, E_,	degrees_, radians_,
 	addition_, subtraction_, multiplication_, division_,
-	near_, less_, greater_,
+	epsilon_, near_, less_, greater_,
 	UNKNOWN_MATH_FUNCTION
 };
 
-uint8_t math_get_function(const char* name_start, const char* name_finish)
+uint8_t math_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, math_function_str, UNKNOWN_MATH_FUNCTION);
-}
-
-uint8_t math_double_near(double value1, double value2)
-{
-	static const double epsilon = 2 * DBL_EPSILON;
-	return (value2 - epsilon < value1 && value1 < value2 + epsilon);
-}
-
-uint8_t math_double_near_to_zero(double value)
-{
-	return math_double_near(value, 0.0);
 }
 
 uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 						   uint8_t arguments_count, struct buffer* output)
 {
-	if (UNKNOWN_MATH_FUNCTION <= function || NULL == arguments || 2 < arguments_count || NULL == output)
+	if (UNKNOWN_MATH_FUNCTION <= function || NULL == arguments || 3 < arguments_count || NULL == output)
 	{
 		return 0;
 	}
@@ -212,11 +238,16 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 
 	struct range argument2;
 
-	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
+	struct range argument3;
+
+	argument1.start = argument2.start = argument1.finish = argument2.finish =
+											argument3.start = argument3.finish = NULL;
 
 	double double_argument_1 = 0;
 
 	double double_argument_2 = 0;
+
+	double double_argument_3 = 0;
 
 	if (1 == arguments_count)
 	{
@@ -236,6 +267,17 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 
 		double_argument_1 = double_parse(argument1.start);
 		double_argument_2 = double_parse(argument2.start);
+	}
+	else if (3 == arguments_count)
+	{
+		if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, 1))
+		{
+			return 0;
+		}
+
+		double_argument_1 = double_parse(argument1.start);
+		double_argument_2 = double_parse(argument2.start);
+		double_argument_3 = double_parse(argument3.start);
 	}
 
 	switch (function)
@@ -331,10 +373,10 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 			return 1 == arguments_count && int64_to_string(math_truncate(double_argument_1), output);
 
 		case PI_:
-			return !arguments_count && common_append_string_to_buffer("3.1415926535897931", output);
+			return !arguments_count && double_to_string(PI, output);
 
 		case E_:
-			return !arguments_count && common_append_string_to_buffer("2.7182818284590451", output);
+			return !arguments_count && double_to_string(E, output);
 
 		case degrees_:
 			return 1 == arguments_count && double_to_string(math_degrees(double_argument_1), output);
@@ -352,15 +394,29 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 			return 2 == arguments_count && double_to_string(double_argument_1 * double_argument_2, output);
 
 		case division_:
-			if (2 != arguments_count || math_double_near_to_zero(double_argument_2))
+			if (2 != arguments_count || math_double_near(double_argument_2, 0.0, 2 * DBL_EPSILON))
 			{
 				break;
 			}
 
 			return double_to_string(double_argument_1 / double_argument_2, output);
 
+		case epsilon_:
+			return !arguments_count && double_to_string(DBL_EPSILON, output);
+
 		case near_:
-			return 2 == arguments_count && bool_to_string(math_double_near(double_argument_1, double_argument_2), output);
+			if (2 == arguments_count || 3 == arguments_count)
+			{
+				if (2 == arguments_count)
+				{
+					double_argument_3 = 2 * DBL_EPSILON;
+				}
+
+				const uint8_t is_near = math_double_near(double_argument_1, double_argument_2, double_argument_3);
+				return bool_to_string(is_near, output);
+			}
+
+			break;
 
 		case less_:
 			return 2 == arguments_count && bool_to_string(double_argument_1 < double_argument_2, output);
