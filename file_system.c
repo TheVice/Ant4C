@@ -141,6 +141,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 	if (NULL == pattern ||
 		all_entries < entry_type ||
 		(0 != recurse && 1 != recurse) ||
+		(UTF8 != output_encoding && UTF16LE != output_encoding) ||
 		NULL == output)
 	{
 		return 0;
@@ -244,10 +245,11 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			continue;
 		}
 
+		finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+
 		if (UTF8 == output_encoding)
 		{
 			start = buffer_wchar_t_data(pattern, 0);
-			finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
 			file_system_set_position_after_pre_root_wchar_t(&start);
 
 			if (!text_encoding_UTF16LE_to_UTF8(start, finish, output) ||
@@ -2897,183 +2899,4 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 
 	return file_set_last_write_time(buffer_data(file_path_in_buffer, 0), seconds);
-}
-
-#define COPY_MOVE_DIR					0
-#define COPY_MOVE_FILE					1
-#define COPY_MOVE_TO_DIR				2
-#define COPY_MOVE_TO_FILE				3
-#define COPY_MOVE_FLATTEN				4
-#define COPY_MOVE_OVER_WRITE			5
-#define COPY_MOVE_INPUT_ENCODING		6
-#define COPY_MOVE_OUTPUT_ENCODING		7
-#define COPY_MOVE_INCLUDE_EMPTY_DIRS	8
-
-static const uint8_t* copy_move_attributes[] =
-{
-	(const uint8_t*)"dir",
-	(const uint8_t*)"file",
-	(const uint8_t*)"todir",
-	(const uint8_t*)"tofile",
-	(const uint8_t*)"flatten",
-	(const uint8_t*)"overwrite",
-	(const uint8_t*)"inputencoding",
-	(const uint8_t*)"outputencoding",
-	(const uint8_t*)"includeemptydirs"
-};
-
-static const uint8_t copy_move_attributes_lengths[] = { 3, 4, 5, 6, 7, 9, 13, 14, 16 };
-
-uint8_t copy_move_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   copy_move_attributes, copy_move_attributes_lengths,
-			   COUNT_OF(copy_move_attributes),
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-enum file_system_tasks { file_system_copy_task, file_system_move_task };
-
-uint8_t copy_move_file_evaluate_task(struct buffer* file_in_a_buffer, uint8_t task_id,
-									 struct buffer* task_arguments, uint8_t verbose)
-{
-	(void)verbose;
-	/**/
-	struct range source_file;
-	BUFFER_TO_RANGE(source_file, file_in_a_buffer);
-	/**/
-	struct range target_file;
-	target_file.start = target_file.finish = NULL;
-	/**/
-	struct buffer* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
-	const ptrdiff_t to_dir_path_size = buffer_size(to_dir_in_a_buffer);
-
-	if (to_dir_path_size)
-	{
-		if (!path_get_file_name(source_file.start, source_file.finish, &target_file))
-		{
-			return 0;
-		}
-
-		if (!path_combine_in_place(to_dir_in_a_buffer, 0, target_file.start, target_file.finish) ||
-			!buffer_push_back(to_dir_in_a_buffer, 0))
-		{
-			return 0;
-		}
-
-		target_file.start = buffer_data(to_dir_in_a_buffer, 0);
-		target_file.finish = NULL;
-	}
-
-	struct buffer* to_file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_FILE);
-
-	const ptrdiff_t to_file_path_size = buffer_size(to_file_in_a_buffer);
-
-	if (to_file_path_size)
-	{
-		if (!buffer_push_back(to_file_in_a_buffer, 0))
-		{
-			return 0;
-		}
-
-		target_file.finish = buffer_data(to_file_in_a_buffer, 0);
-	}
-
-	if (!to_dir_in_a_buffer &&
-		!to_file_path_size)
-	{
-		/*TODO:*/
-		return 0;
-	}
-
-	for (uint8_t i = 0; i < 2; ++i)
-	{
-		const uint8_t* target_file_ptr = i ? target_file.finish : target_file.start;
-
-		if (NULL == target_file_ptr)
-		{
-			continue;
-		}
-
-		const uint8_t result = file_system_copy_task == task_id ?
-							   file_copy(source_file.start, target_file_ptr) :
-							   file_move(source_file.start, target_file_ptr);
-
-		if (!result)
-		{
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
-uint8_t copy_move_evaluate_task(uint8_t task_id, struct buffer* task_arguments, uint8_t verbose)
-{
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	struct buffer* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
-
-	const ptrdiff_t to_dir_path_size = buffer_size(to_dir_in_a_buffer);
-
-	if (to_dir_path_size)
-	{
-		if (!buffer_push_back(to_dir_in_a_buffer, 0))
-		{
-			return 0;
-		}
-
-		const uint8_t* to_dir_path = buffer_data(to_dir_in_a_buffer, 0);
-
-		if (!path_combine_in_place(to_dir_in_a_buffer, 0, NULL, NULL) ||
-			file_exists(to_dir_path))
-		{
-			return 0;
-		}
-
-		if (!directory_exists(to_dir_path) &&
-			!directory_create(to_dir_path))
-		{
-			return 0;
-		}
-
-		if (!buffer_resize(to_dir_in_a_buffer, to_dir_path_size))
-		{
-			return 0;
-		}
-	}
-
-	struct buffer* file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_FILE);
-
-	if (buffer_size(file_in_a_buffer))
-	{
-		if (!buffer_push_back(file_in_a_buffer, 0) ||
-			!file_exists(buffer_data(file_in_a_buffer, 0)))
-		{
-			return 0;
-		}
-
-		if (!copy_move_file_evaluate_task(file_in_a_buffer, task_id, task_arguments, verbose))
-		{
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
-uint8_t copy_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	return copy_move_evaluate_task(file_system_copy_task, task_arguments, verbose);
-}
-
-uint8_t move_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	return copy_move_evaluate_task(file_system_move_task, task_arguments, verbose);
 }

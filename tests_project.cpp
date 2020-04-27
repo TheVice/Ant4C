@@ -12,6 +12,7 @@ extern "C" {
 #include "common.h"
 #include "conversion.h"
 #include "file_system.h"
+#include "interpreter.h"
 #include "load_file.h"
 #include "path.h"
 #include "project.h"
@@ -108,6 +109,7 @@ TEST_F(TestProject, project_load_from_content)
 		std::cout << "[ RUN      ]" << std::endl;
 		//
 		const std::string content(node.node().select_node("content").node().child_value());
+		struct range content_in_range;
 		const auto project_help = (uint8_t)INT_PARSE(
 									  node.node().select_node("project_help").node().child_value());
 		const auto expected_return = (uint8_t)INT_PARSE(
@@ -115,11 +117,23 @@ TEST_F(TestProject, project_load_from_content)
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
 		const std::string target_to_run(node.node().select_node("target_to_run").node().child_value());
-		const std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
+		//
+		std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
+
+		if (!expected_base_directory.empty())
+		{
+			ASSERT_TRUE(buffer_resize(&output, 0))
+					<< buffer_free(&output);
+			content_in_range = string_to_range(expected_base_directory);
+			ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &content_in_range, &output, verbose))
+					<< buffer_free(&output);
+			expected_base_directory = buffer_to_string(&output);
+		}
+
 		const auto properties = node.node().select_nodes("property");
 		const auto targets = node.node().select_nodes("target");
 		//
-		const auto content_in_range(string_to_range(content));
+		content_in_range = string_to_range(content);
 		ASSERT_EQ(content.empty(), range_is_null_or_empty(&content_in_range))
 				<< buffer_free(&output);
 		//

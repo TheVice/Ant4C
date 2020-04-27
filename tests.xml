@@ -1394,7 +1394,7 @@
       <code>${string::empty(</code>
       <code>environment::get-folder-path('MyComputer')</code>
       <code>)}</code>
-      <output>False</output>
+      <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-windows()}">
@@ -1618,14 +1618,14 @@
       <code>${string::empty(</code>
       <code>environment::get-folder-path('LocalizedResources')</code>
       <code>)}</code>
-      <output>False</output>
+      <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-windows()}">
       <code>${string::empty(</code>
       <code>environment::get-folder-path('CommonOemLinks')</code>
       <code>)}</code>
-      <output>False</output>
+      <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-windows()}">
@@ -1636,8 +1636,8 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>${string::empty(environment::get-machine-name())}</code>
-      <output>False</output>
+      <code>${math::less(string::get-length(environment::get-machine-name()), 255)}</code>
+      <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -4189,7 +4189,6 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <project name="loadfile sample">
         <property name="file" value="${path::get-temp-file-name()}" overwrite="true" readonly="true" />
         <echo message="${property::get-value('file')}" file="${property::get-value('file')}" />
-        <!--echo message="${file}" file="${file}" /--><!-- TODO -->
         <loadfile file="${property::get-value('file')}" property="content" />
         <delete file="${property::get-value('file')}" />
         <echo message="${property::get-value('content')}" />
@@ -5030,6 +5029,287 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>Copy/move file sample 2.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move file sample 3." basedir="${path::get-temp-path()}">
+        <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" readonly="true" />
+        <mkdir dir="${folder}" unless="${directory::exists(folder)}" />
+
+        <property name="file_name" value="${hash::bytes-to-string(hash::crc32(folder))}" readonly="true" />
+        <property name="file_1" value="${path::combine(folder, file_name)}" readonly="true" />
+        <property name="file_2" value="${path::combine(project::get-base-directory(), file_name)}" readonly="true" />
+
+        <property name="expected_content" value="The file number one." readonly="true" />
+        <echo file="${file_1}" message="${expected_content}" />
+        <copy file="${file_1}" />
+
+        <fail unless="${file::exists(file_1)}" message="${project::get-name()} - file '${file_1}' not exists." />
+        <fail unless="${file::exists(file_2)}" message="${project::get-name()} - file '${file_2}' not exists." />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_2}" />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is exists." />
+
+        <move file="${file_1}" />
+        <fail unless="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is not exists." />
+        <fail if="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' exists." />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_2}" dir="${folder}" />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is exists." />
+        <fail if="${file::exists(property::get-value('folder'))}" message="${project::get-name()} - folder '${folder}' is exists." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move file sample 3.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move file sample 4.">
+        <property name="file_1" value="${path::get-temp-file-name()}" readonly="true" />
+
+        <property name="expected_content" value="The file number one." />
+        <echo file="${file_1}" message="${expected_content}" />
+
+        <property name="file_2" value="${path::get-temp-file-name()}" readonly="true" />
+        <property name="result" value="${file::get-length(file_2)}" />
+
+        <copy file="${file_1}" tofile="${file_2}" />
+        <property name="result" value="${result} ${file::get-length(file_2)}" />
+
+        <copy file="${file_1}" tofile="${file_2}" overwrite="false" />
+        <property name="result" value="${result} ${file::get-length(file_2)}" />
+
+        <copy file="${file_1}" tofile="${file_2}" overwrite="${string::equal('0 0 0', result)}" />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <property name="expected_content" value="The file number two." />
+        <echo file="${file_2}" message="${expected_content}" />
+
+        <echo file="${file_1}" />
+        <property name="result" value="${file::get-length(file_1)}" />
+
+        <move file="${file_2}" tofile="${file_1}" />
+        <property name="result" value="${result} ${file::get-length(file_1)}" />
+
+        <move file="${file_2}" tofile="${file_1}" overwrite="false" />
+        <property name="result" value="${result} ${file::get-length(file_1)}" />
+
+        <move file="${file_2}" tofile="${file_1}" overwrite="${string::equal('0 0 0', result)}" />
+
+        <loadfile file="${file_1}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_1}" />
+        <delete file="${file_2}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move file sample 4.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move file sample 5." basedir="${path::get-temp-path()}">
+        <property name="file" value="${path::get-temp-file-name()}" readonly="true" />
+        <copy file="${file}" />
+        <property name="folder" value="${path::get-temp-path()}" readonly="true" />
+        <copy file="${file}" todir="${folder}" />
+        <copy file="${file}" tofile="${file}" />
+        <copy file="${file}" todir="${folder}" tofile="${file}" />
+
+        <move file="${file}" />
+        <move file="${file}" todir="${folder}" />
+        <move file="${file}" tofile="${file}" />
+        <move file="${file}" todir="${folder}" tofile="${file}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move file sample 5.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move file sample 6." basedir="${path::get-temp-path()}">
+        <property name="folder" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" readonly="true" />
+        <mkdir dir="${folder}" unless="${directory::exists(folder)}" />
+
+        <property name="file_name" value="${hash::bytes-to-string(hash::crc32(folder))}" readonly="true" />
+        <property name="file_1" value="${path::combine(folder, file_name)}" readonly="true" />
+        <property name="file_2" value="${path::combine(project::get-base-directory(), file_name)}" readonly="true" />
+
+        <property name="expected_content" value="The file number one." readonly="true" />
+        <echo file="${file_1}" message="${expected_content}" />
+        <copy file="${file_1}" todir="${project::get-base-directory()}" tofile="${file_2}" />
+
+        <fail unless="${file::exists(file_1)}" message="${project::get-name()} - file '${file_1}' not exists." />
+        <fail unless="${file::exists(file_2)}" message="${project::get-name()} - file '${file_2}' not exists." />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_2}" />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is exists." />
+
+        <move file="${file_1}" todir="${project::get-base-directory()}" tofile="${file_2}" />
+
+        <fail if="${file::exists(property::get-value('file_1'))}" message="${project::get-name()} - file '${file_1}' is exists." />
+        <fail unless="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is not exists." />
+
+        <loadfile file="${file_2}" property="content" />
+        <fail unless="${string::equal(expected_content, content)}" message="${project::get-name()} - the value of content property '${content}' is not equal to the '${expected_content}'." />
+
+        <delete file="${file_2}" dir="${folder}" />
+        <fail if="${file::exists(property::get-value('file_2'))}" message="${project::get-name()} - file '${file_2}' is exists." />
+        <fail if="${file::exists(property::get-value('folder'))}" message="${project::get-name()} - folder '${folder}' is exists." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move file sample 6.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move folder sample 1." basedir="${path::get-temp-path()}">
+        <property name="folder_1" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" readonly="true" />
+
+        <foreach item="String" in="1 2 3" delim=" " property="line">
+          <property name="line" value="${path::combine(folder_1, line)}" />
+          <property name="line" value="${path::combine(folder_1, hash::bytes-to-string(hash::crc32(line)))}" />
+          <move file="${path::get-temp-file-name()}" todir="${line}" />
+        </foreach>
+
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_1, 'directory', 'false'))}"
+              message="${project::get-name()} no directories at the folder number one '${folder_1}'" />
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_1, 'file', 'true'))}"
+              message="${project::get-name()} no files at the folder number one '${folder_1}'" />
+
+        <property name="folder_2" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(folder_1)))}" readonly="true" />
+        <copy dir="${folder_1}" todir="${folder_2}" flatten="true" />
+
+        <fail unless="${string::empty(directory::enumerate-file-system-entries(folder_2, 'directory', 'false'))}"
+              message="${project::get-name()} there are directories at the folder number two '${folder_2}'" />
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_2, 'file', 'false'))}"
+              message="${project::get-name()} no files at the folder number two '${folder_2}'" />
+
+        <property name="folder_3" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(folder_2)))}" readonly="true" />
+        <move dir="${folder_1}" todir="${folder_3}" flatten="true" />
+
+        <fail unless="${string::empty(directory::enumerate-file-system-entries(folder_3, 'directory', 'false'))}"
+              message="${project::get-name()} there are directories at the folder number three '${folder_3}'" />
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_3, 'file', 'false'))}"
+              message="${project::get-name()} no files at the folder number three '${folder_3}'" />
+
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_1, 'directory', 'false'))}"
+              message="${project::get-name()} no directories at the folder number one '${folder_1}'" />
+        <fail unless="${string::empty(directory::enumerate-file-system-entries(folder_1, 'file', 'true'))}"
+              message="${project::get-name()} there are files at the folder number one '${folder_1}'" />
+
+        <delete dir="${folder_1}" />
+        <delete dir="${folder_2}" />
+        <delete dir="${folder_3}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move folder sample 1.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move folder sample 2." basedir="${path::get-temp-path()}">
+        <copy dir="${project::get-base-directory()}" todir="${project::get-base-directory()}" />
+        <move dir="${project::get-base-directory()}" todir="${project::get-base-directory()}" />
+
+        <copy dir="${project::get-base-directory()}" />
+        <move dir="${project::get-base-directory()}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move folder sample 2.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move folder sample 3." basedir="${path::get-temp-path()}">
+        <property name="folder_1" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" readonly="true" />
+        <property name="folder_2" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(folder_1)))}" readonly="true" />
+        <property name="folder_3" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(folder_2)))}" readonly="true" />
+
+        <foreach item="String" in="1 2 3" delim=" " property="line">
+          <move file="${path::get-temp-file-name()}" todir="${folder_1}" />
+        </foreach>
+
+        <copy dir="${folder_1}" todir="${folder_2}" />
+
+        <property name="folder_1_path_of_entries_length" value="${string::get-length(directory::enumerate-file-system-entries(folder_1, 'all', 'true'))}" readonly="true" />
+        <property name="folder_2_path_of_entries_length" value="${string::get-length(directory::enumerate-file-system-entries(folder_2, 'all', 'true'))}" readonly="true" />
+        <fail unless="${string::equal(folder_1_path_of_entries_length, folder_2_path_of_entries_length)}" message="Content of folder one '${folder_1}' not equal to the folder two '${folder_2}'." />
+
+        <move dir="${folder_2}" todir="${folder_3}" />
+
+        <property name="folder_2_path_of_entries_length_new" value="${string::get-length(directory::enumerate-file-system-entries(folder_2, 'all', 'true'))}" readonly="true" />
+        <property name="folder_3_path_of_entries_length" value="${string::get-length(directory::enumerate-file-system-entries(folder_3, 'all', 'true'))}" readonly="true" />
+
+        <fail unless="${string::equal('0', folder_2_path_of_entries_length_new)}" message="Content of folder two '${folder_2}' is not empty." />
+        <fail unless="${string::equal(folder_1_path_of_entries_length, folder_3_path_of_entries_length)}" message="Content of folder one '${folder_1}' not equal to the folder three '${folder_3}'." />
+
+        <delete dir="${folder_1}" />
+        <delete dir="${folder_2}" />
+        <delete dir="${folder_3}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move folder sample 3.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Copy/move folder sample 4." basedir="${path::get-temp-path()}">
+        <property name="folder_1" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" readonly="true" />
+
+        <foreach item="String" in="1 2 3" delim=" " property="line">
+          <move file="${path::get-temp-file-name()}" todir="${folder_1}" />
+          <property name="line" value="${path::combine(folder_1, line)}" />
+          <property name="line" value="${path::combine(folder_1, hash::bytes-to-string(hash::crc32(line)))}" />
+          <mkdir dir="${line}" unless="${directory::exists(line)}" />
+        </foreach>
+
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_1, 'directory', 'false'))}"
+              message="${project::get-name()} no directories at the folder number one '${folder_1}'" />
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_1, 'file', 'true'))}"
+              message="${project::get-name()} no files at the folder number one '${folder_1}'" />
+
+        <property name="folder_2" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(folder_1)))}" readonly="true" />
+        <copy dir="${folder_1}" todir="${folder_2}" />
+
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_2, 'directory', 'false'))}"
+              message="${project::get-name()} no directories at the folder number one '${folder_2}'" />
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_2, 'file', 'true'))}"
+              message="${project::get-name()} no files at the folder number one '${folder_2}'" />
+
+        <property name="folder_3" value="${path::combine(project::get-base-directory(), hash::bytes-to-string(hash::crc32(folder_2)))}" readonly="true" />
+        <move dir="${folder_2}" todir="${folder_3}" includeemptydirs="false" />
+
+        <fail unless="${string::empty(directory::enumerate-file-system-entries(folder_3, 'directory', 'false'))}"
+              message="${project::get-name()} there are directories at the folder number two '${folder_3}'" />
+        <fail if="${string::empty(directory::enumerate-file-system-entries(folder_3, 'file', 'false'))}"
+              message="${project::get-name()} no files at the folder number two '${folder_3}'" />
+
+        <delete dir="${folder_1}" />
+        <delete dir="${folder_2}" />
+        <delete dir="${folder_3}" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Copy/move folder sample 4.</name>
+      <base_directory>${path::get-temp-path()}</base_directory>
     </project_load_from_content>
     <project_load_from_build_file>
       <content><![CDATA[

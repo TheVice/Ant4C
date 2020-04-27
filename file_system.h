@@ -144,10 +144,4 @@ uint8_t touch_get_attributes_and_arguments_for_task(
 	uint8_t* task_attributes_count, struct buffer* task_arguments);
 uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
 
-uint8_t copy_move_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t copy_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
-uint8_t move_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
-
 #endif

@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "copy_move.h"
 #include "date_time.h"
 #include "echo.h"
 #include "environment.h"
@@ -336,12 +337,23 @@ uint8_t interpreter_get_value_for_argument(
 		}
 		else
 		{
-			if (!buffer_resize(&value, 0) ||
-				!string_un_quote(argument_area) ||
-				!buffer_append_data_from_range(&value, argument_area))
+			const ptrdiff_t index_1 = string_index_of(
+										  argument_area->start, argument_area->finish, namespace_border,
+										  namespace_border + NAMESPACE_BORDER_LENGTH);
+			const ptrdiff_t index_2 = -1 == index_1 ? index_1 :
+									  string_last_index_of(
+										  argument_area->start, argument_area->finish, namespace_border,
+										  namespace_border + NAMESPACE_BORDER_LENGTH);
+
+			if (-1 == index_1 || index_1 != index_2)
 			{
-				buffer_release(&value);
-				return 0;
+				if (!buffer_resize(&value, 0) ||
+					!string_un_quote(argument_area) ||
+					!buffer_append_data_from_range(&value, argument_area))
+				{
+					buffer_release(&value);
+					return 0;
+				}
 			}
 		}
 	}
@@ -1725,7 +1737,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				break;
 			}
 
-			task_attributes_count = copy_evaluate_task(&task_arguments, verbose);
+			task_attributes_count = copy_evaluate_task(the_project, the_target, &task_arguments, verbose);
 			break;
 
 		case delete_task:
@@ -1961,7 +1973,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				break;
 			}
 
-			task_attributes_count = move_evaluate_task(&task_arguments, verbose);
+			task_attributes_count = move_evaluate_task(the_project, the_target, &task_arguments, verbose);
 			break;
 
 		case program_task:

@@ -17,6 +17,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/common.h"
             "${CMAKE_SOURCE_DIR}/conversion.c"
             "${CMAKE_SOURCE_DIR}/conversion.h"
+            "${CMAKE_SOURCE_DIR}/copy_move.c"
+            "${CMAKE_SOURCE_DIR}/copy_move.h"
             "${CMAKE_SOURCE_DIR}/date_time.c"
             "${CMAKE_SOURCE_DIR}/date_time.h"
             "${CMAKE_SOURCE_DIR}/echo.c"
@@ -69,20 +71,26 @@ add_library(ant4c STATIC
 add_executable(ant4c_app
             "${CMAKE_SOURCE_DIR}/main.c")
 
+# add_library(ant4c_lib SHARED
+#             "${CMAKE_SOURCE_DIR}/main.c")
+
 #if (MSVC OR MINGW)
 #  add_compile_definitions(ant4c UNICODE _UNICODE)
 #  add_compile_definitions(ant4c_app UNICODE _UNICODE)
 #endif()
 
 target_link_libraries(ant4c_app ant4c)
+# target_link_libraries(ant4c_lib ant4c)
 
 if(DEFINED PROGRAM_VERSION)
   target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
   target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
+  # target_compile_definitions(ant4c_lib PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
 endif()
 
 if(NOT MSVC)
   target_link_libraries(ant4c_app m)
+  # target_link_libraries(ant4c_lib m)
 endif()
 
 set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
