@@ -1786,6 +1786,127 @@ uint8_t file_read_all(const uint8_t* path, struct buffer* output)
 	return file_close(stream);
 }
 
+uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
+{
+	if (NULL == path ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	void* stream = NULL;
+
+	if (!file_open(path, (const uint8_t*)"rb", &stream) ||
+		!buffer_resize(output, 4096))
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = 0;
+	ptrdiff_t readed = 0;
+	uint16_t count_of_lines = 1;
+	static const uint8_t n = '\n';
+	uint8_t* ptr = buffer_data(output, 0);
+
+	while (0 < (readed = (ptrdiff_t)file_read(ptr, sizeof(uint8_t), 4096, stream)))
+	{
+		size += (ptrdiff_t)readed;
+		path = ptr + readed;
+
+		while (-1 != (readed = string_index_of(ptr, path, &n, &n + 1)))
+		{
+			ptr += readed + 1;
+			++count_of_lines;
+		}
+
+		ptr = buffer_data(output, 0);
+	}
+
+	if (!size)
+	{
+		return file_close(stream) && buffer_resize(output, 0);
+	}
+
+	count_of_lines = count_of_lines ? count_of_lines * sizeof(struct range) : sizeof(struct range);
+	size += count_of_lines;
+
+	if (!buffer_resize(output, size))
+	{
+		file_close(stream);
+		return 0;
+	}
+
+	if (!file_seek(stream, 0, SEEK_SET))
+	{
+		file_close(stream);
+		return 0;
+	}
+
+	if (!buffer_resize(output, count_of_lines))
+	{
+		file_close(stream);
+		return 0;
+	}
+
+	if (!file_read_with_several_steps(stream, output))
+	{
+		file_close(stream);
+		return 0;
+	}
+
+	if (!file_close(stream))
+	{
+		return 0;
+	}
+
+	ptr = buffer_data(output, count_of_lines);
+	path = buffer_data(output, 0) + buffer_size(output);
+
+	if (!buffer_resize(output, count_of_lines))
+	{
+		return 0;
+	}
+
+	count_of_lines = 0;
+	struct range* range_of_line = NULL;
+
+	while (-1 != (size = string_index_of(ptr, path, &n, &n + 1)) &&
+		   NULL != (range_of_line = buffer_range_data(output, count_of_lines++)))
+	{
+		range_of_line->start = ptr;
+		ptr += size;
+		range_of_line->finish = ptr;
+		++ptr;
+	}
+
+	if (ptr < path)
+	{
+		range_of_line = buffer_range_data(output, count_of_lines++);
+		range_of_line->start = ptr;
+		range_of_line->finish = path;
+	}
+	else
+	{
+		if (!buffer_resize(output, buffer_size(output) - sizeof(struct range)))
+		{
+			return 0;
+		}
+	}
+
+	if (!count_of_lines)
+	{
+		if (NULL == range_of_line)
+		{
+			range_of_line = buffer_range_data(output, count_of_lines);
+		}
+
+		range_of_line->start = buffer_data(output, 0) + buffer_size(output);
+		range_of_line->finish = path;
+	}
+
+	return 1;
+}
+
 uint64_t file_get_length(const uint8_t* path)
 {
 	if (NULL == path)

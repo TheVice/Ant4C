@@ -83,11 +83,19 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 {
 	while (start < finish)
 	{
-		const ptrdiff_t index = string_index_of_any(start, finish, substing_start, substing_finish);
-		const uint8_t* pos = (-1 == index) ? finish : start + index;
-		/**/
+		ptrdiff_t index = string_index_of_any(start, finish, substing_start, substing_finish);
+		const uint8_t* pos = (-1 == index) ? finish : start;
+
+		while (0 < index && NULL != pos)
+		{
+			pos = string_enumerate(pos, finish);
+			--index;
+		}
+
 		struct range item;
+
 		item.start = start;
+
 		item.finish = pos;
 
 		if (!for_each_apply_trim(&item, trim_value))

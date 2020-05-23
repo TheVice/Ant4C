@@ -263,9 +263,12 @@ uint8_t property_set_by_pointer(void* the_property,
 
 	if (prop->read_only)
 	{
-		return 0;
+		/*TODO: inform about attempt to set readonly property, but not fail process.*/
+		return 1;
 	}
 
+	/*TODO: add append optimization:
+	if property value match with begin of new value, just add new part.*/
 	if (!buffer_resize(&prop->value, 0))
 	{
 		return 0;

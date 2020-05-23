@@ -569,6 +569,60 @@ TEST_F(TestFileSystem, file_exists)
 	buffer_release(&tmp);
 }
 
+TEST_F(TestFileSystem, file_read_lines)
+{
+	buffer tmp;
+	SET_NULL_TO_BUFFER(tmp);
+
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().select_node("input").node().child_value());
+		const auto expected_output = (uint16_t)INT_PARSE(
+										 node.node().select_node("output").node().child_value());
+		//
+		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
+		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
+		ASSERT_TRUE(buffer_push_back(&tmp, 0)) << buffer_free(&tmp);
+		//
+		const void* ptr = buffer_data(&tmp, 0);
+		//
+		ASSERT_TRUE(echo(0, Default,
+						 (const uint8_t*)ptr, NoLevel,
+						 (const uint8_t*)input.c_str(), (ptrdiff_t)input.size(),
+						 0, verbose)) << buffer_free(&tmp);
+		//
+		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
+		ASSERT_TRUE(file_read_lines((const uint8_t*)ptr, &tmp)) << buffer_free(&tmp);
+		//
+		uint16_t i = 0;
+		std::string returned_output;
+
+		while (NULL != (ptr = buffer_range_data(&tmp, i++)))
+		{
+			struct range* line = (struct range*)ptr;
+			returned_output.append((const char*)line->start, range_size(line));
+		}
+
+		const auto input_in_range(string_to_range(input));
+		static const uint8_t n = '\n';
+		//
+		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
+
+		if (!range_is_null_or_empty(&input_in_range))
+		{
+			ASSERT_TRUE(string_replace(input_in_range.start, input_in_range.finish,
+									   &n, &n + 1, NULL, NULL, &tmp)) << buffer_free(&tmp);
+		}
+
+		ASSERT_EQ(expected_output, i - 1) << buffer_free(&tmp);
+		ASSERT_EQ(buffer_to_string(&tmp), returned_output) << buffer_free(&tmp);
+		//
+		--node_count;
+	}
+
+	buffer_release(&tmp);
+}
+
 TEST(TestFileSystem_, file_get_attributes)
 {
 	const std::string inputs[] =

@@ -11,7 +11,9 @@ extern "C" {
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "echo.h"
 #include "file_system.h"
+#include "hash.h"
 #include "interpreter.h"
 #include "load_file.h"
 #include "path.h"
@@ -23,15 +25,54 @@ extern "C" {
 #include "xml.h"
 };
 
+#include <map>
 #include <string>
 #include <cstddef>
 #include <cstdint>
 #include <ostream>
+#include <utility>
 #include <iostream>
+
+extern "C" {
+	extern uint16_t argument_parser_get_encoding_from_name(const char* start, const char* finish);
+	extern uint8_t program_get_properties(
+		const void* the_project,
+		const void* the_target,
+		const struct buffer* properties_elements,
+		struct buffer* properties,
+		uint8_t is_root, uint8_t verbose);
+};
 
 class TestProject : public TestsBaseXml
 {
+protected:
+	static std::string tests_base_directory;
+
+protected:
+	TestProject() :
+		TestsBaseXml()
+	{
+		predefine_arguments.insert(std::make_pair("--tests_base_directory=", &tests_base_directory));
+	}
+
+	virtual void SetUp() override
+	{
+		TestsBaseXml::SetUp();
+
+		if (tests_base_directory.empty())
+		{
+			auto result = parse_input_arguments();
+			assert(result);
+			ASSERT_TRUE(result);
+			//
+			result = tests_base_directory.empty();
+			assert(!result);
+			ASSERT_FALSE(result);
+		}
+	}
 };
+
+std::string TestProject::tests_base_directory;
 
 TEST_F(TestProject, project_property_set_value)
 {
@@ -295,54 +336,228 @@ TEST_F(TestProject, project_load_from_content)
 	buffer_release(&output);
 }
 
-extern "C" {
-	extern uint16_t argument_parser_get_encoding_from_name(const char* start, const char* finish);
-};
-
 TEST_F(TestProject, project_load_from_build_file)
 {
+	static const std::string hashes[] =
+	{
+		/*"sha3-224", "blake3-256",*/
+		"blake2b-160", "crc32"
+	};
+	//
+	static const std::string tests_base_property("tests_base_directory");
+	const auto current_path_in_range(string_to_range(tests_base_directory));
+	//
 	buffer tmp;
 	SET_NULL_TO_BUFFER(tmp);
-	//
-	ASSERT_TRUE(path_get_directory_for_current_process(&tmp)) << buffer_free(&tmp);
-	const auto current_path(buffer_to_string(&tmp));
-	const auto current_path_in_range(string_to_range(current_path));
 
 	for (const auto& node : nodes)
 	{
-		const std::string content(node.node().select_node("content").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
-		const std::string str_encoding(node.node().select_node("encoding").node().child_value());
-		const auto encoding_in_range(string_to_range(str_encoding));
-		auto encoding = argument_parser_get_encoding_from_name(
-							(const char*)encoding_in_range.start, (const char*)encoding_in_range.finish);
+		const auto file_node = node.node().select_node("file");
 
-		if (FILE_ENCODING_UNKNOWN == encoding)
+		if (file_node.node().empty())
 		{
-			encoding = UTF8;
+			std::cerr << "[Warning]: skip test case, no input data." << std::endl;
+			//
+			--node_count;
+			continue;
 		}
 
-		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
-		const auto path(buffer_to_string(&tmp));
+		std::string path(file_node.node().attribute("path").as_string());
+		auto path_in_range = string_to_range(path);
 		//
-		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-		ASSERT_TRUE(string_to_buffer(content, &tmp)) << buffer_free(&tmp);
+		ASSERT_TRUE(buffer_resize(&tmp, 0))
+				<< buffer_free(&tmp);
+		ASSERT_TRUE(path_combine(
+						current_path_in_range.start,
+						current_path_in_range.finish,
+						path_in_range.start,
+						path_in_range.finish,
+						&tmp))
+				<< buffer_free(&tmp);
 		//
-		ASSERT_TRUE(file_write_all((const uint8_t*)path.c_str(), &tmp)) << buffer_free(&tmp);
+		path = buffer_to_string(&tmp);
+
+		if (!file_exists((const uint8_t*)path.c_str()))
+		{
+			std::cerr << "[Warning]: skip test case, file '"
+					  << path << "' not exists." << std::endl;
+			//
+			--node_count;
+			continue;
+		}
+
+		auto hash_exists = false;
+
+		for (const auto& hash : hashes)
+		{
+			const std::string expected_hash_value(
+				file_node.node().attribute(hash.c_str()).as_string());
+			auto algorithm = string_to_range(hash);
+
+			if (!expected_hash_value.empty())
+			{
+				ASSERT_TRUE(buffer_resize(&tmp, 0))
+						<< buffer_free(&tmp);
+				ASSERT_TRUE(file_get_checksum(
+								(const uint8_t*)path.c_str(),
+								&algorithm, &tmp))
+						<< path << std::endl
+						<< buffer_free(&tmp);
+				//
+				const std::string returned_hash(buffer_to_string(&tmp));
+				ASSERT_EQ(expected_hash_value, returned_hash)
+						<< path << std::endl
+						<< buffer_free(&tmp);
+				//
+				hash_exists = true;
+				break;
+			}
+		}
+
+		if (!hash_exists)
+		{
+			std::cerr << "[Warning]: skip test case,"
+					  << " no hash sum specific for the file '"
+					  << path << "'." << std::endl;
+			//
+			--node_count;
+			continue;
+		}
+
+		const auto content = node.node().select_nodes("content");
+
+		if (!content.empty())
+		{
+			std::map<uint16_t, std::string> new_content;
+
+			for (const auto& line : content)
+			{
+				const auto line_number = (uint16_t)line.node().attribute("line").as_uint();
+
+				if (0 == line_number)
+				{
+					continue;
+				}
+
+				if (new_content.count(line_number))
+				{
+					new_content[line_number] = line.node().child_value();
+				}
+				else
+				{
+					new_content.insert(std::make_pair(line_number, std::string(line.node().child_value())));
+				}
+			}
+
+			ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
+			ASSERT_TRUE(file_read_lines((const uint8_t*)path.c_str(), &tmp)) << buffer_free(&tmp);
+			//
+			path.clear();
+			uint16_t i = 0;
+			struct range* ptr = NULL;
+
+			while (NULL != (ptr = buffer_range_data(&tmp, i++)))
+			{
+				if (new_content.count(i))
+				{
+					path += new_content[i];
+					new_content.erase(i);
+				}
+				else
+				{
+					path.append((const char*)ptr->start, range_size(ptr));
+				}
+
+				path.push_back('\n');
+			}
+
+			ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
+			ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
+			ASSERT_TRUE(buffer_push_back(&tmp, 0)) << buffer_free(&tmp);
+			//
+			ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), NoLevel,
+							 (const uint8_t*)path.c_str(), (ptrdiff_t)path.size(),
+							 0, verbose)) << buffer_free(&tmp);
+			//
+			path = buffer_to_string(&tmp);
+		}
+
+		const auto expected_return = (uint8_t)INT_PARSE(
+										 node.node().select_node("return").node().child_value());
 		//
 		void* the_project = NULL;
 		ASSERT_TRUE(project_new(&the_project)) << buffer_free(&tmp) << project_free(the_project);
 		//
-		const auto path_in_range(string_to_range(path));
-		const auto returned = project_load_from_build_file(
-								  &path_in_range, &current_path_in_range, encoding, the_project, 0, verbose);
+		ASSERT_TRUE(project_property_set_value(
+						the_project,
+						(const uint8_t*)tests_base_property.c_str(),
+						(uint8_t)tests_base_property.size(),
+						(const uint8_t*)tests_base_directory.c_str(),
+						(ptrdiff_t)tests_base_directory.size(),
+						0, 0, 1,
+						verbose))
+				<< path << std::endl
+				<< buffer_free(&tmp) << project_free(the_project);
 		//
+		const auto properties = node.node().select_nodes("property");
+
+		for (const auto& property_node : properties)
+		{
+			const std::string property_name(property_node.node().attribute("name").as_string());
+			const std::string property_value(property_node.node().attribute("value").as_string());
+			//
+			ASSERT_TRUE(project_property_set_value(
+							the_project,
+							(const uint8_t*)property_name.c_str(),
+							(uint8_t)property_name.size(),
+							(const uint8_t*)property_value.c_str(),
+							(ptrdiff_t)property_value.size(),
+							0, 0, 1,
+							verbose))
+					<< path << std::endl
+					<< property_name << std::endl
+					<< property_value << std::endl
+					<< buffer_free(&tmp) << project_free(the_project);
+		}
+
+		const auto project_help = (uint8_t)INT_PARSE(
+									  node.node().select_node("project_help").node().child_value());
+		//
+		std::cout << "[ RUN      ]" << std::endl;
+		//
+		path_in_range = string_to_range(path);
+		auto returned = project_load_from_build_file(
+							&path_in_range, &current_path_in_range,
+							Default, the_project, project_help, verbose);
 		ASSERT_EQ(expected_return, returned)
 				<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
 		//
+		uint8_t expected_target_return = expected_return;
+		const auto target_return_node = node.node().select_node("target_return").node();
+
+		if (!target_return_node.empty())
+		{
+			expected_target_return = (uint8_t)INT_PARSE(target_return_node.child_value());
+		}
+
+		const std::string target_to_run(node.node().select_node("target_to_run").node().child_value());
+
+		if (target_to_run.empty())
+		{
+			returned = project_evaluate_default_target(the_project, verbose);
+			ASSERT_EQ(expected_target_return, returned)
+					<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
+		}
+		else
+		{
+			const auto target_to_run_in_range(string_to_range(target_to_run));
+			returned = target_evaluate_by_name(the_project, &target_to_run_in_range, verbose);
+			ASSERT_EQ(expected_target_return, returned)
+					<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
+		}
+
 		project_unload(the_project);
+		std::cout << "[       OK ]" << std::endl;
 		//
 		--node_count;
 	}
@@ -353,33 +568,6 @@ TEST_F(TestProject, project_load_from_build_file)
 
 class TestProgram : public TestsBaseXml
 {
-};
-
-TEST(TestProgram_, program_exec_function)
-{
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-	//
-	const uint8_t* version = (const uint8_t*)"version";
-	ASSERT_FALSE(program_exec_function(project_get_function(version, version + 7),
-									   (const buffer*)&program_exec_function, 0, &output)) << buffer_free(&output);
-	ASSERT_FALSE(buffer_size(&output)) << buffer_free(&output);
-	//
-	const uint8_t* current_directory = (const uint8_t*)"current-directory";
-	ASSERT_TRUE(program_exec_function(project_get_function(current_directory, current_directory + 17),
-									  (const buffer*)&program_exec_function, 0, &output)) << buffer_free(&output);
-	ASSERT_LT(0, buffer_size(&output)) << buffer_free(&output);
-	//
-	buffer_release(&output);
-}
-
-extern "C" {
-	extern uint8_t program_get_properties(
-		const void* the_project,
-		const void* the_target,
-		const struct buffer* properties_elements,
-		struct buffer* properties,
-		uint8_t is_root, uint8_t verbose);
 };
 
 TEST_F(TestProgram, program_get_properties)

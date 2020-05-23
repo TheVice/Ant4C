@@ -215,13 +215,13 @@ uint8_t target_new(void* the_project,
 		{
 			depend->start = depend_name;
 			depend->finish = find_any_symbol_like_or_not_like_that(depend_name, max_ptr, &depends_delimiter, 1, 1, 1);
+			depend_name = find_any_symbol_like_or_not_like_that(depend->finish + 1, max_ptr, &depends_delimiter, 1, 0, 1);
 
-			if (!range_size(depend))
+			if (!string_trim(depend) ||
+				!range_size(depend))
 			{
 				return 0;
 			}
-
-			depend_name = depend->finish + 1;
 
 			if (max_ptr < depend_name)
 			{

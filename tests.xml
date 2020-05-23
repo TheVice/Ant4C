@@ -756,6 +756,27 @@
       <input>/bin/ls1</input>
       <return>0</return>
     </file_exists>
+    <file_read_lines>
+      <input></input>
+      <output></output>
+    </file_read_lines>
+    <file_read_lines>
+      <input>a</input>
+      <output>1</output>
+    </file_read_lines>
+    <file_read_lines>
+      <input><![CDATA[a
+        b
+        c]]></input>
+      <output>3</output>
+    </file_read_lines>
+    <file_read_lines>
+      <input><![CDATA[a
+        b
+        c
+]]></input>
+      <output>3</output>
+    </file_read_lines>
   </TestFileSystem>
   <TestHashAlgorithm>
     <BLAKE2>
@@ -2059,10 +2080,10 @@
       <code>${project::get-name()}</code>
       <return>1</return>
     </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
+    <!--interpreter_evaluate_code>
       <code>${program::version()}</code>
       <return>0</return>
-    </interpreter_evaluate_code>
+    </interpreter_evaluate_code-->
     <interpreter_evaluate_code>
       <code>path::change-extension('1.txt', '.exe') => ${path::change-extension('1.txt', '.exe')}</code>
       <output>path::change-extension('1.txt', '.exe') => 1.exe</output>
@@ -4205,7 +4226,6 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
         <echo message="${property::get-value('file')}" file="${property::get-value('file')}" />
         <touch file="${property::get-value('file')}" />
         <touch file="${property::get-value('file')}" datetime="15.09.2019 12:35:46" />
-        <!-- ${datetime::parse('15.09.2019 12:35:46')} -->
         <touch file="${property::get-value('file')}" millis="1569840495" />
         <touch file="${property::get-value('file')}" datetime="15.09.2019 12:35:46" millis="1569840495" />
       </project>
@@ -4483,6 +4503,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>0</return>
       <name>Target task sample 1</name>
+      <target>A</target>
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -4549,6 +4570,128 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <target>C</target>
       <target>D</target>
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 5" default="D">
+        <property name="i" value="0" />
+        <property name="stack" value="" />
+        <target name="A">
+          <property name="i" value="${math::addition('1', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="B" depends="A">
+          <property name="i" value="${math::addition('20', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="C" depends="B">
+          <property name="i" value="${math::addition('300', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="D" depends="C, B, A">
+          <property name="i" value="${math::addition('4000', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+          <fail unless="${string::equal('4321', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 4321." />
+          <fail unless="${string::equal('ABCD', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ABCD." />
+        </target>
+        <fail unless="${string::equal('0', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 0." />
+        <fail unless="${string::equal('', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ''." />
+        <fail unless="${string::empty(stack)}" message="${project::get-name()} - property value of stack (${stack}) is not empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 5</name>
+      <default>D</default>
+      <target>A</target>
+      <target>B</target>
+      <target>C</target>
+      <target>D</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 6" default="D">
+        <property name="i" value="0" />
+        <property name="stack" value="" />
+        <target name="A">
+          <property name="i" value="${math::addition('1', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="B" depends="A">
+          <property name="i" value="${math::addition('20', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="C" depends="B">
+          <property name="i" value="${math::addition('300', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="D" depends="C , B , A">
+          <property name="i" value="${math::addition('4000', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+          <fail unless="${string::equal('4321', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 4321." />
+          <fail unless="${string::equal('ABCD', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ABCD." />
+        </target>
+        <fail unless="${string::equal('0', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 0." />
+        <fail unless="${string::equal('', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ''." />
+        <fail unless="${string::empty(stack)}" message="${project::get-name()} - property value of stack (${stack}) is not empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 6</name>
+      <default>D</default>
+      <target>A</target>
+      <target>B</target>
+      <target>C</target>
+      <target>D</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 7" default="D">
+        <property name="i" value="0" />
+        <property name="stack" value="" />
+        <target name="A">
+          <property name="i" value="${math::addition('1', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="B" depends="A">
+          <property name="i" value="${math::addition('20', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="C" depends="B">
+          <property name="i" value="${math::addition('300', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+        </target>
+        <target name="D" depends=" C , B , A ">
+          <property name="i" value="${math::addition('4000', i)}" />
+          <property name="stack" value="${stack}${target::get-current-target()}" />
+          <fail unless="${string::equal('4321', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 4321." />
+          <fail unless="${string::equal('ABCD', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ABCD." />
+        </target>
+        <fail unless="${string::equal('0', math::truncate(i))}" message="${project::get-name()} - property value of i (${i}) is not equal to the 0." />
+        <fail unless="${string::equal('', stack)}" message="${project::get-name()} - property value of stack (${stack}) is not equal to the ''." />
+        <fail unless="${string::empty(stack)}" message="${project::get-name()} - property value of stack (${stack}) is not empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 7</name>
+      <default>D</default>
+      <target>A</target>
+      <target>B</target>
+      <target>C</target>
+      <target>D</target>
+    </project_load_from_content>
+    <!-- TODO project_load_from_content>
+      <content><![CDATA[
+      <project name="Target task sample 8" default="A" >
+        <target name="A" depends="B">
+        </target>
+        <target name="B" depends="A" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Target task sample 8</name>
+      <default>A</default>
+      <target>A</target>
+      <target>B</target>
+    </project_load_from_content-->
     <project_load_from_content>
       <content><![CDATA[
       <project name="Call task sample" default="B">
@@ -4706,6 +4849,21 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>For each sample 6.</name>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="For each sample 7.">
+        <property name="expected_result" value="&#xa77e;&#xa77f;&#xa780;&#xa781;&#xa782;&#xa783;&#xa784;&#xa785;&#xa786;&#xa787;" readonly="true" />
+        <property name="result" value="" />
+        <foreach item="String" in="&#xa77e; &#xa77f; &#xa780; &#xa781; &#xa782; &#xa783; &#xa784; &#xa785; &#xa786; &#xa787;" delim=" " property="element">
+          <property name="result" value="${result}${element}" />
+        </foreach>
+        <fail unless="${string::equal(expected_result, result)}" message="${project::get-name()} - property value of result (${result}) should be equal to the '${expected_result}'." />
+      </project>
+      ]]>
+      </content>
+      <return>1</return>
+      <name>For each sample 7.</name>
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -5311,7 +5469,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <name>Copy/move folder sample 4.</name>
       <base_directory>${path::get-temp-path()}</base_directory>
     </project_load_from_content>
-    <project_load_from_build_file>
+    <project_load_from_content>
       <content><![CDATA[
       <project name="project-properties" default="some_target">
         <echo message="Base directory - '${project::get-base-directory()}'." level="Info" />
@@ -5329,6 +5487,132 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>project-properties</name>
       <default>some_target</default>
+      <target>some_target</target>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project default="target_with_call_sample">
+
+        <target name="target_with_call_sample">
+          <property name="input_parameter" value="Abc" />
+          <call target="target_that_was_called"/>
+
+          <property name="input_parameter" value="deF" />
+          <call target="target_that_was_called" />
+        </target>
+
+        <target name="target_that_was_called">
+          <echo message="Input parameter is next - '${input_parameter}'." />
+        </target>
+
+      </project>
+      ]]></content>
+      <return>1</return>
+      <default>target_with_call_sample</default>
+      <target>target_with_call_sample</target>
+      <target>target_that_was_called</target>
+    </project_load_from_content>
+    <project_load_from_build_file />
+    <project_load_from_build_file>
+      <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/CommandOptions.build" crc32="385b7756" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/CommandOptions.build" crc32="385b7756" />
+      <return>1</return>
+      <project_help>1</project_help>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/NAntSchema.build" crc32="6204ac6c" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <TODO><project_load_from_build_file>
+      <file path="Chapter2/CircularChaos.build" crc32="511ecd8c" />
+      <return>1</return>
+    </project_load_from_build_file></TODO>
+    <project_load_from_build_file>
+      <file path="Chapter2/IfElse.build" crc32="bbc2b7d8" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/IfElse.build" crc32="bbc2b7d8" />
+      <return>1</return>
+      <property name="ifelse" value="false" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/DynamicProperty.build" crc32="2f5d2af3" />
+      <return>0</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/DynamicProperty.build" crc32="2f5d2af3" />
+      <return>1</return>
+      <property name="dynamic" value="false" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/DynamicProperty.build" crc32="2f5d2af3" />
+      <return>1</return>
+      <property name="dynamic" value="true" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/ReadOnlyProperty.build" crc32="2d3468cd" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/IfUnlessProperty.build" crc32="ca9b5ba8" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/IfUnlessProperty.build" crc32="ca9b5ba8" />
+      <return>1</return>
+      <property name="raining" value="false" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/IfUnlessProperty.build" crc32="ca9b5ba8" />
+      <return>1</return>
+      <property name="windy" value="false" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/IfUnlessProperty.build" crc32="ca9b5ba8" />
+      <return>1</return>
+      <property name="raining" value="false" />
+      <property name="windy" value="false" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/FailureTest1.build" crc32="4f4e0880" />
+      <return>1</return>
+      <target_return>0</target_return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/FailureTest2.build" crc32="f7778dae" />
+      <return>1</return>
+      <target_return>0</target_return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/BuildSkeleton.build" crc32="0e08a623" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/BuildSkeleton.build" crc32="0e08a623" />
+      <return>1</return>
+      <project_help>1</project_help>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/DeploySkeleton.build" crc32="1cde1839" />
+      <return>1</return>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter2/DeploySkeleton.build" crc32="1cde1839" />
+      <return>1</return>
+      <project_help>1</project_help>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter3/Folderchecker.build" crc32="4636345f" />
+      <content line="3"><![CDATA[<property name="foldername" value="${tests_base_directory}" />]]></content>
+      <return>1</return>
     </project_load_from_build_file>
   </TestProject>
   <TestProgram>
