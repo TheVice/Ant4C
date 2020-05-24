@@ -400,13 +400,12 @@ uint8_t copy_move_dir_evaluate_task(
 		const uint8_t delimiter = *(directory_name.finish);
 		uint8_t* ptr = buffer_data(to_dir_in_a_buffer, directory_name.finish - directory_name.start);
 		*ptr = '\0';
-		
+
 		if (!directory_exists(directory_name.start) &&
 			!directory_create(directory_name.start))
 		{
 			return 0;
 		}
-
 
 		*ptr = delimiter;
 		start -= dir_in_a_buffer_size;
@@ -428,14 +427,14 @@ uint8_t copy_move_dir_evaluate_task(
 	}
 
 	struct buffer* include_empty_dirs_in_a_buffer = buffer_buffer_data(
-		task_arguments, COPY_MOVE_INCLUDE_EMPTY_DIRS);
+				task_arguments, COPY_MOVE_INCLUDE_EMPTY_DIRS);
 
 	uint8_t include_empty_dirs = (uint8_t)buffer_size(include_empty_dirs_in_a_buffer);
 
 	if (include_empty_dirs)
 	{
 		if (!bool_parse(
-			buffer_data(include_empty_dirs_in_a_buffer, 0), include_empty_dirs, &include_empty_dirs))
+				buffer_data(include_empty_dirs_in_a_buffer, 0), include_empty_dirs, &include_empty_dirs))
 		{
 			return 0;
 		}
