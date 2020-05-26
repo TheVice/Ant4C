@@ -105,7 +105,7 @@ else()
   if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
     target_compile_options(ant4c PRIVATE "-fPIE")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
-    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie")
+    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
   endif()
 
   if(${CMAKE_VERSION} LESS 3.0)
@@ -132,4 +132,20 @@ endif()
 
 if(DEFINED ENV{LDFLAGS})
   set(LINK_FLAGS "${LINK_FLAGS} $ENV{LDFLAGS}")
+endif()
+
+if(DEFINED CFLAGS)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS}")
+endif()
+
+if(DEFINED CPPFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPPFLAGS}")
+endif()
+
+if(DEFINED CXXFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+endif()
+
+if(DEFINED LDFLAGS)
+  set(LINK_FLAGS "${LINK_FLAGS} ${LDFLAGS}")
 endif()
