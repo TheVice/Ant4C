@@ -21,6 +21,8 @@ All binaries available on [release page](https://github.com/TheVice/Ant4C/releas
 
 ### Windows
 * [MinGW-w64 8.1.0 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MinGW-w64_8.1.0_x64.zip)
+* [MSVC 12 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MSVC_12_x64.zip)
+* [MSVC 12 x86](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MSVC_12_x86.zip)
 * [MSVC 14.25 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MSVC_14.25_x64.zip)
 
 #### Checksums
@@ -30,10 +32,14 @@ All binaries available on [release page](https://github.com/TheVice/Ant4C/releas
 * ant4c_2020.05-1xenial1.0_amd64.deb 962fcbe412b1c6370e3a6eadf7775dc7
 * ant4c_2020.05-1bionic1.0_amd64.deb 4f35a2c4ea2b821ebf4a8760fc5daca2
 * ant4c_2020.05-1focal1.0_amd64.deb c51edd9aa41392eb9f4eddebc7c3a9d2
-* ant4c_lib_2020.05_gcc_Ubuntu.tar.bz2 7a3a4b349e3e38eb18b322da138ae9ad
 * ant4c_app_2020.05_MinGW-w64_8.1.0_x64.zip 80b2361d9a0fd7a0dd900e7e068d9c9e
+* ant4c_app_2020.05_MSVC_12_x64.zip 75329b5a9f844977085438da4f7a89d8
+* ant4c_app_2020.05_MSVC_12_x86.zip 7113cf878fb7529640c1e9e631f3d708
 * ant4c_app_2020.05_MSVC_14.25_x64.zip 602f6636bf05e2a907d8032ebcdcf780
+* ant4c_lib_2020.05_gcc_Ubuntu.tar.bz2 7a3a4b349e3e38eb18b322da138ae9ad
 * ant4c_lib_2020.05_MinGW-w64_8.1.0_x64.zip c49a0ea3d2f419443abbfc4200d84d0b
+* ant4c_lib_2020.05_MSVC_12_x64.zip 8d3c8d6b6624f30fb5f6f5a6940917d1
+* ant4c_lib_2020.05_MSVC_12_x86.zip d5074288b1a0543f571c31865e23a7ed
 * ant4c_lib_2020.05_MSVC_14.25_x64.zip d5901e1a794cf6cd256d3539484d930b
 
 ##### SHA3-224SUMS
@@ -41,10 +47,14 @@ All binaries available on [release page](https://github.com/TheVice/Ant4C/releas
 * ant4c_2020.05-1xenial1.0_amd64.deb 2021ad0f34286cd8c4af107b4366a9f056df20b53286e367e52688be
 * ant4c_2020.05-1bionic1.0_amd64.deb 489e36182d2905d8101ed783440bb75362385833439866acc98c4452
 * ant4c_2020.05-1focal1.0_amd64.deb 21022d65492c82a6dbcf4d6713151207afcc26ec58a105a0be5fabbe
-* ant4c_lib_2020.05_gcc_Ubuntu.tar.bz2 566d12ad7b2279142b17550fadaa87274549dce6a0a126b4b42e09c2
 * ant4c_app_2020.05_MinGW-w64_8.1.0_x64.zip 02a130753d634049d0e43f92e77e399f5eeb081c2e80656ee0e01240
+* ant4c_app_2020.05_MSVC_12_x64.zip a7490af0d1e27837548c37b35d2573481bd908c3418beda9cd17353a
+* ant4c_app_2020.05_MSVC_12_x86.zip 2ee1213d052d76a0d83e7781d4f5bc6fdb8411133733a4b9d42a4887
 * ant4c_app_2020.05_MSVC_14.25_x64.zip ab1d274422f2f615dbffd6728a9cc67aa0c24b68dee91a11ff69700c
+* ant4c_lib_2020.05_gcc_Ubuntu.tar.bz2 566d12ad7b2279142b17550fadaa87274549dce6a0a126b4b42e09c2
 * ant4c_lib_2020.05_MinGW-w64_8.1.0_x64.zip 0485abf3a5260e5276e75bb3aee947d33d6f3e4b117ea7dc6e31c372
+* ant4c_lib_2020.05_MSVC_12_x64.zip 5d9b6474280fe07deaea1c009f21af9bd4847d9350d323350efd15e7
+* ant4c_lib_2020.05_MSVC_12_x86.zip 98d96ae511a6bb65f7af267f2395bff85d5415665a643ebb63c30ddb
 * ant4c_lib_2020.05_MSVC_14.25_x64.zip 822665b2f6fe2ab5c677a593a053e762c2818249dd79ea6bdb01856c
 
 ## Developing
