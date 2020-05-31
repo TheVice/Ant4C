@@ -1,9 +1,10 @@
 ant4c (2019.10.21)
 
-  * Supported of echo and exec tasks.
-  * Available functions from name spaces bool, cygpath, datetime,
-    double, environment, int, int64, long, math, operating-system,
-    path, platform, program, project, property, string, timespan and version.
+  * Available tasks 'echo', 'exec' and 'property'.
+  * Available functions from name spaces 'bool', 'cygpath, datetime',
+    'double', 'environment', 'int', 'int64', 'long', 'math',
+    'operating-system', 'path', 'platform', 'program', 'project',
+    'property, 'string', 'timespan' and 'version'.
 
  -- TheVice <TheVice>  Tue, 22 Oct 2019 16:24:46 +0300
 
