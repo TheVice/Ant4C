@@ -15,15 +15,15 @@ Developing was started in August of 2019 and present to the public in October of
 All binaries available on the [release page](https://github.com/TheVice/Ant4C/releases/).
 
 ### For Linux distributions
-* [Ubuntu 14.04](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1trusty1.0_amd64.deb)
-* [Ubuntu 16.04](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1xenial1.0_amd64.deb)
-* [Ubuntu 18.04](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1bionic1.0_amd64.deb)
-* [Ubuntu 20.04](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1focal1.0_amd64.deb)
+* [Ubuntu 14.04 (Trusty Tahr)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1trusty1.0_amd64.deb)
+* [Ubuntu 16.04 (Xenial Xerus)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1xenial1.0_amd64.deb)
+* [Ubuntu 18.04 (Bionic Beaver)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1bionic1.0_amd64.deb)
+* [Ubuntu 20.04 (Focal Fossa)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1focal1.0_amd64.deb)
 
 ### For BSD distributions
 * [FreeBSD 11](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_freebsd_11.txz)
 * [FreeBSD 12](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_freebsd_12.txz)
-* [OpenBSD 6.5](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_clang_7.0.1_OpenBSD6.5_x64.tar.bz2)
+* [OpenBSD 6.4](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.4.tgz)
 
 ### For Windows
 * [MSVC 12 x64](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MSVC_12_x64.zip)
