@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -11,6 +11,7 @@
 #include "conversion.h"
 #include "operating_system.h"
 #include "range.h"
+#include "text_encoding.h"
 
 #include <string.h>
 
@@ -257,21 +258,10 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 	if (S_OK == fnSHGetKnownFolderPath(&folderID, KF_FLAG_DEFAULT, NULL, &pathW))
 	{
-		uint16_t count = (uint16_t)wcslen(pathW);
-		const ptrdiff_t path_size = buffer_size(path);
-
-		if (!buffer_append_char(path, NULL, count))
-		{
-			CoTaskMemFree(pathW);
-			pathW = NULL;
-			return 0;
-		}
-
-		char* m = (char*)buffer_data(path, path_size);
-		WIDE2MULTI(pathW, m, count);
+		const size_t count = wcslen(pathW);
+		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(pathW, pathW + count, path);
 		CoTaskMemFree(pathW);
-		pathW = NULL;
-		return 0 < count;
+		return returned;
 	}
 
 	return 1;
@@ -487,29 +477,35 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 #else
 	fnSHGetFolderPathW = (LPFN_SHGETFOLDERPATHW)GetProcAddress(shell32Module, "SHGetFolderPathW");
 #endif
-	ptrdiff_t path_size = buffer_size(path);
 
-	if (!buffer_append_char(path, NULL, MAX_PATH + 1) || !buffer_append_char(path, NULL, MAX_PATH + 1))
+	if (NULL == fnSHGetFolderPathW)
 	{
 		return 0;
 	}
 
-	char* m = (char*)buffer_data(path, path_size);
-	wchar_t* w = (wchar_t*)buffer_data(path, path_size + MAX_PATH + 1);
+	const ptrdiff_t size = buffer_size(path);
 
-	if (S_OK != fnSHGetFolderPathW(NULL, folderID, NULL, SHGFP_TYPE_DEFAULT, w))
+	if (!buffer_append(path, NULL, 6 * (MAX_PATH + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(path, path_size + (ptrdiff_t)wcslen(w)))
+	wchar_t* pathW = (wchar_t*)buffer_data(path,
+										   buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * MAX_PATH - sizeof(uint16_t));
+
+	if (S_OK != fnSHGetFolderPathW(NULL, folderID, NULL, SHGFP_TYPE_DEFAULT, pathW))
 	{
 		return 0;
 	}
 
-	uint16_t count  = (uint16_t)(buffer_size(path) - path_size);
-	WIDE2MULTI(w, m, count);
-	return 0 < count;
+	const size_t count = wcslen(pathW);
+
+	if (!buffer_resize(path, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(pathW, pathW + count, path);
 #endif
 }
 
@@ -517,8 +513,19 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 #define _POSIXSOURCE 1
 
+#include "string_unit.h"
+
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <sys/param.h>
+#endif
+
 #include <pwd.h>
 #include <unistd.h>
+#if defined(BSD)
+#include <sys/sysctl.h>
+#else
+#include <sys/sysinfo.h>
+#endif
 #include <sys/utsname.h>
 
 #include <stdio.h>
@@ -532,7 +539,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case DesktopDirectory:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Desktop", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Desktop", path);
 			}
 
 			break;
@@ -541,7 +548,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case MyDocuments:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Documents", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Documents", path);
 			}
 
 			break;
@@ -549,7 +556,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case MyMusic:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Music", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Music", path);
 			}
 
 			break;
@@ -557,7 +564,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case MyVideos:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Videos", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Videos", path);
 			}
 
 			break;
@@ -565,7 +572,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case Templates:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Templates", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Templates", path);
 			}
 
 			break;
@@ -573,7 +580,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case ApplicationData:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/.config", path);
+				return common_append_string_to_buffer((const uint8_t*)"/.config", path);
 			}
 
 			break;
@@ -581,18 +588,18 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		case LocalApplicationData:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/.local/share", path);
+				return common_append_string_to_buffer((const uint8_t*)"/.local/share", path);
 			}
 
 			break;
 
 		case CommonApplicationData:
-			return common_append_string_to_buffer("/usr/share", path);
+			return common_append_string_to_buffer((const uint8_t*)"/usr/share", path);
 
 		case MyPictures:
 			if (environment_get_folder_path(UserProfile, path))
 			{
-				return common_append_string_to_buffer("/Pictures", path);
+				return common_append_string_to_buffer((const uint8_t*)"/Pictures", path);
 			}
 
 			break;
@@ -607,7 +614,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 				break;
 			}
 
-			return common_append_string_to_buffer(user_info->pw_dir, path);
+			return common_append_string_to_buffer((const uint8_t*)user_info->pw_dir, path);
 		}
 
 		default:
@@ -627,25 +634,28 @@ uint8_t environment_get_machine_name(struct buffer* name)
 		return 0;
 	}
 
-	const ptrdiff_t name_size = buffer_size(name);
-	DWORD size = MAX_COMPUTERNAME_LENGTH + 1;
+	const ptrdiff_t size = buffer_size(name);
+	DWORD max_size = 6 * (MAX_COMPUTERNAME_LENGTH + 1) + sizeof(uint32_t);
 
-	if (!buffer_append_char(name, NULL, size) || !buffer_append_wchar_t(name, NULL, size))
+	if (!buffer_append(name, NULL, max_size))
 	{
 		return 0;
 	}
 
-	wchar_t* nameW = (wchar_t*)buffer_data(name, name_size + size);
+	wchar_t* nameW = (wchar_t*)buffer_data(name,
+										   buffer_size(name) - sizeof(uint32_t) - sizeof(uint16_t) * MAX_COMPUTERNAME_LENGTH - sizeof(uint16_t));
 
-	if (!GetComputerNameW(nameW, &size))
+	if (!GetComputerNameW(nameW, &max_size))
 	{
 		return 0;
 	}
 
-	const DWORD computer_name_size = size;
-	char* m = (char*)buffer_data(name, name_size);
-	WIDE2MULTI(nameW, m, size);
-	return size && buffer_resize(name, name_size + computer_name_size);
+	if (!buffer_resize(name, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name);
 }
 
 #else
@@ -720,9 +730,11 @@ struct Version GetWindowsVersion()
 										   VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL),
 										   VER_MINORVERSION, VER_GREATER_EQUAL);
 
-	for (uint8_t i = 0, count = sizeof(versions) / sizeof(*versions); i < count; ++i)
+	for (uint8_t i = 0, count = COUNT_OF(versions); i < count; ++i)
 	{
-		OSVERSIONINFOEXW osvi = { sizeof(OSVERSIONINFOEXW), 0, 0, 0, 0, { 0 }, 0, 0, 0, 0, 0 };
+		OSVERSIONINFOEXW osvi;
+		memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
+		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 		osvi.dwMajorVersion = versions[i].major;
 		osvi.dwMinorVersion = versions[i].minor;
 
@@ -743,18 +755,19 @@ const struct OperatingSystem* environment_get_operating_system()
 		operating_system.Platform = Win32;
 		operating_system.Version = GetWindowsVersion();
 #if __STDC_SEC_API__
-		is_data_of_operating_system_filled = (0 == strcpy_s(operating_system.VersionString, INT8_MAX, Win32NT_str));
+		is_data_of_operating_system_filled = (0 == memcpy_s(operating_system.VersionString, INT8_MAX, Win32NT_str,
+											  Win32NT_str_length));
 #else
-		strcpy(operating_system.VersionString, Win32NT_str);
+		memcpy(operating_system.VersionString, Win32NT_str, Win32NT_str_length);
 		is_data_of_operating_system_filled = 1;
 #endif
 
 		if (is_data_of_operating_system_filled)
 		{
-			char* ptr = operating_system.VersionString + strlen(operating_system.VersionString);
+			uint8_t* ptr = operating_system.VersionString + Win32NT_str_length;
 			*ptr = ' ';
 			++ptr;
-			is_data_of_operating_system_filled = 0 < version_to_char_array(&operating_system.Version, ptr);
+			is_data_of_operating_system_filled = 0 < version_to_byte_array(&operating_system.Version, ptr);
 		}
 	}
 
@@ -775,13 +788,14 @@ const struct OperatingSystem* environment_get_operating_system()
 			return NULL;
 		}
 
-		if (!version_parse(uname_data.version, uname_data.version + strlen(uname_data.version),
+		if (!version_parse((const uint8_t*)uname_data.version,
+						   (const uint8_t*)uname_data.version + strlen(uname_data.version),
 						   &operating_system.Version))
 		{
 			/*TODO: call echo with verbose or debug level.*/
 		}
 
-		const uint16_t max_count = sizeof(operating_system.VersionString) / sizeof(operating_system.VersionString[0]);
+		const uint16_t max_count = COUNT_OF(operating_system.VersionString);
 		const uint16_t count = 4 + strlen(uname_data.sysname) + strlen(uname_data.release) + strlen(
 								   uname_data.version) + strlen(uname_data.machine);
 
@@ -790,7 +804,7 @@ const struct OperatingSystem* environment_get_operating_system()
 			return NULL;
 		}
 
-		sprintf(operating_system.VersionString, "%s %s %s %s",
+		sprintf((char* const)operating_system.VersionString, "%s %s %s %s",
 				uname_data.sysname, uname_data.release,
 				uname_data.version, uname_data.machine);
 		is_data_of_operating_system_filled = 1;
@@ -809,25 +823,29 @@ uint8_t environment_get_user_name(struct buffer* name)
 		return 0;
 	}
 
-	const ptrdiff_t name_size = buffer_size(name);
-	DWORD size = UNLEN + 1;
+	const ptrdiff_t size = buffer_size(name);
+	DWORD max_size = 6 * (UNLEN + 1) + sizeof(uint32_t);
 
-	if (!buffer_append_char(name, NULL, size) || !buffer_append_wchar_t(name, NULL, size))
+	if (!buffer_append(name, NULL, max_size))
 	{
 		return 0;
 	}
 
-	wchar_t* nameW = (wchar_t*)buffer_data(name, name_size + size);
+	wchar_t* nameW = (wchar_t*)buffer_data(name,
+										   buffer_size(name) - sizeof(uint32_t) - sizeof(uint16_t) * UNLEN - sizeof(uint16_t));
 
-	if (!GetUserNameW(nameW, &size))
+	if (!GetUserNameW(nameW, &max_size))
 	{
 		return 0;
 	}
 
-	const DWORD user_name_size = size - 1;
-	char* m = (char*)buffer_data(name, name_size);
-	WIDE2MULTI(nameW, m, size);
-	return size && buffer_resize(name, name_size + user_name_size);
+	if (!buffer_resize(name, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name) &&
+		   buffer_resize(name, buffer_size(name) - 1);
 }
 
 #else
@@ -847,115 +865,112 @@ uint8_t environment_get_user_name(struct buffer* name)
 		return 0;
 	}
 
-	return common_append_string_to_buffer(user_info->pw_name, name);
+	return common_append_string_to_buffer((const uint8_t*)user_info->pw_name, name);
 }
 
 #endif
+
+#define LOCAL_OR_ARGUMENT(L, A) (NULL != (A) ? (A) : (L))
+
 #if defined(_WIN32)
 
-uint8_t environment_get_variable(const char* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
 								 struct buffer* variable)
 {
-	if (NULL == variable_name || 0 == variable_name_length)
+	if (range_in_parts_is_null_or_empty(variable_name_start, variable_name_finish))
 	{
 		return 0;
 	}
 
-	struct buffer variable_name_w;
+	struct buffer l_variable;
 
-	SET_NULL_TO_BUFFER(variable_name_w);
+	SET_NULL_TO_BUFFER(l_variable);
 
-	if (!buffer_append_wchar_t(&variable_name_w, NULL, (ptrdiff_t)variable_name_length + 2))
+	const ptrdiff_t size = buffer_size(variable);
+
+	if (!text_encoding_UTF8_to_UTF16LE(variable_name_start, variable_name_finish, LOCAL_OR_ARGUMENT(&l_variable,
+									   variable)) ||
+		!buffer_push_back_uint16(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
 	{
-		buffer_release(&variable_name_w);
+		buffer_release(&l_variable);
 		return 0;
 	}
 
-	wchar_t* ptr = buffer_wchar_t_data(&variable_name_w, 0);
+	const ptrdiff_t value_start = buffer_size(LOCAL_OR_ARGUMENT(&l_variable, variable));
 
-	for (uint8_t i = 0; i < variable_name_length; ++i)/*TODO: Use WIDE2MULTI*/
+	if (!buffer_push_back_uint16(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
 	{
-		ptr[i] = variable_name[i];
+		buffer_release(&l_variable);
+		return 0;
 	}
 
-	ptr[variable_name_length] = L'\0';
-	const uint16_t pos = variable_name_length + 1;
-	DWORD size = GetEnvironmentVariableW(buffer_wchar_t_data(&variable_name_w, 0),
-										 buffer_wchar_t_data(&variable_name_w, pos),
-										 1);
+	const DWORD variable_value_size = GetEnvironmentVariableW(
+										  (const wchar_t*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), size),
+										  (wchar_t*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), value_start),
+										  1);
+	buffer_release(&l_variable);
 
-	if (0 == size)
+	if (variable_value_size < 2)
 	{
-		buffer_release(&variable_name_w);
 		return 0;
 	}
 
 	if (NULL == variable)
 	{
-		buffer_release(&variable_name_w);
 		return 1;
 	}
 
-	if (1 < size)
+	if (!buffer_append(variable, NULL, sizeof(uint32_t) + (ptrdiff_t)6 * (variable_value_size + (ptrdiff_t)1)))
 	{
-		if (!buffer_append_wchar_t(&variable_name_w, NULL, size))
-		{
-			buffer_release(&variable_name_w);
-			return 0;
-		}
-
-		size = GetEnvironmentVariableW(buffer_wchar_t_data(&variable_name_w, 0),
-									   buffer_wchar_t_data(&variable_name_w, pos),
-									   size);
-
-		if (0 == size)
-		{
-			buffer_release(&variable_name_w);
-			return 0;
-		}
-	}
-
-	++size;
-	const ptrdiff_t variable_size = buffer_size(variable);
-
-	if (!buffer_append_char(variable, NULL, size))
-	{
-		buffer_release(&variable_name_w);
 		return 0;
 	}
 
-	--size;
-	const wchar_t* w = buffer_wchar_t_data(&variable_name_w, pos);
-	char* m = (char*)buffer_data(variable, variable_size);
-	WIDE2MULTI(w, m, size);
-	buffer_release(&variable_name_w);
-	return size && buffer_resize(variable, buffer_size(variable) - 1);
+	wchar_t* value = (wchar_t*)buffer_data(variable,
+										   buffer_size(variable) - sizeof(uint32_t) - sizeof(uint16_t) * variable_value_size - sizeof(uint16_t));
+	const DWORD returned_value_size = GetEnvironmentVariableW(
+										  (const wchar_t*)buffer_data(variable, size),
+										  value,
+										  variable_value_size);
+
+	if (variable_value_size < returned_value_size)
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(variable, size))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF16LE_to_UTF8(value, value + returned_value_size, variable);
 }
 
 #else
 
-uint8_t environment_get_variable(const char* variable_name, uint8_t variable_name_length,
+uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
 								 struct buffer* variable)
 {
-	if (NULL == variable_name ||
-		0 == variable_name_length)
+	if (range_in_parts_is_null_or_empty(variable_name_start, variable_name_finish))
 	{
 		return 0;
 	}
 
-	struct buffer variable_name_;
+	struct buffer l_variable;
 
-	SET_NULL_TO_BUFFER(variable_name_);
+	SET_NULL_TO_BUFFER(l_variable);
 
-	if (!buffer_append_char(&variable_name_, variable_name, variable_name_length) ||
-		!buffer_push_back(&variable_name_, '\0'))
+	const ptrdiff_t size = buffer_size(variable);
+
+	if (!buffer_append(LOCAL_OR_ARGUMENT(&l_variable, variable), variable_name_start,
+					   variable_name_finish - variable_name_start) ||
+		!buffer_push_back(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
 	{
-		buffer_release(&variable_name_);
+		buffer_release(&l_variable);
 		return 0;
 	}
 
-	const char* value = getenv(buffer_char_data(&variable_name_, 0));
-	buffer_release(&variable_name_);
+	const char* value = getenv((const char*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), size));
+	buffer_release(&l_variable);
 
 	if (NULL == value)
 	{
@@ -967,11 +982,10 @@ uint8_t environment_get_variable(const char* variable_name, uint8_t variable_nam
 		return 1;
 	}
 
-	return common_append_string_to_buffer(value, variable);
+	return buffer_resize(variable, size) && common_append_string_to_buffer((const uint8_t*)value, variable);
 }
 
 #endif
-
 
 uint8_t environment_newline(struct buffer* newline)
 {
@@ -987,9 +1001,9 @@ uint8_t environment_newline(struct buffer* newline)
 #endif
 }
 
-uint8_t environment_variable_exists(const char* variable_name, uint8_t variable_name_length)
+uint8_t environment_variable_exists(const uint8_t* variable_name_start, const uint8_t* variable_name_finish)
 {
-	return environment_get_variable(variable_name, variable_name_length, NULL);
+	return environment_get_variable(variable_name_start, variable_name_finish, NULL);
 }
 
 uint8_t environment_is64bit_process()
@@ -1062,16 +1076,53 @@ uint8_t environment_is64bit_operating_system()
 	}
 
 #else
+	static const uint8_t* x86_64 = (const uint8_t*)"x86_64";
+	static const uint8_t* amd64 = (const uint8_t*)"amd64";
 	const struct OperatingSystem* os = environment_get_operating_system();
-	return NULL != strstr(os->VersionString, "x86_64") || NULL != strstr(os->VersionString, "amd64");
+	return string_contains(os->VersionString, os->VersionString + common_count_bytes_until(os->VersionString, 0),
+						   x86_64, x86_64 + 6) ||
+		   string_contains(os->VersionString, os->VersionString + common_count_bytes_until(os->VersionString, 0),
+						   amd64, amd64 + 5);
 #endif
 }
 
-static const char* environment_str[] =
+uint16_t environment_processor_count()
 {
-	"get-folder-path", "get-machine-name", "get-operating-system",
-	"get-user-name", "get-variable", "newline", "variable-exists",
-	"is64bit-process", "is64bit-operating-system"
+#if defined(_WIN32)
+	SYSTEM_INFO system_info;
+	memset(&system_info, 0, sizeof(SYSTEM_INFO));
+	GetSystemInfo(&system_info);
+	return MAX(1, (uint16_t)system_info.dwNumberOfProcessors);
+#elif defined(BSD)
+	int mib[2];
+	mib[0] = CTL_HW;
+	mib[1] = HW_NCPU;
+	int nproc = 0;
+	size_t size = sizeof(nproc);
+
+	if (0 == sysctl(mib, 2, &nproc, &size, NULL, 0))
+	{
+		return (uint16_t)nproc;
+	}
+
+	return 1;
+#else
+	return (uint16_t)get_nprocs();
+#endif
+}
+
+static const uint8_t* environment_str[] =
+{
+	(const uint8_t*)"get-folder-path",
+	(const uint8_t*)"get-machine-name",
+	(const uint8_t*)"get-operating-system",
+	(const uint8_t*)"get-user-name",
+	(const uint8_t*)"get-variable",
+	(const uint8_t*)"newline",
+	(const uint8_t*)"variable-exists",
+	(const uint8_t*)"is64bit-process",
+	(const uint8_t*)"is64bit-operating-system",
+	(const uint8_t*)"processor-count"
 };
 
 enum environment_function
@@ -1079,28 +1130,64 @@ enum environment_function
 	get_folder_path, get_machine_name, get_operating_system,
 	get_user_name, get_variable, newline, variable_exists,
 	is64bit_process, is64bit_operating_system,
+	processor_count,
 	UNKNOWN_ENVIRONMENT
 };
 
-uint8_t environment_get_function(const char* name_start, const char* name_finish)
+uint8_t environment_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, environment_str, UNKNOWN_ENVIRONMENT);
 }
 
-static const char* special_folder_str[] =
+static const uint8_t* special_folder_str[] =
 {
-	"Desktop", "Programs", "Personal", "MyDocuments", "Favorites",
-	"Startup", "Recent", "SendTo", "StartMenu",	"MyMusic", "MyVideos",
-	"DesktopDirectory",	"MyComputer", "NetworkShortcuts", "Fonts",
-	"Templates", "CommonStartMenu", "CommonPrograms", "CommonStartup",
-	"CommonDesktopDirectory", "ApplicationData", "PrinterShortcuts",
-	"LocalApplicationData", "InternetCache", "Cookies", "History",
-	"CommonApplicationData", "Windows", "System", "ProgramFiles",
-	"MyPictures", "UserProfile", "SystemX86", "ProgramFilesX86",
-	"CommonProgramFiles", "CommonProgramFilesX86", "CommonTemplates",
-	"CommonDocuments", "CommonAdminTools", "AdminTools", "CommonMusic",
-	"CommonPictures", "CommonVideos", "Resources", "LocalizedResources",
-	"CommonOemLinks", "CDBurning"
+	(const uint8_t*)"Desktop",
+	(const uint8_t*)"Programs",
+	(const uint8_t*)"Personal",
+	(const uint8_t*)"MyDocuments",
+	(const uint8_t*)"Favorites",
+	(const uint8_t*)"Startup",
+	(const uint8_t*)"Recent",
+	(const uint8_t*)"SendTo",
+	(const uint8_t*)"StartMenu",
+	(const uint8_t*)"MyMusic",
+	(const uint8_t*)"MyVideos",
+	(const uint8_t*)"DesktopDirectory",
+	(const uint8_t*)"MyComputer",
+	(const uint8_t*)"NetworkShortcuts",
+	(const uint8_t*)"Fonts",
+	(const uint8_t*)"Templates",
+	(const uint8_t*)"CommonStartMenu",
+	(const uint8_t*)"CommonPrograms",
+	(const uint8_t*)"CommonStartup",
+	(const uint8_t*)"CommonDesktopDirectory",
+	(const uint8_t*)"ApplicationData",
+	(const uint8_t*)"PrinterShortcuts",
+	(const uint8_t*)"LocalApplicationData",
+	(const uint8_t*)"InternetCache",
+	(const uint8_t*)"Cookies",
+	(const uint8_t*)"History",
+	(const uint8_t*)"CommonApplicationData",
+	(const uint8_t*)"Windows",
+	(const uint8_t*)"System",
+	(const uint8_t*)"ProgramFiles",
+	(const uint8_t*)"MyPictures",
+	(const uint8_t*)"UserProfile",
+	(const uint8_t*)"SystemX86",
+	(const uint8_t*)"ProgramFilesX86",
+	(const uint8_t*)"CommonProgramFiles",
+	(const uint8_t*)"CommonProgramFilesX86",
+	(const uint8_t*)"CommonTemplates",
+	(const uint8_t*)"CommonDocuments",
+	(const uint8_t*)"CommonAdminTools",
+	(const uint8_t*)"AdminTools",
+	(const uint8_t*)"CommonMusic",
+	(const uint8_t*)"CommonPictures",
+	(const uint8_t*)"CommonVideos",
+	(const uint8_t*)"Resources",
+	(const uint8_t*)"LocalizedResources",
+	(const uint8_t*)"CommonOemLinks",
+	(const uint8_t*)"CDBurning"
 };
 
 uint8_t environment_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
@@ -1148,14 +1235,14 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 
 		case get_variable:
 			return (1 == arguments_count) &&
-				   environment_get_variable(argument.start, (uint8_t)range_size(&argument), output);
+				   environment_get_variable(argument.start, argument.finish, output);
 
 		case newline:
 			return !arguments_count && environment_newline(output);
 
 		case variable_exists:
 			return (1 == arguments_count) &&
-				   bool_to_string(environment_variable_exists(argument.start, (uint8_t)range_size(&argument)),
+				   bool_to_string(environment_variable_exists(argument.start, argument.finish),
 								  output);
 
 		case is64bit_process:
@@ -1163,6 +1250,9 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 
 		case is64bit_operating_system:
 			return !arguments_count && bool_to_string(environment_is64bit_operating_system(), output);
+
+		case processor_count:
+			return !arguments_count && int_to_string(environment_processor_count(), output);
 
 		case UNKNOWN_ENVIRONMENT:
 		default:

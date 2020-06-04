@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -12,13 +12,17 @@
 #include "range.h"
 
 #include <stdio.h>
-/*#include <string.h>*/
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-uint8_t version_parse(const char* input_start, const char* input_finish, struct Version* version)
+static const uint8_t point = '.';
+
+static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+#define COUNT_OF_DIGITS COUNT_OF(digits)
+
+uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, struct Version* version)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) || NULL == version)
 	{
@@ -31,14 +35,16 @@ uint8_t version_parse(const char* input_start, const char* input_finish, struct 
 	ver_in_parts[2] = &version->build;
 	ver_in_parts[3] = &version->revision;
 	/**/
-	const uint8_t count = sizeof(ver_in_parts) / sizeof(*ver_in_parts);
+	const uint8_t count = COUNT_OF(ver_in_parts);
 	uint8_t i = 0;
 
-	for (input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, "0123456789", 10, 1, 1);
+	for (input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS,
+					   1, 1);
 		 input_start < input_finish && i < count; ++i, ++input_start)
 	{
 		if (input_finish == input_start ||
-			input_start + 1 == find_any_symbol_like_or_not_like_that(input_start, input_start + 1, "0123456789", 10, 1,
+			input_start + 1 == find_any_symbol_like_or_not_like_that(input_start, input_start + 1, digits,
+					COUNT_OF_DIGITS, 1,
 					1))
 		{
 			if (i == 0)
@@ -50,7 +56,7 @@ uint8_t version_parse(const char* input_start, const char* input_finish, struct 
 		}
 
 		*(ver_in_parts[i]) = (uint32_t)int_parse(input_start);
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, ".", 1, 1, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, &point, 1, 1, 1);
 	}
 
 	if (i == 0)
@@ -66,7 +72,7 @@ uint8_t version_parse(const char* input_start, const char* input_finish, struct 
 	return 1;
 }
 
-uint8_t version_to_char_array(const struct Version* version, char* output)
+uint8_t version_to_byte_array(const struct Version* version, uint8_t* output)
 {
 	if (NULL == version || NULL == output)
 	{
@@ -75,10 +81,10 @@ uint8_t version_to_char_array(const struct Version* version, char* output)
 
 #if __STDC_SEC_API__
 	const uint8_t length = (uint8_t)sprintf_s(
-							   output, 64, "%u.%u.%u.%u", version->major, version->minor, version->build, version->revision);
+							   (char* const)output, 64, "%u.%u.%u.%u", version->major, version->minor, version->build, version->revision);
 #else
 	const uint8_t length = (uint8_t)sprintf(
-							   output, "%u.%u.%u.%u", version->major, version->minor, version->build, version->revision);
+							   (char* const)output, "%u.%u.%u.%u", version->major, version->minor, version->build, version->revision);
 #endif
 	return length;
 }
@@ -97,8 +103,8 @@ uint8_t version_to_string(const struct Version* version, struct buffer* output)
 		return 0;
 	}
 
-	char* ptr = (char*)buffer_data(output, size);
-	return buffer_resize(output, size + version_to_char_array(version, ptr));
+	uint8_t* ptr = buffer_data(output, size);
+	return buffer_resize(output, size + version_to_byte_array(version, ptr));
 }
 
 uint8_t version_less(const struct Version* a, const struct Version* b)
@@ -157,9 +163,16 @@ uint8_t version_greater(const struct Version* a, const struct Version* b)
 	return 0;
 }
 
-static const char* version_function_str[] =
+static const uint8_t* version_function_str[] =
 {
-	"parse", "to-string", "get-major", "get-minor", "get-build", "get-revision", "less", "greater"
+	(const uint8_t*)"parse",
+	(const uint8_t*)"to-string",
+	(const uint8_t*)"get-major",
+	(const uint8_t*)"get-minor",
+	(const uint8_t*)"get-build",
+	(const uint8_t*)"get-revision",
+	(const uint8_t*)"less",
+	(const uint8_t*)"greater"
 };
 
 enum version_function
@@ -168,7 +181,7 @@ enum version_function
 	UNKNOWN_VERSION_FUNCTION
 };
 
-uint8_t version_get_function(const char* name_start, const char* name_finish)
+uint8_t version_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, version_function_str, UNKNOWN_VERSION_FUNCTION);
 }

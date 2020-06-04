@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -30,6 +30,7 @@ ptrdiff_t buffer_size(const struct buffer* the_buffer);
 
 uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size);
 void buffer_release(struct buffer* the_buffer);
+void buffer_release_inner_buffers(struct buffer* buffer);
 void buffer_release_with_inner_buffers(struct buffer* the_buffer);
 
 uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size);
@@ -48,6 +49,8 @@ struct buffer* buffer_buffer_data(const struct buffer* the_buffer, ptrdiff_t dat
 uint8_t buffer_push_back(struct buffer* the_buffer, uint8_t data);
 uint8_t buffer_push_back_uint16(struct buffer* the_buffer, uint16_t data);
 uint8_t buffer_push_back_uint32(struct buffer* the_buffer, uint32_t data);
+
+uint8_t buffer_assing_to_uint16(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size);
 
 uint8_t buffer_shrink_to_fit(struct buffer* the_buffer);
 

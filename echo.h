@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -11,13 +11,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum Encoding { UTF7, BigEndianUnicode, Unicode, Default, ASCII, UTF8, UTF32 };
-enum Level { Debug, Error, Info, None, Verbose, Warning, NoLevel };
+struct buffer;
 
-uint8_t echo(uint8_t append, uint8_t encoding, const char* file, uint8_t level,
-			 const char* message, ptrdiff_t message_length, uint8_t new_line, uint8_t verbose);
-uint8_t echo_evaluate_task(const void* project, const void* target,
-						   const char* attributes_start, const char* attributes_finish,
-						   const char* element_finish);
+enum Level { Debug, Error, Info, None, Verbose, Warning, NoLevel, Fail };
+
+uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file, uint8_t level,
+			 const uint8_t* message, ptrdiff_t message_length, uint8_t new_line, uint8_t verbose);
+
+uint8_t echo_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
 
 #endif

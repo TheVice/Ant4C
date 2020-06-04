@@ -6,34 +6,29 @@ Ant for C is C-based script tool. Source of script should be written in XML-base
 For understanding why tools with such vision was written read [Apache Ant Introduction](http://jakarta.apache.org/ant/manual/) or/and [NAnt help](http://nant.sourceforge.net/).
 
 Name of program just reference to language on which source was written.
-
-For first initial release echo and exec tasks support. Targets are not support. Functions from name spaces bool, cygpath, datetime, double, environment, int, int64, long, math, operating_system, path, platform, program, project, property, string, timespan and version are available.
-
-Developing was started in August of 2019 and present to the public in October of 2019.
+Developing was started in August of 2019 and first present to the public in October of 2019.
+The second public release available on April of 2020.
 
 ## Downloads
 All binaries available on the [release page](https://github.com/TheVice/Ant4C/releases/).
 
 ### For Linux distributions
-* [Ubuntu 14.04 (Trusty Tahr)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1trusty1.0_amd64.deb)
-* [Ubuntu 16.04 (Xenial Xerus)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1xenial1.0_amd64.deb)
-* [Ubuntu 18.04 (Bionic Beaver)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1bionic1.0_amd64.deb)
-* [Ubuntu 20.04 (Focal Fossa)](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_2019.10.21-1focal1.0_amd64.deb)
+* [Ubuntu 14.04 (Trusty Tahr)](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c_2020.04-1trusty1.0_amd64.deb)
+* [Ubuntu 16.04 (Xenial Xerus)](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c_2020.04-1xenial1.0_amd64.deb)
+* [Ubuntu 18.04 (Bionic Beaver)](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c_2020.04-1bionic1.0_amd64.deb)
+* [Ubuntu 20.04 (Focal Fossa)](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c_2020.04-1focal1.0_amd64.deb)
 
 ### For BSD distributions
-* [FreeBSD 11](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_freebsd_11.txz)
-* [FreeBSD 12](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_freebsd_12.txz)
-* [OpenBSD 6.4](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.4.tgz)
-* [OpenBSD 6.5](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.5.tgz)
-* [OpenBSD 6.6](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.6.tgz)
-* [OpenBSD 6.7](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.7.tgz)
+* [FreeBSD 11](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c-2020.04_freebsd_11.txz)
+* [FreeBSD 12](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c-2020.04_freebsd_12.txz)
+* [OpenBSD 6.4](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c-2020.04_openbsd_6.4.tgz)
+* [OpenBSD 6.5](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c-2020.04_openbsd_6.5.tgz)
+* [OpenBSD 6.6](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c-2020.04_openbsd_6.6.tgz)
+* [OpenBSD 6.7](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c-2020.04_openbsd_6.7.tgz)
 
 ### For Windows
-* [MSVC 12 x64](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MSVC_12_x64.zip)
-* [MSVC 12 x86](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MSVC_12_x86.zip)
-* [MSVC 14.23 x64](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MSVC_1423_x64.zip)
-* [MSVC 14.23 x86](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MSVC_1423_x86.zip)
-* [MinGW-w64 8.1.0 x64](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MinGW-w64_8.1.0_x64.zip)
+* [MSVC 14.25 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c_app_2020.04_MSVC_14.25_x64.zip)
+* [MinGW-w64 8.1.0 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.04/ant4c_app_2020.04_MinGW-w64_8.1.0_x64.zip)
 
 #### Checksums
 

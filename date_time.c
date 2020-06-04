@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "math_unit.h"
 #include "range.h"
 
 #include <time.h>
@@ -19,6 +20,9 @@
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
+
+#define CLOCK_T	((clock_t)-1)
+#define TIME_T	((time_t)-1)
 
 #define LOCAL_TIME(T)												\
 	struct tm* tm_ = localtime((const time_t* const)(T));
@@ -32,9 +36,37 @@
 		return 0;													\
 	}
 
+#define UTC_TIME(T)													\
+	struct tm* tm_u = gmtime((const time_t* const)(T));
+
+#define UTC_TIME_STDC_SEC_API(T)									\
+	struct tm tm__u;												\
+	struct tm* tm_u = &tm__u;										\
+	\
+	if (0 != gmtime_s(tm_u, (const time_t* const)(T)))				\
+	{																\
+		return 0;													\
+	}
+
 static const int32_t seconds_per_day = 86400;
 static const int16_t seconds_per_hour = 3600;
 static const int8_t seconds_per_minute = 60;
+
+static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+#define COUNT_OF_DIGITS COUNT_OF(digits)
+
+#define WEEK_DAY(A)	\
+	((A) < 6) ? ((A) + 1) : 0;
+
+int datetime_add_days(int week_day, uint16_t days)
+{
+	for (; days != 0; --days)
+	{
+		week_day = WEEK_DAY(week_day);
+	}
+
+	return week_day;
+}
 
 uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 {
@@ -46,13 +78,15 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 	memset(tm_, 0, sizeof(struct tm));
 	tm_->tm_year = 1970;
 	tm_->tm_mday = 1;
+	tm_->tm_wday = 4;
 	tm_->tm_yday = 1;
 	/**/
 	int64_t this_time = 0;
 
-	while (1)
+	for (;;)
 	{
-		int64_t year = (int64_t)seconds_per_day * (datetime_is_leap_year(tm_->tm_year) ? 366 : 365);
+		const uint16_t days_in_year = datetime_is_leap_year(tm_->tm_year) ? 366 : 365;
+		const int64_t year = (int64_t)seconds_per_day * days_in_year;
 
 		if (time < this_time + year)
 		{
@@ -61,12 +95,13 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 
 		this_time += year;
 		++tm_->tm_year;
+		tm_->tm_wday = datetime_add_days(tm_->tm_wday, days_in_year);
 	}
 
-	while (1)
+	for (;;)
 	{
-		uint8_t days = datetime_get_days_in_month(tm_->tm_year, 1 + (uint8_t)tm_->tm_mon);
-		int64_t month = (int64_t)seconds_per_day * days;
+		const uint8_t days = datetime_get_days_in_month(tm_->tm_year, 1 + (uint8_t)tm_->tm_mon);
+		const int64_t month = (int64_t)seconds_per_day * days;
 
 		if (time < this_time + month)
 		{
@@ -76,9 +111,10 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		this_time += month;
 		++tm_->tm_mon;
 		tm_->tm_yday += days;
+		tm_->tm_wday = datetime_add_days(tm_->tm_wday, days);
 	}
 
-	while (1)
+	for (;;)
 	{
 		if (time < this_time + seconds_per_day)
 		{
@@ -88,9 +124,10 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		this_time += seconds_per_day;
 		++tm_->tm_mday;
 		++tm_->tm_yday;
+		tm_->tm_wday = WEEK_DAY(tm_->tm_wday);
 	}
 
-	while (1)
+	for (;;)
 	{
 		if (time < this_time + seconds_per_hour)
 		{
@@ -101,7 +138,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 		++tm_->tm_hour;
 	}
 
-	while (1)
+	for (;;)
 	{
 		if (time < this_time + seconds_per_minute)
 		{
@@ -124,7 +161,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 	return 1;
 }
 
-uint8_t datetime_format_to_string(int64_t input, const char* format, struct buffer* output)
+uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct buffer* output)
 {
 	struct tm tm_;
 
@@ -142,7 +179,7 @@ uint8_t datetime_format_to_string(int64_t input, const char* format, struct buff
 
 	tm_.tm_year -= 1900;
 	tm_.tm_mon -= 1;
-	const ptrdiff_t new_size = strftime((char*)buffer_data(output, size), INT8_MAX, format, &tm_);
+	const ptrdiff_t new_size = strftime((char*)buffer_data(output, size), INT8_MAX, (const char*)format, &tm_);
 
 	if (!new_size)
 	{
@@ -152,7 +189,7 @@ uint8_t datetime_format_to_string(int64_t input, const char* format, struct buff
 	return buffer_resize(output, size + new_size);
 }
 
-uint8_t datetime_parse(const char* input_start, const char* input_finish,
+uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 					   uint32_t* year, uint8_t* month, uint8_t* day,
 					   uint8_t* hour, uint8_t* minute, uint8_t* second)
 {
@@ -174,7 +211,7 @@ uint8_t datetime_parse(const char* input_start, const char* input_finish,
 
 	while (input_start != input_finish && step < 6)
 	{
-		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, "0123456789", 10, 1, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
 
 		if (input_start == input_finish)
 		{
@@ -193,10 +230,42 @@ uint8_t datetime_parse(const char* input_start, const char* input_finish,
 		}
 
 		++step;
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, "0123456789", 10, 0, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, digits, COUNT_OF_DIGITS, 0,
+					  1);
 	}
 
 	return (0 < *day && *day < 32 && 1 < *month && *month < 31 && *hour < 24 && *minute < 60 && *second < 60);
+}
+
+uint8_t datetime_parse_buffer(struct buffer* input_output)
+{
+	const ptrdiff_t size = buffer_size(input_output);
+
+	if (!size)
+	{
+		return 0;
+	}
+
+	if (!buffer_append(input_output, NULL, sizeof(uint32_t) + 5 * sizeof(uint8_t)))
+	{
+		return 0;
+	}
+
+	const uint8_t* ptr = buffer_data(input_output, 0);
+	uint32_t* year = (uint32_t*)buffer_data(input_output, size);
+	uint8_t* month = (uint8_t*)buffer_data(input_output, size + sizeof(uint32_t));
+	uint8_t* day = month + sizeof(uint8_t);
+	uint8_t* hour = day + sizeof(uint8_t);
+	uint8_t* minute = hour + sizeof(uint8_t);
+	uint8_t* second = minute + sizeof(uint8_t);
+
+	if (!datetime_parse(ptr, ptr + size, year, month, day, hour, minute, second))
+	{
+		return 0;
+	}
+
+	*((int64_t*)year) = datetime_encode(*year, *month, *day, *hour, *minute, *second);
+	return buffer_resize(input_output, size + sizeof(int64_t));
 }
 
 uint8_t datetime_to_char_array(const struct tm* tm_, char* output)
@@ -281,9 +350,6 @@ uint8_t datetime_get_day(int64_t input)
 
 uint8_t datetime_get_day_of_week(int64_t input)
 {
-	(void)input;
-	return UINT8_MAX;
-	/*TODO:
 	struct tm tm_;
 
 	if (!datetime_decode_to_tm(input, &tm_))
@@ -291,7 +357,7 @@ uint8_t datetime_get_day_of_week(int64_t input)
 		return 0;
 	}
 
-	return (uint8_t)tm_.tm_wday;*/
+	return (uint8_t)tm_.tm_wday;
 }
 
 uint16_t datetime_get_day_of_year(int64_t input)
@@ -386,23 +452,41 @@ uint8_t datetime_is_leap_year(uint32_t year)
 	return ((!(year % 400)) || ((year % 100) && (!(year % 4))));
 }
 
-int64_t datetime_now_utc(time_t* now)
+int64_t datetime_ticks()
 {
-	if (NULL == now || ((time_t) -1) == time(now))
+	const clock_t ticks = clock();
+
+	if (CLOCK_T == ticks)
 	{
 		return 0;
 	}
 
-	/*TODO: gmtime();
-	gmtime_s();*/
-	return (*now);
+	return ticks;
+}
+
+int64_t datetime_now_utc()
+{
+	time_t now = 0;
+
+	if (TIME_T == time(&now))
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__
+	UTC_TIME_STDC_SEC_API(&now);
+#else
+	UTC_TIME(&now);
+#endif
+	return datetime_encode(1900 + tm_u->tm_year, 1 + (uint8_t)tm_u->tm_mon, (uint8_t)tm_u->tm_mday,
+						   (uint8_t)tm_u->tm_hour, (uint8_t)tm_u->tm_min, (uint8_t)tm_u->tm_sec);
 }
 
 int64_t datetime_now()
 {
 	time_t now = 0;
 
-	if (!datetime_now_utc(&now))
+	if (TIME_T == time(&now))
 	{
 		return 0;
 	}
@@ -514,6 +598,33 @@ uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* d
 
 	return 1;
 }
+#if !defined(_WIN32)
+long datetime_get_bias()
+{
+	time_t now = 0;
+
+	if (TIME_T == time(&now))
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__
+	LOCAL_TIME_STDC_SEC_API(&now);
+#else
+	LOCAL_TIME(&now);
+#endif
+#if __STDC_SEC_API__
+	UTC_TIME_STDC_SEC_API(&now);
+#else
+	UTC_TIME(&now);
+#endif
+	return (long)(mktime(tm_u) - mktime(tm_)) / 60 - (tm_u->tm_isdst ? 0 : 60);
+}
+#endif
+int64_t date_time_millisecond_to_second(int64_t millisecond)
+{
+	return math_truncate(math_ceiling((double)millisecond / 1000));
+}
 
 int64_t timespan_from_days(double input)
 {
@@ -524,7 +635,12 @@ int64_t timespan_from_hours(double input)
 {
 	return (int64_t)((double)seconds_per_hour * input);
 }
-/*timespan_from_milliseconds*/
+
+int64_t timespan_from_milliseconds(double input)
+{
+	return (int64_t)(input / 1000);
+}
+
 int64_t timespan_from_minutes(double input)
 {
 	return (int64_t)((double)seconds_per_minute * input);
@@ -534,7 +650,17 @@ int64_t timespan_from_seconds(double input)
 {
 	return (int64_t)input;
 }
-/*timespan_from_ticks*/
+
+int64_t timespan_from_ticks(int64_t ticks)
+{
+	if (ticks < CLOCKS_PER_SEC)
+	{
+		return 0;
+	}
+
+	return (int64_t)(((double)ticks) / CLOCKS_PER_SEC);
+}
+
 int32_t timespan_get_days(int64_t input)
 {
 	int32_t days = 0;
@@ -561,8 +687,12 @@ int32_t timespan_get_minutes(int64_t input)
 
 	return minutes;
 }
-/*timespan_get_seconds*/
-/*timespan_get_ticks*/
+
+int64_t timespan_get_ticks(int64_t input)
+{
+	return CLOCKS_PER_SEC * input;
+}
+
 double timespan_get_total_days(int64_t input)
 {
 	return (double)input / seconds_per_day;
@@ -572,18 +702,38 @@ double timespan_get_total_hours(int64_t input)
 {
 	return (double)input / seconds_per_hour;
 }
-/*timespan_get_total_milliseconds*/
+
+int64_t timespan_get_total_milliseconds(int64_t input)
+{
+	return 1000 * input;
+}
+
 double timespan_get_total_minutes(int64_t input)
 {
 	return (double)input / seconds_per_minute;
 }
 
-static const char* datetime_function_str[] =
+static const uint8_t* datetime_function_str[] =
 {
-	"format-to-string", "parse", "to-string", "get-day", "get-day-of-week",
-	"get-day-of-year", "get-days-in-month",	"get-hour", "get-millisecond",
-	"get-minute", "get-month", "get-second", "get-ticks", "get-year",
-	"is-leap-year", "now", "from-input"
+	(const uint8_t*)"format-to-string",
+	(const uint8_t*)"parse",
+	(const uint8_t*)"to-string",
+	(const uint8_t*)"get-day",
+	(const uint8_t*)"get-day-of-week",
+	(const uint8_t*)"get-day-of-year",
+	(const uint8_t*)"get-days-in-month",
+	(const uint8_t*)"get-hour",
+	(const uint8_t*)"get-millisecond",
+	(const uint8_t*)"get-minute",
+	(const uint8_t*)"get-month",
+	(const uint8_t*)"get-second",
+	(const uint8_t*)"get-ticks",
+	(const uint8_t*)"get-year",
+	(const uint8_t*)"is-leap-year",
+	(const uint8_t*)"ticks",
+	(const uint8_t*)"now-utc",
+	(const uint8_t*)"now",
+	(const uint8_t*)"from-input"
 };
 
 enum datetime_function
@@ -591,11 +741,11 @@ enum datetime_function
 	format_to_string, parse, to_string,	get_day, get_day_of_week,
 	get_day_of_year, get_days_in_month, get_hour, get_millisecond,
 	get_minute, get_month, get_second, get_ticks, get_year,
-	is_leap_year, now, encode,
+	is_leap_year, ticks, now_utc, now, encode,
 	UNKNOWN_DATETIME_FUNCTION
 };
 
-uint8_t datetime_get_function(const char* name_start, const char* name_finish)
+uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, datetime_function_str, UNKNOWN_DATETIME_FUNCTION);
 }
@@ -658,9 +808,7 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 			return 1 == arguments_count && int_to_string(datetime_get_day(int64_parse(argument1.start)), output);
 
 		case get_day_of_week:
-			/*TODO:
-			return 1 == arguments_count && int_to_string(datetime_get_day_of_week(int64_parse(argument1.start)), output);*/
-			break;
+			return 1 == arguments_count && int_to_string(datetime_get_day_of_week(int64_parse(argument1.start)), output);
 
 		case get_day_of_year:
 			return 1 == arguments_count && int_to_string(datetime_get_day_of_year(int64_parse(argument1.start)), output);
@@ -674,6 +822,7 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 			return 1 == arguments_count && int_to_string(datetime_get_hour(int64_parse(argument1.start)), output);
 
 		case get_millisecond:
+			/*TODO:*/
 			break;
 
 		case get_minute:
@@ -686,6 +835,7 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 			return 1 == arguments_count && int_to_string(datetime_get_second(int64_parse(argument1.start)), output);
 
 		case get_ticks:
+			/*TODO:*/
 			break;
 
 		case get_year:
@@ -694,10 +844,28 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 		case is_leap_year:
 			return 1 == arguments_count && bool_to_string(datetime_is_leap_year(int_parse(argument1.start)), output);
 
+		case ticks:
+			if (!arguments_count)
+			{
+				const int64_t ticks_ = datetime_ticks();
+				return /*0 < ticks_ && */int64_to_string(0 < ticks_ ? ticks_ : 0, output);
+			}
+
+			break;
+
+		case now_utc:
+			if (!arguments_count)
+			{
+				const int64_t time_is_now = datetime_now_utc();
+				return 0 < time_is_now && int64_to_string(time_is_now, output);
+			}
+
+			break;
+
 		case now:
 			if (!arguments_count)
 			{
-				int64_t time_is_now = datetime_now();
+				const int64_t time_is_now = datetime_now();
 				return 0 < time_is_now && int64_to_string(time_is_now, output);
 			}
 
@@ -729,15 +897,27 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 	return 0;
 }
 
-static const char* timespan_function_str[] =
+static const uint8_t* timespan_function_str[] =
 {
-	"parse", "to-string", "from-days", "from-hours",
-	"from-milliseconds", "from-minutes", "from-seconds",
-	"from-ticks", "get-days", "get-hours",
-	"get-milliseconds", "get-minutes", "get-seconds",
-	"get-ticks", "get-total-days", "get-total-hours",
-	"get-total-milliseconds", "get-total-minutes",
-	"get-total-seconds"
+	(const uint8_t*)"parse",
+	(const uint8_t*)"to-string",
+	(const uint8_t*)"from-days",
+	(const uint8_t*)"from-hours",
+	(const uint8_t*)"from-milliseconds",
+	(const uint8_t*)"from-minutes",
+	(const uint8_t*)"from-seconds",
+	(const uint8_t*)"from-ticks",
+	(const uint8_t*)"get-days",
+	(const uint8_t*)"get-hours",
+	(const uint8_t*)"get-milliseconds",
+	(const uint8_t*)"get-minutes",
+	(const uint8_t*)"get-seconds",
+	(const uint8_t*)"get-ticks",
+	(const uint8_t*)"get-total-days",
+	(const uint8_t*)"get-total-hours",
+	(const uint8_t*)"get-total-milliseconds",
+	(const uint8_t*)"get-total-minutes",
+	(const uint8_t*)"get-total-seconds"
 };
 
 enum timespan_function
@@ -751,7 +931,7 @@ enum timespan_function
 	ts_get_total_seconds_, UNKNOWN_TIMESPAN_FUNCTION
 };
 
-uint8_t timespan_get_function(const char* name_start, const char* name_finish)
+uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, timespan_function_str, UNKNOWN_TIMESPAN_FUNCTION);
 }
@@ -773,9 +953,6 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 		return 0;
 	}
 
-	/*double double_argument = 0;
-	int64_t int64_argument = 0;*/
-
 	switch (function)
 	{
 		case ts_from_days_:
@@ -785,16 +962,16 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return int64_to_string(timespan_from_hours(double_parse(argument.start)), output);
 
 		case ts_from_milliseconds_:
-			break;
+			return int64_to_string(timespan_from_milliseconds(double_parse(argument.start)), output);
 
 		case ts_from_minutes_:
 			return int64_to_string(timespan_from_minutes(double_parse(argument.start)), output);
 
 		case ts_from_seconds_:
-			return int64_to_string((int64_t)double_parse(argument.start), output);
+			return int64_to_string(int64_parse(argument.start), output);
 
 		case ts_from_ticks_:
-			break;
+			return int64_to_string(timespan_from_ticks(int64_parse(argument.start)), output);
 
 		case ts_get_days_:
 			return int_to_string(timespan_get_days(int64_parse(argument.start)), output);
@@ -803,6 +980,7 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return int_to_string(timespan_get_hours(int64_parse(argument.start)), output);
 
 		case ts_get_milliseconds_:
+			/*TODO:*/
 			break;
 
 		case ts_get_minutes_:
@@ -815,7 +993,7 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return int64_to_string(int64_parse(argument.start), output);
 
 		case ts_get_ticks_:
-			break;
+			return int64_to_string(timespan_get_ticks(int64_parse(argument.start)), output);
 
 		case ts_get_total_days_:
 			return double_to_string(timespan_get_total_days(int64_parse(argument.start)), output);
@@ -824,7 +1002,7 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return double_to_string(timespan_get_total_hours(int64_parse(argument.start)), output);
 
 		case ts_get_total_milliseconds_:
-			break;
+			return int64_to_string(timespan_get_total_milliseconds(int64_parse(argument.start)), output);
 
 		case ts_get_total_minutes_:
 			return double_to_string(timespan_get_total_minutes(int64_parse(argument.start)), output);

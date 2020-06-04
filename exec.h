@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+struct buffer;
 struct range;
 
 uint8_t exec(
@@ -25,8 +26,10 @@ uint8_t exec(
 	uint8_t spawn,
 	uint32_t time_out,
 	uint8_t verbose);
-uint8_t exec_evaluate_task(void* project, const void* target,
-						   const char* attributes_start, const char* attributes_finish,
-						   const char* element_finish);
+
+uint8_t exec_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose);
 
 #endif

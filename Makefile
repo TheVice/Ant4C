@@ -4,10 +4,12 @@ argument_parser.c: argument_parser.h
 argument_parser.c: buffer.h
 argument_parser.c: common.h
 argument_parser.c: conversion.h
+argument_parser.c: load_file.h
 argument_parser.c: math_unit.h
 argument_parser.c: property.h
 argument_parser.c: range.h
 argument_parser.c: string_unit.h
+argument_parser.c: text_encoding.h
 
 buffer.c: buffer.h
 
@@ -21,6 +23,18 @@ conversion.c: conversion.h
 conversion.c: buffer.h
 conversion.c: common.h
 conversion.c: range.h
+
+copy_move.c: copy_move.h
+copy_move.c: buffer.h
+copy_move.c: common.h
+copy_move.c: conversion.h
+copy_move.c: file_system.h
+copy_move.c: load_file.h
+copy_move.c: path.h
+copy_move.c: project.h
+copy_move.c: range.h
+copy_move.c: string_unit.h
+copy_move.c: text_encoding.h
 
 date_time.c: date_time.h
 date_time.c: buffer.h
@@ -36,6 +50,7 @@ echo.c: conversion.h
 echo.c: file_system.h
 echo.c: range.h
 echo.c: string_unit.h
+echo.c: text_encoding.h
 
 environment.c: environment.h
 environment.c: buffer.h
@@ -43,6 +58,7 @@ environment.c: common.h
 environment.c: conversion.h
 environment.c: operating_system.h
 environment.c: range.h
+environment.c: text_encoding.h
 
 exec.c: exec.h
 exec.c: argument_parser.h
@@ -57,6 +73,7 @@ exec.c: project.h
 exec.c: property.h
 exec.c: range.h
 exec.c: string_unit.h
+exec.c: text_encoding.h
 exec.c: xml.h
 
 file_system.c: file_system.h
@@ -64,31 +81,78 @@ file_system.c: buffer.h
 file_system.c: common.h
 file_system.c: conversion.h
 file_system.c: date_time.h
+file_system.c: hash.h
 file_system.c: path.h
 file_system.c: project.h
 file_system.c: property.h
 file_system.c: range.h
 file_system.c: string_unit.h
+file_system.c: text_encoding.h
+
+for_each.c: buffer.h
+for_each.c: common.h
+for_each.c: file_system.h
+for_each.c: interpreter.h
+for_each.c: path.h
+for_each.c: project.h
+for_each.c: property.h
+for_each.c: range.h
+for_each.c: string_unit.h
+for_each.c: xml.h
+
+hash.blake2.c: hash.h
+hash.blake2.c: buffer.h
+hash.blake2.c: range.h
+
+hash.blake3.c: hash.h
+hash.blake3.c: buffer.h
+
+hash.c: hash.h
+hash.c: buffer.h
+hash.c: common.h
+hash.c: file_system.h
+hash.c: range.h
+
+hash.crc32.c: hash.h
+hash.crc32.c: common.h
+
+hash.sha3.c: hash.h
+hash.sha3.c: buffer.h
 
 interpreter.c: interpreter.h
 interpreter.c: buffer.h
 interpreter.c: common.h
 interpreter.c: conversion.h
+interpreter.c: copy_move.h
 interpreter.c: date_time.h
 interpreter.c: echo.h
 interpreter.c: environment.h
 interpreter.c: exec.h
 interpreter.c: file_system.h
+interpreter.c: hash.h
+interpreter.c: load_file.h
 interpreter.c: math_unit.h
 interpreter.c: operating_system.h
 interpreter.c: path.h
 interpreter.c: project.h
 interpreter.c: property.h
 interpreter.c: range.h
+interpreter.c: sleep_unit.h
 interpreter.c: string_unit.h
 interpreter.c: target.h
+interpreter.c: text_encoding.h
 interpreter.c: version.h
 interpreter.c: xml.h
+
+load_file.c: load_file.h
+load_file.c: buffer.h
+load_file.c: common.h
+load_file.c: file_system.h
+load_file.c: project.h
+load_file.c: property.h
+load_file.c: range.h
+load_file.c: string_unit.h
+load_file.c: text_encoding.h
 
 main.c: argument_parser.h
 main.c: buffer.h
@@ -99,15 +163,19 @@ main.c: echo.h
 main.c: environment.h
 main.c: exec.h
 main.c: file_system.h
+main.c: hash.h
 main.c: interpreter.h
+main.c: load_file.h
 main.c: math_unit.h
 main.c: operating_system.h
 main.c: path.h
 main.c: project.h
 main.c: property.h
 main.c: range.h
+main.c: sleep_unit.h
 main.c: string_unit.h
 main.c: target.h
+main.c: text_encoding.h
 main.c: version.h
 main.c: xml.h
 
@@ -137,6 +205,7 @@ path.c: file_system.h
 path.c: project.h
 path.c: range.h
 path.c: string_unit.h
+path.c: text_encoding.h
 
 project.c: project.h
 project.c: buffer.h
@@ -144,11 +213,13 @@ project.c: common.h
 project.c: conversion.h
 project.c: file_system.h
 project.c: interpreter.h
+project.c: load_file.h
 project.c: path.h
 project.c: property.h
 project.c: range.h
 project.c: string_unit.h
 project.c: target.h
+project.c: text_encoding.h
 project.c: version.h
 project.c: xml.h
 
@@ -157,19 +228,28 @@ property.c: buffer.h
 property.c: common.h
 property.c: conversion.h
 property.c: file_system.h
+property.c: load_file.h
 property.c: project.h
 property.c: range.h
 property.c: string_unit.h
+property.c: text_encoding.h
 
 range.c: range.h
 range.c: buffer.h
 range.c: common.h
+
+sleep_unit.c: sleep_unit.h
+sleep_unit.c: buffer.h
+sleep_unit.c: common.h
+sleep_unit.c: conversion.h
+sleep_unit.c: date_time.h
 
 string_unit.c: string_unit.h
 string_unit.c: buffer.h
 string_unit.c: common.h
 string_unit.c: conversion.h
 string_unit.c: range.h
+string_unit.c: text_encoding.h
 
 target.c: target.h
 target.c: buffer.h
@@ -181,7 +261,22 @@ target.c: project.h
 target.c: property.h
 target.c: range.h
 target.c: string_unit.h
+target.c: text_encoding.h
 target.c: xml.h
+
+text_encoding.c: text_encoding.h
+text_encoding.c: buffer.h
+text_encoding.c: common.h
+
+try_catch.c: buffer.h
+try_catch.c: common.h
+try_catch.c: file_system.h
+try_catch.c: interpreter.h
+try_catch.c: path.h
+try_catch.c: project.h
+try_catch.c: property.h
+try_catch.c: range.h
+try_catch.c: xml.h
 
 version.c: version.h
 version.c: buffer.h
@@ -194,6 +289,7 @@ xml.c: buffer.h
 xml.c: common.h
 xml.c: range.h
 xml.c: string_unit.h
+xml.c: text_encoding.h
 
 argument_parser.obj: argument_parser.c
 	$(CC) $(CFLAGS) -c argument_parser.c -o $@
@@ -206,6 +302,9 @@ common.obj: common.c
 
 conversion.obj: conversion.c
 	$(CC) $(CFLAGS) -c conversion.c -o $@
+
+copy_move.obj: copy_move.c
+	$(CC) $(CFLAGS) -c copy_move.c -o $@
 
 date_time.obj: date_time.c
 	$(CC) $(CFLAGS) -c date_time.c -o $@
@@ -222,8 +321,29 @@ exec.obj: exec.c
 file_system.obj: file_system.c
 	$(CC) $(CFLAGS) -c file_system.c -o $@
 
+for_each.obj: for_each.c
+	$(CC) $(CFLAGS) -c for_each.c -o $@
+
+hash.blake2.obj: hash.blake2.c
+	$(CC) $(CFLAGS) -c hash.blake2.c -o $@
+
+hash.blake3.obj: hash.blake3.c
+	$(CC) $(CFLAGS) -c hash.blake3.c -o $@
+
+hash.obj: hash.c
+	$(CC) $(CFLAGS) -c hash.c -o $@
+
+hash.crc32.obj: hash.crc32.c
+	$(CC) $(CFLAGS) -c hash.crc32.c -o $@
+
+hash.sha3.obj: hash.sha3.c
+	$(CC) $(CFLAGS) -c hash.sha3.c -o $@
+
 interpreter.obj: interpreter.c
 	$(CC) $(CFLAGS) -c interpreter.c -o $@
+
+load_file.obj: load_file.c
+	$(CC) $(CFLAGS) -c load_file.c -o $@
 
 main.obj: main.c
 	$(CC) $(CFLAGS) -c main.c -o $@
@@ -246,11 +366,20 @@ property.obj: property.c
 range.obj: range.c
 	$(CC) $(CFLAGS) -c range.c -o $@
 
+sleep_unit.obj: sleep_unit.c
+	$(CC) $(CFLAGS) -c sleep_unit.c -o $@
+
 string_unit.obj: string_unit.c
 	$(CC) $(CFLAGS) -c string_unit.c -o $@
 
 target.obj: target.c
 	$(CC) $(CFLAGS) -c target.c -o $@
+
+text_encoding.obj: text_encoding.c
+	$(CC) $(CFLAGS) -c text_encoding.c -o $@
+
+try_catch.obj: try_catch.c
+	$(CC) $(CFLAGS) -c try_catch.c -o $@
 
 version.obj: version.c
 	$(CC) $(CFLAGS) -c version.c -o $@
@@ -262,23 +391,34 @@ libant4c.a: argument_parser.obj
 libant4c.a: buffer.obj
 libant4c.a: common.obj
 libant4c.a: conversion.obj
+libant4c.a: copy_move.obj
 libant4c.a: date_time.obj
 libant4c.a: echo.obj
 libant4c.a: environment.obj
 libant4c.a: exec.obj
 libant4c.a: file_system.obj
+libant4c.a: for_each.obj
+libant4c.a: hash.blake2.obj
+libant4c.a: hash.blake3.obj
+libant4c.a: hash.obj
+libant4c.a: hash.crc32.obj
+libant4c.a: hash.sha3.obj
 libant4c.a: interpreter.obj
+libant4c.a: load_file.obj
 libant4c.a: math_unit.obj
 libant4c.a: operating_system.obj
 libant4c.a: path.obj
 libant4c.a: project.obj
 libant4c.a: property.obj
 libant4c.a: range.obj
+libant4c.a: sleep_unit.obj
 libant4c.a: string_unit.obj
 libant4c.a: target.obj
+libant4c.a: text_encoding.obj
+libant4c.a: try_catch.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj common.obj conversion.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj interpreter.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj string_unit.obj target.obj version.obj xml.obj
+	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
@@ -287,5 +427,5 @@ ant4c: main.obj
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj common.obj conversion.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj interpreter.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj string_unit.obj target.obj version.obj xml.obj
+	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean

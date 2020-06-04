@@ -17,6 +17,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/common.h"
             "${CMAKE_SOURCE_DIR}/conversion.c"
             "${CMAKE_SOURCE_DIR}/conversion.h"
+            "${CMAKE_SOURCE_DIR}/copy_move.c"
+            "${CMAKE_SOURCE_DIR}/copy_move.h"
             "${CMAKE_SOURCE_DIR}/date_time.c"
             "${CMAKE_SOURCE_DIR}/date_time.h"
             "${CMAKE_SOURCE_DIR}/echo.c"
@@ -27,8 +29,17 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/exec.h"
             "${CMAKE_SOURCE_DIR}/file_system.c"
             "${CMAKE_SOURCE_DIR}/file_system.h"
+            "${CMAKE_SOURCE_DIR}/for_each.c"
+            "${CMAKE_SOURCE_DIR}/hash.blake2.c"
+            "${CMAKE_SOURCE_DIR}/hash.blake3.c"
+            "${CMAKE_SOURCE_DIR}/hash.c"
+            "${CMAKE_SOURCE_DIR}/hash.crc32.c"
+            "${CMAKE_SOURCE_DIR}/hash.h"
+            "${CMAKE_SOURCE_DIR}/hash.sha3.c"
             "${CMAKE_SOURCE_DIR}/interpreter.c"
             "${CMAKE_SOURCE_DIR}/interpreter.h"
+            "${CMAKE_SOURCE_DIR}/load_file.c"
+            "${CMAKE_SOURCE_DIR}/load_file.h"
             "${CMAKE_SOURCE_DIR}/math_unit.c"
             "${CMAKE_SOURCE_DIR}/math_unit.h"
             "${CMAKE_SOURCE_DIR}/operating_system.c"
@@ -41,10 +52,15 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/property.h"
             "${CMAKE_SOURCE_DIR}/range.c"
             "${CMAKE_SOURCE_DIR}/range.h"
+            "${CMAKE_SOURCE_DIR}/sleep_unit.c"
+            "${CMAKE_SOURCE_DIR}/sleep_unit.h"
             "${CMAKE_SOURCE_DIR}/string_unit.c"
             "${CMAKE_SOURCE_DIR}/string_unit.h"
             "${CMAKE_SOURCE_DIR}/target.c"
             "${CMAKE_SOURCE_DIR}/target.h"
+            "${CMAKE_SOURCE_DIR}/text_encoding.c"
+            "${CMAKE_SOURCE_DIR}/text_encoding.h"
+            "${CMAKE_SOURCE_DIR}/try_catch.c"
             "${CMAKE_SOURCE_DIR}/version.c"
             "${CMAKE_SOURCE_DIR}/version.h"
             "${CMAKE_SOURCE_DIR}/xml.c"
@@ -57,12 +73,9 @@ add_executable(ant4c_app
 
 target_link_libraries(ant4c_app ant4c)
 
-if(DEFINED PROGRAM_VERSION AND DEFINED PROGRAM_VERSION_LENGTH)
+if(DEFINED PROGRAM_VERSION)
   target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
-  target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION_LENGTH=${PROGRAM_VERSION_LENGTH})
-
   target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
-  target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION_LENGTH=${PROGRAM_VERSION_LENGTH})
 endif()
 
 if(NOT MSVC)
