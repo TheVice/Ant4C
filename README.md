@@ -24,6 +24,9 @@ All binaries available on the [release page](https://github.com/TheVice/Ant4C/re
 * [FreeBSD 11](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_freebsd_11.txz)
 * [FreeBSD 12](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_freebsd_12.txz)
 * [OpenBSD 6.4](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.4.tgz)
+* [OpenBSD 6.5](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.5.tgz)
+* [OpenBSD 6.6](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.6.tgz)
+* [OpenBSD 6.7](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c-2019.10.21_openbsd_6.7.tgz)
 
 ### For Windows
 * [MSVC 12 x64](https://github.com/TheVice/Ant4C/releases/download/v2019.10.21/ant4c_app_2019.10.21_MSVC_12_x64.zip)
