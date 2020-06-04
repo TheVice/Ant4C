@@ -11,11 +11,11 @@
 #include "conversion.h"
 #include "file_system.h"
 #include "range.h"
+#include "string_unit.h"
 #include "text_encoding.h"
 
 #if defined(_WIN32)
-#include <io.h>
-#include <fcntl.h>
+#include <windows.h>
 #endif
 
 #if !defined(__STDC_SEC_API__)
@@ -60,7 +60,48 @@ static const uint8_t* echo_labels[] =
 };
 
 static const uint8_t echo_labels_lengths[] = { 9, 9, 8, 0, 11, 11, 0 };
+#if defined(_WIN32)
+HANDLE echo_get_win32_console_output(uint8_t level)
+{
+	static HANDLE output_stream = INVALID_HANDLE_VALUE;
+	static HANDLE error_output_stream = INVALID_HANDLE_VALUE;
 
+	if (Fail < level)
+	{
+		return INVALID_HANDLE_VALUE;
+	}
+
+	if (Error != level && Fail != level)
+	{
+		if (INVALID_HANDLE_VALUE == output_stream)
+		{
+			output_stream = GetStdHandle(STD_OUTPUT_HANDLE);
+		}
+
+		return output_stream;
+	}
+
+	if (INVALID_HANDLE_VALUE == error_output_stream)
+	{
+		error_output_stream = GetStdHandle(STD_ERROR_HANDLE);
+	}
+
+	return error_output_stream;
+}
+
+uint8_t echo_win32(HANDLE output, const uint16_t* message, uint16_t count_of_chars)
+{
+	if (INVALID_HANDLE_VALUE == output)
+	{
+		return 0;
+	}
+
+	DWORD chars_that_was_written = 0;
+	const BOOL result1 = WriteConsoleW(output, message, count_of_chars, &chars_that_was_written, NULL);
+	const uint8_t result2 = count_of_chars == chars_that_was_written;
+	return result1 && result2;
+}
+#endif
 uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 			 uint8_t level, const uint8_t* message, ptrdiff_t message_length,
 			 uint8_t new_line, uint8_t verbose)
@@ -109,34 +150,29 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	if (NULL != message && 0 < message_length)
 	{
 #if defined(_WIN32)
+		uint8_t is_output_standard = 1;
 
 		if (!file)
 		{
-			level = (Error != level &&
-					 Fail != level) ? common_is_output_stream_standard() : common_is_error_output_stream_standard();
+			is_output_standard = (Error != level &&
+								  Fail != level) ? common_is_output_stream_standard() : common_is_error_output_stream_standard();
 		}
 
 		struct buffer new_message;
 
 		SET_NULL_TO_BUFFER(new_message);
 
-		int mode = 0;
-
-		if (!file && level && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
+		if (!file && is_output_standard && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
 		{
-			if (!buffer_assing_to_uint16(&new_message, message, message_length))
+			if (!text_encoding_UTF8_to_UTF16LE(message, message + message_length, &new_message))
 			{
 				return 0;
 			}
 
+			/*message_length = buffer_size(&new_message) / sizeof(uint16_t);*/
+			message_length = string_get_length(message, message + message_length);
+			message = buffer_data(&new_message, 0);
 			result = file_flush(file_stream);
-
-			if (result)
-			{
-				mode = _setmode(_file_fileno(file_stream), _O_U8TEXT);
-				message = buffer_data(&new_message, 0);
-				message_length = buffer_size(&new_message);
-			}
 		}
 
 #endif
@@ -153,26 +189,17 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 			}
 			else
 			{
+#if defined(_WIN32)
+				result = (is_output_standard && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding)) ?
+						 echo_win32(echo_get_win32_console_output(level), (const uint16_t*)message, (uint16_t)message_length) :
+						 (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+#else
 				result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+#endif
 			}
 		}
 
 #if defined(_WIN32)
-
-		if (0 < mode)
-		{
-			uint8_t previous_result = result;
-			result = file_flush(file_stream);
-			previous_result = previous_result && result;
-#if defined(_MSC_VER)
-			result = (_O_U8TEXT == _setmode(_file_fileno(file_stream), mode));
-#else
-			mode = _setmode(_file_fileno(file_stream), mode);
-			result = (_O_U8TEXT == mode || -1 != mode);
-#endif
-			result = result && previous_result;
-		}
-
 		buffer_release(&new_message);
 #endif
 	}
