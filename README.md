@@ -38,6 +38,10 @@ All binaries available on the [release page](https://github.com/TheVice/Ant4C/re
 * [MD5SUMS](MD5SUMS)
 * [SHA3-224SUMS](SHA3-224SUMS)
 
+#### Help
+
+Help available at the [help.html file](https://github.com/TheVice/Ant4C/releases/download/v2020.05/help.html).
+
 ## Developing
 Tests (at the develop branch) written in C++ and required [Google Test](https://github.com/google/googletest) and [pugixml](https://github.com/zeux/pugixml/) libraries.
 On systems with missed this libraries in packages repositories or if unable to install it, PUGIXML_PATH and GTEST_PATH definition can be used while configure project with CMake.
