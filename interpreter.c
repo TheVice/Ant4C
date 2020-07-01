@@ -15,6 +15,7 @@
 #include "environment.h"
 #include "exec.h"
 #include "file_system.h"
+#include "for_each.h"
 #include "hash.h"
 #include "load_file.h"
 #include "math_unit.h"
@@ -27,6 +28,7 @@
 #include "string_unit.h"
 #include "target.h"
 #include "text_encoding.h"
+#include "try_catch.h"
 #include "version.h"
 #include "xml.h"
 
@@ -1366,16 +1368,6 @@ uint8_t fail_evaluate_task(
 	return 0;
 }
 
-uint8_t for_each_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
-							   const uint8_t* attributes_finish, const uint8_t* element_finish,
-							   struct buffer* task_arguments, uint8_t verbose);
-uint8_t do_evaluate_task(void* the_project, const void* the_target,
-						 const uint8_t* attributes_finish, const uint8_t* element_finish,
-						 struct buffer* task_arguments, uint8_t verbose);
-
 #define IF_TEST_POSITION		0
 
 uint8_t if_get_attributes_and_arguments_for_task(
@@ -1428,11 +1420,6 @@ uint8_t if_evaluate_task(
 
 	return interpreter_evaluate_tasks(the_project, the_target, test_in_a_buffer, 0, verbose);
 }
-
-uint8_t try_catch_evaluate_task(
-	void* the_project, const void* the_target,
-	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments, uint8_t verbose);
 
 static const uint8_t* interpreter_task_str[] =
 {

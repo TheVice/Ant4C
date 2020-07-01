@@ -88,7 +88,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 
 		while (0 < index && NULL != pos)
 		{
-			pos = string_enumerate(pos, finish);
+			pos = string_enumerate(pos, finish, NULL);
 			--index;
 		}
 
@@ -116,7 +116,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 			return 0;
 		}
 
-		pos = (-1 == index) ? finish : string_enumerate(pos, finish);
+		pos = (-1 == index) ? finish : string_enumerate(pos, finish, NULL);
 		start = NULL == pos ? finish : pos;
 	}
 

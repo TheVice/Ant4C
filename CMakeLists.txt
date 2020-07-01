@@ -30,6 +30,7 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/file_system.c"
             "${CMAKE_SOURCE_DIR}/file_system.h"
             "${CMAKE_SOURCE_DIR}/for_each.c"
+            "${CMAKE_SOURCE_DIR}/for_each.h"
             "${CMAKE_SOURCE_DIR}/hash.blake2.c"
             "${CMAKE_SOURCE_DIR}/hash.blake3.c"
             "${CMAKE_SOURCE_DIR}/hash.c"
@@ -61,6 +62,7 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/text_encoding.c"
             "${CMAKE_SOURCE_DIR}/text_encoding.h"
             "${CMAKE_SOURCE_DIR}/try_catch.c"
+            "${CMAKE_SOURCE_DIR}/try_catch.h"
             "${CMAKE_SOURCE_DIR}/version.c"
             "${CMAKE_SOURCE_DIR}/version.h"
             "${CMAKE_SOURCE_DIR}/xml.c"
@@ -92,6 +94,10 @@ if(NOT MSVC)
   target_link_libraries(ant4c_app m)
   # target_link_libraries(ant4c_lib m)
 endif()
+
+set_target_properties(ant4c_app
+  PROPERTIES
+  OUTPUT_NAME ant4c)
 
 set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
 
@@ -254,7 +260,7 @@ else()
   if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
     target_compile_options(ant4c PRIVATE "-fPIE")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
-    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie")
+    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
   endif()
 
   if(${CMAKE_VERSION} LESS 3.0)
@@ -281,4 +287,20 @@ endif()
 
 if(DEFINED ENV{LDFLAGS})
   set(LINK_FLAGS "${LINK_FLAGS} $ENV{LDFLAGS}")
+endif()
+
+if(DEFINED CFLAGS)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS}")
+endif()
+
+if(DEFINED CPPFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPPFLAGS}")
+endif()
+
+if(DEFINED CXXFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+endif()
+
+if(DEFINED LDFLAGS)
+  set(LINK_FLAGS "${LINK_FLAGS} ${LDFLAGS}")
 endif()

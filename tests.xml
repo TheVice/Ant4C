@@ -145,6 +145,11 @@
       <help>1</help>
     </argument_parser_at_all>
     <argument_parser_at_all>
+      <input>a</input>
+      <target>a</target>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
       <input> foo -logfile:C:\1.txt -buildfile:1.build bar</input>
       <target>foo</target>
       <log_file>C:\1.txt</log_file>
@@ -3115,10 +3120,10 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>get-day(1569840495) -> ${datetime::get-day-of-week('1569840495')} </code>
-      <code>get-day(1577059200) -> ${datetime::get-day-of-week('1577059200')}</code>
-      <output>get-day(1569840495) -> 1 </output>
-      <output>get-day(1577059200) -> 1</output>
+      <code>get-day-of-week(1569840495) -> ${datetime::get-day-of-week('1569840495')} </code>
+      <code>get-day-of-week(1577059200) -> ${datetime::get-day-of-week('1577059200')}</code>
+      <output>get-day-of-week(1569840495) -> 1 </output>
+      <output>get-day-of-week(1577059200) -> 1</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -4063,6 +4068,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_content>
       <content><![CDATA[]]></content>
       <return></return>
+      <target_return>1</target_return>
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -4240,6 +4246,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>0</return>
+      <target_return>1</target_return>
       <name>fail sample 1</name>
     </project_load_from_content>
     <project_load_from_content>
@@ -4249,6 +4256,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>0</return>
+      <target_return>1</target_return>
       <name>fail sample 2</name>
     </project_load_from_content>
     <project_load_from_content>
@@ -4502,6 +4510,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>0</return>
+      <target_return>1</target_return>
       <name>Target task sample 1</name>
       <target>A</target>
     </project_load_from_content>
@@ -4678,7 +4687,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <target>C</target>
       <target>D</target>
     </project_load_from_content>
-    <!-- TODO project_load_from_content>
+    <project_load_from_content>
       <content><![CDATA[
       <project name="Target task sample 8" default="A" >
         <target name="A" depends="B">
@@ -4687,11 +4696,12 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>1</return>
+      <target_return>0</target_return>
       <name>Target task sample 8</name>
       <default>A</default>
       <target>A</target>
       <target>B</target>
-    </project_load_from_content-->
+    </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
       <project name="Call task sample" default="B">
@@ -4710,6 +4720,39 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>Call task sample</name>
       <default>B</default>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="Call example" default="Run">
+        <property name="property" value="" />
+
+        <target name="A" unless="${target::has-executed(target::get-current-target())}">
+          <property name="property" value="${property::get-value('property')} ${target::get-current-target()}" />
+        </target>
+
+        <target name="B" depends="A">
+          <property name="property" value="${property::get-value('property')} ${target::get-current-target()}" />
+        </target>
+
+        <target name="C" depends="A,B">
+          <property name="property" value="${property::get-value('property')} ${target::get-current-target()}" />
+        </target>
+
+        <target name="Run" depends="A,B,C">
+          <call target="B" />
+          <call target="B" />
+          <fail unless="${string::equal(property, ' A B C B B')}" message="Value of property '${property}' not equal to the ' A B C B B'." />
+        </target>
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>Call example</name>
+      <default>Run</default>
+      <target>A</target>
+      <target>B</target>
+      <target>C</target>
+      <target>Run</target>
+      <property name="property" value=" A B C B B" dynamic="false" readonly="false" />
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
@@ -5076,6 +5119,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <name>'Try catch' sample 2.</name>
       <return>0</return>
+      <target_return>1</target_return>
       <property name="result" value="Entered to the 'try' section. Here we are at the 'catch' section with next problem: Error happen at the try section.&#10; And we entered into finally section.&#10;- Is problem property exists?&#10;- Yes." />
       <property name="the_problem_is" value="Error happen at the try section.&#10;" />
     </project_load_from_content>
@@ -5512,6 +5556,70 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <target>target_with_call_sample</target>
       <target>target_that_was_called</target>
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property
+          name="path"
+          value="${project::get-buildfile-path()}"
+          readonly="true" />
+        <property
+          name="normalized_path"
+          value="${path::combine(path, '')}"
+          readonly="true" />
+        <property
+          name="unix_like_path"
+          value="${cygpath::get-unix-path(path)}"
+          readonly="true" />
+        <property
+          name="windows_like_path"
+          value="${cygpath::get-windows-path(path)}"
+          readonly="true" />
+        <choose>
+          <when test="${platform::is-unix()}">
+            <fail unless="${string::equal(unix_like_path, normalized_path)}" />
+          </when>
+          <when test="${platform::is-windows()}">
+            <fail unless="${string::equal(windows_like_path, normalized_path)}" />
+          </when>
+          <otherwise>
+            <fail />
+          </otherwise>
+        </choose>
+      </project>
+      ]]></content>
+      <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property
+          name="this_target"
+          value="${target::get-current-target()}"
+          dynamic="true"
+          readonly="true" />
+
+        <target name="A">
+          <property
+            name="output"
+            value="${this_target}"
+            readonly="true" />
+        </target>
+        <target name="B" depends="A" if="false">
+          <property name="output" value="" />
+        </target>
+        <target name="C" depends="A,B" if="false">
+          <property name="output" value="" />
+        </target>
+
+        <call target="C" />
+
+        <fail unless="${property::exists('output')}" message="Property 'output' not defined." />
+        <fail unless="${string::equal('A', output)}" message="Value of 'output' property '${output}'' not equal to the 'A'." />
+      </project>
+      ]]></content>
+      <return>1</return>
+    </project_load_from_content>
     <project_load_from_build_file />
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />
@@ -5530,10 +5638,11 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <file path="Chapter2/NAntSchema.build" crc32="6204ac6c" />
       <return>1</return>
     </project_load_from_build_file>
-    <TODO><project_load_from_build_file>
+    <project_load_from_build_file>
       <file path="Chapter2/CircularChaos.build" crc32="511ecd8c" />
       <return>1</return>
-    </project_load_from_build_file></TODO>
+      <target_return>0</target_return>
+    </project_load_from_build_file>
     <project_load_from_build_file>
       <file path="Chapter2/IfElse.build" crc32="bbc2b7d8" />
       <return>1</return>

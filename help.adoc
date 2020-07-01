@@ -1,0 +1,3336 @@
+////
+1)to html
+* asciidoc <file_name>.adoc
+* with '-a data-uri' to add images inside document
+2)to pdf:
+* asciidoc -b docbook <file_name>.adoc
+* a2x -f pdf <file_name>.xml
+////
+
+= Ant4C Help
+:toc:
+
+[[history]]
+== History
+
+* *v2020.05*
+* v2020.04
+* v2019.10.21
+
+== Installation
+
+=== Installing from binaries
+
+. Go to the https://github.com/TheVice/Ant4C/releases[release page] of the project and choose version for your operation system.
+. Depend on variant available for your system:
+* Unpack 'zip' archive to prefer location.
+* For 'DEB', 'TGZ' or 'TXZ' packages - install program using the system package manager.
+** Debian based: 'dpkg --install *.deb'.
+** FreeBSD: 'pkg install *.txz'.
+** OpenBSD: 'pkg_add -Dunsigned *.tgz'.
+
+=== Build from source
+
+Before chose this way, make sure you have https://www.cmake.org/download/[CMake] tool and C compiler. +
+Optional, if you have previous version of Ant4C, you can use build script file to build new one directly, otherwise addition work in command prompt will be required.
+
+. Unpack/clone source files.
+. Configure project file for your C compiler, refer to documentation of your compiler if it not listing bottom:
+* For CLang at Windows use:
+** '-G "Visual Studio 14 2015" -T v140_clang_3_7 <path to project>';
+** '-G "Visual Studio 14 2015" -T v140_clang_c2 <path to project>';
+** '-G "Visual Studio 15 2017" -T v141_clang_c2 <path to project>';
+** '-G "Visual Studio 16 2019" -T ClangCL <path to project>'.
+** For stand alone configuration (with out using tool chain from Visual Studio) refer to the documentation of that package.
+* For GCC or CLang at Unix kind systems use '-G "Unix Makefiles" -DCMAKE_BUILD_TYPE="Release" <path to project>'.
+* For MinGW use '-G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" <path to project>'.
+* For MSVC use '-G "Visual Studio 16 2019" <path to project>'. If used different version of Visual Studio refer to the documentation of name of last one.
+. Build project using command 'cmake --build . --config Release'.
+. If no one of steps below not failed - Ant4C is ready to use.
+
+== Fundamentals
+
+Basis to understand how to use Ant4C.
+
+=== Running
+
+To get all possibilities of running program type and execute 'ant4c -help'. +
+In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
+
+[[program_options]]
+==== Options
+
+*-buildfile:, /f:* ::
+  Set path to project file.
+
+*-encoding*: ::
+  Set expected <<encoding_type,encoding>> of the input file.
+  Can be *ASCII*, *UTF8*, *UTF16BE*, *UTF16LE*, *UTF32BE*, *UTF32LE*,
+  *BigEndianUnicode*, *Unicode*, *UTF32*, *Default*,
+  *Windows_1250*, *Windows_1251*, *Windows_1252*, *Windows_1253*, *Windows_1254*,
+  *Windows_1255*, *Windows_1256*, *Windows_1257*, *Windows_1258*, *ISO_8859_1*,
+  *ISO_8859_2*, *ISO_8859_7*, *ISO_8859_9*, *ISO_8859_11* or *ISO_8859_13*
+  in any letter case. UTF based encoding can be recognized if file
+  contain byte order mark.
+
+*-D*: ::
+  Define property.
+  For example *-D:"property name"="property value"*
+
+*-projecthelp* ::
+  Show description of project and target(s)
+
+*-nologo* ::
+  Do not display program version, license and copyright information
+
+*-help, -h* ::
+  Print brief message about application using
+
+==== Specifying the script file
+
+If no file specific, all file with '.build' extension will be executed on Windows system. +
+Count of build files is limit to the 'INT8_MAX' count. That macros usually equal to the 127.
+
+To specific the script file type '-buildfile' option.
+
+==== Specifying targets
+
+Several targets can be set. If no targets set, default target of the project will be executed. +
+If project do not contain default target, only global tasks will be executed. +
+If description of project and/or exists it can be view by specific project '-projecthelp' argument.
+
+[[property_from_outside]]
+==== Setting properties
+
+To set properties outside of script file specific next option '-D:property=value'. +
+Property will be read only at the script file.
+
+==== Sample using
+
+. ant4c
+. ant4c -buildfile:project_file.build
+. ant4c build
+. ant4c -D:version="2020.05" build publish
+
+1) Run program. On Windows platform it search all file with '.build' extension and run it with default targets. If project do not specify such, global task will be executed. +
+2) Run project from 'project_file.build' file. +
+3) Run 'build' target at all '.build' file from current directory. +
+4) Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
+
+=== Project
+
+<<project_task,Project>> usually used as root element of the file.
+To access data of this element function from the <<project_unit,project unit>> can be used.
+
+[[target_in_general]]
+=== Target
+
+<<target_task,Target>> usually used as top-level element of the project task.
+
+See also functions of the <<target_unit, target unit>>.
+
+=== Task
+
+Both previously typed things are examples of the task. All available tasks can be found at the <<task_reference,reference>>.
+
+See also the <<task_unit, task unit>>.
+
+[[property_in_general]]
+=== Property
+
+This is also the task, that set named area of bytes with some value. As noted <<property_from_outside,early>> - property can be set outside from project file.
+
+To access <<property_task,property>> value place name of last one between '${' and '}'. +
+Also <<property_unit,property unit>> have function 'get-value' for same purpose.
+
+==== Read only property
+
+Property set from outside of the script will be read only. To set read only property at the script set 'readonly' argument to the *true* value.
+
+NOTE: Attempt to set value of the read only property at the <<property_task,property task>> will no affect. For ant4c version prior to the 2020.05 same move will break evaluation of script with error. Try to set value of read only property not from property task will be break evaluation of script with error.
+
+==== Dynamic property
+
+That kind of the properties interpreter their value not at the moment when it was set, but at the access moment. +
+To define dynamic property set dynamic parameter to the true value.
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="Property example">
+  <property name="property" value="value" />
+
+  <echo if="${math::greater(version::get-major(program::version()), '2019')}"
+    message="The property value is '${property}'." />
+
+  <echo if="${math::less(version::get-major(program::version()), '2020')}"
+    message="The property value is '${property::get-value('property')}'." />
+</project>
+----
+
+The output of interpreting of this script will be:
+----
+[Info]: The property value is 'value'.
+----
+NOTE: For version prior to the 2020.* access to the property value was only via property::get-value function.
+
+----
+<?xml version="1.0"?>
+<project name="Property example">
+  <property name="property" value="value" />
+
+  <echo
+    message="The length of property value is '${string::get-length(property)}'." />
+</project>
+----
+
+And the output:
+
+----
+[Info]: The length of property value is '5'.
+----
+
+NOTE: For all version access to the property value at the functions can be provided directly by property name.
+
+----
+<?xml version="1.0"?>
+<project name="Property example">
+  <property name="property" value="${datetime::format-to-string(datetime::now(), '%A %c')}" dynamic="true" />
+
+  <echo
+    message="The property value is '${property::get-value('property')}'." />
+</project>
+----
+
+At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL data base world.
+
+More complex example is calculating determinate and roots of quadratic polynomial: three properties (D, X1 and X2) can be dynamic and input values (a, b, c) can be static.
+
+----
+<property name="D"
+  value="${math::subtraction(math::pow(b, '2'), math::multiplication('4', math::multiplication(a, c)))}"
+  dynamic="true" readonly="true" />
+
+<property name="X1"
+  value="${math::division(math::addition(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}"
+  dynamic="true" readonly="true" />
+
+<property name="X2"
+  value="${math::division(math::subtraction(math::multiplication('-1', b), math::sqrt(D)), math::multiplication('2', a))}"
+  dynamic="true" readonly="true" />
+----
+
+=== Function
+
+Full list of functions can be found at the <<unit_reference,unit reference>>.
+
+To call function choose name of unit (or name space) and function name. If function has arguments set them. Some arguments not mandatory, for example like at string::substring.
+
+All arguments interprets as strings and convert to required type, if it possible, at the moment of function call. If converting is impossible, evaluation will be break with error.
+
+----
+unit_name::function_name('argument_number_1', ..., 'argument_number_N')
+----
+
+Arguments without ''' symbols around interprets as property name.
+
+[[task_reference]]
+== Tasks reference
+
+All tasks have next non mandatory parameters.
+[[common_parameters]]
+
+.Common tasks parameters.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description
+| failonerror .4+^.^| bool | true | If value of this parameter evaluated to the *false*, task non stop interpreting of script even if task was failed.
+| if | true | If value of this parameter evaluated to the *false*, task will be skip.
+| unless | false | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
+| verbose | false | RESERVED. If this parameter set to *true* task logging addition details.
+|===
+
+Order of reading is next - first 'if', than 'unless', 'failonerror' and 'verbose'. Value of 'failonerror' ignored here, so if something wrong happens while reading common parameters - task will failed even if value of fail on error requested opposite.
+
+.List of tasks.
+|===
+.s| Task .s| Description
+| <<attrib_task,attrib>> | Set attribute of file. Ignored at POSIX systems.
+| <<call_task,call>> | Call specific target.
+| <<choose_task,choose>> | Create the sections that will executed by conditions specific in the sub nodes of this task.
+| <<copy_task,copy>> | Copy file or directory.
+| <<delete_task,delete>> | Deletes file or directory.
+| <<description_task,description>> | Add the description of parent task. Ignored by default. Used only if '-projecthelp' argument used.
+| <<echo_task,echo>> | Write message to standard/error (depend of level of the message) output or file.
+| <<exec_task,exec>> | Execute a binary with platform function.
+| <<fail_task,fail>> | Fail a build according to 'if' or 'unless' condition.
+| <<foreach_task,foreach>> | Create the section that repeat some of count according to the condition of this task.
+| <<if_task,if>> | Create the section that executed only if 'test' of this task set to the true.
+| <<loadfile_task,loadfile>> | Load content of file into property.
+| <<mkdir_task,mkdir>> | Creates a directory by specific path and all missed parent directory.
+| <<move_task,move>> | Move file or directory.
+| <<program_task,program>> | Create an addition program for interpreting specific script file.
+| <<project_task,project>> | Specify the project. Usually root element of script file.
+| <<property_task,property>> | Specify the property of project.
+| <<sleep_task,sleep>> | Pause executing of a script for a specific period of time.
+| <<target_task,target>> | Specify target. Usually located inside project tag. Common attributes 'verbose' and 'faileonerror' will ignored for this task.
+| <<touch_task,touch>> | Task is an analog of POSIX touch command: create the file or change date and time of exists one file.
+| <<trycatch_task,trycatch>> | Create the section where allowed to tasks return fail, without set all of the 'failonerror' flag to the *false*.
+|===
+
+[[attrib_task]]
+=== <attrib>
+
+This task effect only on Windows platform. Set one or more attribute of file.
+
+.Parameters of the 'attrib' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description
+| archive ^| bool ^| false | Set the archive attribute of the file.
+| file ^| string ^| N/A | Path to the file. If this parameter not set, task will be skip.
+| hidden .4+^.^| bool .4+^.^| false | Set the hidden attribute of the file.
+| normal | Set the normal attribute of the file.
+| readonly | Set the read only attribute of the file.
+| system | Set the system attribute of the file.
+|===
+
+==== Sample using
+
+----
+<attrib file="notes.txt" readonly="true" />
+<attrib file="regular_notes.txt" normal="true" />
+----
+
+[[call_task]]
+=== <call>
+
+Direct call of <<target_task,target>>. If target and it dependencies was already call, this task re-evaluate last onen's.
+
+If dependencies do not required to run again there are two options available to made such behavior:
+
+* Add to such one condition at unless __${\target::has-executed(''name of target'')}__ or '${\target::has-executed(target::get-current-target())}'.
+* Set parameter 'cascade' of the 'call' task to the *false*.
+
+.Parameters of the 'call' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description .s| Mandatory
+| *target* | string | N/A | Name of target to execute. | Yes
+| cascade | bool | true | Should execute dependencies on *true* or just required target on *false*. | No
+|===
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="Call example" default="publish">
+  <property name="version" value="1" />
+
+  <target name="clone">
+    <echo message="Cloning..." />
+  </target>
+
+  <target name="build" depends="clone">
+    <echo message="Build version - ${property::get-value('version')}" />
+  </target>
+
+  <target name="publish">
+    <call target="build" />
+    <property name="version" value="1-rev1" />
+    <call target="build" cascade="false" />
+    <echo message="Publish versions that was build" />
+  </target>
+</project>
+----
+
+Using 'call' task with 'cascade' attribute equal to the *false* will not run clone target, depend of build target. +
+So output will be next:
+
+----
+[Info]: Cloning...
+[Info]: Build version - 1
+[Info]: Build version - 1-rev1
+[Info]: Publish versions that was build
+----
+
+[[choose_task]]
+=== <choose>
+
+This task allow to interprets tasks at the one of 'when' sub element with condition of last one is interpreted as *true*. And if no sub element do not match then tasks from 'otherwise' sub element will be interpreted, if such present.
+
+This task do not have own parameters, only <<common_parameters,common task parameters>> available to set.
+
+==== Sub elements
+
+There are two elements - '<when>' and '<otherwise>'.
+
+===== <when>
+
+.Parameter of the 'when' element from 'choose' task.
+|===
+.s| Argument name .s| Type .s| Mandatory .s| Description
+^.^| *test* ^.^| bool ^.^| Yes | If this parameter interpret as *true* the tasks from it will be evaluated.
+|===
+
+===== <otherwise>
+
+If no *test* from the 'when' element(s) do not equal to the *true* tasks from the *otherwise* task will be interpreted, if such exists. +
+This element do not have any parameters.
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="Choose example">
+  <property name="compiler" value="MSVC" overwrite="false" />
+  <choose>
+    <when test="${string::equal('GCC', compiler)}">
+      <echo message="Set parameter for the ${property::get-value('compiler')} compiler." />
+    </when>
+    <when test="${string::equal('MinGW', compiler)}">
+      <echo message="Set parameter for the ${property::get-value('compiler')} compiler." />
+    </when>
+    <otherwise>
+      <echo>
+        The ${property::get-value('compiler')} compiler do not have own 'when' section.
+      </echo>
+    </otherwise>
+  </choose>
+</project>
+----
+
+Based on value stored at the compile property different 'when' element will be processed. +
+If user run this script and define some compiler name not equals to the MinGW or GCC 'otherwise' element will be processed.
+
+[[copy_task]]
+[[move_task]]
+=== <copy> and <move>
+
+Copy or move file or/and directory.
+
+.Parameters of the 'copy' and 'move' tasks.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description
+| dir ^| directory .4+^.^| N/A | Source directory.
+| file ^| file | Source file.
+| todir ^| directory | Destination directory of file or directory.
+| tofile ^| file | Destination of file.
+| flatten .2+^.^| bool .2+^.^| *false* | Do not store directory structure when copy to the 'todir' path - all sub directory of 'dir' parameter will be ignored, only file from them will be copy to the path from 'todir' parameter.
+| overwrite | Overwrite destination file if it exists. When used with flatten parameter not clear what file will be in result, if sub folders have several files with same name.
+| inputencoding .2+^.^| <<encoding_type,Encoding>> .2+^.^| <<Default_encoding_member,Default>> | RESERVED. Expected input encoding.
+| outputencoding | RESERVED. Required encoding of output file(s).
+| includeemptydirs ^.^| bool ^.^| *true* | Include empty directory of source and create it at the destination directory.
+|===
+
+==== Sample using
+
+===== File
+
+----
+<copy file="${file}" />
+<move file="${file}" />
+
+<copy file="${file_1}" tofile="${file_2}" />
+<move file="${file_1}" tofile="${file_2}" />
+
+<copy file="${file_1}" tofile="${file_2}" overwrite="false" />
+<move file="${file_1}" tofile="${file_2}" overwrite="true" />
+
+<copy file="${file}" todir="${folder}" />
+<move file="${file}" todir="${path::get-temp-path()}" />
+
+<copy file="${file_1}" todir="${folder}" tofile="${file_2}" />
+<move file="${file_1}" todir="${folder}" tofile="${file_2}" />
+----
+
+. Copy/move file to the base directory of project (see project::get-base-directory() function).
+. Copy/move file to the specific location.
+. Copy file and do not overwrite if destination already exists. In case of move - overwrite destination if last one exists.
+. Copy/move file to the specific directory with save name of original file.
+. Copy file in folder and in new location. Move file to the directory and new location, source file will be delete after both destination got source file.
+
+===== Folder
+
+----
+<copy dir="${folder}" />
+<move dir="${folder}" />
+
+<copy dir="${folder_1}" todir="${folder_2}" />
+<move dir="${folder_1}" todir="${folder_2}" />
+
+<copy dir="${folder_1}" todir="${folder_2}" flatten="true" />
+<move dir="${folder_1}" todir="${folder_2}" flatten="true" />
+
+<copy dir="${folder_1}" todir="${folder_2}" includeemptydirs="true" />
+<move dir="${folder_1}" todir="${folder_2}" includeemptydirs="false" />
+----
+
+. Copy/move folder to the base directory of project (see project::get-base-directory() function).
+. Copy/move folder to the specific location.
+. Copy/move all files from folder to the specific location. No sub folder will be copying in this case.
+. Copy content of folder with empty sub folder too. Move files and non empty sub folders.
+
+[[delete_task]]
+=== <delete>
+
+Will delete file or/and directory. If no path set to directory or/and file - task will fail. If at file or directory set path to directory or file, in other word by deleting one thing requested opposite, task will fail. If file or/and directory not exists task will finish with out any error.
+
+.Parameters of the 'delete' task.
+|===
+.s| Argument name .s| Type .s| Description
+| dir .2+^.^| string | The directory to delete.
+| file | The file to delete.
+|===
+
+==== Sample using
+
+----
+<delete dir="${folder}" />
+<delete file="${file}" />
+<delete file="${file}" dir="${folder}" />
+----
+
+. Delete directory.
+. Delete file.
+. Delete file and directory.
+
+[[description_task]]
+=== <description>
+
+Set a description of parent tasks, usually target(s) and project. If program run with '-projecthelp' parameter - content of this task will be displayed. Otherwise ignored.
+
+This task do not have own parameters, only <<common_parameters,common task parameters>> available to set.
+
+==== Sample using
+
+----
+<description>Let's describe target or/and project.</description>
+----
+
+[[echo_task]]
+=== <echo>
+
+Output message to the file, standard or error output dependent of input parameters - set file or used levels. +
+No addition line or level message will not be added to the message if file used. +
+Message can be set at the parameter or inside element. +
+If function used at the message they will be interpreted and replaced with result string. +
+
+.Parameters of the 'echo' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description
+| append | bool | *false* | If echo output to the file, will add message to the end of it. Ignored if no file used.
+| encoding | <<encoding_type,Encoding>> | UTF8 | Set <<encoding_type, encoding>> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <<UTF8_encoding_member,UTF8>> if encoding non <<Default_encoding_member,Default>> and <<ASCII_encoding_member,ASCII>>.
+| file | file | N/A | Path to the output file. If no path set standard output or standard error output will be used, depend on level value.
+| level | <<level_type,Level>> | Info | Ignored, except None value, if file used.
+| message | string | N/A | Message to echo. For huge message child value of echo tag recommended to use.
+|===
+
+[[encoding_type]]
+==== Encoding
+
+Internally program evaluate all string as encoded in UTF8, except some of system calls on Windows platform where converting to UTF16LE used.
+
+|===
+.s| Encoding name. .s| Description
+| [[ASCII_encoding_member]]ASCII | Text encoded by ASCII codes. At <<loadfile_task, loadfile task>> can be specify one of ASCII extension.
+| UTF7 | RESERVED. Encoding represent UNICODE string using only 7-bit values.
+| [[UTF8_encoding_member]]UTF8 | UNICODE string encoded with 8-bit values.
+| BigEndianUnicode .2+^.^| UNICODE string encoded with 16-bit values in big-endian ordering.
+| UTF16BE
+| Unicode .2+^.^| UNICODE string encoded with 16-bit values in little-endian ordering.
+| UTF16LE
+| UTF32BE | UNICODE string encoded with 32-bit values in big-endian ordering.
+| UTF32 .2+^.^| UNICODE string encoded with 32-bit values in little-endian ordering.
+| UTF32LE
+| [[Default_encoding_member]]Default | Depend of using: <<echo_task,echo task>> use default of platform encoding, <<loadfile_task, loadfile task>> read file as is, also that approach called 'binary'.
+|===
+
+NOTE: Some task support addition encodings that not listed here. For example see example of such encodings at the <<program_options,options of program>>.
+
+//image::../../../../SVG/utf-examples.svg[UTF,width=528,height=364,align="center"]
+
+[[level_type]]
+==== Level
+
+|===
+.s| Level name. .s| Description
+| Debug | "Debug" string will be added before message.
+| Info | "Info" string will be added before message.
+| Verbose | "Verbose" string will be added before message.
+| Warning | "Warning" string will be added before message.
+| Error | Will be used standard error output, "Error" string will be added before message.
+| None | Mute echo message.
+| NoLevel | No addition string before message will not be added.
+|===
+
+==== Sample using
+
+----
+<echo message="This is the message." level="Verbose" />
+<echo level="Info">This is
+the message too.</echo>
+<echo message="My place is -'${project::get-base-directory()}'." />
+----
+
+[[exec_task]]
+=== <exec>
+
+.Parameters of the 'exec' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description .s| Mandatory
+| *program* | file ^| N/A | Path to program that should be executed. ^| Yes
+| append | bool ^| *false* | When output to file, regulate should added new output to this file or rewrite it with last one. .9+^.^| No
+| basedir | directory .5+^.^| N/A | Base directory program executable. Will be placed before path from *program* parameter.
+| commandline | string | Command line parameters of the program to be executed.
+| output | file | Path to file where output of program should be stored.
+| pidproperty .2+^.^| string | RESERVED. Name of property where store process identification of program that should be executed.
+| resultproperty | RESERVED. Name of property where store value of process exit of program run. For example it can be *EXIT_SUCCESS*, *EXIT_FAILURE* or something else.
+| spawn | bool ^| *false* | RESERVED. If set to true, program that was executed will run without output redirection to the ant4c.
+| workingdir | directory .2+^.^| N/A | Directory that should be used as current while call executing of program.
+| timeout | int | RESERVED. Time that should be enough for the program to finish work. If program work more than that time task will be failed.
+|===
+
+==== Sub element <environment>
+
+This element also have sub element named '<variable>' +
+that represent the variable that should be using at by program to execute. +
+If no environment set, program got same environment that ant4c have. +
+
+.Parameter of 'environment' element of 'exec' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description .s| Mandatory
+| name .2+^.^| string .2+^.^| N/A | Name of environment variable. | Yes
+| value | Value of environment variable. | No
+|===
+
+==== Sample using
+
+----
+<exec program="${property::get-value('cmake')}"
+	  commandline="${property::get-value('cmake_arguments')}" />
+----
+
+[[fail_task]]
+=== <fail>
+
+Stop interpreting with fail. Optional message can be notice why this happen.
+
+.Parameter of the 'fail' task.
+|===
+.s| Argument name .s| Type .s| Description
+| message | string | Message that describe why interpreting was stopped with fail.
+|===
+
+==== Sample using
+
+----
+<fail />
+<fail message="${project::get-name()} - failed to continue interpreting script." />
+<fail>${project::get-name()} - failed to continue interpreting script.</fail>
+<fail unless="${file_exists}" message="file_exists - ${file} not exists" />
+<fail if="${string::empty(result)}" message="${project::get-name()} - property value of result (${result}) should not be empty." />
+----
+. Just break the interpreting with no reason.
+. Notice about break the interpreting at the message parameter.
+. Notice about break the interpreting inside the element.
+. Fail if file was not exists.
+. Fail if string is empty.
+
+[[foreach_task]]
+=== <foreach>
+
+This task create the loop with task(s) from inside of element. +
+Loop can be provided over directories, files, lines from file or sub strings from string. +
+Loop property will be saved before using and restore when iteration was finish. +
+Read only property can not be used as loop property. Task will fail if such property was attempt to be used. +
+Tasks can be store directly inside element or inside 'do' sub element.
+
+.Parameters of the 'foreach' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description .s| Mandatory
+| *item* ^| item .5+^.^| N/A | Type of iterator of the loop that should be provided. Can be one of the following: "Folder", "File", "Line" or "String". .2+^.^| Yes
+| *property* .3+^.^| string | Property that will be used to store value of loop variable. Attempt to use read only property will fail the task.
+| delim | UTF8 chars that should be use as delimiter between loop's item. If any chars not set, used zero char (''\0''). .3+^.^| No
+| in | The source of the items. For 'Folder' and 'File' this is path to folder, for line path to file and for string - another string.
+| trim ^| trim | How we should trim, or even trim, loop item before present it to the tasks at the item. Can be one of the following: "Both", "End", "None", or "Start".
+|===
+
+==== Sub element <do>
+
+This element do not have own parameters, only <<common_parameters,common task parameters>> available to set.
+The only reason to use this element is ability to group tasks by some condition: for example for one value of loop item do some group for another different. And common item, outside of do elements, do something other.
+
+==== Sample using
+
+----
+<property name="result" value="" />
+<foreach item="File" in="${folder}" property="file_name">
+  <property name="result" value="${result}${path::get-file-name(file_name)}" />
+</foreach>
+----
+Enumerate file from the folder and store it file names at the result property.
+----
+<property name="result" value="" />
+<foreach item="Line" in="${file}" trim="Both" property="line">
+  <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
+</foreach>
+----
+Enumerate lines from the file, calculate hash of each one by crc32 algorithm and store at the result property. Each loop iteration present to us trimed lines - without space, tabs and other white spaces at the start and end of the line.
+----
+<property name="result" value="" />
+<foreach item="String" in="${directory::get-logical-drives()}" property="element">
+  <property name="result" value="${result}${element}" />
+</foreach>
+----
+Enumerate drive letter, delimiter with zero symbol (''\0''), and concatenation it at the result property.
+----
+<property name="result" value="" />
+<foreach item="String" in="&#xa77e; &#xa77f; &#xa780; &#xa781; &#xa782; &#xa783; &#xa784; &#xa785; &#xa786; &#xa787;" delim=" " property="element">
+  <property name="result" value="${result}${element}" />
+</foreach>
+----
+Enumerate string delimiter with space symbol and concatenation it at the result property.
+
+[[if_task]]
+=== <if>
+
+This task allow to group several tasks with one condition to check. Instead set for each task same condition, set this condition to the if task at the 'test' parameter.
+
+.Parameter of the 'if' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description
+| test | bool | *true* | Message that describe why interpreting was stopped with fail.
+|===
+
+==== Sample using
+
+----
+<if test="${string::equal('False', property::exists('name_of_project'))}">
+  <echo>${name_of_project}</echo>
+</if>
+----
+
+[[loadfile_task]]
+=== <loadfile>
+
+Read content of file to the property. +
+According to read all content of file into property, make sure that first one not so huge (more than 1 GB) - otherwise task will fail.
+
+.Parameters of the 'loadfile' task.
+|===
+.s| Argument name .s| Type .s| Description .s| Mandatory
+| *file* | file | Path to the file content that should be loaded into the property. .2+^.^| Yes
+| *property* | string | Property that will be used to store content of the file. Attempt to use read only property will fail the task.
+| encoding | <<encoding_type,Encoding>> | Expected encoding of the input file. Will be used while converting file to the UTF8. Task support <<program_options,extension list of encoding>>. File with UTF based byte order mark can be recognized. ^| No
+|===
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property name="file" value="1.txt" />
+  <property name="content" value="" />
+  <loadfile file="${file}" property="content" if="${math::less(file::get-length(file), '1073741824')}" />
+  <echo>Count of UTF8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.</echo>
+</project>
+----
+
+[[mkdir_task]]
+=== <mkdir>
+
+Create directory and all required parent directories at the given path.
+
+.Parameter of the 'mkdir' task.
+|===
+.s| Argument name .s| Type .s| Description .s| Mandatory
+| *dir* | directory | Path to the directory that should be created. | Yes
+|===
+
+==== Sample using
+
+----
+<mkdir dir="${folder}" unless="${directory::exists(folder)}" />
+----
+
+[[program_task]]
+=== <program>
+
+Create addition ant4c interpreter on given file. +
+All properties from current file will be available in new interpreter. +
+If new interpreter should not access properties 'inheritall' argument should be set to the *false*.
+
+.Parameters of the 'program' task.
+|===
+.s| Argument name .s| Type .s| Default value .s| Description
+| buildfile | file | N/A | Path to file that should be interpreted.
+| encoding | <<encoding_type,Encoding>> | UTF8 | Expected encoding of input file. This task support <<program_options,extension list of encoding>>.
+| inheritall | bool | *true* | Allow access properties of current project.
+| target | string | N/A | Target that should be run after global tasks.
+|===
+
+==== Sub element <properties>
+
+Inside this element addition properties can be defined for the interpreter. +
+If parameter 'inheritall' set to the *false* only this property will be set to the interpreter. +
+Defined as regular property from <<property_task,property task>>.
+
+==== Sample using
+
+----
+<program buildfile="${file}" />
+----
+Interpret file.
+----
+<program buildfile="${file}">
+  <properties>
+    <property name="property_name" value="property value" />
+  </properties>
+</program>
+----
+Interpret file with addition property.
+
+[[project_task]]
+=== <project>
+
+Task that store tasks of the project. +
+If project do not contains target(s) or no target to execute is set only global tasks will be executed.
+
+.Parameters of the 'project' task.
+|===
+.s| Argument name .s| Type .s| Description
+| name .3+^.^| string | The name of the project.
+| default | The name of target that run by default if no target specify from the environment.
+| basedir | Location that is used at path function while converting relative paths to the absolute. If not specify directory of file is used as base.
+|===
+
+To access this values from the script use function from the <<project_unit,project unit>>.
+
+==== Sample using
+
+----
+<project name="Just project" />
+----
+----
+<project name="Project with default target" default="Say hello">
+  <target name="Say hello">
+    <echo>${target::get-current-target()}</echo>
+  </target>
+</project>
+----
+----
+<project name="Project with base directory" basedir="${path::get-temp-path()}">
+  <echo>${project::get-base-directory()}</echo>
+</project>
+----
+
+[[property_task]]
+=== <property>
+
+Set property of the project.
+General information and different between versions of program in property aspect can be found at the <<property_in_general,general section>> about property.
+
+.Parameters of the 'property' task.
+|===
+.s| Argument name .s| Type .s| Default value .s|Description .s| Mandatory
+| *name* .2+^.^| string .2+^.^| N/A | Set name of property. .2+^.^| Yes
+| *value* | Set value of property. If function present it will be interpreted for the static property and save as is for the dynamic.
+| dynamic .3+^.^| bool ^| *false* | Set *true* if value of property should be interpreted at the moment of access. .3+^.^| No
+| overwrite ^| *true* | Should value replace early exists property. If property read only this value is ignored.
+| readonly ^| *false* | Is value of property can not be rewritten.
+|===
+
+==== Name of property
+
+* Can contain any valid UTF8 letters, digits, under scope characters, dash and dot characters.
+* Should start from UTF8 letter or under scope symbol and end with letter, digit or an under scope symbol.
+* Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF8 chars with 3 bytes per char that mean 85 chars for the name.
+
+==== Sample using
+
+----
+<property name="property_name" value="property_value" dynamic="true" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+----
+
+[[sleep_task]]
+=== <sleep>
+
+Stop interpreting for specific period of time.
+
+.Parameters of the 'sleep' task.
+|===
+.s| Argument name .s| Type .s| Description
+| hours .4+^.^| int | Count of hours to sleep.
+| minutes | Count of minutes to sleep.
+| seconds | Count of seconds to sleep.
+| milliseconds | Count of milliseconds to sleep. On POSIX converted to near biggest second value. For example, value less than second is always one second.
+|===
+
+==== Sample using
+
+----
+<sleep />
+<sleep hours="0" />
+<sleep milliseconds="0" />
+<sleep minutes="0" />
+<sleep seconds="0" />
+<sleep hours="0" milliseconds="0" />
+<sleep hours="0" minutes="0" />
+<sleep hours="0" seconds="0" />
+<sleep milliseconds="0" minutes="0" />
+<sleep milliseconds="0" seconds="0" />
+<sleep minutes="0" seconds="0" />
+<sleep hours="0" milliseconds="10" minutes="0" seconds="0" />
+----
+
+[[target_task]]
+=== <target>
+
+Part of the project with tasks grouped for some target.
+
+.Parameters of the 'target' task.
+|===
+.s| Argument name .s| Type .s| Description .s| Mandatory
+| *name* .3+^.^| string | The name of the target. ^.^| Yes
+| depends | Name of target, delimit with ',' symbol, that should executed before this one. .2+^.^| No
+| description | Description of target functional.
+|===
+
+Common task parameter - 'verbose' and 'faileonerror' will ignored at this task. +
+'If' and 'unless' processing while interpreting target, not while reading first one - comparing to the rest of tasks.
+
+NOTE: Target depend before version 2020.05 should not use space and tabs in names and between each other, only ',' as delimiter
+
+==== Dependencies
+
+Target specific at the 'depends' parameter will be evaluate in written order. If some of target have addition depend on already specific target, than target with no depend will be executed and later all previously called targets.
+
+----
+<target name="Say_Hello" />
+<target name="Ask-how_are_you?" depends="Say_Hello" />
+<target name="Say_about_how_your_day" depends="Ask-how_are_you?" />
+<target name="Message_exchange" depends="Say_about_how_your_day, Ask-how_are_you?, Say_Hello" />
+----
+
+When target 'Message_exchange' was call first of one 'Say_Hello' call than 'Ask-how_are_you?' and only finally 'Say_about_how_your_day'.
+
+All target at the line will be execute only once, to made processing target several times, <<call_task,call>> task can be used.
+
+==== Wild target
+
+Target with name '*' called wild and will be executed if specify to execute not exists at the project target.
+
+==== Conditions
+
+Comparing to other <<task_reference,tasks>> 'if' and 'unless' parameter will processed at the time when executing of target will required.
+
+NOTE: If conditions do not pass to the target - dependencies even not be processed.
+
+==== Sample using
+
+----
+<target name="build" />
+<target name="Say hello" if="${string::contains('Abc', 'A')}" />
+<target name="publish" depends="build" />
+<target name="Answer" depends="Say hello, publish" />
+----
+
+[[touch_task]]
+=== <touch>
+
+Create new file with current time or change time of exists one. Similar to the Unix same name command.
+
+.Parameters of the 'sleep' task.
+|===
+.s| Argument name .s| Type .s| Description
+| file | file | Set path to the file. If not set task will be skip. If file not exists it will be created.
+| datetime | datetime | Set required time in datetime (DD.MM.YYYY HH.MM.SS) format.
+| millis | int | Set required time in milliseconds. If datetime already set - this parameter will be ignored.
+|===
+
+If no 'datetime' and 'millis' set, current time will be used.
+
+==== Sample using
+
+----
+<touch />
+<touch file="${property::get-value('file')}" />
+<touch file="${property::get-value('file')}" datetime="15.09.2019 12:35:46" />
+<touch file="${property::get-value('file')}" millis="1569840495" />
+<touch file="${property::get-value('file')}" datetime="15.09.2019 12:35:46" millis="1569840495" />
+<touch file="${path::combine(folder, 'A')}" />
+----
+
+[[trycatch_task]]
+=== <trycatch>
+
+This task catch fail of task located in one of it sub element. +
+This is almost same if set 'failonerror' of failed task to the false. +
+In context of this task access to the fail message will be available, if task write such explanation.
+
+This task do not have own parameters, only <<common_parameters,common task parameters>> available to set.
+
+==== Sub elements
+
+There are three elements - '<try>', '<catch>' and '<finally>'.
+
+===== <try>
+
+Every task at this element can fail. If this happen tasks from catch section will be run.
+
+===== <catch>
+
+If one of task from try section fail, tasks from this section will be interpreted.
+
+.Parameter of the 'catch' element from 'trycatch' task.
+|===
+.s| Argument name .s| Type .s| Description
+| property | string | Name of property where store error message from task that was catch. Attempt to use read only property will fail the task.
+|===
+
+If task from this block fail - finally tasks still will be executed, however interpreting of script will be mark as fail. +
+Except 'trycath' block not marked with 'failonerror' to *false* or not located at the another 'catch' element of 'trycatch' task.
+
+===== <finally>
+
+No meter fail happen or not, tasks from this section will follow.
+
+==== Sample using
+
+----
+<trycatch>
+  <try>
+    <property name="result" value="Entered 'try' section." />
+    <fail message="Fail!" />
+    <property name="result" />
+  </try>
+  <catch>
+    <property name="result" value="${result} Catch at the 'catch' section." />
+  </catch>
+  <finally>
+    <property name="result" value="${result} Finally at the 'finally' section." />
+  </finally>
+</trycatch>
+----
+----
+<trycatch>
+  <try>
+    <property name="result" value="Entered to the 'try' section." />
+    <fail message="Error happen at the try section." />
+    <property name="result" />
+  </try>
+  <catch property="the_problem_is">
+    <property name="result" value="${result} Here we are at the 'catch' section with next problem: ${the_problem_is}" />
+    <fail message="Here we go again in to the problem." />
+    <property name="the_problem_is" />
+  </catch>
+  <finally>
+    <property name="result" value="${result} And we entered into finally section." />
+    <property name="result" value="${result}&#10;- Is problem property exists?" />
+    <property name="result" value="${result}&#10;- Yes." if="${property::exists('the_problem_is')}" />
+    <property name="result" value="${result}&#10;- No." unless="${property::exists('the_problem_is')}" />
+  </finally>
+</trycatch>
+----
+
+== Types structure
+
+* string
+** algorithm
+** bool
+** double
+** encoding
+** entry
+** int
+** item
+** level
+** long / int64_t
+*** datetime
+*** timespan
+** operating system
+** order
+** path
+*** directory
+*** file
+** platform ID
+** special folder
+** trim
+** uri
+** version
+
+[[unit_reference]]
+== Unit reference
+
+=== Conversion unit
+
+.Functions from conversion unit.
+|===
+.s| Script function .s| Description
+| bool::parse ^| Convert string to the string with boolean value.
+| double::parse .4+^.^| Convert value from string representation to it digital form.
+| int::parse
+| int64::parse
+| long::parse
+| bool::to-string ^| Convert string with boolean value to the string.
+| double::to-string .4+^.^| Convert value from digital form to it string representation.
+| int::to-string
+| int64::to-string
+| long::to-string
+|===
+
+NOTE: Directly using of this functions in most cases not required. +
+Functions from other units will call they internally, if they need such transformation.
+
+*string with boolean value* 'bool::parse'(*string*) +
+*digital value in the string* 'double|int|int64|long::parse'(*string*)
+
+*string with boolean value* 'bool::to-string'(*string with boolean value*) +
+*string* 'double|int|int64|long::to-string'(*digital value in the string*)
+
+Boolean unit is restrict that only 'true', 'false', 'True', 'False' should be at the input. +
+Lower case will be transformed into value with upper first char.
+
+If input parameter not string with digits - zero in digital form returned ('0', '0.0' depend of name of unit). +
+If string contain more data - after digital part they will be skip.
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <echo>
+    ${bool::parse('True')}
+    ${bool::parse('false')}
+    ${double::parse('0.5')}
+    ${int::parse('2147483647')}
+    ${long::parse('9223372036854775807')}
+
+    ${bool::to-string('True')}
+    ${bool::to-string('false')}
+    ${double::to-string('0.5')}
+    ${int::to-string('2')}
+    ${int::to-string('2147483647')}
+    ${long::to-string('9223372036854775807')}
+  </echo>
+</project>
+----
+
+=== Date-time unit
+
+.Functions from date-time unit.
+|===
+.s| Script function .s| Description
+| <<date_time-format_to_string,datetime::format-to-string>> | Format date time value into the specific string format.
+| <<date_time-from_input,datetime::from-input>> | Create date time value from input string (DD.MM.YYYY HH.MM.SS).
+| <<date_time-get_day,datetime::get-day>> | Get date from given date time value.
+| <<date_time-get_day_of_week,datetime::get-day-of-week>> | Get day of week from given date time value.
+| <<date_time-get_day_of_year,datetime::get-day-of-year>> | Get year from given date time value.
+| <<date_time-get_days_in_month,datetime::get-days-in-month>> | Get count of days of month from given date time value.
+| <<date_time-get_hour,datetime::get-hour>> | Get hour from given date time value.
+| <<date_time-get_minute,datetime::get-minute>> | Get minute from given date time value.
+| <<date_time-get_month,datetime::get-month>> | Get month from given date time value.
+| <<date_time-get_second,datetime::get-second>> | Get second from given date time value.
+| <<date_time-get_year,datetime::get-year>> | Get year from given date time value.
+| <<date_time-is_leap_year,datetime::is-leap-year>> | Find out is year from given date time value leap.
+| <<date_time-now,datetime::now>> | Get current time for current time zone.
+| <<date_time-now_utc,datetime::now-utc>> | Get current time according to the UTC.
+| <<date_time-parse,datetime::parse>> | Parse from input string (DD.MM.YYYY HH.MM.SS) date time value.
+| <<date_time-ticks,datetime::ticks>> | Get count of clock tick of current moment.
+| <<date_time-to_string,datetime::to-string>> | Convert date time at string (DD.MM.YYYY HH.MM.SS) to the string.
+| <<timespan-from_days,timespan::from-days>> | Create timespan from days.
+| <<timespan-from_hours,timespan::from-hours>> | Create timespan from hours.
+| <<timespan-from_milliseconds,timespan::from-milliseconds>> | Create timespan from milliseconds.
+| <<timespan-from_minutes,timespan::from-minutes>> | Create timespan from minutes days.
+| <<timespan-from_seconds,timespan::from-seconds>> | Create timespan from seconds days.
+| <<timespan-from_ticks,timespan::from-ticks>> | Create timespan from ticks days.
+| <<timespan-get_days,timespan::get-days>> | Get days from timespan.
+| <<timespan-get_hours,timespan::get-hours>> | Get hours from timespan.
+| <<timespan-get_minutes,timespan::get-minutes>> | Get minutes from timespan.
+| <<timespan-get_seconds,timespan::get-seconds>> | Get seconds from timespan.
+| <<timespan-get_ticks,timespan::get-ticks>> | Get seconds from ticks.
+| <<timespan-get_total_days,timespan::get-total-days>> | Get total count of days that present at the timespan.
+| <<timespan-get_total_hours,timespan::get-total-hours>> | Get total count of hours that present at the timespan.
+| <<timespan-get_total_milliseconds,timespan::get-total-milliseconds>> | Get total count of milliseconds that present at the timespan.
+| <<timespan-get_total_minutes,timespan::get-total-minutes>> | Get total count of minutes that present at the timespan.
+| <<timespan-get_total_seconds,timespan::get-total-seconds>> | Get total count of seconds that present at the timespan.
+| <<timespan-parse,timespan::parse>> | Convert string representation of the timespan into digital presentation at string.
+| <<timespan-to_string,timespan::to-string>> | Convert digital representation in string into string.
+|===
+
+NOTE: Directly using of 'parse' and 'to-string' functions in most cases not required. +
+Functions from other units will call they internally, if they need such transformation.
+
+[[date_time-format_to_string]]
+==== format-to-string
+
+*string* 'datetime::format-to-string'(*datetime* input, *string* format)
+
+First parameter is 'datetime' that planned to format at the returned string. +
+Second one is the requested 'format'. All possibilities of formats can be found at the documentation of C compiler with what ant4c was made. +
+In general recent versions of compilers support formats described at the next references:
+
+* http://www.cplusplus.com/reference/ctime/strftime/[<ctime> -> strftime]
+* https://en.cppreference.com/w/c/chrono/strftime/[Date and time utilities -> strftime]
+
+See sample using with some of that formats.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property name="input" value="1569840495" readonly="true" />
+  <property name="formats"
+            value="%a %A %b %B %c %C %d %D %e %F %g %G %h %H %I %j %m %M %p %r %R %S %T %u %U %V %w %W %x %X %y %Y %z %Z"
+            readonly="true" />
+  <foreach item="String" in="${formats}" delim=" " property="format">
+    <echo>${format} -> ${datetime::format-to-string(input, format)}</echo>
+  </foreach>
+</project>
+----
+
+NOTE: Addition next formats '%n', '%t' and '%%' can be used to add new line, tab and percent symbol '%'. +
+All formats can be used in combinations with each others: for example __datetime::format-to-string(input, ''%A %c'')__.
+
+[[date_time-from_input]]
+==== from-input
+
+*datetime* 'datetime::from-input'(*string*)
+
+Returned value can be used in other functions of the unit with *datetime* input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::from-input('30.09.2019 10:48:15')}
+</echo>
+----
+
+[[date_time-get_day]]
+==== get-day
+
+*int* 'datetime::get-day'(*datetime*)
+
+Get day of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-day('1569840495')}
+</echo>
+----
+
+[[date_time-get_day_of_week]]
+==== get-day-of-week
+
+*int* 'datetime::get-day-of-week'(*datetime*)
+
+Get day of the week of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-day-of-week('1577059200')}
+</echo>
+----
+
+[[date_time-get_day_of_year]]
+==== get-day-of-year
+
+*int* 'datetime::get-day-of-year'(*datetime*)
+
+Get day of year of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-day-of-year('1569840495')}
+</echo>
+----
+
+[[date_time-get_days_in_month]]
+==== get-days-in-month
+
+*int* 'datetime::get-days-in-month'(*int* year, *int* month)
+
+Get count of days in month from year and month input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-days-in-month('2016', '2')}
+  ${datetime::get-days-in-month('2019', '2')}
+</echo>
+----
+
+[[date_time-get_hour]]
+==== get-hour
+
+*int* 'datetime::get-hour'(*datetime*)
+
+Get hour of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-hour('1569840495')}
+</echo>
+----
+
+[[date_time-get_minute]]
+==== get-minute
+
+*int* 'datetime::get-minute'(*datetime*)
+
+Get minute of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-minute('1569840495')}
+</echo>
+----
+
+[[date_time-get_month]]
+==== get-month
+
+*int* 'datetime::get-month'(*datetime*)
+
+Get month of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-month('1569840495')}
+</echo>
+----
+
+[[date_time-get_second]]
+==== get-second
+
+*int* 'datetime::get-second'(*datetime*)
+
+Get second of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-second('1569840495')}
+</echo>
+----
+
+[[date_time-get_year]]
+==== get-year
+
+*int* 'datetime::get-year'(*datetime*)
+
+Get year of date time from input.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::get-year('1569840495')}
+</echo>
+----
+
+[[date_time-is_leap_year]]
+==== is-leap-year
+
+*bool* 'datetime::is-leap-year'(*int*)
+
+Find out is year from input is leap.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::is-leap-year('2016')}
+  ${datetime::is-leap-year('2019')}
+</echo>
+----
+
+[[date_time-now]]
+==== now
+
+*datetime* 'datetime'::now()
+
+Get current time according to the current time zone.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::now()}
+</echo>
+----
+
+[[date_time-now_utc]]
+==== now-utc
+
+*datetime* 'datetime'::now-utc()
+
+Get current time according to the UTC.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::now-utc()}
+</echo>
+----
+
+[[date_time-parse]]
+==== parse
+
+*string with date time value* 'datetime::parse'(*string*)
+
+Get string with date time value from string. If more data located in the string, they will be skip. +
+String should be in format 'DD.MM.YYYY HH.MM.SS'.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::parse('01.09.2019 2:03:04')}
+</echo>
+----
+
+[[date_time-ticks]]
+==== ticks
+
+*datetime* 'datetime'::ticks()
+
+Get count of clock ticks.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::now-ticks()}
+</echo>
+----
+
+[[date_time-to_string]]
+==== to-string
+
+*string* 'datetime::to-string'(*string with date time value*)
+
+Get string with date time value from string. If more data located in the string, they will be skip. +
+String should be in format 'DD.MM.YYYY HH.MM.SS'.
+
+===== Sample using
+
+----
+<echo>
+  ${datetime::to-string('01.09.2019 2:03:04')}
+</echo>
+----
+
+[[timespan-from_days]]
+==== from-days
+
+*timespan* 'timespan::from-days'(*double*)
+
+Create time span from days.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::from-days('1')}
+</echo>
+----
+
+[[timespan-from_hours]]
+==== from-hours
+
+*timespan* 'timespan::from-hours'(*double*)
+
+Create time span from hours.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::from-hours('1')}
+</echo>
+----
+
+[[timespan-from_milliseconds]]
+==== from-milliseconds
+
+*timespan* 'timespan::from-milliseconds'(*double*)
+
+Create time span from milliseconds.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::from-milliseconds('10000')}
+</echo>
+----
+
+[[timespan-from_minutes]]
+==== from-minutes
+
+*timespan* 'timespan::from-minutes'(*double*)
+
+Create time span from minutes.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::from-minutes('1')}
+</echo>
+----
+
+[[timespan-from_seconds]]
+==== from-seconds
+
+*timespan* 'timespan::from-seconds'(*double*)
+
+Create time span from seconds.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::from-seconds('1')}
+</echo>
+----
+
+[[timespan-from_ticks]]
+==== from-ticks
+
+*timespan* 'timespan::from-ticks'(*int64_t*)
+
+Create time span from clock ticks.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::from-ticks('100000000')}
+</echo>
+----
+
+[[timespan-get_days]]
+==== get-days
+
+*int* 'timespan::get-days'(*timespan*)
+
+Get days from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-days('86400')}
+</echo>
+----
+
+[[timespan-get_hours]]
+==== get-hours
+
+*int* 'timespan::get-hours'(*timespan*)
+
+Get hours from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-hours('3600')}
+</echo>
+----
+
+[[timespan-get_minutes]]
+==== get-minutes
+
+*int* 'timespan::get-minutes'(*timespan*)
+
+Get minutes from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-minutes('60')}
+</echo>
+----
+
+[[timespan-get_seconds]]
+==== get-seconds
+
+*int64_t* 'timespan::get-seconds'(*timespan*)
+
+Get seconds from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-seconds('60')}
+</echo>
+----
+
+[[timespan-get_ticks]]
+==== get-ticks
+
+*int64_t* 'timespan::get-ticks'(*timespan*)
+
+Get clock ticks from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-ticks('10')}
+</echo>
+----
+
+[[timespan-get_total_days]]
+==== get-total-days
+
+*double* 'timespan::get-total-days'(*timespan*)
+
+Get total days from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-total-days('86400')}
+</echo>
+----
+
+[[timespan-get_total_hours]]
+==== get-total-hours
+
+*double* 'timespan::get-total-hours'(*timespan*)
+
+Get total hours from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-total-hours('3600')}
+</echo>
+----
+
+[[timespan-get_total_milliseconds]]
+==== get-total-milliseconds
+
+*int64_t* 'timespan::get-total-milliseconds'(*timespan*)
+
+Get total milliseconds from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-total-milliseconds('1')}
+</echo>
+----
+
+[[timespan-get_total_minutes]]
+==== get-total-minutes
+
+*double* 'timespan::get-total-minutes'(*timespan*)
+
+Get total minutes from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-total-minutes('60')}
+</echo>
+----
+
+[[timespan-get_total_seconds]]
+==== get-total-seconds
+
+*int64_t* 'timespan::get-total-seconds'(*timespan*)
+
+Get total second from the time span.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::get-total-seconds('60')}
+</echo>
+----
+
+[[timespan-parse]]
+==== parse
+
+*timespan* 'timespan::parse'(*string*)
+
+Convert string to the time span. If input contain more data than time span, that data will be skip.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::parse('60')}
+</echo>
+----
+
+[[timespan-to_string]]
+==== to-string
+
+*string* 'timespan::to-string'(*timespan*)
+
+Convert time span representation to the string.
+
+===== Sample using
+
+----
+<echo>
+  ${timespan::to-string('60')}
+</echo>
+----
+
+=== Environment unit
+
+.Functions from environment unit.
+|===
+.s| Script function .s| Description
+| <<environment-get_folder_path,get-folder-path>> | Get path of special folder.
+| <<environment-get_machine_name,get-machine-name>> | Get name of machine.
+| <<environment-get_operating_system,get-operating-system>> | Get name of operation system.
+| <<environment-get_user_name,get-user-name>> | Get name of user.
+| <<environment-get_variable,get-variable>> | Get value of environment variable.
+| <<environment-is64bit_operating_system,is64bit-operating-system>> | Is operation system x86-64.
+| <<environment-is64bit_process,is64bit-process>> | Is current process x86-64.
+| <<environment-newline,newline>> | Get new line string.
+| <<environment-processor_count,processor-count>> | Get count of processor's cores.
+| <<environment-variable_exists,variable-exists>> | Check is variable exists.
+|===
+
+[[environment-get_folder_path]]
+==== get-folder-path
+
+*string* 'environment::get-folder-path'(*special folder*)
+
+===== Special folder
+
+Not all paths available on not Windows platform and not at all versions of Windows. +
+If path can not be located - function can return empty path (Windows) or fail (non Windows).
+
+.Values of special folder enumeration.
+|===
+.s| Value .s| Available at POSIX systems
+| Desktop ^| Yes
+| Programs ^| No
+| Personal .2+^.^| Yes
+| MyDocuments
+| Favorites .5+^.^| No
+| Startup
+| Recent
+| SendTo
+| StartMenu
+| MyMusic .3+^.^| Yes
+| MyVideos
+| DesktopDirectory
+| MyComputer .3+^.^| No
+| NetworkShortcuts
+| Fonts
+| Templates ^| Yes
+| CommonStartMenu .4+^.^| No
+| CommonPrograms
+| CommonStartup
+| CommonDesktopDirectory
+| ApplicationData ^| Yes
+| PrinterShortcuts ^| No
+| LocalApplicationData ^| Yes
+| InternetCache .3+^.^| No
+| Cookies
+| History
+| CommonApplicationData ^| Yes
+| Windows  .3+^.^| No
+| System
+| ProgramFiles
+| MyPictures .2+^.^| Yes
+| UserProfile
+| SystemX86 .15+^.^| No
+| ProgramFilesX86
+| CommonProgramFiles
+| CommonProgramFilesX86
+| CommonTemplates
+| CommonDocuments
+| CommonAdminTools
+| AdminTools
+| CommonMusic
+| CommonPictures
+| CommonVideos
+| Resources
+| LocalizedResources
+| CommonOemLinks
+| CDBurning
+|===
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property name="folders"
+    value="Desktop, Personal, MyDocuments, MyMusic, MyVideos,
+           DesktopDirectory, Templates, ApplicationData,
+           LocalApplicationData, CommonApplicationData,
+           MyPictures, UserProfile"
+    readonly="true" />
+  <foreach item="String" in="${folders}" delim="," trim="Both" property="folder">
+    <echo>'${folder}' -> '${environment::get-folder-path(folder)}'</echo>
+  </foreach>
+</project>
+----
+
+[[environment-get_machine_name]]
+==== get-machine-name
+
+*string* 'environment::get-machine-name'()
+
+Get name of machine name.
+
+[[environment-get_operating_system]]
+==== get-operating-system
+
+*string* 'environment::get-operating-system'()
+
+Get name of operating system.
+
+[[environment-get_user_name]]
+==== get-user-name
+
+*string* 'environment::get-user-name'()
+
+Get name of user.
+
+[[environment-get_variable]]
+==== get-variable
+
+*string* environment::get-variable(*string*)
+
+Get value of environment variable.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <echo>${environment::get-variable('PATH')}</echo>
+</project>
+----
+
+[[environment-is64bit_operating_system]]
+==== is64bit-operating-system
+
+*bool* 'environment::is64bit-operating-system'()
+
+Return *true* on x86-64 operation systems.
+
+[[environment-is64bit_process]]
+==== is64bit-process
+
+*bool* 'environment::is64bit-process'()
+
+Return true if process is x86-64.
+
+[[environment-newline]]
+==== newline
+
+*string* environment::newline()
+
+Return new line string.
+
+[[environment-processor_count]]
+==== processor-count
+
+*int* 'environment::processor-count'()
+
+Return count of processor cores.
+
+[[environment-variable_exists]]
+==== variable-exists
+
+*bool* 'environment::variable-exists'(*string*)
+
+Return *true* if environment variable exists.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property name="varibles"
+            value="USERNAME, LOGNAME"
+            readonly="true" />
+  <property name="True" value="exists" readonly="true" />
+  <property name="False" value="not exists" readonly="true" />
+  <property name="exists"
+            value="${environment::variable-exists(varible)}"
+            dynamic="true"
+            readonly="true" />
+  <foreach item="String" in="${varibles}" delim="," trim="Start" property="varible">
+    <echo>Environment varible '${varible}' is ${property::get-value(exists)}.</echo>
+  </foreach>
+</project>
+----
+
+=== File unit
+
+.Functions from file unit.
+|===
+.s| Script function .s| Description
+| <<directory-enumerate_file_system_entries,directory::enumerate-file-system-entries>> | Enumerate file system entries - directories or/and files.
+| <<directory-exists,directory::exists>> | Check exists of directory.
+| <<directory-get_creation_time,directory::get-creation-time>> | Get creation time of directory according to the time zone.
+| <<directory-get_creation_time_utc,directory::get-creation-time-utc>> | Get creation time of directory according to the UTC.
+| <<directory-get_current_directory,directory::get-current-directory>> | Get current directory, equal to the base directory of the project.
+| <<directory-get_directory_root,directory::get-directory-root>> | Get root of directory.
+| <<directory-get_last_access_time,directory::get-last-access-time>> | Get access time of directory according to the time zone.
+| <<directory-get_last_access_time_utc,directory::get-last-access-time-utc>> | Get access time of directory according to the UTC.
+| <<directory-get_last_write_time,directory::get-last-write-time>> | Get write time of directory according to the time zone.
+| <<directory-get_last_write_time_utc,directory::get-last-write-time-utc>> | Get write time of directory according to the UTC.
+| <<directory-get_logical_drives,directory::get-logical-drives>> | Get logical drives. At POSIX systems return single slash ('/').
+| <<directory-get_parent_directory,directory::get-parent-directory>> | Get parent of directory.
+| <<file-exists,file::exists>> | Check exists of file.
+| <<file-get_checksum,file::get-checksum>> | Get hash checksum with specific algorithm.
+| <<file-get_creation_time,file::get-creation-time>> | Get creation time of file according to the time zone.
+| <<file-get_creation_time_utc,file::get-creation-time-utc>> | Get creation time of file according to the UTC.
+| <<file-get_last_access_time,file::get-last-access-time>> | Get access time of file according to the time zone.
+| <<file-get_last_access_time_utc,file::get-last-access-time-utc>> | Get access time of file according to the UTC.
+| <<file-get_last_write_time,file::get-last-write-time>> | Get write time of file according to the time zone.
+| <<file-get_last_write_time_utc,file::get-last-write-time-utc>> | Get write time of file according to the UTC.
+| <<file-get_length,file::get-length>> | Get length of file in bytes.
+| <<file-replace,file::replace>> | Replace data at the file.
+| <<file-up_to_date,file::up-to-date>> | Compare write times of two files and decision if one of them up to date with changes from another.
+|===
+
+[[directory-enumerate_file_system_entries]]
+==== enumerate-file-system-entries
+
+*string* 'directory::enumerate-file-system-entries'(*directory* directory, *entry* type_of_entry) +
+*string* 'directory::enumerate-file-system-entries'(*directory* directory, *entry* type_of_entry, *bool* recurse)
+
+Enumerate file system entries at the specific directory.
+
+.Values of entry type.
+|===
+.s| Value .s| Description
+| directory | Enumerate only directories.
+| file | Enumerate only files.
+| all | Enumerate all file system entries.
+|===
+
+If recurse mode set to *true* function also enter to the sub directories and enumerate they entries. +
+Return from function version with two argument equal to the return from version with three arguments where third argument set to the *false*.
+
+Returned entries delimited with zero chars ('\0').
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <echo>
+    Only directories from folder.
+    ${directory::enumerate-file-system-entries(path::get-temp-path(), 'directory')}
+    =====================================
+    Only files from current and sub directories.
+    ${directory::enumerate-file-system-entries(path::get-temp-path(), 'file', 'true')}
+    =====================================
+    All entries from folder.
+    ${directory::enumerate-file-system-entries(path::get-temp-path(), 'all', 'false')}
+  </echo>
+</project>
+----
+
+[[directory-exists]]
+==== exists
+
+*bool* 'directory::exists'(*directory*)
+
+If path point to the exists directory *true* will be returned.
+
+[[directory-get_creation_time]]
+==== get-creation-time
+
+*datetime* 'directory::get-creation-time'(*directory*)
+
+Return creation time of the directory according to the time zone.
+
+NOTE: At UNIX systems return most early time attribute (from access/write) because file system do not store creation time of the entry.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property name="creation_time"
+    value="${directory::get-creation-time(path::get-temp-path())}"
+    readonly="true" />
+  <echo>${datetime::format-to-string(creation_time, '%A %c')}</echo>
+</project>
+----
+
+[[directory-get_creation_time_utc]]
+==== get-creation-time-utc
+
+*datetime* 'directory::get-creation-time-utc'(*directory*)
+
+Return creation time of the directory according to the UTC.
+
+NOTE: At UNIX systems return most early time attribute (from access/write) because file system do not store creation time of the entry.
+
+[[directory-get_current_directory]]
+==== get-current-directory
+
+*directory* 'directory::get-current-directory'()
+
+Get current directory.
+
+[[directory-get_directory_root]]
+==== get-directory-root
+
+*directory* 'directory::get-directory-root'(*directory*)
+
+Get root of the given directory.
+
+[[directory-get_last_access_time]]
+==== get-last-access-time
+
+*datetime* 'directory::get-last-access-time'(*directory*)
+
+Return access time of the directory according to the time zone.
+
+[[directory-get_last_access_time_utc]]
+==== get-last-access-time-utc
+
+*datetime* 'directory::get-last-access-time-utc'(*directory*)
+
+Return access time of the directory according to the UTC.
+
+[[directory-get_last_write_time]]
+==== get-last-write-time
+
+*datetime* 'directory::get-last-write-time'(*directory*)
+
+Return write time of the directory according to the time zone.
+
+[[directory-get_last_write_time_utc]]
+==== get-last-write-time-utc
+
+*datetime* 'directory::get-last-write-time-utc'(*directory*)
+
+Return write time of the directory according to the UTC.
+
+[[directory-get_logical_drives]]
+==== get-logical-drives
+
+*string* 'directory::get-logical-drives'()
+
+Return list of logical drive, delimited with zero char ('\0').
+
+NOTE: At POSIX systems return single slash ('/').
+
+[[directory-get_parent_directory]]
+==== get-parent-directory
+
+*directory* 'directory::get-parent-directory'(*directory*)
+
+Return parent of directory.
+
+[[file-exists]]
+==== exists
+
+*bool* file::exists(*file*)
+
+If path point to the exists file *true* will be returned.
+
+[[file-get_checksum]]
+==== get-checksum
+
+*string* 'file::get-checksum'(*file* file, *algorithm* algorithm)
+
+Calculate hash sum of file according to algorithm.
+
+.Values of algorithm.
+|===
+.s| Value .s| Description
+| crc32 ^| Calculate hash with CRC-32/zlib algorithm.
+| blake2b-160 .4+^.^| Calculate hash with BLAKE2b algorithm with requested length.
+| blake2b-256
+| blake2b-384
+| blake2b-512
+|===
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property
+    name="file"
+    value="${project::get-buildfile-path()}"
+    readonly="true" />
+  <property
+    name="algorithms"
+    value="crc32, blake2b-160, blake2b-256, blake2b-384, blake2b-512"
+    readonly="true" />
+  <foreach item="String" in="${algorithms}" delim="," trim="Start" property="algorithm">
+    <echo>Hash by '${algorithm}' algorithm is ${file::get-checksum(file, algorithm)}.</echo>
+  </foreach>
+</project>
+----
+
+NOTE: At current release of Ant4C algorithms Keccak/SHA3 and BLAKE3 do not supported to calculate hash of files directly. However it can be done if first load content of file to the property and calculate hash sum of the property value.
+
+[[file-get_creation_time]]
+==== get-creation-time
+
+*datetime* 'file::get-creation-time'(*file*)
+
+Return creation time of the file according to the time zone.
+
+NOTE: At UNIX systems return most early time attribute (from access/write) because file system do not store creation time of the entry.
+
+[[file-get_creation_time_utc]]
+==== get-creation-time-utc
+
+*datetime* 'file::get-creation-time-utc'(*file*)
+
+Return creation time of the file according to the UTC.
+
+NOTE: At UNIX systems return most early time attribute (from access/write) because file system do not store creation time of the entry.
+
+[[file-get_last_access_time]]
+==== get-last-access-time
+
+*datetime* 'file::get-last-access-time'(*file*)
+
+Return access time of the file according to the time zone.
+
+[[file-get_last_access_time_utc]]
+==== get-last-access-time-utc
+
+*datetime* 'file::get-last-access-time-utc'(*file*)
+
+Return access time of the file according to the UTC.
+
+[[file-get_last_write_time]]
+==== get-last-write-time
+
+*datetime* 'file::get-last-write-time'(*file*)
+
+Return write time of the file according to the time zone.
+
+[[file-get_last_write_time_utc]]
+==== get-last-write-time-utc
+
+*datetime* 'file::get-last-write-time-utc'(*file*)
+
+Return write time of the file according to the UTC.
+
+[[file-get_length]]
+==== get-length
+
+*uint64_t* 'file::get-length'(*file*)
+
+Get length of file in bytes.
+
+[[file-replace]]
+==== replace
+
+*bool* 'file::replace'(*file* file, *string* to_be_replaced, *string* by_replacement)
+
+Replace data at the file.
+
+IMPORTANT: Current implementation most effective, from memory usage perspective, if *to be replaced* and *by replacement* have same length. All rest scenarios request that content of whole file will be read into memory before replacing.
+
+===== Sample using
+
+----
+<fail unless="${file::replace(file, '01', '10')}"
+  message="File replace function was failed." />
+----
+
+[[file-up_to_date]]
+==== up-to-date
+
+*bool* 'file::up-to-date'(*string* source_file, *string* target_file)
+
+Compare write time of *source file* with *target file*. +
+If *source file* have more recent write time than *target* - *false* will be returned.
+
+=== Hash unit
+
+.Functions from hash unit.
+|===
+.s| Script function .s| Description
+| <<hash-blake2b_160,blake2b-160>> .4+^.^| Calculate hash with BLAKE2b algorithm with requested length.
+| <<hash-blake2b_256,blake2b-256>>
+| <<hash-blake2b_384,blake2b-384>>
+| <<hash-blake2b_512,blake2b-512>>
+| <<hash-blake3,blake3/blake3-256>> ^| Calculate hash with BLAKE3 algorithm.
+| <<hash-bytes_to_string,bytes-to-string>> ^| Convert array of bytes to it hex representation at string.
+| <<hash-crc32,crc32>> ^| Calculate check of cyclic redundancy for specific value according to CRC-32/zlib algorithm.
+| <<hash-keccak_224,keccak-224>> .8+^.^| Calculate hash with Keccak algorithm with requested length for specific value. SHA3 use same algorithm, but with different values at internal padding stage.
+| <<hash-keccak_256,keccak-256>>
+| <<hash-keccak_384,keccak-384>>
+| <<hash-keccak_512,keccak-512>>
+| <<hash-sha3_224,sha3-224>>
+| <<hash-sha3_256,sha3-256>>
+| <<hash-sha3_384,sha3-384>>
+| <<hash-sha3_512,sha3-512>>
+|===
+
+[[hash-blake2b_160]]
+==== blake2b-160
+
+*byte array* 'hash::blake2b-160'(*string*)
+
+Calculate 20 bytes hash with BLAKE2b algorithm.
+
+[[hash-blake2b_256]]
+==== blake2b-256
+
+*byte array* 'hash::blake2b-256'(*string*)
+
+Calculate 32 bytes hash with BLAKE2b algorithm.
+
+[[hash-blake2b_384]]
+==== blake2b-384
+
+*byte array* 'hash::blake2b-384'(*string*)
+
+Calculate 48 bytes hash with BLAKE2b algorithm.
+
+[[hash-blake2b_512]]
+==== blake2b-512
+
+*byte array* 'hash::blake2b-512'(*string*)
+
+Calculate 64 bytes hash with BLAKE2b algorithm.
+
+[[hash-blake3]]
+==== blake3/blake3-256
+
+*byte array* 'hash::blake3-256'(*string*)
+//*byte array* 'hash::blake3'(*string*, *byte*)
+
+IMPORTANT: Function will be renamed into 'blake3'.
+
+Calculate hash with BLAKE3 algorithm.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property
+    name="contents"
+    value=", The quick brown fox jumps over the lazy dog"
+    readonly="true" />
+  <foreach item="String" in="${contents}" delim="," trim="Start" property="content">
+    <echo if="${version::less(program::version(), 2020.06)}">'${content}' -> ${hash::bytes-to-string(hash::blake3-256(content))}</echo>
+  </foreach>
+</project>
+----
+
+[[hash-bytes_to_string]]
+==== bytes-to-string
+
+*string* 'hash::bytes-to-string'(*byte array*)
+
+Convert byte array into the string.
+
+[[hash-crc32]]
+==== crc32
+
+*byte array* 'hash::crc32'(*string* input) +
+*byte array* 'hash::crc32'(*string* input, *order* byte_order)
+
+Calculate check of cyclic redundancy for specific value according to CRC-32/zlib algorithm.
+
+.Values of order.
+|===
+.s| Value .s| Description
+| decreasing | Byte sorted in decrease order.
+| increasing | Byte sorted in increase order.
+|===
+
+Return from function version with one argument equal to the return from version with two arguments where second set to the *increasing*.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property
+    name="content"
+    value="The quick brown fox jumps over the lazy dog"
+    readonly="true" />
+  <property
+    name="orders"
+    value=", decreasing, increasing"
+    readonly="true" />
+  <foreach item="String" in="${orders}" delim="," trim="Start" property="order">
+    <property
+      unless="${string::empty(order)}"
+      name="order" value="${hash::crc32(content, order)}" />
+    <property
+      if="${string::empty(order)}"
+      name="order" value="${hash::crc32(content)}" />
+    <echo>'${content}' -> '${hash::bytes-to-string(order)}'</echo>
+  </foreach>
+</project>
+----
+
+Output will be:
+----
+[Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
+[Info]: 'The quick brown fox jumps over the lazy dog' -> '414fa339'
+[Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
+----
+
+[[hash-keccak_224]]
+==== keccak-224
+
+*byte array* 'hash::keccak-224'(*string*)
+
+Calculate 28 bytes hash with Keccak algorithm.
+
+[[hash-keccak_256]]
+==== keccak-256
+
+*byte array* 'hash::keccak-256'(*string*)
+
+Calculate 32 bytes hash with Keccak algorithm.
+
+[[hash-keccak_384]]
+==== keccak-384
+
+*byte array* 'hash::keccak-384'(*string*)
+
+Calculate 48 bytes hash with Keccak algorithm.
+
+[[hash-keccak_512]]
+==== keccak-512
+
+*byte array* 'hash::keccak-512'(*string*)
+
+Calculate 64 bytes hash with Keccak algorithm.
+
+[[hash-sha3_224]]
+==== sha3-224
+
+*byte array* 'hash::sha3-224'(*string*)
+
+Calculate 28 bytes hash with Keccak/SHA3 algorithm.
+
+[[hash-sha3_256]]
+==== sha3-256
+
+*byte array* 'hash::sha3-256'(*string*)
+
+Calculate 32 bytes hash with Keccak/SHA3 algorithm.
+
+[[hash-sha3_384]]
+==== sha3-384
+
+*byte array* 'hash::sha3-384'(*string*)
+
+Calculate 48 bytes hash with Keccak/SHA3 algorithm.
+
+[[hash-sha3_512]]
+==== sha3-512
+
+*byte array* 'hash::sha3-512'(*string*)
+
+Calculate 64 bytes hash with Keccak/SHA3 algorithm.
+
+=== Math unit
+
+.Functions from math unit.
+|===
+.s| Script function .s| Description
+| <<math-abs,abs>> | Get absolute of the value.
+| <<math-acos,acos>> | Get arccosine of the value.
+| <<math-addition,addition>> | Made addition of the values.
+| <<math-asin,asin>> | Get arcsine of the value.
+| <<math-atan,atan>> .2+.^| Get arctangent.
+| <<math-atan2,atan2>>
+| <<math-ceiling,ceiling>> | Get round to near great integer value.
+| <<math-cos,cos>> | Get cosines of the value.
+| <<math-cosh,cosh>> | Get hyperbolic cosines of the value.
+| <<math-cot,cot>> | Get cotangent of the value.
+| <<math-coth,coth>> | Get hyperbolic cotangent of the value.
+| <<math-degrees,degrees>> | Get degrees from the radian value.
+| <<math-division,division>> | Make division of the values.
+| <<math-double_epsilon,double_epsilon>> | Get value of the 'DBL_EPSILON' macros.
+| <<math-E,E>> | Get Euler's number.
+| <<math-exp,exp>> | Calculate value of exponential function.
+| <<math-floor,floor>> | Get round to near less integer value.
+| <<math-greater,greater>> | Check is value greater than other.
+| <<math-less,less>> | Check is value less than other.
+| <<math-log,log>> | Get logarithm of the value.
+| <<math-log10,log10>> | Get common or decimal logarithm of the value.
+| <<math-max,max>> | Get maximum from the values.
+| <<math-min,min>> | Get minimum from the values.
+| <<math-multiplication,multiplication>> | Make multiplication of the values.
+| <<math-near,near>> | Check is double values near to each other.
+| <<math-PI,PI>> | Get Pi number.
+| <<math-pow,pow>> | Get the power of the values.
+| <<math-radians,radians>> | Get radian from the degree value.
+| <<math-round,round>> | Get round of the value.
+| <<math-sign,sign>> | Get sign of the value.
+| <<math-sin,sin>> | Get sine of the value.
+| <<math-sinh,sinh>> | Get hyperbolic sine of the value.
+| <<math-sqrt,sqrt>> | Get square root of the value.
+| <<math-subtraction,subtraction>> | Make subtraction of the values.
+| <<math-tan,tan>> | Get tangent of the value.
+| <<math-tanh,tanh>> | Get hyperbolic tangent of the value.
+| <<math-truncate,truncate>> | Get integer part from double digital value.
+|===
+
+[[math-abs]]
+==== abs
+
+*double* 'math::abs'(*double*)
+
+Get absolute of the value.
+
+[[math-acos]]
+==== acos
+
+*double* 'math::acos'(*double*)
+
+Get arccosine of the value.
+
+[[math-addition]]
+==== addition
+
+*double* 'math::addition'(*double* a, *double* b)
+
+Made addition of the values.
+
+[[math-asin]]
+==== asin
+
+*double* 'math::asin'(*double*)
+
+Get arcsine of the value.
+
+[[math-atan]]
+==== atan
+
+*double* 'math::atan'(*double*)
+
+Get arctangent.
+
+[[math-atan2]]
+==== atan2
+
+*double* 'math::atan2'(*double* x, *double* y)
+
+Get arctangent.
+
+[[math-ceiling]]
+==== ceiling
+
+*double* 'math::ceiling'(*double*)
+
+Get round to near great integer value.
+
+[[math-cos]]
+==== cos
+
+*double* 'math::cos'(*double*)
+
+Get cosines of the value.
+
+[[math-cosh]]
+==== cosh
+
+*double* 'math::cosh'(*double*)
+
+Get hyperbolic cosines of the value.
+
+[[math-cot]]
+==== cot
+
+*double* 'math::cot'(*double*)
+
+Get cotangent of the value.
+
+[[math-coth]]
+==== coth
+
+*double* 'math::coth'(*double*)
+
+Get hyperbolic cotangent of the value.
+
+[[math-degrees]]
+==== degrees
+
+*double* 'math::degrees'(*double*)
+
+Get degrees from the radian value.
+
+[[math-division]]
+==== division
+
+*double* 'math::division'(*double* a, *double* b)
+
+Make division of the values - 'a / b'.
+
+[[math-double_epsilon]]
+==== double_epsilon
+
+*double* 'math::double_epsilon'()
+
+Get value of the 'DBL_EPSILON' macros.
+
+[[math-E]]
+==== E
+
+*double* 'math::E'()
+
+Get Euler's number.
+
+[[math-exp]]
+==== exp
+
+*double* 'math::exp'(*double*)
+
+Calculate value of exponential function.
+
+[[math-floor]]
+==== floor
+
+*double* 'math::floor'(*double*)
+
+Get round to near less integer value.
+
+[[math-greater]]
+==== greater
+
+*bool* 'math::greater'(*double* value1, *double* value2)
+
+Is value greater than other: 'value1 > value2'.
+
+[[math-less]]
+==== less
+
+*bool* 'math::less'(*double* value1, *double* value2)
+
+Is value less than other: 'value1 < value2'.
+
+[[math-log]]
+==== log
+
+*double* 'math::log'(*double*)
+
+Get logarithm of the value.
+
+[[math-log10]]
+==== log10
+
+*double* 'math::log10'(*double*)
+
+Get common or decimal logarithm of the value.
+
+[[math-max]]
+==== max
+
+*double* 'math::max'(*double* value1, *double* value2)
+
+Get maximum from the values.
+
+[[math-min]]
+==== min
+
+*double* 'math::min'(*double* value1, *double* value2)
+
+Get minimum from the values.
+
+[[math-multiplication]]
+==== multiplication
+
+*double* 'math::multiplication'(*double* x, *double* y)
+
+Make multiplication of the values.
+
+[[math-near]]
+==== near
+
+*bool* 'math::double-near'(*double* x, *double* y) +
+*bool* 'math::double-near'(*double* x, *double* y, *double* epsilon)
+
+At the epsilon can be set maximum absolute delta between x and y value when last ones are considered near. +
+If used version with two arguments than '2 * DBL_EPSILON' used as epsilon.
+
+Return *true* if values near to each other.
+
+[[math-PI]]
+==== PI
+
+*double* 'math::PI'()
+
+Get Pi number.
+
+[[math-pow]]
+==== pow
+
+*double* 'math::pow'(*double* base_value, *double* exponent_value)
+
+Get the power of the values.
+
+[[math-radians]]
+==== radians
+
+*double* math::radians(*double*)
+
+Get radian from the degree value.
+
+[[math-round]]
+==== round
+
+*double* 'math::round'(*double*)
+
+Get round of the value.
+
+[[math-sign]]
+==== sign
+
+*int* 'math::sign'(*double*)
+
+If value less than zero return *-1*, otherwise *+1*.
+
+[[math-sin]]
+==== sin
+
+*double* 'math::sin'(*double*)
+
+Get sine of the value.
+
+[[math-sinh]]
+==== sinh
+
+*double* 'math::sinh'(*double*)
+
+Get hyperbolic sine of the value.
+
+[[math-sqrt]]
+==== sqrt
+
+*double* 'math::sqrt'(*double*)
+
+Get square root of the value.
+
+[[math-subtraction]]
+==== subtraction
+
+*double* 'math::subtraction'(*double* x, *double* y)
+
+Make subtraction of the values: 'x - y'.
+
+[[math-tan]]
+==== tan
+
+*double* 'math::tan'(*double*)
+
+Get tangent of the value.
+
+[[math-tanh]]
+==== tanh
+
+*double* 'math::tanh'(*double*)
+
+Get hyperbolic tangent of the value.
+
+[[math-truncate]]
+==== truncate
+
+*int64_t* 'math::truncate'(*double*)
+
+Get integer part from double digital value.
+
+=== Operating system unit
+
+.Functions from operating system unit.
+|===
+.s| Script function .s| Description
+| <<operating_system-get_platform,operating-system::get-platform>> | Get platform of the operation system.
+| <<operating_system-get_version,operating-system::get-version>> | Get version of the operation system.
+| <<operating_system-to_string,operating-system::to-string>> | Get string representation of the the operation system.
+| <<platform-get_name,platform::get-name>> | Get name of current platform.
+| <<platform-is_unix,platform::is-unix>> | Check is current platform UNIX like.
+| <<platform-is_windows,platform::is-windows>> | Check is current platform Windows.
+|===
+
+[[operating_system-get_platform]]
+==== get-platform
+
+*platform ID* 'operating-system::get-platform'(*operating system*)
+
+Return ID of platform.
+
+.Values of platform ID.
+|===
+.s| Value .s| Description
+| Win32 | Platform is from Windows family.
+| Unix | Platform is UNIX like.
+|===
+
+[[operating_system-get_version]]
+==== get-version
+
+*version* 'operating-system::get-version'(*operating system*)
+
+Get version of operating system.
+
+[[operating_system-to_string]]
+==== to-string
+
+*string* 'operating-system::to-string'(*operating system*)
+
+Get string representation of operating system.
+
+[[platform-get_name]]
+==== get-name
+
+*string* 'platform::get-name'()
+
+Get name of the platform..
+
+[[platform-is_unix]]
+==== is-unix
+
+*bool* 'platform::is-unix'()
+
+Return *true* if current platform UNIX like.
+
+[[platform-is_windows]]
+==== is-windows
+
+*bool* 'platform::is-windows'()
+
+Return *true* if current platform from Windows family.
+
+=== Path unit
+
+.Functions from path unit.
+|===
+.s| Script function .s| Description
+| <<path-change_extension,path::change-extension>> | Change extension of the path. In other words - all after the last point symbol.
+| <<path-combine,path::combine>> | Combine two part of path into the system specific path. Can be used as path normalizer.
+| <<path-get_directory_name,path::get-directory-name>> | Get directory name of the path.
+| <<path-get_extension,path::get-extension>> | Get extension of the path. In other words - all after the last point symbol.
+| <<path-get_file_name_without_extension,path::get-file-name-without-extension>> | Get file name without extension.
+| <<path-get_file_name,path::get-file-name>> | Get file name.
+| <<path-get_full_path,path::get-full-path>> | Get full path. Relative path will be transformed into absolute.
+| <<path-get_path_root,path::get-path-root>> | Get root of the path.
+| <<path-get_temp_file_name,path::get-temp-file-name>> | Get unique file name point to the file in the temporary directory. File with zero length will be created.
+| <<path-get_temp_path,path::get-temp-path>> | Get path to the temporary directory.
+| <<path-has_extension,path::has-extension>> | Indicate is path have extension.
+| <<path-is_path_rooted,path::is-path-rooted>> | Indicate is path rooted.
+| <<cygpath-get_dos_path,cygpath::get-dos-path>> | Get DOS compatibility path. Only at Win32 platform.
+| <<cygpath-get_unix_path,cygpath::get-unix-path>> | Get UNIX like path.
+| <<cygpath-get_windows_path,cygpath::get-windows-path>> | Get Windows like path.
+|===
+
+[[path-change_extension]]
+==== change-extension
+
+*string* 'path::change-extension'(*string*)
+
+Change extension of the path. In other words - all after the last point symbol.
+
+[[path-combine]]
+==== combine
+
+*path* 'path::combine'(*string* path_a, *string* path_b)
+
+Combine two part of path into the system specific path. Can be used as path normalizer.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property
+    name="path"
+    value="${project::get-buildfile-path()}"
+    readonly="true" />
+  <property
+    name="normalized_path"
+    value="${path::combine(path, '')}"
+    readonly="true" />
+  <property
+    name="unix_like_path"
+    value="${cygpath::get-unix-path(path)}"
+    readonly="true" />
+  <property
+    name="windows_like_path"
+    value="${cygpath::get-windows-path(path)}"
+    readonly="true" />
+  <echo>
+    Project path - '${path}'
+    Normalized project path - '${normalized_path}'
+    Unix like project path - '${unix_like_path}'
+    Windows like project path- '${windows_like_path}'
+  </echo>
+</project>
+----
+
+[[path-get_directory_name]]
+==== get-directory-name
+
+*string* 'path::get-directory-name'(*string*)
+
+Get directory name of the path.
+
+[[path-get_extension]]
+==== get-extension
+
+*string* 'path::get-extension'(*string*)
+
+Get extension of the path. In other words - all after the last point symbol.
+
+[[path-get_file_name_without_extension]]
+==== get-file-name-without-extension
+
+*string* 'path::get-file-name-without-extension'(*string*)
+
+Get file name without extension.
+
+[[path-get_file_name]]
+==== get-file-name
+
+*string* 'path::get-file-name'(*string*)
+
+Get file name.
+
+[[path-get_full_path]]
+==== get-full-path
+
+*path* 'path::get-full-path'(*string*)
+
+Get full path. Relative path will be transformed into absolute.
+
+[[path-get_path_root]]
+==== get-path-root
+
+*string* 'path::get-path-root'(*string*)
+
+Get root of the path.
+
+[[path-get_temp_file_name]]
+==== get-temp-file-name
+
+*file* 'path::get-temp-file-name'()
+
+Get unique file name point to the file in the temporary directory. File with zero length will be created.
+
+[[path-get_temp_path]]
+==== get-temp-path
+
+*directory* 'path::get-temp-path'()
+
+Get path to the temporary directory.
+
+[[path-has_extension]]
+==== has-extension
+
+*bool* 'path::has-extension'(*string*)
+
+Indicate is path have extension.
+
+[[path-is_path_rooted]]
+==== is-path-rooted
+
+*bool* 'path::is-path-rooted'(*string*)
+
+Indicate is path rooted.
+
+[[cygpath-get_dos_path]]
+==== get-dos-path
+
+*path* 'cygpath::get-dos-path'(*string*)
+
+Get DOS compatibility path. Only at Win32 platform.
+
+[[cygpath-get_unix_path]]
+==== get-unix-path
+
+*path* 'cygpath::get-unix-path'(*string*)
+
+Get UNIX like path.
+
+[[cygpath-get_windows_path]]
+==== get-windows-path
+
+*path* 'cygpath::get-windows-path'(*string*)
+
+Get Windows like path.
+
+[[project_unit]]
+=== Project unit
+
+.Functions from project unit.
+|===
+.s| Script function .s| Description
+| <<project-get_base_directory,project::get-base-directory>> | Get base directory path.
+| <<project-get_buildfile_path,project::get-buildfile-path>> | Get path of script file.
+| <<project-get_buildfile_uri,project::get-buildfile-uri>> | Get URI of script file.
+| <<project-get_default_target,project::get-default-target>> | Get default target of project.
+| <<project-get_name,project::get-name>> | Get name of project.
+| <<program-current_directory,program::current-directory>> | Get current directory of the program.
+| <<program-version,program::version>> | Get version of the program.
+|===
+
+[[project-get_base_directory]]
+==== get-base-directory
+
+*directory* 'project::get-base-directory'()
+
+Get base directory of the script file. That path can be set at script file at the <<project_task,project task>> in 'basedir'.
+
+[[project-get_buildfile_path]]
+==== get-buildfile-path
+
+*file* 'project::get-buildfile-path'()
+
+Get path of script file.
+
+[[project-get_buildfile_uri]]
+==== get-buildfile-uri
+
+*uri* 'project::get-buildfile-uri'()
+
+Get URI of the script file.
+
+[[project-get_default_target]]
+==== get-default-target
+
+*string* 'project::get-default-target'()
+
+Get default target or empty string if it was not set.
+
+[[project-get_name]]
+==== get-name
+
+*string* 'project::get-name'()
+
+Get project name.
+
+[[program-current_directory]]
+==== current-directory
+
+*directory* 'program::current-directory'()
+
+Get current directory of the path. +
+Comparing to the 'project::get-base-directory' and 'directory::get-current-directory' this path can not be set at the script file. +
+That path set by environment when program start.
+
+[[program-version]]
+==== version
+
+*version* 'program::version'()
+
+Get version of the program. +
+See <<history,history>> to view list of available return values, without 'v' prefix.
+
+[[property_unit]]
+=== Property unit
+
+.Functions from property unit.
+|===
+.s| Script function .s| Description
+| <<property-exists,exists>> | Check if property exists.
+| <<property-get_value,get-value>> | Get value of property. Fail if property not exists.
+| <<property-is_dynamic,is-dynamic>> | Check is value of property dynamic. Fail if property not exists.
+| <<property-is_readonly,is-readonly>> | Check is value of property for read only access. Fail if property not exists.
+|===
+
+[[property-exists]]
+==== exists
+
+*bool* 'property::exists'(*string*)
+
+Return *true* if property exists.
+
+[[property-get_value]]
+==== get-value
+
+*string* 'property::get-value'(*string*)
+
+Get value of property. Fail if property not exists.
+
+[[property-is_dynamic]]
+==== is-dynamic
+
+*bool* 'property::is-dynamic'(*string*)
+
+Return *true* if value of property is dynamic. Fail if property not exists.
+
+[[property-is_readonly]]
+==== is-readonly
+
+*bool* 'property::is-readonly'(*string*)
+
+Return *true* if value of property for read only access. Fail if property not exists.
+
+=== String unit
+
+All strings operated at this unit at the UTF8 encoding.
+
+NOTE: Prior to the version *2020.04* string was ASCII - one character per byte.
+
+.Functions from string unit.
+|===
+.s| Script function .s| Description
+| <<string-contains,contains>> | Check is string contains another string.
+| <<string-empty,empty>> | Check is string empty.
+| <<string-ends_with,ends-with>> | Check if string ends with another string.
+| <<string-equal,equal>> | Check if two strings are equals.
+| <<string-get_length,get-length>> | Get length of string in characters.
+| <<string-index_of,index-of>> .2+^.^| Return index of char located at the string.
+| <<string-index_of_any,index-of-any>>
+| <<string-last_index_of,last-index-of>> .2+^.^| Return last index of char located at the string.
+| <<string-last_index_of_any,last-index-of-any>>
+| <<string-pad_left,pad-left>> | Add at the start of string some of char several times.
+| <<string-pad_right,pad-right>> | Add at the end of string some of char several times.
+| <<string-quote,quote>> | Add quote symbols to the start and end of the string.
+| <<string-replace,replace>> | Replace in string one string to another.
+| <<string-starts_with,starts-with>> | Check if string starts from another string.
+| <<string-substring,substring>> | Substring the string.
+| <<string-to_lower,to-lower>> | Made string in lower case form.
+| <<string-to_upper,to-upper>> | Made string in upper case form.
+| <<string-trim,trim>> | Remove white space symbols from start and end of string.
+| <<string-trim_end,trim-end>> | Remove white space symbols from end of string.
+| <<string-trim_start,trim-start>> | Remove white space symbols from start of string.
+| <<string-un_quote,un-quote>> | Remove quote symbols from begin and end of the string.
+|===
+
+[[string-contains]]
+==== contains
+
+*bool* 'string::contains'(*string* string, *string* value)
+
+If value contains at the string - *true* will be returned.
+
+[[string-empty]]
+==== empty
+
+*bool* 'string::empty(*string*)
+
+If string is empty - *true* will be returned.
+
+[[string-ends_with]]
+==== ends-with
+
+*bool* 'string::ends-with'(*string* string, *string* value)
+
+If value located at the end of string - *true* will be returned.
+
+[[string-equal]]
+==== equal
+
+*bool* 'string::equal'(*string* string_a, *string* string_b)
+
+If *string_a* equal to the *string_b* - *true* will be returned.
+
+[[string-get_length]]
+==== get-length
+
+*int* 'string::get-length'(*string*)
+
+Return of string length in characters.
+
+NOTE: Prior to the version 2020.04 return was in bytes, that actually equal for one char per byte.
+
+[[string-index_of]]
+==== index-of
+
+*int* 'string::index-of'(*string* string, *char* value)
+
+Return index of *value* at the *string*. +
+If *value* not found at the *string* then -1 was returned.
+
+[[string-index_of_any]]
+==== index-of-any
+
+*int* 'string::index-of-any'(*string* string, *char*[] value)
+
+Return index of one of *value* char at the *string*. +
+If no one chars of *value* not found at the *string* then -1 returned.
+
+[[string-last_index_of]]
+==== last-index-of
+
+*int* 'string::last-index-of'(*string* string, *char* value)
+
+Return last index of *value* at the *string*. +
+If *value* not found at the *string* then -1 was returned.
+
+[[string-last_index_of_any]]
+==== last-index-of-any
+
+*int* 'string::last-index-of-any'(*string* string, *char*[] value)
+
+Return last index of one of *value* char at the *string*. +
+If no one chars of *value* not found at the *string* then -1 returned.
+
+[[string-pad_left]]
+==== pad-left
+
+*string* 'string::pad-left'(*string* string, *int* count, *char* char)
+
+Add *char* to the begin of *string* until string length not equal to the *count* in chars.
+
+[[string-pad_right]]
+==== pad-right
+
+Add *char* to the end of *string* until string length not equal to the *count* in chars.
+
+[[string-quote]]
+==== quote
+
+*string* 'string::quote'(*string*)
+
+Add quote symbols at the begin and end of the *string*.
+
+[[string-replace]]
+==== replace
+
+*string* 'string::replace'(*string* string, *string* to_be_replaced, *string* by_replacement)
+
+Provide replace of content in the string. +
+*By replacement* can be empty. In this case function just remove *to be replacing* string from *string* content.
+
+NOTE: For replacing content in the file, <<file-replace,replace function from file unit>> can be used.
+
+[[string-starts_with]]
+==== starts-with
+
+*bool* 'string::starts-with'(*string* string, *string* value)
+
+If value located at the start of string - *true* will be returned.
+
+[[string-substring]]
+==== substring
+
+*string* 'string::substring'(*string* string, *int* position)
+*string* 'string::substring'(*string* string, *int* position, *int* length)
+
+Return sub string of the *string* from *position* with *length*. +
+If used version with out *length* attribute - sub string will be from the *position* until to the end of *string*.
+
+[[string-to_lower]]
+==== to-lower
+
+*string* 'string::to-lower'(*string*)
+
+Get lower case representation of the *string*.
+
+[[string-to_upper]]
+==== to-upper
+
+*string* 'string::to-upper'(*string*)
+
+Get upper case representation of the *string*.
+
+[[string-trim]]
+==== trim
+
+*string* 'string::trim'(*string*)
+
+Remove white space symbols from start and end of string.
+
+[[string-trim_end]]
+==== trim-end
+
+*string* 'string::trim-end'(*string*)
+
+Remove white space symbols from end of string.
+
+[[string-trim_start]]
+==== trim-start
+
+*string* 'string::trim-start'(*string*)
+
+Remove white space symbols from start of string.
+
+[[string-un_quote]]
+==== un-quote
+
+*string* 'string::un-quote'(*string*)
+
+Remove quote symbols at the begin and end of the *string*.
+
+[[target_unit]]
+=== Target unit
+
+.Functions from target unit.
+|===
+.s| Script function .s| Description
+| <<target-exists,exists>> | Check if target exists in the project.
+| <<target-get_current_target,get-current-target>> | Return of current target.
+| <<target-has_executed,has-executed>> | Check if target already evaluated.
+|===
+
+[[target-exists]]
+==== exists
+
+*bool* 'target::exists'(*string*)
+
+Return *true* if target exists in the project.
+
+[[target-get_current_target]]
+==== get-current-target
+
+*string* 'target::get-current-target'()
+
+Return of current target. +
+Run outside of the target fail the evaluation of the script.
+
+[[target-has_executed]]
+==== has-executed
+
+*bool* 'target::has-executed'(*string*)
+
+Return *true* if target already evaluated.
+
+[[task_unit]]
+=== Task unit
+
+.Function from task unit.
+|===
+.s| Script function .s| Description
+| <<task-exists,exists>> | Check if <<task_reference,task>> exists.
+|===
+
+[[task-exists]]
+==== exists
+*bool* 'task::exists'(*string*)
+
+Return *true* if task exists.
+
+=== Version unit
+
+.Functions from version unit.
+|===
+.s| Script function .s| Description
+| <<version-get_build,get-build>> | Get build part from the version.
+| <<version-get_major,get-major>> | Get major part from the version.
+| <<version-get_minor,get-minor>> | Get minor part from the version.
+| <<version-get_revision,get-revision>> | Get revision part from the version.
+| <<version-greater,greater>> | Check if one version greater than other.
+| <<version-less,less>> | Check if one version less than other.
+| <<version-parse,parse>> | Parse string representation of version into version in the string.
+| <<version-to_string,to-string>> | Convert version in the string into string.
+|===
+
+NOTE: Directly using of 'parse' and 'to-string' functions in most cases not required. +
+Functions from other units will call they internally, if they need such transformation.
+
+[[version-get_build]]
+==== get-build
+
+*int* 'version::get-build'(*version*)
+
+Return build part of the version.
+
+[[version-get_major]]
+==== get-major
+
+*int* 'version::get-major'(*version*)
+
+Return major part of the version.
+
+[[version-get_minor]]
+==== get-minor
+
+*int* 'version::get-minor'(*version*)
+
+Return minor part of the version.
+
+[[version-get_revision]]
+==== get-revision
+
+*int* 'version::get-revision'(*version*)
+
+Return revision part of the version.
+
+[[version-greater]]
+==== greater
+
+*bool* 'version::greater'(*version* version_a, *version* version_b)
+
+Return *true* if *version_a* greater than *version_b*.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <echo>
+    ${version::greater('2020.04', '2019.10.21')}
+  </echo>
+</project>
+----
+
+[[version-less]]
+==== less
+
+*bool* 'version::less'(*version* version_a, *version* version_b)
+
+Return *true* if *version_a* less than *version_b*.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <echo>
+    ${version::less('2019.10.21', '2020.04')}
+  </echo>
+</project>
+----
+
+[[version-parse]]
+==== parse
+
+*version* 'version::parse'(*string*)
+
+Parse string representation of version into version in the string.
+
+[[version-to_string]]
+==== to-string
+
+*string* 'version::to-string'(*version*)
+
+Convert version in the string into string.
+
+== What's next?
+
+Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/4cc005f99954fa3d615edaa5bf8574d6fe8244fc/tests.xml#L4097[tests.xml file], at the 'project_load_from_content' test.

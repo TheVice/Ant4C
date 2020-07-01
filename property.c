@@ -53,13 +53,8 @@ uint8_t property_is_name_valid(const uint8_t* name, uint8_t name_length)
 	const uint8_t* name_start = name;
 	const uint8_t* name_finish = name + name_length;
 
-	while (NULL != (pos = string_enumerate(name, name_finish)))
+	while (NULL != (pos = string_enumerate(name, name_finish, &out)))
 	{
-		if (!text_encoding_decode_UTF8_single(name, pos, &out))
-		{
-			return 0;
-		}
-
 		if (INT8_MAX < out)
 		{
 			if (string_to_case(out, string_get_id_of_to_lower_function()) ==

@@ -279,11 +279,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 	{
 		const size_t length = strlen(argv[i]);
 
-		if (length < 2)
-		{
-			continue;
-		}
-		else if (7 < length && 0 == memcmp(argv[i], "-indent:", 8))
+		if (7 < length && 0 == memcmp(argv[i], "-indent:", 8))
 		{
 			if (length < 9)
 			{

@@ -138,6 +138,31 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 	return interpreter_evaluate_tasks(the_project, the_target, &(the_target->tasks), 1, verbose);
 }
 
+uint8_t target_set_name(struct target* the_target, const uint8_t* name, uint8_t name_length)
+{
+	if (NULL == the_target ||
+		NULL == name ||
+		name_length < 1)
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__
+
+	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
+	{
+		return 0;
+	}
+
+#else
+	memcpy(the_target, name, name_length);
+#endif
+	the_target->name[name_length] = '\0';
+	the_target->name_length = name_length;
+	/**/
+	return 1;
+}
+
 uint8_t target_new(void* the_project,
 				   const uint8_t* name, uint8_t name_length,
 				   const uint8_t* depends, uint16_t depends_length,
@@ -166,18 +191,12 @@ uint8_t target_new(void* the_project,
 
 	SET_NULL_TO_BUFFER(the_target->depends);
 	SET_NULL_TO_BUFFER(the_target->tasks);
-#if __STDC_SEC_API__
 
-	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
+	if (!target_set_name(the_target, name, name_length))
 	{
 		return 0;
 	}
 
-#else
-	memcpy(the_target, name, name_length);
-#endif
-	the_target->name[name_length] = '\0';
-	the_target->name_length = name_length;
 	the_target->has_executed = 0;
 
 	if (depends && 0 < depends_length)
@@ -419,21 +438,57 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 		return 0;
 	}
 
+	struct target* the_real_target = (struct target*)the_target;
+
 	if (target_is_in_stack(stack, the_target))
 	{
-		return 1;
+		return 2 == the_real_target->has_executed ? 0 : 1;
 	}
-
-	struct target* the_real_target = (struct target*)the_target;
 
 	uint8_t skip = 0;
 
-	struct buffer tmp;
+	if (cascade)
+	{
+		skip = the_real_target->has_executed;
+		the_real_target->has_executed = 2;
 
+		if (!buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**)))
+		{
+			return 0;
+		}
+
+		uint16_t index = 0;
+		const struct range* depend = NULL;
+
+		while (NULL != (depend = target_get_depend(the_target, index++)))
+		{
+			void* target_dep = NULL;
+
+			if (!project_target_get(the_project, depend->start, (uint8_t)range_size(depend), &target_dep, verbose))
+			{
+				return 0;
+			}
+
+			if (the_target == target_dep)
+			{
+				return 0;
+			}
+
+			if (!target_evaluate(the_project, target_dep, stack, cascade, verbose))
+			{
+				return 0;
+			}
+		}
+
+		the_real_target->has_executed = skip;
+	}
+
+	skip = 0;
+	struct buffer tmp;
 	SET_NULL_TO_BUFFER(tmp);
 
 	if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-			the_project, NULL, the_real_target->attributes.start,
+			the_project, the_target, the_real_target->attributes.start,
 			the_real_target->attributes.finish, &skip, &tmp, verbose))
 	{
 		buffer_release_with_inner_buffers(&tmp);
@@ -447,35 +502,13 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 		return 1;
 	}
 
-	if (cascade)
-	{
-		uint16_t index = 0;
-		const struct range* depend = NULL;
-
-		while (NULL != (depend = target_get_depend(the_target, index++)))
-		{
-			void* target_dep = NULL;
-
-			if (!project_target_get(the_project, depend->start, (uint8_t)range_size(depend), &target_dep, verbose))
-			{
-				return 0;
-			}
-
-			if (!target_evaluate(the_project, target_dep, stack, cascade, verbose))
-			{
-				return 0;
-			}
-		}
-	}
-
 	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), 0, verbose))
 	{
-		buffer_release(&tmp);
 		return 0;
 	}
 
 	the_real_target->has_executed = 1;
-	return buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
+	return cascade ? 1 : buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
 }
 
 uint8_t target_evaluate_by_name(void* the_project, const struct range* target_name, uint8_t verbose)
@@ -487,13 +520,18 @@ uint8_t target_evaluate_by_name(void* the_project, const struct range* target_na
 	}
 
 	void* the_target = NULL;
+	const uint8_t name_length = (uint8_t)range_size(target_name);
 
-	if (!project_target_get(the_project, target_name->start,
-							(uint8_t)range_size(target_name), &the_target, verbose))
+	if (!project_target_get(the_project, target_name->start, name_length, &the_target, verbose))
 	{
 		static const uint8_t asterisk = '*';
 
 		if (!project_target_get(the_project, &asterisk, 1, &the_target, verbose))
+		{
+			return 0;
+		}
+
+		if (!target_set_name((struct target*)the_target, target_name->start, name_length))
 		{
 			return 0;
 		}

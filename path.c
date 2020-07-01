@@ -98,7 +98,9 @@ uint8_t path_combine_in_place(struct buffer* path1, const ptrdiff_t size,
 		return 0;
 	}
 
-	if (size < buffer_size(path1) && !buffer_push_back(path1, PATH_DELIMITER))
+	if (size < buffer_size(path1) &&
+		path2_start < path2_finish &&
+		!buffer_push_back(path1, PATH_DELIMITER))
 	{
 		return 0;
 	}
@@ -982,71 +984,47 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[2];
 
-	struct range argument2;
-
-	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
-
-	switch (arguments_count)
+	if (!common_get_arguments(arguments, arguments_count, values, 0))
 	{
-		case 0:
-			break;
-
-		case 1:
-			if (!common_get_one_argument(arguments, &argument1, 0))
-			{
-				return 0;
-			}
-
-			break;
-
-		case 2:
-			if (!common_get_two_arguments(arguments, &argument1, &argument2, 0))
-			{
-				return 0;
-			}
-
-			break;
-
-		default:
-			return 0;
+		return 0;
 	}
 
 	switch (function)
 	{
 		case path_change_extension_function:
 			return (2 == arguments_count) &&
-				   path_change_extension(argument1.start, argument1.finish, argument2.start, argument2.finish, output);
+				   path_change_extension(values[0].start, values[0].finish, values[1].start, values[1].finish, output);
 
 		case path_combine_function:
 			return (2 == arguments_count) &&
-				   path_combine(argument1.start, argument1.finish, argument2.start, argument2.finish, output);
+				   path_combine(values[0].start, values[0].finish, values[1].start, values[1].finish, output);
 
 		case path_get_directory_name_function:
 			return (1 == arguments_count) &&
-				   path_get_directory_name(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_directory_name(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_extension_function:
 			return (1 == arguments_count) &&
-				   path_get_extension(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_extension(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_file_name_function:
 			return (1 == arguments_count) &&
-				   path_get_file_name(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_file_name(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_file_name_without_extension_function:
 			return (1 == arguments_count) &&
-				   path_get_file_name_without_extension(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_file_name_without_extension(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_path_root_function:
 			return (1 == arguments_count) &&
-				   path_get_path_root(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_path_root(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_temp_file_name_function:
 #if defined(_WIN32)
@@ -1060,11 +1038,11 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 		case path_has_extension_function:
 			return (1 == arguments_count) &&
-				   bool_to_string(path_has_extension(argument1.start, argument1.finish), output);
+				   bool_to_string(path_has_extension(values[0].start, values[0].finish), output);
 
 		case path_is_path_rooted_function:
 			return (1 == arguments_count) &&
-				   bool_to_string(path_is_path_rooted(argument1.start, argument1.finish), output);
+				   bool_to_string(path_is_path_rooted(values[0].start, values[0].finish), output);
 
 		case path_get_full_path_function:
 		case UNKNOWN_PATH_FUNCTION:
