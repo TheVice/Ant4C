@@ -13,7 +13,8 @@
 [[history]]
 == History
 
-* *v2020.05*
+* *vYYYY.MM*
+* v2020.05
 * v2020.04
 * v2019.10.21
 
@@ -2067,7 +2068,8 @@ If path point to the exists file *true* will be returned.
 [[file-get_checksum]]
 ==== get-checksum
 
-*string* 'file::get-checksum'(*file* file, *algorithm* algorithm)
+*string* 'file::get-checksum'(*file* file, *algorithm* algorithm) +
+*string* 'file::get-checksum'(*file* file, *algorithm* algorithm, *string* algorithm_parameter)
 
 Calculate hash sum of file according to algorithm.
 
@@ -2075,11 +2077,16 @@ Calculate hash sum of file according to algorithm.
 |===
 .s| Value .s| Description
 | crc32 ^| Calculate hash with CRC-32/zlib algorithm.
-| blake2b-160 .4+^.^| Calculate hash with BLAKE2b algorithm with requested length.
-| blake2b-256
-| blake2b-384
-| blake2b-512
+| blake2b ^| Calculate hash with BLAKE2b algorithm with requested length.
+| blake3 ^| Calculate hash with BLAKE3 algorithm.
 |===
+
+Value of 'algorithm parameter' depend of 'algorithm'.
+For 'crc32' it can be <<hash-crc32,decreasing or increasing>>.
+For 'blake2b' - 160, 256, 384 or 512.
+For 'blake3' - 256, 384 or 512.
+For 'keccak' and 'sha3' - 224, 256, 384 or 512.
+Return from first version of function equal to the return of second if increasing or 256 was used as argument parameter.
 
 ===== Sample using
 
@@ -2092,7 +2099,7 @@ Calculate hash sum of file according to algorithm.
     readonly="true" />
   <property
     name="algorithms"
-    value="crc32, blake2b-160, blake2b-256, blake2b-384, blake2b-512"
+    value="crc32, blake2b, blake3"
     readonly="true" />
   <foreach item="String" in="${algorithms}" delim="," trim="Start" property="algorithm">
     <echo>Hash by '${algorithm}' algorithm is ${file::get-checksum(file, algorithm)}.</echo>
@@ -2100,7 +2107,7 @@ Calculate hash sum of file according to algorithm.
 </project>
 ----
 
-NOTE: At current release of Ant4C algorithms Keccak/SHA3 and BLAKE3 do not supported to calculate hash of files directly. However it can be done if first load content of file to the property and calculate hash sum of the property value.
+IMPORTANT: Current implementation of Keccak/SHA3 algorithm request that all file content should be loaded into memory.
 
 [[file-get_creation_time]]
 ==== get-creation-time
@@ -2184,60 +2191,42 @@ If *source file* have more recent write time than *target* - *false* will be ret
 .Functions from hash unit.
 |===
 .s| Script function .s| Description
-| <<hash-blake2b_160,blake2b-160>> .4+^.^| Calculate hash with BLAKE2b algorithm with requested length.
-| <<hash-blake2b_256,blake2b-256>>
-| <<hash-blake2b_384,blake2b-384>>
-| <<hash-blake2b_512,blake2b-512>>
-| <<hash-blake3,blake3/blake3-256>> ^| Calculate hash with BLAKE3 algorithm.
+| <<hash-blake2b,blake2b>> ^| Calculate hash with BLAKE2b algorithm with requested length.
+| <<hash-blake3,blake3>> ^| Calculate hash with BLAKE3 algorithm.
 | <<hash-bytes_to_string,bytes-to-string>> ^| Convert array of bytes to it hex representation at string.
 | <<hash-crc32,crc32>> ^| Calculate check of cyclic redundancy for specific value according to CRC-32/zlib algorithm.
-| <<hash-keccak_224,keccak-224>> .8+^.^| Calculate hash with Keccak algorithm with requested length for specific value. SHA3 use same algorithm, but with different values at internal padding stage.
-| <<hash-keccak_256,keccak-256>>
-| <<hash-keccak_384,keccak-384>>
-| <<hash-keccak_512,keccak-512>>
-| <<hash-sha3_224,sha3-224>>
-| <<hash-sha3_256,sha3-256>>
-| <<hash-sha3_384,sha3-384>>
-| <<hash-sha3_512,sha3-512>>
+| <<hash-keccak,keccak>> .2+^.^| Calculate hash with Keccak algorithm with requested length for specific value. SHA3 use same algorithm, but with different values at internal padding stage.
+| <<hash-sha3,sha3>>
 |===
 
-[[hash-blake2b_160]]
-==== blake2b-160
+[[hash-blake2b]]
+==== blake2b
 
-*byte array* 'hash::blake2b-160'(*string*)
+*byte array* 'hash::blake2'(*string* input) +
+*byte array* 'hash::blake2'(*string* input, *int* length)
 
-Calculate 20 bytes hash with BLAKE2b algorithm.
+Calculate hash with BLAKE2b algorithm.
 
-[[hash-blake2b_256]]
-==== blake2b-256
+.Values of length.
+|===
+.s| Value .s| Description
+| 160 ^| At return will be hash with length equal to the 20 bytes.
+| 256 ^| At return will be hash with length equal to the 32 bytes.
+| 384 ^| At return will be hash with length equal to the 48 bytes.
+| 512 ^| At return will be hash with length equal to the 64 bytes.
+|===
 
-*byte array* 'hash::blake2b-256'(*string*)
-
-Calculate 32 bytes hash with BLAKE2b algorithm.
-
-[[hash-blake2b_384]]
-==== blake2b-384
-
-*byte array* 'hash::blake2b-384'(*string*)
-
-Calculate 48 bytes hash with BLAKE2b algorithm.
-
-[[hash-blake2b_512]]
-==== blake2b-512
-
-*byte array* 'hash::blake2b-512'(*string*)
-
-Calculate 64 bytes hash with BLAKE2b algorithm.
+Return from first version of function equal to the return of second if 256 was used as length.
 
 [[hash-blake3]]
-==== blake3/blake3-256
+==== blake3
 
-*byte array* 'hash::blake3-256'(*string*)
-//*byte array* 'hash::blake3'(*string*, *byte*)
-
-IMPORTANT: Function will be renamed into 'blake3'.
+*byte array* 'hash::blake3'(*string* input) +
+*byte array* 'hash::blake3'(*string* input, *int* length)
 
 Calculate hash with BLAKE3 algorithm.
+Possible length values same as for <<hash-blake2b,BLAKE2b>>.
+Return from first version of function equal to the return of second if 256 was used as length.
 
 ===== Sample using
 
@@ -2249,7 +2238,7 @@ Calculate hash with BLAKE3 algorithm.
     value=", The quick brown fox jumps over the lazy dog"
     readonly="true" />
   <foreach item="String" in="${contents}" delim="," trim="Start" property="content">
-    <echo if="${version::less(program::version(), 2020.06)}">'${content}' -> ${hash::bytes-to-string(hash::blake3-256(content))}</echo>
+    <echo if="${version::greater(program::version(), 2020.05)}">'${content}' -> ${hash::bytes-to-string(hash::blake3(content))}</echo>
   </foreach>
 </project>
 ----
@@ -2310,61 +2299,34 @@ Output will be:
 [Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
 ----
 
-[[hash-keccak_224]]
-==== keccak-224
+[[hash-keccak]]
+==== keccak
 
-*byte array* 'hash::keccak-224'(*string*)
+*byte array* 'hash::keccak'(*string* input) +
+*byte array* 'hash::keccak'(*string* input, *int* length)
 
-Calculate 28 bytes hash with Keccak algorithm.
+Calculate hash with Keccak algorithm.
 
-[[hash-keccak_256]]
-==== keccak-256
+.Values of length.
+|===
+.s| Value .s| Description
+| 224 ^| At return will be hash with length equal to the 28 bytes.
+| 256 ^| At return will be hash with length equal to the 32 bytes.
+| 384 ^| At return will be hash with length equal to the 48 bytes.
+| 512 ^| At return will be hash with length equal to the 64 bytes.
+|===
 
-*byte array* 'hash::keccak-256'(*string*)
+Return from first version of function equal to the return of second if 256 was used as length.
 
-Calculate 32 bytes hash with Keccak algorithm.
+[[hash-sha3]]
+==== sha3
 
-[[hash-keccak_384]]
-==== keccak-384
+*byte array* 'hash::sha3'(*string* input) +
+*byte array* 'hash::sha3'(*string* input, *int* length)
 
-*byte array* 'hash::keccak-384'(*string*)
-
-Calculate 48 bytes hash with Keccak algorithm.
-
-[[hash-keccak_512]]
-==== keccak-512
-
-*byte array* 'hash::keccak-512'(*string*)
-
-Calculate 64 bytes hash with Keccak algorithm.
-
-[[hash-sha3_224]]
-==== sha3-224
-
-*byte array* 'hash::sha3-224'(*string*)
-
-Calculate 28 bytes hash with Keccak/SHA3 algorithm.
-
-[[hash-sha3_256]]
-==== sha3-256
-
-*byte array* 'hash::sha3-256'(*string*)
-
-Calculate 32 bytes hash with Keccak/SHA3 algorithm.
-
-[[hash-sha3_384]]
-==== sha3-384
-
-*byte array* 'hash::sha3-384'(*string*)
-
-Calculate 48 bytes hash with Keccak/SHA3 algorithm.
-
-[[hash-sha3_512]]
-==== sha3-512
-
-*byte array* 'hash::sha3-512'(*string*)
-
-Calculate 64 bytes hash with Keccak/SHA3 algorithm.
+Calculate hash with Keccak/SHA3 algorithm.
+Possible length values same as for <<hash-keccak,Keccak>>.
+Return from first version of function equal to the return of second if 256 was used as length.
 
 === Math unit
 

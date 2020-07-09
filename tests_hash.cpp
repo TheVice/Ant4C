@@ -20,6 +20,7 @@ extern "C" {
 #include <string>
 #include <cstdint>
 #include <iostream>
+#include <algorithm>
 
 class TestHashAlgorithm : public TestsBaseXml
 {
@@ -88,13 +89,6 @@ TEST(TestHashAlgorithm_, hash_algorithm_bytes_to_string)
 
 TEST_F(TestHashAlgorithm, BLAKE2)
 {
-	typedef uint8_t (*BLAKE2b)(const uint8_t*, const uint8_t*, struct buffer*);
-	static const BLAKE2b functions[] =
-	{
-		&hash_algorithm_blake2b_160, &hash_algorithm_blake2b_256,
-		&hash_algorithm_blake2b_384, &hash_algorithm_blake2b_512
-	};
-	//
 	static const uint8_t hash_sizes[] =
 	{
 		20, 32, 48, 64
@@ -131,7 +125,8 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 			auto input_in_range(string_to_range(input));
 			null_range_to_empty(input_in_range);
 			//
-			auto returned = (functions[i])(input_in_range.start, input_in_range.finish, &output);
+			auto returned = hash_algorithm_blake2b(input_in_range.start, input_in_range.finish, 8 * hash_sizes[i],
+												   &output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl << (int)i << buffer_free(&output);
 			//
 			returned = (uint8_t)buffer_size(&output);
@@ -239,6 +234,37 @@ TEST_F(TestHashAlgorithm, BLAKE3)
 		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 		//
 		ASSERT_STRNE(expected_output.c_str(), (const char*)finish) << buffer_free(&input) << buffer_free(&output);
+		//
+		static const uint8_t d = 0;
+		//
+		uint32_t m[16];
+		uint32_t h[8];
+		//
+		uint8_t l = 0;
+		uint32_t t[2];
+		t[0] = t[1] = 0;
+		uint8_t compressed = 0;
+		uint8_t stack[256];
+		uint8_t stack_length = 0;
+		//
+		returned = BLAKE3_init(h, sizeof(h), m, sizeof(m), sizeof(stack));
+		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+
+		for (uint16_t i = 0; i < input_length; i += 4096)
+		{
+			returned = BLAKE3_core(ptr + i, std::min(4096, input_length - i), m, &l, h, &compressed, t, stack,
+								   &stack_length, d);
+			ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		}
+
+		returned = BLAKE3_final(stack, stack_length, compressed, t, h, m, l, d, 131, buffer_data(&output, 0));
+		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		//
+		ASSERT_TRUE(buffer_resize(&output, 131)) << buffer_free(&input) << buffer_free(&output);
+		returned = hash_algorithm_bytes_to_string(start, finish, &output);
+		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		//
+		ASSERT_STREQ(expected_output.c_str(), (const char*)finish) << buffer_free(&input) << buffer_free(&output);
 		//
 		--node_count;
 	}
@@ -379,13 +405,16 @@ TEST_F(TestHashAlgorithm, Keccak)
 
 TEST_F(TestHashAlgorithm, sha3)
 {
-	typedef uint8_t(*Keccak)(const uint8_t*, const uint8_t*, struct buffer*);
+	typedef uint8_t(*Keccak)(const uint8_t*, const uint8_t*, uint16_t hash_length, struct buffer*);
 	static const Keccak functions[] =
 	{
-		&hash_algorithm_keccak_224, &hash_algorithm_keccak_256,
-		&hash_algorithm_keccak_384, &hash_algorithm_keccak_512,
-		&hash_algorithm_sha3_224, &hash_algorithm_sha3_256,
-		&hash_algorithm_sha3_384, &hash_algorithm_sha3_512
+		&hash_algorithm_keccak, &hash_algorithm_sha3
+	};
+	//
+	static const uint16_t hash_lengths[] =
+	{
+		224, 256, 384, 512,
+		224, 256, 384, 512
 	};
 	//
 	buffer output;
@@ -424,7 +453,8 @@ TEST_F(TestHashAlgorithm, sha3)
 			auto input_in_range(string_to_range(input));
 			null_range_to_empty(input_in_range);
 			//
-			auto returned = (functions[i])(input_in_range.start, input_in_range.finish, &output);
+			auto returned = (functions[i < 4 ? 0 : 1])(input_in_range.start, input_in_range.finish, hash_lengths[i],
+							&output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl << (int)i << buffer_free(&output);
 			//
 			returned = (uint8_t)buffer_size(&output);
@@ -468,7 +498,20 @@ TEST_F(TestHashAlgorithm, file_get_checksum)
 		for (const auto& algorithm_node : node.node())
 		{
 			const std::string algorithm(algorithm_node.name());
-			const auto algorithm_in_range(string_to_range(algorithm));
+			auto algorithm_in_range(string_to_range(algorithm));
+			//
+			range algorithm_parameter;
+			algorithm_parameter.start = algorithm_parameter.finish = NULL;
+			//
+			const auto pos = algorithm.find('-');
+
+			if (std::string::npos != pos)
+			{
+				algorithm_parameter.finish = algorithm_in_range.finish;
+				algorithm_in_range.finish = algorithm_in_range.start + pos;
+				algorithm_parameter.start = algorithm_in_range.start + pos + 1;
+			}
+
 			const auto input_length = (uint16_t)algorithm_node.attribute("input").as_uint();
 			const std::string expected_output(algorithm_node.child_value());
 			//
@@ -477,7 +520,8 @@ TEST_F(TestHashAlgorithm, file_get_checksum)
 			ASSERT_TRUE(echo(0, Default, path, NoLevel, input, input_length, 0, verbose)) << buffer_free(&output);
 			//
 			ASSERT_TRUE(buffer_resize(&output, size)) << buffer_free(&output);
-			ASSERT_TRUE(file_get_checksum(path, &algorithm_in_range, &output)) << buffer_free(&output);
+			ASSERT_TRUE(file_get_checksum(path, &algorithm_in_range, &algorithm_parameter,
+										  &output)) << buffer_free(&output);
 			//
 			const std::string output_str((const char*)buffer_data(&output, size), buffer_size(&output) - size);
 			ASSERT_EQ(expected_output, output_str) << buffer_free(&output);

@@ -1,10 +1,19 @@
 ant4c (YYYY.MM)
   * Functions from the path unit allowed to operate with empty paths.
-    Function 'combinate' can be used for normalizing path.
+    Function 'combine' can be used for normalizing path.
   * Increased list of symbols to trim from string at string::trim
     function.
+  * Replaced script hash functions 'blake2b-160', 'blake2b-256', 'blake2b-384'
+    and 'blake2b-512' with 'blake2b';
+    'blake3-256' with 'blake3';
+    'keccak-224', keccak-256', 'keccak-384' and 'keccak-512' with 'keccak';
+    'sha3-224', sha3-256', 'sha3-384' and 'sha3-512' with 'sha3'.
+  * Added support of 'blake3' and 'keccak' algorithms at the script
+    function 'file::get-checksum'.
+  * Added argument for configure algorithm - byte order, hash length,
+    to the 'file::get-checksum' function.
 
--- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-....
+-- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 
 ant4c (2020.05)
 
@@ -26,7 +35,7 @@ ant4c (2020.04)
     'sleep', 'touch' and 'trycatch' to early exists 'echo' and 'exec'.
   * Added hash unit with 'crc32', 'BLAKE2b', 'BLAKE3',
     'SHA3/Keccak' algorithms. Algorithms 'crc32' and 'BLAKE2b'
-    also available for file::get-checksum script function.
+    also available for 'file::get-checksum' script function.
   * Tag elements 'project' and 'target' internally also marked as tasks.
 
  -- TheVice <TheVice>  Mon, 27 Apr 2020 05:26:22 +0300

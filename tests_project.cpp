@@ -411,6 +411,18 @@ TEST_F(TestProject, project_load_from_build_file)
 			const std::string expected_hash_value(
 				file_node.node().attribute(hash.c_str()).as_string());
 			auto algorithm = string_to_range(hash);
+			//
+			range algorithm_parameter;
+			algorithm_parameter.start = algorithm_parameter.finish = NULL;
+			//
+			const auto pos = hash.find('-');
+
+			if (std::string::npos != pos)
+			{
+				algorithm_parameter.finish = algorithm.finish;
+				algorithm.finish = algorithm.start + pos;
+				algorithm_parameter.start = algorithm.start + pos + 1;
+			}
 
 			if (!expected_hash_value.empty())
 			{
@@ -418,7 +430,8 @@ TEST_F(TestProject, project_load_from_build_file)
 						<< buffer_free(&tmp);
 				ASSERT_TRUE(file_get_checksum(
 								(const uint8_t*)path.c_str(),
-								&algorithm, &tmp))
+								&algorithm, &algorithm_parameter,
+								&tmp))
 						<< path << std::endl
 						<< buffer_free(&tmp);
 				//

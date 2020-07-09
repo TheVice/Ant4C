@@ -2648,8 +2648,8 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 				   bool_to_string(file_exists(argument1.start), output);
 
 		case file_get_checksum_:
-			return 2 == arguments_count &&
-				   file_get_checksum(argument1.start, &argument2, output);
+			return (2 == arguments_count || 3 == arguments_count) &&
+				   file_get_checksum(argument1.start, &argument2, &argument3, output);
 
 		case file_get_creation_time_:
 			return 1 == arguments_count &&

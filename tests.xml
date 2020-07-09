@@ -1276,6 +1276,64 @@
       <blake2b-512 input="16384">fdaf9dca1aaf9c01e65379b5b17dffc40f890721627bf5eca54558245324ad8983b7f445a642f9d9388367226e4a1d2fb15591ac0cbeec886c247eee76d3a576</blake2b-512>
       <blake2b-512 input="31744">c3494504df969632ed8a0827ab8508354f31059e7cd44ae21a27a510793cffb53fc21dd1a42efbb0dfe7b22435450056443a2090992ff6043818fb0b25b1d5d0</blake2b-512>
     </file_get_checksum>
+    <file_get_checksum>
+      <blake3 input="0">af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</blake3>
+      <blake3 input="1">2d3adedff11b61f14c886e35afa036736dcd87a74d27b5c1510225d0f592e213</blake3>
+      <blake3 input="1023">10108970eeda3eb932baac1428c7a2163b0e924c9a9e25b35bba72b28f70bd11</blake3>
+      <blake3 input="1024">42214739f095a406f3fc83deb889744ac00df831c10daa55189b5d121c855af7</blake3>
+      <blake3 input="1025">d00278ae47eb27b34faecf67b4fe263f82d5412916c1ffd97c8cb7fb814b8444</blake3>
+      <blake3 input="2048">e776b6028c7cd22a4d0ba182a8bf62205d2ef576467e838ed6f2529b85fba24a</blake3>
+      <blake3 input="2049">5f4d72f40d7a5f82b15ca2b2e44b1de3c2ef86c426c95c1af0b6879522563030</blake3>
+      <blake3 input="3072">b98cb0ff3623be03326b373de6b9095218513e64f1ee2edd2525c7ad1e5cffd2</blake3>
+      <blake3 input="3073">7124b49501012f81cc7f11ca069ec9226cecb8a2c850cfe644e327d22d3e1cd3</blake3>
+      <blake3 input="4096">015094013f57a5277b59d8475c0501042c0b642e531b0a1c8f58d2163229e969</blake3>
+      <blake3 input="4097">9b4052b38f1c5fc8b1f9ff7ac7b27cd242487b3d890d15c96a1c25b8aa0fb995</blake3>
+      <blake3 input="5120">9cadc15fed8b5d854562b26a9536d9707cadeda9b143978f319ab34230535833</blake3>
+      <blake3 input="5121">628bd2cb2004694adaab7bbd778a25df25c47b9d4155a55f8fbd79f2fe154cff</blake3>
+      <blake3 input="6144">3e2e5b74e048f3add6d21faab3f83aa44d3b2278afb83b80b3c35164ebeca205</blake3>
+      <blake3 input="6145">f1323a8631446cc50536a9f705ee5cb619424d46887f3c376c695b70e0f0507f</blake3>
+      <blake3 input="7168">61da957ec2499a95d6b8023e2b0e604ec7f6b50e80a9678b89d2628e99ada77a</blake3>
+      <blake3 input="7169">a003fc7a51754a9b3c7fae0367ab3d782dccf28855a03d435f8cfe74605e7817</blake3>
+      <blake3 input="8192">aae792484c8efe4f19e2ca7d371d8c467ffb10748d8a5a1ae579948f718a2a63</blake3>
+      <blake3 input="8193">bab6c09cb8ce8cf459261398d2e7aef35700bf488116ceb94a36d0f5f1b7bc3b</blake3>
+      <blake3 input="16384">f875d6646de28985646f34ee13be9a576fd515f76b5b0a26bb324735041ddde4</blake3>
+      <blake3 input="31744">62b6960e1a44bcc1eb1a611a8d6235b6b4b78f32e7abc4fb4c6cdcce94895c47</blake3>
+    </file_get_checksum>
+    <file_get_checksum>
+      <sha3 input="0">a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</sha3>
+      <sha3 input="1">5d53469f20fef4f8eab52b88044ede69c77a6a68a60728609fc4a65ff531e7d0</sha3>
+      <sha3 input="69">ed379e9012f1d3a4fef5096688a2557b3ceb68c619245bffcf05a14a5a846fd9</sha3>
+      <sha3 input="70">97a26b0e8066f35d400b7f12a6ae62a290bc1ca68660b4da8bf17afad6b8c948</sha3>
+      <sha3 input="71">881ad9ffbd7f090efa51cbdfe93da23a0401f4446f7adf150d1c226851cbfff2</sha3>
+      <sha3 input="101">af504dd36feb666b16fe553116adbdd604e449ca783e54a83171aee7ddc7e7b1</sha3>
+      <sha3 input="102">986b81944604ef3a1f26032a04537777c0ecd1cb66b37e3ca6e9b108befaf56c</sha3>
+      <sha3 input="103">120a055c592d237c0f535eebfc05673374fe4a50e1330293ef2c1ab611e0d0ba</sha3>
+      <sha3 input="133">721f0e936b3b93c0384f970c07680a8a6293e5012295e83615ea4657ed5d7e17</sha3>
+      <sha3 input="134">644e15224f5597351aef5c4bdd22b27ca0c19db2244431534c2a4a0bebfdf39c</sha3>
+      <sha3 input="135">fded8fd9d6551c601eeb3b7c6bc5e5cfd8aad1d015b7e9aaa9c9b9475231d5e2</sha3>
+      <sha3 input="141">4134fa637cc87ac52320f311f4a681ef740b58da8ce2c09c721eedd720179c4f</sha3>
+      <sha3 input="142">4996d371abd506e72178b4cbea8e9f5ad781a5a566543d97f89a4efb13d5bb5f</sha3>
+      <sha3 input="143">295fef4d46110ee21fba0d1798a1bb7c1bbc88306bc9b7661b18ace7170f02ae</sha3>
+      <sha3 input="1023">3456dac4a1209693b8c2bd2cd27fc64c330ce283b8d43a0d9662761825865cbc</sha3>
+      <sha3 input="1024">ba7f1834cddbba9f82cd4dcf7a106bb2e615fec90020f5a5de8efff8d49198b6</sha3>
+      <sha3 input="1025">413cf357775aef534fcd49da91a30f7877b50bbd924a20649315a4827f79cac0</sha3>
+      <sha3 input="2048">51a0283a8332e99679957152f59acd063596f607f567053ef538e64c9f75ecf2</sha3>
+      <sha3 input="2049">aee1e49906909f36267064b9e924a42cc84832c16f2b453ce3dc90ed09431ee9</sha3>
+      <sha3 input="3072">3d6f9314a37c0dec3cd87ccfb4b5d515c3449e40c1640c0123e511134fd3371c</sha3>
+      <sha3 input="3073">5f24381c43d4473a3a65dba2430023c3415eb682d7ab0baffec2576c6e20649e</sha3>
+      <sha3 input="4096">40e655a0042c7fc243710579c0d6fad05daceba7d474de35cccb17d194c2cda2</sha3>
+      <sha3 input="4097">c1743d3e79e9a1516251b027c4210f8b592630bfc9456d4ce36b17e9908bf8fa</sha3>
+      <sha3 input="5120">791faf2ff8ab27eb6ea5b860baa8db20336213bbe1da02e050f4da3451d868e4</sha3>
+      <sha3 input="5121">d07ffdb737ad569dc7f648f0bc6dd0968475a7c72dc8aaf8a40184829d9e276d</sha3>
+      <sha3 input="6144">2d31fe5b4080fb6a965196936406cb33d3a929030ad9b151dde066e533bb4b99</sha3>
+      <sha3 input="6145">2277dd53396cef38fe8aa8716739e7d2f4fa33a55c697f21409e96715eca91dc</sha3>
+      <sha3 input="7168">de9a4c24206979eea656585ffc5877faf6203b1bc90a4fbde802f05c36d44c73</sha3>
+      <sha3 input="7169">1c76a266bcfc80883d589fbd593ccd628d0b368ecbb40bd9e932d9def73598c9</sha3>
+      <sha3 input="8192">ae1e2d41aabdd5f20028d82dbd03bb02c64de6021b9c5afb5db3bec5b415528c</sha3>
+      <sha3 input="8193">91cbc140c95662bd52cfb156b36fe9eed52f264dd7babde25cb5e84837633b88</sha3>
+      <sha3 input="16384">8f8eeb8c5f4c7ca72654a2f6b8ee7c84e0367846655af46494e3e98f91208a43</sha3>
+      <sha3 input="31744">cbc6fd3ce90dafe74a83bb29674e48082f59efd400b989214a63e85ae1984d43</sha3>
+    </file_get_checksum>
   </TestHashAlgorithm>
   <TestInterpreter>
     <interpreter_disassemble_function>
@@ -3386,28 +3444,38 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>blake2b-160('') -> ${hash::bytes-to-string(hash::blake2b-160(''))}</code>
+      <code>blake2b-160('') -> ${hash::bytes-to-string(hash::blake2b('', '160'))}</code>
       <output>blake2b-160('') -> 3345524abf6bbe1809449224b5972c41790b6cf2</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>blake2b-256('') -> ${hash::bytes-to-string(hash::blake2b-256(''))}</code>
+      <code>blake2b-256('') -> ${hash::bytes-to-string(hash::blake2b('', '256'))}</code>
       <output>blake2b-256('') -> 0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>blake2b-384('') -> ${hash::bytes-to-string(hash::blake2b-384(''))}</code>
+      <code>blake2b-256('') -> ${hash::bytes-to-string(hash::blake2b(''))}</code>
+      <output>blake2b-256('') -> 0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>blake2b-384('') -> ${hash::bytes-to-string(hash::blake2b('', '384'))}</code>
       <output>blake2b-384('') -> b32811423377f52d7862286ee1a72ee540524380fda1724a6f25d7978c6fd3244a6caf0498812673c5e05ef583825100</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>blake2b-512('') -> ${hash::bytes-to-string(hash::blake2b-512(''))}</code>
+      <code>blake2b-512('') -> ${hash::bytes-to-string(hash::blake2b('', '512'))}</code>
       <output>blake2b-512('') -> 786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>blake3-256('') -> ${hash::bytes-to-string(hash::blake3-256(''))}</code>
-      <output>blake3-256('') -> af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</output>
+      <code>blake3('') -> ${hash::bytes-to-string(hash::blake3('', '256'))}</code>
+      <output>blake3('') -> af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>blake3('') -> ${hash::bytes-to-string(hash::blake3(''))}</code>
+      <output>blake3('') -> af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -3451,42 +3519,52 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-224('') -> ${hash::bytes-to-string(hash::keccak-224(''))}</code>
+      <code>hash::keccak-224('') -> ${hash::bytes-to-string(hash::keccak('', '224'))}</code>
       <output>hash::keccak-224('') -> f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-256('') -> ${hash::bytes-to-string(hash::keccak-256(''))}</code>
+      <code>hash::keccak-256('') -> ${hash::bytes-to-string(hash::keccak('', '256'))}</code>
       <output>hash::keccak-256('') -> c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-384('') -> ${hash::bytes-to-string(hash::keccak-384(''))}</code>
+      <code>hash::keccak-256('') -> ${hash::bytes-to-string(hash::keccak(''))}</code>
+      <output>hash::keccak-256('') -> c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::keccak-384('') -> ${hash::bytes-to-string(hash::keccak('', '384'))}</code>
       <output>hash::keccak-384('') -> 2c23146a63a29acf99e73b88f8c24eaa7dc60aa771780ccc006afbfa8fe2479b2dd2b21362337441ac12b515911957ff</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-512('') -> ${hash::bytes-to-string(hash::keccak-512(''))}</code>
+      <code>hash::keccak-512('') -> ${hash::bytes-to-string(hash::keccak('', '512'))}</code>
       <output>hash::keccak-512('') -> 0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-224('') -> ${hash::bytes-to-string(hash::sha3-224(''))}</code>
+      <code>hash::sha3-224('') -> ${hash::bytes-to-string(hash::sha3('', '224'))}</code>
       <output>hash::sha3-224('') -> 6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-256('') -> ${hash::bytes-to-string(hash::sha3-256(''))}</code>
+      <code>hash::sha3-256('') -> ${hash::bytes-to-string(hash::sha3('', '256'))}</code>
       <output>hash::sha3-256('') -> a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-384('') -> ${hash::bytes-to-string(hash::sha3-384(''))}</code>
+      <code>hash::sha3-256('') -> ${hash::bytes-to-string(hash::sha3(''))}</code>
+      <output>hash::sha3-256('') -> a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::sha3-384('') -> ${hash::bytes-to-string(hash::sha3('', '384'))}</code>
       <output>hash::sha3-384('') -> 0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-512('') -> ${hash::bytes-to-string(hash::sha3-512(''))}</code>
+      <code>hash::sha3-512('') -> ${hash::bytes-to-string(hash::sha3('', '512'))}</code>
       <output>hash::sha3-512('') -> a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26</output>
       <return>1</return>
     </interpreter_evaluate_code>
@@ -4364,17 +4442,32 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
         <property name="checksum" value="${file::get-checksum(file, 'crc32')}" />
         <fail unless="${string::equal('00000000', checksum)}" message="checksum - ${checksum}" />
 
-        <property name="checksum" value="${file::get-checksum(file, 'blake2b-160')}" />
+        <property name="checksum" value="${file::get-checksum(file, 'blake2b', '160')}" />
         <fail unless="${string::equal('3345524abf6bbe1809449224b5972c41790b6cf2', checksum)}" message="checksum - ${checksum}" />
 
-        <property name="checksum" value="${file::get-checksum(file, 'blake2b-256')}" />
+        <property name="checksum" value="${file::get-checksum(file, 'blake2b', '256')}" />
         <fail unless="${string::equal('0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8', checksum)}" message="checksum - ${checksum}" />
 
-        <property name="checksum" value="${file::get-checksum(file, 'blake2b-384')}" />
+        <property name="checksum" value="${file::get-checksum(file, 'blake2b')}" />
+        <fail unless="${string::equal('0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'blake3', '256')}" />
+        <fail unless="${string::equal('af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'blake3')}" />
+        <fail unless="${string::equal('af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'blake2b', '384')}" />
         <fail unless="${string::equal('b32811423377f52d7862286ee1a72ee540524380fda1724a6f25d7978c6fd3244a6caf0498812673c5e05ef583825100', checksum)}" message="checksum - ${checksum}" />
 
-        <property name="checksum" value="${file::get-checksum(file, 'blake2b-512')}" />
+        <property name="checksum" value="${file::get-checksum(file, 'blake2b', '512')}" />
         <fail unless="${string::equal('786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'sha3', '256')}" />
+        <fail unless="${string::equal('a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'sha3')}" />
+        <fail unless="${string::equal('a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a', checksum)}" message="checksum - ${checksum}" />
 
         <property name="file_get-creation-time" value="${file::get-creation-time(property::get-value('file'))}" />
         <property name="file_get-creation-time-utc" value="${file::get-creation-time-utc(property::get-value('file'))}" />
@@ -4389,7 +4482,14 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
         <fail unless="${string::equal('0', file_get-length)}" message="file_get-length - ${file_get-length}" />
 
         <echo file="${file}" message="The quick brown fox jumps over the lazy dog" />
+
         <property name="checksum" value="${file::get-checksum(file, 'crc32')}" />
+        <fail unless="${string::equal('39a34f41', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'crc32', 'decreasing')}" />
+        <fail unless="${string::equal('414fa339', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'crc32', 'increasing')}" />
         <fail unless="${string::equal('39a34f41', checksum)}" message="checksum - ${checksum}" />
 
         <property name="new_file" value="${path::get-temp-file-name()}" />
@@ -5738,13 +5838,13 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_build_file>
       <file path="Chapter3/CopyFilterchain.build" blake2b-160="7b0795fcd477843597971b600532119ec49909dd" crc32_1="0x64baba1" crc32_2="0xa1ab4b06" />
       <content line="3"><![CDATA[	<property name="input_file" value="${path::combine(tests_base_directory, 'Chapter3/template.txt')}" />]]></content>
-      <content line="4"><![CDATA[	<fail unless="${string::equal('c28c22979f9913623e5b73cd815e3c288953d19d', file::get-checksum(input_file, 'blake2b-160'))}"]]></content>
+      <content line="4"><![CDATA[	<fail unless="${string::equal('c28c22979f9913623e5b73cd815e3c288953d19d', file::get-checksum(input_file, 'blake2b', '160'))}"]]></content>
       <content line="5"><![CDATA[		message="Hash sum of file '${input_file}' not equal to the 'c28c22979f9913623e5b73cd815e3c288953d19d'." />]]></content>
       <content line="6"><![CDATA[	<property name="reference_file" value="${path::combine(tests_base_directory, 'Chapter3/specific.txt')}" />]]></content>
       <content line="7"><![CDATA[	<property name="output_file" value="${path::get-temp-file-name()}" />]]></content>
       <content line="8"><![CDATA[	<copy file="${input_file}" tofile="${output_file}" overwrite="true" />]]></content>
       <content line="9"><![CDATA[	<fail unless="${file::replace(output_file, '@DRIVELETTER@', 'D')}" message="Failed while call replace function." />]]></content>
-      <content line="10"><![CDATA[	<fail unless="${string::equal(file::get-checksum(reference_file, 'blake2b-160'), file::get-checksum(output_file, 'blake2b-160'))}"]]></content>
+      <content line="10"><![CDATA[	<fail unless="${string::equal(file::get-checksum(reference_file, 'blake2b', '160'), file::get-checksum(output_file, 'blake2b', '160'))}"]]></content>
       <content line="11"><![CDATA[		message="File '${reference_file}' not equal to the '${output_file}'." />]]></content>
       <return>1</return>
     </project_load_from_build_file>
