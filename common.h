@@ -40,6 +40,9 @@ uint8_t common_get_two_arguments(const struct buffer* arguments, struct range* a
 uint8_t common_get_three_arguments(const struct buffer* arguments, struct range* argument1,
 								   struct range* argument2, struct range* argument3, uint8_t terminate);
 
+uint8_t common_get_arguments(const struct buffer* boxed_arguments,
+							 uint8_t arguments_count, struct range* arguments, uint8_t terminate);
+
 uint8_t common_get_attributes_and_arguments_for_task(
 	const uint8_t** input_task_attributes,
 	const uint8_t* input_task_attributes_lengths,

@@ -590,6 +590,33 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 	return BLAKE3_get_bytes_from_root_chunk(hash_length, h, m, l, domain_flags, output);
 }
 
+uint8_t BLAKE3_init(uint32_t* h, uint8_t h_length,
+					uint32_t* m, uint8_t m_length,
+					uint16_t stack_length)
+{
+	if (NULL == h ||
+		h_length < BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t) ||
+		NULL == m ||
+		m_length < BLAKE3_BLOCK_LENGTH / sizeof(uint32_t) ||
+		stack_length < BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH)
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__
+
+	if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
+	{
+		return 0;
+	}
+
+#else
+	memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
+#endif
+	memset(m, 0, BLAKE3_BLOCK_LENGTH);
+	return 1;
+}
+
 uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length, uint8_t* output)
 {
 	if (NULL == start ||
@@ -601,27 +628,25 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 		return 0;
 	}
 
+	static const uint8_t d = 0;
+	/**/
 	const ptrdiff_t length = finish - start;
-	uint8_t stack[BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH];
-	uint8_t stack_length = 0;
-	uint8_t compressed = 0;
+	uint32_t m[BLAKE3_BLOCK_LENGTH / sizeof(uint32_t)];
 	uint32_t h[BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)];
-#if __STDC_SEC_API__
 
-	if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
+	if (!BLAKE3_init(h, BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t),
+					 m, BLAKE3_BLOCK_LENGTH / sizeof(uint32_t),
+					 BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH))
 	{
 		return 0;
 	}
 
-#else
-	memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
-#endif
-	uint32_t m[BLAKE3_BLOCK_LENGTH / sizeof(uint32_t)];
-	memset(m, 0, BLAKE3_BLOCK_LENGTH);
+	uint8_t l = 0;
 	uint32_t t[2];
 	t[0] = t[1] = 0;
-	uint8_t l = 0;
-	uint8_t d = 0;
+	uint8_t compressed = 0;
+	uint8_t stack[BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH];
+	uint8_t stack_length = 0;
 
 	if (0 < length && !BLAKE3_core(start, (uint64_t)length, m, &l, h, &compressed, t, stack, &stack_length, d))
 	{
@@ -631,9 +656,17 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 	return BLAKE3_final(stack, stack_length, compressed, t, h, m, l, d, hash_length, output);
 }
 
-uint8_t hash_algorithm_blake3_256(const uint8_t* start, const uint8_t* finish, struct buffer* output)
+uint8_t hash_algorithm_blake3(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
+							  struct buffer* output)
 {
-	return buffer_append(output, NULL, 256) &&
-		   BLAKE3(start, finish, 32, (buffer_data(output, 0) + buffer_size(output) - 256)) &&
-		   buffer_resize(output, buffer_size(output) - 224);
+	if (hash_length < 8 || 1024 < hash_length)
+	{
+		return 0;
+	}
+
+	hash_length = hash_length / 8;
+	/**/
+	return buffer_append(output, NULL, UINT8_MAX) &&
+		   BLAKE3(start, finish, (uint8_t)hash_length, (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
 }

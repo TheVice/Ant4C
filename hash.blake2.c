@@ -104,41 +104,7 @@ uint8_t BLAKE2b_compress(uint64_t* h, const uint64_t* chunk, const uint64_t* t, 
 
 	return 1;
 }
-#if TODO
-uint8_t BLAKE2b_Pad(const uint8_t* key, ptrdiff_t key_size, uint8_t result_size, struct buffer* output)
-{
-	if (NULL == key ||
-		key_size < 1 ||
-		result_size < key_size ||
-		NULL == output)
-	{
-		return 0;
-	}
 
-	const ptrdiff_t size = buffer_size(output);
-
-	if (!buffer_append(output, NULL, result_size) ||
-		!buffer_resize(output, size) ||
-		!buffer_append(output, key, key_size))
-	{
-		return 0;
-	}
-
-	result_size -= (uint8_t)key_size;
-
-	while (result_size > 0)
-	{
-		if (!buffer_push_back(output, 0))
-		{
-			return 0;
-		}
-
-		--result_size;
-	}
-
-	return 1;
-}
-#endif
 uint8_t BLAKE2b_init(uint8_t hash_length, uint64_t* output)
 {
 	if (NULL == output)
@@ -225,9 +191,7 @@ uint8_t BLAKE2b_final(const uint8_t* start, ptrdiff_t* bytes_compressed, uint8_t
 }
 
 uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,
-				const uint8_t* key, ptrdiff_t key_size,
-				uint8_t hash_length,
-				uint64_t* output)
+				uint8_t hash_length, uint64_t* output)
 {
 	if (NULL == start ||
 		NULL == finish ||
@@ -237,111 +201,38 @@ uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,
 		return 0;
 	}
 
-	for (uint8_t i = 1; i < 8; ++i)
+	if (!BLAKE2b_init(hash_length, output))
 	{
-		output[i] = IV[i];
+		return 0;
 	}
 
-	output[0] = 0x01010000;
-	output[0] += (key_size << 2);
-	output[0] += hash_length;
-	output[0] = IV[0] ^ output[0];
-	/**/
-	uint64_t t[2];
 	ptrdiff_t bytes_compressed = 0;
-	ptrdiff_t bytes_remaining = finish - start;
-#if TODO
 
-	if (key_size > 0)
+	while (start + 128 < finish)
 	{
-		/*... = BLAKE2b_Pad(key, 128, o) || ... */
-		bytes_remaining += 128;
-	}
-
-#else
-	(void)key;
-#endif
-	t[0] = t[1] = 0;/*NOTE: using of t[1] not implemented.*/
-
-	while (bytes_remaining > 128)
-	{
-		bytes_compressed += 128;
-		bytes_remaining -= 128;
-		t[0] = bytes_compressed;
-
-		if (!BLAKE2b_compress(output, (const uint64_t*)(start + bytes_compressed - 128), t, 0))
+		if (!BLAKE2b_core(start, start + 128, &bytes_compressed, output))
 		{
 			return 0;
 		}
+
+		start += 128;
 	}
 
-	struct buffer chunk;
+	return BLAKE2b_final(start, &bytes_compressed, (uint8_t)(finish - start), output);
+}
 
-	SET_NULL_TO_BUFFER(chunk);
-
-	if (!buffer_append(&chunk, NULL, 128) ||
-		!buffer_resize(&chunk, 0))
+uint8_t hash_algorithm_blake2b(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
+							   struct buffer* output)
+{
+	if (hash_length < 8 || 1024 < hash_length)
 	{
-		buffer_release(&chunk);
 		return 0;
 	}
 
-	if (0 < bytes_remaining)
-	{
-		if (!buffer_append(&chunk, start + bytes_compressed, bytes_remaining))
-		{
-			buffer_release(&chunk);
-			return 0;
-		}
-
-		bytes_compressed += bytes_remaining;
-		t[0] = bytes_compressed;
-		bytes_remaining = 0;
-	}
-
-	while (buffer_size(&chunk) < 128)
-	{
-		if (!buffer_push_back(&chunk, 0))
-		{
-			buffer_release(&chunk);
-			return 0;
-		}
-	}
-
-	if (!BLAKE2b_compress(output, (const uint64_t*)buffer_data(&chunk, 0), t, 1))
-	{
-		buffer_release(&chunk);
-		return 0;
-	}
-
-	buffer_release(&chunk);
-	return 1;
-}
-
-uint8_t hash_algorithm_blake2b_160(const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   BLAKE2b(start, finish, NULL, 0, 20, (uint64_t*)(buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 108);
-}
-
-uint8_t hash_algorithm_blake2b_256(const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   BLAKE2b(start, finish, NULL, 0, 32, (uint64_t*)(buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 96);
-}
-
-uint8_t hash_algorithm_blake2b_384(const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   BLAKE2b(start, finish, NULL, 0, 48, (uint64_t*)(buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 80);
-}
-
-uint8_t hash_algorithm_blake2b_512(const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   BLAKE2b(start, finish, NULL, 0, 64, (uint64_t*)(buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 64);
+	hash_length = hash_length / 8;
+	/**/
+	return buffer_append(output, NULL, UINT8_MAX) &&
+		   BLAKE2b(start, finish, (uint8_t)hash_length,
+				   (uint64_t*)(buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
 }

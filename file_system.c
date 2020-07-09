@@ -94,6 +94,40 @@ size_t file_read(void* content, const size_t size_of_content_element,
 #endif
 }
 
+uint8_t file_read_with_several_steps(void* stream, struct buffer* content)
+{
+	if (NULL == stream ||
+		NULL == content)
+	{
+		return 0;
+	}
+
+	ptrdiff_t size = buffer_size(content);
+
+	if (!buffer_append(content, NULL, 4096))
+	{
+		return 0;
+	}
+
+	size_t readed = 0;
+	uint8_t* ptr = buffer_data(content, size);
+
+	while (0 < (readed = file_read(ptr, sizeof(uint8_t), 4096, stream)))
+	{
+		size += (ptrdiff_t)readed;
+
+		if (!buffer_resize(content, size) ||
+			(4096 == readed && !buffer_append(content, NULL, 4096)))
+		{
+			return 0;
+		}
+
+		ptr = buffer_data(content, size);
+	}
+
+	return buffer_resize(content, size);
+}
+
 size_t file_write(const void* content, const size_t size_of_content_element,
 				  const size_t count_of_elements, void* stream)
 {

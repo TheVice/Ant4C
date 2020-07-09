@@ -254,6 +254,49 @@ uint8_t common_get_three_arguments(const struct buffer* arguments, struct range*
 	return ret1 && ret2 && ret3;
 }
 
+uint8_t common_get_arguments(const struct buffer* boxed_arguments, uint8_t arguments_count,
+							 struct range* arguments, uint8_t terminate)
+{
+	if (NULL == arguments)
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 0; i < arguments_count; ++i)
+	{
+		struct buffer* argument = buffer_buffer_data(boxed_arguments, i);
+
+		if (argument)
+		{
+			const ptrdiff_t size = buffer_size(argument);
+
+			if (size)
+			{
+				if (terminate)
+				{
+					if (!buffer_push_back(argument, '\0'))
+					{
+						return 0;
+					}
+				}
+
+				arguments[i].start = buffer_data(argument, 0);
+				arguments[i].finish = arguments[i].start + size;
+			}
+			else
+			{
+				arguments[i].start = arguments[i].finish = NULL;
+			}
+		}
+		else
+		{
+			arguments[i].start = arguments[i].finish = (const uint8_t*)(&(arguments[i]));
+		}
+	}
+
+	return 1;
+}
+
 uint8_t common_get_attributes_and_arguments_for_task(
 	const uint8_t** input_task_attributes,
 	const uint8_t* input_task_attributes_lengths,

@@ -8,6 +8,7 @@
 #include "hash.h"
 #include "buffer.h"
 #include "common.h"
+#include "conversion.h"
 #include "file_system.h"
 #include "range.h"
 
@@ -60,33 +61,35 @@ uint8_t hash_algorithm_bytes_to_string(const uint8_t* start, const uint8_t* fini
 	return buffer_resize(output, size);
 }
 
+static const uint8_t* crc32_parameters_str[] =
+{
+	(const uint8_t*)"decreasing",
+	(const uint8_t*)"increasing"
+};
+
+enum crc32_parameters
+{
+	decreasing,
+	increasing,
+	UNKNOWN_CRC32_PARAMETER
+};
+
 static const uint8_t* hash_function_str[] =
 {
-	(const uint8_t*)"blake2b-160",
-	(const uint8_t*)"blake2b-256",
-	(const uint8_t*)"blake2b-384",
-	(const uint8_t*)"blake2b-512",
-	(const uint8_t*)"blake3-256",
+	(const uint8_t*)"blake2b",
+	(const uint8_t*)"blake3",
 	(const uint8_t*)"bytes-to-string",
 	(const uint8_t*)"crc32",
-	(const uint8_t*)"keccak-224",
-	(const uint8_t*)"keccak-256",
-	(const uint8_t*)"keccak-384",
-	(const uint8_t*)"keccak-512",
-	(const uint8_t*)"sha3-224",
-	(const uint8_t*)"sha3-256",
-	(const uint8_t*)"sha3-384",
-	(const uint8_t*)"sha3-512"
+	(const uint8_t*)"keccak",
+	(const uint8_t*)"sha3"
 };
 
 enum hash_function
 {
-	blake2b_160, blake2b_256, blake2b_384, blake2b_512,
-	blake3_256,
+	blake2b, blake3,
 	bytes_to_string,
 	crc32,
-	keccak_224, keccak_256, keccak_384, keccak_512,
-	sha3_224, sha3_256, sha3_384, sha3_512,
+	keccak, sha3,
 	UNKNOWN_HASH_FUNCTION
 };
 
@@ -106,68 +109,52 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[2];
 
-	struct range argument2;
-
-	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
-
-	if (1 == arguments_count)
+	if (!common_get_arguments(arguments, arguments_count, values,
+							  crc32 != function &&
+							  bytes_to_string != function))
 	{
-		if (!common_get_one_argument(arguments, &argument1, 0))
-		{
-			argument1.start = argument1.finish = (const uint8_t*)&argument1;
-		}
+		return 0;
 	}
-	else if (2 == arguments_count)
-	{
-		if (!common_get_two_arguments(arguments, &argument1, &argument2, 0))
-		{
-			if (range_is_null_or_empty(&argument1))
-			{
-				argument1.start = argument1.finish = (const uint8_t*)&argument1;
-			}
 
-			arguments_count = 1;
-		}
+	uint16_t hash_length = 256;
+
+	if (2 == arguments_count &&
+		crc32 != function &&
+		bytes_to_string != function)
+	{
+		hash_length = (uint16_t)int_parse(values[1].start);
+	}
+
+	if (NULL == values[0].start)
+	{
+		values[0].start = values[0].finish = (const uint8_t*)&values[0];
 	}
 
 	switch (function)
 	{
-		case blake2b_160:
-			return 1 == arguments_count && hash_algorithm_blake2b_160(argument1.start, argument1.finish, output);
+		case blake2b:
+			return (1 == arguments_count || 2 == arguments_count) &&
+				   hash_algorithm_blake2b(values[0].start, values[0].finish, hash_length, output);
 
-		case blake2b_256:
-			return 1 == arguments_count && hash_algorithm_blake2b_256(argument1.start, argument1.finish, output);
-
-		case blake2b_384:
-			return 1 == arguments_count && hash_algorithm_blake2b_384(argument1.start, argument1.finish, output);
-
-		case blake2b_512:
-			return 1 == arguments_count && hash_algorithm_blake2b_512(argument1.start, argument1.finish, output);
-
-		case blake3_256:
-			return 1 == arguments_count && hash_algorithm_blake3_256(argument1.start, argument1.finish, output);
+		case blake3:
+			return (1 == arguments_count || 2 == arguments_count) &&
+				   hash_algorithm_blake3(values[0].start, values[0].finish, hash_length, output);
 
 		case bytes_to_string:
-			return 1 == arguments_count && hash_algorithm_bytes_to_string(argument1.start, argument1.finish, output);
+			return 1 == arguments_count && hash_algorithm_bytes_to_string(values[0].start, values[0].finish, output);
 
 		case crc32:
 		{
-			uint8_t order = 1;
+			hash_length = 1;
 
 			if (2 == arguments_count)
 			{
-				if (10 != range_size(&argument2))
-				{
-					break;
-				}
+				hash_length = common_string_to_enum(values[1].start, values[1].finish, crc32_parameters_str,
+													UNKNOWN_CRC32_PARAMETER);
 
-				order = argument2.start ?
-						(0 == memcmp("decreasing", argument2.start, 10) ? 0 :
-						 (0 == memcmp("increasing", argument2.start, 10) ? 1 : 2)) : 2;
-
-				if (1 < order)
+				if (UNKNOWN_CRC32_PARAMETER == hash_length)
 				{
 					break;
 				}
@@ -178,33 +165,22 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 				break;
 			}
 
+			if (NULL == values[0].start)
+			{
+				values[0].start = values[0].finish = (const uint8_t*)&values[0];
+			}
+
 			uint32_t* ptr = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
-			return hash_algorithm_crc32(argument1.start, argument1.finish, ptr, order);
+			return hash_algorithm_crc32(values[0].start, values[0].finish, ptr, (uint8_t)hash_length);
 		}
 
-		case keccak_224:
-			return 1 == arguments_count && hash_algorithm_keccak_224(argument1.start, argument1.finish, output);
+		case keccak:
+			return (1 == arguments_count || 2 == arguments_count) &&
+				   hash_algorithm_keccak(values[0].start, values[0].finish, hash_length, output);
 
-		case keccak_256:
-			return 1 == arguments_count && hash_algorithm_keccak_256(argument1.start, argument1.finish, output);
-
-		case keccak_384:
-			return 1 == arguments_count && hash_algorithm_keccak_384(argument1.start, argument1.finish, output);
-
-		case keccak_512:
-			return 1 == arguments_count && hash_algorithm_keccak_512(argument1.start, argument1.finish, output);
-
-		case sha3_224:
-			return 1 == arguments_count && hash_algorithm_sha3_224(argument1.start, argument1.finish, output);
-
-		case sha3_256:
-			return 1 == arguments_count && hash_algorithm_sha3_256(argument1.start, argument1.finish, output);
-
-		case sha3_384:
-			return 1 == arguments_count && hash_algorithm_sha3_384(argument1.start, argument1.finish, output);
-
-		case sha3_512:
-			return 1 == arguments_count && hash_algorithm_sha3_512(argument1.start, argument1.finish, output);
+		case sha3:
+			return (1 == arguments_count || 2 == arguments_count) &&
+				   hash_algorithm_sha3(values[0].start, values[0].finish, hash_length, output);
 
 		case UNKNOWN_HASH_FUNCTION:
 		default:
@@ -214,27 +190,42 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 	return 0;
 }
 
-uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm, struct buffer* output)
+uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
+						   const struct range* algorithm_parameter, struct buffer* output)
 {
 	if (NULL == path ||
-		range_is_null_or_empty(algorithm) ||
+		bytes_to_string == algorithm ||
+		UNKNOWN_HASH_FUNCTION == algorithm ||
 		NULL == output)
 	{
 		return 0;
 	}
 
-	const uint8_t algorithm_value = common_string_to_enum(algorithm->start, algorithm->finish,
-									hash_function_str, UNKNOWN_HASH_FUNCTION);
+	uint16_t hash_length = crc32 == algorithm ? 1 : 256;
 
-	if (blake3_256 == algorithm_value ||
-		bytes_to_string == algorithm_value ||
-		crc32 < algorithm_value)
+	if (!range_is_null_or_empty(algorithm_parameter))
 	{
-		return 0;
+		if (crc32 != algorithm)
+		{
+			hash_length = (uint16_t)int_parse(algorithm_parameter->start);
+
+			if (hash_length < 8 || 1024 < hash_length)
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			hash_length = common_string_to_enum(algorithm_parameter->start, algorithm_parameter->finish,
+												crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
+
+			if (UNKNOWN_CRC32_PARAMETER == hash_length)
+			{
+				return 0;
+			}
+		}
 	}
 
-	uint8_t hash_size = 0;
-	const ptrdiff_t size = buffer_size(output);
 	void* file = NULL;
 
 	if (!file_open(path, (const uint8_t*)"rb", &file))
@@ -242,23 +233,154 @@ uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm, st
 		return 0;
 	}
 
-	switch (algorithm_value)
+	const ptrdiff_t size = buffer_size(output);
+
+	switch (algorithm)
 	{
-		case blake2b_160:
-			hash_size = 20;
-			break;
+		case blake2b:
+		{
+			hash_length = hash_length / 8;
 
-		case blake2b_256:
-			hash_size = 32;
-			break;
+			if (!buffer_append(output, NULL, 64 + 128 + 4096 + 128))
+			{
+				break;
+			}
 
-		case blake2b_384:
-			hash_size = 48;
-			break;
+			uint64_t* out = (uint64_t*)buffer_data(output, size + 64);
 
-		case blake2b_512:
-			hash_size = 64;
-			break;
+			if (!BLAKE2b_init((uint8_t)hash_length, out))
+			{
+				break;
+			}
+
+			size_t readed = 0;
+			uint8_t* last = NULL;
+			ptrdiff_t bytes_compressed = 0;
+			uint8_t* file_content = buffer_data(output, size + 64 + 128);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				if (last && !BLAKE2b_core(last, last + 128, &bytes_compressed, out))
+				{
+					file_close(file);
+					return 0;
+				}
+
+				last = NULL;
+
+				if (4096 != readed)
+				{
+					if (128 < readed)
+					{
+						uint16_t bytes_to_compress = (uint16_t)(128 * (readed / 128));
+
+						if (0 == readed % 128)
+						{
+							bytes_to_compress -= 128;
+						}
+
+						if (!BLAKE2b_core(file_content, file_content + bytes_to_compress, &bytes_compressed, out))
+						{
+							file_close(file);
+							return 0;
+						}
+
+						readed -= bytes_compressed;
+						file_content += bytes_to_compress;
+					}
+
+					break;
+				}
+
+				if (!BLAKE2b_core(file_content, file_content + 4096 - 128, &bytes_compressed, out))
+				{
+					file_close(file);
+					return 0;
+				}
+
+				last = file_content + 4096;
+#if __STDC_SEC_API__
+				memcpy_s(last, 128, file_content + 4096 - 128, 128);
+#else
+				memcpy(last, file_content + 4096 - 128, 128);
+#endif
+			}
+
+			if (last)
+			{
+				if (!readed)
+				{
+					file_content = last;
+					readed = 128;
+				}
+				else
+				{
+					if (!BLAKE2b_core(last, last + 128, &bytes_compressed, out))
+					{
+						break;
+					}
+				}
+			}
+
+			if (!BLAKE2b_final(file_content, &bytes_compressed, (uint8_t)readed, out))
+			{
+				break;
+			}
+
+			return file_close(file) &&
+				   buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string((const uint8_t*)out, ((const uint8_t*)out) + hash_length, output);
+		}
+
+		case blake3:
+		{
+			static const uint8_t d = 0;
+			/**/
+			hash_length = hash_length / 8;
+			/**/
+			uint32_t h[8];
+			uint32_t m[16];
+			uint8_t stack[256];
+
+			if (!BLAKE3_init(h, sizeof(h), m, sizeof(m), sizeof(stack)))
+			{
+				break;
+			}
+
+			uint8_t l = 0;
+			uint32_t t[2];
+			t[0] = t[1] = 0;
+			uint8_t compressed = 0;
+			uint8_t stack_length = 0;
+
+			if (!buffer_append(output, NULL, 4096))
+			{
+				break;
+			}
+
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				if (!BLAKE3_core(file_content, readed, m, &l, h, &compressed, t, stack, &stack_length, d))
+				{
+					file_close(file);
+					return 0;
+				}
+			}
+
+			file_content = buffer_data(output, size + 64);
+
+			if (!file_close(file) ||
+				!BLAKE3_final(stack, stack_length, compressed, t, h, m, l, d, (uint8_t)hash_length, file_content))
+			{
+				break;
+			}
+
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string(file_content, file_content + hash_length, output);
+		}
 
 		case crc32:
 		{
@@ -266,14 +388,12 @@ uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm, st
 
 			if (!hash_algorithm_crc32_init(&out))
 			{
-				file_close(file);
-				return 0;
+				break;
 			}
 
 			if (!buffer_append(output, NULL, 4096))
 			{
-				file_close(file);
-				return 0;
+				break;
 			}
 
 			size_t readed = 0;
@@ -289,120 +409,96 @@ uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm, st
 			}
 
 			if (!file_close(file) ||
-				!hash_algorithm_crc32_final(&out, 1))
+				!hash_algorithm_crc32_final(&out, (uint8_t)hash_length))
 			{
-				file_close(file);
-				return 0;
+				break;
 			}
 
 			return buffer_resize(output, size) &&
 				   hash_algorithm_bytes_to_string((const uint8_t*)&out, ((const uint8_t*)&out) + sizeof(uint32_t), output);
 		}
 
-		default:
-			file_close(file);
-			return 0;
-	}
-
-	if (algorithm_value < blake3_256)
-	{
-		if (!buffer_append(output, NULL, 64 + 128 + 4096 + 128))
+		case keccak:
+		case sha3:
 		{
-			file_close(file);
-			return 0;
-		}
-
-		uint64_t* out = (uint64_t*)buffer_data(output, size + 64);
-
-		if (!BLAKE2b_init(hash_size, out))
-		{
-			file_close(file);
-			return 0;
-		}
-
-		size_t readed = 0;
-		uint8_t* last = NULL;
-		ptrdiff_t bytes_compressed = 0;
-		uint8_t* file_content = buffer_data(output, size + 64 + 128);
-
-		while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
-		{
-			if (last && !BLAKE2b_core(last, last + 128, &bytes_compressed, out))
+			if (224 != hash_length &&
+				256 != hash_length &&
+				384 != hash_length &&
+				512 != hash_length)
 			{
-				file_close(file);
-				return 0;
-			}
-
-			last = NULL;
-
-			if (4096 != readed)
-			{
-				if (128 < readed)
-				{
-					uint16_t bytes_to_compress = (uint16_t)(128 * (readed / 128));
-
-					if (0 == readed % 128)
-					{
-						bytes_to_compress -= 128;
-					}
-
-					if (!BLAKE2b_core(file_content, file_content + bytes_to_compress, &bytes_compressed, out))
-					{
-						file_close(file);
-						return 0;
-					}
-
-					readed -= bytes_compressed;
-					file_content += bytes_to_compress;
-				}
-
 				break;
 			}
 
-			if (!BLAKE2b_core(file_content, file_content + 4096 - 128, &bytes_compressed, out))
+			if (!file_read_with_several_steps(file, output))
 			{
-				file_close(file);
-				return 0;
+				break;
 			}
 
-			last = file_content + 4096;
-#if __STDC_SEC_API__
-			memcpy_s(last, 128, file_content + 4096 - 128, 128);
-#else
-			memcpy(last, file_content + 4096 - 128, 128);
-#endif
-		}
+			const ptrdiff_t new_size = buffer_size(output);
 
-		if (!file_close(file))
-		{
-			return 0;
-		}
-
-		if (last)
-		{
-			if (!readed)
+			if (!buffer_append(output, NULL, 64))
 			{
-				file_content = last;
-				readed = 128;
+				break;
+			}
+
+			struct range content;
+
+			content.start = buffer_data(output, size);
+
+			content.finish = buffer_data(output, new_size);
+
+			if (!buffer_resize(output, size + 64))
+			{
+				break;
+			}
+
+			if (keccak == algorithm)
+			{
+				if (!file_close(file) ||
+					!hash_algorithm_keccak(content.start, content.finish, hash_length, output))
+				{
+					break;
+				}
 			}
 			else
 			{
-				if (!BLAKE2b_core(last, last + 128, &bytes_compressed, out))
+				if (!file_close(file) ||
+					!hash_algorithm_sha3(content.start, content.finish, hash_length, output))
 				{
-					return 0;
+					break;
 				}
 			}
+
+			content.start = buffer_data(output, size + 64);
+			content.finish = buffer_data(output, 0) + buffer_size(output);
+
+			if (NULL == content.start ||
+				NULL == content.finish)
+			{
+				break;
+			}
+
+			if (!buffer_resize(output, size))
+			{
+				return 0;
+			}
+
+			return hash_algorithm_bytes_to_string(content.start, content.finish, output);
 		}
 
-		if (!BLAKE2b_final(file_content, &bytes_compressed, (uint8_t)readed, out))
-		{
-			return 0;
-		}
-
-		return buffer_resize(output, size) &&
-			   hash_algorithm_bytes_to_string((const uint8_t*)out, ((const uint8_t*)out) + hash_size, output);
+		default:
+			break;
 	}
 
 	file_close(file);
 	return 0;
+}
+
+uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm,
+						  const struct range* algorithm_parameter, struct buffer* output)
+{
+	return !range_is_null_or_empty(algorithm) &&
+		   file_get_checksum_(path, common_string_to_enum(algorithm->start, algorithm->finish,
+							  hash_function_str, UNKNOWN_HASH_FUNCTION),
+							  algorithm_parameter, output);
 }
