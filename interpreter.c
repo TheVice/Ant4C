@@ -17,6 +17,7 @@
 #include "file_system.h"
 #include "for_each.h"
 #include "hash.h"
+#include "listener.h"
 #include "load_file.h"
 #include "math_unit.h"
 #include "operating_system.h"
@@ -1871,7 +1872,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			}
 
 			task_attributes_count = for_each_evaluate_task(the_project, the_target, attributes_finish, element_finish,
-									&task_arguments, verbose);
+									&task_arguments, fail_on_error, verbose);
 			break;
 
 		case if_task:
@@ -2117,14 +2118,19 @@ uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 			break;
 		}
 
-		if (!interpreter_evaluate_task(the_project, the_target,
-									   interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish),
+		const uint8_t task = interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish);
+		listener_task_started(NULL, 0, the_project, the_target, task);
+
+		if (!interpreter_evaluate_task(the_project, the_target, task,
 									   tag_name_or_content.finish,
 									   element->finish, target_help, verbose))
 		{
 			i = 0;
+			listener_task_finished(NULL, 0, the_project, the_target, task, (uint8_t)i);
 			break;
 		}
+
+		listener_task_finished(NULL, 0, the_project, the_target, task, 0 < i);
 	}
 
 	return 0 < i;

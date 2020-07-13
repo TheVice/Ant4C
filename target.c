@@ -11,6 +11,7 @@
 #include "conversion.h"
 #include "echo.h"
 #include "interpreter.h"
+#include "listener.h"
 #include "project.h"
 #include "property.h"
 #include "range.h"
@@ -198,6 +199,7 @@ uint8_t target_new(void* the_project,
 	}
 
 	the_target->has_executed = 0;
+	listener_target_started(NULL, 0, the_project, the_target);
 
 	if (depends && 0 < depends_length)
 	{
@@ -215,6 +217,7 @@ uint8_t target_new(void* the_project,
 		if (!buffer_append_range(&(the_target->depends), NULL, depends_count) ||
 			!buffer_append(&(the_target->depends), depends, depends_length))
 		{
+			listener_target_finished(NULL, 0, the_project, the_target);
 			return 0;
 		}
 
@@ -224,6 +227,7 @@ uint8_t target_new(void* the_project,
 
 		if (!buffer_resize(&(the_target->depends), depends_count * sizeof(struct range)))
 		{
+			listener_target_finished(NULL, 0, the_project, the_target);
 			return 0;
 		}
 
@@ -239,6 +243,7 @@ uint8_t target_new(void* the_project,
 			if (!string_trim(depend) ||
 				!range_size(depend))
 			{
+				listener_target_finished(NULL, 0, the_project, the_target);
 				return 0;
 			}
 
@@ -256,6 +261,7 @@ uint8_t target_new(void* the_project,
 		if (!target_print_description(the_project, the_target, description, attributes_start, element_finish,
 									  verbose))
 		{
+			listener_target_finished(NULL, 0, the_project, the_target);
 			return 0;
 		}
 	}
@@ -265,6 +271,7 @@ uint8_t target_new(void* the_project,
 		{
 			if (!buffer_resize(&(the_target->tasks), 0))
 			{
+				listener_target_finished(NULL, 0, the_project, the_target);
 				return 0;
 			}
 		}
@@ -280,6 +287,7 @@ uint8_t target_new(void* the_project,
 		}
 	}
 
+	listener_target_finished(NULL, 0, the_project, the_target);
 	return 1;
 }
 

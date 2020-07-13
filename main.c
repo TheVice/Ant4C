@@ -16,6 +16,7 @@
 #include "file_system.h"
 #include "hash.h"
 #include "interpreter.h"
+#include "listener.h"
 #include "load_file.h"
 #include "math_unit.h"
 #include "operating_system.h"
@@ -83,6 +84,84 @@ uint8_t print_status(int status)
 					 status ? Info : Error,
 					 status ? (const uint8_t*)"SUCCESS." : (const uint8_t*)"FAILURE.",
 					 8, 1, 0);
+}
+
+uint8_t project_evaluate(void* the_project, const struct range* build_file,
+						 const struct range* current_directory_in_range)
+{
+	if (NULL == build_file)
+	{
+		/*TODO: echo.*/
+		return 0;
+	}
+
+	if (!argument_parser_get_project_help())
+	{
+		if (!property_add_at_project(the_project, argument_parser_get_properties(), NULL,
+									 argument_parser_get_verbose()))
+		{
+			/*TODO: echo.*/
+			return 0;
+		}
+	}
+
+	listener_project_started(build_file->start, the_project);
+	/**/
+	uint8_t is_loaded = project_load_from_build_file(
+							build_file, current_directory_in_range,
+							argument_parser_get_encoding(),
+							the_project, argument_parser_get_project_help(),
+							argument_parser_get_verbose());
+
+	if (!is_loaded)
+	{
+		/*TODO: echo.*/
+		listener_project_finished(build_file->start, the_project);
+		return 0;
+	}
+
+	if (!argument_parser_get_project_help())
+	{
+		if (argument_parser_get_target(0))
+		{
+			int index = 0;
+			const struct range* target_name = NULL;
+
+			while (NULL != (target_name = argument_parser_get_target(index++)))
+			{
+				is_loaded = target_evaluate_by_name(the_project, target_name, argument_parser_get_verbose());
+
+				if (!is_loaded)
+				{
+					/*TODO: echo.*/
+					break;
+				}
+			}
+
+			if (!is_loaded)
+			{
+				/*TODO: echo.*/
+				listener_project_finished(build_file->start, the_project);
+				return 0;
+			}
+		}
+		else
+		{
+			is_loaded = project_evaluate_default_target(the_project, argument_parser_get_verbose());
+
+			if (!is_loaded)
+			{
+				/*TODO: echo.*/
+				listener_project_finished(build_file->start, the_project);
+				return 0;
+			}
+		}
+	}
+
+	listener_project_finished(build_file->start, the_project);
+	project_clear(the_project);
+	/**/
+	return 1;
 }
 
 #if defined(_MSC_VER)
@@ -182,7 +261,7 @@ int main(int argc, char** argv)
 			return EXIT_FAILURE;
 		}
 
-		if (!directory_enumerate_file_system_entries(&current_directory, 1, 0, build_files))
+		if (!directory_enumerate_file_system_entries(&current_directory, 1, 0, build_files, 1))
 		{
 			if (!buffer_resize(build_files, 0))
 			{
@@ -236,78 +315,16 @@ int main(int argc, char** argv)
 	{
 		const struct range* build_file = argument_parser_get_build_file(argc);
 
-		if (NULL == build_file)
+		if (!build_file)
 		{
-			/*TODO: echo.*/
 			break;
 		}
 
-		if (!argument_parser_get_project_help())
+		if (!project_evaluate(the_project, build_file, &current_directory_in_range))
 		{
-			if (!property_add_at_project(the_project, argument_parser_get_properties(), NULL,
-										 argument_parser_get_verbose()))
-			{
-				/*TODO: echo.*/
-				argc = 0;
-				break;
-			}
-		}
-
-		uint8_t is_loaded = project_load_from_build_file(
-								build_file, &current_directory_in_range,
-								argument_parser_get_encoding(),
-								the_project, argument_parser_get_project_help(),
-								argument_parser_get_verbose());
-
-		if (!is_loaded)
-		{
-			/*TODO: echo.*/
 			argc = 0;
 			break;
 		}
-
-		if (argument_parser_get_project_help())
-		{
-			project_clear(the_project);
-			continue;
-		}
-
-		if (argument_parser_get_target(0))
-		{
-			int index = 0;
-			const struct range* target_name = NULL;
-
-			while (NULL != (target_name = argument_parser_get_target(index++)))
-			{
-				is_loaded = target_evaluate_by_name(the_project, target_name,  argument_parser_get_verbose());
-
-				if (!is_loaded)
-				{
-					/*TODO: echo.*/
-					break;
-				}
-			}
-
-			if (!is_loaded)
-			{
-				/*TODO: echo.*/
-				argc = 0;
-				break;
-			}
-		}
-		else
-		{
-			is_loaded = project_evaluate_default_target(the_project, argument_parser_get_verbose());
-
-			if (!is_loaded)
-			{
-				/*TODO: echo.*/
-				argc = 0;
-				break;
-			}
-		}
-
-		project_clear(the_project);
 	}
 
 	project_unload(the_project);

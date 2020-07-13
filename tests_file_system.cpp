@@ -155,7 +155,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 			ASSERT_TRUE(returned)
 					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
-			returned = directory_enumerate_file_system_entries(&property_value, entry_type, recurse, &file_tree);
+			returned = directory_enumerate_file_system_entries(&property_value, entry_type, recurse, &file_tree, 1);
 			ASSERT_TRUE(returned)
 					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//

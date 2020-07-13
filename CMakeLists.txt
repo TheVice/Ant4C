@@ -39,6 +39,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/hash.sha3.c"
             "${CMAKE_SOURCE_DIR}/interpreter.c"
             "${CMAKE_SOURCE_DIR}/interpreter.h"
+            "${CMAKE_SOURCE_DIR}/listener.c"
+            "${CMAKE_SOURCE_DIR}/listener.h"
             "${CMAKE_SOURCE_DIR}/load_file.c"
             "${CMAKE_SOURCE_DIR}/load_file.h"
             "${CMAKE_SOURCE_DIR}/math_unit.c"

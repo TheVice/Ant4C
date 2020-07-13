@@ -181,7 +181,7 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 									 const uint8_t* property_name, uint8_t property_name_length,
 									 struct buffer* input, struct buffer* tmp,
 									 const uint8_t* attributes_finish, const uint8_t* element_finish,
-									 uint8_t item_value, uint8_t verbose)
+									 uint8_t item_value, uint8_t fail_on_error, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == property_name ||
@@ -223,7 +223,7 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 		return 0;
 	}
 
-	if (!directory_enumerate_file_system_entries(input, File == item_value, 0, tmp))
+	if (!directory_enumerate_file_system_entries(input, File == item_value, 0, tmp, fail_on_error))
 	{
 		return 0;
 	}
@@ -334,7 +334,7 @@ uint8_t for_each_get_attributes_and_arguments_for_task(
 
 uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 							   const uint8_t* attributes_finish, const uint8_t* element_finish,
-							   struct buffer* task_arguments, uint8_t verbose)
+							   struct buffer* task_arguments, uint8_t fail_on_error, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -429,7 +429,7 @@ uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 			if (!for_each_file_system_entries(
 					the_project, the_target, property_name, property_name_length,
 					in_value_in_a_buffer, trim_value_in_a_buffer,
-					attributes_finish, element_finish, item_value, verbose))
+					attributes_finish, element_finish, item_value, fail_on_error, verbose))
 			{
 				return 0;
 			}

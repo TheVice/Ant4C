@@ -136,7 +136,7 @@ uint8_t directory_delete_wchar_t(const wchar_t* path)
 uint8_t directory_enumerate_file_system_entries_wchar_t(
 	struct buffer* pattern,
 	const uint8_t entry_type, const uint8_t recurse, uint8_t output_encoding,
-	struct buffer* output)
+	struct buffer* output, uint8_t fail_on_error)
 {
 	if (NULL == pattern ||
 		all_entries < entry_type ||
@@ -153,7 +153,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 
 	if (INVALID_HANDLE_VALUE == file_handle)
 	{
-		return 0;
+		return fail_on_error ? 0 : 1;
 	}
 
 	const ptrdiff_t size = wcslen(start);
@@ -210,7 +210,8 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			if (recurse)
 			{
 				if (!buffer_append_wchar_t(pattern, NULL, delta) ||
-					!directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output_encoding, output))
+					!directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output_encoding, output,
+							fail_on_error))
 				{
 					FindClose(file_handle);
 					return 0;
@@ -349,7 +350,7 @@ uint8_t directory_delete_(const char* path)
 uint8_t directory_enumerate_file_system_entries_(
 	struct buffer* path, const uint8_t* wildcard,
 	const uint8_t entry_type, const uint8_t recurse,
-	struct buffer* output)
+	struct buffer* output, uint8_t fail_on_error)
 {
 	if (NULL == path ||
 		all_entries < entry_type ||
@@ -363,7 +364,7 @@ uint8_t directory_enumerate_file_system_entries_(
 
 	if (NULL == directory)
 	{
-		return 0;
+		return fail_on_error ? 0 : 1;
 	}
 
 	const ptrdiff_t size = buffer_size(path);
@@ -395,7 +396,7 @@ uint8_t directory_enumerate_file_system_entries_(
 		{
 			if (recurse)
 			{
-				if (!directory_enumerate_file_system_entries_(path, wildcard, entry_type, recurse, output))
+				if (!directory_enumerate_file_system_entries_(path, wildcard, entry_type, recurse, output, fail_on_error))
 				{
 					closedir(directory);
 					return 0;
@@ -592,9 +593,9 @@ uint8_t directory_delete(const uint8_t* path)
 
 #if defined(_WIN32)
 
-		if (!directory_enumerate_file_system_entries_wchar_t(&pathW, entry, 1, UTF16LE, &entries))
+		if (!directory_enumerate_file_system_entries_wchar_t(&pathW, entry, 1, UTF16LE, &entries, 1))
 #else
-		if (!directory_enumerate_file_system_entries(&pathW, entry, 1, &entries))
+		if (!directory_enumerate_file_system_entries(&pathW, entry, 1, &entries, 1))
 #endif
 		{
 			buffer_release(&entries);
@@ -688,7 +689,8 @@ uint8_t directory_delete(const uint8_t* path)
 }
 
 uint8_t directory_enumerate_file_system_entries(
-	struct buffer* path, const uint8_t entry_type, const uint8_t recurse, struct buffer* output)
+	struct buffer* path, const uint8_t entry_type, const uint8_t recurse,
+	struct buffer* output, uint8_t fail_on_error)
 {
 	if (NULL == path ||
 		all_entries < entry_type ||
@@ -734,7 +736,7 @@ uint8_t directory_enumerate_file_system_entries(
 	}
 
 	const uint8_t returned = directory_enumerate_file_system_entries_wchar_t(
-								 &patternW, entry_type, recurse, UTF8, output);
+								 &patternW, entry_type, recurse, UTF8, output, fail_on_error);
 	/**/
 	buffer_release(&patternW);
 	return returned;
@@ -769,7 +771,7 @@ uint8_t directory_enumerate_file_system_entries(
 	}
 
 	const uint8_t returned = directory_enumerate_file_system_entries_(
-								 path, buffer_data(&wildcard, 0), entry_type, recurse, output);
+								 path, buffer_data(&wildcard, 0), entry_type, recurse, output, fail_on_error);
 	buffer_release(&wildcard);
 	return returned;
 #endif
@@ -2533,7 +2535,8 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 				break;
 			}
 
-			return directory_enumerate_file_system_entries(buffer_buffer_data(arguments, 0), entry_type, recurse, output);
+			return directory_enumerate_file_system_entries(buffer_buffer_data(arguments, 0), entry_type, recurse, output,
+					1);
 		}
 
 		case dir_exists:
