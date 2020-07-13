@@ -506,7 +506,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
 			ASSERT_TRUE(buffer_push_back(&tmp, 0)) << buffer_free(&tmp);
 			//
-			ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), NoLevel,
+			ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), Info,
 							 (const uint8_t*)path.c_str(), (ptrdiff_t)path.size(),
 							 0, verbose)) << buffer_free(&tmp);
 			//

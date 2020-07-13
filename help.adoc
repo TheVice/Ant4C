@@ -76,16 +76,26 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
 
 *-D*: ::
   Define property.
-  For example *-D:"property name"="property value"*
+  For example *-D:"property name"="property value"*.
 
 *-projecthelp* ::
-  Show description of project and target(s)
+  Show description of project and target(s).
 
 *-nologo* ::
-  Do not display program version, license and copyright information
+  Do not display program version, license and copyright information.
+
+*-debug* ::
+  Display message with Debug level.
+
+*-verbose* ::
+  Display message with Verbose level.
+  Set verbose parameter of functions to the true.
+
+*-quiet*:, -q* ::
+  Display messages only with Warning or/and Errore levels.
 
 *-help, -h* ::
-  Print brief message about application using
+  Print brief message about application using.
 
 ==== Specifying the script file
 

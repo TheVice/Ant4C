@@ -237,7 +237,7 @@ uint8_t exec_win32_with_redirect(
 					&numberOfBytesRead, 0) &&
 		   0 < numberOfBytesRead)
 	{
-		if (!echo(1, Default, file, NoLevel, security_attributes.lpSecurityDescriptor, numberOfBytesRead, 0, verbose))
+		if (!echo(1, Default, file, Info, security_attributes.lpSecurityDescriptor, numberOfBytesRead, 0, verbose))
 		{
 			CloseHandle(hReadPipe);
 			return 0;
@@ -273,7 +273,7 @@ uint8_t exec(
 
 	if (!spawn && !append && NULL != file)
 	{
-		if (!echo(0, Default, file, NoLevel, NULL, 0, 1, verbose))
+		if (!echo(0, Default, file, Info, NULL, 0, 1, verbose))
 		{
 			return 0;
 		}
@@ -576,7 +576,7 @@ uint8_t exec_posix_with_redirect(
 			return 0;
 		}
 
-		if (!echo(1, Default, file, NoLevel, ptr, count, 0, verbose))
+		if (!echo(1, Default, file, Info, ptr, count, 0, verbose))
 		{
 			close(file_des[0]);
 			return 0;
@@ -610,7 +610,7 @@ uint8_t exec(
 
 	if (!spawn && !append && NULL != file)
 	{
-		if (!echo(0, Default, file, NoLevel, NULL, 0, 1, verbose))
+		if (!echo(0, Default, file, Info, NULL, 0, 1, verbose))
 		{
 			return 0;
 		}

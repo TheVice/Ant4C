@@ -1362,9 +1362,7 @@ uint8_t fail_evaluate_task(
 		}
 	}
 
-	echo(0, UTF8, NULL,
-		 buffer_size(message) ? Fail : Error,
-		 buffer_data(message, 0), buffer_size(message), 1, verbose);
+	echo(0, UTF8, NULL, Error, buffer_data(message, 0), buffer_size(message), 1, verbose);
 	return 0;
 }
 
@@ -1757,7 +1755,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				}
 
 				task_attributes_count =
-					echo(0, UTF8, NULL, NoLevel, buffer_data(&task_arguments, 0), buffer_size(&task_arguments), 1, verbose);
+					echo(0, UTF8, NULL, Info, buffer_data(&task_arguments, 0), buffer_size(&task_arguments), 1, verbose);
 				buffer_release(&task_arguments);
 			}
 			else

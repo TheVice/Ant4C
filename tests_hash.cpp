@@ -517,7 +517,7 @@ TEST_F(TestHashAlgorithm, file_get_checksum)
 			//
 			ASSERT_LT(input_length, 31745) << buffer_free(&output);
 			//
-			ASSERT_TRUE(echo(0, Default, path, NoLevel, input, input_length, 0, verbose)) << buffer_free(&output);
+			ASSERT_TRUE(echo(0, Default, path, Info, input, input_length, 0, verbose)) << buffer_free(&output);
 			//
 			ASSERT_TRUE(buffer_resize(&output, size)) << buffer_free(&output);
 			ASSERT_TRUE(file_get_checksum(path, &algorithm_in_range, &algorithm_parameter,

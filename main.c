@@ -59,8 +59,8 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-#define LOGO (const uint8_t*)"Program version "PROGRAM_VERSION"\n"	\
-	"The MIT License (MIT)\n"						\
+#define LOGO (const uint8_t*)"Program version "PROGRAM_VERSION"\n"																\
+	"The MIT License (MIT)\n"																									\
 	"Copyright (c) 2019 - 2020 https://github.com/TheVice/"
 #define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
 #define SAMPLE_USING (const uint8_t*)"Sample using - [options] <target> ..."
@@ -71,6 +71,9 @@
 	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"											\
 	"\t-projecthelp - show description of project and target(s).\n"																\
 	"\t-nologo - do not display program version, license and copyright information.\n"											\
+	"\t-debug - display message with Debug level.\n"																			\
+	"\t-verbose - display message with Verbose level. Set verbose parameter of functions to the true.\n"						\
+	"\t-quiet - display messages only with Warning or/and Errore levels. Short form -q.\n"										\
 	"\t-help - print this message. Short form -h."
 #define OPTIONS_LENGTH common_count_bytes_until(OPTIONS, 0)
 
@@ -93,7 +96,7 @@ int main(int argc, char** argv)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 #endif
-#if 0
+#if 1
 	uint64_t time_now = datetime_now();
 #if defined(_MSC_VER)
 
@@ -104,7 +107,7 @@ int main(int argc, char** argv)
 	{
 		argument_parser_release();
 
-		if (!echo(0, Default, NULL, NoLevel, LOGO, LOGO_LENGTH, 1, 0))
+		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, 0))
 		{
 			argc = 0;
 		}
@@ -117,12 +120,25 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
+	if (argument_parser_get_quiet())
+	{
+		echo_set_level(Debug, argument_parser_get_debug());
+		echo_set_level(Error, 1);
+		echo_set_level(Info, 0);
+		echo_set_level(Verbose, argument_parser_get_verbose());
+		echo_set_level(Warning, 1);
+	}
+	else
+	{
+		echo_set_level(Debug, argument_parser_get_debug());
+		echo_set_level(Verbose, argument_parser_get_verbose());
+	}
+
 	if (!argument_parser_get_no_logo())
 	{
-		if (!echo(0, Default, NULL, NoLevel, LOGO, LOGO_LENGTH, 1, argument_parser_get_verbose()))
+		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, argument_parser_get_verbose()))
 		{
 			argument_parser_release();
-			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 	}
@@ -331,7 +347,6 @@ int main(int argc, char** argv)
 		if (!echo(0, Default, NULL, Info, buffer_data(build_files, 0), buffer_size(build_files), 1, 0))
 		{
 			argument_parser_release();
-			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 	}

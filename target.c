@@ -93,19 +93,19 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 		return 0;
 	}
 
-	if (!echo(0, UTF8, NULL, NoLevel, the_target->name, the_target->name_length, 0, verbose))
+	if (!echo(0, UTF8, NULL, Info, the_target->name, the_target->name_length, 0, verbose))
 	{
 		return 0;
 	}
 
 	if (buffer_size(target_description))
 	{
-		if (!echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose))
+		if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
 		{
 			return 0;
 		}
 
-		if (!echo(0, UTF8, NULL, NoLevel, buffer_data(target_description, 0),
+		if (!echo(0, UTF8, NULL, Info, buffer_data(target_description, 0),
 				  buffer_size(target_description), 1, verbose))
 		{
 			return 0;
@@ -130,7 +130,7 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 		return 1;
 	}
 
-	if (!echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose))
+	if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
 	{
 		return 0;
 	}

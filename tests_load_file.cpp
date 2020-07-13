@@ -64,7 +64,7 @@ TEST(TestLoadFile, load_file_to_buffer)
 	for (uint8_t i = 0, count = COUNT_OF(encodings); i < count; ++i)
 	{
 		ASSERT_TRUE(echo(0, Default,
-						 (const uint8_t*)path_str.c_str(), NoLevel,
+						 (const uint8_t*)path_str.c_str(), Info,
 						 byte_order_marks[i].data(), (ptrdiff_t)byte_order_marks[i].size(), 0, 0))
 				<< buffer_free(&path);
 		//
@@ -156,7 +156,7 @@ TEST(TestLoadFile, load_file_to_buffer)
 		}
 
 		ASSERT_TRUE(echo(1, Default,
-						 (const uint8_t*)path_str.c_str(), NoLevel, file_content.data(),
+						 (const uint8_t*)path_str.c_str(), Info, file_content.data(),
 						 (ptrdiff_t)file_content.size(), 0, 0))
 				<< buffer_free(&path);
 		//

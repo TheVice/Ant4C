@@ -211,7 +211,7 @@ TEST_F(TestStringUnit, string_replace)
 		const auto tmp_path(buffer_to_string(&output));
 		ASSERT_TRUE(buffer_push_back(&output, 0)) << buffer_free(&output);
 		//
-		returned = echo(0, Default, buffer_data(&output, 0), NoLevel,
+		returned = echo(0, Default, buffer_data(&output, 0), Info,
 						input_in_range.start, range_size(&input_in_range), 0, verbose);
 		//
 		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(&output);

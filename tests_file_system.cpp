@@ -481,7 +481,7 @@ TEST(TestFileSystem_, file_copy)
 
 		if (i)
 		{
-			ASSERT_TRUE(echo(0, Default, buffer_data(&path, 0), NoLevel, buffer_data(&path, 0), size, 0, 0))
+			ASSERT_TRUE(echo(0, Default, buffer_data(&path, 0), Info, buffer_data(&path, 0), size, 0, 0))
 					<< buffer_free(&path);
 		}
 		else
@@ -587,7 +587,7 @@ TEST_F(TestFileSystem, file_read_lines)
 		const void* ptr = buffer_data(&tmp, 0);
 		//
 		ASSERT_TRUE(echo(0, Default,
-						 (const uint8_t*)ptr, NoLevel,
+						 (const uint8_t*)ptr, Info,
 						 (const uint8_t*)input.c_str(), (ptrdiff_t)input.size(),
 						 0, verbose)) << buffer_free(&tmp);
 		//
@@ -688,7 +688,7 @@ TEST(TestFileSystem_, file_move)
 
 		if (i)
 		{
-			ASSERT_TRUE(echo(0, Default, buffer_data(&path, 0), NoLevel, buffer_data(&path, 0), size, 0, 0))
+			ASSERT_TRUE(echo(0, Default, buffer_data(&path, 0), Info, buffer_data(&path, 0), size, 0, 0))
 					<< buffer_free(&path);
 		}
 		else
