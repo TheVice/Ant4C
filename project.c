@@ -378,36 +378,30 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 		return 0;
 	}
 
-	const uint8_t root_task_id = interpreter_get_task(tag_name.start, tag_name.finish);
+	uint8_t root_task_id = interpreter_get_task(tag_name.start, tag_name.finish);
 	const uint8_t* element_finish = element->finish;
+	/**/
+	root_task_id = interpreter_evaluate_task(the_project, NULL, root_task_id,
+				   tag_name.finish, element_finish,
+				   project_help, verbose);
 
-	if (!interpreter_evaluate_task(the_project, NULL, root_task_id,
-								   tag_name.finish, element_finish,
-								   project_help, verbose))
+	if (!root_task_id ||
+		!buffer_resize(&elements, 0))
 	{
 		buffer_release(&elements);
 		buffer_release(&sub_nodes_names);
 		return 0;
 	}
 
-	if (!buffer_resize(&elements, 0))
+	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, &sub_nodes_names, &elements))
 	{
-		buffer_release(&elements);
-		buffer_release(&sub_nodes_names);
-		return 0;
-	}
-
-	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, &sub_nodes_names, &elements) &&
-		!interpreter_evaluate_tasks(the_project, NULL, &elements, project_help, verbose))
-	{
-		buffer_release(&elements);
-		buffer_release(&sub_nodes_names);
-		return 0;
+		root_task_id = interpreter_evaluate_tasks(the_project, NULL, &elements, project_help, verbose);
 	}
 
 	buffer_release(&elements);
 	buffer_release(&sub_nodes_names);
-	return 1;
+	/**/
+	return root_task_id;
 }
 
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
@@ -561,6 +555,37 @@ void project_unload(void* the_project)
 	property_release(&pro->properties);
 
 	target_release(&pro->targets);
+}
+
+ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* cursor)
+{
+	if (NULL == the_project ||
+		NULL == cursor)
+	{
+		return 0;
+	}
+
+	const struct project* pro = (const struct project*)the_project;
+	const uint8_t* start = buffer_data(&pro->content, 0);
+
+	if (NULL == start)
+	{
+		return 0;
+	}
+
+	const uint8_t* finish = start + buffer_size(&pro->content);
+
+	if (range_in_parts_is_null_or_empty(start, finish))
+	{
+		return 0;
+	}
+
+	if (start < cursor && cursor < finish)
+	{
+		return cursor - start;
+	}
+
+	return 0;
 }
 
 uint8_t project_get_attributes_and_arguments_for_task(

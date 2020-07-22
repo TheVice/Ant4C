@@ -53,5 +53,6 @@ const struct buffer* argument_parser_get_properties();
 const struct range* argument_parser_get_build_file(int index);
 const struct range* argument_parser_get_log_file();
 const struct range* argument_parser_get_target(int index);
+const struct range* argument_parser_get_listener();
 
 #endif

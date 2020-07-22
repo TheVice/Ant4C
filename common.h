@@ -85,4 +85,7 @@ uint8_t common_is_error_output_stream_standard();
 #define MIN(A, B) ((A) > (B) ? (B) : (A))
 #endif
 
+#define FAIL_WITH_OUT_ERROR					2
+#define ATTEMPT_TO_WRITE_READ_ONLY_PROPERTY	3
+
 #endif

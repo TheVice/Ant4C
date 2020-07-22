@@ -86,8 +86,36 @@ TEST(TestProperty_, property_at_all)
 	ASSERT_EQ(1, read_only)
 			<< buffer_free(&output) << properties_free(&properties);
 	//
+	ASSERT_EQ(ATTEMPT_TO_WRITE_READ_ONLY_PROPERTY,
+			  property_set_by_pointer(the_property, the_property, 0, property_value_is_byte_array, 0, 1, 0))
+			<< buffer_free(&output) << properties_free(&properties);
+	//
 	buffer_release(&output);
 	property_release(&properties);
+}
+
+TEST(TestProperty_, property_get)
+{
+	std::string code("<property name=\"my\" value=\"${my}\" failonerror=\"false\" />");
+	auto code_in_range(string_to_range(code));
+	//
+	void* project = NULL;
+	ASSERT_TRUE(project_new(&project));
+	//
+	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish, project,
+			  0, 0))
+			<< project_free(project);
+	//
+	project_clear(project);
+	//
+	code = "<project><property name=\"my\" value=\"${my}\" failonerror=\"false\" /></project>";
+	code_in_range = string_to_range(code);
+	//
+	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish, project,
+			  0, 0))
+			<< project_free(project);
+	//
+	project_unload(project);
 }
 
 TEST_F(TestProperty, property_task)

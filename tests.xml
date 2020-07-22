@@ -256,6 +256,21 @@
       <output>C:\Program Files\1.txt</output>
       <return>1</return>
     </argument_parser_get_log_file>
+    <argument_parser_get_log_file>
+      <argument>-listener:</argument>
+      <output/>
+      <return>0</return>
+    </argument_parser_get_log_file>
+    <argument_parser_get_log_file>
+      <argument>-listener:libdefault_listener.so</argument>
+      <output/>
+      <return>1</return>
+    </argument_parser_get_log_file>
+    <argument_parser_get_log_file>
+      <argument>-listener:default_listener.dll</argument>
+      <output/>
+      <return>1</return>
+    </argument_parser_get_log_file>
   </TestArgumentParser>
   <TestConversion>
     <bool_parse>

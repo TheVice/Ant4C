@@ -2086,16 +2086,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 
 	if (!task_attributes_count && !fail_on_error)
 	{
-		if (!echo(0, Default, NULL, Warning,
-				  (const uint8_t*)
-				  "[interpreter]: task was failed. However evaluation of script continue as requested at 'fail on error' attribute.",
-				  112,
-				  1, verbose))
-		{
-			return 0;
-		}
-
-		task_attributes_count = 1;
+		task_attributes_count = FAIL_WITH_OUT_ERROR;
 	}
 
 	return task_attributes_count;
@@ -2106,34 +2097,35 @@ uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 								   uint8_t target_help, uint8_t verbose)
 {
 	ptrdiff_t i = 0;
+	uint8_t returned = 1;
 	struct range* element = NULL;
 
 	while (NULL != (element = buffer_range_data(elements, i++)))
 	{
 		struct range tag_name_or_content;
+		returned = xml_get_tag_name(element->start, element->finish, &tag_name_or_content);
 
-		if (!xml_get_tag_name(element->start, element->finish, &tag_name_or_content))
+		if (!returned)
 		{
-			i = 0;
 			break;
 		}
 
+		const ptrdiff_t offset = project_get_source_offset(the_project, tag_name_or_content.finish);
 		const uint8_t task = interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish);
-		listener_task_started(NULL, 0, the_project, the_target, task);
+		/**/
+		listener_task_started(NULL, offset, the_project, the_target, task);
+		returned = interpreter_evaluate_task(the_project, the_target, task,
+											 tag_name_or_content.finish,
+											 element->finish, target_help, verbose);
+		listener_task_finished(NULL, offset, the_project, the_target, task, returned);
 
-		if (!interpreter_evaluate_task(the_project, the_target, task,
-									   tag_name_or_content.finish,
-									   element->finish, target_help, verbose))
+		if (!returned)
 		{
-			i = 0;
-			listener_task_finished(NULL, 0, the_project, the_target, task, (uint8_t)i);
 			break;
 		}
-
-		listener_task_finished(NULL, 0, the_project, the_target, task, 0 < i);
 	}
 
-	return 0 < i;
+	return returned;
 }
 
 enum task_function

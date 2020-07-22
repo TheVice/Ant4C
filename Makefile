@@ -147,6 +147,8 @@ interpreter.c: try_catch.h
 interpreter.c: version.h
 interpreter.c: xml.h
 
+listener.c: listener.h
+
 load_file.c: load_file.h
 load_file.c: buffer.h
 load_file.c: common.h
@@ -240,6 +242,8 @@ property.c: text_encoding.h
 range.c: range.h
 range.c: buffer.h
 range.c: common.h
+
+shared_object.c: shared_object.h
 
 sleep_unit.c: sleep_unit.h
 sleep_unit.c: buffer.h
@@ -346,6 +350,9 @@ hash.sha3.obj: hash.sha3.c
 interpreter.obj: interpreter.c
 	$(CC) $(CFLAGS) -c interpreter.c -o $@
 
+listener.obj: listener.c
+	$(CC) $(CFLAGS) -c listener.c -o $@
+
 load_file.obj: load_file.c
 	$(CC) $(CFLAGS) -c load_file.c -o $@
 
@@ -369,6 +376,9 @@ property.obj: property.c
 
 range.obj: range.c
 	$(CC) $(CFLAGS) -c range.c -o $@
+
+shared_object.obj: shared_object.c
+	$(CC) $(CFLAGS) -c shared_object.c -o $@
 
 sleep_unit.obj: sleep_unit.c
 	$(CC) $(CFLAGS) -c sleep_unit.c -o $@
@@ -408,6 +418,7 @@ libant4c.a: hash.obj
 libant4c.a: hash.crc32.obj
 libant4c.a: hash.sha3.obj
 libant4c.a: interpreter.obj
+libant4c.a: listener.obj
 libant4c.a: load_file.obj
 libant4c.a: math_unit.obj
 libant4c.a: operating_system.obj
@@ -415,6 +426,7 @@ libant4c.a: path.obj
 libant4c.a: project.obj
 libant4c.a: property.obj
 libant4c.a: range.obj
+libant4c.a: shared_object.obj
 libant4c.a: sleep_unit.obj
 libant4c.a: string_unit.obj
 libant4c.a: target.obj
@@ -422,14 +434,15 @@ libant4c.a: text_encoding.obj
 libant4c.a: try_catch.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj listener.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
 	$(CC) main.obj -o $@ libant4c.a -lm $(LDCFLAGS)
+	#$(CC) main.obj -o $@ libant4c.a -lm -ldl $(LDCFLAGS)
 
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj listener.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean

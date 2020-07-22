@@ -84,6 +84,9 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
 *-nologo* ::
   Do not display program version, license and copyright information.
 
+*-listener:* ::
+  Set path to the module with listener.
+
 *-debug* ::
   Display message with Debug level.
 

@@ -258,8 +258,7 @@ uint8_t property_set_by_pointer(void* the_property,
 
 	if (prop->read_only)
 	{
-		/*TODO: inform about attempt to set readonly property, but not fail process.*/
-		return 1;
+		return ATTEMPT_TO_WRITE_READ_ONLY_PROPERTY;
 	}
 
 	/*TODO: add append optimization:

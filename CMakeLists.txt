@@ -55,6 +55,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/property.h"
             "${CMAKE_SOURCE_DIR}/range.c"
             "${CMAKE_SOURCE_DIR}/range.h"
+            "${CMAKE_SOURCE_DIR}/shared_object.c"
+            "${CMAKE_SOURCE_DIR}/shared_object.h"
             "${CMAKE_SOURCE_DIR}/sleep_unit.c"
             "${CMAKE_SOURCE_DIR}/sleep_unit.h"
             "${CMAKE_SOURCE_DIR}/string_unit.c"
@@ -95,6 +97,9 @@ endif()
 if(NOT MSVC)
   target_link_libraries(ant4c_app m)
   # target_link_libraries(ant4c_lib m)
+  if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
+    target_link_libraries(ant4c_app dl)
+  endif()
 endif()
 
 set_target_properties(ant4c_app
@@ -135,6 +140,9 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   target_link_libraries(ant4c_tests ant4c pugixml GTest::GTest)# GTest::Main)
   if(NOT MSVC)
     target_link_libraries(ant4c_tests m)
+    if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
+      target_link_libraries(ant4c_app dl)
+    endif()
   endif()
   if((NOT MSVC) AND (${CMAKE_VERSION} GREATER 3.0))
     set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)

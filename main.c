@@ -24,6 +24,7 @@
 #include "project.h"
 #include "property.h"
 #include "range.h"
+#include "shared_object.h"
 #include "sleep_unit.h"
 #include "string_unit.h"
 #include "target.h"
@@ -72,6 +73,7 @@
 	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"											\
 	"\t-projecthelp - show description of project and target(s).\n"																\
 	"\t-nologo - do not display program version, license and copyright information.\n"											\
+	"\t-listener: - set path to the module with listener.\n"																	\
 	"\t-debug - display message with Debug level.\n"																			\
 	"\t-verbose - display message with Verbose level. Set verbose parameter of functions to the true.\n"						\
 	"\t-quiet - display messages only with Warning or/and Errore levels. Short form -q.\n"										\
@@ -161,6 +163,89 @@ uint8_t project_evaluate(void* the_project, const struct range* build_file,
 	listener_project_finished(build_file->start, the_project);
 	project_clear(the_project);
 	/**/
+	return 1;
+}
+
+typedef void (*on_project)(const uint8_t* source, const void* the_project);
+
+typedef void (*on_target)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
+						  const void* the_target);
+
+typedef void (*on_task_start)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
+							  const void* the_target, uint8_t task);
+typedef void (*on_task_finish)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
+							   const void* the_target, uint8_t task, uint8_t result);
+
+uint8_t load_listener(const struct range* listener, void** object)
+{
+	if (!listener ||
+		!object)
+	{
+		return 0;
+	}
+
+	if (NULL != (*object))
+	{
+		shared_object_unload(*object);
+	}
+
+	(*object) = shared_object_load(listener->start);
+
+	if (NULL == (*object))
+	{
+		return 0;
+	}
+
+	static const uint8_t* procedures_names[] =
+	{
+		(const uint8_t*)"listener_project_started",
+		(const uint8_t*)"listener_project_finished",
+		(const uint8_t*)"listener_target_started",
+		(const uint8_t*)"listener_target_finished",
+		(const uint8_t*)"listener_task_started",
+		(const uint8_t*)"listener_task_finished"
+	};
+
+	for (uint8_t i = 0, count = COUNT_OF(procedures_names); i < count; ++i)
+	{
+		void* address = shared_object_get_procedure_address(*object, procedures_names[i]);
+
+		if (!address)
+		{
+			continue;
+		}
+
+		switch (i)
+		{
+			case 0:
+				listener_set_on_project_started((on_project)address);
+				break;
+
+			case 1:
+				listener_set_on_project_finished((on_project)address);
+				break;
+
+			case 2:
+				listener_set_on_target_started((on_target)address);
+				break;
+
+			case 3:
+				listener_set_on_target_finished((on_target)address);
+				break;
+
+			case 4:
+				listener_set_on_task_started((on_task_start)address);
+				break;
+
+			case 5:
+				listener_set_on_task_finished((on_task_finish)address);
+				break;
+
+			default:
+				break;
+		}
+	}
+
 	return 1;
 }
 
@@ -304,6 +389,21 @@ int main(int argc, char** argv)
 		return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
+	void* object = NULL;
+	const struct range* listener = argument_parser_get_listener();
+
+	if (listener && !load_listener(listener, &object))
+	{
+		if (!echo(0, Default, NULL, Warning, listener->start, range_size(listener), 1,
+				  argument_parser_get_verbose()) ||
+			!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener not loaded.", 20, 1,
+				  argument_parser_get_verbose()))
+		{
+			shared_object_unload(object);
+			return EXIT_FAILURE;
+		}
+	}
+
 	void* the_project = NULL;
 
 	if (!project_new(&the_project))
@@ -330,6 +430,7 @@ int main(int argc, char** argv)
 	project_unload(the_project);
 	buffer_release(&current_directory);
 	time_now = datetime_now() - time_now;
+	shared_object_unload(object);
 
 	if (10 < time_now)
 	{

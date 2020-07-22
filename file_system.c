@@ -153,7 +153,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 
 	if (INVALID_HANDLE_VALUE == file_handle)
 	{
-		return fail_on_error ? 0 : 1;
+		return fail_on_error ? 0 : FAIL_WITH_OUT_ERROR;
 	}
 
 	const ptrdiff_t size = wcslen(start);
@@ -161,6 +161,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 	const ptrdiff_t index =
 		find_any_symbol_like_or_not_like_that_wchar_t(finish - 1, start, L"\\", 1, 1, -1) - start;
 	const ptrdiff_t delta = size - index + 1;
+	uint8_t result = 1;
 
 	do
 	{
@@ -209,9 +210,16 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		{
 			if (recurse)
 			{
-				if (!buffer_append_wchar_t(pattern, NULL, delta) ||
-					!directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output_encoding, output,
-							fail_on_error))
+				if (!buffer_append_wchar_t(pattern, NULL, delta))
+				{
+					FindClose(file_handle);
+					return 0;
+				}
+
+				result = directory_enumerate_file_system_entries_wchar_t(pattern, entry_type, recurse, output_encoding,
+						 output, fail_on_error);
+
+				if (!result)
 				{
 					FindClose(file_handle);
 					return 0;
@@ -280,7 +288,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 	while (FindNextFileW(file_handle, &file_data));
 
 	FindClose(file_handle);
-	return 1;
+	return result;
 }
 
 uint8_t directory_exists_wchar_t(const wchar_t* path)
@@ -364,11 +372,12 @@ uint8_t directory_enumerate_file_system_entries_(
 
 	if (NULL == directory)
 	{
-		return fail_on_error ? 0 : 1;
+		return fail_on_error ? 0 : FAIL_WITH_OUT_ERROR;
 	}
 
 	const ptrdiff_t size = buffer_size(path);
 	struct dirent* entry = NULL;
+	uint8_t result = 1;
 
 	while (NULL != (entry = readdir(directory)))
 	{
@@ -396,7 +405,8 @@ uint8_t directory_enumerate_file_system_entries_(
 		{
 			if (recurse)
 			{
-				if (!directory_enumerate_file_system_entries_(path, wildcard, entry_type, recurse, output, fail_on_error))
+				if (!(result = directory_enumerate_file_system_entries_(path, wildcard, entry_type, recurse, output,
+							   fail_on_error)))
 				{
 					closedir(directory);
 					return 0;
@@ -438,7 +448,12 @@ uint8_t directory_enumerate_file_system_entries_(
 		}
 	}
 
-	return 0 == closedir(directory);
+	if (0 != closedir(directory))
+	{
+		return 0;
+	}
+
+	return result;
 }
 #endif
 uint8_t directory_create(const uint8_t* path)

@@ -34,6 +34,7 @@ static struct buffer build_files;
 static struct buffer log_file;
 static struct buffer properties;
 static struct buffer targets;
+static struct buffer listener;
 
 static const uint8_t equal_symbol = '=';
 static const uint8_t quote_symbol = '"';
@@ -263,6 +264,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		SET_NULL_TO_BUFFER(properties);
 		SET_NULL_TO_BUFFER(log_file);
 		SET_NULL_TO_BUFFER(targets);
+		SET_NULL_TO_BUFFER(listener);
 		is_argument_init = 1;
 	}
 
@@ -270,7 +272,8 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 
 	if (!buffer_append(&build_files, NULL, max_size) ||
 		!buffer_append(&log_file, NULL, sizeof(struct range)) ||
-		!buffer_append(&targets, NULL, max_size))
+		!buffer_append(&targets, NULL, max_size) ||
+		!buffer_append(&listener, NULL, sizeof(struct range)))
 	{
 		return 0;
 	}
@@ -398,6 +401,21 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		{
 			argument_parser_help = argument_parser_get_bool_value(argv[i], length);
 		}
+		else if (9 < length && 0 == memcmp(argv[i], "-listener:", 10))
+		{
+			if (length < (size_t)(11))
+			{
+				i = argc + 1;
+				break;
+			}
+
+			if (!buffer_resize(&listener, sizeof(struct range)) ||
+				!argument_get_file_path((const uint8_t*)argv[i], 10, length, &listener))
+			{
+				i = argc + 1;
+				break;
+			}
+		}
 		else if ('-' != argv[i][0] &&
 				 '@' != argv[i][0] &&
 				 '/' != argv[i][0])
@@ -415,13 +433,15 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		buffer_resize(&build_files, 0);
 		buffer_resize(&log_file, 0);
 		buffer_resize(&targets, 0);
+		buffer_resize(&listener, 0);
 		/**/
 		return 0;
 	}
 
 	if (!argument_parser_fill_ranges_at_storage(&build_files, max_size) ||
 		!argument_parser_fill_ranges_at_storage(&log_file, sizeof(struct range)) ||
-		!argument_parser_fill_ranges_at_storage(&targets, max_size))
+		!argument_parser_fill_ranges_at_storage(&targets, max_size) ||
+		!argument_parser_fill_ranges_at_storage(&listener, sizeof(struct range)))
 	{
 		return 0;
 	}
@@ -522,6 +542,7 @@ void argument_parser_release()
 		property_release(&properties);
 		buffer_release(&log_file);
 		buffer_release(&targets);
+		buffer_release(&listener);
 	}
 	else
 	{
@@ -529,6 +550,7 @@ void argument_parser_release()
 		SET_NULL_TO_BUFFER(properties);
 		SET_NULL_TO_BUFFER(log_file);
 		SET_NULL_TO_BUFFER(targets);
+		SET_NULL_TO_BUFFER(listener);
 		is_argument_init = 1;
 	}
 }
@@ -890,4 +912,14 @@ const struct range* argument_parser_get_target(int index)
 	}
 
 	return buffer_range_data(&targets, index);
+}
+
+const struct range* argument_parser_get_listener()
+{
+	if (!is_argument_init)
+	{
+		return NULL;
+	}
+
+	return buffer_range_data(&listener, 0);
 }
