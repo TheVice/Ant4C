@@ -120,8 +120,9 @@ TEST(TestProperty_, property_get)
 
 TEST_F(TestProperty, property_task)
 {
-	static const uint8_t* property_str = (const uint8_t*)"property";
-	static const auto task_id = interpreter_get_task(property_str, property_str + 8);
+	static const std::string property_str("property");
+	static const auto task_id = interpreter_get_task((const uint8_t*)property_str.c_str(),
+								(const uint8_t*)property_str.c_str() + 8);
 	//
 	buffer properties;
 	SET_NULL_TO_BUFFER(properties);
@@ -145,11 +146,16 @@ TEST_F(TestProperty, property_task)
 
 		for (const auto& record_node : node.node().select_nodes("record"))
 		{
-			const std::string record(record_node.node().child_value());
+			const std::string record = property_str + " " + record_node.node().child_value();
 			const auto record_in_range(string_to_range(record));
+			//
+			struct range task_in_range;
+			task_in_range.start = (const uint8_t*)record.c_str();
+			task_in_range.finish = (const uint8_t*)task_in_range.start + property_str.size();
+			//
 			const auto returned = interpreter_evaluate_task(
 									  project, NULL, task_id,
-									  record_in_range.start, record_in_range.finish,
+									  &task_in_range, record_in_range.finish,
 									  0, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)

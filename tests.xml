@@ -3428,7 +3428,7 @@
       <output>exists('if') -> True </output>
       <output>exists('include') -> False </output>
       <output>exists('loadfile') -> True </output>
-      <output>exists('loadtasks') -> False </output>
+      <output>exists('loadtasks') -> True </output>
       <output>exists('mkdir') -> True </output>
       <output>exists('move') -> True </output>
       <output>exists('program') -> True </output>
@@ -5734,6 +5734,33 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="load regex task" >
+        <choose>
+          <when test="${platform::is-unix()}">
+            <loadtasks module="libant4c.regex.so" />
+          </when>
+          <when test="${platform::is-windows()}">
+            <loadtasks module="ant4c.regex.dll" />
+          </when>
+        </choose>
+
+        <fail unless="${task::exists('regex')}" message="${project::get-name()} - 'regex' task is not exists." />
+
+        <regex input="This is a test on the regex module" pattern="(?'last_word'\w+)$" />
+        <regex input="C:\Windows\System32\bash.exe" pattern="^(?'file_name'.*)\.(?'file_extension'\w+)$" />
+        <regex input="file://A:/MyFolder/MySubFolder/AnotherSubFolder/my_file.txt" pattern="^(?'path_to_file'.*(\\|/)|(/|\\))(?'name_of_file'.*)$" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>load regex task</name>
+      <property name="last_word" value="module" />
+      <property name="file_name" value="C:\Windows\System32\bash" />
+      <property name="file_extension" value="exe" />
+      <property name="path_to_file" value="file://A:/MyFolder/MySubFolder/AnotherSubFolder/" />
+      <property name="name_of_file" value="my_file.txt" />
     </project_load_from_content>
     <project_load_from_build_file />
     <project_load_from_build_file>

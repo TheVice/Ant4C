@@ -11,7 +11,9 @@
 #include "conversion.h"
 #include "file_system.h"
 #include "interpreter.h"
+#include "listener.h"
 #include "load_file.h"
+#include "load_tasks.h"
 #include "path.h"
 #include "property.h"
 #include "range.h"
@@ -28,6 +30,7 @@ struct project
 	struct buffer content;
 	struct buffer properties;
 	struct buffer targets;
+	struct buffer modules;
 };
 
 static struct project gProject;
@@ -170,6 +173,30 @@ uint8_t project_target_has_executed(const void* the_project, const uint8_t* name
 
 	const struct project* pro = (const struct project*)the_project;
 	return target_has_executed(&pro->targets, name, name_length);
+}
+
+uint8_t project_add_module(void* the_project, const void* the_module, uint8_t length)
+{
+	if (NULL == the_project || NULL == the_module || 0 == length)
+	{
+		return 0;
+	}
+
+	struct project* pro = (struct project*)the_project;
+
+	return buffer_append(&pro->modules, the_module, length);
+}
+
+const uint8_t* project_get_task_from_module(const void* the_project, const struct range* task_name,
+		void** the_module_of_task)
+{
+	if (NULL == the_project || NULL == task_name)
+	{
+		return 0;
+	}
+
+	const struct project* pro = (const struct project*)the_project;
+	return load_tasks_get_task(&pro->modules, task_name, the_module_of_task);
 }
 
 uint8_t project_get_base_directory(const void* the_project, const void** the_property)
@@ -318,6 +345,7 @@ uint8_t project_new(void** the_project)
 	SET_NULL_TO_BUFFER(gProject.content);
 	SET_NULL_TO_BUFFER(gProject.properties);
 	SET_NULL_TO_BUFFER(gProject.targets);
+	SET_NULL_TO_BUFFER(gProject.modules);
 	(*the_project) = &gProject;
 	return 1;
 }
@@ -378,14 +406,16 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 		return 0;
 	}
 
-	uint8_t root_task_id = interpreter_get_task(tag_name.start, tag_name.finish);
+	const uint8_t root_task_id = interpreter_get_task(tag_name.start, tag_name.finish);
 	const uint8_t* element_finish = element->finish;
+	const ptrdiff_t offset = project_get_source_offset(the_project, tag_name.finish);
 	/**/
-	root_task_id = interpreter_evaluate_task(the_project, NULL, root_task_id,
-				   tag_name.finish, element_finish,
-				   project_help, verbose);
+	listener_task_started(NULL, offset, the_project, NULL, root_task_id);
+	uint8_t result = interpreter_evaluate_task(the_project, NULL,
+					 root_task_id, &tag_name, element_finish, project_help, verbose);
+	listener_task_finished(NULL, offset, the_project, NULL, root_task_id, result);
 
-	if (!root_task_id ||
+	if (!result ||
 		!buffer_resize(&elements, 0))
 	{
 		buffer_release(&elements);
@@ -395,13 +425,13 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 
 	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, &sub_nodes_names, &elements))
 	{
-		root_task_id = interpreter_evaluate_tasks(the_project, NULL, &elements, project_help, verbose);
+		result = interpreter_evaluate_tasks(the_project, NULL, &elements, project_help, verbose);
 	}
 
 	buffer_release(&elements);
 	buffer_release(&sub_nodes_names);
 	/**/
-	return root_task_id;
+	return result;
 }
 
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
@@ -539,6 +569,10 @@ void project_clear(void* the_project)
 	target_release_inner(&pro->targets);
 
 	buffer_resize(&pro->targets, 0);
+
+	load_tasks_unload(&pro->modules);
+
+	buffer_resize(&pro->modules, 0);
 }
 
 void project_unload(void* the_project)
@@ -555,6 +589,10 @@ void project_unload(void* the_project)
 	property_release(&pro->properties);
 
 	target_release(&pro->targets);
+
+	load_tasks_unload(&pro->modules);
+
+	buffer_release(&pro->modules);
 }
 
 ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* cursor)
@@ -870,7 +908,7 @@ uint8_t program_get_properties(
 	ptrdiff_t i = 0;
 	struct range* element = NULL;
 	/**/
-	uint8_t fail_on_error = 1;
+	uint8_t returned = 1;
 
 	while (NULL != (element = buffer_range_data(properties_elements, i++)))
 	{
@@ -882,7 +920,7 @@ uint8_t program_get_properties(
 				the_project, the_target, element->start,
 				finish_of_attributes, &skip, &attributes, verbose))
 		{
-			i = 0;
+			returned = 0;
 			break;
 		}
 
@@ -892,12 +930,13 @@ uint8_t program_get_properties(
 		}
 
 		buffer_release_inner_buffers(&attributes);
+		uint8_t fail_on_error = 1;
 
 		if (!interpreter_get_xml_tag_attribute_values(
 				the_project, the_target, element->start,
 				finish_of_attributes, &fail_on_error, &verbose, &attributes, verbose))
 		{
-			i = 0;
+			returned = 0;
 			break;
 		}
 
@@ -905,7 +944,7 @@ uint8_t program_get_properties(
 
 		if (!buffer_resize(&attributes, 0))
 		{
-			i = 0;
+			returned = 0;
 			break;
 		}
 
@@ -919,21 +958,21 @@ uint8_t program_get_properties(
 					{
 						if (!buffer_resize(&attributes, 0))
 						{
-							i = 0;
+							returned = 0;
 							break;
 						}
 
-						/*TODO: add note about fail on error factor.*/
+						returned = FAIL_WITH_OUT_ERROR;
 						continue;
 					}
 
-					i = 0;
+					returned = 0;
 					break;
 				}
 
 				if (!buffer_resize(&attributes, 0))
 				{
-					i = 0;
+					returned = 0;
 					break;
 				}
 			}
@@ -947,11 +986,11 @@ uint8_t program_get_properties(
 			{
 				if (!fail_on_error)
 				{
-					/*TODO: add note about fail on error factor.*/
+					returned = FAIL_WITH_OUT_ERROR;
 					continue;
 				}
 
-				i = 0;
+				returned = 0;
 				break;
 			}
 		}
@@ -960,7 +999,7 @@ uint8_t program_get_properties(
 	buffer_release(&property_range);
 	buffer_release_with_inner_buffers(&attributes);
 	/**/
-	return 0 < i;
+	return returned;
 }
 
 uint8_t project_is_property_private(const uint8_t* value, uint8_t size)
@@ -1071,6 +1110,8 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 	SET_NULL_TO_BUFFER(the_new_project->properties);
 
 	SET_NULL_TO_BUFFER(the_new_project->targets);
+
+	SET_NULL_TO_BUFFER(the_new_project->modules);
 
 	if (!property_add_at_project((void*)the_new_project, &properties, NULL, verbose))
 	{

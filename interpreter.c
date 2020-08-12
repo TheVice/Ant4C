@@ -19,6 +19,7 @@
 #include "hash.h"
 #include "listener.h"
 #include "load_file.h"
+#include "load_tasks.h"
 #include "math_unit.h"
 #include "operating_system.h"
 #include "path.h"
@@ -28,6 +29,7 @@
 #include "sleep_unit.h"
 #include "string_unit.h"
 #include "target.h"
+#include "task.h"
 #include "text_encoding.h"
 #include "try_catch.h"
 #include "version.h"
@@ -43,8 +45,8 @@ static const uint8_t arguments_delimiter = ',';
 static const uint8_t space_and_tab[] = { ' ', '\t' };
 #define SPACE_AND_TAB_LENGTH COUNT_OF(space_and_tab)
 
-static const uint8_t namespace_border[] = { ':', ':' };
-#define NAMESPACE_BORDER_LENGTH COUNT_OF(namespace_border)
+static const uint8_t name_space_border[] = { ':', ':' };
+#define NAME_SPACE_BORDER_LENGTH COUNT_OF(name_space_border)
 
 static const uint8_t function_call_start[] = { '$', '{' };
 #define FUNCTION_CALL_START_LENGTH COUNT_OF(function_call_start)
@@ -131,8 +133,8 @@ uint8_t interpreter_disassemble_function(
 
 	if (-1 == (index = string_index_of(function->start,
 									   function->finish,
-									   namespace_border,
-									   namespace_border + NAMESPACE_BORDER_LENGTH)))
+									   name_space_border,
+									   name_space_border + NAME_SPACE_BORDER_LENGTH)))
 	{
 		return 0;
 	}
@@ -140,7 +142,7 @@ uint8_t interpreter_disassemble_function(
 	name_space->start = function->start;
 	name_space->finish = function->start + index;
 	/**/
-	name->start = name_space->finish + NAMESPACE_BORDER_LENGTH;
+	name->start = name_space->finish + NAME_SPACE_BORDER_LENGTH;
 	name->finish = find_any_symbol_like_or_not_like_that(
 					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
 
@@ -217,7 +219,7 @@ uint8_t interpreter_evaluate_argument_area(
 	{
 		while (-1 != (index = string_index_of(
 								  pos, argument_area->finish,
-								  namespace_border, namespace_border + NAMESPACE_BORDER_LENGTH)))
+								  name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH)))
 		{
 			struct range function;
 			function.start = find_any_symbol_like_or_not_like_that(pos + index, pos,
@@ -341,12 +343,12 @@ uint8_t interpreter_get_value_for_argument(
 		else
 		{
 			const ptrdiff_t index_1 = string_index_of(
-										  argument_area->start, argument_area->finish, namespace_border,
-										  namespace_border + NAMESPACE_BORDER_LENGTH);
+										  argument_area->start, argument_area->finish, name_space_border,
+										  name_space_border + NAME_SPACE_BORDER_LENGTH);
 			const ptrdiff_t index_2 = -1 == index_1 ? index_1 :
 									  string_last_index_of(
-										  argument_area->start, argument_area->finish, namespace_border,
-										  namespace_border + NAMESPACE_BORDER_LENGTH);
+										  argument_area->start, argument_area->finish, name_space_border,
+										  name_space_border + NAME_SPACE_BORDER_LENGTH);
 
 			if (-1 == index_1 || index_1 != index_2)
 			{
@@ -668,6 +670,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 
 		case task_unit:
 			values_count = task_exec_function(
+							   the_project,
 							   task_get_function(name.start, name.finish),
 							   &values, values_count, return_of_function);
 			break;
@@ -1438,9 +1441,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"include",
 #endif
 	(const uint8_t*)"loadfile",
-#if 0
 	(const uint8_t*)"loadtasks",
-#endif
 	(const uint8_t*)"mkdir",
 	(const uint8_t*)"move",
 	(const uint8_t*)"program",
@@ -1479,9 +1480,7 @@ enum interpreter_task
 	include_task,
 #endif
 	loadfile_task,
-#if 0
 	loadtasks_task,
-#endif
 	mkdir_task,
 	move_task,
 	program_task,
@@ -1584,11 +1583,20 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	return 1;
 }
 
-uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish,
-								  uint8_t target_help, uint8_t verbose)
+uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
+								  uint8_t command, const struct range* command_in_range,
+								  const uint8_t* element_finish,
+								  uint8_t target_help,
+								  uint8_t verbose)
 {
-	if (UNKNOWN_TASK < command || range_in_parts_is_null_or_empty(attributes_start, element_finish))
+	if (range_is_null_or_empty(command_in_range))
+	{
+		return 0;
+	}
+
+	const uint8_t* attributes_start = command_in_range->finish;
+
+	if (range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
 		return 0;
 	}
@@ -1918,11 +1926,25 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 
 			task_attributes_count = load_file_evaluate_task(the_project, &task_arguments, verbose);
 			break;
-#if 0
 
-		case loadtasks_:
+		case loadtasks_task:
+			if (!load_tasks_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					the_project, the_target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = load_tasks_evaluate_task(the_project, the_target, &task_arguments, verbose);
 			break;
-#endif
 
 		case mkdir_task:
 			if (!mkdir_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -2078,6 +2100,11 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 #endif
 
 		case UNKNOWN_TASK:
+			task_attributes_count = load_tasks_evaluate_loaded_task(
+										the_project, the_target, command_in_range,
+										attributes_finish, element_finish, &task_arguments, verbose);
+			break;
+
 		default:
 			break;
 	}
@@ -2114,8 +2141,8 @@ uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 		const uint8_t task = interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish);
 		/**/
 		listener_task_started(NULL, offset, the_project, the_target, task);
-		returned = interpreter_evaluate_task(the_project, the_target, task,
-											 tag_name_or_content.finish,
+		returned = interpreter_evaluate_task(the_project, the_target,
+											 task, &tag_name_or_content,
 											 element->finish, target_help, verbose);
 		listener_task_finished(NULL, offset, the_project, the_target, task, returned);
 
@@ -2128,42 +2155,7 @@ uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 	return returned;
 }
 
-enum task_function
+uint8_t interpreter_get_unknown_task_id()
 {
-	task_exists,
-	UNKNOWN_TASK_FUNCTION
-};
-
-static const uint8_t* task_function_str[] =
-{
-	(const uint8_t*)"exists"
-};
-
-uint8_t task_get_function(const uint8_t* name_start, const uint8_t* name_finish)
-{
-	return common_string_to_enum(name_start, name_finish, task_function_str, UNKNOWN_TASK_FUNCTION);
-}
-
-uint8_t task_exec_function(uint8_t function, const struct buffer* arguments,
-						   uint8_t arguments_count, struct buffer* output)
-{
-	if (UNKNOWN_TASK_FUNCTION <= function ||
-		NULL == arguments ||
-		1 != arguments_count ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	struct range argument;
-
-	argument.start = argument.finish = NULL;
-
-	if (!common_get_one_argument(arguments, &argument, 0))
-	{
-		return 0;
-	}
-
-	arguments_count = (UNKNOWN_TASK != interpreter_get_task(argument.start, argument.finish));
-	return bool_to_string(arguments_count, output);
+	return UNKNOWN_TASK;
 }

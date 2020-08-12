@@ -18,6 +18,7 @@
 #include "interpreter.h"
 #include "listener.h"
 #include "load_file.h"
+#include "load_tasks.h"
 #include "math_unit.h"
 #include "operating_system.h"
 #include "path.h"
@@ -249,6 +250,19 @@ uint8_t load_listener(const struct range* listener, void** object)
 	return 1;
 }
 
+typedef const uint8_t* (*enumerate_tasks)(ptrdiff_t index);
+typedef const uint8_t* (*enumerate_namespaces)(ptrdiff_t index);
+typedef const uint8_t* (*enumerate_functions)(const uint8_t* name_space, ptrdiff_t index);
+typedef uint8_t (*get_attributes_and_arguments_for_task)(
+	const uint8_t* task, const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count);
+typedef uint8_t (*evaluate_task)(const uint8_t* task,
+								 const uint8_t** arguments, const uint16_t* arguments_lengths, uint8_t arguments_count,
+								 uint8_t verbose);
+typedef uint8_t (*evaluate_function)(const uint8_t* function,
+									 const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+									 const uint8_t** output, uint16_t* output_length);
+
 #if defined(_MSC_VER)
 int wmain(int argc, wchar_t** argv)
 #else
@@ -260,7 +274,78 @@ int main(int argc, char** argv)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 #endif
-#if 1
+	void* object = shared_object_load((const uint8_t*)""/*"libsample_module.so" "sample_module.dll"*/);
+	enumerate_tasks et = (enumerate_tasks)shared_object_get_procedure_address(object,
+						 (const uint8_t*)"enumerate_tasks");
+	evaluate_task ev_t = (evaluate_task)shared_object_get_procedure_address(object,
+						 (const uint8_t*)"evaluate_task");
+	ptrdiff_t i = 0;
+	const void* ptr = NULL;
+
+	if (NULL != et)
+	{
+		while (NULL != (ptr = et(i++)))
+		{
+			printf("%s\n", (const char*)ptr);
+			get_attributes_and_arguments_for_task aa = (get_attributes_and_arguments_for_task)
+					shared_object_get_procedure_address(object, (const uint8_t*)"get_attributes_and_arguments_for_task");
+
+			if (NULL != aa)
+			{
+				const uint8_t** ta = NULL;
+				const uint8_t* tal = NULL;
+				uint8_t tac = 0;
+
+				if (aa(ptr, &ta, &tal, &tac))
+				{
+					for (uint8_t j = 0; j < tac; ++j)
+					{
+						printf("\t%s %i %i\n", (const char*)ta[j], tal[j], j);
+					}
+				}
+
+				static const uint8_t* arguments[] = { (const uint8_t*)"Abc", (const uint8_t*)"qwer", (const uint8_t*)"wt", (const uint8_t*)"h" };
+				static uint16_t arguments_lengths[] = { 3, 3, 2, 1 };
+				ev_t(ptr, arguments, arguments_lengths, tac, 0);
+			}
+		}
+	}
+
+	enumerate_namespaces en = (enumerate_namespaces)shared_object_get_procedure_address(object,
+							  (const uint8_t*)"enumerate_namespaces");
+	enumerate_functions ef = (enumerate_functions)shared_object_get_procedure_address(object,
+							 (const uint8_t*)"enumerate_functions");
+	evaluate_function ev_f = (evaluate_function)shared_object_get_procedure_address(object,
+							 (const uint8_t*)"evaluate_function");
+
+	if (NULL != en && NULL != ef && NULL != ev_f)
+	{
+		i = 0;
+
+		while (NULL != (ptr = en(i++)))
+		{
+			printf("%s\n", (const char*)ptr);
+			ptrdiff_t j = 0;
+			const void* func = NULL;
+
+			while (NULL != (func = ef(ptr, j++)))
+			{
+				printf("%s\n", (const char*)func);
+				static const uint8_t* values[] = { (const uint8_t*)"first_value", (const uint8_t*)"second_value", (const uint8_t*)"third_value" };
+				static uint16_t values_lengths[] = { 12, 13, 12 };
+				const uint8_t* out = NULL;
+				uint16_t out_l = 0;
+
+				if (ev_f(func, values, values_lengths, 3, &out, &out_l))
+				{
+					fwrite(out, sizeof(uint8_t), out_l, stdout);
+				}
+			}
+		}
+	}
+
+	shared_object_unload(object);
+#if 0
 	uint64_t time_now = datetime_now();
 #if defined(_MSC_VER)
 

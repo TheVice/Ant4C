@@ -43,6 +43,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/listener.h"
             "${CMAKE_SOURCE_DIR}/load_file.c"
             "${CMAKE_SOURCE_DIR}/load_file.h"
+            "${CMAKE_SOURCE_DIR}/load_tasks.c"
+            "${CMAKE_SOURCE_DIR}/load_tasks.h"
             "${CMAKE_SOURCE_DIR}/math_unit.c"
             "${CMAKE_SOURCE_DIR}/math_unit.h"
             "${CMAKE_SOURCE_DIR}/operating_system.c"
@@ -63,6 +65,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/string_unit.h"
             "${CMAKE_SOURCE_DIR}/target.c"
             "${CMAKE_SOURCE_DIR}/target.h"
+            "${CMAKE_SOURCE_DIR}/task.c"
+            "${CMAKE_SOURCE_DIR}/task.h"
             "${CMAKE_SOURCE_DIR}/text_encoding.c"
             "${CMAKE_SOURCE_DIR}/text_encoding.h"
             "${CMAKE_SOURCE_DIR}/try_catch.c"
@@ -79,11 +83,6 @@ add_executable(ant4c_app
 
 # add_library(ant4c_lib SHARED
 #             "${CMAKE_SOURCE_DIR}/main.c")
-
-#if (MSVC OR MINGW)
-#  add_compile_definitions(ant4c UNICODE _UNICODE)
-#  add_compile_definitions(ant4c_app UNICODE _UNICODE)
-#endif()
 
 target_link_libraries(ant4c_app ant4c)
 # target_link_libraries(ant4c_lib ant4c)
@@ -134,6 +133,8 @@ set(GTest_FOUND False)
 find_package(pugixml)
 find_package(GTest)
 
+include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
+
 if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
   add_executable(ant4c_tests ${SOURCES_OF_TESTS})
@@ -141,13 +142,14 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   if(NOT MSVC)
     target_link_libraries(ant4c_tests m)
     if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
-      target_link_libraries(ant4c_app dl)
+      target_link_libraries(ant4c_tests dl)
     endif()
   endif()
   if((NOT MSVC) AND (${CMAKE_VERSION} GREATER 3.0))
     set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
   endif()
   add_dependencies(ant4c_tests tests_exec_app)
+  add_dependencies(ant4c_tests ant4c.regex)
   if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
     add_custom_command(TARGET ant4c_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
@@ -219,6 +221,9 @@ else()
 
       if(NOT MSVC)
         target_link_libraries(ant4c_tests m)
+        if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
+          target_link_libraries(ant4c_tests dl)
+        endif()
       endif()
 
       if((NOT MSVC) AND (${CMAKE_VERSION} GREATER 3.0))
@@ -227,6 +232,7 @@ else()
       endif()
 
       add_dependencies(ant4c_tests tests_exec_app)
+      add_dependencies(ant4c_tests ant4c.regex)
       if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
         add_custom_command(TARGET ant4c_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
@@ -237,12 +243,6 @@ else()
         target_compile_definitions(ant4c_tests PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY})
       endif()
       message(STATUS "pugixml and GTest was found.")
-
-#     if (MSVC OR MINGW)
-#       add_compile_definitions(${GTEST_MAIN_LIBRARY} UNICODE _UNICODE)
-#       add_compile_definitions(tests_exec_app UNICODE _UNICODE)
-#       add_compile_definitions(ant4c_tests UNICODE _UNICODE)
-#     endif()
     endif()
   endif()
 endif()

@@ -41,15 +41,12 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish, uint8_t verbose);
-uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish,
-								  uint8_t target_help, uint8_t verbose);
+uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
+								  uint8_t command, const struct range* command_in_range,
+								  const uint8_t* element_finish, uint8_t target_help, uint8_t verbose);
 uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 								   const struct buffer* elements,
 								   uint8_t target_help, uint8_t verbose);
-
-uint8_t task_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t task_exec_function(uint8_t function, const struct buffer* arguments,
-						   uint8_t arguments_count, struct buffer* output);
+uint8_t interpreter_get_unknown_task_id();
 
 #endif

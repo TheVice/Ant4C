@@ -147,7 +147,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		ASSERT_EQ(pugi::xml_parse_status::status_ok, result.status) << code;
 		//
 		const std::string task_name(doc.first_child().name());
-		const auto task_name_in_range = string_to_range(task_name);
+		auto task_name_in_range = string_to_range(task_name);
 		const auto task_id = interpreter_get_task(task_name_in_range.start, task_name_in_range.finish);
 		//
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
@@ -160,10 +160,15 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		}
 
 		auto code_in_range = string_to_range(code);
+		//
+		task_name_in_range = code_in_range;
+		task_name_in_range.start++;
+		task_name_in_range.finish = task_name_in_range.start + task_name.size();
+		//
 		code_in_range.start += 1 + task_name.size();
 		const auto returned = interpreter_evaluate_task(
 								  project, NULL, task_id,
-								  code_in_range.start, code_in_range.finish,
+								  &task_name_in_range, code_in_range.finish,
 								  0, verbose);
 		//
 		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(project);

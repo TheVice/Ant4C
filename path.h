@@ -46,6 +46,9 @@ uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finis
 uint8_t path_get_directory_for_current_process(struct buffer* path);
 uint8_t path_get_directory_for_current_image(struct buffer* path);
 
+const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void* the_target,
+		struct buffer* input, struct buffer* tmp, uint8_t verbose);
+
 uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path);
 uint8_t cygpath_get_unix_path(uint8_t* path_start, uint8_t* path_finish);
 uint8_t cygpath_get_windows_path(uint8_t* path_start, uint8_t* path_finish);

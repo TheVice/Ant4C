@@ -1,0 +1,71 @@
+
+cmake_minimum_required(VERSION 2.8.12)
+
+#project(ant4c.regex)
+
+find_package(Boost COMPONENTS regex)
+add_library(ant4c.regex SHARED
+  "${CMAKE_SOURCE_DIR}/regex.cpp"
+  "${CMAKE_SOURCE_DIR}/regex.h"
+  "${CMAKE_SOURCE_DIR}/text_encoding.c")
+
+if(NOT MSVC)
+  set_target_properties(ant4c.regex PROPERTIES CXX_STANDARD 11)
+endif()
+
+target_compile_definitions(ant4c.regex PUBLIC NO_BUFFER_UNIT)
+target_compile_definitions(ant4c.regex PUBLIC NO_COMMON_UNIT)
+target_compile_definitions(ant4c.regex PUBLIC NO_EXPORT_MODULE)
+
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+
+  if(MSVC)
+    target_link_directories(ant4c.regex PRIVATE ${Boost_LIBRARY_DIRS})
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/PDB:\"${CMAKE_BINARY_DIR}/Debug/ant4c.regex.pbd\"")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/PDB:\"${CMAKE_BINARY_DIR}/Release/ant4c.regex.pbd\"")
+  else()
+    target_link_libraries(ant4c.regex ${Boost_REGEX_LIBRARY})
+  endif()
+else()
+  if(BOOST_ROOT)
+    file(TO_CMAKE_PATH "${BOOST_ROOT}" BOOST_ROOT)
+
+    file(GLOB CPP_FILES ${BOOST_ROOT} ${BOOST_ROOT}/libs/regex/src/*.cpp)
+    add_library(boost_regex ${CPP_FILES} ${H_FILES})
+
+    if(EXISTS ${BOOST_ROOT}/boost)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT})
+    endif()
+
+    if(EXISTS ${BOOST_ROOT}/libs)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/assert/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/config/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/container_hash/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/core/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/detail/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/integer/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/mpl/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/predef/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/preprocessor/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/regex/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/smart_ptr/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/static_assert/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/throw_exception/include)
+      target_include_directories(boost_regex PUBLIC ${BOOST_ROOT}/libs/type_traits/include)
+    endif()
+
+    if(NOT MSVC)
+      set_target_properties(boost_regex PROPERTIES CXX_STANDARD 11)
+      target_compile_options(boost_regex PRIVATE "-fPIC")
+    endif()
+
+    target_link_libraries(ant4c.regex boost_regex)
+    #target_compile_definitions(ant4c.regex PRIVATE BOOST_LIB_NAME=regex)
+    target_compile_definitions(ant4c.regex PRIVATE BOOST_AUTO_LINK_NOMANGLE)
+  endif()
+endif()
+
+#include(GenerateExportHeader)
+#target_include_directories(ant4c.regex PRIVATE ${CMAKE_BINARY_DIR})
+#GENERATE_EXPORT_HEADER(ant4c.regex)

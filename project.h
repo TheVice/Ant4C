@@ -37,6 +37,10 @@ uint8_t project_target_get(const void* the_project, const uint8_t* name, uint8_t
 uint8_t project_target_exists(const void* the_project, const uint8_t* name, uint8_t name_length);
 uint8_t project_target_has_executed(const void* the_project, const uint8_t* name, uint8_t name_length);
 
+uint8_t project_add_module(void* the_project, const void* the_module, uint8_t length);
+const uint8_t* project_get_task_from_module(const void* the_project, const struct range* task_name,
+		void** the_module_of_task);
+
 uint8_t project_get_base_directory(const void* the_project, const void** the_property);
 uint8_t project_get_buildfile_path(const void* the_project, const void** the_property);
 uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build_file_uri);

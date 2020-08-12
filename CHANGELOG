@@ -13,6 +13,7 @@ ant4c (YYYY.MM)
   * Added argument for configure algorithm - byte order, hash length,
     to the 'file::get-checksum' function.
   * Added possibility use external events listener.
+  * Added 'loadtasks' task.
 
 -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

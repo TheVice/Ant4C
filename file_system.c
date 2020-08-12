@@ -10,6 +10,7 @@
 #include "common.h"
 #include "conversion.h"
 #include "date_time.h"
+#include "environment.h"
 #include "hash.h"
 #include "path.h"
 #include "project.h"
@@ -2429,6 +2430,130 @@ uint8_t file_replace(const uint8_t* path,
 
 	buffer_release(&input);
 	return file_close(stream);
+}
+
+uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full_path)
+{
+	if (range_is_null_or_empty(partial_path) ||
+		NULL == full_path)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(full_path);
+
+	if (path_is_path_rooted(partial_path->start, partial_path->finish))
+	{
+		return buffer_append_data_from_range(full_path, partial_path) &&
+			   buffer_push_back(full_path, 0) &&
+			   file_exists(buffer_data(full_path, size));
+	}
+
+	static const uint8_t* path_variable = (const uint8_t*)"PATH";
+	/**/
+	struct buffer variable;
+	SET_NULL_TO_BUFFER(variable);
+	/**/
+	struct range start_of_path;
+
+	if (environment_get_variable(path_variable, path_variable + 4, &variable))
+	{
+		BUFFER_TO_RANGE(start_of_path, &variable);
+
+		if (!buffer_resize(full_path, range_size(&start_of_path) + range_size(partial_path)))
+		{
+			buffer_release(&variable);
+			return 0;
+		}
+
+		const uint8_t* ptr = start_of_path.start;
+
+		while (start_of_path.finish != (ptr = find_any_symbol_like_or_not_like_that(ptr, start_of_path.finish,
+											  &ENVIRONMENT_DELIMITER, 1, 1, 1)))
+		{
+			if (!buffer_resize(full_path, size))
+			{
+				buffer_release(&variable);
+				return 0;
+			}
+
+			if (!buffer_append(full_path, start_of_path.start, ptr - start_of_path.start))
+			{
+				buffer_release(&variable);
+				return 0;
+			}
+
+			if (!path_combine_in_place(full_path, size, partial_path->start, partial_path->finish) ||
+				!buffer_push_back(full_path, 0))
+			{
+				buffer_release(&variable);
+				return 0;
+			}
+
+			if (file_exists(buffer_data(full_path, size)))
+			{
+				buffer_release(&variable);
+				return 1;
+			}
+
+			ptr = find_any_symbol_like_or_not_like_that(ptr + 1, start_of_path.finish, &ENVIRONMENT_DELIMITER, 1, 0, 1);
+			start_of_path.start = ptr;
+		}
+	}
+
+#if !defined(_WIN32)
+	static const uint8_t* names[] =
+	{
+		(const uint8_t*)"PWD", (const uint8_t*)"OLDPWD"
+	};
+	/**/
+	static const uint8_t names_lengths[] =
+	{
+		3, 6
+	};
+
+	for (uint8_t i = 0, count = COUNT_OF(names); i < count; ++i)
+	{
+		if (!buffer_resize(&variable, 0))
+		{
+			buffer_release(&variable);
+			return 0;
+		}
+
+		if (environment_get_variable(names[i], names[i] + names_lengths[i], &variable))
+		{
+			if (!buffer_resize(full_path, size))
+			{
+				buffer_release(&variable);
+				return 0;
+			}
+
+			BUFFER_TO_RANGE(start_of_path, &variable);
+
+			if (!buffer_append_data_from_range(full_path, &start_of_path))
+			{
+				buffer_release(&variable);
+				return 0;
+			}
+
+			if (!path_combine_in_place(full_path, size, partial_path->start, partial_path->finish) ||
+				!buffer_push_back(full_path, 0))
+			{
+				buffer_release(&variable);
+				return 0;
+			}
+
+			if (file_exists(buffer_data(full_path, size)))
+			{
+				buffer_release(&variable);
+				return 1;
+			}
+		}
+	}
+
+#endif
+	buffer_release(&variable);
+	return 0;
 }
 
 static const uint8_t* entry_types_str[] =

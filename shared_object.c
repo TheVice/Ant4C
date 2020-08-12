@@ -23,6 +23,10 @@
 
 void* shared_object_load_wchar_t(const wchar_t* path)
 {
+	/*if (!file_exists_wchar_t(path))
+	{
+		return NULL;
+	}*/
 	return (void*)LoadLibraryExW(path, NULL, 0);
 }
 
@@ -30,6 +34,11 @@ void* shared_object_load_wchar_t(const wchar_t* path)
 
 void* shared_object_load(const uint8_t* path)
 {
+	if (NULL == path)
+	{
+		return NULL;
+	}
+
 #if defined(_WIN32)
 	struct buffer pathW;
 	SET_NULL_TO_BUFFER(pathW);
@@ -45,6 +54,10 @@ void* shared_object_load(const uint8_t* path)
 	/**/
 	return object;
 #else
+	/*if (!file_exists(path))
+	{
+		return NULL;
+	}*/
 	return dlopen((const char*)path, RTLD_NOW);
 #endif
 }

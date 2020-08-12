@@ -839,6 +839,91 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	return 0;
 }
 
+const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void* the_target,
+		struct buffer* input, struct buffer* tmp, uint8_t verbose)
+{
+	struct range path;
+	BUFFER_TO_RANGE(path, input);
+
+	if (!path_is_path_rooted(path.start, path.finish))
+	{
+		if (!project_get_current_directory(the_project, the_target, tmp, 0, verbose))
+		{
+			return NULL;
+		}
+
+		if (!path_combine_in_place(tmp, 0, path.start, path.finish) ||
+			!buffer_push_back(tmp, 0))
+		{
+			return NULL;
+		}
+
+		path.start = buffer_data(tmp, 0);
+
+		if (file_exists(path.start))
+		{
+			path.finish = NULL;
+		}
+
+		if (NULL != path.finish)
+		{
+			BUFFER_TO_RANGE(path, input);
+
+			if (!buffer_resize(tmp, 0))
+			{
+				return NULL;
+			}
+
+			if (!path_get_directory_for_current_process(tmp))
+			{
+				return NULL;
+			}
+
+			if (!path_combine_in_place(tmp, 0, path.start, path.finish) ||
+				!buffer_push_back(tmp, 0))
+			{
+				return NULL;
+			}
+
+			path.start = buffer_data(tmp, 0);
+
+			if (file_exists(path.start))
+			{
+				path.finish = NULL;
+			}
+		}
+
+		if (NULL != path.finish)
+		{
+			BUFFER_TO_RANGE(path, input);
+
+			if (!buffer_resize(tmp, 0))
+			{
+				return NULL;
+			}
+
+			if (file_get_full_path(&path, tmp))
+			{
+				path.start = buffer_data(tmp, 0);
+				path.finish = NULL;
+			}
+		}
+
+		if (NULL != path.finish)
+		{
+			if (!buffer_push_back(input, 0))
+			{
+				return NULL;
+			}
+
+			path.start = buffer_data(input, 0);
+			path.finish = NULL;
+		}
+	}
+
+	return path.start;
+}
+
 uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||

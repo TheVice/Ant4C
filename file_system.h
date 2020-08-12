@@ -118,6 +118,8 @@ uint8_t file_write_all(const uint8_t* path, const struct buffer* content);
 uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, void* stream);
 uint8_t file_write_with_several_steps(const struct buffer* content, void* stream);
 
+uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full_path);
+
 uint8_t dir_get_id_of_get_current_directory_function();
 uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t dir_exec_function(
