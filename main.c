@@ -100,7 +100,7 @@ uint8_t project_evaluate(void* the_project, const struct range* build_file,
 
 	if (!argument_parser_get_project_help())
 	{
-		if (!property_add_at_project(the_project, argument_parser_get_properties(), NULL,
+		if (!property_add_at_project(the_project, argument_parser_get_properties(),
 									 argument_parser_get_verbose()))
 		{
 			/*TODO: echo.*/

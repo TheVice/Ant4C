@@ -191,10 +191,6 @@ TEST_F(TestProject, project_load_from_content)
 		void* the_project = NULL;
 		ASSERT_TRUE(project_new(&the_project))
 				<< buffer_free(&output) << project_free(the_project);
-		ASSERT_TRUE(project_property_set_value(the_project, (const uint8_t*)"project.buildfile", 17,
-											   (const uint8_t*)source_file.c_str(), (ptrdiff_t)source_file.size(),
-											   0, 0, 1, verbose))
-				<< buffer_free(&output) << project_free(the_project);
 		//
 		const auto returned = project_load_from_content(content_in_range.start, content_in_range.finish,
 							  the_project, project_help, verbose);
@@ -214,26 +210,17 @@ TEST_F(TestProject, project_load_from_content)
 		}
 
 		const void* the_property = NULL;
-		//
-		ASSERT_NE(content.empty(), project_get_base_directory(the_project, &the_property))
-				<< buffer_free(&output) << project_free(the_project);
 
 		if (!expected_base_directory.empty())
 		{
+			ASSERT_NE(content.empty(), project_get_base_directory(the_project, &the_property))
+					<< buffer_free(&output) << project_free(the_project);
+			//
 			const auto returned_base_directory(property_to_string(the_property, &output));
 			ASSERT_EQ(expected_base_directory, returned_base_directory)
 					<< buffer_free(&output) << project_free(the_project);
 		}
 
-		the_property = NULL;
-		ASSERT_TRUE(project_get_buildfile_path(the_project, &the_property))
-				<< buffer_free(&output) << project_free(the_project);
-		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output) << project_free(the_project);
-		ASSERT_TRUE(project_get_buildfile_uri(the_property, &output))
-				<< buffer_free(&output) << project_free(the_project);
-		ASSERT_TRUE(buffer_size(&output)) << buffer_free(&output) << project_free(the_project);
-		//
 		the_property = NULL;
 		ASSERT_EQ(!expected_name.empty(), project_get_name(the_project, &the_property))
 				<< buffer_free(&output) << project_free(the_project);
@@ -358,8 +345,8 @@ TEST_F(TestProject, project_load_from_build_file)
 {
 	static const std::string hashes[] =
 	{
-		/*"sha3-224", "blake3-256",*/
-		"blake2b-160", "crc32"
+		/*"sha3", "blake3",*/
+		"blake2b", "crc32"
 	};
 	//
 	static const std::string tests_base_property("tests_base_directory");
@@ -410,39 +397,28 @@ TEST_F(TestProject, project_load_from_build_file)
 		{
 			const std::string expected_hash_value(
 				file_node.node().attribute(hash.c_str()).as_string());
-			auto algorithm = string_to_range(hash);
-			//
-			range algorithm_parameter;
-			algorithm_parameter.start = algorithm_parameter.finish = NULL;
-			//
-			const auto pos = hash.find('-');
 
-			if (std::string::npos != pos)
+			if (expected_hash_value.empty())
 			{
-				algorithm_parameter.finish = algorithm.finish;
-				algorithm.finish = algorithm.start + pos;
-				algorithm_parameter.start = algorithm.start + pos + 1;
+				continue;
 			}
 
-			if (!expected_hash_value.empty())
-			{
-				ASSERT_TRUE(buffer_resize(&tmp, 0))
-						<< buffer_free(&tmp);
-				ASSERT_TRUE(file_get_checksum(
-								(const uint8_t*)path.c_str(),
-								&algorithm, &algorithm_parameter,
-								&tmp))
-						<< path << std::endl
-						<< buffer_free(&tmp);
-				//
-				const std::string returned_hash(buffer_to_string(&tmp));
-				ASSERT_EQ(expected_hash_value, returned_hash)
-						<< path << std::endl
-						<< buffer_free(&tmp);
-				//
-				hash_exists = true;
-				break;
-			}
+			const auto algorithm = string_to_range(hash);
+			const std::string algorithm_parameter_str(file_node.node().attribute("algorithm_parameter").as_string());
+			const auto algorithm_parameter = string_to_range(algorithm_parameter_str);
+			//
+			ASSERT_TRUE(buffer_resize(&tmp, 0))
+					<< buffer_free(&tmp);
+			ASSERT_TRUE(file_get_checksum((const uint8_t*)path.c_str(),
+										  &algorithm, &algorithm_parameter, &tmp))
+					<< path << std::endl << buffer_free(&tmp);
+			//
+			const std::string returned_hash(buffer_to_string(&tmp));
+			ASSERT_EQ(expected_hash_value, returned_hash)
+					<< path << std::endl << buffer_free(&tmp);
+			//
+			hash_exists = true;
+			break;
 		}
 
 		if (!hash_exists)
@@ -562,6 +538,15 @@ TEST_F(TestProject, project_load_from_build_file)
 							Default, the_project, project_help, verbose);
 		ASSERT_EQ(expected_return, returned)
 				<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
+		//
+		const void* the_property = NULL;
+		ASSERT_TRUE(project_get_buildfile_path(the_project, &the_property))
+				<< path << buffer_free(&tmp) << project_free(the_project);
+		//
+		ASSERT_TRUE(buffer_resize(&tmp, 0)) << path << buffer_free(&tmp) << project_free(the_project);
+		ASSERT_TRUE(project_get_buildfile_uri(the_property, &tmp))
+				<< path << buffer_free(&tmp) << project_free(the_project);
+		ASSERT_TRUE(buffer_size(&tmp)) << path << buffer_free(&tmp) << project_free(the_project);
 		//
 		uint8_t expected_target_return = expected_return;
 		const auto target_return_node = node.node().select_node("target_return").node();

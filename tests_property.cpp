@@ -139,8 +139,8 @@ TEST_F(TestProperty, property_task)
 		void* project = NULL;
 		ASSERT_TRUE(project_new(&project)) << properties_free(&properties) << project_free(project);
 		//
-		ASSERT_TRUE(property_add_at_project(project, &properties, NULL,
-											verbose)) << properties_free(&properties) << project_free(project);
+		ASSERT_TRUE(property_add_at_project(project, &properties, verbose))
+				<< properties_free(&properties) << project_free(project);
 		//
 		property_release(&properties);
 

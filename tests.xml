@@ -5676,7 +5676,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <project>
         <property
           name="path"
-          value="${project::get-buildfile-path()}"
+          value="${environment::get-folder-path('UserProfile')}"
           readonly="true" />
         <property
           name="normalized_path"
@@ -5872,13 +5872,13 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_build_file>
     <project_load_from_build_file>
       <file path="Chapter3/IfNot.build" crc32="9a8ed6a3" />
-      <content line="3"><![CDATA[<if test="${string::equal('False', property::exists('name_of_project'))}">]]></content>
+      <content line="3"><![CDATA[<if test="${string::equal('False', property::exists('project.name'))}">]]></content>
       <content line="5"><![CDATA[</if>]]></content>
       <return>0</return>
       <target_return>1</target_return>
     </project_load_from_build_file>
     <project_load_from_build_file>
-      <file path="Chapter3/CopyFilterchain.build" blake2b-160="7b0795fcd477843597971b600532119ec49909dd" crc32_1="0x64baba1" crc32_2="0xa1ab4b06" />
+      <file path="Chapter3/CopyFilterchain.build" blake2b="7b0795fcd477843597971b600532119ec49909dd" algorithm_parameter="160" crc32_1="0x64baba1" crc32_2="0xa1ab4b06" />
       <content line="3"><![CDATA[	<property name="input_file" value="${path::combine(tests_base_directory, 'Chapter3/template.txt')}" />]]></content>
       <content line="4"><![CDATA[	<fail unless="${string::equal('c28c22979f9913623e5b73cd815e3c288953d19d', file::get-checksum(input_file, 'blake2b', '160'))}"]]></content>
       <content line="5"><![CDATA[		message="Hash sum of file '${input_file}' not equal to the 'c28c22979f9913623e5b73cd815e3c288953d19d'." />]]></content>
