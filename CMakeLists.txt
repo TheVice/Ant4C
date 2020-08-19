@@ -133,6 +133,7 @@ set(GTest_FOUND False)
 find_package(pugixml)
 find_package(GTest)
 
+include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
 include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
 
 if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
@@ -149,6 +150,7 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
     set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
   endif()
   add_dependencies(ant4c_tests tests_exec_app)
+  add_dependencies(ant4c_tests ant4c.dns)
   add_dependencies(ant4c_tests ant4c.regex)
   if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
     add_custom_command(TARGET ant4c_tests POST_BUILD
@@ -232,6 +234,7 @@ else()
       endif()
 
       add_dependencies(ant4c_tests tests_exec_app)
+      add_dependencies(ant4c_tests ant4c.dns)
       add_dependencies(ant4c_tests ant4c.regex)
       if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
         add_custom_command(TARGET ant4c_tests POST_BUILD

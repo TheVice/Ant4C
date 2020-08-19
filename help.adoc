@@ -95,7 +95,7 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
   Set verbose parameter of functions to the true.
 
 *-quiet*:, -q* ::
-  Display messages only with Warning or/and Errore levels.
+  Display messages only with Warning or/and Error levels.
 
 *-help, -h* ::
   Print brief message about application using.
@@ -567,13 +567,12 @@ NOTE: Some task support addition encodings that not listed here. For example see
 
 |===
 .s| Level name. .s| Description
-| Debug | "Debug" string will be added before message.
-| Info | "Info" string will be added before message.
-| Verbose | "Verbose" string will be added before message.
-| Warning | "Warning" string will be added before message.
-| Error | Will be used standard error output, "Error" string will be added before message.
+| Debug | Message will be output with "Debug" level. By default message with this level do not show.
+| Info | Message will be output with "Info" level.
+| Verbose | Message will be output with "Verbose" level. By default message with this level do not show.
+| Warning | Message will be output with "Warning" level.
+| Error | Message will be output with "Error" level.
 | None | Mute echo message.
-| NoLevel | No addition string before message will not be added.
 |===
 
 ==== Sample using
@@ -779,6 +778,7 @@ If new interpreter should not access properties 'inheritall' argument should be 
 | buildfile | file | N/A | Path to file that should be interpreted.
 | encoding | <<encoding_type,Encoding>> | UTF8 | Expected encoding of input file. This task support <<program_options,extension list of encoding>>.
 | inheritall | bool | *true* | Allow access properties of current project.
+| inheritmodules | bool | *true* | TODO
 | target | string | N/A | Target that should be run after global tasks.
 |===
 
@@ -3308,4 +3308,4 @@ Convert version in the string into string.
 
 == What's next?
 
-Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/4cc005f99954fa3d615edaa5bf8574d6fe8244fc/tests.xml#L4097[tests.xml file], at the 'project_load_from_content' test.
+Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/4cc005f99954fa3d615edaa5bf8574d6fe8244fc/tests.xml[tests.xml file], at the 'project_load_from_content' test.

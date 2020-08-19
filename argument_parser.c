@@ -26,6 +26,7 @@ static uint8_t argument_parser_indent = 0;
 static uint8_t argument_parser_no_logo = 0;
 static uint8_t argument_parser_pause = 0;
 static uint8_t argument_parser_project_help = 0;
+static uint8_t argument_parser_module_priority = 0;
 static uint8_t argument_parser_quiet = 0;
 static uint8_t argument_parser_verbose = UINT8_MAX;
 static uint16_t argument_parser_encoding = UTF8;
@@ -386,6 +387,12 @@ uint8_t argument_parser_char(int i, int argc, char** argv)
 		{
 			argument_parser_project_help = argument_parser_get_bool_value(argv[i], length);
 		}
+		else if ((16 == length && (0 == memcmp(argv[i], "-modulepriority+", 16) ||
+								   0 == memcmp(argv[i], "-modulepriority-", 16))) ||
+				 (15 == length && 0 == memcmp(argv[i], "-modulepriority", 15)))
+		{
+			argument_parser_module_priority = argument_parser_get_bool_value(argv[i], length);
+		}
 		else if ((8 == length && (0 == memcmp(argv[i], "-nologo+", 8) ||
 								  0 == memcmp(argv[i], "-nologo-", 8))) ||
 				 (7 == length && 0 == memcmp(argv[i], "-nologo", 7)))
@@ -532,6 +539,7 @@ void argument_parser_release()
 	argument_parser_no_logo = 0;
 	argument_parser_pause = 0;
 	argument_parser_project_help = 0;
+	argument_parser_module_priority = 0;
 	argument_parser_quiet = 0;
 	argument_parser_verbose = UINT8_MAX;
 	argument_parser_encoding = UTF8;
@@ -867,6 +875,11 @@ uint8_t argument_parser_get_pause()
 uint8_t argument_parser_get_project_help()
 {
 	return argument_parser_project_help;
+}
+
+uint8_t argument_parser_get_module_priority()
+{
+	return argument_parser_module_priority;
 }
 
 uint8_t argument_parser_get_quiet()

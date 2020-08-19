@@ -6,6 +6,9 @@
  */
 
 #include "shared_object.h"
+/*#ifndef NDEBUG
+#include "echo.h"
+#endif*/
 
 #include <stddef.h>
 
@@ -58,7 +61,21 @@ void* shared_object_load(const uint8_t* path)
 	{
 		return NULL;
 	}*/
+
+/*#ifndef NDEBUG
+	void* ptr = dlopen((const char*)path, RTLD_NOW);
+
+	if (NULL == ptr)
+	{
+		const char* error_str = dlerror();
+		const uint8_t message_length = (uint8_t)common_count_bytes_until(ptr, 0);
+		echo(0, UTF8, NULL, Error, (const uint8_t*)error_str, message_length, 1, 0);
+	}
+
+	return ptr;
+#else*/
 	return dlopen((const char*)path, RTLD_NOW);
+/*#endif*/
 #endif
 }
 

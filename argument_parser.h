@@ -45,6 +45,7 @@ uint8_t argument_parser_get_indent();
 uint8_t argument_parser_get_no_logo();
 uint8_t argument_parser_get_pause();
 uint8_t argument_parser_get_project_help();
+uint8_t argument_parser_get_module_priority();
 uint8_t argument_parser_get_quiet();
 uint8_t argument_parser_get_verbose();
 uint16_t argument_parser_get_encoding();

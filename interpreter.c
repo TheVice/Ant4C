@@ -460,6 +460,26 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 
 	uint8_t values_count = interpreter_get_values_for_arguments(
 							   the_project, the_target, &arguments_area, &values, verbose);
+	/**/
+	void* the_module = NULL;
+	const uint8_t* func = NULL;
+	/**/
+	uint8_t module_priority = 0;/*TODO*/
+
+	if (module_priority)
+	{
+		func = project_get_function_from_module(the_project, &name_space, &name, &the_module, NULL);
+
+		if (NULL != func && NULL != the_module)
+		{
+			values_count = load_tasks_evaluate_loaded_function(the_module, func, &values, values_count,
+						   return_of_function,
+						   verbose);
+			/**/
+			buffer_release_with_inner_buffers(&values);
+			return values_count;
+		}
+	}
 
 	switch (interpreter_get_unit(name_space.start, name_space.finish))
 	{
@@ -624,7 +644,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			if (!project_exec_function(
 					the_project,
 					project_get_function(name.start, name.finish),
-					&values, values_count, &the_property, return_of_function))
+					&values, values_count, &the_property, return_of_function, verbose))
 			{
 				values_count = 0;
 				break;
@@ -688,6 +708,18 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			break;
 
 		case UNKNOWN_UNIT:
+			if (module_priority)
+			{
+				values_count = 0;
+				break;
+			}
+
+			func = project_get_function_from_module(the_project, &name_space, &name, &the_module, NULL);
+			values_count = load_tasks_evaluate_loaded_function(the_module, func, &values, values_count,
+						   return_of_function,
+						   verbose);
+			break;
+
 		default:
 			values_count = 0;
 			break;
@@ -1667,6 +1699,27 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 	}
 
 	buffer_release_inner_buffers(&task_arguments);
+	void* the_module = NULL;
+	const uint8_t* pointer_to_the_task = NULL;
+	/**/
+	uint8_t module_priority = 0;/*TODO*/
+
+	if (module_priority)
+	{
+		pointer_to_the_task = project_get_task_from_module(the_project, command_in_range, &the_module);
+
+		if (NULL != pointer_to_the_task &&
+			NULL != the_module)
+		{
+			task_attributes_count = load_tasks_evaluate_loaded_task(
+										the_project, the_target, command_in_range,
+										attributes_finish, element_finish, &task_arguments,
+										the_module, pointer_to_the_task, verbose);
+			/**/
+			buffer_release_with_inner_buffers(&task_arguments);
+			return task_attributes_count;
+		}
+	}
 
 	switch (command)
 	{
@@ -2100,9 +2153,17 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 #endif
 
 		case UNKNOWN_TASK:
+			if (module_priority)
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			pointer_to_the_task = project_get_task_from_module(the_project, command_in_range, &the_module);
 			task_attributes_count = load_tasks_evaluate_loaded_task(
 										the_project, the_target, command_in_range,
-										attributes_finish, element_finish, &task_arguments, verbose);
+										attributes_finish, element_finish,
+										&task_arguments, the_module, pointer_to_the_task, verbose);
 			break;
 
 		default:

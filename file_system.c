@@ -920,9 +920,9 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 }
 
 uint8_t directory_get_current_directory(const void* project, const void** the_property,
-										struct buffer* output)
+										struct buffer* output, uint8_t verbose)
 {
-	if (!project_get_base_directory(project, the_property))
+	if (!project_get_base_directory(project, the_property, verbose))
 	{
 		if (NULL != the_property)
 		{

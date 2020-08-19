@@ -59,5 +59,5 @@ Build can be done by one of C compilers - MSVC, MinGW, GCC or CLang after config
 ## License
 This project available under terms of [MIT License](LICENSE).
 
-### ant4c.regex module
-Module available by same, MIT License, but it internally use Boost regex library - that available by [Boost Software License](https://github.com/boostorg/boost/blob/7dd85823c436b0a858c2f97f29b6a44beea71dfb/LICENSE_1_0.txt).
+### ant4c.dns and ant4c.regex modules
+Modules available by same, MIT License, but internally they use Boost libraries - that available by [Boost Software License](https://github.com/boostorg/boost/blob/7dd85823c436b0a858c2f97f29b6a44beea71dfb/LICENSE_1_0.txt).

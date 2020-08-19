@@ -5743,7 +5743,8 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
             <loadtasks module="libant4c.regex.so" />
           </when>
           <when test="${platform::is-windows()}">
-            <loadtasks module="ant4c.regex.dll" />
+            <loadtasks module="ant4c.regex.dll" failonerror="false" />
+            <loadtasks module="libant4c.regex.dll" failonerror="false" />
           </when>
         </choose>
 
@@ -5761,6 +5762,34 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <property name="file_extension" value="exe" />
       <property name="path_to_file" value="file://A:/MyFolder/MySubFolder/AnotherSubFolder/" />
       <property name="name_of_file" value="my_file.txt" />
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project name="load dns function" >
+        <choose>
+          <when test="${platform::is-unix()}">
+            <loadtasks module="libant4c.dns.so" />
+          </when>
+          <when test="${platform::is-windows()}">
+
+            <trycatch>
+              <try>
+                <loadtasks module="ant4c.dns.dll" />
+              </try>
+              <catch>
+                <loadtasks module="libant4c.dns.dll" />
+              </catch>
+            </trycatch>
+
+          </when>
+        </choose>
+
+        <property name="host_name" value="${dns::get-host-name()}" />
+        <fail if="${string::empty('host_name')}" message="Property host_name should not be empty." />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <name>load dns function</name>
     </project_load_from_content>
     <project_load_from_build_file />
     <project_load_from_build_file>

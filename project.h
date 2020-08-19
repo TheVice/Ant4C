@@ -40,12 +40,15 @@ uint8_t project_target_has_executed(const void* the_project, const uint8_t* name
 uint8_t project_add_module(void* the_project, const void* the_module, uint8_t length);
 const uint8_t* project_get_task_from_module(const void* the_project, const struct range* task_name,
 		void** the_module_of_task);
+const uint8_t* project_get_function_from_module(const void* the_project,
+		const struct range* name_space, const struct range* function_name,
+		void** the_module_of_task, const uint8_t** name_space_at_module);
 
-uint8_t project_get_base_directory(const void* the_project, const void** the_property);
-uint8_t project_get_buildfile_path(const void* the_project, const void** the_property);
-uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build_file_uri);
-uint8_t project_get_default_target(const void* the_project, const void** the_property);
-uint8_t project_get_name(const void* the_project, const void** the_property);
+uint8_t project_get_base_directory(const void* the_project, const void** the_property, uint8_t verbose);
+uint8_t project_get_buildfile_path(const void* the_project, const void** the_property, uint8_t verbose);
+uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build_file_uri, uint8_t verbose);
+uint8_t project_get_default_target(const void* the_project, const void** the_property, uint8_t verbose);
+uint8_t project_get_name(const void* the_project, const void** the_property, uint8_t verbose);
 
 uint8_t project_get_current_directory(const void* the_project, const void* the_target,
 									  struct buffer* output, ptrdiff_t size, uint8_t verbose);
@@ -70,7 +73,7 @@ uint8_t project_evaluate_task(void* the_project, const struct buffer* task_argum
 uint8_t project_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t project_exec_function(const void* the_project,
 							  uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							  const void** the_property, struct buffer* output);
+							  const void** the_property, struct buffer* output, uint8_t verbose);
 
 uint8_t program_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 							  struct buffer* output);

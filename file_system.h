@@ -41,7 +41,7 @@ int64_t directory_get_creation_time(const uint8_t* path);
 int64_t directory_get_creation_time_utc(const uint8_t* path);
 
 uint8_t directory_get_current_directory(
-	const void* project, const void** the_property, struct buffer* output);
+	const void* project, const void** the_property, struct buffer* output, uint8_t verbose);
 uint8_t directory_get_directory_root(const uint8_t* path, struct range* root);
 
 int64_t directory_get_last_access_time(const uint8_t* path);

@@ -213,7 +213,7 @@ TEST_F(TestProject, project_load_from_content)
 
 		if (!expected_base_directory.empty())
 		{
-			ASSERT_NE(content.empty(), project_get_base_directory(the_project, &the_property))
+			ASSERT_NE(content.empty(), project_get_base_directory(the_project, &the_property, verbose))
 					<< buffer_free(&output) << project_free(the_project);
 			//
 			const auto returned_base_directory(property_to_string(the_property, &output));
@@ -222,7 +222,7 @@ TEST_F(TestProject, project_load_from_content)
 		}
 
 		the_property = NULL;
-		ASSERT_EQ(!expected_name.empty(), project_get_name(the_project, &the_property))
+		ASSERT_EQ(!expected_name.empty(), project_get_name(the_project, &the_property, verbose))
 				<< buffer_free(&output) << project_free(the_project);
 		//
 		const auto returned_name(property_to_string(the_property, &output));
@@ -230,7 +230,7 @@ TEST_F(TestProject, project_load_from_content)
 				<< buffer_free(&output) << project_free(the_project);
 		//
 		the_property = NULL;
-		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(the_project, &the_property))
+		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(the_project, &the_property, verbose))
 				<< buffer_free(&output) << project_free(the_project);
 		//
 		const auto returned_default_target(property_to_string(the_property, &output));
@@ -540,11 +540,11 @@ TEST_F(TestProject, project_load_from_build_file)
 				<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
 		//
 		const void* the_property = NULL;
-		ASSERT_TRUE(project_get_buildfile_path(the_project, &the_property))
+		ASSERT_TRUE(project_get_buildfile_path(the_project, &the_property, verbose))
 				<< path << buffer_free(&tmp) << project_free(the_project);
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << path << buffer_free(&tmp) << project_free(the_project);
-		ASSERT_TRUE(project_get_buildfile_uri(the_property, &tmp))
+		ASSERT_TRUE(project_get_buildfile_uri(the_property, &tmp, verbose))
 				<< path << buffer_free(&tmp) << project_free(the_project);
 		ASSERT_TRUE(buffer_size(&tmp)) << path << buffer_free(&tmp) << project_free(the_project);
 		//

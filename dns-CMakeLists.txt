@@ -1,0 +1,58 @@
+cmake_minimum_required(VERSION 2.8.12)
+
+# project(dns)
+
+# find_package(Boost COMPONENTS asio)
+find_package(Boost COMPONENTS system)
+
+add_library(ant4c.dns SHARED
+  "${CMAKE_SOURCE_DIR}/dns.cpp"
+  "${CMAKE_SOURCE_DIR}/dns.h")
+
+if(NOT MSVC)
+  set_target_properties(ant4c.dns PROPERTIES CXX_STANDARD 11)
+endif()
+
+if(Boost_FOUND)
+  target_include_directories(ant4c.dns PRIVATE ${Boost_INCLUDE_DIRS})
+
+  if(MSVC)
+    target_link_directories(ant4c.dns PRIVATE ${Boost_LIBRARY_DIRS})
+  endif()
+else()
+  if(BOOST_ROOT)
+    file(TO_CMAKE_PATH "${BOOST_ROOT}" BOOST_ROOT)
+
+    if(EXISTS ${BOOST_ROOT}/boost)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT})
+      target_compile_definitions(ant4c.dns PRIVATE BOOST_DATE_TIME_NO_LIB)
+      target_compile_definitions(ant4c.dns PRIVATE BOOST_REGEX_NO_LIB)
+      #target_compile_definitions(ant4c.dns PRIVATE BOOST_AUTO_LINK_NOMANGLE)
+    endif()
+
+    if(EXISTS ${BOOST_ROOT}/libs)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/date_time/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/throw_exception/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/asio/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/assert/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/bind/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/config/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/core/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/mpl/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/numeric/conversion/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/predef/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/preprocessor/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/regex/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/smart_ptr/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/static_assert/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/system/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/type_traits/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/utility/include)
+      target_include_directories(ant4c.dns PRIVATE ${BOOST_ROOT}/libs/winapi/include)
+    endif()
+
+    if(MINGW)
+      target_link_libraries(ant4c.dns ws2_32)
+    endif()
+  endif()
+endif()

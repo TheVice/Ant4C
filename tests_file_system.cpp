@@ -422,6 +422,8 @@ TEST(TestFileSystem_, directory_move)
 
 TEST(TestFileSystem_, directory_set_current_directory)
 {
+	uint8_t verbose = 0;
+	//
 	buffer path;
 	SET_NULL_TO_BUFFER(path);
 	//
@@ -444,7 +446,7 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	const auto path_that_was_set(buffer_to_string(&path));
 	//
 	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
-	returned = directory_get_current_directory(NULL, NULL, &path);
+	returned = directory_get_current_directory(NULL, NULL, &path, verbose);
 	ASSERT_TRUE(returned) << buffer_free(&path);
 	//
 	const auto current_path(buffer_to_string(&path));
