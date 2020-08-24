@@ -669,6 +669,78 @@ uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finis
 	return (path_posix_delimiter == path_start[0] || PATH_DELIMITER == path_start[0]);
 }
 
+uint8_t path_glob(const uint8_t* path_start, const uint8_t* path_finish,
+				  const uint8_t* wild_card_start, const uint8_t* wild_card_finish)
+{
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
+		range_in_parts_is_null_or_empty(wild_card_start, wild_card_finish))
+	{
+		return 0;
+	}
+
+	static const uint8_t asterisk = '*';
+	static const uint8_t question_mark = '?';
+	/**/
+	uint8_t go_until = 0;
+	uint32_t wild_card_symbol = 0;
+
+	while (NULL != (wild_card_start = string_enumerate(wild_card_start, wild_card_finish, &wild_card_symbol)))
+	{
+		if (NULL == path_start && asterisk != wild_card_symbol)
+		{
+			return 0;
+		}
+
+		if (NULL != path_start && asterisk != wild_card_symbol)
+		{
+			uint32_t input_symbol = 0;
+
+			if (go_until)
+			{
+				if (question_mark != wild_card_symbol)
+				{
+					while (NULL != (path_start = string_enumerate(path_start, path_finish, &input_symbol)))
+					{
+						if (wild_card_symbol == input_symbol)
+						{
+							break;
+						}
+					}
+
+					if (NULL == path_start)
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					path_start = string_enumerate(path_start, path_finish, &input_symbol);
+				}
+
+				go_until = 0;
+				continue;
+			}
+
+			path_start = string_enumerate(path_start, path_finish, &input_symbol);
+
+			if (question_mark != wild_card_symbol && input_symbol != wild_card_symbol)
+			{
+				return 0;
+			}
+
+			continue;
+		}
+
+		if (asterisk == wild_card_symbol)
+		{
+			go_until = 1;
+			continue;
+		}
+	}
+
+	return 1;
+}
+
 uint8_t path_get_directory_for_current_process(struct buffer* path)
 {
 	if (NULL == path)

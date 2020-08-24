@@ -1,7 +1,7 @@
 ant4c (YYYY.MM)
   * Functions from the path unit allowed to operate with empty paths.
     Function 'combine' can be used for normalizing path.
-  * Increased list of symbols to trim from string at string::trim
+  * Increased list of symbols to trim from string at 'string::trim'
     function.
   * Replaced script hash functions 'blake2b-160', 'blake2b-256', 'blake2b-384'
     and 'blake2b-512' with 'blake2b';
@@ -14,6 +14,8 @@ ant4c (YYYY.MM)
     to the 'file::get-checksum' function.
   * Added possibility use external events listener.
   * Added 'loadtasks' task.
+  * For POSIX systems added searching of files with '.build' extension,
+    if no file provided at command prompt.
 
 -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 
@@ -52,7 +54,8 @@ ant4c (2019.10.21)
 
  -- TheVice <TheVice>  Tue, 22 Oct 2019 16:24:46 +0300
 
-# [Unreleased] https://github.com/TheVice/Ant4C/compare/v2020.05...HEAD
+# [Unreleased] https://github.com/TheVice/Ant4C/compare/vYYYY.MM...HEAD	0000000000000000000000000000000000000000
+# [YYYY.MM] https://github.com/TheVice/Ant4C/compare/v2020.05...vYYYY.MM	?
 # [2020.05] https://github.com/TheVice/Ant4C/compare/v2020.04...v2020.05	2f55fe293c83f297b41da3bd9481463352c16943
 # [2020.04] https://github.com/TheVice/Ant4C/compare/v2019.10.21...v2020.04	f5972487794a79cb1a55739342268e043578a745
 # [2019.10.21] https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21	1cc404418891657ed04ea6794cc72185fb59a933

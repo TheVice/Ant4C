@@ -242,6 +242,25 @@ TEST_F(TestPath, path_get_full_path)
 	buffer_release(&full_path);
 }
 
+TEST_F(TestPath, path_glob)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().attribute("input").as_string());
+		const std::string wild_card(node.node().attribute("wild_card").as_string());
+		const uint8_t expected_return = node.node().attribute("result").as_bool();
+		//
+		const auto input_in_range = string_to_range(input);
+		const auto wild_card_in_range = string_to_range(wild_card);
+		const auto returned = path_glob(input_in_range.start, input_in_range.finish,
+										wild_card_in_range.start, wild_card_in_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned) << input << std::endl << wild_card << std::endl;
+		//
+		--node_count;
+	}
+}
+
 TEST(TestPath_, path_delimiter)
 {
 	ASSERT_NE(path_posix_delimiter, path_windows_delimiter);

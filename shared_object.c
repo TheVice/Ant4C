@@ -7,7 +7,9 @@
 
 #include "shared_object.h"
 /*#ifndef NDEBUG
+#include "common.h"
 #include "echo.h"
+#include "text_encoding.h"
 #endif*/
 
 #include <stddef.h>
@@ -61,8 +63,8 @@ void* shared_object_load(const uint8_t* path)
 	{
 		return NULL;
 	}*/
-
-/*#ifndef NDEBUG
+	/*
+#ifndef NDEBUG
 	void* ptr = dlopen((const char*)path, RTLD_NOW);
 
 	if (NULL == ptr)
@@ -75,7 +77,9 @@ void* shared_object_load(const uint8_t* path)
 	return ptr;
 #else*/
 	return dlopen((const char*)path, RTLD_NOW);
-/*#endif*/
+	/*
+#endif
+	*/
 #endif
 }
 

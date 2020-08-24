@@ -251,18 +251,44 @@ uint8_t load_listener(const struct range* listener, void** object)
 	return 1;
 }
 
-typedef const uint8_t* (*enumerate_tasks)(ptrdiff_t index);
-typedef const uint8_t* (*enumerate_namespaces)(ptrdiff_t index);
-typedef const uint8_t* (*enumerate_functions)(const uint8_t* name_space, ptrdiff_t index);
-typedef uint8_t (*get_attributes_and_arguments_for_task)(
-	const uint8_t* task, const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count);
-typedef uint8_t (*evaluate_task)(const uint8_t* task,
-								 const uint8_t** arguments, const uint16_t* arguments_lengths, uint8_t arguments_count,
-								 uint8_t verbose);
-typedef uint8_t (*evaluate_function)(const uint8_t* function,
-									 const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-									 const uint8_t** output, uint16_t* output_length);
+uint8_t build_files_get(struct buffer* current_directory, const uint8_t* file_extension_start,
+						const uint8_t* file_extension_finish, struct buffer* build_files)
+{
+	if (NULL == current_directory ||
+		range_in_parts_is_null_or_empty(file_extension_start, file_extension_finish) ||
+		NULL == build_files)
+	{
+		return 0;
+	}
+
+	if (!path_combine_in_place(current_directory, 0, file_extension_start, file_extension_finish))
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(build_files, INT8_MAX * sizeof(struct range)))
+	{
+		return 0;
+	}
+
+	if (!directory_enumerate_file_system_entries(current_directory, 1, 0, build_files, 1))
+	{
+		if (!buffer_resize(build_files, 0))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		if (!argument_parser_fill_ranges_at_storage(build_files, INT8_MAX * sizeof(struct range)))
+		{
+			echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create ranges for the build files paths.", 50, 1, 0);
+			return 0;
+		}
+	}
+
+	return 1;
+}
 
 #if defined(_MSC_VER)
 int wmain(int argc, wchar_t** argv)
@@ -275,7 +301,7 @@ int main(int argc, char** argv)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 #endif
-#if 0
+#if 1
 	uint64_t time_now = datetime_now();
 #if defined(_MSC_VER)
 
@@ -340,12 +366,12 @@ int main(int argc, char** argv)
 
 	struct buffer* build_files = argument_parser_get_build_files();
 
-#if defined(_WIN32)
 	if (!buffer_size(build_files))
 	{
 		static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
+		const ptrdiff_t current_directory_path_length = range_size(&current_directory_in_range);
 
-		if (!path_combine_in_place(&current_directory, 0, file_extension, file_extension + 8))
+		if (!build_files_get(&current_directory, file_extension, file_extension + 8, build_files))
 		{
 			buffer_release(&current_directory);
 			argument_parser_release();
@@ -353,7 +379,8 @@ int main(int argc, char** argv)
 			return EXIT_FAILURE;
 		}
 
-		if (!buffer_append(build_files, NULL, INT8_MAX * sizeof(struct range)))
+		if (!buffer_resize(&current_directory, current_directory_path_length) ||
+			!buffer_push_back(&current_directory, 0))
 		{
 			buffer_release(&current_directory);
 			argument_parser_release();
@@ -361,34 +388,9 @@ int main(int argc, char** argv)
 			return EXIT_FAILURE;
 		}
 
-		if (!directory_enumerate_file_system_entries(&current_directory, 1, 0, build_files, 1))
-		{
-			if (!buffer_resize(build_files, 0))
-			{
-				buffer_release(&current_directory);
-				argument_parser_release();
-				/*TODO: echo.*/
-				return EXIT_FAILURE;
-			}
-		}
-		else
-		{
-			if (!argument_parser_fill_ranges_at_storage(build_files, INT8_MAX * sizeof(struct range)))
-			{
-				if (!echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create ranges for the build files paths.", 50,
-						  1, 0))
-				{
-					argc = 0;
-				}
-
-				buffer_release(&current_directory);
-				argument_parser_release();
-				return EXIT_FAILURE;
-			}
-		}
+		BUFFER_TO_RANGE(current_directory_in_range, &current_directory);
+		current_directory_in_range.finish = current_directory_in_range.start + current_directory_path_length;
 	}
-
-#endif
 
 	if (argument_parser_get_help() || NULL == argument_parser_get_build_file(0))
 	{
@@ -409,9 +411,9 @@ int main(int argc, char** argv)
 
 	if (listener && !load_listener(listener, &object))
 	{
-		if (!echo(0, Default, NULL, Warning, listener->start, range_size(listener), 1,
+		if (!echo(0, Default, NULL, Error, listener->start, range_size(listener), 1,
 				  argument_parser_get_verbose()) ||
-			!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener not loaded.", 20, 1,
+			!echo(0, Default, NULL, Error, (const uint8_t*)"Listener not loaded.", 20, 1,
 				  argument_parser_get_verbose()))
 		{
 			shared_object_unload(object);
@@ -444,8 +446,8 @@ int main(int argc, char** argv)
 
 	project_unload(the_project);
 	buffer_release(&current_directory);
-	time_now = datetime_now() - time_now;
 	shared_object_unload(object);
+	time_now = datetime_now() - time_now;
 
 	if (10 < time_now)
 	{

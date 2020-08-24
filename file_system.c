@@ -357,11 +357,14 @@ uint8_t directory_delete_(const char* path)
 }
 
 uint8_t directory_enumerate_file_system_entries_(
-	struct buffer* path, const uint8_t* wildcard,
+	struct buffer* path,
+	const uint8_t* wild_card_start,
+	const uint8_t* wild_card_finish,
 	const uint8_t entry_type, const uint8_t recurse,
 	struct buffer* output, uint8_t fail_on_error)
 {
 	if (NULL == path ||
+		range_in_parts_is_null_or_empty(wild_card_start, wild_card_finish) ||
 		all_entries < entry_type ||
 		(0 != recurse && 1 != recurse) ||
 		NULL == output)
@@ -406,8 +409,9 @@ uint8_t directory_enumerate_file_system_entries_(
 		{
 			if (recurse)
 			{
-				if (!(result = directory_enumerate_file_system_entries_(path, wildcard, entry_type, recurse, output,
-							   fail_on_error)))
+				if (!(result = directory_enumerate_file_system_entries_(
+								   path, wild_card_start, wild_card_finish,
+								   entry_type, recurse, output, fail_on_error)))
 				{
 					closedir(directory);
 					return 0;
@@ -438,7 +442,14 @@ uint8_t directory_enumerate_file_system_entries_(
 			continue;
 		}
 
-		(void)wildcard;/*TODO:*/
+		const uint8_t* path_start = buffer_data(path, 0);
+		const uint8_t* path_finish = path_start + buffer_size(path);
+
+		if (!path_glob(path_start, path_finish,
+					   wild_card_start, wild_card_finish))
+		{
+			continue;
+		}
 
 		if (!buffer_append_data_from_buffer(output, path) ||
 			!buffer_resize(path, size - 1) ||
@@ -765,13 +776,13 @@ uint8_t directory_enumerate_file_system_entries(
 		return 0;
 	}
 
-	struct buffer wildcard;
+	struct buffer wild_card;
 
-	SET_NULL_TO_BUFFER(wildcard);
+	SET_NULL_TO_BUFFER(wild_card);
 
-	if (!buffer_append_data_from_range(&wildcard, &file_name))
+	if (!buffer_append_data_from_range(&wild_card, &file_name))
 	{
-		buffer_release(&wildcard);
+		buffer_release(&wild_card);
 		return 0;
 	}
 
@@ -782,13 +793,17 @@ uint8_t directory_enumerate_file_system_entries(
 		!buffer_resize(path, range_size(&file_name)) ||
 		!buffer_push_back(path, 0))
 	{
-		buffer_release(&wildcard);
+		buffer_release(&wild_card);
 		return 0;
 	}
 
+	const uint8_t* wild_card_start = buffer_data(&wild_card, 0);
+	const uint8_t* wild_card_finish = wild_card_start + buffer_size(&wild_card);
+	/**/
 	const uint8_t returned = directory_enumerate_file_system_entries_(
-								 path, buffer_data(&wildcard, 0), entry_type, recurse, output, fail_on_error);
-	buffer_release(&wildcard);
+								 path, wild_card_start, wild_card_finish,
+								 entry_type, recurse, output, fail_on_error);
+	buffer_release(&wild_card);
 	return returned;
 #endif
 }

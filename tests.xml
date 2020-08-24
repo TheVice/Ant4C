@@ -640,7 +640,7 @@
       <project name="Empty folder">
         <property name="folder" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" overwrite="true" />
         <mkdir dir="${property::get-value('folder')}" unless="${directory::exists(property::get-value('folder'))}" />
-        <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
+        <property name="folder" value="${path::combine(property::get-value('folder'), '*')}" readonly="true" />
       </project>
       ]]></code>
       <output entry_type="directory" recurse="false" />
@@ -658,7 +658,7 @@
 
         <property name="entry" value="${path::combine(property::get-value('folder'), hash::bytes-to-string(hash::crc32(property::get-value('folder'))))}" />
         <mkdir dir="${property::get-value('entry')}" unless="${directory::exists(property::get-value('entry'))}" />
-        <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
+        <property name="folder" value="${path::combine(property::get-value('folder'), '*')}" readonly="true" />
       </project>
       ]]></code>
       <output entry_type="directory" recurse="false">
@@ -692,7 +692,7 @@
         <mkdir dir="${property::get-value('entry_')}" unless="${directory::exists(property::get-value('entry_'))}" />
 
         <description>Save in property input for function to test</description>
-        <property name="folder" value="${path::combine(property::get-value('folder'), '*.*')}" readonly="true" />
+        <property name="folder" value="${path::combine(property::get-value('folder'), '*')}" readonly="true" />
       </project>
       ]]></code>
       <output entry_type="directory" recurse="false">
@@ -4144,6 +4144,18 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <full_path>C:\sample.build</full_path>
       <return>1</return>
     </path_get_full_path>
+    <path_glob input="" wild_card="" result="" />
+    <path_glob input="Law" wild_card="Law*" result="true" />
+    <path_glob input="Laws" wild_card="Law*" result="true" />
+    <path_glob input="Lawyer" wild_card="Law*" result="true" />
+    <path_glob input="GrokLaw" wild_card="Law*" result="false" />
+    <path_glob input="La" wild_card="Law*" result="false" />
+    <path_glob input="aw" wild_card="Law*" result="false" />
+    <path_glob input="Law" wild_card="*Law*" result="true" />
+    <path_glob input="GrokLaw" wild_card="*Law*" result="true" />
+    <path_glob input="Lawyer" wild_card="*Law*" result="true" />
+    <path_glob input="La" wild_card="*Law*" result="false" />
+    <path_glob input="aw" wild_card="*Law*" result="false" />
   </TestPath>
   <TestProject>
     <project_property_set_value>

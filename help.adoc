@@ -102,7 +102,7 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
 
 ==== Specifying the script file
 
-If no file specific, all file with '.build' extension will be executed on Windows system. +
+If no file specific, all file with '.build' extension will be executed. +
 Count of build files is limit to the 'INT8_MAX' count. That macros usually equal to the 127.
 
 To specific the script file type '-buildfile' option.
@@ -126,7 +126,7 @@ Property will be read only at the script file.
 . ant4c build
 . ant4c -D:version="2020.05" build publish
 
-1) Run program. On Windows platform it search all file with '.build' extension and run it with default targets. If project do not specify such, global task will be executed. +
+1) Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed. +
 2) Run project from 'project_file.build' file. +
 3) Run 'build' target at all '.build' file from current directory. +
 4) Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
