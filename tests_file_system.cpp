@@ -120,44 +120,46 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		const std::string property_name(code_node.attribute("input").as_string());
 		auto content = string_to_range(code);
 		//
-		void* project = NULL;
-		auto returned = project_new(&project);
-		ASSERT_TRUE(returned)
-				<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+		struct buffer the_project;
+		SET_NULL_TO_BUFFER(the_project);
 		//
-		returned = project_load_from_content(content.start, content.finish, project, 0, verbose);
+		auto returned = project_new(&the_project);
 		ASSERT_TRUE(returned)
-				<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+		//
+		returned = project_load_from_content(content.start, content.finish, &the_project, 0, verbose);
+		ASSERT_TRUE(returned)
+				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 
 		for (const auto& output : node.node().select_nodes("output"))
 		{
 			returned = buffer_resize(&property_value, 0);
 			ASSERT_TRUE(returned)
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			returned = project_property_get_by_name(
-						   project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &property_value, verbose);
+						   &the_project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &property_value, verbose);
 			ASSERT_TRUE(returned)
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			returned = buffer_push_back(&property_value, 0);
 			ASSERT_TRUE(returned)
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			const std::string entry_type_str(output.node().attribute("entry_type").as_string());
 			ASSERT_TRUE(entry_types.count(entry_type_str))
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			const auto entry_type = entry_types.at(entry_type_str);
 			//
 			const uint8_t recurse = output.node().attribute("recurse").as_bool();
 			//
 			returned = buffer_resize(&file_tree, 0);
 			ASSERT_TRUE(returned)
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			returned = directory_enumerate_file_system_entries(&property_value, entry_type, recurse, &file_tree, 1);
 			ASSERT_TRUE(returned)
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			ptrdiff_t counter = 0;
 			const ptrdiff_t returned_counter = buffer_size(&file_tree);
@@ -170,16 +172,16 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 				//
 				returned = buffer_resize(&file_tree, 0);
 				ASSERT_TRUE(returned)
-						<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 				//
-				returned = project_property_get_by_name(project, (const uint8_t*)entry_str.c_str(),
+				returned = project_property_get_by_name(&the_project, (const uint8_t*)entry_str.c_str(),
 														(uint8_t)entry_str.size(), &file_tree, verbose);
 				ASSERT_TRUE(returned)
-						<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 				//
 				returned = buffer_push_back(&file_tree, 0);
 				ASSERT_TRUE(returned)
-						<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 				//
 				counter += buffer_size(&file_tree);
 				//
@@ -198,23 +200,23 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 
 				ASSERT_TRUE(returned)
 						<< returned_output_str << std::endl << expected_path_str << std::endl
-						<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			}
 
 			ASSERT_EQ(counter, returned_counter)
-					<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 		}
 
 		returned = buffer_resize(&property_value, 0);
 		ASSERT_TRUE(returned)
-				<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 		//
 		returned = project_property_get_by_name(
-					   project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &property_value, verbose);
+					   &the_project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &property_value, verbose);
 		ASSERT_TRUE(returned)
-				<< project_free(project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 		//
-		project_unload(project);
+		project_unload(&the_project);
 		//
 		content = buffer_to_range(&property_value);
 		//

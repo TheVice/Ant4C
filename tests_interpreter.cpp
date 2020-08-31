@@ -152,11 +152,12 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		//
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
-		void* project = NULL;
+		struct buffer the_project;
+		SET_NULL_TO_BUFFER(the_project);
 
 		if (node.node().attribute("project").as_bool())
 		{
-			ASSERT_TRUE(project_new(&project)) << project_free(project);
+			ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
 		}
 
 		auto code_in_range = string_to_range(code);
@@ -167,12 +168,12 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		//
 		code_in_range.start += 1 + task_name.size();
 		const auto returned = interpreter_evaluate_task(
-								  project, NULL, task_id,
+								  &the_project, NULL, task_id,
 								  &task_name_in_range, code_in_range.finish,
 								  0, verbose);
 		//
-		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(project);
-		project_unload(project);
+		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(&the_project);
+		project_unload(&the_project);
 		//
 		--node_count;
 	}

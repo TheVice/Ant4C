@@ -16,6 +16,7 @@ ant4c (YYYY.MM)
   * Added 'loadtasks' task.
   * For POSIX systems added searching of files with '.build' extension,
     if no file provided at command prompt.
+  * Added 'path::glob' function.
 
 -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

@@ -25,10 +25,6 @@
 
 #include <string.h>
 
-static uint8_t project_is_init = 0;
-
-static struct buffer project;
-
 static const uint8_t* project_attributes[] =
 {
 	(const uint8_t*)"name",
@@ -349,26 +345,10 @@ uint8_t project_get_current_directory(const void* the_project, const void* the_t
 	return 1;
 }
 
-uint8_t project_new(void** the_project)
+uint8_t project_new(void* the_project)
 {
-	if (NULL == the_project)
-	{
-		return 0;
-	}
-
-	if (!project_is_init)
-	{
-		SET_NULL_TO_BUFFER(project);
-		project_is_init = 1;
-	}
-
-	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, COUNT_OF_POSITIONS, NULL, NULL, NULL, &project))
-	{
-		return 0;
-	}
-
-	*the_project = &project;
-	return NULL != *the_project;
+	return common_get_attributes_and_arguments_for_task(NULL, NULL, COUNT_OF_POSITIONS, NULL, NULL, NULL,
+			the_project);
 }
 
 uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
@@ -521,12 +501,7 @@ uint8_t project_load_from_build_file(const struct range* path_to_build_file,
 		return 0;
 	}
 
-	if (!project_load(the_project, project_help, verbose))
-	{
-		return 0;
-	}
-
-	return 1;
+	return project_load(the_project, project_help, verbose);
 }
 
 uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
@@ -1146,8 +1121,7 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 		return 0;
 	}
 
-	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, COUNT_OF_POSITIONS, NULL, NULL, NULL,
-			inherit_all_in_a_buffer))
+	if (!project_new(inherit_all_in_a_buffer))
 	{
 		property_release(&properties);
 		return 0;

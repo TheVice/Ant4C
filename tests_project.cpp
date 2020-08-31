@@ -34,7 +34,6 @@ extern "C" {
 #include <iostream>
 
 extern "C" {
-	extern uint16_t argument_parser_get_encoding_from_name(const char* start, const char* finish);
 	extern uint8_t program_get_properties(
 		const void* the_project,
 		const void* the_target,
@@ -82,8 +81,11 @@ TEST_F(TestProject, project_property_set_value)
 		//
 		const auto code_in_range = string_to_range(code);
 		//
-		void* the_project = NULL;
-		ASSERT_TRUE(project_new(&the_project)) << project_free(the_project);
+		struct buffer project_;
+		SET_NULL_TO_BUFFER(project_);
+		void* the_project = &project_;
+		//
+		ASSERT_TRUE(project_new(the_project)) << project_free(the_project);
 		ASSERT_NE(nullptr, the_project) << project_free(the_project);
 		//
 		ASSERT_NE(code.empty(), project_load_from_content(
@@ -188,8 +190,11 @@ TEST_F(TestProject, project_load_from_content)
 		ASSERT_EQ(content.empty(), range_is_null_or_empty(&content_in_range))
 				<< buffer_free(&output);
 		//
-		void* the_project = NULL;
-		ASSERT_TRUE(project_new(&the_project))
+		struct buffer project_;
+		SET_NULL_TO_BUFFER(project_);
+		void* the_project = &project_;
+		//
+		ASSERT_TRUE(project_new(the_project))
 				<< buffer_free(&output) << project_free(the_project);
 		//
 		const auto returned = project_load_from_content(content_in_range.start, content_in_range.finish,
@@ -492,8 +497,11 @@ TEST_F(TestProject, project_load_from_build_file)
 		const auto expected_return = (uint8_t)INT_PARSE(
 										 node.node().select_node("return").node().child_value());
 		//
-		void* the_project = NULL;
-		ASSERT_TRUE(project_new(&the_project)) << buffer_free(&tmp) << project_free(the_project);
+		struct buffer project_;
+		SET_NULL_TO_BUFFER(project_);
+		void* the_project = &project_;
+		//
+		ASSERT_TRUE(project_new(the_project)) << buffer_free(&tmp) << project_free(the_project);
 		//
 		ASSERT_TRUE(project_property_set_value(
 						the_project,
@@ -594,9 +602,11 @@ TEST_F(TestProgram, program_get_properties)
 	struct buffer properties;
 	SET_NULL_TO_BUFFER(properties);
 	//
-	void* the_project = NULL;
+	struct buffer project_;
+	SET_NULL_TO_BUFFER(project_);
+	void* the_project = &project_;
 	//
-	ASSERT_TRUE(project_new(&the_project))
+	ASSERT_TRUE(project_new(the_project))
 			<< buffer_free(&properties_elements)
 			<< properties_free(&properties)
 			<< project_free(the_project);

@@ -102,8 +102,7 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
 
 ==== Specifying the script file
 
-If no file specific, all file with '.build' extension will be executed. +
-Count of build files is limit to the 'INT8_MAX' count. That macros usually equal to the 127.
+If no file specific, all files with '.build' extension from current directory will be evaluated.
 
 To specific the script file type '-buildfile' option.
 
@@ -1094,10 +1093,10 @@ No meter fail happen or not, tasks from this section will follow.
 NOTE: Directly using of this functions in most cases not required. +
 Functions from other units will call they internally, if they need such transformation.
 
-*string with boolean value* 'bool::parse'(*string*) +
+*string* 'bool::parse'(*string*) +
 *digital value in the string* 'double|int|int64|long::parse'(*string*)
 
-*string with boolean value* 'bool::to-string'(*string with boolean value*) +
+*string* 'bool::to-string'(*string*) +
 *string* 'double|int|int64|long::to-string'(*digital value in the string*)
 
 Boolean unit is restrict that only 'true', 'false', 'True', 'False' should be at the input. +
@@ -1405,7 +1404,7 @@ Get current time according to the UTC.
 [[date_time-parse]]
 ==== parse
 
-*string with date time value* 'datetime::parse'(*string*)
+*string* 'datetime::parse'(*string*)
 
 Get string with date time value from string. If more data located in the string, they will be skip. +
 String should be in format 'DD.MM.YYYY HH.MM.SS'.
@@ -1436,7 +1435,7 @@ Get count of clock ticks.
 [[date_time-to_string]]
 ==== to-string
 
-*string* 'datetime::to-string'(*string with date time value*)
+*string* 'datetime::to-string'(*string*)
 
 Get string with date time value from string. If more data located in the string, they will be skip. +
 String should be in format 'DD.MM.YYYY HH.MM.SS'.
@@ -2725,6 +2724,7 @@ Return *true* if current platform from Windows family.
 | <<path-get_path_root,path::get-path-root>> | Get root of the path.
 | <<path-get_temp_file_name,path::get-temp-file-name>> | Get unique file name point to the file in the temporary directory. File with zero length will be created.
 | <<path-get_temp_path,path::get-temp-path>> | Get path to the temporary directory.
+| <<path-glob,path::glob>> | Check if input path match according to the wild card argument.
 | <<path-has_extension,path::has-extension>> | Indicate is path have extension.
 | <<path-is_path_rooted,path::is-path-rooted>> | Indicate is path rooted.
 | <<cygpath-get_dos_path,cygpath::get-dos-path>> | Get DOS compatibility path. Only at Win32 platform.
@@ -2831,6 +2831,13 @@ Get unique file name point to the file in the temporary directory. File with zer
 *directory* 'path::get-temp-path'()
 
 Get path to the temporary directory.
+
+[[path-glob]]
+==== glob
+
+*bool* 'path::glob'(*string* input, *string* wild_card)
+
+Return *true* if *input* path match by *wild card* argument.
 
 [[path-has_extension]]
 ==== has-extension

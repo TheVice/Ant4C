@@ -1090,6 +1090,7 @@ static const uint8_t* path_function_str[] =
 	(const uint8_t*)"get-path-root",
 	(const uint8_t*)"get-temp-file-name",
 	(const uint8_t*)"get-temp-path",
+	(const uint8_t*)"glob",
 	(const uint8_t*)"has-extension",
 	(const uint8_t*)"is-path-rooted",
 	(const uint8_t*)"get-dos-path",
@@ -1109,6 +1110,7 @@ enum path_function
 	path_get_path_root_function,
 	path_get_temp_file_name_function,
 	path_get_temp_path_function,
+	path_glob_function,
 	path_has_extension_function,
 	path_is_path_rooted_function,
 	cygpath_get_dos_path_function,
@@ -1192,6 +1194,11 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 		case path_get_temp_path_function:
 			return !arguments_count && path_get_temp_path(output);
+
+		case path_glob_function:
+			return 2 == arguments_count &&
+				   bool_to_string(path_glob(values[0].start, values[0].finish,
+											values[1].start, values[1].finish), output);
 
 		case path_has_extension_function:
 			return (1 == arguments_count) &&

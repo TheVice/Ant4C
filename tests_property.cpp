@@ -99,23 +99,27 @@ TEST(TestProperty_, property_get)
 	std::string code("<property name=\"my\" value=\"${my}\" failonerror=\"false\" />");
 	auto code_in_range(string_to_range(code));
 	//
-	void* project = NULL;
-	ASSERT_TRUE(project_new(&project));
+	struct buffer the_project;
+	SET_NULL_TO_BUFFER(the_project);
 	//
-	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish, project,
+	ASSERT_TRUE(project_new(&the_project));
+	//
+	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish,
+			  &the_project,
 			  0, 0))
-			<< project_free(project);
+			<< project_free(&the_project);
 	//
-	project_clear(project);
+	project_clear(&the_project);
 	//
 	code = "<project><property name=\"my\" value=\"${my}\" failonerror=\"false\" /></project>";
 	code_in_range = string_to_range(code);
 	//
-	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish, project,
+	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish,
+			  &the_project,
 			  0, 0))
-			<< project_free(project);
+			<< project_free(&the_project);
 	//
-	project_unload(project);
+	project_unload(&the_project);
 }
 
 TEST_F(TestProperty, property_task)
@@ -136,11 +140,13 @@ TEST_F(TestProperty, property_task)
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const auto output_properties = node.node().select_nodes("output_properties/property");
 		//
-		void* project = NULL;
-		ASSERT_TRUE(project_new(&project)) << properties_free(&properties) << project_free(project);
+		struct buffer the_project;
+		SET_NULL_TO_BUFFER(the_project);
 		//
-		ASSERT_TRUE(property_add_at_project(project, &properties, verbose))
-				<< properties_free(&properties) << project_free(project);
+		ASSERT_TRUE(project_new(&the_project)) << properties_free(&properties) << project_free(&the_project);
+		//
+		ASSERT_TRUE(property_add_at_project(&the_project, &properties, verbose))
+				<< properties_free(&properties) << project_free(&the_project);
 		//
 		property_release(&properties);
 
@@ -154,13 +160,13 @@ TEST_F(TestProperty, property_task)
 			task_in_range.finish = (const uint8_t*)task_in_range.start + property_str.size();
 			//
 			const auto returned = interpreter_evaluate_task(
-									  project, NULL, task_id,
+									  &the_project, NULL, task_id,
 									  &task_in_range, record_in_range.finish,
 									  0, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< record << std::endl
-					<< properties_free(&properties) << project_free(project);
+					<< properties_free(&properties) << project_free(&the_project);
 		}
 
 		for (const auto& property : output_properties)
@@ -176,32 +182,33 @@ TEST_F(TestProperty, property_task)
 			property_load_from_node(property.node(), name, expected_value, expected_dynamic,
 									over_write, expected_read_only, fail_on_error, local_verbose);
 			//
-			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
+			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(&the_project);
 			ASSERT_TRUE(project_property_get_by_name(
-							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
+							&the_project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
 							&properties, verbose))
-					<< name << std::endl << buffer_free(&properties) << project_free(project);
+					<< name << std::endl << buffer_free(&properties) << project_free(&the_project);
 			ASSERT_EQ(expected_value, buffer_to_string(&properties)) << buffer_free(&properties);
-			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(project);
+			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(&the_project);
 			//
 			void* the_property = NULL;
 			ASSERT_TRUE(project_property_exists(
-							project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property, verbose))
-					<< name << buffer_free(&properties) << project_free(project);
+							&the_project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property, verbose))
+					<< name << buffer_free(&properties) << project_free(&the_project);
 			//
 			uint8_t returned_dynamic = 0;
 			ASSERT_TRUE(property_is_dynamic(the_property,
-											&returned_dynamic)) << name << buffer_free(&properties) << project_free(project);
-			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << buffer_free(&properties) << project_free(project);
+											&returned_dynamic)) << name << buffer_free(&properties) << project_free(&the_project);
+			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << buffer_free(&properties) << project_free(
+						&the_project);
 			//
 			uint8_t returned_read_only = 0;
 			ASSERT_TRUE(property_is_readonly(the_property,
-											 &returned_read_only)) << name << buffer_free(&properties) << project_free(project);
+											 &returned_read_only)) << name << buffer_free(&properties) << project_free(&the_project);
 			ASSERT_EQ(expected_read_only, returned_read_only) << name << buffer_free(&properties) << project_free(
-						project);
+						&the_project);
 		}
 
-		project_unload(project);
+		project_unload(&the_project);
 		--node_count;
 	}
 

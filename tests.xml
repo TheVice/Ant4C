@@ -2,21 +2,23 @@
 <Tests>
   <TestArgumentParser>
     <argument_parser_at_all>
-      <input></input>
+      <input />
       <return>1</return>
-      <!--build_file></build_file-->
-      <pause></pause>
-      <verbose></verbose>
-      <debug></debug>
-      <quiet></quiet>
-      <indent></indent>
+      <!--build_file /-->
+      <pause />
+      <verbose />
+      <debug />
+      <quiet />
+      <indent />
       <!--properties>
-        <property name="property_name" value="property value" /--> <!-- dynamic="false" overwrite="false" readonly="true" failonerror="false" verbose="false" /-->
+        <property name="property_name" value="property value" dynamic="false" readonly="true" /-->
       <!--/properties-->
-      <log_file></log_file>
-      <project_help></project_help>
-      <no_logo></no_logo>
-      <help></help>
+      <log_file />
+      <project_help />
+      <no_logo />
+      <help />
+      <encoding />
+      <module_priority />
     </argument_parser_at_all>
     <argument_parser_at_all>
       <input>-indent:</input>
@@ -121,7 +123,15 @@
       <input>-D:property_name=property_value</input>
       <return>1</return>
       <properties>
-        <property name="property_name" value="property_value" dynamic="true" overwrite="false" readonly="true" failonerror="false" verbose="false" />
+        <property name="property_name" value="property_value" dynamic="true" readonly="true" />
+      </properties>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-D:property_name_1=property_value_1 -D:property_name_2=property_value_2</input>
+      <return>1</return>
+      <properties>
+        <property name="property_name_1" value="property_value_1" dynamic="true" readonly="true" />
+        <property name="property_name_2" value="property_value_2" dynamic="true" readonly="true" />
       </properties>
     </argument_parser_at_all>
     <argument_parser_at_all>
@@ -157,120 +167,176 @@
       <target>bar</target>
       <return>1</return>
     </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-encoding:Unicode</input>
+      <encoding>Unicode</encoding>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-encoding:ENC</input>
+      <encoding>UNKNOWN</encoding>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-listener:default_listener</input>
+      <listener>default_listener</listener>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-modulepriority</input>
+      <module_priority>1</module_priority>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-modulepriority+</input>
+      <module_priority>1</module_priority>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-modulepriority-</input>
+      <module_priority>0</module_priority>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>1</input>
+      <verbose>0</verbose>
+      <target>1</target>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-v+</input>
+      <verbose>1</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-v-</input>
+      <verbose>0</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-v1</input>
+      <verbose>0</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-verbose+</input>
+      <verbose>1</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-verbose-</input>
+      <verbose>0</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-verbose1</input>
+      <verbose>0</verbose>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>/f:1.build</input>
+      <build_file>1.build</build_file>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-buildfile:1.build</input>
+      <build_file>1.build</build_file>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-l:</input>
+      <return>0</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-l:1.txt</input>
+      <log_file>1.txt</log_file>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-logfile:</input>
+      <output></output>
+      <return>0</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-logfile:1.txt</input>
+      <log_file>1.txt</log_file>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-logfile:"C:\Program Files\1.txt"</input>
+      <log_file>C:\Program Files\1.txt</log_file>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-l:"C:\Program Files\1.txt"</input>
+      <log_file>C:\Program Files\1.txt</log_file>
+      <return>1</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-listener:</input>
+      <return>0</return>
+    </argument_parser_at_all>
+    <argument_parser_at_all>
+      <input>-listener:libdefault_listener.so</input>
+      <listener>libdefault_listener.so</listener>
+      <return>1</return>
+    </argument_parser_at_all>
+      <argument_parser_at_all>
+      <input>-listener:default_listener.dll</input>
+      <listener>default_listener.dll</listener>
+      <return>1</return>
+    </argument_parser_at_all>
     <argument_append_arguments>
-      <argument></argument>
+      <input></input>
       <output></output>
       <return></return>
     </argument_append_arguments>
     <argument_append_arguments>
-      <argument>1</argument>
-      <argument>2</argument>
-      <argument>3</argument>
-      <argument>4</argument>
-      <argument>5</argument>
-      <argument>6</argument>
-      <argument>7</argument>
-      <argument>8</argument>
-      <argument>9</argument>
-      <argument>0</argument>
+      <input>1</input>
+      <input>2</input>
+      <input>3</input>
+      <input>4</input>
+      <input>5</input>
+      <input>6</input>
+      <input>7</input>
+      <input>8</input>
+      <input>9</input>
+      <input>0</input>
       <output>10x020x030x040x050x060x070x080x090x000x0</output>
       <return>1</return>
     </argument_append_arguments>
     <argument_append_arguments>
-      <argument>"a b c"</argument>
-      <argument>2</argument>
-      <argument>3</argument>
-      <argument>4</argument>
-      <argument>5</argument>
-      <argument>6</argument>
-      <argument>7</argument>
-      <argument>8</argument>
-      <argument>9</argument>
-      <argument>0</argument>
+      <input>"a b c"</input>
+      <input>2</input>
+      <input>3</input>
+      <input>4</input>
+      <input>5</input>
+      <input>6</input>
+      <input>7</input>
+      <input>8</input>
+      <input>9</input>
+      <input>0</input>
       <output>a b c0x020x030x040x050x060x070x080x090x000x0</output>
       <return>1</return>
     </argument_append_arguments>
-    <argument_parser_get_verbose>
-      <argument>1</argument>
-      <output>0</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_verbose>
-      <argument>-v+</argument>
-      <output>1</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_verbose>
-      <argument>-v-</argument>
-      <output>0</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_verbose>
-      <argument>-v1</argument>
-      <output>0</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_verbose>
-      <argument>-verbose+</argument>
-      <output>1</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_verbose>
-      <argument>-verbose-</argument>
-      <output>0</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_verbose>
-      <argument>-verbose1</argument>
-      <output>0</output>
-    </argument_parser_get_verbose>
-    <argument_parser_get_build_file>
-      <argument>/f:1.build</argument>
-      <output>1.build</output>
-    </argument_parser_get_build_file>
-    <argument_parser_get_build_file>
-      <argument>-buildfile:1.build</argument>
-      <output>1.build</output>
-    </argument_parser_get_build_file>
-    <argument_parser_get_log_file>
-      <argument>-l:</argument>
-      <output></output>
-      <return>0</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-l:1.txt</argument>
-      <output>1.txt</output>
+    <argument_append_arguments>
+      <input>/f:C:\discriminant.build /f:"C:\first one.build" /f:"C:\Folder checker.build" /f:C:\sample.build</input>
+      <output>/f:C:\discriminant.build0x0/f:C:\first one.build0x0/f:C:\Folder checker.build0x0/f:C:\sample.build0x0</output>
       <return>1</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-logfile:</argument>
-      <output></output>
-      <return>0</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-logfile:1.txt</argument>
-      <output>1.txt</output>
+    </argument_append_arguments>
+    <argument_append_arguments>
+      <input>/f:C:\discriminant.build</input>
+      <input>/f:"C:\first one.build"</input>
+      <input>/f:"C:\Folder checker.build"</input>
+      <input>/f:C:\sample.build</input>
+      <output>/f:C:\discriminant.build0x0/f:C:\first one.build0x0/f:C:\Folder checker.build0x0/f:C:\sample.build0x0</output>
       <return>1</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-logfile:"C:\Program Files\1.txt"</argument>
-      <output>C:\Program Files\1.txt</output>
+    </argument_append_arguments>
+    <argument_append_arguments>
+      <input>"a b c" "d e f" "g h" 4 5</input>
+      <output>a b c0x0d e f0x0g h0x040x050x0</output>
       <return>1</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-l:"C:\Program Files\1.txt"</argument>
-      <output>C:\Program Files\1.txt</output>
-      <return>1</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-listener:</argument>
-      <output/>
-      <return>0</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-listener:libdefault_listener.so</argument>
-      <output/>
-      <return>1</return>
-    </argument_parser_get_log_file>
-    <argument_parser_get_log_file>
-      <argument>-listener:default_listener.dll</argument>
-      <output/>
-      <return>1</return>
-    </argument_parser_get_log_file>
+    </argument_append_arguments>
   </TestArgumentParser>
   <TestConversion>
     <bool_parse>
@@ -3670,6 +3736,16 @@
       <output>"${math::truncate(math::addition(a, b))}"</output>
       <return>1</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${path::glob('1.txt', '*.txt')}</code>
+      <output>True</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${path::glob('1.txt', '*.bat')}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
     <interpreter_evaluate_task>
       <code><![CDATA[<echo />]]></code>
       <return>1</return>
@@ -5775,7 +5851,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <property name="path_to_file" value="file://A:/MyFolder/MySubFolder/AnotherSubFolder/" />
       <property name="name_of_file" value="my_file.txt" />
     </project_load_from_content>
-    <project_load_from_content>
+    <TODO><project_load_from_content>
       <content><![CDATA[
       <project name="load dns function" >
         <choose>
@@ -5802,7 +5878,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>load dns function</name>
-    </project_load_from_content>
+    </project_load_from_content></TODO>
     <project_load_from_build_file />
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />

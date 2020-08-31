@@ -308,13 +308,11 @@ std::wstring u8string_to_u16string(const std::string& input, buffer* value)
 	return buffer_to_u16string(value);
 }
 
+extern std::wstring char_to_wchar_t(const std::string& input);
+
 std::wstring u8string_to_u16string(const std::string& input)
 {
-	buffer value;
-	SET_NULL_TO_BUFFER(value);
-	const auto returned(u8string_to_u16string(input, &value));
-	buffer_release(&value);
-	return returned;
+	return char_to_wchar_t(input);
 }
 
 std::string TestsBaseXml::tests_xml;

@@ -125,7 +125,8 @@ set(SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_property.cpp"
             "${CMAKE_SOURCE_DIR}/tests_string_unit.cpp"
             "${CMAKE_SOURCE_DIR}/tests_text_encoding.cpp"
-            "${CMAKE_SOURCE_DIR}/tests_xml.cpp")
+            "${CMAKE_SOURCE_DIR}/tests_xml.cpp"
+            "${CMAKE_SOURCE_DIR}/text_encoding.cpp")
 
 set(pugixml_FOUND 0)
 set(GTest_FOUND False)
@@ -162,16 +163,6 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   if(DEFINED PUGIXML_HEADER_ONLY)
     target_compile_definitions(ant4c_tests PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY})
   endif()
-
-  if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
-    target_compile_options(pugixml PRIVATE "-fPIE")
-    target_compile_options(GTest::GTest PRIVATE "-fPIE")
-  endif()
-
-# if (MSVC OR MINGW)
-#   add_compile_definitions(tests_exec_app UNICODE _UNICODE)
-#   add_compile_definitions(ant4c_tests UNICODE _UNICODE)
-# endif()
 else()
   message(STATUS "Search pugixml and GTest via defined PUGIXML_PATH and/or GTEST_PATH if such exists.")
   if(DEFINED ENV{PUGIXML_PATH})

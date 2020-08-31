@@ -70,7 +70,7 @@
 #define SAMPLE_USING_LENGTH 37
 #define OPTIONS (const uint8_t*)"Options:\n"																					\
 	"\t-buildfile: - set path to project file. Short form /f:.\n"																\
-	"\t-encoding: - set encoding of input file. Can be ASCII, UTF8, Unicode, UTF16LE, UTF32 or UTF32LE in any letter case.\n"	\
+	"\t-encoding: - set encoding of input file.\n"																				\
 	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"											\
 	"\t-projecthelp - show description of project and target(s).\n"																\
 	"\t-nologo - do not display program version, license and copyright information.\n"											\
@@ -91,31 +91,32 @@ uint8_t print_status(int status)
 }
 
 uint8_t project_evaluate(void* the_project, const struct range* build_file,
-						 const struct range* current_directory_in_range)
+						 const struct range* current_directory_in_range,
+						 const struct buffer* properties,
+						 const struct buffer* arguments, struct buffer* argument_value,
+						 uint8_t verbose)
 {
-	if (NULL == build_file)
+	if (NULL == build_file ||
+		NULL == properties)
 	{
 		/*TODO: echo.*/
 		return 0;
 	}
 
-	if (!argument_parser_get_project_help())
+	const uint8_t project_help = argument_parser_get_project_help(arguments, argument_value);
+
+	if (!project_help && !property_add_at_project(the_project, properties, verbose))
 	{
-		if (!property_add_at_project(the_project, argument_parser_get_properties(),
-									 argument_parser_get_verbose()))
-		{
-			/*TODO: echo.*/
-			return 0;
-		}
+		/*TODO: echo.*/
+		return 0;
 	}
 
 	listener_project_started(build_file->start, the_project);
 	/**/
 	uint8_t is_loaded = project_load_from_build_file(
 							build_file, current_directory_in_range,
-							argument_parser_get_encoding(),
-							the_project, argument_parser_get_project_help(),
-							argument_parser_get_verbose());
+							argument_parser_get_encoding(arguments, argument_value),
+							the_project, project_help, verbose);
 
 	if (!is_loaded)
 	{
@@ -124,16 +125,16 @@ uint8_t project_evaluate(void* the_project, const struct range* build_file,
 		return 0;
 	}
 
-	if (!argument_parser_get_project_help())
+	if (!project_help)
 	{
-		if (argument_parser_get_target(0))
+		if (argument_parser_get_target(arguments, argument_value, 0))
 		{
 			int index = 0;
 			const struct range* target_name = NULL;
 
-			while (NULL != (target_name = argument_parser_get_target(index++)))
+			while (NULL != (target_name = argument_parser_get_target(arguments, argument_value, index++)))
 			{
-				is_loaded = target_evaluate_by_name(the_project, target_name, argument_parser_get_verbose());
+				is_loaded = target_evaluate_by_name(the_project, target_name, verbose);
 
 				if (!is_loaded)
 				{
@@ -151,7 +152,7 @@ uint8_t project_evaluate(void* the_project, const struct range* build_file,
 		}
 		else
 		{
-			is_loaded = project_evaluate_default_target(the_project, argument_parser_get_verbose());
+			is_loaded = project_evaluate_default_target(the_project, verbose);
 
 			if (!is_loaded)
 			{
@@ -251,40 +252,70 @@ uint8_t load_listener(const struct range* listener, void** object)
 	return 1;
 }
 
-uint8_t build_files_get(struct buffer* current_directory, const uint8_t* file_extension_start,
-						const uint8_t* file_extension_finish, struct buffer* build_files)
+uint8_t build_files_get(struct buffer* arguments,
+						struct buffer* argument_value,
+						struct buffer* current_directory,
+						uint8_t verbose)
 {
-	if (NULL == current_directory ||
-		range_in_parts_is_null_or_empty(file_extension_start, file_extension_finish) ||
-		NULL == build_files)
+	if (NULL == arguments ||
+		NULL == argument_value ||
+		NULL == current_directory)
 	{
 		return 0;
 	}
 
-	if (!path_combine_in_place(current_directory, 0, file_extension_start, file_extension_finish))
+	static const uint8_t zero_symbol = '\0';
+	static const uint8_t* f_argument = (const uint8_t*)"\" /f:\"";
+	static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
+	/**/
+	const ptrdiff_t current_directory_path_length = buffer_size(current_directory);
+
+	if (!path_combine_in_place(current_directory, 0, file_extension, file_extension + 8))
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(build_files, INT8_MAX * sizeof(struct range)))
+	if (!directory_enumerate_file_system_entries(current_directory, 1, 0, argument_value, 1))
 	{
 		return 0;
 	}
 
-	if (!directory_enumerate_file_system_entries(current_directory, 1, 0, build_files, 1))
+	const uint8_t* start = buffer_data(argument_value, 0);
+	const uint8_t* finish = start + buffer_size(argument_value);
+
+	if (!buffer_append(current_directory, f_argument + 2, 4) ||
+		!string_replace(start, finish, &zero_symbol, &zero_symbol + 1, f_argument, f_argument + 6, current_directory))
 	{
-		if (!buffer_resize(build_files, 0))
-		{
-			return 0;
-		}
+		return 0;
 	}
-	else
+
+	if (!buffer_resize(current_directory, buffer_size(current_directory) - 5) ||
+		!buffer_push_back(current_directory, 0))
 	{
-		if (!argument_parser_fill_ranges_at_storage(build_files, INT8_MAX * sizeof(struct range)))
-		{
-			echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create ranges for the build files paths.", 50, 1, 0);
-			return 0;
-		}
+		return 0;
+	}
+
+	int argc = 0;
+	char** argv = NULL;
+	/**/
+	start = buffer_data(current_directory, current_directory_path_length + 9);
+	finish = buffer_data(current_directory, 0) + buffer_size(current_directory);
+
+	if (!buffer_resize(argument_value, 0) ||
+		!argument_from_char((const char*)start, (const char*)finish, argument_value, &argc, &argv))
+	{
+		return 0;
+	}
+
+	if (!argument_parser_char(0, argc, argv, arguments, verbose))
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(current_directory, current_directory_path_length) ||
+		!buffer_push_back(current_directory, 0))
+	{
+		return 0;
 	}
 
 	return 1;
@@ -303,14 +334,19 @@ int main(int argc, char** argv)
 #endif
 #if 1
 	uint64_t time_now = datetime_now();
+	struct buffer arguments;
+	SET_NULL_TO_BUFFER(arguments);
 #if defined(_MSC_VER)
+	const uint8_t verbose = argument_parser_get_verbose_wchar_t(1, argc, argv);
 
-	if (!argument_parser_wchar_t(1, argc, argv))
+	if (!argument_parser_wchar_t(1, argc, argv, &arguments, verbose))
 #else
-	if (!argument_parser_char(1, argc, argv))
+	const uint8_t verbose = argument_parser_get_verbose_char(1, argc, argv);
+
+	if (!argument_parser_char(1, argc, argv, &arguments, verbose))
 #endif
 	{
-		argument_parser_release();
+		property_release(&arguments);
 
 		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, 0))
 		{
@@ -325,25 +361,31 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	if (argument_parser_get_quiet())
+	struct buffer argument_value;
+
+	SET_NULL_TO_BUFFER(argument_value);
+
+	if (argument_parser_get_quiet(&arguments, &argument_value))
 	{
-		echo_set_level(Debug, argument_parser_get_debug());
+		echo_set_level(Debug, argument_parser_get_debug(&arguments, &argument_value));
 		echo_set_level(Error, 1);
 		echo_set_level(Info, 0);
-		echo_set_level(Verbose, argument_parser_get_verbose());
+		echo_set_level(Verbose, verbose);
 		echo_set_level(Warning, 1);
 	}
 	else
 	{
-		echo_set_level(Debug, argument_parser_get_debug());
-		echo_set_level(Verbose, argument_parser_get_verbose());
+		echo_set_level(Debug, argument_parser_get_debug(&arguments, &argument_value));
+		echo_set_level(Verbose, verbose);
 	}
 
-	if (!argument_parser_get_no_logo())
+	if (!argument_parser_get_no_logo(&arguments, &argument_value))
 	{
-		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, argument_parser_get_verbose()))
+		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, verbose))
 		{
-			argument_parser_release();
+			buffer_release(&argument_value);
+			property_release(&arguments);
+			/**/
 			return EXIT_FAILURE;
 		}
 	}
@@ -355,144 +397,155 @@ int main(int argc, char** argv)
 	if (!path_get_directory_for_current_process(&current_directory))
 	{
 		buffer_release(&current_directory);
-		argument_parser_release();
+		buffer_release(&argument_value);
+		property_release(&arguments);
 		/*TODO: echo.*/
 		return EXIT_FAILURE;
+	}
+
+	const struct range* build_file = argument_parser_get_build_file(&arguments, &argument_value, 0);
+
+	if (!build_file)
+	{
+		if (!build_files_get(&arguments, &argument_value, &current_directory, verbose))
+		{
+			buffer_release(&current_directory);
+			buffer_release(&argument_value);
+			property_release(&arguments);
+			/*TODO: echo.*/
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (argument_parser_get_program_help(&arguments, &argument_value) ||
+		NULL == argument_parser_get_build_file(&arguments, &argument_value, 0))
+	{
+		if (!echo(0, Default, NULL, Info, SAMPLE_USING, SAMPLE_USING_LENGTH, 1, verbose) ||
+			!echo(0, Default, NULL, Info, OPTIONS, OPTIONS_LENGTH, 1, verbose))
+		{
+			argc = 0;
+		}
+
+		buffer_release(&current_directory);
+		buffer_release(&argument_value);
+		property_release(&arguments);
+		/**/
+		return 0 < argc ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+
+	void* listener_object = NULL;
+	const struct range* listener = argument_parser_get_listener(&arguments, &argument_value);
+
+	if (listener && !load_listener(listener, &listener_object))
+	{
+		if (!echo(0, Default, NULL, Error, listener->start, range_size(listener), 1,
+				  verbose) ||
+			!echo(0, Default, NULL, Error, (const uint8_t*)"Listener not loaded.", 20, 1,
+				  verbose))
+		{
+			shared_object_unload(listener_object);
+			buffer_release(&current_directory);
+			buffer_release(&argument_value);
+			property_release(&arguments);
+			/**/
+			return EXIT_FAILURE;
+		}
+	}
+
+	struct buffer the_project;
+
+	SET_NULL_TO_BUFFER(the_project);
+
+	if (!project_new(&the_project))
+	{
+		project_unload(&the_project);
+		shared_object_unload(listener_object);
+		buffer_release(&current_directory);
+		buffer_release(&argument_value);
+		property_release(&arguments);
+		/*TODO: echo.*/
+		return EXIT_FAILURE;
+	}
+
+	struct buffer properties;
+
+	SET_NULL_TO_BUFFER(properties);
+
+	if (!argument_parser_get_properties(&arguments, &properties, verbose))
+	{
+		property_release(&properties);
 	}
 
 	struct range current_directory_in_range;
 
 	BUFFER_TO_RANGE(current_directory_in_range, &current_directory);
 
-	struct buffer* build_files = argument_parser_get_build_files();
-
-	if (!buffer_size(build_files))
+	for (argc = 0;
+		 NULL != (build_file = argument_parser_get_build_file(&arguments, &argument_value, argc++));)
 	{
-		static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
-		const ptrdiff_t current_directory_path_length = range_size(&current_directory_in_range);
-
-		if (!build_files_get(&current_directory, file_extension, file_extension + 8, build_files))
-		{
-			buffer_release(&current_directory);
-			argument_parser_release();
-			/*TODO: echo.*/
-			return EXIT_FAILURE;
-		}
-
-		if (!buffer_resize(&current_directory, current_directory_path_length) ||
-			!buffer_push_back(&current_directory, 0))
-		{
-			buffer_release(&current_directory);
-			argument_parser_release();
-			/*TODO: echo.*/
-			return EXIT_FAILURE;
-		}
-
-		BUFFER_TO_RANGE(current_directory_in_range, &current_directory);
-		current_directory_in_range.finish = current_directory_in_range.start + current_directory_path_length;
-	}
-
-	if (argument_parser_get_help() || NULL == argument_parser_get_build_file(0))
-	{
-		if (!echo(0, Default, NULL, Info, SAMPLE_USING, SAMPLE_USING_LENGTH, 1, argument_parser_get_verbose()) ||
-			!echo(0, Default, NULL, Info, OPTIONS, OPTIONS_LENGTH, 1, argument_parser_get_verbose()))
-		{
-			argc = 0;
-		}
-
-		buffer_release(&current_directory);
-		argument_parser_release();
-		argc = 0 < argc;
-		return argc ? EXIT_SUCCESS : EXIT_FAILURE;
-	}
-
-	void* object = NULL;
-	const struct range* listener = argument_parser_get_listener();
-
-	if (listener && !load_listener(listener, &object))
-	{
-		if (!echo(0, Default, NULL, Error, listener->start, range_size(listener), 1,
-				  argument_parser_get_verbose()) ||
-			!echo(0, Default, NULL, Error, (const uint8_t*)"Listener not loaded.", 20, 1,
-				  argument_parser_get_verbose()))
-		{
-			shared_object_unload(object);
-			return EXIT_FAILURE;
-		}
-	}
-
-	void* the_project = NULL;
-
-	if (!project_new(&the_project))
-	{
-		argc = 0;
-	}
-
-	for (argc = 0; ; ++argc)
-	{
-		const struct range* build_file = argument_parser_get_build_file(argc);
-
-		if (!build_file)
-		{
-			break;
-		}
-
-		if (!project_evaluate(the_project, build_file, &current_directory_in_range))
+		if (!project_evaluate(&the_project, build_file, &current_directory_in_range, &properties, &arguments,
+							  &argument_value, verbose))
 		{
 			argc = 0;
 			break;
 		}
 	}
 
-	project_unload(the_project);
+	property_release(&properties);
+	project_unload(&the_project);
+	shared_object_unload(listener_object);
 	buffer_release(&current_directory);
-	shared_object_unload(object);
+	property_release(&arguments);
+	/**/
 	time_now = datetime_now() - time_now;
 
 	if (10 < time_now)
 	{
-		if (!buffer_resize(build_files, 0))
+		if (!buffer_resize(&argument_value, 0))
 		{
-			argument_parser_release();
+			buffer_release(&argument_value);
 			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 
-		if (!buffer_append_char(build_files, "Total time: ", 12))
+		if (!buffer_append_char(&argument_value, "Total time: ", 12))
 		{
-			argument_parser_release();
+			buffer_release(&argument_value);
 			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 
-		if (!int64_to_string(time_now, build_files))
+		if (!int64_to_string(time_now, &argument_value))
 		{
-			argument_parser_release();
+			buffer_release(&argument_value);
 			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 
-		if (!buffer_append_char(build_files, " second(s).", 11))
+		if (!buffer_append_char(&argument_value, " second(s).", 11))
 		{
-			argument_parser_release();
+			buffer_release(&argument_value);
 			/*TODO: echo.*/
 			return EXIT_FAILURE;
 		}
 
-		if (!echo(0, Default, NULL, Info, buffer_data(build_files, 0), buffer_size(build_files), 1, 0))
+		if (!echo(0, Default, NULL, Info, buffer_data(&argument_value, 0), buffer_size(&argument_value), 1, 0))
 		{
-			argument_parser_release();
+			buffer_release(&argument_value);
+			/**/
 			return EXIT_FAILURE;
 		}
 	}
 
-	argument_parser_release();
+	buffer_release(&argument_value);
 	argc = 0 < argc;
 	argc = print_status(argc) ? argc : 0;
+	/**/
 	return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
 	(void)argc;
 	(void)argv;
+	/**/
 	return EXIT_SUCCESS;
 #endif
 }
