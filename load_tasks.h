@@ -22,9 +22,8 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 
 uint8_t load_tasks_evaluate_loaded_task(
 	void* the_project, const void* the_target,
-	const struct range* task_name,
-	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	const uint8_t* element_finish, struct buffer* task_arguments,
 	const void* the_module, const uint8_t* pointer_to_the_task,
 	uint8_t verbose);
 uint8_t load_tasks_evaluate_loaded_function(const void* the_module, const uint8_t* pointer_to_the_function,

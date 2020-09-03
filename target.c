@@ -86,7 +86,8 @@ uint8_t target_has_executed(const struct buffer* targets,
 
 uint8_t target_print_description(void* the_project, struct target* the_target,
 								 struct buffer* target_description,
-								 const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
+								 const uint8_t* attributes_finish, const uint8_t* element_finish,
+								 const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_target ||
 		NULL == target_description)
@@ -136,7 +137,7 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 		return 0;
 	}
 
-	return interpreter_evaluate_tasks(the_project, the_target, &(the_target->tasks), 1, verbose);
+	return interpreter_evaluate_tasks(the_project, the_target, &(the_target->tasks), sub_nodes_names, 1, verbose);
 }
 
 uint8_t target_set_name(struct target* the_target, const uint8_t* name, uint8_t name_length)
@@ -170,7 +171,8 @@ uint8_t target_new(void* the_project,
 				   struct buffer* description,
 				   const uint8_t* attributes_start, const uint8_t* attributes_finish,
 				   const uint8_t* element_finish,
-				   struct buffer* targets, uint8_t verbose)
+				   struct buffer* targets,
+				   const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -255,7 +257,7 @@ uint8_t target_new(void* the_project,
 		the_target->attributes.start = the_target->attributes.finish = NULL;
 
 		if (!target_print_description(the_project, the_target, description, attributes_start, element_finish,
-									  verbose))
+									  sub_nodes_names, verbose))
 		{
 			return 0;
 		}
@@ -382,7 +384,7 @@ uint8_t target_get_attributes_and_arguments_for_task(
 uint8_t target_evaluate_task(void* the_project, struct buffer* task_arguments, uint8_t target_help,
 							 const uint8_t* attributes_start, const uint8_t* attributes_finish,
 							 const uint8_t* element_finish,
-							 uint8_t verbose)
+							 const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == task_arguments)
 	{
@@ -402,7 +404,8 @@ uint8_t target_evaluate_task(void* the_project, struct buffer* task_arguments, u
 	return project_target_new(the_project,
 							  buffer_data(name, 0), (uint8_t)buffer_size(name),
 							  buffer_data(depends, 0), (uint16_t)buffer_size(depends),
-							  description, attributes_start, attributes_finish, element_finish, verbose);
+							  description, attributes_start, attributes_finish, element_finish,
+							  sub_nodes_names, verbose);
 }
 
 uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
@@ -511,7 +514,7 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 		return 1;
 	}
 
-	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), 0, verbose))
+	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), NULL, 0, verbose))
 	{
 		listener_target_finished(NULL, 0, the_project, the_target);
 		return 0;

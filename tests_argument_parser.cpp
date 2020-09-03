@@ -30,96 +30,131 @@ class TestArgumentParser : public TestsBaseXml
 {
 };
 
-template<typename STRING_TYPE, typename CHAR_TYPE>
-void string_to_arguments(const STRING_TYPE& input, std::pair<STRING_TYPE, std::vector<CHAR_TYPE*>>& arguments)
+uint8_t string_to_command_arguments(const std::string& input, buffer* output, int* argc, char*** argv)
 {
-	std::vector<size_t> positions(input.size(), 0);
-	positions.clear();
-	//
-	std::get<0>(arguments).resize(2 * input.size(), 0);
-	std::get<0>(arguments).clear();
-	//
-	std::get<1>(arguments).resize(input.size());
-	std::get<1>(arguments).clear();
-	//
-	auto current = input.cbegin();
-
-	for (auto i = input.cbegin(); i != input.cend(); ++i)
+	if (NULL == output ||
+		NULL == argc ||
+		NULL == argv)
 	{
-		if (' ' == *i)
-		{
-			if (current != i)
-			{
-				positions.push_back(std::get<0>(arguments).size());
-
-				while (current != i)
-				{
-					if ('"' != *current)
-					{
-						std::get<0>(arguments).push_back(*current);
-					}
-
-					++current;
-				}
-
-				std::get<0>(arguments).push_back(0);
-			}
-
-			i = std::find_if(i, input.cend(), [](const CHAR_TYPE & ch)
-			{
-				return ' ' != ch;
-			});
-			//
-			current = i;
-		}
-		else if ('"' == *i)
-		{
-			while ('"' == *i && i != input.cend())
-			{
-				++i;
-				continue;
-			}
-
-			while ('"' != *i && i != input.cend())
-			{
-				++i;
-				continue;
-			}
-		}
+		return 0;
 	}
 
-	if (current != input.cend())
+	if (input.empty())
 	{
-		positions.push_back(std::get<0>(arguments).size());
-
-		while (current != input.cend())
-		{
-			if ('"' != *current)
-			{
-				std::get<0>(arguments).push_back(*current);
-			}
-
-			++current;
-		}
-
-		std::get<0>(arguments).push_back(0);
+		(*argc) = 0;
+		(*argv) = NULL;
+		return 1;
 	}
 
-	for (const auto& i : positions)
+	range input_in_range = string_to_range(input);
+
+	if (!string_trim(&input_in_range))
 	{
-		std::get<1>(arguments).push_back(&std::get<0>(arguments)[i]);
+		return 0;
 	}
+
+	return argument_from_char(
+			   (const char*)input_in_range.start,
+			   (const char*)input_in_range.finish,
+			   output, argc, argv);
 }
+#if defined(_WIN32)
+uint8_t string_to_command_arguments(const std::string& input, buffer* output, int* argc, wchar_t*** argv)
+{
+	if (NULL == output ||
+		NULL == argc ||
+		NULL == argv)
+	{
+		return 0;
+	}
 
+	if (input.empty())
+	{
+		(*argc) = 0;
+		(*argv) = NULL;
+		return 1;
+	}
+
+	char** argvA = NULL;
+
+	if (!string_to_command_arguments(input, output, argc, &argvA))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = (uint8_t*)argvA - buffer_data(output, 0);
+
+	if (!buffer_append(output, NULL, 4 * (size + 1) + sizeof(uint32_t)))
+	{
+		return 0;
+	}
+
+	const uint8_t* start = buffer_data(output, 0);
+	const uint8_t* finish = buffer_data(output, size);
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	if (!text_encoding_UTF8_to_UTF16LE(start, finish, output))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t new_size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, (ptrdiff_t)1 + (*argc) * sizeof(wchar_t*)) ||
+		!buffer_resize(output, new_size))
+	{
+		return 0;
+	}
+
+	int i = 0;
+	static const wchar_t zero_symbol = L'\0';
+	const wchar_t* startW = (const wchar_t*)buffer_data(output, size);
+	const wchar_t* finishW = (const wchar_t*)(buffer_data(output, 0) + new_size);
+
+	while ((startW = find_any_symbol_like_or_not_like_that_wchar_t(startW, finishW, &zero_symbol, 1, 0,
+					 1)) < finishW && i < (*argc))
+	{
+		if (!buffer_append(output, (const uint8_t*)&startW, sizeof(const wchar_t*)))
+		{
+			return 0;
+		}
+
+		startW = find_any_symbol_like_or_not_like_that_wchar_t(startW, finishW, &zero_symbol, 1, 1, 1);
+		++i;
+	}
+
+	startW = NULL;
+
+	if (!buffer_append(output, (const uint8_t*)&startW, sizeof(const wchar_t*)))
+	{
+		return 0;
+	}
+
+	(*argv) = (wchar_t**)(buffer_data(output, 0) + new_size);
+	return 1;
+}
+#endif
 #define ARGUMENT_PARSER_AT_ALL(INPUT, VERBOSE_PARSER, ARGUMENT_PARSER, I)															\
 	\
-	string_to_arguments((INPUT), arguments);																						\
-	argv = std::get<1>(arguments).empty() ? nullptr : &std::get<1>(arguments)[0];													\
-	argc = (int)std::get<1>(arguments).size();																						\
+	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+			(INPUT) << std::endl <<																									\
+			buffer_free(&argument_value) <<																							\
+			properties_free(&command_arguments) <<																					\
+			buffer_free(&property_value);																							\
+	/**/																															\
+	ASSERT_TRUE(string_to_command_arguments((INPUT), &argument_value, &argc, &argv)) <<												\
+			(INPUT) << std::endl <<																									\
+			buffer_free(&argument_value) <<																							\
+			properties_free(&command_arguments) <<																					\
+			buffer_free(&property_value);																							\
 	/**/																															\
 	verbose = (VERBOSE_PARSER)(0, argc, argv);																						\
 	/**/																															\
-	const uint8_t returned = (ARGUMENT_PARSER)(0, argc, argv, &command_arguments, verbose);											\
+	const auto returned = (ARGUMENT_PARSER)(0, argc, argv, &command_arguments, verbose);											\
 	ASSERT_EQ(expected_return, returned) <<																							\
 										 (INPUT) << std::endl <<																	\
 										 buffer_free(&argument_value) <<															\
@@ -148,7 +183,7 @@ void string_to_arguments(const STRING_TYPE& input, std::pair<STRING_TYPE, std::v
 				properties_free(&command_arguments) <<																				\
 				buffer_free(&property_value);																						\
 		/**/																														\
-		const range* returned_build_file =  argument_parser_get_build_file(&command_arguments, &argument_value, (I)++);				\
+		const auto returned_build_file =  argument_parser_get_build_file(&command_arguments, &argument_value, (I)++);				\
 		ASSERT_EQ(std::string(build_file.node().child_value()),																		\
 				  range_to_string(returned_build_file)) <<																			\
 						  (INPUT) << std::endl << (I) - 1 << std::endl <<															\
@@ -173,7 +208,7 @@ void string_to_arguments(const STRING_TYPE& input, std::pair<STRING_TYPE, std::v
 	\
 	for (const auto& target : expected_targets)																						\
 	{																																\
-		const range* returned_target = argument_parser_get_target(&command_arguments, &argument_value, (I)++);						\
+		const auto returned_target = argument_parser_get_target(&command_arguments, &argument_value, (I)++);						\
 		ASSERT_EQ(std::string(target.node().child_value()),																			\
 				  range_to_string(returned_target)) <<																				\
 						  (INPUT) << std::endl << (I) - 1 << std::endl <<															\
@@ -315,7 +350,7 @@ void string_to_arguments(const STRING_TYPE& input, std::pair<STRING_TYPE, std::v
 			properties_free(&command_arguments) <<																					\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	const range* log_file = argument_parser_get_log_file(&command_arguments, &argument_value);										\
+	const auto log_file = argument_parser_get_log_file(&command_arguments, &argument_value);										\
 	ASSERT_EQ(expected_log_file.empty(), NULL == log_file)  <<																		\
 			(INPUT) << std::endl <<																									\
 			buffer_free(&argument_value) <<																							\
@@ -467,23 +502,21 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 
 		for (uint8_t step = 0; step < 2; ++step)
 		{
-			int i = 0;
-			int argc = 0;
-
 			if (!step)
 			{
+				int i = 0;
+				int argc = 0;
 				char** argv = NULL;
-				std::pair<std::string, std::vector<char*>> arguments;
 				ARGUMENT_PARSER_AT_ALL(input, argument_parser_get_verbose_char, argument_parser_char, i);
 			}
 
 #if defined(_WIN32)
 			else
 			{
+				int i = 0;
+				int argc = 0;
 				wchar_t** argv = NULL;
-				const auto inputW = u8string_to_u16string(input);
-				std::pair<std::wstring, std::vector<wchar_t*>> arguments;
-				ARGUMENT_PARSER_AT_ALL(inputW, argument_parser_get_verbose_wchar_t, argument_parser_wchar_t, i);
+				ARGUMENT_PARSER_AT_ALL(input, argument_parser_get_verbose_wchar_t, argument_parser_wchar_t, i);
 			}
 
 #endif
@@ -514,7 +547,7 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 		const auto arguments = node.node().select_nodes("input");
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		std::string expected_output(node.node().select_node("output").node().child_value());
-		auto pos = std::string::npos;
+		size_t pos = 0;
 
 		while (std::string::npos != (pos = expected_output.find("0x0")))
 		{

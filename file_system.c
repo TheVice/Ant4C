@@ -1688,7 +1688,7 @@ uint8_t file_move(const uint8_t* current_path, const uint8_t* new_path)
 
 	const uint8_t returned = (0 != MoveFileExW(buffer_wchar_t_data(&pathW, 0),
 							  (const wchar_t*)buffer_data(&pathW, size),
-							  MOVEFILE_WRITE_THROUGH | MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
+							  MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
 	buffer_release(&pathW);
 	return returned;
 #else

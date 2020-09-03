@@ -353,7 +353,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			//
 			returned = interpreter_evaluate_task(NULL, NULL, exec_task_id,
 												 &exec_in_range_,
-												 exec_code_in_range.finish, 0, verbose_);
+												 exec_code_in_range.finish, NULL, 0, verbose_);
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl
 					<< buffer_free(&temp_file_name);

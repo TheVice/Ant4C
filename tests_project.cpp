@@ -144,8 +144,6 @@ TEST_F(TestProject, project_property_set_value)
 
 TEST_F(TestProject, project_load_from_content)
 {
-	static const std::string source_file(__FILE__);
-	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 

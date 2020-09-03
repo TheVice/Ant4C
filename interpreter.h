@@ -35,6 +35,9 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, c
 		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
 		const uint8_t** attributes, const uint8_t* attributes_lengths,
 		uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose);
+uint8_t interpreter_get_xml_element_value(const void* the_project, const void* the_target,
+		const uint8_t* attributes_finish, const uint8_t* element_finish, struct buffer* output,
+		uint8_t verbose);
 uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish);
 uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	const void* the_project, const void* the_target,
@@ -43,9 +46,12 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	const uint8_t* attributes_start, const uint8_t* attributes_finish, uint8_t verbose);
 uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 								  uint8_t command, const struct range* command_in_range,
-								  const uint8_t* element_finish, uint8_t target_help, uint8_t verbose);
+								  const uint8_t* element_finish,
+								  const struct buffer* sub_nodes_names,
+								  uint8_t target_help, uint8_t verbose);
 uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 								   const struct buffer* elements,
+								   const struct buffer* sub_nodes_names,
 								   uint8_t target_help, uint8_t verbose);
 uint8_t interpreter_get_unknown_task_id();
 

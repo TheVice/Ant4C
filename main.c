@@ -347,15 +347,11 @@ int main(int argc, char** argv)
 #endif
 	{
 		property_release(&arguments);
+		argc = echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, 0);
 
-		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, 0))
+		if (argc)
 		{
-			argc = 0;
-		}
-
-		if (!echo(0, Default, NULL, Error, (const uint8_t*)"Failed to parse command arguments.", 34, 1, 0))
-		{
-			argc = 0;
+			/*argc = */echo(0, Default, NULL, Error, (const uint8_t*)"Failed to parse command arguments.", 34, 1, 0);
 		}
 
 		return EXIT_FAILURE;

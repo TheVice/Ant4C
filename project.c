@@ -120,7 +120,8 @@ uint8_t project_target_new(void* the_project, const uint8_t* target_name, uint8_
 						   const uint8_t* target_depends, uint16_t target_depends_length,
 						   struct buffer* description,
 						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
-						   const uint8_t* element_finish, uint8_t verbose)
+						   const uint8_t* element_finish,
+						   const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == target_name ||
@@ -141,7 +142,7 @@ uint8_t project_target_new(void* the_project, const uint8_t* target_name, uint8_
 					  target_depends, target_depends_length,
 					  description,
 					  attributes_start, attributes_finish,
-					  element_finish, targets, verbose);
+					  element_finish, targets, sub_nodes_names, verbose);
 }
 
 uint8_t project_target_get(const void* the_project, const uint8_t* name, uint8_t name_length,
@@ -377,6 +378,7 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 		!range_from_string((const uint8_t*)"project\0target\0description\0", 27, 3, &sub_nodes_names))
 	{
 		buffer_release(&sub_nodes_names);
+		/**/
 		return 0;
 	}
 
@@ -384,51 +386,26 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 
 	SET_NULL_TO_BUFFER(elements);
 
-	if (1 != xml_get_sub_nodes_elements(tag_name.start, tag_name.finish, &sub_nodes_names, &elements))
-	{
-		buffer_release(&elements);
-		buffer_release(&sub_nodes_names);
-		return 0;
-	}
-
 	struct range* element = NULL;
 
-	if (NULL == (element = buffer_range_data(&elements, 0)))
+	if (1 != xml_get_sub_nodes_elements(tag_name.start, tag_name.finish, &sub_nodes_names, &elements) ||
+		NULL == (element = buffer_range_data(&elements, 0)) ||
+		!xml_get_tag_name(element->start, element->finish, &tag_name))
 	{
 		buffer_release(&elements);
 		buffer_release(&sub_nodes_names);
+		/**/
 		return 0;
 	}
 
-	if (!xml_get_tag_name(element->start, element->finish, &tag_name))
-	{
-		buffer_release(&elements);
-		buffer_release(&sub_nodes_names);
-		return 0;
-	}
-
-	const uint8_t root_task_id = interpreter_get_task(tag_name.start, tag_name.finish);
-	const uint8_t* element_finish = element->finish;
+	const uint8_t task_id = interpreter_get_task(tag_name.start, tag_name.finish);
 	const ptrdiff_t offset = project_get_source_offset(the_project, tag_name.finish);
 	/**/
-	listener_task_started(NULL, offset, the_project, NULL, root_task_id);
-	uint8_t result = interpreter_evaluate_task(the_project, NULL,
-					 root_task_id, &tag_name, element_finish, project_help, verbose);
-	listener_task_finished(NULL, offset, the_project, NULL, root_task_id, result);
-
-	if (!result ||
-		!buffer_resize(&elements, 0))
-	{
-		buffer_release(&elements);
-		buffer_release(&sub_nodes_names);
-		return 0;
-	}
-
-	if (xml_get_sub_nodes_elements(tag_name.finish, element_finish, &sub_nodes_names, &elements))
-	{
-		result = interpreter_evaluate_tasks(the_project, NULL, &elements, project_help, verbose);
-	}
-
+	listener_task_started(NULL, offset, the_project, NULL, task_id);
+	const uint8_t result = interpreter_evaluate_task(
+							   the_project, NULL, task_id, &tag_name, element->finish, &sub_nodes_names, project_help, verbose);
+	listener_task_finished(NULL, offset, the_project, NULL, task_id, result);
+	/**/
 	buffer_release(&elements);
 	buffer_release(&sub_nodes_names);
 	/**/
@@ -657,7 +634,10 @@ uint8_t project_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t project_evaluate_task(void* the_project, const struct buffer* task_arguments, uint8_t verbose)
+uint8_t project_evaluate_task(void* the_project,
+							  const uint8_t* attributes_finish, const uint8_t* element_finish,
+							  const struct buffer* sub_nodes_names, uint8_t project_help,
+							  const struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == task_arguments)
 	{
@@ -729,6 +709,19 @@ uint8_t project_evaluate_task(void* the_project, const struct buffer* task_argum
 		}
 
 		buffer_release(&build_file);
+	}
+
+	struct buffer* elements = buffer_buffer_data(task_arguments, 0);
+
+	if (!elements ||
+		!buffer_resize(elements, 0))
+	{
+		return 0;
+	}
+
+	if (xml_get_sub_nodes_elements(attributes_finish, element_finish, sub_nodes_names, elements))
+	{
+		return interpreter_evaluate_tasks(the_project, NULL, elements, sub_nodes_names, project_help, verbose);
 	}
 
 	return 1;

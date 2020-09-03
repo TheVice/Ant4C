@@ -179,9 +179,8 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 			result = file_flush(file_stream);
 		}
 
-#endif
-
 		if (result)
+#endif
 		{
 			if (NULL != file)
 			{

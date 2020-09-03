@@ -94,14 +94,7 @@ std::wstring buffer_to_u16string(const buffer* input)
 range buffer_to_range(const buffer* input)
 {
 	range output;
-	output.start = output.finish = NULL;
-
-	if (NULL == input ||
-		NULL == (output.start = buffer_data(input, 0)))
-	{
-		return output;
-	}
-
+	output.start = buffer_data(input, 0);
 	output.finish = output.start + buffer_size(input);
 	return output;
 }

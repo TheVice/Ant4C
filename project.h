@@ -30,7 +30,7 @@ uint8_t project_target_new(void* the_project, const uint8_t* target_name, uint8_
 						   const uint8_t* target_depends, uint16_t target_depends_length,
 						   struct buffer* description,
 						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
-						   const uint8_t* element_finish, uint8_t verbose);
+						   const uint8_t* element_finish, const struct buffer* sub_nodes_names, uint8_t verbose);
 uint8_t project_target_get(const void* the_project, const uint8_t* name, uint8_t name_length,
 						   void** the_target,
 						   uint8_t verbose);
@@ -68,7 +68,10 @@ ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* curs
 uint8_t project_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t project_evaluate_task(void* the_project, const struct buffer* task_arguments, uint8_t verbose);
+uint8_t project_evaluate_task(void* the_project,
+							  const uint8_t* attributes_finish, const uint8_t* element_finish,
+							  const struct buffer* sub_nodes_names, uint8_t project_help,
+							  const struct buffer* task_arguments, uint8_t verbose);
 
 uint8_t project_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t project_exec_function(const void* the_project,

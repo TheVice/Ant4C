@@ -170,7 +170,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		const auto returned = interpreter_evaluate_task(
 								  &the_project, NULL, task_id,
 								  &task_name_in_range, code_in_range.finish,
-								  0, verbose);
+								  NULL, 0, verbose);
 		//
 		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(&the_project);
 		project_unload(&the_project);

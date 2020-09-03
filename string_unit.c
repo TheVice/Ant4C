@@ -774,7 +774,7 @@ uint8_t string_trim_any(struct range* input_output, uint8_t mode, const uint16_t
 
 	if (trim == mode || trim_start == mode)
 	{
-		const uint8_t* pos = input_output->start;
+		const uint8_t* pos = NULL;
 
 		while (NULL != (pos = string_enumerate(input_output->start, input_output->finish, &out)))
 		{

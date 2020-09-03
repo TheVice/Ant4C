@@ -162,7 +162,7 @@ TEST_F(TestProperty, property_task)
 			const auto returned = interpreter_evaluate_task(
 									  &the_project, NULL, task_id,
 									  &task_in_range, record_in_range.finish,
-									  0, verbose);
+									  NULL, 0, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< record << std::endl

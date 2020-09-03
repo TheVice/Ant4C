@@ -3769,6 +3769,33 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
     </interpreter_evaluate_task>
   </TestInterpreter>
+  <TestLoadTasks>
+    <load_tasks_evaluate_task>
+      <assembly />
+      <path />
+      <module />
+      <enumerate_tasks />
+      <enumerate_name_spaces />
+      <enumerate_functions />
+      <get_attributes_and_arguments_for_task />
+      <evaluate_task />
+      <evaluate_function />
+      <module_release />
+      <return />
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>ant4c.dns.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>ant4c.regex.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <!--load_tasks_evaluate_task><TODO />
+      <path>.</path>
+      <return>1</return>
+    </load_tasks_evaluate_task-->
+  </TestLoadTasks>
   <TestMathUnit>
     <math_abs>
       <input>-1.5</input>
@@ -5832,7 +5859,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
           </when>
           <when test="${platform::is-windows()}">
             <loadtasks module="ant4c.regex.dll" failonerror="false" />
-            <loadtasks module="libant4c.regex.dll" failonerror="false" />
+            <loadtasks module="libant4c.regex.dll" unless="${task::exists('regex')}" failonerror="false" />
           </when>
         </choose>
 
@@ -5851,7 +5878,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <property name="path_to_file" value="file://A:/MyFolder/MySubFolder/AnotherSubFolder/" />
       <property name="name_of_file" value="my_file.txt" />
     </project_load_from_content>
-    <TODO><project_load_from_content>
+    <project_load_from_content>
       <content><![CDATA[
       <project name="load dns function" >
         <choose>
@@ -5878,7 +5905,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
       <name>load dns function</name>
-    </project_load_from_content></TODO>
+    </project_load_from_content>
     <project_load_from_build_file />
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />

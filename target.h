@@ -23,7 +23,8 @@ uint8_t target_new(void* the_project,
 				   struct buffer* description,
 				   const uint8_t* attributes_start, const uint8_t* attributes_finish,
 				   const uint8_t* element_finish,
-				   struct buffer* targets, uint8_t verbose);
+				   struct buffer* targets,
+				   const struct buffer* sub_nodes_names, uint8_t verbose);
 uint8_t target_get(const struct buffer* targets, const uint8_t* name, uint8_t name_length, void** the_target);
 const struct range* target_get_depend(const void* the_target, uint16_t index);
 void target_release_inner(struct buffer* targets);
@@ -35,7 +36,7 @@ uint8_t target_get_attributes_and_arguments_for_task(
 uint8_t target_evaluate_task(void* the_project, struct buffer* task_arguments, uint8_t target_help,
 							 const uint8_t* attributes_start, const uint8_t* attributes_finish,
 							 const uint8_t* element_finish,
-							 uint8_t verbose);
+							 const struct buffer* sub_nodes_names, uint8_t verbose);
 
 uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stack,
 						uint8_t cascade, uint8_t verbose);

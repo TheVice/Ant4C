@@ -111,7 +111,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 			return 0;
 		}
 
-		if (!interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose))
+		if (!interpreter_evaluate_tasks(the_project, the_target, elements, NULL, 0, verbose))
 		{
 			return 0;
 		}
@@ -166,7 +166,6 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target,
 			return 0;
 		}
 
-		start = pos + 1;
 		return 1;
 	}
 
@@ -506,7 +505,7 @@ uint8_t do_evaluate_task(void* the_project, const void* the_target,
 
 	if (xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, elements))
 	{
-		return interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose);
+		return interpreter_evaluate_tasks(the_project, the_target, elements, NULL, 0, verbose);
 	}
 
 	return 1;

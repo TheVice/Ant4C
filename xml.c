@@ -63,19 +63,18 @@ uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
 		const uint8_t tag_start_length = i ? cdata_start_length : comment_start_length;
 		/**/
 		const uint8_t* tag_finish = i ? cdata_finish : comment_finish;
-		const uint8_t tag_finish_length = i ? cdata_finish_length : comment_finish_length;
 
 		if (string_starts_with(start_, finish, tag_start, tag_start + tag_start_length))
 		{
 			start_ += tag_start_length;
-			const ptrdiff_t index = string_index_of(start_, finish, tag_finish, tag_finish + tag_finish_length);
+			const ptrdiff_t index = string_index_of(start_, finish, tag_finish, tag_finish + comment_finish_length);
 
 			if (-1 == index)
 			{
 				return 0;
 			}
 
-			start_ += index + tag_finish_length;
+			start_ += index + comment_finish_length;
 
 			if (finish == (start_ = find_any_symbol_like_or_not_like_that(start_, finish,
 									&(characters[LESS_POSITION]), 1, 1, 1)))
