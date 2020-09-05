@@ -75,8 +75,9 @@
 	"\t-projecthelp - show description of project and target(s).\n"																\
 	"\t-nologo - do not display program version, license and copyright information.\n"											\
 	"\t-listener: - set path to the module with listener.\n"																	\
-	"\t-modulepriority: - first try to evaluate tasks and functions from modules than from core of the library.\n"				\
+	"\t-modulepriority - first try to evaluate tasks and functions from modules than from core of the library.\n"				\
 	"\t-debug - display message with Debug level.\n"																			\
+	"\t-logfile: - set path to the file for logging. Short form -l:.\n"															\
 	"\t-verbose - display message with Verbose level. Set verbose parameter of functions to the true.\n"						\
 	"\t-quiet - display messages only with Warning or/and Error levels. Short form -q.\n"										\
 	"\t-help - print this message. Short form -h."
@@ -92,20 +93,10 @@ uint8_t print_status(int status)
 
 uint8_t project_evaluate(void* the_project, const struct range* build_file,
 						 const struct range* current_directory_in_range,
-						 const struct buffer* properties,
 						 const struct buffer* arguments, struct buffer* argument_value,
-						 uint8_t verbose)
+						 uint8_t project_help, uint16_t encoding, uint8_t verbose)
 {
-	if (NULL == build_file ||
-		NULL == properties)
-	{
-		/*TODO: echo.*/
-		return 0;
-	}
-
-	const uint8_t project_help = argument_parser_get_project_help(arguments, argument_value);
-
-	if (!project_help && !property_add_at_project(the_project, properties, verbose))
+	if (NULL == build_file)
 	{
 		/*TODO: echo.*/
 		return 0;
@@ -115,8 +106,7 @@ uint8_t project_evaluate(void* the_project, const struct range* build_file,
 	/**/
 	uint8_t is_loaded = project_load_from_build_file(
 							build_file, current_directory_in_range,
-							argument_parser_get_encoding(arguments, argument_value),
-							the_project, project_help, verbose);
+							encoding, the_project, project_help, verbose);
 
 	if (!is_loaded)
 	{
@@ -142,31 +132,20 @@ uint8_t project_evaluate(void* the_project, const struct range* build_file,
 					break;
 				}
 			}
-
-			if (!is_loaded)
-			{
-				/*TODO: echo.*/
-				listener_project_finished(build_file->start, the_project);
-				return 0;
-			}
 		}
 		else
 		{
 			is_loaded = project_evaluate_default_target(the_project, verbose);
-
-			if (!is_loaded)
-			{
-				/*TODO: echo.*/
-				listener_project_finished(build_file->start, the_project);
-				return 0;
-			}
 		}
 	}
 
+	if (is_loaded)
+	{
+		is_loaded = project_on_success(the_project, NULL, argument_value, verbose);
+	}
+
 	listener_project_finished(build_file->start, the_project);
-	project_clear(the_project);
-	/**/
-	return 1;
+	return is_loaded;
 }
 
 typedef void (*on_project)(const uint8_t* source, const void* the_project);
@@ -252,70 +231,31 @@ uint8_t load_listener(const struct range* listener, void** object)
 	return 1;
 }
 
-uint8_t build_files_get(struct buffer* arguments,
-						struct buffer* argument_value,
-						struct buffer* current_directory,
-						uint8_t verbose)
+uint8_t print_elapsed_time(int64_t delta, struct buffer* argument_value)
 {
-	if (NULL == arguments ||
-		NULL == argument_value ||
-		NULL == current_directory)
+	if (10 < delta)
 	{
-		return 0;
-	}
+		if (!buffer_resize(argument_value, 0))
+		{
+			return 0;
+		}
 
-	static const uint8_t zero_symbol = '\0';
-	static const uint8_t* f_argument = (const uint8_t*)"\" /f:\"";
-	static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
-	/**/
-	const ptrdiff_t current_directory_path_length = buffer_size(current_directory);
+		if (!buffer_append_char(argument_value, "Total time: ", 12))
+		{
+			return 0;
+		}
 
-	if (!path_combine_in_place(current_directory, 0, file_extension, file_extension + 8))
-	{
-		return 0;
-	}
+		if (!int64_to_string(delta, argument_value))
+		{
+			return 0;
+		}
 
-	if (!directory_enumerate_file_system_entries(current_directory, 1, 0, argument_value, 1))
-	{
-		return 0;
-	}
+		if (!buffer_append_char(argument_value, " second(s).", 11))
+		{
+			return 0;
+		}
 
-	const uint8_t* start = buffer_data(argument_value, 0);
-	const uint8_t* finish = start + buffer_size(argument_value);
-
-	if (!buffer_append(current_directory, f_argument + 2, 4) ||
-		!string_replace(start, finish, &zero_symbol, &zero_symbol + 1, f_argument, f_argument + 6, current_directory))
-	{
-		return 0;
-	}
-
-	if (!buffer_resize(current_directory, buffer_size(current_directory) - 5) ||
-		!buffer_push_back(current_directory, 0))
-	{
-		return 0;
-	}
-
-	int argc = 0;
-	char** argv = NULL;
-	/**/
-	start = buffer_data(current_directory, current_directory_path_length + 9);
-	finish = buffer_data(current_directory, 0) + buffer_size(current_directory);
-
-	if (!buffer_resize(argument_value, 0) ||
-		!argument_from_char((const char*)start, (const char*)finish, argument_value, &argc, &argv))
-	{
-		return 0;
-	}
-
-	if (!argument_parser_char(0, argc, argv, arguments, verbose))
-	{
-		return 0;
-	}
-
-	if (!buffer_resize(current_directory, current_directory_path_length) ||
-		!buffer_push_back(current_directory, 0))
-	{
-		return 0;
+		return echo(0, Default, NULL, Info, buffer_data(argument_value, 0), buffer_size(argument_value), 1, 0);
 	}
 
 	return 1;
@@ -333,7 +273,8 @@ int main(int argc, char** argv)
 #endif
 #endif
 #if 1
-	uint64_t time_now = datetime_now();
+	int64_t time_now = datetime_now();
+	/**/
 	struct buffer arguments;
 	SET_NULL_TO_BUFFER(arguments);
 #if defined(_MSC_VER)
@@ -375,12 +316,37 @@ int main(int argc, char** argv)
 		echo_set_level(Verbose, verbose);
 	}
 
+	void* file_stream = NULL;
+	const struct range* log_file = argument_parser_get_log_file(&arguments, &argument_value);
+
+	if (log_file)
+	{
+		if (!file_open(log_file->start, (const uint8_t*)"ab", &file_stream))
+		{
+			buffer_release(&argument_value);
+			property_release(&arguments);
+			/**/
+			file_flush(file_stream);
+			file_close(file_stream);
+			/**/
+			return EXIT_FAILURE;
+		}
+
+		common_set_output_stream(file_stream);
+		common_set_error_output_stream(file_stream);
+	}
+
+	common_set_module_priority(argument_parser_get_module_priority(&arguments, &argument_value));
+
 	if (!argument_parser_get_no_logo(&arguments, &argument_value))
 	{
 		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, verbose))
 		{
 			buffer_release(&argument_value);
 			property_release(&arguments);
+			/**/
+			file_flush(file_stream);
+			file_close(file_stream);
 			/**/
 			return EXIT_FAILURE;
 		}
@@ -390,12 +356,16 @@ int main(int argc, char** argv)
 
 	SET_NULL_TO_BUFFER(current_directory);
 
-	if (!path_get_directory_for_current_process(&current_directory))
+	if (!argument_parser_get_program_help(&arguments, &argument_value) &&
+		!path_get_directory_for_current_process(&current_directory))
 	{
 		buffer_release(&current_directory);
 		buffer_release(&argument_value);
 		property_release(&arguments);
 		/*TODO: echo.*/
+		file_flush(file_stream);
+		file_close(file_stream);
+		/**/
 		return EXIT_FAILURE;
 	}
 
@@ -403,12 +373,16 @@ int main(int argc, char** argv)
 
 	if (!build_file)
 	{
-		if (!build_files_get(&arguments, &argument_value, &current_directory, verbose))
+		if (!argument_parser_get_program_help(&arguments, &argument_value) &&
+			!project_get_build_files_from_directory(&arguments, &argument_value, &current_directory, verbose))
 		{
 			buffer_release(&current_directory);
 			buffer_release(&argument_value);
 			property_release(&arguments);
 			/*TODO: echo.*/
+			file_flush(file_stream);
+			file_close(file_stream);
+			/**/
 			return EXIT_FAILURE;
 		}
 	}
@@ -426,6 +400,9 @@ int main(int argc, char** argv)
 		buffer_release(&argument_value);
 		property_release(&arguments);
 		/**/
+		file_flush(file_stream);
+		file_close(file_stream);/*TODO: argc*/
+		/**/
 		return 0 < argc ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
@@ -434,15 +411,18 @@ int main(int argc, char** argv)
 
 	if (listener && !load_listener(listener, &listener_object))
 	{
-		if (!echo(0, Default, NULL, Error, listener->start, range_size(listener), 1,
+		if (!echo(0, Default, NULL, Warning, listener->start, range_size(listener), 1,
 				  verbose) ||
-			!echo(0, Default, NULL, Error, (const uint8_t*)"Listener not loaded.", 20, 1,
+			!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener not loaded.", 20, 1,
 				  verbose))
 		{
 			shared_object_unload(listener_object);
 			buffer_release(&current_directory);
 			buffer_release(&argument_value);
 			property_release(&arguments);
+			/**/
+			file_flush(file_stream);
+			file_close(file_stream);
 			/**/
 			return EXIT_FAILURE;
 		}
@@ -460,6 +440,9 @@ int main(int argc, char** argv)
 		buffer_release(&argument_value);
 		property_release(&arguments);
 		/*TODO: echo.*/
+		file_flush(file_stream);
+		file_close(file_stream);
+		/**/
 		return EXIT_FAILURE;
 	}
 
@@ -476,15 +459,27 @@ int main(int argc, char** argv)
 
 	BUFFER_TO_RANGE(current_directory_in_range, &current_directory);
 
+	const uint8_t project_help = argument_parser_get_project_help(&arguments, &argument_value);
+
+	const uint16_t encoding = argument_parser_get_encoding(&arguments, &argument_value);
+
 	for (argc = 0;
 		 NULL != (build_file = argument_parser_get_build_file(&arguments, &argument_value, argc++));)
 	{
-		if (!project_evaluate(&the_project, build_file, &current_directory_in_range, &properties, &arguments,
-							  &argument_value, verbose))
+		if (!project_help && !property_add_at_project(&the_project, &properties, verbose))
 		{
 			argc = 0;
 			break;
 		}
+
+		if (!project_evaluate(&the_project, build_file, &current_directory_in_range,
+							  &arguments, &argument_value, project_help, encoding, verbose))
+		{
+			argc = 0;
+			break;
+		}
+
+		project_clear(&the_project);
 	}
 
 	property_release(&properties);
@@ -495,47 +490,23 @@ int main(int argc, char** argv)
 	/**/
 	time_now = datetime_now() - time_now;
 
-	if (10 < time_now)
+	if (!print_elapsed_time(time_now, &argument_value))
 	{
-		if (!buffer_resize(&argument_value, 0))
-		{
-			buffer_release(&argument_value);
-			/*TODO: echo.*/
-			return EXIT_FAILURE;
-		}
-
-		if (!buffer_append_char(&argument_value, "Total time: ", 12))
-		{
-			buffer_release(&argument_value);
-			/*TODO: echo.*/
-			return EXIT_FAILURE;
-		}
-
-		if (!int64_to_string(time_now, &argument_value))
-		{
-			buffer_release(&argument_value);
-			/*TODO: echo.*/
-			return EXIT_FAILURE;
-		}
-
-		if (!buffer_append_char(&argument_value, " second(s).", 11))
-		{
-			buffer_release(&argument_value);
-			/*TODO: echo.*/
-			return EXIT_FAILURE;
-		}
-
-		if (!echo(0, Default, NULL, Info, buffer_data(&argument_value, 0), buffer_size(&argument_value), 1, 0))
-		{
-			buffer_release(&argument_value);
-			/**/
-			return EXIT_FAILURE;
-		}
+		buffer_release(&argument_value);
+		print_status(0);
+		/**/
+		file_flush(file_stream);
+		file_close(file_stream);
+		/**/
+		return EXIT_FAILURE;
 	}
 
 	buffer_release(&argument_value);
 	argc = 0 < argc;
 	argc = print_status(argc) ? argc : 0;
+	/**/
+	file_flush(file_stream);
+	file_close(file_stream);
 	/**/
 	return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 #else

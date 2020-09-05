@@ -442,11 +442,6 @@ uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
 			continue;
 		}
 
-		if (NULL == value)
-		{
-			return 1;
-		}
-
 		pos = find_any_symbol_like_or_not_like_that(pos, finish, &(characters[QUOTE_POSITION]), 1, 1, 1);
 
 		if (finish != pos && string_starts_with(pos, finish, double_quote, double_quote + 2))
@@ -455,8 +450,25 @@ uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
 		}
 
 		pos = find_any_symbol_like_or_not_like_that(pos + 1, finish, &(characters[QUOTE_POSITION]), 1, 0, 1);
+
+		if (finish == pos)
+		{
+			return 0;
+		}
+
 		key_finish = find_any_symbol_like_or_not_like_that(pos + 1, finish, &(characters[QUOTE_POSITION]), 1, 1, 1);
-		/**/
+
+		if (finish == key_finish &&
+			characters[QUOTE_POSITION] != *key_finish)
+		{
+			return 0;
+		}
+
+		if (NULL == value)
+		{
+			return 1;
+		}
+
 		return xml_read_ampersand_based_data(pos, key_finish, value);
 	}
 

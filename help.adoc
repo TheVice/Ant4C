@@ -87,14 +87,21 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
 *-listener:* ::
   Set path to the module with listener.
 
+*-modulepriority* ::
+  First try to evaluate tasks and/or functions from loaded modules
+  than from the core of the library.
+
 *-debug* ::
   Display message with Debug level.
+
+*-logfile:, -l:* ::
+  Set path to the file for logging.
 
 *-verbose* ::
   Display message with Verbose level.
   Set verbose parameter of functions to the true.
 
-*-quiet*:, -q* ::
+*-quiet, -q* ::
   Display messages only with Warning or/and Error levels.
 
 *-help, -h* ::

@@ -8,9 +8,11 @@
 #include "tests_base_xml.h"
 
 extern "C" {
+#include "argument_parser.h"
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "date_time.h"
 #include "echo.h"
 #include "file_system.h"
 #include "hash.h"
@@ -27,11 +29,13 @@ extern "C" {
 
 #include <map>
 #include <string>
+#include <vector>
 #include <cstddef>
 #include <cstdint>
 #include <ostream>
 #include <utility>
 #include <iostream>
+#include <algorithm>
 
 extern "C" {
 	extern uint8_t program_get_properties(
@@ -81,7 +85,7 @@ TEST_F(TestProject, project_property_set_value)
 		//
 		const auto code_in_range = string_to_range(code);
 		//
-		struct buffer project_;
+		buffer project_;
 		SET_NULL_TO_BUFFER(project_);
 		void* the_project = &project_;
 		//
@@ -152,7 +156,7 @@ TEST_F(TestProject, project_load_from_content)
 		std::cout << "[ RUN      ]" << std::endl;
 		//
 		const std::string content(node.node().select_node("content").node().child_value());
-		struct range content_in_range;
+		range content_in_range;
 		const auto project_help = (uint8_t)INT_PARSE(
 									  node.node().select_node("project_help").node().child_value());
 		const auto expected_return = (uint8_t)INT_PARSE(
@@ -188,7 +192,7 @@ TEST_F(TestProject, project_load_from_content)
 		ASSERT_EQ(content.empty(), range_is_null_or_empty(&content_in_range))
 				<< buffer_free(&output);
 		//
-		struct buffer project_;
+		buffer project_;
 		SET_NULL_TO_BUFFER(project_);
 		void* the_project = &project_;
 		//
@@ -464,7 +468,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			//
 			path.clear();
 			uint16_t i = 0;
-			struct range* ptr = NULL;
+			range* ptr = NULL;
 
 			while (NULL != (ptr = buffer_range_data(&tmp, i++)))
 			{
@@ -495,7 +499,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		const auto expected_return = (uint8_t)INT_PARSE(
 										 node.node().select_node("return").node().child_value());
 		//
-		struct buffer project_;
+		buffer project_;
 		SET_NULL_TO_BUFFER(project_);
 		void* the_project = &project_;
 		//
@@ -586,7 +590,147 @@ TEST_F(TestProject, project_load_from_build_file)
 
 	buffer_release(&tmp);
 }
-//project_exec_function
+
+TEST(TestProject_, project_get_build_files_from_directory)
+{
+	static const uint8_t verbose = 0;
+	//
+	buffer directory;
+	SET_NULL_TO_BUFFER(directory);
+	//
+	ASSERT_TRUE(path_get_temp_path(&directory)) <<
+			buffer_free(&directory);
+	ASSERT_TRUE(buffer_push_back(&directory, PATH_DELIMITER)) <<
+			buffer_free(&directory);
+	//
+	const auto now = datetime_now();
+	uint32_t hash = 0;
+	//
+	ASSERT_TRUE(hash_algorithm_crc32((const uint8_t*)&now, (const uint8_t*)&now + sizeof(now), &hash, 1));
+	ASSERT_TRUE(hash_algorithm_bytes_to_string(
+					(const uint8_t*)&hash, (const uint8_t*)&hash + sizeof(hash), &directory)) <<
+							buffer_free(&directory);
+	//
+	const auto size = buffer_size(&directory);
+	const auto expected_current_directory(buffer_to_string(&directory));
+	//
+	ASSERT_TRUE(buffer_push_back(&directory, 0)) <<
+			buffer_free(&directory);
+	//
+	ASSERT_TRUE(directory_create(buffer_data(&directory, 0))) <<
+			buffer_free(&directory);
+	//
+	int i = 0;
+	//
+	std::vector<std::string> expected_files(5);
+	expected_files.clear();
+
+	for (i = 0; i < 5; ++i)
+	{
+		const auto start = buffer_data(&directory, 0);
+		const auto finish = start + buffer_size(&directory);
+		//
+		ASSERT_TRUE(hash_algorithm_crc32(start, finish, &hash, 1));
+		//
+		ASSERT_TRUE(buffer_resize(&directory, size)) <<
+				buffer_free(&directory);
+		ASSERT_TRUE(buffer_push_back(&directory, PATH_DELIMITER)) <<
+				buffer_free(&directory);
+		//
+		const auto minimal_size = buffer_size(&directory);
+		//
+		ASSERT_TRUE(hash_algorithm_bytes_to_string(
+						(const uint8_t*)&hash, (const uint8_t*)&hash + sizeof(hash), &directory)) <<
+								buffer_free(&directory);
+		//
+		const auto new_size = buffer_size(&directory) - i;
+		//
+		ASSERT_LT(minimal_size, new_size) <<
+										  buffer_free(&directory);
+		//
+		ASSERT_TRUE(buffer_resize(&directory, new_size)) <<
+				buffer_free(&directory);
+		ASSERT_TRUE(buffer_append_char(&directory, ".build\0", 7)) <<
+				buffer_free(&directory);
+		//
+		const auto path = buffer_data(&directory, 0);
+		//
+		ASSERT_TRUE(file_create(path)) <<
+									   buffer_free(&directory);
+		//
+		expected_files.push_back(std::string((const char*)path, buffer_size(&directory) - 1));
+	}
+
+	ASSERT_TRUE(buffer_resize(&directory, size)) <<
+			buffer_free(&directory);
+	//
+	buffer argument_value;
+	SET_NULL_TO_BUFFER(argument_value);
+	//
+	buffer command_arguments;
+	SET_NULL_TO_BUFFER(command_arguments);
+	//
+	ASSERT_TRUE(project_get_build_files_from_directory(
+					&command_arguments, &argument_value, &directory, verbose)) <<
+							buffer_free(&directory) << buffer_free(&argument_value) <<
+							properties_free(&command_arguments);
+	//
+	ASSERT_EQ(size + 1, buffer_size(&directory)) <<
+			buffer_free(&directory) << buffer_free(&argument_value) <<
+			properties_free(&command_arguments);
+	//
+	ASSERT_EQ(0, *buffer_data(&directory, size)) <<
+			buffer_free(&directory) << buffer_free(&argument_value) <<
+			properties_free(&command_arguments);
+	//
+	ASSERT_TRUE(buffer_resize(&directory, size)) <<
+			buffer_free(&directory) << buffer_free(&argument_value) <<
+			properties_free(&command_arguments);
+	//
+	ASSERT_EQ(expected_current_directory, buffer_to_string(&directory)) <<
+			buffer_free(&directory) << buffer_free(&argument_value) <<
+			properties_free(&command_arguments);
+	//
+	i = 0;
+	std::string build_file;
+
+	while (!(build_file = range_to_string(argument_parser_get_build_file(&command_arguments, &argument_value,
+										  i++))).empty())
+	{
+		const auto fonded_path = std::find_if(expected_files.cbegin(),
+											  expected_files.cend(), [&build_file](const std::string & expected_path)
+		{
+			return build_file == expected_path;
+		});
+		//
+		ASSERT_NE(fonded_path, expected_files.end()) <<
+				build_file << std::endl <<
+				buffer_free(&directory) << buffer_free(&argument_value) <<
+				properties_free(&command_arguments);
+		//
+		expected_files.erase(fonded_path);
+	}
+
+	ASSERT_TRUE(expected_files.empty()) << expected_files.size() << std::endl << i << std::endl <<
+										buffer_free(&directory) << buffer_free(&argument_value) <<
+										properties_free(&command_arguments);
+	//
+	ASSERT_EQ(nullptr, argument_parser_get_build_file(&command_arguments, &argument_value, i - 1)) <<
+			i << std::endl <<
+			buffer_free(&directory) << buffer_free(&argument_value) <<
+			properties_free(&command_arguments);
+	ASSERT_EQ(nullptr, argument_parser_get_build_file(&command_arguments, &argument_value, i)) <<
+			i << std::endl <<
+			buffer_free(&directory) << buffer_free(&argument_value) <<
+			properties_free(&command_arguments);
+	//
+	buffer_release(&directory);
+	buffer_release(&argument_value);
+	property_release(&command_arguments);
+	//
+	ASSERT_TRUE(directory_delete((const uint8_t*)expected_current_directory.c_str())) <<
+			expected_current_directory;
+}
 
 class TestProgram : public TestsBaseXml
 {
@@ -594,13 +738,13 @@ class TestProgram : public TestsBaseXml
 
 TEST_F(TestProgram, program_get_properties)
 {
-	struct buffer properties_elements;
+	buffer properties_elements;
 	SET_NULL_TO_BUFFER(properties_elements);
 	//
-	struct buffer properties;
+	buffer properties;
 	SET_NULL_TO_BUFFER(properties);
 	//
-	struct buffer project_;
+	buffer project_;
 	SET_NULL_TO_BUFFER(project_);
 	void* the_project = &project_;
 	//

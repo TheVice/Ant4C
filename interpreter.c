@@ -463,10 +463,8 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 	/**/
 	void* the_module = NULL;
 	const uint8_t* func = NULL;
-	/**/
-	uint8_t module_priority = 0;/*TODO*/
 
-	if (module_priority)
+	if (common_get_module_priority())
 	{
 		func = project_get_function_from_module(the_project, &name_space, &name, &the_module, NULL);
 
@@ -707,7 +705,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			break;
 
 		case UNKNOWN_UNIT:
-			if (module_priority)
+			if (common_get_module_priority())
 			{
 				values_count = 0;
 				break;
@@ -1411,8 +1409,14 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 								  const struct buffer* sub_nodes_names, uint8_t target_help,
 								  uint8_t verbose)
 {
+	struct buffer task_arguments;
+	SET_NULL_TO_BUFFER(task_arguments);
+
 	if (range_is_null_or_empty(command_in_range))
 	{
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		/**/
 		return 0;
 	}
 
@@ -1420,6 +1424,9 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 
 	if (range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		/**/
 		return 0;
 	}
 
@@ -1428,9 +1435,6 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 	uint8_t task_attributes_count = 0;
 	/**/
 	const uint8_t* attributes_finish = xml_get_tag_finish_pos(attributes_start, element_finish);
-	/**/
-	struct buffer task_arguments;
-	SET_NULL_TO_BUFFER(task_arguments);
 
 	if (target_task == command)
 	{
@@ -1438,7 +1442,10 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 				&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments) ||
 			task_attributes_count < 1)
 		{
-			buffer_release_with_inner_buffers(&task_arguments);
+			buffer_release_inner_buffers(&task_arguments);
+			project_on_failure(the_project, the_target, &task_arguments, verbose);
+			buffer_release(&task_arguments);
+			/**/
 			return 0;
 		}
 
@@ -1451,15 +1458,28 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 				the_project, the_target, attributes_start, attributes_finish,
 				task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 		{
-			buffer_release_with_inner_buffers(&task_arguments);
+			buffer_release_inner_buffers(&task_arguments);
+			project_on_failure(the_project, the_target, &task_arguments, verbose);
+			buffer_release(&task_arguments);
+			/**/
 			return 0;
 		}
 
 		task_attributes_count = target_evaluate_task(
 									the_project, &task_arguments, target_help,
 									attributes_start, attributes_finish, element_finish, sub_nodes_names, verbose);
-		buffer_release_with_inner_buffers(&task_arguments);
-		/**/
+
+		if (task_attributes_count)
+		{
+			buffer_release_with_inner_buffers(&task_arguments);
+		}
+		else
+		{
+			buffer_release_inner_buffers(&task_arguments);
+			project_on_failure(the_project, the_target, &task_arguments, verbose);
+			buffer_release(&task_arguments);
+		}
+
 		return task_attributes_count;
 	}
 
@@ -1467,7 +1487,10 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 			the_project, the_target, attributes_start, attributes_finish,
 			&task_attributes_count, &task_arguments, verbose))
 	{
-		buffer_release_with_inner_buffers(&task_arguments);
+		buffer_release_inner_buffers(&task_arguments);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		/**/
 		return 0;
 	}
 
@@ -1484,17 +1507,18 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 			the_project, the_target, attributes_start, attributes_finish, &fail_on_error, &verbose, &task_arguments,
 			verbose))
 	{
-		buffer_release_with_inner_buffers(&task_arguments);
+		buffer_release_inner_buffers(&task_arguments);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		/**/
 		return 0;
 	}
 
 	buffer_release_inner_buffers(&task_arguments);
 	void* the_module = NULL;
 	const uint8_t* pointer_to_the_task = NULL;
-	/**/
-	uint8_t module_priority = 0;/*TODO*/
 
-	if (module_priority)
+	if (common_get_module_priority())
 	{
 		pointer_to_the_task = project_get_task_from_module(the_project, command_in_range, &the_module);
 
@@ -1505,8 +1529,18 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 										the_project, the_target, command_in_range->finish,
 										attributes_finish, element_finish, &task_arguments,
 										the_module, pointer_to_the_task, verbose);
-			/**/
-			buffer_release_with_inner_buffers(&task_arguments);
+
+			if (task_attributes_count)
+			{
+				buffer_release_with_inner_buffers(&task_arguments);
+			}
+			else
+			{
+				buffer_release_inner_buffers(&task_arguments);
+				project_on_failure(the_project, the_target, &task_arguments, verbose);
+				buffer_release(&task_arguments);
+			}
+
 			return task_attributes_count;
 		}
 	}
@@ -1703,7 +1737,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 			}
 
 			task_attributes_count = fail_evaluate_task(the_project, the_target, attributes_finish, element_finish,
-													&task_arguments, verbose);
+									&task_arguments, verbose);
 			break;
 
 		case foreach_task:
@@ -1946,7 +1980,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 #endif
 
 		case UNKNOWN_TASK:
-			if (module_priority)
+			if (common_get_module_priority())
 			{
 				task_attributes_count = 0;
 				break;
@@ -1963,11 +1997,20 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 			break;
 	}
 
-	buffer_release_with_inner_buffers(&task_arguments);
-
 	if (!task_attributes_count && !fail_on_error)
 	{
 		task_attributes_count = FAIL_WITH_OUT_ERROR;
+	}
+
+	if (task_attributes_count)
+	{
+		buffer_release_with_inner_buffers(&task_arguments);
+	}
+	else
+	{
+		buffer_release_inner_buffers(&task_arguments);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
 	}
 
 	return task_attributes_count;

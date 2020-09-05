@@ -62,6 +62,9 @@ void* common_get_error_output_stream();
 uint8_t common_is_output_stream_standard();
 uint8_t common_is_error_output_stream_standard();
 
+void common_set_module_priority(uint8_t priority);
+uint8_t common_get_module_priority();
+
 #define XCHG(A, Z)	\
 	(A) -= (Z);		\
 	(Z) += (A);		\

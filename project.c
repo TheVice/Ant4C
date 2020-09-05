@@ -6,6 +6,7 @@
  */
 
 #include "project.h"
+#include "argument_parser.h"
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
@@ -622,6 +623,129 @@ ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* curs
 	}
 
 	return 0;
+}
+
+uint8_t project_evaluate_target_by_name_from_property(
+	void* the_project, const void* the_target,
+	const uint8_t* property_name, uint8_t property_name_length,
+	struct buffer* argument_value, uint8_t verbose)
+{
+	void* the_property = NULL;
+
+	if (!project_property_exists(the_project, property_name, property_name_length, &the_property, verbose))
+	{
+		return 1;
+	}
+
+	if (!buffer_resize(argument_value, 0) ||
+		!property_get_by_pointer(the_property, argument_value))
+	{
+		return 0;
+	}
+
+	if (!interpreter_actualize_property_value(
+			the_project, the_target, property_get_id_of_get_value_function(),
+			the_property, 0, argument_value, verbose))
+	{
+		return 0;
+	}
+
+	struct range target_name;
+
+	BUFFER_TO_RANGE(target_name, argument_value);
+
+	return target_evaluate_by_name(the_project, &target_name, verbose);
+}
+
+uint8_t project_on_success(void* the_project, const void* the_target, struct buffer* argument_value,
+						   uint8_t verbose)
+{
+	static const uint8_t* property_name = (const uint8_t*)"project.onsuccess";
+	return project_evaluate_target_by_name_from_property(the_project, the_target, property_name, 17,
+			argument_value, verbose);
+}
+
+uint8_t project_on_failure(void* the_project, const void* the_target, struct buffer* argument_value,
+						   uint8_t verbose)
+{
+	static const uint8_t* property_name = (const uint8_t*)"project.onfailure";
+	return project_evaluate_target_by_name_from_property(the_project, the_target, property_name, 17,
+			argument_value, verbose);
+}
+
+uint8_t project_get_build_files_from_directory(
+	struct buffer* command_arguments, struct buffer* argument_value,
+	struct buffer* directory, uint8_t verbose)
+{
+	if (NULL == command_arguments ||
+		NULL == argument_value ||
+		NULL == directory)
+	{
+		return 0;
+	}
+
+	static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
+	const ptrdiff_t directory_path_length = buffer_size(directory);
+
+	if (!path_combine_in_place(directory, 0, file_extension, file_extension + 8))
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(argument_value, 0))
+	{
+		return 0;
+	}
+
+	if (directory_enumerate_file_system_entries(directory, 1, 0, argument_value, 1) &&
+		buffer_size(argument_value))
+	{
+		static const uint8_t zero_symbol = '\0';
+		static const uint8_t* f_argument = (const uint8_t*)"\" /f:\"";
+		/**/
+		const uint8_t* start = buffer_data(argument_value, 0);
+		const uint8_t* finish = start + buffer_size(argument_value);
+
+		if (!buffer_append(directory, f_argument + 2, 4) ||
+			!string_replace(start, finish, &zero_symbol, &zero_symbol + 1, f_argument, f_argument + 6, directory))
+		{
+			return 0;
+		}
+
+		if (!buffer_resize(directory, buffer_size(directory) - 5) ||
+			!buffer_push_back(directory, 0))
+		{
+			return 0;
+		}
+
+		int argc = 0;
+		char** argv = NULL;
+#if defined(_WIN32)
+		start = buffer_data(directory, directory_path_length + 9);
+#else
+		start = buffer_data(directory, directory_path_length + 1);
+#endif
+		finish = buffer_data(directory, 0) + buffer_size(directory);
+
+		if (!buffer_resize(argument_value, 0) ||
+			!argument_from_char((const char*)start, (const char*)finish, argument_value, &argc, &argv))
+		{
+			return 0;
+		}
+
+		if (!argument_parser_char(0, argc, argv, command_arguments, verbose))
+		{
+			return 0;
+		}
+	}
+
+	if (!buffer_resize(directory, directory_path_length) ||
+		!buffer_push_back(directory, 0))
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 uint8_t project_get_attributes_and_arguments_for_task(

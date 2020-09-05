@@ -328,8 +328,8 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-void* output_stream = NULL;
-void* error_output_stream = NULL;
+static void* output_stream = NULL;
+static void* error_output_stream = NULL;
 
 void common_set_output_stream(void* stream)
 {
@@ -359,4 +359,16 @@ uint8_t common_is_output_stream_standard()
 uint8_t common_is_error_output_stream_standard()
 {
 	return NULL == error_output_stream;
+}
+
+static uint8_t module_priority = 0;
+
+void common_set_module_priority(uint8_t priority)
+{
+	module_priority = 0 < priority;
+}
+
+uint8_t common_get_module_priority()
+{
+	return module_priority;
 }

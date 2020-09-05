@@ -64,6 +64,17 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose);
 void project_clear(void* the_project);
 void project_unload(void* the_project);
 ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* cursor);
+uint8_t project_evaluate_target_by_name_from_property(
+	void* the_project, const void* the_target,
+	const uint8_t* property_name, uint8_t property_name_length,
+	struct buffer* argument_value, uint8_t verbose);
+uint8_t project_on_success(void* the_project, const void* the_target, struct buffer* argument_value,
+						   uint8_t verbose);
+uint8_t project_on_failure(void* the_project, const void* the_target, struct buffer* argument_value,
+						   uint8_t verbose);
+uint8_t project_get_build_files_from_directory(
+	struct buffer* command_arguments, struct buffer* argument_value,
+	struct buffer* directory, uint8_t verbose);
 
 uint8_t project_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

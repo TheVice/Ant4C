@@ -5978,16 +5978,19 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_build_file>
     <project_load_from_build_file>
       <file path="Chapter2/FailureTest1.build" crc32="4f4e0880" />
+      <content line="4"><![CDATA[<property name="project.onfailure" value="fail"/>]]></content>
       <return>1</return>
       <target_return>0</target_return>
     </project_load_from_build_file>
     <project_load_from_build_file>
       <file path="Chapter2/FailureTest2.build" crc32="f7778dae" />
+      <content line="4"><![CDATA[<property name="project.onfailure" value="fail"/>]]></content>
       <return>1</return>
       <target_return>0</target_return>
     </project_load_from_build_file>
     <project_load_from_build_file>
       <file path="Chapter2/BuildSkeleton.build" crc32="0e08a623" />
+      <NOTE><content line="5"><![CDATA[<property name="project.onfailure" value="fail" />]]></content></NOTE>
       <return>1</return>
     </project_load_from_build_file>
     <project_load_from_build_file>
@@ -5997,6 +6000,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_build_file>
     <project_load_from_build_file>
       <file path="Chapter2/DeploySkeleton.build" crc32="1cde1839" />
+      <NOTE><content line="5"><![CDATA[<property name="project.onfailure" value="fail" />]]></content></NOTE>
       <return>1</return>
     </project_load_from_build_file>
     <project_load_from_build_file>
@@ -6034,7 +6038,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <content line="11"><![CDATA[		message="File '${reference_file}' not equal to the '${output_file}'." />]]></content>
       <return>1</return>
     </project_load_from_build_file>
-    <project_load_from_build_file>
+    <project_load_from_build_file><TODO />
       <file path="Chapter3/Asminfo.build" crc32="08adbdc5" />
       <return>0</return>
       <target_return>1</target_return>
@@ -6058,6 +6062,8 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <file path="Chapter4/ErrorHandlingExample.xml" crc32="79bbe18a" />
       <return>1</return>
       <target_return>0</target_return>
+      <content line="5"><![CDATA[<property name="project.onfailure" value="GiveUp" />]]></content>
+      <content line="17"><![CDATA[<property name="project.onfailure" value="CleanUp2" />]]></content>
     </project_load_from_build_file>
   </TestProject>
   <TestProgram>
@@ -9674,6 +9680,11 @@ Approximate round trip times in milli-seconds:
       <attribute>name</attribute>
       <output>example</output>
       <return>1</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<property name="checksum" value="${file::get-checksum(file, 'crc32')} />]]></input>
+      <attribute>value</attribute>
+      <return>0</return>
     </xml_get_attribute_value>
     <xml_get_element_value>
       <input></input>
