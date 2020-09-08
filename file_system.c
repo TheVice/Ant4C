@@ -79,18 +79,84 @@ static const uint8_t* pre_root_path = (const uint8_t*)"\\\\?\\";
 static const wchar_t* pre_root_path_wchar_t = L"\\\\?\\";
 static const uint8_t pre_root_path_length = 4;
 
-uint8_t file_system_append_pre_root(const struct range* path, struct buffer* output)
+uint8_t _buffer_append_pre(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size)
 {
-	if (range_is_null_or_empty(path) || NULL == output)
+	if (NULL == the_buffer || size < 0)
 	{
 		return 0;
 	}
 
-	if (path_is_path_rooted(path->start, path->finish) &&
-		!string_starts_with(path->start, path->finish, pre_root_path, pre_root_path + pre_root_path_length) &&
-		!buffer_append(output, pre_root_path, pre_root_path_length))
+	if (!size)
+	{
+		return 1;
+	}
+
+	const ptrdiff_t current_size = buffer_size(the_buffer);
+
+	if (!buffer_append(the_buffer, NULL, size))
 	{
 		return 0;
+	}
+
+	for (ptrdiff_t i = current_size; 0 < i;)
+	{
+		uint8_t* dst = NULL;
+		const uint8_t* src = NULL;
+
+		if (i < size)
+		{
+			dst = buffer_data(the_buffer, size);
+			src = buffer_data(the_buffer, 0);
+			MEM_CPY(dst, src, i);
+			/**/
+			break;
+		}
+
+		dst = buffer_data(the_buffer, i);
+		i -= size;
+		src = buffer_data(the_buffer, i);
+		MEM_CPY(dst, src, size);
+	}
+
+	if (NULL != data)
+	{
+		uint8_t* dst = buffer_data(the_buffer, 0);
+#if __STDC_SEC_API__
+
+		if (0 != memcpy_s(dst, size, data, size))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(dst, data, size);
+#endif
+	}
+
+	return 1;
+}
+
+uint8_t file_system_append_pre_root(struct buffer* path)
+{
+	const ptrdiff_t size = buffer_size(path);
+
+	if (!size)
+	{
+		return 0;
+	}
+
+	struct range path_in_the_range;
+
+	BUFFER_TO_RANGE(path_in_the_range, path);
+
+	if (path_is_path_rooted(path_in_the_range.start, path_in_the_range.finish))
+	{
+		if (!string_starts_with(path_in_the_range.start, path_in_the_range.finish,
+								pre_root_path, pre_root_path + pre_root_path_length) &&
+			!_buffer_append_pre(path, pre_root_path, pre_root_path_length))
+		{
+			return 0;
+		}
 	}
 
 	return 1;

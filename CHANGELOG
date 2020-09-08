@@ -3,11 +3,8 @@ ant4c (YYYY.MM)
     Function 'combine' can be used for normalizing path.
   * Increased list of symbols to trim from string at 'string::trim'
     function.
-  * Replaced script hash functions 'blake2b-160', 'blake2b-256', 'blake2b-384'
-    and 'blake2b-512' with 'blake2b';
-    'blake3-256' with 'blake3';
-    'keccak-224', keccak-256', 'keccak-384' and 'keccak-512' with 'keccak';
-    'sha3-224', sha3-256', 'sha3-384' and 'sha3-512' with 'sha3'.
+  * Replaced script hash functions with hash length at the names with
+    'blake2b', 'blake3', 'keccak' and 'sha3'.
   * Added support of 'blake3' and 'keccak' algorithms at the script
     function 'file::get-checksum'.
   * Added argument for configure algorithm - byte order, hash length,
@@ -17,6 +14,8 @@ ant4c (YYYY.MM)
   * For POSIX systems added searching of files with '.build' extension,
     if no file provided at command prompt.
   * Added 'path::glob' function.
+  * Allowed to call executable from the directory that was set
+    at the PATH environment variable.
 
 -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

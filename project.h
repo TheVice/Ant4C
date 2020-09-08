@@ -61,6 +61,11 @@ uint8_t project_load_from_build_file(const struct range* path_to_build_file,
 									 uint16_t encoding, void* the_project,
 									 uint8_t project_help, uint8_t verbose);
 uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose);
+uint8_t project_load_and_evaluate_target(
+	void* the_project, const struct range* build_file,
+	const struct range* current_directory,
+	const struct buffer* arguments, struct buffer* argument_value,
+	uint8_t project_help, uint16_t encoding, uint8_t verbose);
 void project_clear(void* the_project);
 void project_unload(void* the_project);
 ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* cursor);

@@ -91,63 +91,6 @@ uint8_t print_status(int status)
 					 8, 1, 0);
 }
 
-uint8_t project_evaluate(void* the_project, const struct range* build_file,
-						 const struct range* current_directory_in_range,
-						 const struct buffer* arguments, struct buffer* argument_value,
-						 uint8_t project_help, uint16_t encoding, uint8_t verbose)
-{
-	if (NULL == build_file)
-	{
-		/*TODO: echo.*/
-		return 0;
-	}
-
-	listener_project_started(build_file->start, the_project);
-	/**/
-	uint8_t is_loaded = project_load_from_build_file(
-							build_file, current_directory_in_range,
-							encoding, the_project, project_help, verbose);
-
-	if (!is_loaded)
-	{
-		/*TODO: echo.*/
-		listener_project_finished(build_file->start, the_project);
-		return 0;
-	}
-
-	if (!project_help)
-	{
-		if (argument_parser_get_target(arguments, argument_value, 0))
-		{
-			int index = 0;
-			const struct range* target_name = NULL;
-
-			while (NULL != (target_name = argument_parser_get_target(arguments, argument_value, index++)))
-			{
-				is_loaded = target_evaluate_by_name(the_project, target_name, verbose);
-
-				if (!is_loaded)
-				{
-					/*TODO: echo.*/
-					break;
-				}
-			}
-		}
-		else
-		{
-			is_loaded = project_evaluate_default_target(the_project, verbose);
-		}
-	}
-
-	if (is_loaded)
-	{
-		is_loaded = project_on_success(the_project, NULL, argument_value, verbose);
-	}
-
-	listener_project_finished(build_file->start, the_project);
-	return is_loaded;
-}
-
 typedef void (*on_project)(const uint8_t* source, const void* the_project);
 
 typedef void (*on_target)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
@@ -472,8 +415,9 @@ int main(int argc, char** argv)
 			break;
 		}
 
-		if (!project_evaluate(&the_project, build_file, &current_directory_in_range,
-							  &arguments, &argument_value, project_help, encoding, verbose))
+		if (!project_load_and_evaluate_target(
+				&the_project, build_file, &current_directory_in_range,
+				&arguments, &argument_value, project_help, encoding, verbose))
 		{
 			argc = 0;
 			break;

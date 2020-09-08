@@ -28,6 +28,10 @@ extern "C" {
 	extern uint8_t argument_get_key_and_value(
 		const uint8_t* input_start, const uint8_t* input_finish,
 		struct range* key, struct range* value);
+	extern uint8_t exec_get_program_full_path(
+		const void* the_project, const void* the_target,
+		struct buffer* path_to_the_program, uint8_t is_path_rooted,
+		const struct range* base_dir, struct buffer* tmp, uint8_t verbose);
 };
 
 class TestExec : public TestsBaseXml
@@ -58,7 +62,6 @@ protected:
 
 	uint8_t spawn;
 	uint32_t time_out;
-	uint8_t verbose_;
 	uint8_t expected_return;
 
 	uint8_t allow_output_to_console;
@@ -81,7 +84,6 @@ protected:
 		environment_variables(),
 		spawn(),
 		time_out(),
-		verbose_(),
 		expected_return(),
 		allow_output_to_console()
 	{
@@ -136,7 +138,7 @@ void TestExec::load_input_data(const pugi::xpath_node& node)
 	//
 	spawn = (uint8_t)INT_PARSE(node.node().select_node("spawn").node().child_value());
 	time_out = (uint8_t)INT_PARSE(node.node().select_node("time_out").node().child_value());
-	verbose_ = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
+	verbose = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
 	//
 	expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 }
@@ -147,8 +149,7 @@ static const uint8_t equal_symbol = '=';
 static const uint8_t space_symbol = ' ';
 
 static uint8_t argument_get_keys_and_values(
-	const uint8_t* input_start, const uint8_t* input_finish,
-	struct buffer* output)
+	const uint8_t* input_start, const uint8_t* input_finish, buffer* output)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		NULL == output)
@@ -181,9 +182,8 @@ static uint8_t argument_get_keys_and_values(
 			input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, &space_symbol, 1, 1, 1);
 		}
 
-		struct range key;
-
-		struct range value;
+		range key;
+		range value;
 
 		if (!argument_get_key_and_value(previous, input_start, &key, &value))
 		{
@@ -271,8 +271,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	for (const auto& node : nodes)
 	{
 		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &temp_file_name,
-					&condition, verbose)) << buffer_free(&temp_file_name);
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &temp_file_name, &condition, verbose))
+				<< buffer_free(&temp_file_name);
 
 		if (!condition)
 		{
@@ -298,9 +298,13 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 		if (allow_output_to_console)
 		{
-			returned = exec(append, &program, &base_dir, &command_line, NULL,
+			ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+			ASSERT_TRUE(string_to_buffer(range_to_string(&program), &temp_file_name))
+					<< buffer_free(&temp_file_name);
+			//
+			returned = exec(NULL, NULL, append, &temp_file_name, &base_dir, &command_line, NULL,
 							NULL, NULL, &working_dir, &environment_variables,
-							spawn, time_out, verbose_);
+							spawn, time_out, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< "program - '" << range_to_string(&program) << "'" << std::endl
@@ -339,21 +343,21 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_TRUE(exec_node.append_attribute("timeout").set_value(time_out))
 					<< time_out << std::endl << buffer_free(&temp_file_name);
 			//
-			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose_ ? true : false))
-					<< (int)verbose_ << std::endl << buffer_free(&temp_file_name);
+			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose ? true : false))
+					<< (int)verbose << std::endl << buffer_free(&temp_file_name);
 			//
 			std::ostringstream string_stream;
 			exec_document.print(string_stream);
 			const auto exec_code = string_stream.str();
 			const auto exec_code_in_range = string_to_range(exec_code);
 			//
-			struct range exec_in_range_;
+			range exec_in_range_;
 			exec_in_range_.start = exec_code_in_range.start + 1;
 			exec_in_range_.finish = exec_in_range_.start + exec_str.size();
 			//
 			returned = interpreter_evaluate_task(NULL, NULL, exec_task_id,
 												 &exec_in_range_,
-												 exec_code_in_range.finish, NULL, 0, verbose_);
+												 exec_code_in_range.finish, NULL, 0, verbose);
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl
 					<< buffer_free(&temp_file_name);
@@ -363,12 +367,17 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		ASSERT_TRUE(path_get_temp_file_name(&temp_file_name)) << buffer_free(&temp_file_name);
 		ASSERT_TRUE(buffer_push_back(&temp_file_name, 0)) << buffer_free(&temp_file_name);
 		//
-		const range output_file = buffer_to_range(&temp_file_name);
+		const auto output_file_str = buffer_to_string(&temp_file_name);
+		const auto output_file = string_to_range(output_file_str);
+		//
+		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+		ASSERT_TRUE(string_to_buffer(range_to_string(&program), &temp_file_name))
+				<< buffer_free(&temp_file_name);
 		//
 		returned =
-			exec(append, &program, &base_dir, &command_line, &output_file,
+			exec(NULL, NULL, append, &temp_file_name, &base_dir, &command_line, &output_file,
 				 NULL, NULL, &working_dir, &environment_variables,
-				 spawn, time_out, verbose_);
+				 spawn, time_out, verbose);
 		//
 		ASSERT_EQ(expected_return, returned) << buffer_free(&temp_file_name);
 		//
@@ -497,4 +506,64 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	}
 
 	buffer_release(&temp_file_name);
+}
+
+TEST_F(TestExec, exec_get_program_full_path)
+{
+	buffer path_to_the_program;
+	SET_NULL_TO_BUFFER(path_to_the_program);
+	//
+	buffer tmp;
+	SET_NULL_TO_BUFFER(tmp);
+
+	for (const auto& node : nodes)
+	{
+		uint8_t condition = 0;
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose))
+				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
+
+		if (!condition)
+		{
+			--node_count;
+			continue;
+		}
+
+		ASSERT_TRUE(buffer_resize(&path_to_the_program, 0)) << buffer_free(&path_to_the_program) << buffer_free(&tmp);
+		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&path_to_the_program) << buffer_free(&tmp);
+		//
+		program_str = node.node().select_node("program").node().child_value();
+		base_dir_str = node.node().select_node("base_dir").node().child_value();
+		base_dir = string_to_range(base_dir_str);
+		expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		//
+		ASSERT_TRUE(string_to_buffer(program_str, &path_to_the_program))
+				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
+		//
+		const auto program_in_the_range = string_to_range(program_str);
+		const auto is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
+		//
+		const auto returned = exec_get_program_full_path(NULL, NULL, &path_to_the_program, is_path_rooted, &base_dir,
+							  &tmp, verbose);
+		ASSERT_EQ(expected_return, returned) <<
+											 program_str << std::endl << base_dir_str << std::endl <<
+											 buffer_free(&path_to_the_program) << buffer_free(&tmp);
+		//
+		const std::string expected_path_to_the_program(node.node().select_node("output").node().child_value());
+		std::string returned_path_to_the_program(buffer_to_string(&path_to_the_program));
+		//
+		const auto pos = returned_path_to_the_program.find('\0');
+
+		if (std::string::npos != pos)
+		{
+			returned_path_to_the_program = returned_path_to_the_program.substr(0, pos);
+		}
+
+		ASSERT_EQ(returned_path_to_the_program, expected_path_to_the_program)
+				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
+		//
+		--node_count;
+	}
+
+	buffer_release(&tmp);
+	buffer_release(&path_to_the_program);
 }

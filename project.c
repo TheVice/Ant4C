@@ -526,6 +526,63 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
 	return 1;
 }
 
+uint8_t project_load_and_evaluate_target(
+	void* the_project, const struct range* build_file,
+	const struct range* current_directory,
+	const struct buffer* arguments, struct buffer* argument_value,
+	uint8_t project_help, uint16_t encoding, uint8_t verbose)
+{
+	if (NULL == the_project ||
+		NULL == build_file)
+	{
+		return 0;
+	}
+
+	listener_project_started(build_file->start, the_project);
+	/**/
+	uint8_t is_loaded = project_load_from_build_file(
+							build_file, current_directory,
+							encoding, the_project, project_help, verbose);
+
+	if (!is_loaded)
+	{
+		listener_project_finished(build_file->start, the_project);
+		return 0;
+	}
+
+	if (!project_help)
+	{
+		if (argument_parser_get_target(arguments, argument_value, 0))
+		{
+			int index = 0;
+			const struct range* target_name = NULL;
+
+			while (NULL != (target_name = argument_parser_get_target(arguments, argument_value, index++)))
+			{
+				is_loaded = target_evaluate_by_name(the_project, target_name, verbose);
+
+				if (!is_loaded)
+				{
+					/*TODO: echo.*/
+					break;
+				}
+			}
+		}
+		else
+		{
+			is_loaded = project_evaluate_default_target(the_project, verbose);
+		}
+	}
+
+	if (is_loaded)
+	{
+		is_loaded = project_on_success(the_project, NULL, argument_value, verbose);
+	}
+
+	listener_project_finished(build_file->start, the_project);
+	return is_loaded;
+}
+
 void project_clear(void* the_project)
 {
 	if (NULL == the_project)

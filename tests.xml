@@ -593,8 +593,6 @@
       <return>0</return>
     </environment_variable_exists>
   </TestEnvironment>
-  <TestEcho>
-  </TestEcho>
   <TestExec allow_output_to_console="true">
     <exec_with_redirect_to_tmp_file>
       <append></append>
@@ -699,6 +697,54 @@
       <command_line>"a b c" "d e f" "g h" 4 5</command_line>
       <return>1</return>
     </exec_with_redirect_to_tmp_file>
+    <exec_get_program_full_path>
+      <program></program>
+      <base_dir></base_dir>
+      <output></output>
+      <return></return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path>
+      <program>my_program</program>
+      <base_dir></base_dir>
+      <output>my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path if="${platform::is-windows()}">
+      <program>C:\my_program</program>
+      <base_dir></base_dir>
+      <output>\\?\C:\my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path if="${platform::is-windows()}">
+      <program>my_program</program>
+      <base_dir>C:\</base_dir>
+      <output>\\?\C:\my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path if="${platform::is-windows()}">
+      <program>C:\my_program</program>
+      <base_dir>A:\</base_dir>
+      <output>\\?\C:\my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path if="${platform::is-unix()}">
+      <program>/tmp/my_program</program>
+      <base_dir></base_dir>
+      <output>/tmp/my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path if="${platform::is-unix()}">
+      <program>my_program</program>
+      <base_dir>/tmp/</base_dir>
+      <output>/tmp/my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
+    <exec_get_program_full_path if="${platform::is-unix()}">
+      <program>/tmp/my_program</program>
+      <base_dir>/usr/</base_dir>
+      <output>/tmp/my_program</output>
+      <return>1</return>
+    </exec_get_program_full_path>
   </TestExec>
   <TestFileSystem>
     <directory_enumerate_file_system_entries>

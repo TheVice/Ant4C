@@ -1717,7 +1717,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target,
 				}
 			}
 
-			task_attributes_count = exec_evaluate_task(the_project, &task_arguments, verbose);
+			task_attributes_count = exec_evaluate_task(the_project, the_target, &task_arguments, verbose);
 			break;
 
 		case fail_task:

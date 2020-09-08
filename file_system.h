@@ -19,7 +19,7 @@ struct buffer;
 struct range;
 
 #if defined(_WIN32)
-uint8_t file_system_append_pre_root(const struct range* path, struct buffer* output);
+uint8_t file_system_append_pre_root(struct buffer* path);
 uint8_t file_system_get_position_after_pre_root(struct range* path);
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path);
 uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW);

@@ -23,51 +23,73 @@
 
 static const uint8_t zero_symbol = '\0';
 
-uint8_t exec_get_program_full_path(const struct range* program, const struct range* base_dir,
-								   struct buffer* full_path)
+uint8_t exec_get_program_full_path(
+	const void* the_project, const void* the_target,
+	struct buffer* path_to_the_program, uint8_t is_path_rooted,
+	const struct range* base_dir, struct buffer* tmp, uint8_t verbose)
 {
-	if (range_is_null_or_empty(program) || NULL == full_path)
+	if (!buffer_size(path_to_the_program) ||
+		!buffer_resize(tmp, 0))
 	{
 		return 0;
 	}
 
-	if (!range_is_null_or_empty(base_dir) &&
-		!path_is_path_rooted(program->start, program->finish))
+	struct range program_in_the_range;
+
+	BUFFER_TO_RANGE(program_in_the_range, path_to_the_program);
+
+	if (!range_is_null_or_empty(base_dir) && !is_path_rooted)
 	{
-#if defined(_WIN32)
-
-		if (!file_system_append_pre_root(base_dir, full_path))
-		{
-			return 0;
-		}
-
-#endif
-
 		if (!path_combine(base_dir->start, base_dir->finish,
-						  program->start, program->finish, full_path))
+						  program_in_the_range.start, program_in_the_range.finish, tmp))
+		{
+			return 0;
+		}
+
+		if (!buffer_resize(path_to_the_program, 0) ||
+			!buffer_append_data_from_buffer(path_to_the_program, tmp))
 		{
 			return 0;
 		}
 	}
-
-	if (!buffer_size(full_path))
+	else
 	{
-#if defined(_WIN32)
+		const uint8_t* path = path_try_to_get_absolute_path(
+								  the_project, the_target, path_to_the_program, tmp, verbose);
 
-		if (!file_system_append_pre_root(program, full_path))
+		if (buffer_data(path_to_the_program, 0) != path)
 		{
-			return 0;
-		}
+			if (!buffer_resize(path_to_the_program, 0))
+			{
+				return 0;
+			}
 
-#endif
-
-		if (!path_combine(NULL, NULL, program->start, program->finish, full_path))
-		{
-			return 0;
+			if (!buffer_append(path_to_the_program, path, common_count_bytes_until(path, zero_symbol)) ||
+				!buffer_push_back(path_to_the_program, 0))
+			{
+				return 0;
+			}
 		}
 	}
 
-	return buffer_push_back(full_path, zero_symbol);
+#if defined(_WIN32)
+	const ptrdiff_t size = buffer_size(path_to_the_program);
+
+	if (!file_system_append_pre_root(path_to_the_program))
+	{
+		return 0;
+	}
+
+	if (!path_combine_in_place(path_to_the_program,
+							   buffer_size(path_to_the_program) - size, &zero_symbol, &zero_symbol))
+#else
+	if (!path_combine_in_place(path_to_the_program, 0, &zero_symbol, &zero_symbol))
+#endif
+	{
+		return 0;
+	}
+
+	return buffer_push_back(path_to_the_program, zero_symbol);
 }
 
 #if defined(_WIN32)
@@ -249,8 +271,10 @@ uint8_t exec_win32_with_redirect(
 }
 
 uint8_t exec(
+	const void* the_project,
+	const void* the_target,
 	uint8_t append,
-	const struct range* program,
+	struct buffer* program,
 	const struct range* base_dir,
 	const struct range* command_line,
 	const struct range* output_file,
@@ -264,7 +288,7 @@ uint8_t exec(
 {
 	(void)result_property;
 
-	if (range_is_null_or_empty(program))
+	if (!buffer_size(program))
 	{
 		return 0;
 	}
@@ -279,18 +303,27 @@ uint8_t exec(
 		}
 	}
 
+	struct range program_in_the_range;
+
+	BUFFER_TO_RANGE(program_in_the_range, program);
+
+	const uint8_t is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
+
 	struct buffer application;
 
 	SET_NULL_TO_BUFFER(application);
 
-	if (!buffer_resize(&application, spawn ? 1024 : 4096) ||
-		!buffer_resize(&application, 0))
+	if (!buffer_resize(&application, spawn ? 1024 : 4096))
 	{
 		buffer_release(&application);
 		return 0;
 	}
 
-	if (!exec_get_program_full_path(program, base_dir, &application))
+	if (!exec_get_program_full_path(
+			the_project, the_target, program,
+			is_path_rooted, base_dir, &application, verbose) ||
+		!buffer_resize(&application, 0) ||
+		!buffer_append_data_from_buffer(&application, program))
 	{
 		buffer_release(&application);
 		return 0;
@@ -360,7 +393,7 @@ uint8_t exec(
 		}
 	}
 
-	if (path_is_path_rooted(program->start, program->finish))
+	if (is_path_rooted)
 	{
 		if (!file_exists_wchar_t(programW))
 		{
@@ -450,9 +483,8 @@ uint8_t exec_posix_no_redirect(
 
 	const pid_t pid = fork();
 
-	if (NULL != pid_property &&
-		!property_set_by_pointer(pid_property, (const void*)&pid, sizeof(pid_t), property_value_is_integer, 0, 0,
-								 verbose))
+	if (!property_set_by_pointer(
+			pid_property, (const void*)&pid, sizeof(pid_t), property_value_is_integer, 0, 0, verbose))
 	{
 		return 0;
 	}
@@ -542,12 +574,6 @@ uint8_t exec_posix_with_redirect(
 			status = execve(program, cmd, env);
 		}
 
-		if (NULL != result_property)
-		{
-			property_set_by_pointer(result_property, (const void*)&status, sizeof(status),
-									property_value_is_integer, 0, 0, verbose);
-		}
-
 		exit(status);
 	}
 
@@ -584,12 +610,28 @@ uint8_t exec_posix_with_redirect(
 	}
 
 	close(file_des[0]);
-	return -1 != wait(0);
+	count = 0;
+
+	if (-1 == wait((int*)&count))
+	{
+		return 0;
+	}
+
+	if (NULL != result_property)
+	{
+		return property_set_by_pointer(
+				   result_property, (const void*)&count, sizeof(int),
+				   property_value_is_integer, 0, 0, verbose);
+	}
+
+	return 1;
 }
 
 uint8_t exec(
+	const void* the_project,
+	const void* the_target,
 	uint8_t append,
-	const struct range* program,
+	struct buffer* program,
 	const struct range* base_dir,
 	const struct range* command_line,
 	const struct range* output_file,
@@ -601,7 +643,7 @@ uint8_t exec(
 	uint32_t time_out,
 	uint8_t verbose)
 {
-	if (range_is_null_or_empty(program))
+	if (!buffer_size(program))
 	{
 		return 0;
 	}
@@ -616,24 +658,34 @@ uint8_t exec(
 		}
 	}
 
-	ptrdiff_t required_size = range_size(program);
+	ptrdiff_t required_size = buffer_size(program);
 	required_size += range_size(base_dir);
 	required_size += range_size(command_line);
 	required_size += range_size(working_dir);
 	required_size += sizeof(const uint8_t*) * required_size;
 	required_size += 1024;
 	required_size = spawn ? required_size : MAX(required_size, 4096);
+	/**/
 	struct buffer application;
 	SET_NULL_TO_BUFFER(application);
 
-	if (!buffer_append(&application, NULL, required_size) ||
-		!buffer_resize(&application, 0))
+	if (!buffer_append(&application, NULL, required_size))
 	{
 		buffer_release(&application);
 		return 0;
 	}
 
-	if (!exec_get_program_full_path(program, base_dir, &application))
+	struct range program_in_the_range;
+
+	BUFFER_TO_RANGE(program_in_the_range, program);
+
+	const uint8_t is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
+
+	if (!exec_get_program_full_path(
+			the_project, the_target, program,
+			is_path_rooted, base_dir, &application, verbose) ||
+		!buffer_resize(&application, 0) ||
+		!buffer_append_data_from_buffer(&application, program))
 	{
 		buffer_release(&application);
 		return 0;
@@ -798,37 +850,22 @@ uint8_t exec_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, uint8_t verbose)
+uint8_t exec_evaluate_task(void* the_project, const void* the_target, const struct buffer* task_arguments,
+						   uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
 		return 0;
 	}
 
-	const struct buffer* program_path_in_a_buffer = buffer_buffer_data(task_arguments, PROGRAM_POSITION);
-	const struct buffer* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
-	const struct buffer* base_dir_in_a_buffer = buffer_buffer_data(task_arguments, BASE_DIR_POSITION);
-	const struct buffer* command_line_in_a_buffer = buffer_buffer_data(task_arguments, COMMAND_LINE_POSITION);
-	struct buffer* output_path_in_a_buffer = buffer_buffer_data(task_arguments, OUTPUT_POSITION);
-	void* pid_property = NULL;
-	void* result_property = NULL;
-	const struct buffer* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
-	struct buffer* working_dir_in_a_buffer = buffer_buffer_data(task_arguments, WORKING_DIR_POSITION);
-	struct buffer* time_out_in_a_buffer = buffer_buffer_data(task_arguments, TIME_OUT_POSITION);
-	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
+	struct buffer* path_to_the_program = buffer_buffer_data(task_arguments, PROGRAM_POSITION);
 
-	if (!buffer_size(program_path_in_a_buffer))
+	if (!buffer_size(path_to_the_program))
 	{
 		return 0;
 	}
 
-	struct range program;
-
-	program.start = buffer_data(program_path_in_a_buffer, 0);
-
-	program.finish = program.start + buffer_size(program_path_in_a_buffer);
-
-	/**/
+	const struct buffer* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
 	uint8_t append = 0;
 
 	if (buffer_size(append_in_a_buffer) &&
@@ -837,30 +874,13 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		return 0;
 	}
 
+	const struct buffer* base_dir_in_a_buffer = buffer_buffer_data(task_arguments, BASE_DIR_POSITION);
 	struct range base_directory;
-
-	if (buffer_size(base_dir_in_a_buffer))
-	{
-		base_directory.start = buffer_data(base_dir_in_a_buffer, 0);
-		base_directory.finish = base_directory.start + buffer_size(base_dir_in_a_buffer);
-	}
-	else
-	{
-		base_directory.start = base_directory.finish = NULL;
-	}
-
+	BUFFER_TO_RANGE(base_directory, base_dir_in_a_buffer);
+	const struct buffer* command_line_in_a_buffer = buffer_buffer_data(task_arguments, COMMAND_LINE_POSITION);
 	struct range command_line;
-
-	if (buffer_size(command_line_in_a_buffer))
-	{
-		command_line.start = buffer_data(command_line_in_a_buffer, 0);
-		command_line.finish = command_line.start + buffer_size(command_line_in_a_buffer);
-	}
-	else
-	{
-		command_line.start = command_line.finish = NULL;
-	}
-
+	BUFFER_TO_RANGE(command_line, command_line_in_a_buffer);
+	struct buffer* output_path_in_a_buffer = buffer_buffer_data(task_arguments, OUTPUT_POSITION);
 	struct range output_file;
 
 	if (buffer_size(output_path_in_a_buffer))
@@ -878,6 +898,9 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		output_file.start = output_file.finish = NULL;
 	}
 
+	void* pid_property = NULL;
+	void* result_property = NULL;
+
 	for (uint8_t index = PID_PROPERTY_POSITION; ; index = RESULT_PROPERTY_POSITION)
 	{
 		const struct buffer* property_in_a_buffer = buffer_buffer_data(task_arguments, index);
@@ -892,17 +915,17 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 			continue;
 		}
 
-		if (NULL == project)
+		if (NULL == the_project)
 		{
 			return 0;
 		}
 
 		void** the_property = (PID_PROPERTY_POSITION == index ? &pid_property : &result_property);
 
-		if (!project_property_set_value(project, buffer_data(property_in_a_buffer, 0),
+		if (!project_property_set_value(the_project, buffer_data(property_in_a_buffer, 0),
 										(uint8_t)buffer_size(property_in_a_buffer),
 										(const uint8_t*)the_property, 0, 0, 1, 0, verbose) ||
-			!project_property_exists(project, buffer_data(property_in_a_buffer, 0),
+			!project_property_exists(the_project, buffer_data(property_in_a_buffer, 0),
 									 (uint8_t)buffer_size(property_in_a_buffer), the_property, verbose))
 		{
 			return 0;
@@ -914,6 +937,7 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		}
 	}
 
+	const struct buffer* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
 	uint8_t spawn = 0;
 
 	if (buffer_size(spawn_in_a_buffer) &&
@@ -921,6 +945,8 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 	{
 		return 0;
 	}
+
+	struct buffer* working_dir_in_a_buffer = buffer_buffer_data(task_arguments, WORKING_DIR_POSITION);
 
 	struct range working_directory;
 
@@ -938,6 +964,8 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 	{
 		working_directory.start = working_directory.finish = NULL;
 	}
+
+	struct buffer* time_out_in_a_buffer = buffer_buffer_data(task_arguments, TIME_OUT_POSITION);
 
 	uint64_t time_out = 0;
 
@@ -963,6 +991,7 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		time_out = (uint64_t)data;
 	}
 
+	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
 	struct range environment_variables;
 
 	if (buffer_size(environment_in_a_buffer))
@@ -975,6 +1004,8 @@ uint8_t exec_evaluate_task(void* project, const struct buffer* task_arguments, u
 		environment_variables.start = environment_variables.finish = NULL;
 	}
 
-	return exec(append, &program, &base_directory, &command_line, &output_file, pid_property, result_property,
-				&working_directory, &environment_variables, spawn, (uint32_t)time_out, verbose);
+	return exec(the_project, the_target,
+				append, path_to_the_program, &base_directory, &command_line, &output_file,
+				pid_property, result_property, &working_directory, &environment_variables,
+				spawn, (uint32_t)time_out, verbose);
 }
