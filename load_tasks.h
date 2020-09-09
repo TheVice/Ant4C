@@ -8,6 +8,7 @@
 #ifndef _LOAD_TASKS_H_
 #define _LOAD_TASKS_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 struct buffer;
@@ -30,7 +31,7 @@ uint8_t load_tasks_evaluate_loaded_function(const void* the_module, const uint8_
 		struct buffer* arguments, uint8_t arguments_count, struct buffer* return_of_function, uint8_t verbose);
 
 const uint8_t* load_tasks_get_task(
-	const struct buffer* modules, const struct range* task_name, void** the_module_of_task);
+	const struct buffer* modules, const struct range* task_name, void** the_module_of_task, ptrdiff_t* task_id);
 
 const uint8_t* load_tasks_get_function(
 	const struct buffer* modules, const struct range* name_space,

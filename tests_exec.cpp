@@ -260,8 +260,6 @@ uint8_t compare_paths_with_delimiter_independ(const char* path_1, const char* pa
 TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 {
 	static const auto exec_str(std::string("exec"));
-	static const auto exec_in_range = string_to_range(exec_str);
-	static const uint8_t exec_task_id = interpreter_get_task(exec_in_range.start, exec_in_range.finish);
 	//
 	buffer temp_file_name;
 	SET_NULL_TO_BUFFER(temp_file_name);
@@ -351,12 +349,11 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			const auto exec_code = string_stream.str();
 			const auto exec_code_in_range = string_to_range(exec_code);
 			//
-			range exec_in_range_;
-			exec_in_range_.start = exec_code_in_range.start + 1;
-			exec_in_range_.finish = exec_in_range_.start + exec_str.size();
+			range exec_in_range;
+			exec_in_range.start = exec_code_in_range.start + 1;
+			exec_in_range.finish = exec_in_range.start + exec_str.size();
 			//
-			returned = interpreter_evaluate_task(NULL, NULL, exec_task_id,
-												 &exec_in_range_,
+			returned = interpreter_evaluate_task(NULL, NULL, &exec_in_range,
 												 exec_code_in_range.finish, NULL, 0, verbose);
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl

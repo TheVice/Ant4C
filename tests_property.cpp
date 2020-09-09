@@ -99,7 +99,7 @@ TEST(TestProperty_, property_get)
 	std::string code("<property name=\"my\" value=\"${my}\" failonerror=\"false\" />");
 	auto code_in_range(string_to_range(code));
 	//
-	struct buffer the_project;
+	buffer the_project;
 	SET_NULL_TO_BUFFER(the_project);
 	//
 	ASSERT_TRUE(project_new(&the_project));
@@ -125,8 +125,6 @@ TEST(TestProperty_, property_get)
 TEST_F(TestProperty, property_task)
 {
 	static const std::string property_str("property");
-	static const auto task_id = interpreter_get_task((const uint8_t*)property_str.c_str(),
-								(const uint8_t*)property_str.c_str() + 8);
 	//
 	buffer properties;
 	SET_NULL_TO_BUFFER(properties);
@@ -140,7 +138,7 @@ TEST_F(TestProperty, property_task)
 		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		const auto output_properties = node.node().select_nodes("output_properties/property");
 		//
-		struct buffer the_project;
+		buffer the_project;
 		SET_NULL_TO_BUFFER(the_project);
 		//
 		ASSERT_TRUE(project_new(&the_project)) << properties_free(&properties) << project_free(&the_project);
@@ -155,12 +153,12 @@ TEST_F(TestProperty, property_task)
 			const std::string record = property_str + " " + record_node.node().child_value();
 			const auto record_in_range(string_to_range(record));
 			//
-			struct range task_in_range;
+			range task_in_range;
 			task_in_range.start = (const uint8_t*)record.c_str();
 			task_in_range.finish = (const uint8_t*)task_in_range.start + property_str.size();
 			//
 			const auto returned = interpreter_evaluate_task(
-									  &the_project, NULL, task_id,
+									  &the_project, NULL,
 									  &task_in_range, record_in_range.finish,
 									  NULL, 0, verbose);
 			//

@@ -120,7 +120,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		const std::string property_name(code_node.attribute("input").as_string());
 		auto content = string_to_range(code);
 		//
-		struct buffer the_project;
+		buffer the_project;
 		SET_NULL_TO_BUFFER(the_project);
 		//
 		auto returned = project_new(&the_project);
@@ -603,8 +603,7 @@ TEST_F(TestFileSystem, file_read_lines)
 
 		while (NULL != (ptr = buffer_range_data(&tmp, i++)))
 		{
-			struct range* line = (struct range*)ptr;
-			returned_output.append((const char*)line->start, range_size(line));
+			returned_output.append(range_to_string(static_cast<const range*>(ptr)));
 		}
 
 		const auto input_in_range(string_to_range(input));

@@ -91,15 +91,18 @@ uint8_t print_status(int status)
 					 8, 1, 0);
 }
 
-typedef void (*on_project)(const uint8_t* source, const void* the_project);
+typedef void (*on_project_started)(const uint8_t* source, const uint8_t* the_project);
+typedef void (*on_project_finished)(const uint8_t* source, const uint8_t* the_project, uint8_t result);
 
-typedef void (*on_target)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
-						  const void* the_target);
+typedef void (*on_target_started)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
+								  const uint8_t* the_target);
+typedef void (*on_target_finished)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
+								   const uint8_t* the_target, uint8_t result);
 
-typedef void (*on_task_start)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
-							  const void* the_target, uint8_t task);
-typedef void (*on_task_finish)(const uint8_t* source, ptrdiff_t offset, const void* the_project,
-							   const void* the_target, uint8_t task, uint8_t result);
+typedef void (*on_task_started)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
+								const uint8_t* the_target, const uint8_t* task);
+typedef void (*on_task_finished)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
+								 const uint8_t* the_target, const uint8_t* task, uint8_t result);
 
 uint8_t load_listener(const struct range* listener, void** object)
 {
@@ -107,11 +110,6 @@ uint8_t load_listener(const struct range* listener, void** object)
 		!object)
 	{
 		return 0;
-	}
-
-	if (NULL != (*object))
-	{
-		shared_object_unload(*object);
 	}
 
 	(*object) = shared_object_load(listener->start);
@@ -143,27 +141,27 @@ uint8_t load_listener(const struct range* listener, void** object)
 		switch (i)
 		{
 			case 0:
-				listener_set_on_project_started((on_project)address);
+				listener_set_on_project_started((on_project_started)address);
 				break;
 
 			case 1:
-				listener_set_on_project_finished((on_project)address);
+				listener_set_on_project_finished((on_project_finished)address);
 				break;
 
 			case 2:
-				listener_set_on_target_started((on_target)address);
+				listener_set_on_target_started((on_target_started)address);
 				break;
 
 			case 3:
-				listener_set_on_target_finished((on_target)address);
+				listener_set_on_target_finished((on_target_finished)address);
 				break;
 
 			case 4:
-				listener_set_on_task_started((on_task_start)address);
+				listener_set_on_task_started((on_task_started)address);
 				break;
 
 			case 5:
-				listener_set_on_task_finished((on_task_finish)address);
+				listener_set_on_task_finished((on_task_finished)address);
 				break;
 
 			default:

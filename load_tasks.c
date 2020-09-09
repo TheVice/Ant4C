@@ -17,7 +17,6 @@
 #include "shared_object.h"
 #include "xml.h"
 
-#include <stddef.h>
 #include <string.h>
 
 #define ASSEMBLY_POSITION	0
@@ -622,7 +621,7 @@ uint8_t load_tasks_evaluate_loaded_function(const void* the_module, const uint8_
 }
 
 const uint8_t* load_tasks_get_task(const struct buffer* modules, const struct range* task_name,
-								   void** the_module_of_task)
+								   void** the_module_of_task, ptrdiff_t* task_id)
 {
 	if (range_is_null_or_empty(task_name))
 	{
@@ -659,6 +658,11 @@ const uint8_t* load_tasks_get_task(const struct buffer* modules, const struct ra
 				if (NULL != the_module_of_task)
 				{
 					*the_module_of_task = the_module;
+				}
+
+				if (NULL != task_id)
+				{
+					*task_id = j - 1;
 				}
 
 				break;

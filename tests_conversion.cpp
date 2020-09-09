@@ -202,3 +202,19 @@ TEST(TestConversion_, long_to_string)
 
 	buffer_release(&output);
 }
+
+TEST(TestConversion_, pointer_to_string_and_parse)
+{
+	buffer value;
+	SET_NULL_TO_BUFFER(value);
+	//
+	buffer* pointer_to_buffer = &value;
+	ASSERT_TRUE(pointer_to_string(pointer_to_buffer, pointer_to_buffer)) << buffer_free(pointer_to_buffer);
+	//
+	const void* returned_pointer = pointer_parse(buffer_data(pointer_to_buffer, 0));
+	const buffer* returned_pointer_to_buffer = static_cast<const buffer*>(returned_pointer);
+	//
+	ASSERT_EQ(pointer_to_buffer, returned_pointer_to_buffer) << buffer_free(pointer_to_buffer);
+	//
+	buffer_release(pointer_to_buffer);
+}

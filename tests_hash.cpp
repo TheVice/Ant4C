@@ -405,7 +405,7 @@ TEST_F(TestHashAlgorithm, Keccak)
 
 TEST_F(TestHashAlgorithm, sha3)
 {
-	typedef uint8_t(*Keccak)(const uint8_t*, const uint8_t*, uint16_t hash_length, struct buffer*);
+	typedef uint8_t(*Keccak)(const uint8_t*, const uint8_t*, uint16_t hash_length, buffer*);
 	static const Keccak functions[] =
 	{
 		&hash_algorithm_keccak, &hash_algorithm_sha3
@@ -480,7 +480,7 @@ TEST_F(TestHashAlgorithm, sha3)
 
 TEST_F(TestHashAlgorithm, file_get_checksum)
 {
-	struct buffer output;
+	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
 	ASSERT_TRUE(input_generator(&output, 31744)) << buffer_free(&output);

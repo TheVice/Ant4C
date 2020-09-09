@@ -59,7 +59,8 @@ uint8_t target_exists(const struct buffer* targets,
 
 uint8_t target_get_current_target(const void* the_target, const uint8_t** name, uint8_t* name_length)
 {
-	if (NULL == the_target)
+	if (NULL == the_target ||
+		NULL == name)
 	{
 		return 0;
 	}
@@ -67,7 +68,12 @@ uint8_t target_get_current_target(const void* the_target, const uint8_t** name, 
 	/*TODO: add validation at project.*/
 	const struct target* the_real_target = (const struct target*)the_target;
 	*name = the_real_target->name;
-	*name_length = the_real_target->name_length;
+
+	if (NULL != name_length)
+	{
+		*name_length = the_real_target->name_length;
+	}
+
 	return 1;
 }
 
@@ -435,19 +441,21 @@ uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
 uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stack,
 						uint8_t cascade, uint8_t verbose)
 {
+	listener_target_started(NULL, 0, the_project, the_target, verbose);
+
 	if (NULL == the_project ||
 		NULL == the_target ||
 		NULL == stack)
 	{
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 		return 0;
 	}
 
-	listener_target_started(NULL, 0, the_project, the_target);
 	struct target* the_real_target = (struct target*)the_target;
 
 	if (target_is_in_stack(stack, the_target))
 	{
-		listener_target_finished(NULL, 0, the_project, the_target);
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 		return 2 == the_real_target->has_executed ? 0 : 1;
 	}
 
@@ -460,7 +468,7 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 
 		if (!buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**)))
 		{
-			listener_target_finished(NULL, 0, the_project, the_target);
+			listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 			return 0;
 		}
 
@@ -473,19 +481,19 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 
 			if (!project_target_get(the_project, depend->start, (uint8_t)range_size(depend), &target_dep, verbose))
 			{
-				listener_target_finished(NULL, 0, the_project, the_target);
+				listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 				return 0;
 			}
 
 			if (the_target == target_dep)
 			{
-				listener_target_finished(NULL, 0, the_project, the_target);
+				listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 				return 0;
 			}
 
 			if (!target_evaluate(the_project, target_dep, stack, cascade, verbose))
 			{
-				listener_target_finished(NULL, 0, the_project, the_target);
+				listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 				return 0;
 			}
 		}
@@ -502,7 +510,7 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 			the_real_target->attributes.finish, &skip, &tmp, verbose))
 	{
 		buffer_release_with_inner_buffers(&tmp);
-		listener_target_finished(NULL, 0, the_project, the_target);
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 		return 0;
 	}
 
@@ -510,19 +518,21 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 
 	if (skip)
 	{
-		listener_target_finished(NULL, 0, the_project, the_target);
+		listener_target_finished(NULL, 0, the_project, the_target, 1, verbose);
 		return 1;
 	}
 
 	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), NULL, 0, verbose))
 	{
-		listener_target_finished(NULL, 0, the_project, the_target);
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 		return 0;
 	}
 
 	the_real_target->has_executed = 1;
-	listener_target_finished(NULL, 0, the_project, the_target);
-	return cascade ? 1 : buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
+	skip = cascade ? 1 : buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
+	listener_target_finished(NULL, 0, the_project, the_target, skip, verbose);
+	/**/
+	return skip;
 }
 
 uint8_t target_evaluate_by_name(void* the_project, const struct range* target_name, uint8_t verbose)

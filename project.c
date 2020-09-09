@@ -45,12 +45,18 @@ static const uint8_t project_attributes_count = 3;
 #define BASE_DIR_POSITION		2
 #define BUILD_FILE_POSITION		3
 
-#define CONTENT_POSITION		1
-#define PROPERTIES_POSITION		2
-#define TARGETS_POSITION		3
-#define MODULES_POSITION		4
+#define PROPERTIES_POSITION		1
+#define TARGETS_POSITION		2
 
-#define COUNT_OF_POSITIONS		(MODULES_POSITION + 1)
+#define CONTENT_POSITION		3
+#define ELEMENTS_POSITION		4
+#define SUB_NODES_POSITION		5
+#define LISTENER_PROJECT_NAME	6
+#define LISTENER_TASK_NAME		7
+
+#define MODULES_POSITION		8
+
+#define COUNT_OF_POSITIONS	(MODULES_POSITION + 1)
 
 uint8_t project_property_exists(const void* the_project,
 								const uint8_t* property_name, uint8_t property_name_length,
@@ -195,7 +201,7 @@ uint8_t project_add_module(void* the_project, const void* the_module, uint8_t le
 }
 
 const uint8_t* project_get_task_from_module(const void* the_project, const struct range* task_name,
-		void** the_module_of_task)
+		void** the_module_of_task, ptrdiff_t* task_id)
 {
 	if (NULL == the_project || range_is_null_or_empty(task_name))
 	{
@@ -203,7 +209,7 @@ const uint8_t* project_get_task_from_module(const void* the_project, const struc
 	}
 
 	const struct buffer* modules = buffer_buffer_data(the_project, MODULES_POSITION);
-	return load_tasks_get_task(modules, task_name, the_module_of_task);
+	return load_tasks_get_task(modules, task_name, the_module_of_task, task_id);
 }
 
 const uint8_t* project_get_function_from_module(const void* the_project,
@@ -258,7 +264,7 @@ uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build
 
 	const ptrdiff_t size = buffer_size(build_file_uri);
 
-	if (!common_append_string_to_buffer((const uint8_t*)"file:///", build_file_uri))
+	if (!buffer_append_char(build_file_uri, "file:///", 8))
 	{
 		return 0;
 	}
@@ -360,57 +366,41 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 		return 0;
 	}
 
-	struct range tag_name;
+	struct range content_in_the_range;
 
 	const struct buffer* content = buffer_buffer_data(the_project, CONTENT_POSITION);
 
-	BUFFER_TO_RANGE(tag_name, content);
+	BUFFER_TO_RANGE(content_in_the_range, content);
 
-	if (range_is_null_or_empty(&tag_name))
+	if (range_is_null_or_empty(&content_in_the_range))
 	{
 		return 0;
 	}
 
-	struct buffer sub_nodes_names;
-
-	SET_NULL_TO_BUFFER(sub_nodes_names);
+	struct buffer* sub_nodes_names = buffer_buffer_data(the_project, SUB_NODES_POSITION);
 
 	if (project_help &&
-		!range_from_string((const uint8_t*)"project\0target\0description\0", 27, 3, &sub_nodes_names))
+		!buffer_resize(sub_nodes_names, 0))
 	{
-		buffer_release(&sub_nodes_names);
-		/**/
 		return 0;
 	}
 
-	struct buffer elements;
-
-	SET_NULL_TO_BUFFER(elements);
-
-	struct range* element = NULL;
-
-	if (1 != xml_get_sub_nodes_elements(tag_name.start, tag_name.finish, &sub_nodes_names, &elements) ||
-		NULL == (element = buffer_range_data(&elements, 0)) ||
-		!xml_get_tag_name(element->start, element->finish, &tag_name))
+	if (project_help &&
+		!range_from_string((const uint8_t*)"project\0target\0description\0", 27, 3, sub_nodes_names))
 	{
-		buffer_release(&elements);
-		buffer_release(&sub_nodes_names);
-		/**/
 		return 0;
 	}
 
-	const uint8_t task_id = interpreter_get_task(tag_name.start, tag_name.finish);
-	const ptrdiff_t offset = project_get_source_offset(the_project, tag_name.finish);
-	/**/
-	listener_task_started(NULL, offset, the_project, NULL, task_id);
-	const uint8_t result = interpreter_evaluate_task(
-							   the_project, NULL, task_id, &tag_name, element->finish, &sub_nodes_names, project_help, verbose);
-	listener_task_finished(NULL, offset, the_project, NULL, task_id, result);
-	/**/
-	buffer_release(&elements);
-	buffer_release(&sub_nodes_names);
-	/**/
-	return result;
+	struct buffer* elements = buffer_buffer_data(the_project, ELEMENTS_POSITION);
+
+	if (!buffer_resize(elements, 0) ||
+		1 != xml_get_sub_nodes_elements(
+			content_in_the_range.start, content_in_the_range.finish, sub_nodes_names, elements))
+	{
+		return 0;
+	}
+
+	return interpreter_evaluate_tasks(the_project, NULL, elements, sub_nodes_names, project_help, verbose);
 }
 
 uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
@@ -532,21 +522,22 @@ uint8_t project_load_and_evaluate_target(
 	const struct buffer* arguments, struct buffer* argument_value,
 	uint8_t project_help, uint16_t encoding, uint8_t verbose)
 {
+	listener_project_started(build_file ? build_file->start : NULL, the_project, verbose);
+
 	if (NULL == the_project ||
 		NULL == build_file)
 	{
+		listener_project_finished(build_file ? build_file->start : NULL, the_project, 0, verbose);
 		return 0;
 	}
 
-	listener_project_started(build_file->start, the_project);
-	/**/
 	uint8_t is_loaded = project_load_from_build_file(
 							build_file, current_directory,
 							encoding, the_project, project_help, verbose);
 
 	if (!is_loaded)
 	{
-		listener_project_finished(build_file->start, the_project);
+		listener_project_finished(build_file->start, the_project, is_loaded, verbose);
 		return 0;
 	}
 
@@ -579,7 +570,7 @@ uint8_t project_load_and_evaluate_target(
 		is_loaded = project_on_success(the_project, NULL, argument_value, verbose);
 	}
 
-	listener_project_finished(build_file->start, the_project);
+	listener_project_finished(build_file->start, the_project, is_loaded, verbose);
 	return is_loaded;
 }
 
@@ -592,8 +583,6 @@ void project_clear(void* the_project)
 
 	struct buffer* private_properties = buffer_buffer_data(the_project, PRIVATE_PROPERTIES);
 
-	struct buffer* content = buffer_buffer_data(the_project, CONTENT_POSITION);
-
 	struct buffer* properties = buffer_buffer_data(the_project, PROPERTIES_POSITION);
 
 	struct buffer* targets = buffer_buffer_data(the_project, TARGETS_POSITION);
@@ -604,18 +593,17 @@ void project_clear(void* the_project)
 
 	buffer_resize(private_properties, 0);
 
-	buffer_resize(content, 0);
+	for (uint8_t i = CONTENT_POSITION; i <= LISTENER_TASK_NAME; ++i)
+	{
+		struct buffer* buffer_at_the_project = buffer_buffer_data(the_project, i);
+		buffer_resize(buffer_at_the_project, 0);
+	}
 
 	property_release_inner(properties);
-
 	buffer_resize(properties, 0);
-
 	target_release_inner(targets);
-
 	buffer_resize(targets, 0);
-
 	load_tasks_unload(modules);
-
 	buffer_resize(modules, 0);
 }
 
@@ -628,8 +616,6 @@ void project_unload(void* the_project)
 
 	struct buffer* private_properties = buffer_buffer_data(the_project, PRIVATE_PROPERTIES);
 
-	struct buffer* content = buffer_buffer_data(the_project, CONTENT_POSITION);
-
 	struct buffer* properties = buffer_buffer_data(the_project, PROPERTIES_POSITION);
 
 	struct buffer* targets = buffer_buffer_data(the_project, TARGETS_POSITION);
@@ -638,16 +624,16 @@ void project_unload(void* the_project)
 
 	property_release(private_properties);
 
-	buffer_release(content);
+	for (uint8_t i = CONTENT_POSITION; i <= LISTENER_TASK_NAME; ++i)
+	{
+		struct buffer* buffer_at_the_project = buffer_buffer_data(the_project, i);
+		buffer_release(buffer_at_the_project);
+	}
 
 	property_release(properties);
-
 	target_release(targets);
-
 	load_tasks_unload(modules);
-
 	buffer_release(modules);
-
 	buffer_release(the_project);
 }
 
@@ -660,23 +646,19 @@ ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* curs
 	}
 
 	const struct buffer* content = buffer_buffer_data(the_project, CONTENT_POSITION);
-	const uint8_t* start = buffer_data(content, 0);
 
-	if (NULL == start)
+	if (NULL == content)
 	{
 		return 0;
 	}
 
-	const uint8_t* finish = start + buffer_size(content);
+	struct range content_range;
 
-	if (range_in_parts_is_null_or_empty(start, finish))
-	{
-		return 0;
-	}
+	BUFFER_TO_RANGE(content_range, content);
 
-	if (start < cursor && cursor < finish)
+	if (content_range.start < cursor && cursor < content_range.finish)
 	{
-		return cursor - start;
+		return cursor - content_range.start;
 	}
 
 	return 0;
@@ -803,6 +785,90 @@ uint8_t project_get_build_files_from_directory(
 	}
 
 	return 1;
+}
+
+uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbose)
+{
+	if (NULL == the_project)
+	{
+		return 0;
+	}
+
+	struct buffer* listener_project_name = buffer_buffer_data(the_project, LISTENER_PROJECT_NAME);
+
+	if (!buffer_resize(listener_project_name, 0))
+	{
+		return 0;
+	}
+
+	const void* the_property = NULL;
+
+	if (project_get_name(the_project, &the_property, verbose))
+	{
+		if (!property_get_by_pointer(the_property, listener_project_name))
+		{
+			return 0;
+		}
+
+		if (!interpreter_actualize_property_value(the_project, NULL,
+				property_get_id_of_get_value_function(),
+				the_property, 0, listener_project_name, verbose) ||
+			!buffer_append_char(listener_project_name, " ", 1))
+		{
+			return 0;
+		}
+	}
+
+	if (!buffer_append_char(listener_project_name, "(", 1) ||
+		!pointer_to_string(the_project, listener_project_name) ||
+		!buffer_append_char(listener_project_name, ")\0", 2))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+uint8_t project_set_listener_task(const void* the_project, const struct range* task_name, ptrdiff_t task_id)
+{
+	if (NULL == the_project ||
+		range_is_null_or_empty(task_name))
+	{
+		return 0;
+	}
+
+	struct buffer* listener_task_name = buffer_buffer_data(the_project, LISTENER_TASK_NAME);
+
+	if (!buffer_resize(listener_task_name, 0))
+	{
+		return 0;
+	}
+
+	if (!buffer_append_data_from_range(listener_task_name, task_name))
+	{
+		return 0;
+	}
+
+	if (!buffer_append_char(listener_task_name, "(", 1) ||
+		!int64_to_string(task_id, listener_task_name) ||
+		!buffer_append_char(listener_task_name, ")\0", 2))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+const uint8_t* project_get_listener_project_name(const void* the_project)
+{
+	const struct buffer* listener_project_name = buffer_buffer_data(the_project, LISTENER_PROJECT_NAME);
+	return buffer_data(listener_project_name, 0);
+}
+
+const uint8_t* project_get_listener_task_name(const void* the_project)
+{
+	const struct buffer* listener_task_name = buffer_buffer_data(the_project, LISTENER_TASK_NAME);
+	return buffer_data(listener_task_name, 0);
 }
 
 uint8_t project_get_attributes_and_arguments_for_task(

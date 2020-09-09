@@ -50,12 +50,12 @@ uint8_t task_exec_function(const void* the_project,
 		return 0;
 	}
 
-	arguments_count = (interpreter_get_unknown_task_id() != interpreter_get_task(argument.start,
-					   argument.finish));
+	arguments_count = (interpreter_get_unknown_task_id() != interpreter_get_task(
+						   argument.start, argument.finish));
 
 	if (!arguments_count)
 	{
-		arguments_count = NULL != project_get_task_from_module(the_project, &argument, NULL);
+		arguments_count = NULL != project_get_task_from_module(the_project, &argument, NULL, NULL);
 	}
 
 	return bool_to_string(arguments_count, output);

@@ -39,7 +39,7 @@ uint8_t project_target_has_executed(const void* the_project, const uint8_t* name
 
 uint8_t project_add_module(void* the_project, const void* the_module, uint8_t length);
 const uint8_t* project_get_task_from_module(const void* the_project, const struct range* task_name,
-		void** the_module_of_task);
+		void** the_module_of_task, ptrdiff_t* task_id);
 const uint8_t* project_get_function_from_module(const void* the_project,
 		const struct range* name_space, const struct range* function_name,
 		void** the_module_of_task, const uint8_t** name_space_at_module);
@@ -80,6 +80,11 @@ uint8_t project_on_failure(void* the_project, const void* the_target, struct buf
 uint8_t project_get_build_files_from_directory(
 	struct buffer* command_arguments, struct buffer* argument_value,
 	struct buffer* directory, uint8_t verbose);
+
+uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbose);
+uint8_t project_set_listener_task(const void* the_project, const struct range* task_name, ptrdiff_t task_id);
+const uint8_t* project_get_listener_project_name(const void* the_project);
+const uint8_t* project_get_listener_task_name(const void* the_project);
 
 uint8_t project_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,

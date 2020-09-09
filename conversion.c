@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -142,6 +142,26 @@ uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 	DIGIT_TO_STRING_STDC_SEC_API(int_value, 24, "%"PRId64, output_string);
 #else
 	DIGIT_TO_STRING(int_value, 24, "%"PRId64, output_string);
+#endif
+}
+
+void* pointer_parse(const uint8_t* value)
+{
+	if (NULL == value)
+	{
+		return 0;
+	}
+
+	char* ch = NULL;
+	return (void*)strtoll((const char*)value, &ch, 16);
+}
+
+uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string)
+{
+#if __STDC_SEC_API__
+	DIGIT_TO_STRING_STDC_SEC_API(pointer_value, 32, "%p", output_string);
+#else
+	DIGIT_TO_STRING(pointer_value, 32, "%p", output_string);
 #endif
 }
 

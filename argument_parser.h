@@ -45,15 +45,16 @@ uint8_t argument_parser_get_module_priority(const struct buffer* arguments, stru
 uint8_t argument_parser_get_quiet(const struct buffer* arguments, struct buffer* argument_value);
 uint16_t argument_parser_get_encoding(const struct buffer* arguments, struct buffer* argument_value);
 
-uint8_t argument_parser_get_properties(const struct buffer* arguments, struct buffer* properties,
-									   uint8_t verbose);
-const struct range* argument_parser_get_build_file(const struct buffer* arguments,
-		struct buffer* argument_value, int index);
-const struct range* argument_parser_get_log_file(const struct buffer* arguments,
-		struct buffer* argument_value);
-const struct range* argument_parser_get_target(const struct buffer* arguments,
-		struct buffer* argument_value, int index);
-const struct range* argument_parser_get_listener(const struct buffer* arguments,
-		struct buffer* argument_value);
+uint8_t argument_parser_get_properties(
+	const struct buffer* arguments, struct buffer* properties, uint8_t verbose);
+
+const struct range* argument_parser_get_build_file(
+	const struct buffer* arguments, struct buffer* argument_value, int index);
+const struct range* argument_parser_get_log_file(
+	const struct buffer* arguments, struct buffer* argument_value);
+const struct range* argument_parser_get_target(
+	const struct buffer* arguments, struct buffer* argument_value, int index);
+const struct range* argument_parser_get_listener(
+	const struct buffer* arguments, struct buffer* argument_value);
 
 #endif
