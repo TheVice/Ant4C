@@ -64,8 +64,8 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose);
 uint8_t project_load_and_evaluate_target(
 	void* the_project, const struct range* build_file,
 	const struct range* current_directory,
-	const struct buffer* arguments, struct buffer* argument_value,
-	uint8_t project_help, uint16_t encoding, uint8_t verbose);
+	const struct buffer* arguments, uint8_t project_help,
+	uint16_t encoding, uint8_t verbose);
 void project_clear(void* the_project);
 void project_unload(void* the_project);
 ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* cursor);
@@ -82,7 +82,8 @@ uint8_t project_get_build_files_from_directory(
 	struct buffer* directory, uint8_t verbose);
 
 uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbose);
-uint8_t project_set_listener_task(const void* the_project, const struct range* task_name, ptrdiff_t task_id);
+uint8_t project_set_listener_task(
+	const void* the_project, const struct range* task_name, ptrdiff_t task_id, const uint8_t* the_module);
 const uint8_t* project_get_listener_project_name(const void* the_project);
 const uint8_t* project_get_listener_task_name(const void* the_project);
 

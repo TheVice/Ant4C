@@ -100,9 +100,9 @@ typedef void (*on_target_finished)(const uint8_t* source, ptrdiff_t offset, cons
 								   const uint8_t* the_target, uint8_t result);
 
 typedef void (*on_task_started)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
-								const uint8_t* the_target, const uint8_t* task);
+								const uint8_t* the_target, const uint8_t* task_name);
 typedef void (*on_task_finished)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
-								 const uint8_t* the_target, const uint8_t* task, uint8_t result);
+								 const uint8_t* the_target, const uint8_t* task_name, uint8_t result);
 
 uint8_t load_listener(const struct range* listener, void** object)
 {
@@ -415,7 +415,7 @@ int main(int argc, char** argv)
 
 		if (!project_load_and_evaluate_target(
 				&the_project, build_file, &current_directory_in_range,
-				&arguments, &argument_value, project_help, encoding, verbose))
+				&arguments, project_help, encoding, verbose))
 		{
 			argc = 0;
 			break;

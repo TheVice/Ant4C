@@ -519,8 +519,8 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
 uint8_t project_load_and_evaluate_target(
 	void* the_project, const struct range* build_file,
 	const struct range* current_directory,
-	const struct buffer* arguments, struct buffer* argument_value,
-	uint8_t project_help, uint16_t encoding, uint8_t verbose)
+	const struct buffer* arguments, uint8_t project_help,
+	uint16_t encoding, uint8_t verbose)
 {
 	listener_project_started(build_file ? build_file->start : NULL, the_project, verbose);
 
@@ -541,14 +541,18 @@ uint8_t project_load_and_evaluate_target(
 		return 0;
 	}
 
+	struct buffer target_name_;
+
+	SET_NULL_TO_BUFFER(target_name_);
+
 	if (!project_help)
 	{
-		if (argument_parser_get_target(arguments, argument_value, 0))
+		if (argument_parser_get_target(arguments, &target_name_, 0))
 		{
 			int index = 0;
 			const struct range* target_name = NULL;
 
-			while (NULL != (target_name = argument_parser_get_target(arguments, argument_value, index++)))
+			while (NULL != (target_name = argument_parser_get_target(arguments, &target_name_, index++)))
 			{
 				is_loaded = target_evaluate_by_name(the_project, target_name, verbose);
 
@@ -567,9 +571,10 @@ uint8_t project_load_and_evaluate_target(
 
 	if (is_loaded)
 	{
-		is_loaded = project_on_success(the_project, NULL, argument_value, verbose);
+		is_loaded = project_on_success(the_project, NULL, &target_name_, verbose);
 	}
 
+	buffer_release(&target_name_);
 	listener_project_finished(build_file->start, the_project, is_loaded, verbose);
 	return is_loaded;
 }
@@ -742,6 +747,7 @@ uint8_t project_get_build_files_from_directory(
 		static const uint8_t zero_symbol = '\0';
 		static const uint8_t* f_argument = (const uint8_t*)"\" /f:\"";
 		/**/
+		const ptrdiff_t index = buffer_size(directory);
 		const uint8_t* start = buffer_data(argument_value, 0);
 		const uint8_t* finish = start + buffer_size(argument_value);
 
@@ -759,11 +765,7 @@ uint8_t project_get_build_files_from_directory(
 
 		int argc = 0;
 		char** argv = NULL;
-#if defined(_WIN32)
-		start = buffer_data(directory, directory_path_length + 9);
-#else
-		start = buffer_data(directory, directory_path_length + 1);
-#endif
+		start = buffer_data(directory, index);
 		finish = buffer_data(directory, 0) + buffer_size(directory);
 
 		if (!buffer_resize(argument_value, 0) ||
@@ -812,8 +814,7 @@ uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbo
 
 		if (!interpreter_actualize_property_value(the_project, NULL,
 				property_get_id_of_get_value_function(),
-				the_property, 0, listener_project_name, verbose) ||
-			!buffer_append_char(listener_project_name, " ", 1))
+				the_property, 0, listener_project_name, verbose))
 		{
 			return 0;
 		}
@@ -829,7 +830,8 @@ uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbo
 	return 1;
 }
 
-uint8_t project_set_listener_task(const void* the_project, const struct range* task_name, ptrdiff_t task_id)
+uint8_t project_set_listener_task(
+	const void* the_project, const struct range* task_name, ptrdiff_t task_id, const uint8_t* the_module)
 {
 	if (NULL == the_project ||
 		range_is_null_or_empty(task_name))
@@ -847,6 +849,16 @@ uint8_t project_set_listener_task(const void* the_project, const struct range* t
 	if (!buffer_append_data_from_range(listener_task_name, task_name))
 	{
 		return 0;
+	}
+
+	if (the_module)
+	{
+		if (!buffer_append_char(listener_task_name, "(", 1) ||
+			!pointer_to_string(the_module, listener_task_name) ||
+			!buffer_append_char(listener_task_name, ")", 1))
+		{
+			return 0;
+		}
 	}
 
 	if (!buffer_append_char(listener_task_name, "(", 1) ||
