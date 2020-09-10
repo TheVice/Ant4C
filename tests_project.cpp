@@ -41,8 +41,8 @@ extern "C" {
 	extern uint8_t program_get_properties(
 		const void* the_project,
 		const void* the_target,
-		const struct buffer* properties_elements,
-		struct buffer* properties,
+		const buffer* properties_elements,
+		buffer* properties,
 		uint8_t is_root, uint8_t verbose);
 };
 

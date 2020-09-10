@@ -697,6 +697,18 @@
       <command_line>"a b c" "d e f" "g h" 4 5</command_line>
       <return>1</return>
     </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <pid_property>property_for_process_identification</pid_property>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <result_property>property_for_process_result</result_property>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
+    <exec_with_redirect_to_tmp_file>
+      <time_out>5000</time_out>
+      <return>1</return>
+    </exec_with_redirect_to_tmp_file>
     <exec_get_program_full_path>
       <program></program>
       <base_dir></base_dir>

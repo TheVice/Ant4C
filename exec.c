@@ -159,11 +159,10 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 
 uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 				   wchar_t* env, const wchar_t* working_dir,
-				   HANDLE hWritePipe, void* pid_property,
-				   uint8_t spawn, uint32_t time_out, uint8_t verbose)
+				   HANDLE std_output, HANDLE std_error,
+				   void* pid_property, HANDLE* process_handle,
+				   uint8_t spawn, uint8_t verbose)
 {
-	(void)time_out;/*TODO:*/
-
 	if (NULL == program)
 	{
 		return 0;
@@ -174,8 +173,8 @@ uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 	start_up_info.cb = sizeof(STARTUPINFO);
 	start_up_info.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 	start_up_info.wShowWindow = SW_HIDE;
-	start_up_info.hStdOutput = hWritePipe;
-	start_up_info.hStdError = hWritePipe;
+	start_up_info.hStdOutput = std_output;
+	start_up_info.hStdError = std_error;
 	/**/
 	PROCESS_INFORMATION process_information;
 	memset(&process_information, 0, sizeof(PROCESS_INFORMATION));
@@ -207,14 +206,23 @@ uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 		return 0;
 	}
 
-	CloseHandle(process_information.hProcess);
+	if (NULL == process_handle)
+	{
+		CloseHandle(process_information.hProcess);
+	}
+	else
+	{
+		*process_handle = process_information.hProcess;
+	}
+
 	CloseHandle(process_information.hThread);
 	return 1;
 }
 
 uint8_t exec_win32_with_redirect(
 	const wchar_t* program, wchar_t* cmd, wchar_t* env, const wchar_t* working_dir,
-	const uint8_t* file, struct buffer* tmp, uint32_t time_out, uint8_t verbose)
+	void* pid_property, void* result_property, const uint8_t* file, struct buffer* tmp,
+	uint32_t time_out, uint8_t verbose)
 {
 	if (NULL == tmp)
 	{
@@ -235,7 +243,12 @@ uint8_t exec_win32_with_redirect(
 		return 0;
 	}
 
-	if (!exec_win32(program, cmd, env, working_dir, hWritePipe, NULL, 0, time_out, verbose))
+	HANDLE process_handle = INVALID_HANDLE_VALUE;
+	const int64_t time_span_start = 10 < time_out ? timespan_from_seconds((double)datetime_now()) : time_out;
+
+	if (!exec_win32(
+			program, cmd, env, working_dir, hWritePipe, hWritePipe,
+			pid_property, result_property ? &process_handle : NULL, 0, verbose))
 	{
 		CloseHandle(hWritePipe);
 		CloseHandle(hReadPipe);
@@ -255,7 +268,8 @@ uint8_t exec_win32_with_redirect(
 	DWORD numberOfBytesRead = 0;
 
 	while (ReadFile(hReadPipe,
-					security_attributes.lpSecurityDescriptor, security_attributes.nLength,
+					security_attributes.lpSecurityDescriptor,
+					security_attributes.nLength,
 					&numberOfBytesRead, 0) &&
 		   0 < numberOfBytesRead)
 	{
@@ -267,7 +281,38 @@ uint8_t exec_win32_with_redirect(
 	}
 
 	CloseHandle(hReadPipe);
-	return 1;
+	numberOfBytesRead = 1;
+
+	if (result_property)
+	{
+		numberOfBytesRead = (WAIT_FAILED != WaitForSingleObject(process_handle, INFINITE));
+
+		if (!numberOfBytesRead)
+		{
+			CloseHandle(process_handle);
+			return 0;
+		}
+
+		security_attributes.nLength = 0;
+		numberOfBytesRead = (0 != GetExitCodeProcess(process_handle, &security_attributes.nLength));
+		CloseHandle(process_handle);
+
+		if (numberOfBytesRead &&
+			!property_set_by_pointer(result_property,
+									 (const void*)&security_attributes.nLength, sizeof(DWORD),
+									 property_value_is_integer, 0, 0, verbose))
+		{
+			return 0;
+		}
+	}
+
+	if (!numberOfBytesRead)
+	{
+		return 0;
+	}
+
+	const int64_t time_span_finish = 10 < time_out ? timespan_from_seconds((double)datetime_now()) : time_out;
+	return time_span_start < time_span_finish ? time_span_finish - time_span_start <= time_out : 1;
 }
 
 uint8_t exec(
@@ -286,8 +331,6 @@ uint8_t exec(
 	uint32_t time_out,
 	uint8_t verbose)
 {
-	(void)result_property;
-
 	if (!buffer_size(program))
 	{
 		return 0;
@@ -447,13 +490,13 @@ uint8_t exec(
 
 	if (spawn)
 	{
-		spawn = exec_win32(programW, command_lineW, environment_variablesW, working_dirW, NULL, pid_property, spawn,
-						   time_out, verbose);
+		spawn = exec_win32(programW, command_lineW, environment_variablesW, working_dirW,
+						   NULL, NULL, pid_property, NULL, spawn, verbose);
 	}
 	else
 	{
 		spawn = exec_win32_with_redirect(programW, command_lineW, environment_variablesW, working_dirW,
-										 file, &application, time_out, verbose);
+										 pid_property, result_property, file, &application, time_out, verbose);
 	}
 
 	buffer_release(&application);
@@ -527,8 +570,6 @@ uint8_t exec_posix_with_redirect(
 	const char* program, char** cmd, char** env, const char* working_dir,
 	const uint8_t* file, struct buffer* tmp, uint32_t time_out, void* result_property, uint8_t verbose)
 {
-	(void)time_out;
-
 	if (NULL == program ||
 		NULL == cmd ||
 		NULL == tmp)
@@ -537,6 +578,7 @@ uint8_t exec_posix_with_redirect(
 	}
 
 	int file_des[2];
+	const int64_t time_span_start = 10 < time_out ? timespan_from_seconds((double)datetime_now()) : time_out;
 
 	if (pipe(file_des) == -1)
 	{
@@ -624,7 +666,8 @@ uint8_t exec_posix_with_redirect(
 				   property_value_is_integer, 0, 0, verbose);
 	}
 
-	return 1;
+	const int64_t time_span_finish = 10 < time_out ? timespan_from_seconds((double)datetime_now()) : time_out;
+	return time_span_start < time_span_finish ? time_span_finish - time_span_start <= time_out : 1;
 }
 
 uint8_t exec(

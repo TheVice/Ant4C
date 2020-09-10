@@ -17,6 +17,7 @@ extern "C" {
 #include "string_unit.h"
 };
 
+#include <cfloat>
 #include <string>
 #include <cstddef>
 #include <cstdint>
@@ -34,10 +35,10 @@ TEST(TestProperty_, property_at_all)
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	//
-	const uint8_t* property_name = (const uint8_t*)"My_property";
-	const uint8_t property_name_length = (uint8_t)common_count_bytes_until(property_name, 0);
+	const auto property_name = reinterpret_cast<const uint8_t*>("My_property");
+	const auto property_name_length = static_cast<uint8_t>(common_count_bytes_until(property_name, 0));
 	//
-	void* the_property = NULL;
+	void* the_property = nullptr;
 	ASSERT_FALSE(property_exists(&properties, property_name, property_name_length, &the_property))
 			<< buffer_free(&output) << properties_free(&properties);
 	//
@@ -52,8 +53,8 @@ TEST(TestProperty_, property_at_all)
 	ASSERT_FALSE(property_is_readonly(the_property, &read_only))
 			<< buffer_free(&output) << properties_free(&properties);
 	//
-	const uint8_t* property_value = (const uint8_t*)"Property value";
-	const uint8_t property_value_length = (uint8_t)common_count_bytes_until(property_value, 0);
+	const auto property_value = reinterpret_cast<const uint8_t*>("Property value");
+	const auto property_value_length = static_cast<uint8_t>(common_count_bytes_until(property_value, 0));
 	ASSERT_TRUE(
 		property_set_by_name(&properties, property_name, property_name_length,
 							 property_value, property_value_length,
@@ -70,8 +71,7 @@ TEST(TestProperty_, property_at_all)
 	ASSERT_EQ(property_value_length, buffer_size(&output))
 			<< buffer_free(&output) << properties_free(&properties);
 	//
-	ASSERT_TRUE(string_equal((const uint8_t*)property_value,
-							 (const uint8_t*)property_value + property_value_length,
+	ASSERT_TRUE(string_equal(property_value, property_value + property_value_length,
 							 buffer_data(&output, 0),
 							 buffer_data(&output, 0) + property_value_length))
 			<< buffer_free(&output) << properties_free(&properties);
@@ -105,9 +105,7 @@ TEST(TestProperty_, property_get)
 	ASSERT_TRUE(project_new(&the_project));
 	//
 	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish,
-			  &the_project,
-			  0, 0))
-			<< project_free(&the_project);
+			  &the_project, 0, 0)) << project_free(&the_project);
 	//
 	project_clear(&the_project);
 	//
@@ -115,11 +113,160 @@ TEST(TestProperty_, property_get)
 	code_in_range = string_to_range(code);
 	//
 	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish,
-			  &the_project,
-			  0, 0))
-			<< project_free(&the_project);
+			  &the_project, 0, 0)) << project_free(&the_project);
 	//
 	project_unload(&the_project);
+}
+
+TEST(TestProperty_, property_set_by_pointer)
+{
+	static const auto property_name = reinterpret_cast<const uint8_t*>("A");
+	static const uint8_t property_name_length = 1;
+	//
+	static const std::vector<int64_t> int64_values({ INT64_MAX, INT32_MAX, INT16_MIN, INT8_MIN, -1, 0, 1, INT8_MAX, INT16_MAX, INT32_MAX, INT64_MAX });
+	static const std::vector<int32_t> int32_values({ INT32_MAX, INT16_MIN, INT8_MIN, -1, 0, 1, INT8_MAX, INT16_MAX, INT32_MAX });
+	static const std::vector<int16_t> int16_values({ INT16_MIN, INT8_MIN, -1, 0, 1, INT8_MAX, INT16_MAX });
+	static const std::vector<int8_t> int8_values({ INT8_MIN, -1, 0, 1, INT8_MAX });
+	//
+	static const std::vector<double> double_values({ -FLT_MIN, 0.0, FLT_MIN, FLT_MAX });
+	static const std::vector<float> float_values({ -FLT_MIN, 0.0, FLT_MIN, FLT_MAX });
+	//
+	buffer properties;
+	SET_NULL_TO_BUFFER(properties);
+	//
+	buffer property_value;
+	SET_NULL_TO_BUFFER(property_value);
+	//
+	ASSERT_TRUE(property_set_by_name(
+					&properties, property_name, property_name_length,
+					reinterpret_cast<const uint8_t*>(&properties), 0,
+					property_value_is_integer, 0, 0, 0, 0)) <<
+							properties_free(&properties) << buffer_free(&property_value);
+	//
+	void* the_property = nullptr;
+	ASSERT_TRUE(property_exists(&properties, property_name, property_name_length, &the_property)) <<
+			properties_free(&properties) << buffer_free(&property_value);
+
+	for (const auto& int64_value : int64_values)
+	{
+		ASSERT_TRUE(property_set_by_pointer(
+						the_property, reinterpret_cast<const uint8_t*>(&int64_value), sizeof(int64_t),
+						property_value_is_integer, 0, 0, 0)) << properties_free(&properties) <<
+								properties_free(&properties) << buffer_free(&property_value);
+		//
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_size(&property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_EQ(int64_value, int64_parse(buffer_data(&property_value, 0))) <<
+				properties_free(&properties) << buffer_free(&property_value);
+	}
+
+	for (const auto& int32_value : int32_values)
+	{
+		ASSERT_TRUE(property_set_by_pointer(
+						the_property, reinterpret_cast<const uint8_t*>(&int32_value), sizeof(int32_t),
+						property_value_is_integer, 0, 0, 0)) << properties_free(&properties) <<
+								properties_free(&properties) << buffer_free(&property_value);
+		//
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_size(&property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_EQ(int32_value, int_parse(buffer_data(&property_value, 0))) <<
+				properties_free(&properties) << buffer_free(&property_value);
+	}
+
+	for (const auto& int16_value : int16_values)
+	{
+		ASSERT_TRUE(property_set_by_pointer(
+						the_property, reinterpret_cast<const uint8_t*>(&int16_value), sizeof(int16_t),
+						property_value_is_integer, 0, 0, 0)) << properties_free(&properties) <<
+								properties_free(&properties) << buffer_free(&property_value);
+		//
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_size(&property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_EQ(int16_value, int_parse(buffer_data(&property_value, 0))) <<
+				properties_free(&properties) << buffer_free(&property_value);
+	}
+
+	for (const auto& int8_value : int8_values)
+	{
+		ASSERT_TRUE(property_set_by_pointer(
+						the_property, reinterpret_cast<const uint8_t*>(&int8_value), sizeof(int8_t),
+						property_value_is_integer, 0, 0, 0)) << properties_free(&properties) <<
+								properties_free(&properties) << buffer_free(&property_value);
+		//
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_size(&property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_EQ(int8_value, int_parse(buffer_data(&property_value, 0))) <<
+				properties_free(&properties) << buffer_free(&property_value);
+	}
+
+	for (const auto& double_value : double_values)
+	{
+		ASSERT_TRUE(property_set_by_pointer(
+						the_property, reinterpret_cast<const uint8_t*>(&double_value), sizeof(double),
+						property_value_is_double, 0, 0, 0)) << properties_free(&properties) <<
+								properties_free(&properties) << buffer_free(&property_value);
+		//
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_size(&property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		//
+		const auto returned_value = double_parse(buffer_data(&property_value, 0));
+		ASSERT_NEAR(double_value, returned_value, 50 * DBL_EPSILON) <<
+				properties_free(&properties) << buffer_free(&property_value);
+	}
+
+	for (const auto& float_value : float_values)
+	{
+		ASSERT_TRUE(property_set_by_pointer(
+						the_property, reinterpret_cast<const uint8_t*>(&float_value), sizeof(float),
+						property_value_is_double, 0, 0, 0)) << properties_free(&properties) <<
+								properties_free(&properties) << buffer_free(&property_value);
+		//
+		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_size(&property_value)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
+				properties_free(&properties) << buffer_free(&property_value);
+		//
+		const auto returned_value = static_cast<float>(double_parse(buffer_data(&property_value, 0)));
+		ASSERT_NEAR(float_value, returned_value, 50 * FLT_EPSILON) <<
+				properties_free(&properties) << buffer_free(&property_value);
+	}
+
+	buffer_release(&property_value);
+	property_release(&properties);
 }
 
 TEST_F(TestProperty, property_task)
@@ -150,17 +297,17 @@ TEST_F(TestProperty, property_task)
 
 		for (const auto& record_node : node.node().select_nodes("record"))
 		{
-			const std::string record = property_str + " " + record_node.node().child_value();
+			const auto record = property_str + " " + record_node.node().child_value();
 			const auto record_in_range(string_to_range(record));
 			//
 			range task_in_range;
-			task_in_range.start = (const uint8_t*)record.c_str();
-			task_in_range.finish = (const uint8_t*)task_in_range.start + property_str.size();
+			task_in_range.start = reinterpret_cast<const uint8_t*>(record.c_str());
+			task_in_range.finish = task_in_range.start + property_str.size();
 			//
 			const auto returned = interpreter_evaluate_task(
-									  &the_project, NULL,
+									  &the_project, nullptr,
 									  &task_in_range, record_in_range.finish,
-									  NULL, 0, verbose);
+									  nullptr, 0, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< record << std::endl
@@ -180,30 +327,36 @@ TEST_F(TestProperty, property_task)
 			property_load_from_node(property.node(), name, expected_value, expected_dynamic,
 									over_write, expected_read_only, fail_on_error, local_verbose);
 			//
+			const auto property_name = reinterpret_cast<const uint8_t*>(name.c_str());
+			const auto property_name_length = static_cast<uint8_t>(name.size());
+			//
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(&the_project);
 			ASSERT_TRUE(project_property_get_by_name(
-							&the_project, (const uint8_t*)name.c_str(), (uint8_t)name.size(),
-							&properties, verbose))
-					<< name << std::endl << buffer_free(&properties) << project_free(&the_project);
+							&the_project,
+							property_name, property_name_length,
+							&properties, verbose)) << name << std::endl <<
+												   buffer_free(&properties) << project_free(&the_project);
 			ASSERT_EQ(expected_value, buffer_to_string(&properties)) << buffer_free(&properties);
 			ASSERT_TRUE(buffer_resize(&properties, 0)) << buffer_free(&properties) << project_free(&the_project);
 			//
-			void* the_property = NULL;
+			void* the_property = nullptr;
 			ASSERT_TRUE(project_property_exists(
-							&the_project, (const uint8_t*)name.c_str(), (uint8_t)name.size(), &the_property, verbose))
-					<< name << buffer_free(&properties) << project_free(&the_project);
+							&the_project,
+							property_name, property_name_length,
+							&the_property, verbose)) << name << std::endl <<
+									buffer_free(&properties) << project_free(&the_project);
 			//
 			uint8_t returned_dynamic = 0;
-			ASSERT_TRUE(property_is_dynamic(the_property,
-											&returned_dynamic)) << name << buffer_free(&properties) << project_free(&the_project);
-			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << buffer_free(&properties) << project_free(
-						&the_project);
+			ASSERT_TRUE(property_is_dynamic(the_property, &returned_dynamic)) << name << std::endl <<
+					buffer_free(&properties) << project_free(&the_project);
+			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << std::endl <<
+					buffer_free(&properties) << project_free(&the_project);
 			//
 			uint8_t returned_read_only = 0;
-			ASSERT_TRUE(property_is_readonly(the_property,
-											 &returned_read_only)) << name << buffer_free(&properties) << project_free(&the_project);
-			ASSERT_EQ(expected_read_only, returned_read_only) << name << buffer_free(&properties) << project_free(
-						&the_project);
+			ASSERT_TRUE(property_is_readonly(the_property, &returned_read_only)) << name << std::endl <<
+					buffer_free(&properties) << project_free(&the_project);
+			ASSERT_EQ(expected_read_only, returned_read_only) << name << std::endl <<
+					buffer_free(&properties) << project_free(&the_project);
 		}
 
 		project_unload(&the_project);

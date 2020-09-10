@@ -12,9 +12,12 @@ extern "C" {
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "date_time.h"
 #include "exec.h"
 #include "interpreter.h"
 #include "path.h"
+#include "project.h"
+#include "property.h"
 #include "range.h"
 };
 
@@ -27,11 +30,11 @@ extern "C" {
 extern "C" {
 	extern uint8_t argument_get_key_and_value(
 		const uint8_t* input_start, const uint8_t* input_finish,
-		struct range* key, struct range* value);
+		range* key, range* value);
 	extern uint8_t exec_get_program_full_path(
 		const void* the_project, const void* the_target,
-		struct buffer* path_to_the_program, uint8_t is_path_rooted,
-		const struct range* base_dir, struct buffer* tmp, uint8_t verbose);
+		buffer* path_to_the_program, uint8_t is_path_rooted,
+		const range* base_dir, buffer* tmp, uint8_t verbose);
 };
 
 class TestExec : public TestsBaseXml
@@ -52,7 +55,10 @@ protected:
 	range command_line;
 
 	std::string pid_property_str;
+	void* pid_property;
+
 	std::string result_property_str;
+	void* result_property;
 
 	std::string working_dir_str;
 	range working_dir;
@@ -63,6 +69,7 @@ protected:
 	uint8_t spawn;
 	uint32_t time_out;
 	uint8_t expected_return;
+	int32_t result_property_value;
 
 	uint8_t allow_output_to_console;
 
@@ -77,7 +84,9 @@ protected:
 		command_line_str(),
 		command_line(),
 		pid_property_str(),
+		pid_property(),
 		result_property_str(),
+		result_property(),
 		working_dir_str(),
 		working_dir(),
 		environment_variables_str(),
@@ -85,6 +94,7 @@ protected:
 		spawn(),
 		time_out(),
 		expected_return(),
+		result_property_value(),
 		allow_output_to_console()
 	{
 		predefine_arguments.insert(std::make_pair("--tests_exec_app=", &tests_exec_app));
@@ -115,7 +125,7 @@ std::string TestExec::tests_exec_app;
 
 void TestExec::load_input_data(const pugi::xpath_node& node)
 {
-	append = (uint8_t)INT_PARSE(node.node().select_node("append").node().child_value());
+	append = static_cast<uint8_t>(INT_PARSE(node.node().select_node("append").node().child_value()));
 	//
 	program_str = std::string(node.node().select_node("program").node().child_value());
 	program = program_str.empty() ? string_to_range(tests_exec_app) : string_to_range(program_str);
@@ -127,7 +137,10 @@ void TestExec::load_input_data(const pugi::xpath_node& node)
 	command_line = string_to_range(command_line_str);
 	//
 	pid_property_str = std::string(node.node().select_node("pid_property").node().child_value());
+	pid_property = nullptr;
+	//
 	result_property_str = std::string(node.node().select_node("result_property").node().child_value());
+	result_property = nullptr;
 	//
 	working_dir_str = std::string(node.node().select_node("working_dir").node().child_value());
 	working_dir = string_to_range(working_dir_str);
@@ -136,11 +149,13 @@ void TestExec::load_input_data(const pugi::xpath_node& node)
 									node.node().select_node("environment_variables").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	//
-	spawn = (uint8_t)INT_PARSE(node.node().select_node("spawn").node().child_value());
-	time_out = (uint8_t)INT_PARSE(node.node().select_node("time_out").node().child_value());
-	verbose = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
+	spawn = static_cast<uint8_t>(INT_PARSE(node.node().select_node("spawn").node().child_value()));
+	time_out = INT_PARSE(node.node().select_node("time_out").node().child_value());
+	verbose = static_cast<uint8_t>(INT_PARSE(node.node().select_node("verbose").node().child_value()));
 	//
-	expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+	expected_return = static_cast<uint8_t>(INT_PARSE(node.node().select_node("return").node().child_value()));
+	//
+	result_property_value = INT_PARSE(node.node().select_node("result_property_value").node().child_value());
 }
 
 static const uint8_t zero_symbol = '\0';
@@ -152,14 +167,14 @@ static uint8_t argument_get_keys_and_values(
 	const uint8_t* input_start, const uint8_t* input_finish, buffer* output)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
-		NULL == output)
+		nullptr == output)
 	{
 		return 0;
 	}
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, input_finish - input_start + 1) ||
+	if (!buffer_append(output, nullptr, input_finish - input_start + 1) ||
 		!buffer_resize(output, size))
 	{
 		return 0;
@@ -219,8 +234,8 @@ static uint8_t argument_get_keys_and_values(
 
 uint8_t compare_paths_with_delimiter_independ(const uint8_t* path_1, const uint8_t* path_2)
 {
-	if (NULL == path_1 ||
-		NULL == path_2)
+	if (nullptr == path_1 ||
+		nullptr == path_2)
 	{
 		return 0;
 	}
@@ -254,12 +269,23 @@ uint8_t compare_paths_with_delimiter_independ(const uint8_t* path_1, const uint8
 
 uint8_t compare_paths_with_delimiter_independ(const char* path_1, const char* path_2)
 {
-	return compare_paths_with_delimiter_independ((const uint8_t*)path_1, (const uint8_t*)path_2);
+	return compare_paths_with_delimiter_independ(
+			   reinterpret_cast<const uint8_t*>(path_1),
+			   reinterpret_cast<const uint8_t*>(path_2));
 }
 
 TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 {
 	static const auto exec_str(std::string("exec"));
+	//
+	std::vector<std::pair<std::string*, void**>> input_properties;
+	input_properties.push_back(std::make_pair(&pid_property_str, &pid_property));
+	input_properties.push_back(std::make_pair(&result_property_str, &result_property));
+	//
+	buffer the_project;
+	SET_NULL_TO_BUFFER(the_project);
+	//
+	ASSERT_TRUE(project_new(&the_project));
 	//
 	buffer temp_file_name;
 	SET_NULL_TO_BUFFER(temp_file_name);
@@ -270,7 +296,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	{
 		uint8_t condition = 0;
 		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &temp_file_name, &condition, verbose))
-				<< buffer_free(&temp_file_name);
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
 
 		if (!condition)
 		{
@@ -280,29 +306,61 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 		load_input_data(node);
 
+		for (auto& the_property : input_properties)
+		{
+			if (std::get<0>(the_property)->empty())
+			{
+				continue;
+			}
+
+			ASSERT_TRUE(project_property_set_value(
+							&the_project,
+							reinterpret_cast<const uint8_t*>(std::get<0>(the_property)->data()),
+							static_cast<uint8_t>(std::get<0>(the_property)->size()),
+							reinterpret_cast<const uint8_t*>(&the_property), 0, 0, 0, 0, verbose)) <<
+									std::get<0>(the_property)->data() << std::endl <<
+									buffer_free(&temp_file_name) << project_free(&the_project);
+			//
+			ASSERT_TRUE(project_property_exists(
+							&the_project,
+							reinterpret_cast<const uint8_t*>(std::get<0>(the_property)->data()),
+							static_cast<uint8_t>(std::get<0>(the_property)->size()),
+							std::get<1>(the_property), verbose)) <<
+									std::get<0>(the_property)->data() << std::endl <<
+									buffer_free(&temp_file_name) << project_free(&the_project);
+			//
+			ASSERT_NE(nullptr, *(std::get<1>(the_property))) <<
+					std::get<0>(the_property)->data() << std::endl <<
+					buffer_free(&temp_file_name) << project_free(&the_project);
+		}
+
 		if (!range_is_null_or_empty(&environment_variables))
 		{
-			ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
-			ASSERT_TRUE(argument_get_keys_and_values(environment_variables.start, environment_variables.finish,
-						&temp_file_name))
-					<< buffer_free(&temp_file_name);
+			ASSERT_TRUE(buffer_resize(&temp_file_name, 0))
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
+			ASSERT_TRUE(
+				argument_get_keys_and_values(
+					environment_variables.start, environment_variables.finish, &temp_file_name))
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			environment_variables_str = buffer_to_string(&temp_file_name);
 			environment_variables = string_to_range(environment_variables_str);
 		}
 
-		ASSERT_TRUE(program_str.empty()) << buffer_free(&temp_file_name);
+		ASSERT_TRUE(program_str.empty()) << buffer_free(&temp_file_name) << project_free(&the_project);
 		//
 		uint8_t returned = 0;
 
 		if (allow_output_to_console)
 		{
-			ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+			ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name) << project_free(&the_project);
 			ASSERT_TRUE(string_to_buffer(range_to_string(&program), &temp_file_name))
-					<< buffer_free(&temp_file_name);
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			//
-			returned = exec(NULL, NULL, append, &temp_file_name, &base_dir, &command_line, NULL,
-							NULL, NULL, &working_dir, &environment_variables,
-							spawn, time_out, verbose);
+			returned = exec(&the_project, NULL, append,
+							&temp_file_name, &base_dir, &command_line, NULL,
+							pid_property, result_property,
+							&working_dir, &environment_variables, spawn,
+							(uint32_t)date_time_millisecond_to_second(time_out), verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< "program - '" << range_to_string(&program) << "'" << std::endl
@@ -310,39 +368,71 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 					<< "command line - '" << range_to_string(command_line) << "'" << std::endl
 					<< "working directory - '" << range_to_string(working_dir) << "'" << std::endl
 					<< "environment variables - '" << range_to_string(environment_variables) << "'" << std::endl
-					<< buffer_free(&temp_file_name);
-			//
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
+
+			for (auto& the_property : input_properties)
+			{
+				if (std::get<0>(the_property)->empty())
+				{
+					continue;
+				}
+
+				ASSERT_TRUE(buffer_resize(&temp_file_name, 0))
+						<< buffer_free(&temp_file_name) << project_free(&the_project);
+				ASSERT_TRUE(property_get_by_pointer(*std::get<1>(the_property), &temp_file_name))
+						<< buffer_free(&temp_file_name) << project_free(&the_project);
+
+				if (buffer_size(&temp_file_name))
+				{
+					ASSERT_TRUE(buffer_push_back(&temp_file_name, 0))
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
+				}
+
+				if (result_property == *std::get<1>(the_property))
+				{
+					ASSERT_EQ(result_property_value, int64_parse(buffer_data(&temp_file_name, 0)))
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
+				}
+				else if (buffer_size(&temp_file_name))
+				{
+					ASSERT_NE(0, int64_parse(buffer_data(&temp_file_name, 0)))
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
+				}
+			}
+
 			pugi::xml_document exec_document;
 			auto exec_node = exec_document.append_child(exec_str.c_str());
 			//
-			ASSERT_TRUE(exec_node.append_attribute("program").set_value((const char*)program.start))
-					<< program.start << std::endl << buffer_free(&temp_file_name);
+			ASSERT_TRUE(exec_node.append_attribute("program").set_value(reinterpret_cast<const char*>(program.start)))
+					<< program.start << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			ASSERT_TRUE(exec_node.append_attribute("append").set_value(append ? true : false))
-					<< (int)append << std::endl << buffer_free(&temp_file_name);
+					<< static_cast<int>(append) << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 
 			if (!range_is_null_or_empty(&command_line))
 			{
-				ASSERT_TRUE(exec_node.append_attribute("commandline").set_value((const char*)command_line.start))
-						<< program.start << std::endl << buffer_free(&temp_file_name);
+				ASSERT_TRUE(
+					exec_node.append_attribute("commandline").set_value(reinterpret_cast<const char*>(command_line.start)))
+						<< program.start << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			}
 
 			ASSERT_TRUE(exec_node.append_attribute("spawn").set_value(spawn ? true : false))
-					<< (int)spawn << std::endl << buffer_free(&temp_file_name);
+					<< static_cast<int>(spawn) << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 
 			if (!range_is_null_or_empty(&working_dir))
 			{
-				ASSERT_TRUE(exec_node.append_attribute("workingdir").set_value((const char*)working_dir.start))
-						<< working_dir.start << std::endl << buffer_free(&temp_file_name);
+				ASSERT_TRUE(
+					exec_node.append_attribute("workingdir").set_value(reinterpret_cast<const char*>(working_dir.start)))
+						<< working_dir.start << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			}
 
 			ASSERT_TRUE(exec_node.append_attribute("failonerror").set_value(true))
-					<< 1 << std::endl << buffer_free(&temp_file_name);
+					<< 1 << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
 			ASSERT_TRUE(exec_node.append_attribute("timeout").set_value(time_out))
-					<< time_out << std::endl << buffer_free(&temp_file_name);
+					<< time_out << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
 			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose ? true : false))
-					<< (int)verbose << std::endl << buffer_free(&temp_file_name);
+					<< static_cast<int>(verbose) << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
 			std::ostringstream string_stream;
 			exec_document.print(string_stream);
@@ -353,46 +443,50 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			exec_in_range.start = exec_code_in_range.start + 1;
 			exec_in_range.finish = exec_in_range.start + exec_str.size();
 			//
-			returned = interpreter_evaluate_task(NULL, NULL, &exec_in_range,
-												 exec_code_in_range.finish, NULL, 0, verbose);
+			returned = interpreter_evaluate_task(
+						   NULL, NULL, &exec_in_range, exec_code_in_range.finish, NULL, 0, verbose);
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl
-					<< buffer_free(&temp_file_name);
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 		}
 
-		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
-		ASSERT_TRUE(path_get_temp_file_name(&temp_file_name)) << buffer_free(&temp_file_name);
-		ASSERT_TRUE(buffer_push_back(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+		ASSERT_TRUE(buffer_resize(&temp_file_name, 0))
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
+		ASSERT_TRUE(path_get_temp_file_name(&temp_file_name))
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
+		ASSERT_TRUE(buffer_push_back(&temp_file_name, 0))
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
 		//
 		const auto output_file_str = buffer_to_string(&temp_file_name);
 		const auto output_file = string_to_range(output_file_str);
 		//
-		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+		ASSERT_TRUE(buffer_resize(&temp_file_name, 0))
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
 		ASSERT_TRUE(string_to_buffer(range_to_string(&program), &temp_file_name))
-				<< buffer_free(&temp_file_name);
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
 		//
 		returned =
 			exec(NULL, NULL, append, &temp_file_name, &base_dir, &command_line, &output_file,
 				 NULL, NULL, &working_dir, &environment_variables,
 				 spawn, time_out, verbose);
 		//
-		ASSERT_EQ(expected_return, returned) << buffer_free(&temp_file_name);
+		ASSERT_EQ(expected_return, returned) << buffer_free(&temp_file_name) << project_free(&the_project);
 		//
-		const auto result = output_file_content.load_file((const char*)output_file.start);
+		const auto result = output_file_content.load_file(reinterpret_cast<const char*>(output_file.start));
 		ASSERT_EQ(pugi::xml_parse_status::status_ok, result.status)
-				<< buffer_free(&temp_file_name);
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
 		//
 		const auto arguments = output_file_content.select_nodes(pugi::xpath_query("App4ExecTest/arguments/argument"));
-		ASSERT_FALSE(arguments.empty()) << buffer_free(&temp_file_name);
+		ASSERT_FALSE(arguments.empty()) << buffer_free(&temp_file_name) << project_free(&the_project);
 		ASSERT_EQ(command_line_str.empty(), 1 == arguments.size())
-				<< buffer_free(&temp_file_name);
-		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
+		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name) << project_free(&the_project);
 
 		if (!base_dir_str.empty() && !path_is_path_rooted(program.start, program.finish))
 		{
 			ASSERT_TRUE(path_combine(base_dir.start, base_dir.finish,
 									 program.start, program.finish, &temp_file_name))
-					<< buffer_free(&temp_file_name);
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			base_dir_str = buffer_to_string(&temp_file_name);
 		}
 
@@ -408,65 +502,65 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 		base_dir = string_to_range(base_dir_str);
 		//
-		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name);
+		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name) << project_free(&the_project);
 		ASSERT_TRUE(argument_append_arguments(base_dir.start, base_dir.finish, &temp_file_name))
-				<< buffer_free(&temp_file_name);
+				<< buffer_free(&temp_file_name) << project_free(&the_project);
 
 		if (command_line_str.empty())
 		{
 			int argc = 0;
-			char** argv = NULL;
+			char** argv = nullptr;
 			//
 			ASSERT_TRUE(argument_create_arguments(&temp_file_name, &argc, &argv))
-					<< buffer_free(&temp_file_name);
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			//
-			ASSERT_EQ(1, argc) << buffer_free(&temp_file_name);
-			ASSERT_NE(nullptr, argv) << buffer_free(&temp_file_name);
-			ASSERT_NE(nullptr, argv[0]) << buffer_free(&temp_file_name);
-			ASSERT_EQ(nullptr, argv[1]) << buffer_free(&temp_file_name);
+			ASSERT_EQ(1, argc) << buffer_free(&temp_file_name) << project_free(&the_project);
+			ASSERT_NE(nullptr, argv) << buffer_free(&temp_file_name) << project_free(&the_project);
+			ASSERT_NE(nullptr, argv[0]) << buffer_free(&temp_file_name) << project_free(&the_project);
+			ASSERT_EQ(nullptr, argv[1]) << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
 			ASSERT_TRUE(compare_paths_with_delimiter_independ(arguments[0].node().child_value(), argv[0]))
-					<< arguments[0].node().child_value()
-					<< argv[0]
-					<< buffer_free(&temp_file_name);
+					<< arguments[0].node().child_value() << argv[0]
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 		}
 		else
 		{
 			ASSERT_TRUE(argument_append_arguments(command_line.start, command_line.finish, &temp_file_name))
-					<< buffer_free(&temp_file_name);
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			//
 			int argc = 0;
-			char** argv = NULL;
+			char** argv = nullptr;
 			//
 			ASSERT_TRUE(argument_create_arguments(&temp_file_name, &argc, &argv))
-					<< buffer_free(&temp_file_name);
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			//
-			ASSERT_EQ((int)arguments.size(), argc) << buffer_free(&temp_file_name);
-			ASSERT_NE(nullptr, argv) << buffer_free(&temp_file_name);
+			ASSERT_EQ(static_cast<int>(arguments.size()), argc)
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
+			ASSERT_NE(nullptr, argv) << buffer_free(&temp_file_name) << project_free(&the_project);
 			argc = 0;
 
 			for (const auto& argument : arguments)
 			{
-				ASSERT_NE(nullptr, argv[argc]) << buffer_free(&temp_file_name);
+				ASSERT_NE(nullptr, argv[argc]) << buffer_free(&temp_file_name) << project_free(&the_project);
 
 				if (!argc)
 				{
 					ASSERT_TRUE(compare_paths_with_delimiter_independ(argument.node().child_value(), argv[argc]))
-							<< argument.node().child_value()
-							<< argv[argc]
-							<< buffer_free(&temp_file_name);
+							<< argument.node().child_value() << argv[argc]
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 				else
 				{
 					ASSERT_STREQ(argument.node().child_value(), argv[argc])
-							<< buffer_free(&temp_file_name);
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 
 				argc++;
 			}
 
-			ASSERT_EQ((int)arguments.size(), argc) << buffer_free(&temp_file_name);
-			ASSERT_EQ(nullptr, argv[argc]) << buffer_free(&temp_file_name);
+			ASSERT_EQ(static_cast<int>(arguments.size()), argc)
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
+			ASSERT_EQ(nullptr, argv[argc]) << buffer_free(&temp_file_name) << project_free(&the_project);
 		}
 
 		/*TODO:
@@ -478,11 +572,12 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 		if (range_is_null_or_empty(&environment_variables))
 		{
-			ASSERT_FALSE(environments.empty()) << buffer_free(&temp_file_name);
+			ASSERT_FALSE(environments.empty()) << buffer_free(&temp_file_name) << project_free(&the_project);
 		}
 		else
 		{
-			ASSERT_EQ(environment_variables_str.empty(), environments.empty()) << buffer_free(&temp_file_name);
+			ASSERT_EQ(environment_variables_str.empty(), environments.empty())
+					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			const uint8_t* previous = environment_variables.start;
 			const uint8_t* start = environment_variables.start;
 			const uint8_t* finish = environment_variables.finish;
@@ -491,18 +586,20 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			{
 				start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1);
 				ASSERT_STREQ(range_to_string(previous, start).c_str(), environment.node().child_value())
-						<< buffer_free(&temp_file_name);
+						<< buffer_free(&temp_file_name) << project_free(&the_project);
 				start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1);
 				previous = start;
 			}
 
-			ASSERT_EQ(start, finish) << buffer_free(&temp_file_name);
+			ASSERT_EQ(start, finish) << buffer_free(&temp_file_name) << project_free(&the_project);
 		}
 
+		project_clear(&the_project);
 		--node_count;
 	}
 
 	buffer_release(&temp_file_name);
+	project_unload(&the_project);
 }
 
 TEST_F(TestExec, exec_get_program_full_path)
@@ -531,7 +628,7 @@ TEST_F(TestExec, exec_get_program_full_path)
 		program_str = node.node().select_node("program").node().child_value();
 		base_dir_str = node.node().select_node("base_dir").node().child_value();
 		base_dir = string_to_range(base_dir_str);
-		expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		expected_return = static_cast<uint8_t>(INT_PARSE(node.node().select_node("return").node().child_value()));
 		//
 		ASSERT_TRUE(string_to_buffer(program_str, &path_to_the_program))
 				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
@@ -539,8 +636,8 @@ TEST_F(TestExec, exec_get_program_full_path)
 		const auto program_in_the_range = string_to_range(program_str);
 		const auto is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
 		//
-		const auto returned = exec_get_program_full_path(NULL, NULL, &path_to_the_program, is_path_rooted, &base_dir,
-							  &tmp, verbose);
+		const auto returned = exec_get_program_full_path(nullptr, nullptr,
+							  &path_to_the_program, is_path_rooted, &base_dir, &tmp, verbose);
 		ASSERT_EQ(expected_return, returned) <<
 											 program_str << std::endl << base_dir_str << std::endl <<
 											 buffer_free(&path_to_the_program) << buffer_free(&tmp);
