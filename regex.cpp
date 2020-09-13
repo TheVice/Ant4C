@@ -44,7 +44,7 @@ std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>> regex(cons
 		{
 			for (auto j = i + 1; j < count; ++j)
 			{
-				auto match = what.named_subexpression(&expression[i], &expression[j]);
+				const auto match = what.named_subexpression(&expression[i], &expression[j]);
 
 				if (match.length())
 				{
@@ -60,11 +60,15 @@ std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>> regex(cons
 extern std::wstring char_to_wchar_t(const uint8_t* input_start, const uint8_t* input_finish);
 extern std::string wchar_t_to_char(const std::wstring& input);
 
-static const uint8_t* task_name = (const uint8_t*)"regex";
+static const uint8_t* task_name = reinterpret_cast<const uint8_t*>("regex");
 
 static const uint8_t* tasks_attributes[][3] =
 {
-	{ (const uint8_t*)"input", (const uint8_t*)"pattern", NULL }
+	{
+		reinterpret_cast<const uint8_t*>("input"),
+		reinterpret_cast<const uint8_t*>("pattern"),
+		nullptr
+	}
 };
 
 static const uint8_t tasks_attributes_lengths[][3] =
@@ -72,11 +76,11 @@ static const uint8_t tasks_attributes_lengths[][3] =
 	{ 5, 7, 0 }
 };
 
-const uint8_t* enumerate_tasks(uint8_t index)
+const uint8_t* enumerate_tasks(ptrdiff_t index)
 {
 	if (0 != index)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return task_name;
@@ -87,9 +91,9 @@ uint8_t get_attributes_and_arguments_for_task(const uint8_t* task,
 		uint8_t* task_attributes_count)
 {
 	if (task_name != task ||
-		NULL == task_attributes ||
-		NULL == task_attributes_lengths ||
-		NULL == task_attributes_count)
+		nullptr == task_attributes ||
+		nullptr == task_attributes_lengths ||
+		nullptr == task_attributes_count)
 	{
 		return 0;
 	}
@@ -97,7 +101,7 @@ uint8_t get_attributes_and_arguments_for_task(const uint8_t* task,
 	*task_attributes = tasks_attributes[0];
 	*task_attributes_lengths = tasks_attributes_lengths[0];
 	*task_attributes_count = 2;
-	/**/
+	//
 	return 1;
 }
 
@@ -107,13 +111,13 @@ uint8_t evaluate_task(const uint8_t* task,
 					  uint8_t verbose)
 {
 	if (task_name != task ||
-		NULL == arguments ||
-		NULL == arguments_lengths ||
+		nullptr == arguments ||
+		nullptr == arguments_lengths ||
 		arguments_count < 2 ||
-		NULL == output ||
-		NULL == output_length ||
-		NULL == arguments[0] ||
-		NULL == arguments[1] ||
+		nullptr == output ||
+		nullptr == output_length ||
+		nullptr == arguments[0] ||
+		nullptr == arguments[1] ||
 		!arguments_lengths[0] ||
 		!arguments_lengths[1])
 	{
@@ -122,10 +126,11 @@ uint8_t evaluate_task(const uint8_t* task,
 
 	(void)verbose;
 	uint8_t use_wchar = 0;
+	static const uint8_t max_ASCII_char = 0x7f;
 
 	for (uint16_t i = 0, count = arguments_lengths[0]; i < count; ++i)
 	{
-		if ((uint8_t)0x7f < arguments[0][i])
+		if (max_ASCII_char < arguments[0][i])
 		{
 			use_wchar = 1;
 			break;
@@ -136,7 +141,7 @@ uint8_t evaluate_task(const uint8_t* task,
 	{
 		for (uint16_t i = 0, count = arguments_lengths[1]; i < count; ++i)
 		{
-			if ((uint8_t)0x7f < arguments[1][i])
+			if (max_ASCII_char < arguments[1][i])
 			{
 				use_wchar = 1;
 				break;
@@ -149,17 +154,18 @@ uint8_t evaluate_task(const uint8_t* task,
 	if (use_wchar)
 	{
 		const auto input_w = char_to_wchar_t(arguments[0], arguments[0] + arguments_lengths[0]);
-		const auto pattern_w = char_to_wchar_t(arguments[1], arguments[1] + arguments_lengths[1]);
-		str_output = wchar_t_to_char(regex(input_w, pattern_w));
+		const auto expression_w = char_to_wchar_t(arguments[1], arguments[1] + arguments_lengths[1]);
+		str_output = wchar_t_to_char(regex(input_w, expression_w));
 	}
 	else
 	{
-		str_output = regex(std::string((const char*)arguments[0], arguments_lengths[0]),
-						   std::string((const char*)arguments[1], arguments_lengths[1]));
+		const auto input = std::string(reinterpret_cast<const char*>(arguments[0]), arguments_lengths[0]);
+		const auto expression = std::string(reinterpret_cast<const char*>(arguments[1]), arguments_lengths[1]);
+		str_output = regex(input, expression);
 	}
 
-	*output = (const uint8_t*)str_output.c_str();
-	*output_length = (uint16_t)str_output.size();
-	/**/
+	*output = reinterpret_cast<const uint8_t*>(str_output.c_str());
+	*output_length = static_cast<uint16_t>(str_output.size());
+	//
 	return !str_output.empty();
 }

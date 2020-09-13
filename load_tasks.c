@@ -74,9 +74,9 @@ uint8_t load_tasks_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-typedef const uint8_t* (*enumerate_tasks)(uint8_t index);
-typedef const uint8_t* (*enumerate_name_spaces)(uint8_t index);
-typedef const uint8_t* (*enumerate_functions)(const uint8_t* name_space, uint8_t index);
+typedef const uint8_t* (*enumerate_tasks)(ptrdiff_t index);
+typedef const uint8_t* (*enumerate_name_spaces)(ptrdiff_t index);
+typedef const uint8_t* (*enumerate_functions)(const uint8_t* name_space, ptrdiff_t index);
 
 typedef uint8_t(*get_attributes_and_arguments_for_task)(
 	const uint8_t* task, const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
@@ -215,7 +215,7 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 
 	if (the_module.enum_tasks)
 	{
-		uint8_t i = 0;
+		ptrdiff_t i = 0;
 		const uint8_t* task_str = NULL;
 		/**/
 		SET_NULL_TO_BUFFER(the_module.tasks);
@@ -232,14 +232,14 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 	if (the_module.enum_name_spaces &&
 		the_module.enum_functions)
 	{
-		uint8_t i = 0;
+		ptrdiff_t i = 0;
 		const uint8_t* name_space_str = NULL;
 		/**/
 		SET_NULL_TO_BUFFER(the_module.name_spaces);
 
 		while (NULL != (name_space_str = the_module.enum_name_spaces(i++)))
 		{
-			uint8_t j = 0;
+			ptrdiff_t j = 0;
 			const uint8_t* function_ = NULL;
 			/**/
 			struct name_space_in_module name_space_;

@@ -87,29 +87,26 @@ add_library(ant4c STATIC
 add_executable(ant4c_app
             "${CMAKE_SOURCE_DIR}/main.c")
 
-# add_library(ant4c_lib SHARED
-#             "${CMAKE_SOURCE_DIR}/main.c")
-
 target_link_libraries(ant4c_app ant4c)
-# target_link_libraries(ant4c_lib ant4c)
 
 if(DEFINED PROGRAM_VERSION)
   target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
   target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
-  # target_compile_definitions(ant4c_lib PRIVATE -DPROGRAM_VERSION=${PROGRAM_VERSION})
 endif()
 
 if(NOT MSVC)
   target_link_libraries(ant4c_app m)
-  # target_link_libraries(ant4c_lib m)
+
   if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
     target_link_libraries(ant4c_app dl)
   endif()
 endif()
 
-set_target_properties(ant4c_app
-  PROPERTIES
-  OUTPUT_NAME ant4c)
+set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
+
+include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
+include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
+include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
 
 set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
 
@@ -141,29 +138,34 @@ set(GTest_FOUND False)
 find_package(pugixml)
 find_package(GTest)
 
-include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
-include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
-
 if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
   add_executable(ant4c_tests ${SOURCES_OF_TESTS})
+
   target_link_libraries(ant4c_tests ant4c pugixml GTest::GTest)# GTest::Main)
+
   if(NOT MSVC)
     target_link_libraries(ant4c_tests m)
+
     if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
       target_link_libraries(ant4c_tests dl)
     endif()
   endif()
+
   if((NOT MSVC) AND (${CMAKE_VERSION} GREATER 3.0))
     set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
   endif()
+
   add_dependencies(ant4c_tests tests_exec_app)
   add_dependencies(ant4c_tests ant4c.dns)
   add_dependencies(ant4c_tests ant4c.regex)
+  add_dependencies(ant4c_tests example_of_the_module)
+
   if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
     add_custom_command(TARGET ant4c_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
   endif()
+
   add_custom_command(TARGET ant4c_tests POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
 
@@ -172,6 +174,7 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   endif()
 else()
   message(STATUS "Search pugixml and GTest via defined PUGIXML_PATH and/or GTEST_PATH if such exists.")
+
   if(DEFINED ENV{PUGIXML_PATH})
     string(REPLACE "\\" "/" pugixml_Path $ENV{PUGIXML_PATH})
   elseif(DEFINED PUGIXML_PATH)
@@ -240,12 +243,16 @@ else()
       add_dependencies(ant4c_tests tests_exec_app)
       add_dependencies(ant4c_tests ant4c.dns)
       add_dependencies(ant4c_tests ant4c.regex)
+      add_dependencies(ant4c_tests example_of_the_module)
+
       if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
         add_custom_command(TARGET ant4c_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
       endif()
+
       add_custom_command(TARGET ant4c_tests POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
+
       if(DEFINED PUGIXML_HEADER_ONLY)
         target_compile_definitions(ant4c_tests PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY})
       endif()

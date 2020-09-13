@@ -11,24 +11,24 @@
 
 #include <string>
 
-static const uint8_t* dns = (const uint8_t*)"dns";
-static const uint8_t* get_host_name = (const uint8_t*)"get-host-name";
+static const auto dns_name_space = reinterpret_cast<const uint8_t*>("dns");
+static const auto get_host_name = reinterpret_cast<const uint8_t*>("get-host-name");
 
-const uint8_t* enumerate_name_spaces(uint8_t index)
+const uint8_t* enumerate_name_spaces(ptrdiff_t index)
 {
 	if (0 != index)
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	return dns;
+	return dns_name_space;
 }
 
-const uint8_t* enumerate_functions(const uint8_t* name_space, uint8_t index)
+const uint8_t* enumerate_functions(const uint8_t* name_space, ptrdiff_t index)
 {
-	if (dns != name_space || 0 != index)
+	if (dns_name_space != name_space || 0 != index)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return get_host_name;
@@ -39,18 +39,18 @@ uint8_t evaluate_function(const uint8_t* function,
 						  const uint8_t** output, uint16_t* output_length)
 {
 	if (get_host_name != function ||
-		NULL == values ||
-		NULL == values_lengths ||
+		nullptr == values ||
+		nullptr == values_lengths ||
 		0 != values_count ||
-		NULL == output ||
-		NULL == output_length)
+		nullptr == output ||
+		nullptr == output_length)
 	{
 		return 0;
 	}
 
-	static std::string out = boost::asio::ip::host_name();
-	*output = (const uint8_t*)out.c_str();
-	*output_length = (uint16_t)out.size();
-	/**/
-	return !out.empty();
+	static const auto str_output = boost::asio::ip::host_name();
+	*output = reinterpret_cast<const uint8_t*>(str_output.c_str());
+	*output_length = static_cast<uint16_t>(str_output.size());
+	//
+	return !str_output.empty();
 }

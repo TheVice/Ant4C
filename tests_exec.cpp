@@ -360,14 +360,19 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 							&temp_file_name, &base_dir, &command_line, NULL,
 							pid_property, result_property,
 							&working_dir, &environment_variables, spawn,
-							(uint32_t)date_time_millisecond_to_second(time_out), verbose);
+							static_cast<uint32_t>(date_time_millisecond_to_second(time_out)), verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
+					<< "append - '" << static_cast<int>(append) << std::endl
 					<< "program - '" << range_to_string(&program) << "'" << std::endl
-					<< "base directory - '" << range_to_string(base_dir) << "'" << std::endl
-					<< "command line - '" << range_to_string(command_line) << "'" << std::endl
-					<< "working directory - '" << range_to_string(working_dir) << "'" << std::endl
-					<< "environment variables - '" << range_to_string(environment_variables) << "'" << std::endl
+					<< "base directory - '" << base_dir_str << "'" << std::endl
+					<< "command line - '" << command_line_str << "'" << std::endl
+					<< "pid property - '" << pid_property_str << "'" << std::endl
+					<< "result property - '" << result_property_str << "'" << std::endl
+					<< "working directory - '" << working_dir_str << "'" << std::endl
+					<< "environment variables - '" << environment_variables_str << "'" << std::endl
+					<< "spawn - '" << static_cast<int>(spawn) << "'" << std::endl
+					<< "time out - '" << static_cast<uint32_t>(date_time_millisecond_to_second(time_out)) << "'" << std::endl
 					<< buffer_free(&temp_file_name) << project_free(&the_project);
 
 			for (auto& the_property : input_properties)
@@ -400,6 +405,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 				}
 			}
 
+			project_clear(&the_project);
+			//
 			pugi::xml_document exec_document;
 			auto exec_node = exec_document.append_child(exec_str.c_str());
 			//
@@ -408,21 +415,21 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_TRUE(exec_node.append_attribute("append").set_value(append ? true : false))
 					<< static_cast<int>(append) << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 
-			if (!range_is_null_or_empty(&command_line))
+			if (!command_line_str.empty())
 			{
 				ASSERT_TRUE(
-					exec_node.append_attribute("commandline").set_value(reinterpret_cast<const char*>(command_line.start)))
-						<< program.start << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
+					exec_node.append_attribute("commandline").set_value(command_line_str.data()))
+						<< command_line_str << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			}
 
 			ASSERT_TRUE(exec_node.append_attribute("spawn").set_value(spawn ? true : false))
 					<< static_cast<int>(spawn) << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 
-			if (!range_is_null_or_empty(&working_dir))
+			if (!working_dir_str.empty())
 			{
 				ASSERT_TRUE(
-					exec_node.append_attribute("workingdir").set_value(reinterpret_cast<const char*>(working_dir.start)))
-						<< working_dir.start << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
+					exec_node.append_attribute("workingdir").set_value(working_dir_str.data()))
+						<< working_dir_str << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			}
 
 			ASSERT_TRUE(exec_node.append_attribute("failonerror").set_value(true))
@@ -430,7 +437,19 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			//
 			ASSERT_TRUE(exec_node.append_attribute("timeout").set_value(time_out))
 					<< time_out << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
-			//
+
+			if (!pid_property_str.empty())
+			{
+				ASSERT_TRUE(exec_node.append_attribute("pidproperty").set_value(pid_property_str.data()))
+						<< pid_property_str << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
+			}
+
+			if (!result_property_str.empty())
+			{
+				ASSERT_TRUE(exec_node.append_attribute("resultproperty").set_value(result_property_str.data()))
+						<< result_property_str << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
+			}
+
 			ASSERT_TRUE(exec_node.append_attribute("verbose").set_value(verbose ? true : false))
 					<< static_cast<int>(verbose) << std::endl << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
@@ -444,10 +463,55 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			exec_in_range.finish = exec_in_range.start + exec_str.size();
 			//
 			returned = interpreter_evaluate_task(
-						   NULL, NULL, &exec_in_range, exec_code_in_range.finish, NULL, 0, verbose);
+						   &the_project, NULL,
+						   &exec_in_range, exec_code_in_range.finish,
+						   NULL, 0, verbose);
+			//
 			ASSERT_EQ(expected_return, returned)
 					<< exec_code << std::endl
 					<< buffer_free(&temp_file_name) << project_free(&the_project);
+
+			for (auto& the_property : input_properties)
+			{
+				if (std::get<0>(the_property)->empty())
+				{
+					continue;
+				}
+
+				ASSERT_TRUE(project_property_exists(
+								&the_project,
+								reinterpret_cast<const uint8_t*>(std::get<0>(the_property)->data()),
+								static_cast<uint8_t>(std::get<0>(the_property)->size()),
+								std::get<1>(the_property), verbose)) <<
+										std::get<0>(the_property)->data() << std::endl <<
+										buffer_free(&temp_file_name) << project_free(&the_project);
+				//
+				ASSERT_NE(nullptr, *(std::get<1>(the_property))) <<
+						std::get<0>(the_property)->data() << std::endl <<
+						buffer_free(&temp_file_name) << project_free(&the_project);
+				//
+				ASSERT_TRUE(buffer_resize(&temp_file_name, 0))
+						<< buffer_free(&temp_file_name) << project_free(&the_project);
+				ASSERT_TRUE(property_get_by_pointer(*std::get<1>(the_property), &temp_file_name))
+						<< buffer_free(&temp_file_name) << project_free(&the_project);
+
+				if (buffer_size(&temp_file_name))
+				{
+					ASSERT_TRUE(buffer_push_back(&temp_file_name, 0))
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
+				}
+
+				if (result_property == *std::get<1>(the_property))
+				{
+					ASSERT_EQ(result_property_value, int64_parse(buffer_data(&temp_file_name, 0)))
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
+				}
+				else if (buffer_size(&temp_file_name))
+				{
+					ASSERT_NE(0, int64_parse(buffer_data(&temp_file_name, 0)))
+							<< buffer_free(&temp_file_name) << project_free(&the_project);
+				}
+			}
 		}
 
 		ASSERT_TRUE(buffer_resize(&temp_file_name, 0))

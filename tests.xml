@@ -5910,6 +5910,77 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_content>
     <project_load_from_content>
       <content><![CDATA[
+      <project>
+        <choose>
+          <when test="${platform::is-unix()}">
+            <loadtasks module="libexample_of_the_module.so" />
+          </when>
+          <when test="${platform::is-windows()}">
+            <loadtasks module="example_of_the_module.dll" failonerror="false" />
+            <loadtasks module="libexample_of_the_module.dll" unless="${task::exists('regex')}" failonerror="false" />
+          </when>
+        </choose>
+
+        <fail if="${property::exists('content_of_the_task_from_script')}" />
+
+        <task_without_attributes/>
+        <fail unless="${property::exists('content_of_the_task_from_script')}" />
+        <fail unless="${string::equal(hash::bytes-to-string(hash::crc32(content_of_the_task_from_script)), 'b02d3480')}"
+              message="content_of_the_task_from_script -> '${hash::bytes-to-string(hash::crc32(content_of_the_task_from_script))}'." />
+
+        <task_without_attributes />
+        <fail unless="${string::equal(hash::bytes-to-string(hash::crc32(content_of_the_task_from_script)), 'b02d3480')}"
+              message="content_of_the_task_from_script -> '${hash::bytes-to-string(hash::crc32(content_of_the_task_from_script))}'." />
+
+        <task_without_attributes>
+          <a /><b /><c />
+        </task_without_attributes>
+        <fail unless="${string::equal(hash::bytes-to-string(hash::crc32(content_of_the_task_from_script)), 'a76ec09e')}"
+              message="content_of_the_task_from_script -> '${hash::bytes-to-string(hash::crc32(content_of_the_task_from_script))}'." />
+
+        <fail if="${property::exists('property_from_the_task_number_two')}" />
+
+        <this_task_with_attributes task_first_attribute="" task_second_attribute="" />
+        <fail unless="${property::exists('property_from_the_task_number_two')}" />
+        <fail unless="${string::equal(property_from_the_task_number_two, '')}"
+              message="property_from_the_task_number_two -> '${property_from_the_task_number_two}'." />
+
+        <this_task_with_attributes task_first_attribute="Copy" task_second_attribute="cat." />
+        <fail unless="${property::exists('property_from_the_task_number_two')}" />
+        <fail unless="${string::equal(property_from_the_task_number_two, 'Copycat.')}"
+              message="property_from_the_task_number_two -> '${property_from_the_task_number_two}'." />
+
+        <fail if="${property::exists('output_of_function')}" />
+
+        <property name="output_of_function" value="${name_space_number_one::function()}" />
+        <fail unless="${string::equal(output_of_function, 'You call function with out arguments.')}"
+              message="output_of_function -> '${output_of_function}'." />
+
+        <property name="output_of_function" value="${name_space_number_two::this_is_the_function_number_one()}" />
+        <fail unless="${string::equal(output_of_function, 'You call function with variable count of the arguments. ')}"
+              message="output_of_function -> '${output_of_function}'." />
+
+        <property name="output_of_function" value="${name_space_number_two::this_is_the_function_number_one('a')}" />
+        <fail unless="${string::equal(output_of_function, 'You call function with variable count of the arguments. a')}"
+              message="output_of_function -> '${output_of_function}'." />
+
+        <property name="output_of_function" value="${name_space_number_two::this_is_the_function_number_one('a', 'b')}" />
+        <fail unless="${string::equal(output_of_function, 'You call function with variable count of the arguments. ab')}"
+              message="output_of_function -> '${output_of_function}'." />
+
+        <property name="output_of_function" value="${name_space_number_two::this_is_the_function_number_one('a', 'b', 'c')}" />
+        <fail unless="${string::equal(output_of_function, 'You call function with variable count of the arguments. abc')}"
+              message="output_of_function -> '${output_of_function}'." />
+
+        <property name="output_of_function" value="${name_space_number_two::and_this_is_the_function_number_two('d', 'e')}" />
+        <fail unless="${string::equal(output_of_function, 'You call function with two arguments. de')}"
+              message="output_of_function -> '${output_of_function}'." />
+        </project>
+        ]]></content>
+      <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
       <project name="load regex task" >
         <choose>
           <when test="${platform::is-unix()}">
@@ -5923,7 +5994,15 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
 
         <fail unless="${task::exists('regex')}" message="${project::get-name()} - 'regex' task is not exists." />
 
-        <regex input="This is a test on the regex module" pattern="(?'last_word'\w+)$" />
+        <property name="pattern" value="(?'last_word'\w+)$" readonly="true" />
+
+        <regex input="This is a test on the regex module." pattern="${pattern}" failonerror="false" />
+        <fail if="${property::exists('last_word')}" message="Property last_word should not exists at this point." />
+
+        <regex input="This is a test on the regex module" pattern="${pattern}" />
+        <fail unless="${property::exists('last_word')}" message="Property last_word not exists." />
+        <fail unless="${string::equal('module', last_word)}" message="Value of property last_word '${last_word}' not equal to the 'module'." />
+
         <regex input="C:\Windows\System32\bash.exe" pattern="^(?'file_name'.*)\.(?'file_extension'\w+)$" />
         <regex input="file://A:/MyFolder/MySubFolder/AnotherSubFolder/my_file.txt" pattern="^(?'path_to_file'.*(\\|/)|(/|\\))(?'name_of_file'.*)$" />
       </project>

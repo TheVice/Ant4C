@@ -8,7 +8,8 @@
 #ifndef _DNS_MODULE_H_
 #define _DNS_MODULE_H_
 
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 #ifdef ANT4C_DNS_STATIC_DEFINE
 #  define ANT4C_DNS_EXPORT
@@ -66,8 +67,8 @@
 #  endif
 #endif
 
-extern "C" ANT4C_DNS_EXPORT const uint8_t* enumerate_name_spaces(uint8_t index);
-extern "C" ANT4C_DNS_EXPORT const uint8_t* enumerate_functions(const uint8_t* name_space, uint8_t index);
+extern "C" ANT4C_DNS_EXPORT const uint8_t* enumerate_name_spaces(ptrdiff_t index);
+extern "C" ANT4C_DNS_EXPORT const uint8_t* enumerate_functions(const uint8_t* name_space, ptrdiff_t index);
 
 extern "C" ANT4C_DNS_EXPORT uint8_t evaluate_function(const uint8_t* function,
 		const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,

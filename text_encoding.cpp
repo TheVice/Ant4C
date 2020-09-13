@@ -39,7 +39,7 @@ std::wstring char_to_wchar_t(const uint8_t* input_start, const uint8_t* input_fi
 				   0 < (bytes = text_encoding_decode_UTF8_single(input_start, input_finish, &out)))
 			{
 				input_start += bytes;
-				uint16_t* ptr = (uint16_t*)&out;
+				uint16_t* ptr = reinterpret_cast<uint16_t*>(&out);
 				bytes = text_encoding_encode_UTF16LE_single(out, ptr);
 
 				if (!bytes || 2 < bytes)
@@ -62,7 +62,7 @@ std::wstring char_to_wchar_t(const uint8_t* input_start, const uint8_t* input_fi
 				   0 < (bytes = text_encoding_decode_UTF8_single(input_start, input_finish, &out)))
 			{
 				input_start += bytes;
-				output.push_back((wchar_t)out);
+				output.push_back(static_cast<wchar_t>(out));
 			}
 
 			break;
@@ -76,7 +76,7 @@ std::wstring char_to_wchar_t(const uint8_t* input_start, const uint8_t* input_fi
 
 std::wstring char_to_wchar_t(const std::string& input)
 {
-	const uint8_t* input_start = (const uint8_t*)input.c_str();
+	const uint8_t* input_start = reinterpret_cast<const uint8_t*>(input.c_str());
 	const uint8_t* input_finish = input_start + input.size();
 	return char_to_wchar_t(input_start, input_finish);
 }
@@ -99,8 +99,10 @@ std::string wchar_t_to_char(const std::wstring& input)
 			uint32_t out_ = 0;
 
 			while (input_start < input_finish &&
-				   0 < (bytes = text_encoding_decode_UTF16LE_single((const uint16_t*)input_start, (const uint16_t*)input_finish,
-								&out_)))
+				   0 < (bytes = text_encoding_decode_UTF16LE_single(
+									reinterpret_cast<const uint16_t*>(input_start),
+									reinterpret_cast<const uint16_t*>(input_finish),
+									&out_)))
 			{
 				input_start += bytes;
 				bytes = text_encoding_encode_UTF8_single(out_, out);
@@ -110,7 +112,7 @@ std::string wchar_t_to_char(const std::wstring& input)
 					break;
 				}
 
-				output.append((const char*)out, bytes);
+				output.append(reinterpret_cast<const char*>(out), bytes);
 			}
 		}
 		break;
@@ -119,7 +121,7 @@ std::string wchar_t_to_char(const std::wstring& input)
 			while (input_start < input_finish && 0 < (bytes = text_encoding_encode_UTF8_single(*input_start, out)))
 			{
 				++input_start;
-				output.append((const char*)out, bytes);
+				output.append(reinterpret_cast<const char*>(out), bytes);
 			}
 
 			break;

@@ -8,7 +8,8 @@
 #ifndef _REGEX_MODULE_H_
 #define _REGEX_MODULE_H_
 
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 #ifndef NO_EXPORT_MODULE
 #include "ant4c.regex_export.h"
@@ -70,7 +71,7 @@
 #endif
 #endif
 
-extern "C" ANT4C_REGEX_EXPORT const uint8_t* enumerate_tasks(uint8_t index);
+extern "C" ANT4C_REGEX_EXPORT const uint8_t* enumerate_tasks(ptrdiff_t index);
 
 extern "C" ANT4C_REGEX_EXPORT uint8_t get_attributes_and_arguments_for_task(const uint8_t* task,
 		const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
