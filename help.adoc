@@ -14,9 +14,9 @@
 == History
 
 * *vYYYY.MM*
-* v2020.05
-* v2020.04
-* v2019.10.21
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.05[v2020.05]
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.04[v2020.04]
+* https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21[v2019.10.21]
 
 == Installation
 

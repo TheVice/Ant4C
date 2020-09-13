@@ -10,6 +10,7 @@
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "echo.h"
 #include "file_system.h"
 #include "interpreter.h"
 #include "listener.h"
@@ -355,8 +356,8 @@ uint8_t project_get_current_directory(const void* the_project, const void* the_t
 
 uint8_t project_new(void* the_project)
 {
-	return common_get_attributes_and_arguments_for_task(NULL, NULL, COUNT_OF_POSITIONS, NULL, NULL, NULL,
-			the_project);
+	return common_get_attributes_and_arguments_for_task(
+			   NULL, NULL, COUNT_OF_POSITIONS, NULL, NULL, NULL, the_project);
 }
 
 uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
@@ -883,6 +884,59 @@ const uint8_t* project_get_listener_task_name(const void* the_project)
 	return buffer_data(listener_task_name, 0);
 }
 
+uint8_t project_print_default_target(const void* the_project, uint8_t verbose)
+{
+	void* the_property = NULL;
+
+	if (project_get_default_target(the_project, &the_property, verbose))
+	{
+		struct buffer property_value;
+		SET_NULL_TO_BUFFER(property_value);
+
+		if (!property_get_by_pointer(the_property, &property_value))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		if (!interpreter_actualize_property_value(
+				the_project, NULL, property_get_id_of_get_value_function(),
+				the_property, 0, &property_value, verbose))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		if (!project_target_exists(the_project,
+								   buffer_data(&property_value, 0),
+								   (uint8_t)buffer_size(&property_value)))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		if (!echo(0, Default, NULL, Info,
+				  (const uint8_t*)"\nDefault target: ",
+				  17, 0, verbose))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		if (!echo(0, Default, NULL, Info,
+				  buffer_data(&property_value, 0),
+				  buffer_size(&property_value), 1, verbose))
+		{
+			buffer_release(&property_value);
+			return 0;
+		}
+
+		buffer_release(&property_value);
+	}
+
+	return 1;
+}
+
 uint8_t project_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count, struct buffer* task_arguments)
@@ -972,18 +1026,25 @@ uint8_t project_evaluate_task(void* the_project,
 
 	struct buffer* elements = buffer_buffer_data(task_arguments, 0);
 
-	if (!elements ||
-		!buffer_resize(elements, 0))
+	if (!buffer_resize(elements, 0))
 	{
 		return 0;
 	}
 
+	uint8_t returned = 1;
+
 	if (xml_get_sub_nodes_elements(attributes_finish, element_finish, sub_nodes_names, elements))
 	{
-		return interpreter_evaluate_tasks(the_project, NULL, elements, sub_nodes_names, project_help, verbose);
+		returned = interpreter_evaluate_tasks(
+					   the_project, NULL, elements, sub_nodes_names, project_help, verbose);
+
+		if (project_help && returned)
+		{
+			returned = project_print_default_target(the_project, verbose);
+		}
 	}
 
-	return 1;
+	return returned;
 }
 
 static const uint8_t* project_function_str[] =

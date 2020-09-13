@@ -36,6 +36,14 @@ All binaries available on the [release page](https://github.com/TheVice/Ant4C/re
 * [MD5SUMS](MD5SUMS)
 * [SHA3-224SUMS](SHA3-224SUMS)
 
+## Installing
+Depend on variant available for your system:
+* Unpack *zip* archive to prefer location.
+* For *DEB*, *TGZ* or *TXZ* packages - install program using the system package manager.
+  * Debian based: *dpkg --install \*.deb*.
+  * FreeBSD: *pkg install \*.txz*.
+  * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
+
 #### Help
 
 Help available at the [help.html file](https://github.com/TheVice/Ant4C/releases/download/v2020.05/help.html).
@@ -43,9 +51,9 @@ Help available at the [help.html file](https://github.com/TheVice/Ant4C/releases
 ## Developing
 Tests, at the develop branch, written in C++ and required [Google Test](https://github.com/google/googletest/) and [pugixml](https://github.com/zeux/pugixml/) libraries.
 On systems with missed this libraries in packages repositories or if unable to install it, PUGIXML_PATH and GTEST_PATH definition can be used while configure project with CMake.
-Also for *ant4c.regex* and *ant4c.regex* modules, required [Boost](https://github.com/boostorg/) libraries.
+To build *ant4c.regex* and *ant4c.regex* modules, also used by tests, required [Boost](https://github.com/boostorg/) libraries.
 
-* cmake -DCMAKE_BUILD_TYPE=Debug -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_ECLIPSE_MAKE_ARGUMENTS="-s" -DPUGIXML_PATH=<full path>/pugixml-1.9/ -DGTEST_PATH=<full path>/googletest-release-1.8.1/ -DBOOST_ROOT=<full path>/boost_1_73_0 <full path>/Ant4C
+* cmake -DCMAKE_BUILD_TYPE=Debug -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_ECLIPSE_MAKE_ARGUMENTS="-s" -DPUGIXML_PATH=\<full path\>/pugixml-1.9/ -DGTEST_PATH=\<full path\>/googletest-release-1.8.1/ -DBOOST_ROOT=\<full path\>/boost_1_73_0 \<full path\>/Ant4C
 
 Optional for [Eclipse IDE](https://www.eclipse.org/downloads/) users:
 

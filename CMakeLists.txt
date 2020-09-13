@@ -106,6 +106,7 @@ set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
 
 include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
 include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
 
 set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")

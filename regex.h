@@ -11,9 +11,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#ifndef NO_EXPORT_MODULE
-#include "ant4c.regex_export.h"
-#else
 #ifdef ANT4C_REGEX_STATIC_DEFINE
 #  define ANT4C_REGEX_EXPORT
 #  define ANT4C_REGEX_NO_EXPORT
@@ -69,7 +66,6 @@
 #    define ANT4C_REGEX_NO_DEPRECATED
 #  endif
 #endif
-#endif
 
 extern "C" ANT4C_REGEX_EXPORT const uint8_t* enumerate_tasks(ptrdiff_t index);
 
@@ -81,7 +77,5 @@ extern "C" ANT4C_REGEX_EXPORT uint8_t evaluate_task(const uint8_t* task,
 		const uint8_t** arguments, const uint16_t* arguments_lengths, uint8_t arguments_count,
 		const uint8_t** output, uint16_t* output_length,
 		uint8_t verbose);
-
-/*extern "C" ANT4C_REGEX_EXPORT void module_release();*/
 
 #endif

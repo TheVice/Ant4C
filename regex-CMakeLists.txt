@@ -16,7 +16,6 @@ endif()
 
 target_compile_definitions(ant4c.regex PUBLIC NO_BUFFER_UNIT)
 target_compile_definitions(ant4c.regex PUBLIC NO_COMMON_UNIT)
-target_compile_definitions(ant4c.regex PUBLIC NO_EXPORT_MODULE)
 
 if(Boost_FOUND)
   target_include_directories(ant4c.regex PRIVATE ${Boost_INCLUDE_DIRS})
@@ -66,7 +65,3 @@ else()
     target_compile_definitions(ant4c.regex PRIVATE BOOST_AUTO_LINK_NOMANGLE)
   endif()
 endif()
-
-#include(GenerateExportHeader)
-#target_include_directories(ant4c.regex PRIVATE ${CMAKE_BINARY_DIR})
-#GENERATE_EXPORT_HEADER(ant4c.regex)

@@ -278,9 +278,7 @@ uint8_t interpreter_actualize_property_value(
 
 	struct range code;
 
-	code.start = buffer_data(&code_in_buffer, 0);
-
-	code.finish = code.start + buffer_size(&code_in_buffer);
+	BUFFER_TO_RANGE(code, &code_in_buffer);
 
 	if (code.start < code.finish &&
 		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
