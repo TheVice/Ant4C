@@ -13,7 +13,7 @@
 [[history]]
 == History
 
-* *vYYYY.MM*
+* *v2020.09*
 * https://github.com/TheVice/Ant4C/releases/tag/v2020.05[v2020.05]
 * https://github.com/TheVice/Ant4C/releases/tag/v2020.04[v2020.04]
 * https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21[v2019.10.21]
@@ -842,7 +842,7 @@ If new interpreter should not access properties 'inheritall' argument should be 
 | buildfile | file | N/A | Path to file that should be interpreted.
 | encoding | <<encoding_type,Encoding>> | UTF8 | Expected encoding of input file. This task support <<program_options,extension list of encoding>>.
 | inheritall | bool | *true* | Allow access properties of current project.
-| inheritmodules | bool | *true* | TODO
+| inheritmodules | bool | *true* | Task(s) and function(s) loaded by current project will be available at the new project.
 | target | string | N/A | Target that should be run after global tasks.
 |===
 

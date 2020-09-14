@@ -6,37 +6,11 @@ Ant for C is C-based script tool. Source of script should be written in XML-base
 Name of program just reference to language on which source was written.
 
 Developing was started in the summer of 2019.
-Brief history of developing can be found at the [help file](https://github.com/TheVice/Ant4C/releases/download/v2020.05/help.html).
 
 ## Downloads
 All binaries available on the [release page](https://github.com/TheVice/Ant4C/releases/).
 
-### For Linux distributions
-* [Ubuntu 14.04 (Trusty Tahr)](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_2020.05-1trusty1.0_amd64.deb)
-* [Ubuntu 16.04 (Xenial Xerus)](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_2020.05-1xenial1.0_amd64.deb)
-* [Ubuntu 18.04 (Bionic Beaver)](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_2020.05-1bionic1.0_amd64.deb)
-* [Ubuntu 20.04 (Focal Fossa)](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_2020.05-1focal1.0_amd64.deb)
-
-### For BSD distributions
-* [FreeBSD 11](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c-2020.05_freebsd_11.txz)
-* [FreeBSD 12](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c-2020.05_freebsd_12.txz)
-* [OpenBSD 6.4](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c-2020.05_openbsd_6.4.tgz)
-* [OpenBSD 6.5](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c-2020.05_openbsd_6.5.tgz)
-* [OpenBSD 6.6](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c-2020.05_openbsd_6.6.tgz)
-* [OpenBSD 6.7](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c-2020.05_openbsd_6.7.tgz)
-
-### For Windows
-* [MinGW-w64 8.1.0 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MinGW-w64_8.1.0_x64.zip)
-* [MSVC 12 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MSVC_12_x64.zip)
-* [MSVC 12 x86](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MSVC_12_x86.zip)
-* [MSVC 14.25 x64](https://github.com/TheVice/Ant4C/releases/download/v2020.05/ant4c_app_2020.05_MSVC_14.25_x64.zip)
-
-#### Checksums
-
-* [MD5SUMS](MD5SUMS)
-* [SHA3-224SUMS](SHA3-224SUMS)
-
-## Installing
+### Installing
 Depend on variant available for your system:
 * Unpack *zip* archive to prefer location.
 * For *DEB*, *TGZ* or *TXZ* packages - install program using the system package manager.
@@ -44,9 +18,9 @@ Depend on variant available for your system:
   * FreeBSD: *pkg install \*.txz*.
   * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
 
-#### Help
+### Help
 
-Help available at the [help.html file](https://github.com/TheVice/Ant4C/releases/download/v2020.05/help.html).
+Help available at the [help.html file](https://github.com/TheVice/Ant4C/releases/download/v2020.09/help.html).
 
 ## Developing
 Tests, at the develop branch, written in C++ and required [Google Test](https://github.com/google/googletest/) and [pugixml](https://github.com/zeux/pugixml/) libraries.

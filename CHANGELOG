@@ -1,4 +1,4 @@
-ant4c (YYYY.MM)
+ant4c (2020.09)
   * Functions from the path unit allowed to operate with empty paths.
     Function 'combine' can be used for normalizing path.
   * Increased list of symbols to trim from string at 'string::trim'
@@ -17,7 +17,7 @@ ant4c (YYYY.MM)
   * Allowed to call executable from the directory that was set
     at the PATH environment variable.
 
- -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
+ -- TheVice <TheVice>  Mon, 14 Sep 2020 17:11:16 +3000
 
 ant4c (2020.05)
 
@@ -54,8 +54,8 @@ ant4c (2019.10.21)
 
  -- TheVice <TheVice>  Tue, 22 Oct 2019 16:24:46 +0300
 
-# [Unreleased] https://github.com/TheVice/Ant4C/compare/vYYYY.MM...HEAD	0000000000000000000000000000000000000000
-# [YYYY.MM] https://github.com/TheVice/Ant4C/compare/v2020.05...vYYYY.MM	?
+# [Unreleased] https://github.com/TheVice/Ant4C/compare/v2020.09...HEAD	0000000000000000000000000000000000000000
+# [2020.09] https://github.com/TheVice/Ant4C/compare/v2020.05...v2020.09	299cb4d9b23f8840c1ea7bac65afd91c94e91703
 # [2020.05] https://github.com/TheVice/Ant4C/compare/v2020.04...v2020.05	2f55fe293c83f297b41da3bd9481463352c16943
 # [2020.04] https://github.com/TheVice/Ant4C/compare/v2019.10.21...v2020.04	f5972487794a79cb1a55739342268e043578a745
 # [2019.10.21] https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21	1cc404418891657ed04ea6794cc72185fb59a933
