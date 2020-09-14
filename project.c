@@ -886,7 +886,7 @@ const uint8_t* project_get_listener_task_name(const void* the_project)
 
 uint8_t project_print_default_target(const void* the_project, uint8_t verbose)
 {
-	void* the_property = NULL;
+	const void* the_property = NULL;
 
 	if (project_get_default_target(the_project, &the_property, verbose))
 	{

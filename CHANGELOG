@@ -17,7 +17,7 @@ ant4c (YYYY.MM)
   * Allowed to call executable from the directory that was set
     at the PATH environment variable.
 
--- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
+ -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 
 ant4c (2020.05)
 

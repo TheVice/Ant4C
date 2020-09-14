@@ -9,6 +9,7 @@
 #include "interpreter.h"
 #include "project.h"
 #include "range.h"
+#include "shared_object.h"
 #include "target.h"
 
 static void (*on_project_started)(const uint8_t* source, const uint8_t* the_project) = NULL;
@@ -174,4 +175,82 @@ void listener_set_on_task_finished(
 									  const uint8_t* the_task, uint8_t result))
 {
 	on_task_finished = listener_on_task_finished;
+}
+
+uint8_t load_listener(const uint8_t* listener, void** object)
+{
+	if (!listener || !object)
+	{
+		return 0;
+	}
+
+	*object = shared_object_load(listener);
+
+	if (NULL == (*object))
+	{
+		return 0;
+	}
+
+	static const uint8_t* procedures_names[] =
+	{
+		(const uint8_t*)"listener_project_started",
+		(const uint8_t*)"listener_project_finished",
+		(const uint8_t*)"listener_target_started",
+		(const uint8_t*)"listener_target_finished",
+		(const uint8_t*)"listener_task_started",
+		(const uint8_t*)"listener_task_finished"
+	};
+
+	for (uint8_t i = 0, count = 6; i < count; ++i)
+	{
+		void* address = shared_object_get_procedure_address(*object, procedures_names[i]);
+
+		if (!address)
+		{
+			continue;
+		}
+
+		switch (i)
+		{
+			case 0:
+				listener_set_on_project_started(
+					(void (*)(const uint8_t* source, const uint8_t* the_project))address);
+				break;
+
+			case 1:
+				listener_set_on_project_finished(
+					(void (*)(const uint8_t* source, const uint8_t* the_project, uint8_t result))address);
+				break;
+
+			case 2:
+				listener_set_on_target_started(
+					(void (*)(const uint8_t* source, ptrdiff_t offset,
+							  const uint8_t* the_project, const uint8_t* the_target))address);
+				break;
+
+			case 3:
+				listener_set_on_target_finished(
+					(void (*)(const uint8_t* source, ptrdiff_t offset,
+							  const uint8_t* the_project, const uint8_t* the_target, uint8_t result))address);
+				break;
+
+			case 4:
+				listener_set_on_task_started(
+					(void (*)(const uint8_t* source, ptrdiff_t offset,
+							  const uint8_t* the_project, const uint8_t* the_target, const uint8_t* the_task))address);
+				break;
+
+			case 5:
+				listener_set_on_task_finished(
+					(void (*)(const uint8_t* source, ptrdiff_t offset,
+							  const uint8_t* the_project, const uint8_t* the_target,
+							  const uint8_t* the_task, uint8_t result))address);
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	return 1;
 }

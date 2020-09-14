@@ -91,87 +91,6 @@ uint8_t print_status(int status)
 					 8, 1, 0);
 }
 
-typedef void (*on_project_started)(const uint8_t* source, const uint8_t* the_project);
-typedef void (*on_project_finished)(const uint8_t* source, const uint8_t* the_project, uint8_t result);
-
-typedef void (*on_target_started)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
-								  const uint8_t* the_target);
-typedef void (*on_target_finished)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
-								   const uint8_t* the_target, uint8_t result);
-
-typedef void (*on_task_started)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
-								const uint8_t* the_target, const uint8_t* task_name);
-typedef void (*on_task_finished)(const uint8_t* source, ptrdiff_t offset, const uint8_t* the_project,
-								 const uint8_t* the_target, const uint8_t* task_name, uint8_t result);
-
-uint8_t load_listener(const struct range* listener, void** object)
-{
-	if (!listener ||
-		!object)
-	{
-		return 0;
-	}
-
-	(*object) = shared_object_load(listener->start);
-
-	if (NULL == (*object))
-	{
-		return 0;
-	}
-
-	static const uint8_t* procedures_names[] =
-	{
-		(const uint8_t*)"listener_project_started",
-		(const uint8_t*)"listener_project_finished",
-		(const uint8_t*)"listener_target_started",
-		(const uint8_t*)"listener_target_finished",
-		(const uint8_t*)"listener_task_started",
-		(const uint8_t*)"listener_task_finished"
-	};
-
-	for (uint8_t i = 0, count = COUNT_OF(procedures_names); i < count; ++i)
-	{
-		void* address = shared_object_get_procedure_address(*object, procedures_names[i]);
-
-		if (!address)
-		{
-			continue;
-		}
-
-		switch (i)
-		{
-			case 0:
-				listener_set_on_project_started((on_project_started)address);
-				break;
-
-			case 1:
-				listener_set_on_project_finished((on_project_finished)address);
-				break;
-
-			case 2:
-				listener_set_on_target_started((on_target_started)address);
-				break;
-
-			case 3:
-				listener_set_on_target_finished((on_target_finished)address);
-				break;
-
-			case 4:
-				listener_set_on_task_started((on_task_started)address);
-				break;
-
-			case 5:
-				listener_set_on_task_finished((on_task_finished)address);
-				break;
-
-			default:
-				break;
-		}
-	}
-
-	return 1;
-}
-
 uint8_t print_elapsed_time(int64_t delta, struct buffer* argument_value)
 {
 	if (10 < delta)
@@ -233,7 +152,7 @@ int main(int argc, char** argv)
 
 		if (argc)
 		{
-			/*argc = */echo(0, Default, NULL, Error, (const uint8_t*)"Failed to parse command arguments.", 34, 1, 0);
+			echo(0, Default, NULL, Error, (const uint8_t*)"Failed to parse command arguments.", 34, 1, 0);
 		}
 
 		return EXIT_FAILURE;
@@ -258,15 +177,27 @@ int main(int argc, char** argv)
 	}
 
 	void* file_stream = NULL;
-	const struct range* log_file = argument_parser_get_log_file(&arguments, &argument_value);
+	const struct range* ptr_to_range = argument_parser_get_log_file(&arguments, &argument_value);
 
-	if (log_file)
+	if (ptr_to_range)
 	{
-		if (!file_open(log_file->start, (const uint8_t*)"ab", &file_stream))
+		if (!file_open(ptr_to_range->start, (const uint8_t*)"ab", &file_stream))
 		{
 			buffer_release(&argument_value);
 			property_release(&arguments);
 			/**/
+			argc = echo(0, Default, NULL, Error, (const uint8_t*)"Failed to open log file '", 25, 0, 0);
+
+			if (argc)
+			{
+				argc = echo(0, Default, NULL, Error, ptr_to_range->start, range_size(ptr_to_range), 0, 0);
+			}
+
+			if (argc)
+			{
+				echo(0, Default, NULL, Error, (const uint8_t*)"'.", 2, 1, 0);
+			}
+
 			file_flush(file_stream);
 			file_close(file_stream);
 			/**/
@@ -281,7 +212,7 @@ int main(int argc, char** argv)
 
 	if (!argument_parser_get_no_logo(&arguments, &argument_value))
 	{
-		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, verbose))
+		if (!echo(0, Default, NULL, Info, LOGO, LOGO_LENGTH, 1, 0))
 		{
 			buffer_release(&argument_value);
 			property_release(&arguments);
@@ -303,16 +234,16 @@ int main(int argc, char** argv)
 		buffer_release(&current_directory);
 		buffer_release(&argument_value);
 		property_release(&arguments);
-		/*TODO: echo.*/
+		/**/
+		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to get current directory.", 32, 1, 0);
+		/**/
 		file_flush(file_stream);
 		file_close(file_stream);
 		/**/
 		return EXIT_FAILURE;
 	}
 
-	const struct range* build_file = argument_parser_get_build_file(&arguments, &argument_value, 0);
-
-	if (!build_file)
+	if (!argument_parser_get_build_file(&arguments, &argument_value, 0))
 	{
 		if (!argument_parser_get_program_help(&arguments, &argument_value) &&
 			!project_get_build_files_from_directory(&arguments, &argument_value, &current_directory, verbose))
@@ -320,19 +251,21 @@ int main(int argc, char** argv)
 			buffer_release(&current_directory);
 			buffer_release(&argument_value);
 			property_release(&arguments);
-			/*TODO: echo.*/
+			/**/
+			argc = echo(0, Default, NULL, Warning, (const uint8_t*)"No file(s) specified at the input.", 34, 1, 0);
+			/**/
 			file_flush(file_stream);
 			file_close(file_stream);
 			/**/
-			return EXIT_FAILURE;
+			return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 		}
 	}
 
 	if (argument_parser_get_program_help(&arguments, &argument_value) ||
 		NULL == argument_parser_get_build_file(&arguments, &argument_value, 0))
 	{
-		if (!echo(0, Default, NULL, Info, SAMPLE_USING, SAMPLE_USING_LENGTH, 1, verbose) ||
-			!echo(0, Default, NULL, Info, OPTIONS, OPTIONS_LENGTH, 1, verbose))
+		if (!echo(0, Default, NULL, Info, SAMPLE_USING, SAMPLE_USING_LENGTH, 1, 0) ||
+			!echo(0, Default, NULL, Info, OPTIONS, OPTIONS_LENGTH, 1, 0))
 		{
 			argc = 0;
 		}
@@ -342,20 +275,19 @@ int main(int argc, char** argv)
 		property_release(&arguments);
 		/**/
 		file_flush(file_stream);
-		file_close(file_stream);/*TODO: argc*/
+		file_close(file_stream);
 		/**/
 		return 0 < argc ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
 	void* listener_object = NULL;
-	const struct range* listener = argument_parser_get_listener(&arguments, &argument_value);
+	ptr_to_range = argument_parser_get_listener(&arguments, &argument_value);
 
-	if (listener && !load_listener(listener, &listener_object))
+	if (ptr_to_range && !load_listener(ptr_to_range->start, &listener_object))
 	{
-		if (!echo(0, Default, NULL, Warning, listener->start, range_size(listener), 1,
-				  verbose) ||
-			!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener not loaded.", 20, 1,
-				  verbose))
+		if (!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener '", 10, 0, 0) ||
+			!echo(0, Default, NULL, Warning, ptr_to_range->start, range_size(ptr_to_range), 0, 0) ||
+			!echo(0, Default, NULL, Warning, (const uint8_t*)"' not loaded.", 13, 1, 0))
 		{
 			shared_object_unload(listener_object);
 			buffer_release(&current_directory);
@@ -380,7 +312,9 @@ int main(int argc, char** argv)
 		buffer_release(&current_directory);
 		buffer_release(&argument_value);
 		property_release(&arguments);
-		/*TODO: echo.*/
+		/**/
+		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create the project.", 29, 1, 0);
+		/**/
 		file_flush(file_stream);
 		file_close(file_stream);
 		/**/
@@ -405,19 +339,21 @@ int main(int argc, char** argv)
 	const uint16_t encoding = argument_parser_get_encoding(&arguments, &argument_value);
 
 	for (argc = 0;
-		 NULL != (build_file = argument_parser_get_build_file(&arguments, &argument_value, argc++));)
+		 NULL != (ptr_to_range = argument_parser_get_build_file(&arguments, &argument_value, argc++));)
 	{
 		if (!project_help && !property_add_at_project(&the_project, &properties, verbose))
 		{
 			argc = 0;
+			echo(0, Default, NULL, Error, (const uint8_t*)"Failed to set properties at the project.", 40, 1, 0);
 			break;
 		}
 
 		if (!project_load_and_evaluate_target(
-				&the_project, build_file, &current_directory_in_range,
+				&the_project, ptr_to_range, &current_directory_in_range,
 				&arguments, project_help, encoding, verbose))
 		{
 			argc = 0;
+			echo(0, Default, NULL, Error, (const uint8_t*)"Evaluation of the project was fail.", 35, 1, 0);
 			break;
 		}
 
@@ -435,7 +371,7 @@ int main(int argc, char** argv)
 	if (!print_elapsed_time(time_now, &argument_value))
 	{
 		buffer_release(&argument_value);
-		print_status(0);
+		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to print elapsed time.", 29, 1, 0);
 		/**/
 		file_flush(file_stream);
 		file_close(file_stream);

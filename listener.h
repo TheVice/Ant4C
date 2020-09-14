@@ -51,4 +51,6 @@ void listener_set_on_task_finished(
 									  const uint8_t* the_project, const uint8_t* the_target,
 									  const uint8_t* the_task, uint8_t result));
 
+uint8_t load_listener(const uint8_t* listener, void** object);
+
 #endif

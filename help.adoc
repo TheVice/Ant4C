@@ -131,11 +131,13 @@ Property will be read only at the script file.
 . ant4c -buildfile:project_file.build
 . ant4c build
 . ant4c -D:version="2020.05" build publish
+. ant4c -listener:"default_listener.dll"
 
 1) Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed. +
 2) Run project from 'project_file.build' file. +
 3) Run 'build' target at all '.build' file from current directory. +
 4) Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
+5) Set path to the listener while run at the Windows platform.
 
 === Project
 
@@ -287,6 +289,7 @@ Order of reading is next - first 'if', than 'unless', 'failonerror' and 'verbose
 | <<foreach_task,foreach>> | Create the section that repeat some of count according to the condition of this task.
 | <<if_task,if>> | Create the section that executed only if 'test' of this task set to the true.
 | <<loadfile_task,loadfile>> | Load content of file into property.
+| <<loadtasks_task,loadtasks>> | Load tasks and functions from the binary modules present like dynamic link library or shared object.
 | <<mkdir_task,mkdir>> | Creates a directory by specific path and all missed parent directory.
 | <<move_task,move>> | Move file or directory.
 | <<program_task,program>> | Create an addition program for interpreting specific script file.
@@ -753,6 +756,61 @@ According to read all content of file into property, make sure that first one no
   <echo>Count of UTF8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.</echo>
 </project>
 ----
+
+[[loadtasks_task]]
+=== <loadtasks>
+
+Load tasks and functions from the binary modules present like dynamic link library or shared object.
+
+Module can be written in any developer environment that can create dynamic link library (DLL) on Windows platform or/and shared object on the other platforms. +
+By default names of functions, with C declaration (cdecl), that should be exported from the module are next:
+
+* enumerate_tasks
+* enumerate_name_spaces
+* enumerate_functions
+* get_attributes_and_arguments_for_task
+* evaluate_task
+* evaluate_function
+* module_release
+
+Names can be redefined at the task arguments, however functions should be match signature of the original named functions.
+
+.Parameters of the 'loadfile' task.
+|===
+.s| Argument name .s| Type .s| Description .s| Mandatory
+| *assembly* | file | RESERVED. Path to the CLI assembly. If this argument was set - task will fail. | No
+| *path* | directory | Path to the directory with module file(s). | No, if module argument was set.
+| *module* | file | Path to the module file. | No, if path argument was set.
+| enumerate_tasks .7+^.^| string | Name of function from the module that will be used to enumerate present task(s). .7+^.^| No
+| enumerate_name_spaces | Name of function from the module that will be used to enumerate present name space(s).
+| enumerate_functions | Name of function from the module that will be used to enumerate present function(s).
+| get_attributes_and_arguments_for_task | Name of function from the module that will be used to get attribute(s) that should be used as argument(s) for the task.
+| evaluate_task | Name of function from the module that should be used for evaluation the task. Addition argument, that located outside of counter, pass to the task at this function - start and finish of task attribute. Some task may require such argument.
+| evaluate_function | Name of function from the module that should be used for evaluation the function.
+| module_release | Name of function from the module that should be called when module should be unloaded.
+|===
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="load regex task" >
+  <choose>
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.regex.so" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <loadtasks module="ant4c.regex.dll" failonerror="false" />
+      <loadtasks module="libant4c.regex.dll" unless="${task::exists('regex')}" failonerror="false" />
+    </when>
+  </choose>
+
+  <fail unless="${task::exists('regex')}" message="${project::get-name()} - 'regex' task is not exists." />
+</project>
+----
+
+Different developer environment may have different output name for module by default. +
+In the example above for Windows platform used names that used at the MSVC and MinGW linkers.
 
 [[mkdir_task]]
 === <mkdir>
