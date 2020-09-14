@@ -98,7 +98,9 @@ uint8_t path_combine_in_place(struct buffer* path1, const ptrdiff_t size,
 		return 0;
 	}
 
-	if (size < buffer_size(path1) && !buffer_push_back(path1, PATH_DELIMITER))
+	if (size < buffer_size(path1) &&
+		path2_start < path2_finish &&
+		!buffer_push_back(path1, PATH_DELIMITER))
 	{
 		return 0;
 	}
@@ -667,6 +669,78 @@ uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finis
 	return (path_posix_delimiter == path_start[0] || PATH_DELIMITER == path_start[0]);
 }
 
+uint8_t path_glob(const uint8_t* path_start, const uint8_t* path_finish,
+				  const uint8_t* wild_card_start, const uint8_t* wild_card_finish)
+{
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
+		range_in_parts_is_null_or_empty(wild_card_start, wild_card_finish))
+	{
+		return 0;
+	}
+
+	static const uint8_t asterisk = '*';
+	static const uint8_t question_mark = '?';
+	/**/
+	uint8_t go_until = 0;
+	uint32_t wild_card_symbol = 0;
+
+	while (NULL != (wild_card_start = string_enumerate(wild_card_start, wild_card_finish, &wild_card_symbol)))
+	{
+		if (NULL == path_start && asterisk != wild_card_symbol)
+		{
+			return 0;
+		}
+
+		if (NULL != path_start && asterisk != wild_card_symbol)
+		{
+			uint32_t input_symbol = 0;
+
+			if (go_until)
+			{
+				if (question_mark != wild_card_symbol)
+				{
+					while (NULL != (path_start = string_enumerate(path_start, path_finish, &input_symbol)))
+					{
+						if (wild_card_symbol == input_symbol)
+						{
+							break;
+						}
+					}
+
+					if (NULL == path_start)
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					path_start = string_enumerate(path_start, path_finish, &input_symbol);
+				}
+
+				go_until = 0;
+				continue;
+			}
+
+			path_start = string_enumerate(path_start, path_finish, &input_symbol);
+
+			if (question_mark != wild_card_symbol && input_symbol != wild_card_symbol)
+			{
+				return 0;
+			}
+
+			continue;
+		}
+
+		if (asterisk == wild_card_symbol)
+		{
+			go_until = 1;
+			continue;
+		}
+	}
+
+	return 1;
+}
+
 uint8_t path_get_directory_for_current_process(struct buffer* path)
 {
 	if (NULL == path)
@@ -837,6 +911,91 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	return 0;
 }
 
+const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void* the_target,
+		struct buffer* input, struct buffer* tmp, uint8_t verbose)
+{
+	struct range path;
+	BUFFER_TO_RANGE(path, input);
+
+	if (!path_is_path_rooted(path.start, path.finish))
+	{
+		if (!project_get_current_directory(the_project, the_target, tmp, 0, verbose))
+		{
+			return NULL;
+		}
+
+		if (!path_combine_in_place(tmp, 0, path.start, path.finish) ||
+			!buffer_push_back(tmp, 0))
+		{
+			return NULL;
+		}
+
+		path.start = buffer_data(tmp, 0);
+
+		if (file_exists(path.start))
+		{
+			path.finish = NULL;
+		}
+
+		if (NULL != path.finish)
+		{
+			BUFFER_TO_RANGE(path, input);
+
+			if (!buffer_resize(tmp, 0))
+			{
+				return NULL;
+			}
+
+			if (!path_get_directory_for_current_process(tmp))
+			{
+				return NULL;
+			}
+
+			if (!path_combine_in_place(tmp, 0, path.start, path.finish) ||
+				!buffer_push_back(tmp, 0))
+			{
+				return NULL;
+			}
+
+			path.start = buffer_data(tmp, 0);
+
+			if (file_exists(path.start))
+			{
+				path.finish = NULL;
+			}
+		}
+
+		if (NULL != path.finish)
+		{
+			BUFFER_TO_RANGE(path, input);
+
+			if (!buffer_resize(tmp, 0))
+			{
+				return NULL;
+			}
+
+			if (file_get_full_path(&path, tmp))
+			{
+				path.start = buffer_data(tmp, 0);
+				path.finish = NULL;
+			}
+		}
+
+		if (NULL != path.finish)
+		{
+			if (!buffer_push_back(input, 0))
+			{
+				return NULL;
+			}
+
+			path.start = buffer_data(input, 0);
+			path.finish = NULL;
+		}
+	}
+
+	return path.start;
+}
+
 uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
@@ -931,6 +1090,7 @@ static const uint8_t* path_function_str[] =
 	(const uint8_t*)"get-path-root",
 	(const uint8_t*)"get-temp-file-name",
 	(const uint8_t*)"get-temp-path",
+	(const uint8_t*)"glob",
 	(const uint8_t*)"has-extension",
 	(const uint8_t*)"is-path-rooted",
 	(const uint8_t*)"get-dos-path",
@@ -950,6 +1110,7 @@ enum path_function
 	path_get_path_root_function,
 	path_get_temp_file_name_function,
 	path_get_temp_path_function,
+	path_glob_function,
 	path_has_extension_function,
 	path_is_path_rooted_function,
 	cygpath_get_dos_path_function,
@@ -982,71 +1143,47 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[2];
 
-	struct range argument2;
-
-	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
-
-	switch (arguments_count)
+	if (!common_get_arguments(arguments, arguments_count, values, 0))
 	{
-		case 0:
-			break;
-
-		case 1:
-			if (!common_get_one_argument(arguments, &argument1, 0))
-			{
-				return 0;
-			}
-
-			break;
-
-		case 2:
-			if (!common_get_two_arguments(arguments, &argument1, &argument2, 0))
-			{
-				return 0;
-			}
-
-			break;
-
-		default:
-			return 0;
+		return 0;
 	}
 
 	switch (function)
 	{
 		case path_change_extension_function:
 			return (2 == arguments_count) &&
-				   path_change_extension(argument1.start, argument1.finish, argument2.start, argument2.finish, output);
+				   path_change_extension(values[0].start, values[0].finish, values[1].start, values[1].finish, output);
 
 		case path_combine_function:
 			return (2 == arguments_count) &&
-				   path_combine(argument1.start, argument1.finish, argument2.start, argument2.finish, output);
+				   path_combine(values[0].start, values[0].finish, values[1].start, values[1].finish, output);
 
 		case path_get_directory_name_function:
 			return (1 == arguments_count) &&
-				   path_get_directory_name(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_directory_name(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_extension_function:
 			return (1 == arguments_count) &&
-				   path_get_extension(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_extension(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_file_name_function:
 			return (1 == arguments_count) &&
-				   path_get_file_name(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_file_name(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_file_name_without_extension_function:
 			return (1 == arguments_count) &&
-				   path_get_file_name_without_extension(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_file_name_without_extension(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_path_root_function:
 			return (1 == arguments_count) &&
-				   path_get_path_root(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   path_get_path_root(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case path_get_temp_file_name_function:
 #if defined(_WIN32)
@@ -1058,13 +1195,18 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 		case path_get_temp_path_function:
 			return !arguments_count && path_get_temp_path(output);
 
+		case path_glob_function:
+			return 2 == arguments_count &&
+				   bool_to_string(path_glob(values[0].start, values[0].finish,
+											values[1].start, values[1].finish), output);
+
 		case path_has_extension_function:
 			return (1 == arguments_count) &&
-				   bool_to_string(path_has_extension(argument1.start, argument1.finish), output);
+				   bool_to_string(path_has_extension(values[0].start, values[0].finish), output);
 
 		case path_is_path_rooted_function:
 			return (1 == arguments_count) &&
-				   bool_to_string(path_is_path_rooted(argument1.start, argument1.finish), output);
+				   bool_to_string(path_is_path_rooted(values[0].start, values[0].finish), output);
 
 		case path_get_full_path_function:
 		case UNKNOWN_PATH_FUNCTION:

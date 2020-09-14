@@ -7,6 +7,7 @@
 
 #include "interpreter.h"
 #include "buffer.h"
+#include "choose_task.h"
 #include "common.h"
 #include "conversion.h"
 #include "copy_move.h"
@@ -14,9 +15,14 @@
 #include "echo.h"
 #include "environment.h"
 #include "exec.h"
+#include "fail_task.h"
 #include "file_system.h"
+#include "for_each.h"
 #include "hash.h"
+#include "if_task.h"
+#include "listener.h"
 #include "load_file.h"
+#include "load_tasks.h"
 #include "math_unit.h"
 #include "operating_system.h"
 #include "path.h"
@@ -26,7 +32,9 @@
 #include "sleep_unit.h"
 #include "string_unit.h"
 #include "target.h"
+#include "task.h"
 #include "text_encoding.h"
+#include "try_catch.h"
 #include "version.h"
 #include "xml.h"
 
@@ -40,14 +48,11 @@ static const uint8_t arguments_delimiter = ',';
 static const uint8_t space_and_tab[] = { ' ', '\t' };
 #define SPACE_AND_TAB_LENGTH COUNT_OF(space_and_tab)
 
-static const uint8_t namespace_border[] = { ':', ':' };
-#define NAMESPACE_BORDER_LENGTH COUNT_OF(namespace_border)
+static const uint8_t name_space_border[] = { ':', ':' };
+#define NAME_SPACE_BORDER_LENGTH COUNT_OF(name_space_border)
 
 static const uint8_t function_call_start[] = { '$', '{' };
 #define FUNCTION_CALL_START_LENGTH COUNT_OF(function_call_start)
-
-static const uint8_t* test = (const uint8_t*)"test";
-static const uint8_t test_length = 4;
 
 static const uint8_t* interpreter_string_enumeration_unit[] =
 {
@@ -128,8 +133,8 @@ uint8_t interpreter_disassemble_function(
 
 	if (-1 == (index = string_index_of(function->start,
 									   function->finish,
-									   namespace_border,
-									   namespace_border + NAMESPACE_BORDER_LENGTH)))
+									   name_space_border,
+									   name_space_border + NAME_SPACE_BORDER_LENGTH)))
 	{
 		return 0;
 	}
@@ -137,7 +142,7 @@ uint8_t interpreter_disassemble_function(
 	name_space->start = function->start;
 	name_space->finish = function->start + index;
 	/**/
-	name->start = name_space->finish + NAMESPACE_BORDER_LENGTH;
+	name->start = name_space->finish + NAME_SPACE_BORDER_LENGTH;
 	name->finish = find_any_symbol_like_or_not_like_that(
 					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
 
@@ -214,7 +219,7 @@ uint8_t interpreter_evaluate_argument_area(
 	{
 		while (-1 != (index = string_index_of(
 								  pos, argument_area->finish,
-								  namespace_border, namespace_border + NAMESPACE_BORDER_LENGTH)))
+								  name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH)))
 		{
 			struct range function;
 			function.start = find_any_symbol_like_or_not_like_that(pos + index, pos,
@@ -273,9 +278,7 @@ uint8_t interpreter_actualize_property_value(
 
 	struct range code;
 
-	code.start = buffer_data(&code_in_buffer, 0);
-
-	code.finish = code.start + buffer_size(&code_in_buffer);
+	BUFFER_TO_RANGE(code, &code_in_buffer);
 
 	if (code.start < code.finish &&
 		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
@@ -338,12 +341,12 @@ uint8_t interpreter_get_value_for_argument(
 		else
 		{
 			const ptrdiff_t index_1 = string_index_of(
-										  argument_area->start, argument_area->finish, namespace_border,
-										  namespace_border + NAMESPACE_BORDER_LENGTH);
+										  argument_area->start, argument_area->finish, name_space_border,
+										  name_space_border + NAME_SPACE_BORDER_LENGTH);
 			const ptrdiff_t index_2 = -1 == index_1 ? index_1 :
 									  string_last_index_of(
-										  argument_area->start, argument_area->finish, namespace_border,
-										  namespace_border + NAMESPACE_BORDER_LENGTH);
+										  argument_area->start, argument_area->finish, name_space_border,
+										  name_space_border + NAME_SPACE_BORDER_LENGTH);
 
 			if (-1 == index_1 || index_1 != index_2)
 			{
@@ -455,6 +458,23 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 
 	uint8_t values_count = interpreter_get_values_for_arguments(
 							   the_project, the_target, &arguments_area, &values, verbose);
+	/**/
+	void* the_module = NULL;
+	const uint8_t* func = NULL;
+
+	if (common_get_module_priority())
+	{
+		func = project_get_function_from_module(the_project, &name_space, &name, &the_module, NULL);
+
+		if (NULL != func && NULL != the_module)
+		{
+			values_count = load_tasks_evaluate_loaded_function(the_module, func, &values, values_count,
+						   return_of_function, verbose);
+			/**/
+			buffer_release_with_inner_buffers(&values);
+			return values_count;
+		}
+	}
 
 	switch (interpreter_get_unit(name_space.start, name_space.finish))
 	{
@@ -619,7 +639,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			if (!project_exec_function(
 					the_project,
 					project_get_function(name.start, name.finish),
-					&values, values_count, &the_property, return_of_function))
+					&values, values_count, &the_property, return_of_function, verbose))
 			{
 				values_count = 0;
 				break;
@@ -665,6 +685,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 
 		case task_unit:
 			values_count = task_exec_function(
+							   the_project,
 							   task_get_function(name.start, name.finish),
 							   &values, values_count, return_of_function);
 			break;
@@ -682,6 +703,17 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			break;
 
 		case UNKNOWN_UNIT:
+			if (common_get_module_priority())
+			{
+				values_count = 0;
+				break;
+			}
+
+			func = project_get_function_from_module(the_project, &name_space, &name, &the_module, NULL);
+			values_count = load_tasks_evaluate_loaded_function(the_module, func, &values, values_count,
+						   return_of_function, verbose);
+			break;
+
 		default:
 			values_count = 0;
 			break;
@@ -705,7 +737,6 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 	ptrdiff_t index = 0;
 	struct range function;
 	function.start = code->start;
-	function.finish = code->start;
 	const uint8_t* previous_pos = code->start;
 
 	while (-1 != (index = string_index_of(function.start,
@@ -1210,231 +1241,7 @@ uint8_t interpreter_get_environments(
 	return 1;
 }
 
-uint8_t choose_evaluate_task(
-	void* the_project, const void* the_target,
-	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments, uint8_t verbose)
-{
-	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, 3, NULL, NULL, NULL, task_arguments))
-	{
-		return 0;
-	}
-
-	struct buffer* sub_nodes_names = buffer_buffer_data(task_arguments, 0);
-
-	SET_NULL_TO_BUFFER(*sub_nodes_names);
-
-	struct buffer* elements = buffer_buffer_data(task_arguments, 1);
-
-	SET_NULL_TO_BUFFER(*elements);
-
-	struct buffer* attribute_value = buffer_buffer_data(task_arguments, 2);
-
-	SET_NULL_TO_BUFFER(*attribute_value);
-
-	if (!range_from_string((const uint8_t*)"when\0otherwise\0", 15, 2, sub_nodes_names))
-	{
-		return 0;
-	}
-
-	const uint16_t count = xml_get_sub_nodes_elements(
-							   attributes_finish, element_finish, sub_nodes_names, elements);
-
-	if (!count)
-	{
-		return 1;
-	}
-
-	uint16_t otherwise_index = count + 1;
-
-	if (!buffer_append_buffer(attribute_value, NULL, 1))
-	{
-		return 0;
-	}
-
-	struct buffer* test_value_in_buffer = buffer_buffer_data(attribute_value, 0);
-
-	SET_NULL_TO_BUFFER(*buffer_buffer_data(attribute_value, 0));
-
-	struct range* tag_name = buffer_range_data(sub_nodes_names, 0);
-
-	for (uint16_t i = 0; i < count; ++i)
-	{
-		struct range current_tag_name;
-		struct range* element = buffer_range_data(elements, i);
-
-		if (!xml_get_tag_name(element->start, element->finish, &current_tag_name))
-		{
-			buffer_release_inner_buffers(attribute_value);
-			return 0;
-		}
-
-		if (!string_equal(tag_name->start, tag_name->finish, current_tag_name.start, current_tag_name.finish))
-		{
-			otherwise_index = count < otherwise_index ? i : otherwise_index;
-			continue;
-		}
-
-		if (!interpreter_get_arguments_from_xml_tag_record(the_project, the_target, current_tag_name.start,
-				element->finish,
-				&test, &test_length, 0, 1, attribute_value, verbose))
-		{
-			buffer_release_inner_buffers(attribute_value);
-			return 0;
-		}
-
-		uint8_t test_value = 0;
-
-		if (!bool_parse(buffer_data(test_value_in_buffer, 0), buffer_size(test_value_in_buffer),
-						&test_value))
-		{
-			buffer_release_inner_buffers(attribute_value);
-			return 0;
-		}
-
-		if (!test_value)
-		{
-			continue;
-		}
-
-		buffer_release_inner_buffers(attribute_value);
-		current_tag_name.finish = element->finish;
-
-		if (!buffer_resize(elements, 0))
-		{
-			return 0;
-		}
-
-		return xml_get_sub_nodes_elements(current_tag_name.start, current_tag_name.finish, NULL, elements) ?
-			   interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose) : 1;
-	}
-
-	buffer_release_inner_buffers(attribute_value);
-
-	if (otherwise_index < count)
-	{
-		struct range* element = buffer_range_data(elements, otherwise_index);
-		struct range tag;
-		tag.start = element->start;
-		tag.finish = element->finish;
-
-		if (!buffer_resize(elements, 0))
-		{
-			return 0;
-		}
-
-		return xml_get_sub_nodes_elements(tag.start, tag.finish, NULL, elements) ?
-			   interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose) : 1;
-	}
-
-	return 1;
-}
-
-#define FAIL_MESSAGE_POSITION		0
-
-uint8_t fail_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	static const uint8_t* fail_attributes[] = { (const uint8_t*)"message" };
-	static const uint8_t fail_attributes_lengths[] = { 7 };
-	/**/
-	return common_get_attributes_and_arguments_for_task(
-			   fail_attributes, fail_attributes_lengths,
-			   COUNT_OF(fail_attributes),
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t fail_evaluate_task(
-	const void* the_project, const void* the_target,
-	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* message, uint8_t verbose)
-{
-	if (!buffer_size(message))
-	{
-		if (!interpreter_get_xml_element_value(the_project, the_target, attributes_finish, element_finish, message,
-											   verbose))
-		{
-			return 0;
-		}
-	}
-
-	echo(0, UTF8, NULL,
-		 buffer_size(message) ? Fail : Error,
-		 buffer_data(message, 0), buffer_size(message), 1, verbose);
-	return 0;
-}
-
-uint8_t for_each_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
-							   const uint8_t* attributes_finish, const uint8_t* element_finish,
-							   struct buffer* task_arguments, uint8_t verbose);
-uint8_t do_evaluate_task(void* the_project, const void* the_target,
-						 const uint8_t* attributes_finish, const uint8_t* element_finish,
-						 struct buffer* task_arguments, uint8_t verbose);
-
-#define IF_TEST_POSITION		0
-
-uint8_t if_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   &test, &test_length, 1,
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t if_evaluate_task(
-	void* the_project, const void* the_target, struct buffer* task_arguments,
-	const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
-{
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	struct buffer* test_in_a_buffer = buffer_buffer_data(task_arguments, IF_TEST_POSITION);
-
-	if (!buffer_size(test_in_a_buffer))
-	{
-		return 1;
-	}
-
-	uint8_t test_value = 0;
-
-	if (!bool_parse(buffer_data(test_in_a_buffer, 0), buffer_size(test_in_a_buffer), &test_value))
-	{
-		return 0;
-	}
-
-	if (!test_value)
-	{
-		return 1;
-	}
-
-	if (!buffer_resize(test_in_a_buffer, 0))
-	{
-		return 0;
-	}
-
-	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, test_in_a_buffer))
-	{
-		return 1;
-	}
-
-	return interpreter_evaluate_tasks(the_project, the_target, test_in_a_buffer, 0, verbose);
-}
-
-uint8_t try_catch_evaluate_task(
-	void* the_project, const void* the_target,
-	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments, uint8_t verbose);
-
-static const uint8_t* interpreter_task_str[] =
+static const uint8_t* interpreter_task_names[] =
 {
 	(const uint8_t*)"attrib",
 	(const uint8_t*)"call",
@@ -1452,9 +1259,7 @@ static const uint8_t* interpreter_task_str[] =
 	(const uint8_t*)"include",
 #endif
 	(const uint8_t*)"loadfile",
-#if 0
 	(const uint8_t*)"loadtasks",
-#endif
 	(const uint8_t*)"mkdir",
 	(const uint8_t*)"move",
 	(const uint8_t*)"program",
@@ -1493,9 +1298,7 @@ enum interpreter_task
 	include_task,
 #endif
 	loadfile_task,
-#if 0
 	loadtasks_task,
-#endif
 	mkdir_task,
 	move_task,
 	program_task,
@@ -1520,7 +1323,7 @@ enum interpreter_task
 uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish)
 {
 	return common_string_to_enum(task_name_start, task_name_finish,
-								 interpreter_task_str, UNKNOWN_TASK);
+								 interpreter_task_names, UNKNOWN_TASK);
 }
 
 uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
@@ -1598,12 +1401,34 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	return 1;
 }
 
-uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uint8_t command,
-								  const uint8_t* attributes_start, const uint8_t* element_finish,
+uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, const struct range* task_name,
+								  const uint8_t* element_finish, const struct buffer* sub_nodes_names,
 								  uint8_t target_help, uint8_t verbose)
 {
-	if (UNKNOWN_TASK < command || range_in_parts_is_null_or_empty(attributes_start, element_finish))
+	void* the_module = NULL;
+	struct buffer task_arguments;
+	SET_NULL_TO_BUFFER(task_arguments);
+
+	if (range_is_null_or_empty(task_name))
 	{
+		listener_task_started(NULL, 0, the_project, the_target, task_name, UNKNOWN_TASK, the_module, verbose);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		listener_task_finished(NULL, 0, the_project, the_target, task_name, UNKNOWN_TASK, the_module, 0, verbose);
+		/**/
+		return 0;
+	}
+
+	ptrdiff_t task_id = interpreter_get_task(task_name->start, task_name->finish);
+	listener_task_started(NULL, 0, the_project, the_target, task_name, task_id, the_module, verbose);
+	const uint8_t* attributes_start = task_name->finish;
+
+	if (range_in_parts_is_null_or_empty(attributes_start, element_finish))
+	{
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		/**/
 		return 0;
 	}
 
@@ -1612,17 +1437,18 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 	uint8_t task_attributes_count = 0;
 	/**/
 	const uint8_t* attributes_finish = xml_get_tag_finish_pos(attributes_start, element_finish);
-	/**/
-	struct buffer task_arguments;
-	SET_NULL_TO_BUFFER(task_arguments);
 
-	if (target_task == command)
+	if (target_task == task_id)
 	{
 		if (!target_get_attributes_and_arguments_for_task(
 				&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments) ||
 			task_attributes_count < 1)
 		{
-			buffer_release_with_inner_buffers(&task_arguments);
+			buffer_release_inner_buffers(&task_arguments);
+			project_on_failure(the_project, the_target, &task_arguments, verbose);
+			buffer_release(&task_arguments);
+			listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+			/**/
 			return 0;
 		}
 
@@ -1635,15 +1461,31 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				the_project, the_target, attributes_start, attributes_finish,
 				task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
 		{
-			buffer_release_with_inner_buffers(&task_arguments);
+			buffer_release_inner_buffers(&task_arguments);
+			project_on_failure(the_project, the_target, &task_arguments, verbose);
+			buffer_release(&task_arguments);
+			listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+			/**/
 			return 0;
 		}
 
 		task_attributes_count = target_evaluate_task(
 									the_project, &task_arguments, target_help,
-									attributes_start, attributes_finish, element_finish, verbose);
-		buffer_release_with_inner_buffers(&task_arguments);
-		/**/
+									attributes_start, attributes_finish, element_finish, sub_nodes_names, verbose);
+
+		if (task_attributes_count)
+		{
+			buffer_release_with_inner_buffers(&task_arguments);
+		}
+		else
+		{
+			buffer_release_inner_buffers(&task_arguments);
+			project_on_failure(the_project, the_target, &task_arguments, verbose);
+			buffer_release(&task_arguments);
+		}
+
+		listener_task_finished(
+			NULL, 0, the_project, the_target, task_name, task_id, NULL, task_attributes_count, verbose);
 		return task_attributes_count;
 	}
 
@@ -1651,30 +1493,71 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			the_project, the_target, attributes_start, attributes_finish,
 			&task_attributes_count, &task_arguments, verbose))
 	{
-		buffer_release_with_inner_buffers(&task_arguments);
+		buffer_release_inner_buffers(&task_arguments);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		/**/
 		return 0;
 	}
 
 	if (task_attributes_count)
 	{
 		buffer_release_with_inner_buffers(&task_arguments);
-		return 1;
+		listener_task_finished(
+			NULL, 0, the_project, the_target, task_name, task_id, NULL, task_attributes_count, verbose);
+		/**/
+		return task_attributes_count;
 	}
 
 	buffer_release_inner_buffers(&task_arguments);
 	uint8_t fail_on_error = 1;
 
 	if (!interpreter_get_xml_tag_attribute_values(
-			the_project, the_target, attributes_start, attributes_finish, &fail_on_error, &verbose, &task_arguments,
-			verbose))
+			the_project, the_target, attributes_start, attributes_finish,
+			&fail_on_error, &verbose, &task_arguments, verbose))
 	{
-		buffer_release_with_inner_buffers(&task_arguments);
+		buffer_release_inner_buffers(&task_arguments);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		/**/
 		return 0;
 	}
 
 	buffer_release_inner_buffers(&task_arguments);
+	const uint8_t* pointer_to_the_task = NULL;
 
-	switch (command)
+	if (common_get_module_priority())
+	{
+		pointer_to_the_task = project_get_task_from_module(the_project, task_name, &the_module, &task_id);
+
+		if (NULL != pointer_to_the_task &&
+			NULL != the_module)
+		{
+			task_attributes_count = load_tasks_evaluate_loaded_task(
+										the_project, the_target, task_name->finish,
+										attributes_finish, element_finish, &task_arguments,
+										the_module, pointer_to_the_task, verbose);
+
+			if (task_attributes_count)
+			{
+				buffer_release_with_inner_buffers(&task_arguments);
+			}
+			else
+			{
+				buffer_release_inner_buffers(&task_arguments);
+				project_on_failure(the_project, the_target, &task_arguments, verbose);
+				buffer_release(&task_arguments);
+			}
+
+			listener_task_finished(
+				NULL, 0, the_project, the_target, task_name, task_id, the_module, task_attributes_count, verbose);
+			return task_attributes_count;
+		}
+	}
+
+	switch (task_id)
 	{
 		case attrib_task:
 			if (!attrib_get_attributes_and_arguments_for_task(
@@ -1770,7 +1653,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				}
 
 				task_attributes_count =
-					echo(0, UTF8, NULL, NoLevel, buffer_data(&task_arguments, 0), buffer_size(&task_arguments), 1, verbose);
+					echo(0, UTF8, NULL, Info, buffer_data(&task_arguments, 0), buffer_size(&task_arguments), 1, verbose);
 				buffer_release(&task_arguments);
 			}
 			else
@@ -1846,7 +1729,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				}
 			}
 
-			task_attributes_count = exec_evaluate_task(the_project, &task_arguments, verbose);
+			task_attributes_count = exec_evaluate_task(the_project, the_target, &task_arguments, verbose);
 			break;
 
 		case fail_task:
@@ -1866,7 +1749,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			}
 
 			task_attributes_count = fail_evaluate_task(the_project, the_target, attributes_finish, element_finish,
-									buffer_buffer_data(&task_arguments, FAIL_MESSAGE_POSITION), verbose);
+									&task_arguments, verbose);
 			break;
 
 		case foreach_task:
@@ -1886,7 +1769,7 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 			}
 
 			task_attributes_count = for_each_evaluate_task(the_project, the_target, attributes_finish, element_finish,
-									&task_arguments, verbose);
+									&task_arguments, fail_on_error, verbose);
 			break;
 
 		case if_task:
@@ -1932,11 +1815,25 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 
 			task_attributes_count = load_file_evaluate_task(the_project, &task_arguments, verbose);
 			break;
-#if 0
 
-		case loadtasks_:
+		case loadtasks_task:
+			if (!load_tasks_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
+					&task_attributes_count, &task_arguments))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			if (!interpreter_get_arguments_from_xml_tag_record(
+					the_project, the_target, attributes_start, attributes_finish,
+					task_attributes, task_attributes_lengths, 0, task_attributes_count, &task_arguments, verbose))
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			task_attributes_count = load_tasks_evaluate_task(the_project, the_target, &task_arguments, verbose);
 			break;
-#endif
 
 		case mkdir_task:
 			if (!mkdir_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -2012,7 +1909,10 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 				break;
 			}
 
-			task_attributes_count = project_evaluate_task(the_project, &task_arguments, verbose);
+			task_attributes_count = project_evaluate_task(the_project,
+									attributes_finish, element_finish,
+									sub_nodes_names, target_help,
+									&task_arguments, verbose);
 			break;
 
 		case property_task:
@@ -2092,95 +1992,76 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, uin
 #endif
 
 		case UNKNOWN_TASK:
+			if (common_get_module_priority())
+			{
+				task_attributes_count = 0;
+				break;
+			}
+
+			pointer_to_the_task = project_get_task_from_module(the_project, task_name, &the_module, &task_id);
+			task_attributes_count = load_tasks_evaluate_loaded_task(
+										the_project, the_target, task_name->finish,
+										attributes_finish, element_finish,
+										&task_arguments, the_module, pointer_to_the_task, verbose);
+			break;
+
 		default:
 			break;
 	}
 
-	buffer_release_with_inner_buffers(&task_arguments);
-
 	if (!task_attributes_count && !fail_on_error)
 	{
-		if (!echo(0, Default, NULL, Warning,
-				  (const uint8_t*)
-				  "[interpreter]: task was failed. However evaluation of script continue as requested at 'fail on error' attribute.",
-				  112,
-				  1, verbose))
-		{
-			return 0;
-		}
-
-		task_attributes_count = 1;
+		task_attributes_count = FAIL_WITH_OUT_ERROR;
 	}
 
+	if (task_attributes_count)
+	{
+		buffer_release_with_inner_buffers(&task_arguments);
+	}
+	else
+	{
+		buffer_release_inner_buffers(&task_arguments);
+		project_on_failure(the_project, the_target, &task_arguments, verbose);
+		buffer_release(&task_arguments);
+	}
+
+	listener_task_finished(
+		NULL, 0, the_project, the_target, task_name, task_id, the_module, task_attributes_count, verbose);
 	return task_attributes_count;
 }
 
 uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 								   const struct buffer* elements,
+								   const struct buffer* sub_nodes_names,
 								   uint8_t target_help, uint8_t verbose)
 {
 	ptrdiff_t i = 0;
+	uint8_t returned = 1;
 	struct range* element = NULL;
 
 	while (NULL != (element = buffer_range_data(elements, i++)))
 	{
-		struct range tag_name_or_content;
+		struct range tag_name;
+		returned = xml_get_tag_name(element->start, element->finish, &tag_name);
 
-		if (!xml_get_tag_name(element->start, element->finish, &tag_name_or_content))
+		if (!returned)
 		{
-			i = 0;
 			break;
 		}
 
-		if (!interpreter_evaluate_task(the_project, the_target,
-									   interpreter_get_task(tag_name_or_content.start, tag_name_or_content.finish),
-									   tag_name_or_content.finish,
-									   element->finish, target_help, verbose))
+		returned = interpreter_evaluate_task(the_project, the_target, &tag_name, element->finish,
+											 sub_nodes_names, target_help, verbose);
+
+		if (!returned)
 		{
-			i = 0;
 			break;
 		}
 	}
 
-	return 0 < i;
+	return returned;
 }
 
-enum task_function
+uint8_t interpreter_get_unknown_task_id()
 {
-	task_exists,
-	UNKNOWN_TASK_FUNCTION
-};
-
-static const uint8_t* task_function_str[] =
-{
-	(const uint8_t*)"exists"
-};
-
-uint8_t task_get_function(const uint8_t* name_start, const uint8_t* name_finish)
-{
-	return common_string_to_enum(name_start, name_finish, task_function_str, UNKNOWN_TASK_FUNCTION);
-}
-
-uint8_t task_exec_function(uint8_t function, const struct buffer* arguments,
-						   uint8_t arguments_count, struct buffer* output)
-{
-	if (UNKNOWN_TASK_FUNCTION <= function ||
-		NULL == arguments ||
-		1 != arguments_count ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	struct range argument;
-
-	argument.start = argument.finish = NULL;
-
-	if (!common_get_one_argument(arguments, &argument, 0))
-	{
-		return 0;
-	}
-
-	arguments_count = (UNKNOWN_TASK != interpreter_get_task(argument.start, argument.finish));
-	return bool_to_string(arguments_count, output);
+	return UNKNOWN_TASK;
 }

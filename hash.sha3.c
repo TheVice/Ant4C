@@ -409,74 +409,61 @@ enum HashType { Hash512 = 0, Hash384, Hash256 = 3, Hash224 };
 static const uint16_t rate_array[] = { 576, 832, 1024, 1088, 1152, 1216, 1280, 1344, 1408 };
 static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448, 384, 320, 256, 192 };
 
-uint8_t hash_algorithm_keccak_224(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
+int8_t hash_length_to_type(uint16_t hash_length)
 {
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 0, rate_array[Hash224], capacity_array[Hash224],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 100);
+	switch (hash_length)
+	{
+		case 224:
+			return Hash224;
+
+		case 256:
+			return Hash256;
+
+		case 384:
+			return Hash384;
+
+		case 512:
+			return Hash512;
+
+		default:
+			break;
+	}
+
+	return -1;
 }
 
-uint8_t hash_algorithm_keccak_256(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
+uint8_t hash_algorithm_keccak(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
+							  struct buffer* output)
 {
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 0, rate_array[Hash256], capacity_array[Hash256],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 96);
+	const int8_t hash_type = hash_length_to_type(hash_length);
+
+	if (-1 == hash_type)
+	{
+		return 0;
+	}
+
+	hash_length = hash_length / 8;
+	/**/
+	return buffer_append(output, NULL, UINT8_MAX) &&
+		   Keccak(start, finish - start, 0, rate_array[hash_type], capacity_array[hash_type],
+				  (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
 }
 
-uint8_t hash_algorithm_keccak_384(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
+uint8_t hash_algorithm_sha3(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
+							struct buffer* output)
 {
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 0, rate_array[Hash384], capacity_array[Hash384],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 80);
-}
+	const int8_t hash_type = hash_length_to_type(hash_length);
 
-uint8_t hash_algorithm_keccak_512(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 0, rate_array[Hash512], capacity_array[Hash512],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 64);
-}
+	if (-1 == hash_type)
+	{
+		return 0;
+	}
 
-uint8_t hash_algorithm_sha3_224(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 1, rate_array[Hash224], capacity_array[Hash224],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 100);
-}
-
-uint8_t hash_algorithm_sha3_256(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 1, rate_array[Hash256], capacity_array[Hash256],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 96);
-}
-
-uint8_t hash_algorithm_sha3_384(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 1, rate_array[Hash384], capacity_array[Hash384],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 80);
-}
-
-uint8_t hash_algorithm_sha3_512(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
-{
-	return buffer_append(output, NULL, 128) &&
-		   Keccak(start, finish - start, 1, rate_array[Hash512], capacity_array[Hash512],
-				  (buffer_data(output, 0) + buffer_size(output) - 128)) &&
-		   buffer_resize(output, buffer_size(output) - 64);
+	hash_length = hash_length / 8;
+	/**/
+	return buffer_append(output, NULL, UINT8_MAX) &&
+		   Keccak(start, finish - start, 1, rate_array[hash_type], capacity_array[hash_type],
+				  (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
 }

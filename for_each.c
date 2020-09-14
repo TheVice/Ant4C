@@ -88,7 +88,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 
 		while (0 < index && NULL != pos)
 		{
-			pos = string_enumerate(pos, finish);
+			pos = string_enumerate(pos, finish, NULL);
 			--index;
 		}
 
@@ -111,12 +111,12 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 			return 0;
 		}
 
-		if (!interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose))
+		if (!interpreter_evaluate_tasks(the_project, the_target, elements, NULL, 0, verbose))
 		{
 			return 0;
 		}
 
-		pos = (-1 == index) ? finish : string_enumerate(pos, finish);
+		pos = (-1 == index) ? finish : string_enumerate(pos, finish, NULL);
 		start = NULL == pos ? finish : pos;
 	}
 
@@ -166,7 +166,6 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target,
 			return 0;
 		}
 
-		start = pos + 1;
 		return 1;
 	}
 
@@ -181,7 +180,7 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 									 const uint8_t* property_name, uint8_t property_name_length,
 									 struct buffer* input, struct buffer* tmp,
 									 const uint8_t* attributes_finish, const uint8_t* element_finish,
-									 uint8_t item_value, uint8_t verbose)
+									 uint8_t item_value, uint8_t fail_on_error, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == property_name ||
@@ -223,7 +222,9 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 		return 0;
 	}
 
-	if (!directory_enumerate_file_system_entries(input, File == item_value, 0, tmp))
+	fail_on_error = directory_enumerate_file_system_entries(input, File == item_value, 0, tmp, fail_on_error);
+
+	if (!fail_on_error)
 	{
 		return 0;
 	}
@@ -231,12 +232,17 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 	const uint8_t* start = buffer_data(tmp, 0);
 	const uint8_t* finish = start + buffer_size(tmp);
 	static const uint8_t zero = 0;
-	/**/
-	return for_each_with_trim(the_project, the_target,
-							  property_name, property_name_length,
-							  start, finish, NULL, input,
-							  attributes_finish, element_finish,
-							  &zero, None, verbose);
+
+	if (!for_each_with_trim(the_project, the_target,
+							property_name, property_name_length,
+							start, finish, NULL, input,
+							attributes_finish, element_finish,
+							&zero, None, verbose))
+	{
+		return 0;
+	}
+
+	return fail_on_error;
 }
 
 uint8_t for_each_line(void* the_project, const void* the_target,
@@ -334,7 +340,7 @@ uint8_t for_each_get_attributes_and_arguments_for_task(
 
 uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 							   const uint8_t* attributes_finish, const uint8_t* element_finish,
-							   struct buffer* task_arguments, uint8_t verbose)
+							   struct buffer* task_arguments, uint8_t fail_on_error, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -426,51 +432,54 @@ uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 	{
 		case File:
 		case Folder:
-			if (!for_each_file_system_entries(
-					the_project, the_target, property_name, property_name_length,
-					in_value_in_a_buffer, trim_value_in_a_buffer,
-					attributes_finish, element_finish, item_value, verbose))
-			{
-				return 0;
-			}
-
+			fail_on_error = for_each_file_system_entries(
+								the_project, the_target, property_name, property_name_length,
+								in_value_in_a_buffer, trim_value_in_a_buffer,
+								attributes_finish, element_finish, item_value, fail_on_error, verbose);
 			break;
 
 		case Line:
-			if (!for_each_line(
-					the_project, the_target, property_name, property_name_length,
-					in_value_in_a_buffer, delim_value_in_a_buffer, trim_value_in_a_buffer,
-					attributes_finish, element_finish, trim_value, verbose))
-			{
-				return 0;
-			}
-
+			fail_on_error = for_each_line(
+								the_project, the_target, property_name, property_name_length,
+								in_value_in_a_buffer, delim_value_in_a_buffer, trim_value_in_a_buffer,
+								attributes_finish, element_finish, trim_value, verbose);
 			break;
 
 		case String:
-			if (!for_each_string(
-					the_project, the_target, property_name, property_name_length,
-					in_value_in_a_buffer, delim_value_in_a_buffer, trim_value_in_a_buffer,
-					attributes_finish, element_finish, trim_value, verbose))
-			{
-				return 0;
-			}
-
+			fail_on_error = for_each_string(
+								the_project, the_target, property_name, property_name_length,
+								in_value_in_a_buffer, delim_value_in_a_buffer, trim_value_in_a_buffer,
+								attributes_finish, element_finish, trim_value, verbose);
 			break;
 
 		default:
 			return 0;
 	}
 
-	if (buffer_size(item_value_in_a_buffer))
+	if (!fail_on_error)
 	{
-		return project_property_set_value(the_project, property_name, property_name_length,
-										  buffer_data(item_value_in_a_buffer, 0), buffer_size(item_value_in_a_buffer),
-										  dynamic, 1, 0, verbose);
+		return 0;
 	}
 
-	return project_property_set_value(the_project, property_name, property_name_length,
-									  (const uint8_t*)&verbose, 0, 0, 1, 0, verbose);
+	if (buffer_size(item_value_in_a_buffer))
+	{
+		if (!project_property_set_value(the_project, property_name, property_name_length,
+										buffer_data(item_value_in_a_buffer, 0), buffer_size(item_value_in_a_buffer),
+										dynamic, 1, 0, verbose))
+		{
+			return 0;
+		}
+
+		return fail_on_error;
+	}
+
+	if (!project_property_set_value(the_project, property_name, property_name_length,
+									(const uint8_t*)&verbose, 0, 0, 1, 0, verbose))
+	{
+		return 0;
+	}
+
+	return fail_on_error;
 }
 
 uint8_t do_evaluate_task(void* the_project, const void* the_target,
@@ -496,7 +505,7 @@ uint8_t do_evaluate_task(void* the_project, const void* the_target,
 
 	if (xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, elements))
 	{
-		return interpreter_evaluate_tasks(the_project, the_target, elements, 0, verbose);
+		return interpreter_evaluate_tasks(the_project, the_target, elements, NULL, 0, verbose);
 	}
 
 	return 1;

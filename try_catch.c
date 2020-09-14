@@ -250,7 +250,7 @@ uint8_t try_catch_evaluate_task(
 			error_output_stream = NULL;
 		}
 
-		result[i] = interpreter_evaluate_tasks(the_project, the_target, sub_elements, 0, verbose);
+		result[i] = interpreter_evaluate_tasks(the_project, the_target, sub_elements, NULL, 0, verbose);
 
 		if (!i)
 		{

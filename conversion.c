@@ -145,6 +145,26 @@ uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 #endif
 }
 
+void* pointer_parse(const uint8_t* value)
+{
+	if (NULL == value)
+	{
+		return 0;
+	}
+
+	char* ch = NULL;
+	return (void*)strtoll((const char*)value, &ch, 16);
+}
+
+uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string)
+{
+#if __STDC_SEC_API__
+	DIGIT_TO_STRING_STDC_SEC_API(pointer_value, 32, "%p", output_string);
+#else
+	DIGIT_TO_STRING(pointer_value, 32, "%p", output_string);
+#endif
+}
+
 static const uint8_t* conversion_str[] =
 {
 	(const uint8_t*)"parse",

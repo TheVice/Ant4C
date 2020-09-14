@@ -319,7 +319,7 @@ uint8_t copy_move_dir_evaluate_task(
 #endif
 
 	if (!buffer_resize(flatten_in_a_buffer, 0) ||
-		!directory_enumerate_file_system_entries(dir_in_a_buffer, 1, 1, flatten_in_a_buffer))
+		!directory_enumerate_file_system_entries(dir_in_a_buffer, 1, 1, flatten_in_a_buffer, 1))
 	{
 		return 0;
 	}
@@ -447,7 +447,7 @@ uint8_t copy_move_dir_evaluate_task(
 	if (1 == include_empty_dirs)
 	{
 		if (!buffer_resize(flatten_in_a_buffer, 0) ||
-			!directory_enumerate_file_system_entries(dir_in_a_buffer, 0, 1, flatten_in_a_buffer))
+			!directory_enumerate_file_system_entries(dir_in_a_buffer, 0, 1, flatten_in_a_buffer, 1))
 		{
 			return 0;
 		}

@@ -44,8 +44,7 @@ uint8_t property_get_attributes_and_arguments_for_task(
 uint8_t property_evaluate_task(void* the_project, struct buffer* properties,
 							   const struct buffer* task_arguments, uint8_t verbose);
 
-uint8_t property_add_at_project(void* the_project, const struct buffer* properties,
-								uint8_t(*except_filter)(const uint8_t*, uint8_t), uint8_t verbose);
+uint8_t property_add_at_project(void* the_project, const struct buffer* properties, uint8_t verbose);
 void property_release_inner(struct buffer* properties);
 void property_release(struct buffer* properties);
 

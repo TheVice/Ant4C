@@ -757,12 +757,13 @@ const struct OperatingSystem* environment_get_operating_system()
 #if __STDC_SEC_API__
 		is_data_of_operating_system_filled = (0 == memcpy_s(operating_system.VersionString, INT8_MAX, Win32NT_str,
 											  Win32NT_str_length));
-#else
-		memcpy(operating_system.VersionString, Win32NT_str, Win32NT_str_length);
-		is_data_of_operating_system_filled = 1;
-#endif
 
 		if (is_data_of_operating_system_filled)
+#else
+		memcpy(operating_system.VersionString, Win32NT_str, Win32NT_str_length);
+
+		is_data_of_operating_system_filled = 1;
+#endif
 		{
 			uint8_t* ptr = operating_system.VersionString + Win32NT_str_length;
 			*ptr = ' ';

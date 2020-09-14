@@ -26,6 +26,8 @@
 #define REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(A) (Default != (A) && ASCII != (A))
 #endif
 
+#define ECHO_UNKNOWN_LEVEL (Warning + 1)
+
 static const uint8_t* echo_attributes[] =
 {
 	(const uint8_t*)"append",
@@ -48,30 +50,40 @@ static const uint8_t* echo_levels[] =
 	(const uint8_t*)"NoLevel"
 };
 
-static const uint8_t* echo_labels[] =
-{
-	(const uint8_t*)"[Debug]: ",
-	(const uint8_t*)"[Error]: ",
-	(const uint8_t*)"[Info]: ",
-	(const uint8_t*)"",/*None*/
-	(const uint8_t*)"[Verbose]: ",
-	(const uint8_t*)"[Warning]: ",
-	(const uint8_t*)""/*NoLevel*/
-};
+static uint8_t levels[] = { 0, 1, 1, 0, 0, 1 };
 
-static const uint8_t echo_labels_lengths[] = { 9, 9, 8, 0, 11, 11, 0 };
+void echo_set_level(uint8_t level, uint8_t enable)
+{
+	if (COUNT_OF(levels) <= level)
+	{
+		return;
+	}
+
+	levels[level] = 0 < enable;
+}
+
+uint8_t echo_is_level_enabled(uint8_t level)
+{
+	if (COUNT_OF(levels) <= level)
+	{
+		return 0;
+	}
+
+	return levels[level];
+}
+
 #if defined(_WIN32)
 HANDLE echo_get_win32_console_output(uint8_t level)
 {
 	static HANDLE output_stream = INVALID_HANDLE_VALUE;
 	static HANDLE error_output_stream = INVALID_HANDLE_VALUE;
 
-	if (Fail < level)
+	if (ECHO_UNKNOWN_LEVEL <= level)
 	{
 		return INVALID_HANDLE_VALUE;
 	}
 
-	if (Error != level && Fail != level)
+	if (Error != level)
 	{
 		if (INVALID_HANDLE_VALUE == output_stream)
 		{
@@ -108,17 +120,21 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 {
 	(void)verbose;/*TODO: */
 
-	if (Fail < level)
+	if (!file)
 	{
-		return 0;
+		if (ECHO_UNKNOWN_LEVEL <= level)
+		{
+			return 0;
+		}
+
+		if (None == level ||
+			!echo_is_level_enabled(level))
+		{
+			return 1;
+		}
 	}
 
-	if (None == level)
-	{
-		return 1;
-	}
-
-	uint8_t result = 0;
+	uint8_t result = 1;
 	void* file_stream = NULL;
 
 	if (NULL != file)
@@ -127,19 +143,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	}
 	else
 	{
-		file_stream = (Error != level &&
-					   Fail != level) ? common_get_output_stream() : common_get_error_output_stream();
-
-		if (NoLevel == level ||
-			Fail == level)
-		{
-			result = 1;
-		}
-		else
-		{
-			result = (echo_labels_lengths[level] == file_write(echo_labels[level], sizeof(uint8_t),
-					  echo_labels_lengths[level], file_stream));
-		}
+		file_stream = (Error != level) ? common_get_output_stream() : common_get_error_output_stream();
 	}
 
 	if (!result)
@@ -154,8 +158,8 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 
 		if (!file)
 		{
-			is_output_standard = (Error != level &&
-								  Fail != level) ? common_is_output_stream_standard() : common_is_error_output_stream_standard();
+			is_output_standard = (Error != level) ? common_is_output_stream_standard() :
+								 common_is_error_output_stream_standard();
 		}
 
 		struct buffer new_message;
@@ -175,9 +179,8 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 			result = file_flush(file_stream);
 		}
 
-#endif
-
 		if (result)
+#endif
 		{
 			if (NULL != file)
 			{
@@ -218,8 +221,6 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	return result;
 }
 
-#define ECHO_UNKNOWN_LEVEL (NoLevel + 1)
-
 #define APPEND_POSITION			0
 #define ENCODING_POSITION		1
 #define FILE_POSITION			2
@@ -252,7 +253,6 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	const struct buffer* append_in_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
 	const struct buffer* encoding_in_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
 	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
-	const struct buffer* level_in_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
 	const struct buffer* message_in_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
 	/**/
 	uint8_t append = 0;
@@ -288,13 +288,18 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 
 	uint8_t level = Info;
 
-	if (buffer_size(level_in_buffer))
+	if (!file)
 	{
-		struct range value;
-		value.start = buffer_data(level_in_buffer, 0);
-		value.finish = value.start + buffer_size(level_in_buffer);
-		/**/
-		level = echo_get_level(value.start, value.finish);
+		const struct buffer* level_in_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
+
+		if (buffer_size(level_in_buffer))
+		{
+			struct range value;
+			value.start = buffer_data(level_in_buffer, 0);
+			value.finish = value.start + buffer_size(level_in_buffer);
+			/**/
+			level = echo_get_level(value.start, value.finish);
+		}
 	}
 
 	const uint8_t* message = NULL;

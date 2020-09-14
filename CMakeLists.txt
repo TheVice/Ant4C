@@ -13,6 +13,8 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/argument_parser.h"
             "${CMAKE_SOURCE_DIR}/buffer.c"
             "${CMAKE_SOURCE_DIR}/buffer.h"
+            "${CMAKE_SOURCE_DIR}/choose_task.c"
+            "${CMAKE_SOURCE_DIR}/choose_task.h"
             "${CMAKE_SOURCE_DIR}/common.c"
             "${CMAKE_SOURCE_DIR}/common.h"
             "${CMAKE_SOURCE_DIR}/conversion.c"
@@ -27,19 +29,28 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/environment.h"
             "${CMAKE_SOURCE_DIR}/exec.c"
             "${CMAKE_SOURCE_DIR}/exec.h"
+            "${CMAKE_SOURCE_DIR}/fail_task.c"
+            "${CMAKE_SOURCE_DIR}/fail_task.h"
             "${CMAKE_SOURCE_DIR}/file_system.c"
             "${CMAKE_SOURCE_DIR}/file_system.h"
             "${CMAKE_SOURCE_DIR}/for_each.c"
+            "${CMAKE_SOURCE_DIR}/for_each.h"
             "${CMAKE_SOURCE_DIR}/hash.blake2.c"
             "${CMAKE_SOURCE_DIR}/hash.blake3.c"
             "${CMAKE_SOURCE_DIR}/hash.c"
             "${CMAKE_SOURCE_DIR}/hash.crc32.c"
             "${CMAKE_SOURCE_DIR}/hash.h"
             "${CMAKE_SOURCE_DIR}/hash.sha3.c"
+            "${CMAKE_SOURCE_DIR}/if_task.c"
+            "${CMAKE_SOURCE_DIR}/if_task.h"
             "${CMAKE_SOURCE_DIR}/interpreter.c"
             "${CMAKE_SOURCE_DIR}/interpreter.h"
+            "${CMAKE_SOURCE_DIR}/listener.c"
+            "${CMAKE_SOURCE_DIR}/listener.h"
             "${CMAKE_SOURCE_DIR}/load_file.c"
             "${CMAKE_SOURCE_DIR}/load_file.h"
+            "${CMAKE_SOURCE_DIR}/load_tasks.c"
+            "${CMAKE_SOURCE_DIR}/load_tasks.h"
             "${CMAKE_SOURCE_DIR}/math_unit.c"
             "${CMAKE_SOURCE_DIR}/math_unit.h"
             "${CMAKE_SOURCE_DIR}/operating_system.c"
@@ -52,15 +63,20 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/property.h"
             "${CMAKE_SOURCE_DIR}/range.c"
             "${CMAKE_SOURCE_DIR}/range.h"
+            "${CMAKE_SOURCE_DIR}/shared_object.c"
+            "${CMAKE_SOURCE_DIR}/shared_object.h"
             "${CMAKE_SOURCE_DIR}/sleep_unit.c"
             "${CMAKE_SOURCE_DIR}/sleep_unit.h"
             "${CMAKE_SOURCE_DIR}/string_unit.c"
             "${CMAKE_SOURCE_DIR}/string_unit.h"
             "${CMAKE_SOURCE_DIR}/target.c"
             "${CMAKE_SOURCE_DIR}/target.h"
+            "${CMAKE_SOURCE_DIR}/task.c"
+            "${CMAKE_SOURCE_DIR}/task.h"
             "${CMAKE_SOURCE_DIR}/text_encoding.c"
             "${CMAKE_SOURCE_DIR}/text_encoding.h"
             "${CMAKE_SOURCE_DIR}/try_catch.c"
+            "${CMAKE_SOURCE_DIR}/try_catch.h"
             "${CMAKE_SOURCE_DIR}/version.c"
             "${CMAKE_SOURCE_DIR}/version.h"
             "${CMAKE_SOURCE_DIR}/xml.c"
@@ -80,7 +96,23 @@ endif()
 
 if(NOT MSVC)
   target_link_libraries(ant4c_app m)
+
+  if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
+    target_link_libraries(ant4c_app dl)
+  endif()
 endif()
+
+set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
+
+include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
+include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
+include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
+
+# add_dependencies(ant4c ant4c.dns)
+# add_dependencies(ant4c ant4c.regex)
+add_dependencies(ant4c default_listener)
+add_dependencies(ant4c example_of_the_module)
 
 if(MSVC)
   if (("v140_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET) OR ("v141_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET))

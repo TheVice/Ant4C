@@ -11,6 +11,7 @@
 #include "conversion.h"
 #include "echo.h"
 #include "interpreter.h"
+#include "listener.h"
 #include "project.h"
 #include "property.h"
 #include "range.h"
@@ -58,7 +59,8 @@ uint8_t target_exists(const struct buffer* targets,
 
 uint8_t target_get_current_target(const void* the_target, const uint8_t** name, uint8_t* name_length)
 {
-	if (NULL == the_target)
+	if (NULL == the_target ||
+		NULL == name)
 	{
 		return 0;
 	}
@@ -66,7 +68,12 @@ uint8_t target_get_current_target(const void* the_target, const uint8_t** name, 
 	/*TODO: add validation at project.*/
 	const struct target* the_real_target = (const struct target*)the_target;
 	*name = the_real_target->name;
-	*name_length = the_real_target->name_length;
+
+	if (NULL != name_length)
+	{
+		*name_length = the_real_target->name_length;
+	}
+
 	return 1;
 }
 
@@ -85,7 +92,8 @@ uint8_t target_has_executed(const struct buffer* targets,
 
 uint8_t target_print_description(void* the_project, struct target* the_target,
 								 struct buffer* target_description,
-								 const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
+								 const uint8_t* attributes_finish, const uint8_t* element_finish,
+								 const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_target ||
 		NULL == target_description)
@@ -93,19 +101,19 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 		return 0;
 	}
 
-	if (!echo(0, UTF8, NULL, NoLevel, the_target->name, the_target->name_length, 0, verbose))
+	if (!echo(0, UTF8, NULL, Info, the_target->name, the_target->name_length, 0, verbose))
 	{
 		return 0;
 	}
 
 	if (buffer_size(target_description))
 	{
-		if (!echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose))
+		if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
 		{
 			return 0;
 		}
 
-		if (!echo(0, UTF8, NULL, NoLevel, buffer_data(target_description, 0),
+		if (!echo(0, UTF8, NULL, Info, buffer_data(target_description, 0),
 				  buffer_size(target_description), 1, verbose))
 		{
 			return 0;
@@ -130,12 +138,37 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 		return 1;
 	}
 
-	if (!echo(0, Default, NULL, NoLevel, (const uint8_t*)"\t", 1, 0, verbose))
+	if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
 	{
 		return 0;
 	}
 
-	return interpreter_evaluate_tasks(the_project, the_target, &(the_target->tasks), 1, verbose);
+	return interpreter_evaluate_tasks(the_project, the_target, &(the_target->tasks), sub_nodes_names, 1, verbose);
+}
+
+uint8_t target_set_name(struct target* the_target, const uint8_t* name, uint8_t name_length)
+{
+	if (NULL == the_target ||
+		NULL == name ||
+		name_length < 1)
+	{
+		return 0;
+	}
+
+#if __STDC_SEC_API__
+
+	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
+	{
+		return 0;
+	}
+
+#else
+	memcpy(the_target, name, name_length);
+#endif
+	the_target->name[name_length] = '\0';
+	the_target->name_length = name_length;
+	/**/
+	return 1;
 }
 
 uint8_t target_new(void* the_project,
@@ -144,7 +177,8 @@ uint8_t target_new(void* the_project,
 				   struct buffer* description,
 				   const uint8_t* attributes_start, const uint8_t* attributes_finish,
 				   const uint8_t* element_finish,
-				   struct buffer* targets, uint8_t verbose)
+				   struct buffer* targets,
+				   const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -166,18 +200,12 @@ uint8_t target_new(void* the_project,
 
 	SET_NULL_TO_BUFFER(the_target->depends);
 	SET_NULL_TO_BUFFER(the_target->tasks);
-#if __STDC_SEC_API__
 
-	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
+	if (!target_set_name(the_target, name, name_length))
 	{
 		return 0;
 	}
 
-#else
-	memcpy(the_target, name, name_length);
-#endif
-	the_target->name[name_length] = '\0';
-	the_target->name_length = name_length;
 	the_target->has_executed = 0;
 
 	if (depends && 0 < depends_length)
@@ -235,7 +263,7 @@ uint8_t target_new(void* the_project,
 		the_target->attributes.start = the_target->attributes.finish = NULL;
 
 		if (!target_print_description(the_project, the_target, description, attributes_start, element_finish,
-									  verbose))
+									  sub_nodes_names, verbose))
 		{
 			return 0;
 		}
@@ -362,7 +390,7 @@ uint8_t target_get_attributes_and_arguments_for_task(
 uint8_t target_evaluate_task(void* the_project, struct buffer* task_arguments, uint8_t target_help,
 							 const uint8_t* attributes_start, const uint8_t* attributes_finish,
 							 const uint8_t* element_finish,
-							 uint8_t verbose)
+							 const struct buffer* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == task_arguments)
 	{
@@ -382,7 +410,8 @@ uint8_t target_evaluate_task(void* the_project, struct buffer* task_arguments, u
 	return project_target_new(the_project,
 							  buffer_data(name, 0), (uint8_t)buffer_size(name),
 							  buffer_data(depends, 0), (uint16_t)buffer_size(depends),
-							  description, attributes_start, attributes_finish, element_finish, verbose);
+							  description, attributes_start, attributes_finish, element_finish,
+							  sub_nodes_names, verbose);
 }
 
 uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
@@ -412,43 +441,37 @@ uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
 uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stack,
 						uint8_t cascade, uint8_t verbose)
 {
+	listener_target_started(NULL, 0, the_project, the_target, verbose);
+
 	if (NULL == the_project ||
 		NULL == the_target ||
 		NULL == stack)
 	{
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 		return 0;
-	}
-
-	if (target_is_in_stack(stack, the_target))
-	{
-		return 1;
 	}
 
 	struct target* the_real_target = (struct target*)the_target;
 
+	if (target_is_in_stack(stack, the_target))
+	{
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
+		return 2 == the_real_target->has_executed ? 0 : 1;
+	}
+
 	uint8_t skip = 0;
-
-	struct buffer tmp;
-
-	SET_NULL_TO_BUFFER(tmp);
-
-	if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-			the_project, NULL, the_real_target->attributes.start,
-			the_real_target->attributes.finish, &skip, &tmp, verbose))
-	{
-		buffer_release_with_inner_buffers(&tmp);
-		return 0;
-	}
-
-	buffer_release_with_inner_buffers(&tmp);
-
-	if (skip)
-	{
-		return 1;
-	}
 
 	if (cascade)
 	{
+		skip = the_real_target->has_executed;
+		the_real_target->has_executed = 2;
+
+		if (!buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**)))
+		{
+			listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
+			return 0;
+		}
+
 		uint16_t index = 0;
 		const struct range* depend = NULL;
 
@@ -458,24 +481,58 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 
 			if (!project_target_get(the_project, depend->start, (uint8_t)range_size(depend), &target_dep, verbose))
 			{
+				listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
+				return 0;
+			}
+
+			if (the_target == target_dep)
+			{
+				listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 				return 0;
 			}
 
 			if (!target_evaluate(the_project, target_dep, stack, cascade, verbose))
 			{
+				listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 				return 0;
 			}
 		}
+
+		the_real_target->has_executed = skip;
 	}
 
-	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), 0, verbose))
+	skip = 0;
+	struct buffer tmp;
+	SET_NULL_TO_BUFFER(tmp);
+
+	if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
+			the_project, the_target, the_real_target->attributes.start,
+			the_real_target->attributes.finish, &skip, &tmp, verbose))
 	{
-		buffer_release(&tmp);
+		buffer_release_with_inner_buffers(&tmp);
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
+		return 0;
+	}
+
+	buffer_release_with_inner_buffers(&tmp);
+
+	if (skip)
+	{
+		listener_target_finished(NULL, 0, the_project, the_target, 1, verbose);
+		return 1;
+	}
+
+	if (!interpreter_evaluate_tasks(the_project, the_target, &(the_real_target->tasks), NULL, 0, verbose))
+	{
+		listener_target_finished(NULL, 0, the_project, the_target, 0, verbose);
 		return 0;
 	}
 
 	the_real_target->has_executed = 1;
-	return buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
+	skip = cascade ? 1 : buffer_append(stack, (const uint8_t*)&the_target, sizeof(void**));
+	listener_target_finished(NULL, 0, the_project, the_target, skip, verbose);
+	/**/
+	return skip;
 }
 
 uint8_t target_evaluate_by_name(void* the_project, const struct range* target_name, uint8_t verbose)
@@ -487,13 +544,18 @@ uint8_t target_evaluate_by_name(void* the_project, const struct range* target_na
 	}
 
 	void* the_target = NULL;
+	const uint8_t name_length = (uint8_t)range_size(target_name);
 
-	if (!project_target_get(the_project, target_name->start,
-							(uint8_t)range_size(target_name), &the_target, verbose))
+	if (!project_target_get(the_project, target_name->start, name_length, &the_target, verbose))
 	{
 		static const uint8_t asterisk = '*';
 
 		if (!project_target_get(the_project, &asterisk, 1, &the_target, verbose))
+		{
+			return 0;
+		}
+
+		if (!target_set_name((struct target*)the_target, target_name->start, name_length))
 		{
 			return 0;
 		}

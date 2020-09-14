@@ -19,6 +19,9 @@ struct range;
 
 const uint8_t* find_any_symbol_like_or_not_like_that(const uint8_t* start, const uint8_t* finish,
 		const uint8_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
+const uint32_t* find_any_symbol_like_or_not_like_that_UTF32LE(
+	const uint32_t* start, const uint32_t* finish,
+	const uint16_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
 #if defined(_WIN32)
 const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(const wchar_t* start, const wchar_t* finish,
 		const wchar_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
@@ -39,8 +42,9 @@ uint8_t common_get_two_arguments(const struct buffer* arguments, struct range* a
 								 struct range* argument2, uint8_t terminate);
 uint8_t common_get_three_arguments(const struct buffer* arguments, struct range* argument1,
 								   struct range* argument2, struct range* argument3, uint8_t terminate);
-uint8_t common_unbox_bool_data(const struct buffer* box_with_data, uint8_t i, uint8_t j, uint8_t* data);
-int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, uint8_t j);
+
+uint8_t common_get_arguments(const struct buffer* boxed_arguments,
+							 uint8_t arguments_count, struct range* arguments, uint8_t terminate);
 
 uint8_t common_get_attributes_and_arguments_for_task(
 	const uint8_t** input_task_attributes,
@@ -57,6 +61,9 @@ void* common_get_output_stream();
 void* common_get_error_output_stream();
 uint8_t common_is_output_stream_standard();
 uint8_t common_is_error_output_stream_standard();
+
+void common_set_module_priority(uint8_t priority);
+uint8_t common_get_module_priority();
 
 #define XCHG(A, Z)	\
 	(A) -= (Z);		\
@@ -80,5 +87,8 @@ uint8_t common_is_error_output_stream_standard();
 #if !defined(MIN)
 #define MIN(A, B) ((A) > (B) ? (B) : (A))
 #endif
+
+#define FAIL_WITH_OUT_ERROR					2
+#define ATTEMPT_TO_WRITE_READ_ONLY_PROPERTY	3
 
 #endif

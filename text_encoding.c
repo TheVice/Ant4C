@@ -6,8 +6,12 @@
  */
 
 #include "text_encoding.h"
+#ifndef NO_BUFFER_UNIT
 #include "buffer.h"
+#endif
+#ifndef NO_COMMON_UNIT
 #include "common.h"
+#endif
 
 #include <string.h>
 
@@ -21,6 +25,7 @@ static const uint8_t UTF8_UNKNOWN_CHAR[] = { 0xEF, 0xBF, 0xBD };
 static const uint16_t UTF16BE_UNKNOWN_CHAR = 0xFDFF;
 static const uint16_t UTF16LE_UNKNOWN_CHAR = 0xFFFD;
 
+#ifndef NO_BUFFER_UNIT
 static const uint8_t unknown_ASCII_char = 0x3F;
 static const uint8_t max_ASCII_char = 0x7f;
 static const uint8_t min_non_ASCII_char = 0x80;
@@ -140,17 +145,31 @@ static const uint16_t codes_1258[] =
 };
 
 enum Endian { Little, Big };
+#endif
 
 void text_encoding_xchange_uint16_t_bytes(uint8_t* input)
 {
+#ifndef NO_COMMON_UNIT
 	XCHG(input[0], input[1]);
+#else
+	uint8_t tmp = input[0];
+	input[0] = input[1];
+	input[1] = tmp;
+#endif
 }
 
 void text_encoding_xchange_uint32_t_bytes(uint16_t* input)
 {
+#ifndef NO_COMMON_UNIT
 	XCHG(input[0], input[1]);
+#else
+	uint16_t tmp = input[0];
+	input[0] = input[1];
+	input[1] = tmp;
+#endif
 }
 
+#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_get_BOM(
 	uint8_t encoding, struct buffer* output)
 {
@@ -190,6 +209,7 @@ uint8_t text_encoding_get_BOM(
 
 	return 1;
 }
+#endif
 
 uint8_t text_encoding_get_one_of_data_by_BOM(const uint8_t* data, ptrdiff_t data_length)
 {
@@ -242,7 +262,7 @@ uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uin
 		uint32_t* output);
 uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const uint32_t* input_finish,
 		uint32_t* output);
-
+#ifndef NO_BUFFER_UNIT
 #define UTF_TO_ASCII(START, FINISH, SIZE, DECODE, TYPE, OUT, OUTPUT)			\
 	while ((const TYPE*)(START) < (const TYPE*)(FINISH))						\
 	{																			\
@@ -539,6 +559,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 	return 1;
 }
+#endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
 {
@@ -586,6 +607,7 @@ uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
 	return 3;
 }
 
+#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	struct buffer* output)
@@ -626,6 +648,7 @@ uint8_t text_encoding_encode_UTF8(
 
 	return 1;
 }
+#endif
 
 uint8_t text_encoding_is_valid_octet_(uint8_t input)
 {
@@ -695,6 +718,7 @@ uint8_t text_encoding_decode_UTF8_single(const uint8_t* input_start, const uint8
 	return 1 + count;
 }
 
+#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_decode_UTF8(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	struct buffer* output)
@@ -729,6 +753,7 @@ uint8_t text_encoding_decode_UTF8(
 
 	return 1;
 }
+#endif
 
 uint8_t text_encoding_encode_UTF16BE_single(uint32_t input_32LE, uint16_t* output)
 {
@@ -794,6 +819,7 @@ uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
 	return 2;
 }
 
+#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF16(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	uint8_t endian, struct buffer* output)
@@ -836,6 +862,7 @@ uint8_t text_encoding_encode_UTF16(
 
 	return 1;
 }
+#endif
 
 uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const uint16_t* input_finish,
 		uint32_t* output)
@@ -934,6 +961,7 @@ uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const u
 	return 2;
 }
 
+#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_decode_UTF16(
 	const uint16_t* data_start, const uint16_t* data_finish,
 	uint8_t endian, struct buffer* output)
@@ -970,6 +998,7 @@ uint8_t text_encoding_decode_UTF16(
 
 	return 1;
 }
+#endif
 
 uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uint32_t* input_finish,
 		uint32_t* output)
@@ -1008,6 +1037,7 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 	return 1;
 }
 
+#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_UTF8_to_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	uint16_t code_page, struct buffer* output)
@@ -1526,7 +1556,8 @@ uint8_t text_encoding_UTF32BE_to_UTF8(const uint32_t* data_start, const uint32_t
 
 	return 1;
 }
-
+#endif
+#ifndef NO_COMMON_UNIT
 static const uint8_t* text_encoding_str[] =
 {
 	(const uint8_t*)"ASCII",
@@ -1546,3 +1577,4 @@ uint8_t text_encoding_get_one(const uint8_t* encoding_start, const uint8_t* enco
 {
 	return common_string_to_enum(encoding_start, encoding_finish, text_encoding_str, TEXT_ENCODING_UNKNOWN);
 }
+#endif

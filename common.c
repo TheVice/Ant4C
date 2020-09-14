@@ -57,6 +57,14 @@ const uint8_t* find_any_symbol_like_or_not_like_that(
 {
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
 }
+
+const uint32_t* find_any_symbol_like_or_not_like_that_UTF32LE(
+	const uint32_t* start, const uint32_t* finish,
+	const uint16_t* that, ptrdiff_t that_length, uint8_t like, int8_t step)
+{
+	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
+}
+
 #if defined(_WIN32)
 const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(
 	const wchar_t* start, const wchar_t* finish, const wchar_t* that,
@@ -231,29 +239,47 @@ uint8_t common_get_three_arguments(const struct buffer* arguments, struct range*
 	return ret1 && ret2 && ret3;
 }
 
-uint8_t common_unbox_bool_data(const struct buffer* box_with_data, uint8_t i, uint8_t j, uint8_t* data)
+uint8_t common_get_arguments(const struct buffer* boxed_arguments, uint8_t arguments_count,
+							 struct range* arguments, uint8_t terminate)
 {
-	struct range char_data;
-
-	if (!common_unbox_char_data(box_with_data, i, j, &char_data, 0))
+	if (NULL == arguments)
 	{
 		return 0;
 	}
 
-	return bool_parse(char_data.start, range_size(&char_data), data);
-}
-
-int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, uint8_t j)
-{
-	struct range int64_data;
-	int64_data.start = int64_data.finish = NULL;
-
-	if (common_unbox_char_data(box_with_data, i, j, &int64_data, 1))
+	for (uint8_t i = 0; i < arguments_count; ++i)
 	{
-		return int64_parse(int64_data.start);
+		struct buffer* argument = buffer_buffer_data(boxed_arguments, i);
+
+		if (argument)
+		{
+			const ptrdiff_t size = buffer_size(argument);
+
+			if (size)
+			{
+				if (terminate)
+				{
+					if (!buffer_push_back(argument, '\0'))
+					{
+						return 0;
+					}
+				}
+
+				arguments[i].start = buffer_data(argument, 0);
+				arguments[i].finish = arguments[i].start + size;
+			}
+			else
+			{
+				arguments[i].start = arguments[i].finish = NULL;
+			}
+		}
+		else
+		{
+			arguments[i].start = arguments[i].finish = (const uint8_t*)(&(arguments[i]));
+		}
 	}
 
-	return 0;
+	return 1;
 }
 
 uint8_t common_get_attributes_and_arguments_for_task(
@@ -302,8 +328,8 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-void* output_stream = NULL;
-void* error_output_stream = NULL;
+static void* output_stream = NULL;
+static void* error_output_stream = NULL;
 
 void common_set_output_stream(void* stream)
 {
@@ -333,4 +359,16 @@ uint8_t common_is_output_stream_standard()
 uint8_t common_is_error_output_stream_standard()
 {
 	return NULL == error_output_stream;
+}
+
+static uint8_t module_priority = 0;
+
+void common_set_module_priority(uint8_t priority)
+{
+	module_priority = 0 < priority;
+}
+
+uint8_t common_get_module_priority()
+{
+	return module_priority;
 }

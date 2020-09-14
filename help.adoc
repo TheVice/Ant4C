@@ -5,9 +5,10 @@
 [[history]]
 == History
 
-* *v2020.05*
-* v2020.04
-* v2019.10.21
+* *v2020.09*
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.05[v2020.05]
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.04[v2020.04]
+* https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21[v2019.10.21]
 
 == Installation
 
@@ -67,21 +68,40 @@ In general command line option is next: *ant4c* ['OPTION'] '<target>' ...
 
 *-D*: ::
   Define property.
-  For example *-D:"property name"="property value"*
+  For example *-D:"property name"="property value"*.
 
 *-projecthelp* ::
-  Show description of project and target(s)
+  Show description of project and target(s).
 
 *-nologo* ::
-  Do not display program version, license and copyright information
+  Do not display program version, license and copyright information.
+
+*-listener:* ::
+  Set path to the module with listener.
+
+*-modulepriority* ::
+  First try to evaluate tasks and/or functions from loaded modules
+  than from the core of the library.
+
+*-debug* ::
+  Display message with Debug level.
+
+*-logfile:, -l:* ::
+  Set path to the file for logging.
+
+*-verbose* ::
+  Display message with Verbose level.
+  Set verbose parameter of functions to the true.
+
+*-quiet, -q* ::
+  Display messages only with Warning or/and Error levels.
 
 *-help, -h* ::
-  Print brief message about application using
+  Print brief message about application using.
 
 ==== Specifying the script file
 
-If no file specific, all file with '.build' extension will be executed on Windows system. +
-Count of build files is limit to the 'INT8_MAX' count. That macros usually equal to the 127.
+If no file specific, all files with '.build' extension from current directory will be evaluated.
 
 To specific the script file type '-buildfile' option.
 
@@ -103,11 +123,13 @@ Property will be read only at the script file.
 . ant4c -buildfile:project_file.build
 . ant4c build
 . ant4c -D:version="2020.05" build publish
+. ant4c -listener:"default_listener.dll"
 
-1) Run program. On Windows platform it search all file with '.build' extension and run it with default targets. If project do not specify such, global task will be executed. +
+1) Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed. +
 2) Run project from 'project_file.build' file. +
 3) Run 'build' target at all '.build' file from current directory. +
 4) Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
+5) Set path to the listener while run at the Windows platform.
 
 === Project
 
@@ -259,6 +281,7 @@ Order of reading is next - first 'if', than 'unless', 'failonerror' and 'verbose
 | <<foreach_task,foreach>> | Create the section that repeat some of count according to the condition of this task.
 | <<if_task,if>> | Create the section that executed only if 'test' of this task set to the true.
 | <<loadfile_task,loadfile>> | Load content of file into property.
+| <<loadtasks_task,loadtasks>> | Load tasks and functions from the binary modules present like dynamic link library or shared object.
 | <<mkdir_task,mkdir>> | Creates a directory by specific path and all missed parent directory.
 | <<move_task,move>> | Move file or directory.
 | <<program_task,program>> | Create an addition program for interpreting specific script file.
@@ -300,7 +323,7 @@ Direct call of <<target_task,target>>. If target and it dependencies was already
 
 If dependencies do not required to run again there are two options available to made such behavior:
 
-* Add to such one condition at unless __${\target::has-executed(''name of target'')}__. In a future probably just '${\target::has-executed(target::get-current-target())}'.
+* Add to such one condition at unless __${\target::has-executed(''name of target'')}__ or '${\target::has-executed(target::get-current-target())}'.
 * Set parameter 'cascade' of the 'call' task to the *false*.
 
 .Parameters of the 'call' task.
@@ -545,13 +568,12 @@ NOTE: Some task support addition encodings that not listed here. For example see
 
 |===
 .s| Level name. .s| Description
-| Debug | "Debug" string will be added before message.
-| Info | "Info" string will be added before message.
-| Verbose | "Verbose" string will be added before message.
-| Warning | "Warning" string will be added before message.
-| Error | Will be used standard error output, "Error" string will be added before message.
+| Debug | Message will be output with "Debug" level. By default message with this level do not show.
+| Info | Message will be output with "Info" level.
+| Verbose | Message will be output with "Verbose" level. By default message with this level do not show.
+| Warning | Message will be output with "Warning" level.
+| Error | Message will be output with "Error" level.
 | None | Mute echo message.
-| NoLevel | No addition string before message will not be added.
 |===
 
 ==== Sample using
@@ -727,6 +749,61 @@ According to read all content of file into property, make sure that first one no
 </project>
 ----
 
+[[loadtasks_task]]
+=== <loadtasks>
+
+Load tasks and functions from the binary modules present like dynamic link library or shared object.
+
+Module can be written in any developer environment that can create dynamic link library (DLL) on Windows platform or/and shared object on the other platforms. +
+By default names of functions, with C declaration (cdecl), that should be exported from the module are next:
+
+* enumerate_tasks
+* enumerate_name_spaces
+* enumerate_functions
+* get_attributes_and_arguments_for_task
+* evaluate_task
+* evaluate_function
+* module_release
+
+Names can be redefined at the task arguments, however functions should be match signature of the original named functions.
+
+.Parameters of the 'loadfile' task.
+|===
+.s| Argument name .s| Type .s| Description .s| Mandatory
+| *assembly* | file | RESERVED. Path to the CLI assembly. If this argument was set - task will fail. | No
+| *path* | directory | Path to the directory with module file(s). | No, if module argument was set.
+| *module* | file | Path to the module file. | No, if path argument was set.
+| enumerate_tasks .7+^.^| string | Name of function from the module that will be used to enumerate present task(s). .7+^.^| No
+| enumerate_name_spaces | Name of function from the module that will be used to enumerate present name space(s).
+| enumerate_functions | Name of function from the module that will be used to enumerate present function(s).
+| get_attributes_and_arguments_for_task | Name of function from the module that will be used to get attribute(s) that should be used as argument(s) for the task.
+| evaluate_task | Name of function from the module that should be used for evaluation the task. Addition argument, that located outside of counter, pass to the task at this function - start and finish of task attribute. Some task may require such argument.
+| evaluate_function | Name of function from the module that should be used for evaluation the function.
+| module_release | Name of function from the module that should be called when module should be unloaded.
+|===
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="load regex task" >
+  <choose>
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.regex.so" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <loadtasks module="ant4c.regex.dll" failonerror="false" />
+      <loadtasks module="libant4c.regex.dll" unless="${task::exists('regex')}" failonerror="false" />
+    </when>
+  </choose>
+
+  <fail unless="${task::exists('regex')}" message="${project::get-name()} - 'regex' task is not exists." />
+</project>
+----
+
+Different developer environment may have different output name for module by default. +
+In the example above for Windows platform used names that used at the MSVC and MinGW linkers.
+
 [[mkdir_task]]
 === <mkdir>
 
@@ -757,6 +834,7 @@ If new interpreter should not access properties 'inheritall' argument should be 
 | buildfile | file | N/A | Path to file that should be interpreted.
 | encoding | <<encoding_type,Encoding>> | UTF8 | Expected encoding of input file. This task support <<program_options,extension list of encoding>>.
 | inheritall | bool | *true* | Allow access properties of current project.
+| inheritmodules | bool | *true* | Task(s) and function(s) loaded by current project will be available at the new project.
 | target | string | N/A | Target that should be run after global tasks.
 |===
 
@@ -956,7 +1034,7 @@ If no 'datetime' and 'millis' set, current time will be used.
 === <trycatch>
 
 This task catch fail of task located in one of it sub element. +
-This is almost same if set 'failonerror' of failed task to the future. +
+This is almost same if set 'failonerror' of failed task to the false. +
 In context of this task access to the fail message will be available, if task write such explanation.
 
 This task do not have own parameters, only <<common_parameters,common task parameters>> available to set.
@@ -1072,10 +1150,10 @@ No meter fail happen or not, tasks from this section will follow.
 NOTE: Directly using of this functions in most cases not required. +
 Functions from other units will call they internally, if they need such transformation.
 
-*string with boolean value* 'bool::parse'(*string*) +
+*string* 'bool::parse'(*string*) +
 *digital value in the string* 'double|int|int64|long::parse'(*string*)
 
-*string with boolean value* 'bool::to-string'(*string with boolean value*) +
+*string* 'bool::to-string'(*string*) +
 *string* 'double|int|int64|long::to-string'(*digital value in the string*)
 
 Boolean unit is restrict that only 'true', 'false', 'True', 'False' should be at the input. +
@@ -1383,7 +1461,7 @@ Get current time according to the UTC.
 [[date_time-parse]]
 ==== parse
 
-*string with date time value* 'datetime::parse'(*string*)
+*string* 'datetime::parse'(*string*)
 
 Get string with date time value from string. If more data located in the string, they will be skip. +
 String should be in format 'DD.MM.YYYY HH.MM.SS'.
@@ -1414,7 +1492,7 @@ Get count of clock ticks.
 [[date_time-to_string]]
 ==== to-string
 
-*string* 'datetime::to-string'(*string with date time value*)
+*string* 'datetime::to-string'(*string*)
 
 Get string with date time value from string. If more data located in the string, they will be skip. +
 String should be in format 'DD.MM.YYYY HH.MM.SS'.
@@ -1787,8 +1865,8 @@ If path can not be located - function can return empty path (Windows) or fail (n
            LocalApplicationData, CommonApplicationData,
            MyPictures, UserProfile"
     readonly="true" />
-  <foreach item="String" in="${folders}" delim=",&#13;" trim="Both" property="folder">
-    <echo unless="${string::empty(folder)}">'${folder}' -> '${environment::get-folder-path(folder)}'</echo>
+  <foreach item="String" in="${folders}" delim="," trim="Both" property="folder">
+    <echo>'${folder}' -> '${environment::get-folder-path(folder)}'</echo>
   </foreach>
 </project>
 ----
@@ -2059,7 +2137,8 @@ If path point to the exists file *true* will be returned.
 [[file-get_checksum]]
 ==== get-checksum
 
-*string* 'file::get-checksum'(*file* file, *algorithm* algorithm)
+*string* 'file::get-checksum'(*file* file, *algorithm* algorithm) +
+*string* 'file::get-checksum'(*file* file, *algorithm* algorithm, *string* algorithm_parameter)
 
 Calculate hash sum of file according to algorithm.
 
@@ -2067,11 +2146,16 @@ Calculate hash sum of file according to algorithm.
 |===
 .s| Value .s| Description
 | crc32 ^| Calculate hash with CRC-32/zlib algorithm.
-| blake2b-160 .4+^.^| Calculate hash with BLAKE2b algorithm with requested length.
-| blake2b-256
-| blake2b-384
-| blake2b-512
+| blake2b ^| Calculate hash with BLAKE2b algorithm with requested length.
+| blake3 ^| Calculate hash with BLAKE3 algorithm.
 |===
+
+Value of 'algorithm parameter' depend of 'algorithm'.
+For 'crc32' it can be <<hash-crc32,decreasing or increasing>>.
+For 'blake2b' - 160, 256, 384 or 512.
+For 'blake3' - 256, 384 or 512.
+For 'keccak' and 'sha3' - 224, 256, 384 or 512.
+Return from first version of function equal to the return of second if increasing or 256 was used as argument parameter.
 
 ===== Sample using
 
@@ -2084,7 +2168,7 @@ Calculate hash sum of file according to algorithm.
     readonly="true" />
   <property
     name="algorithms"
-    value="crc32, blake2b-160, blake2b-256, blake2b-384, blake2b-512"
+    value="crc32, blake2b, blake3"
     readonly="true" />
   <foreach item="String" in="${algorithms}" delim="," trim="Start" property="algorithm">
     <echo>Hash by '${algorithm}' algorithm is ${file::get-checksum(file, algorithm)}.</echo>
@@ -2092,7 +2176,7 @@ Calculate hash sum of file according to algorithm.
 </project>
 ----
 
-NOTE: At current release of Ant4C algorithms Keccak/SHA3 and BLAKE3 do not supported to calculate hash of files directly. However it can be done if first load content of file to the property and calculate hash sum of the property value.
+IMPORTANT: Current implementation of Keccak/SHA3 algorithm request that all file content should be loaded into memory.
 
 [[file-get_creation_time]]
 ==== get-creation-time
@@ -2176,60 +2260,42 @@ If *source file* have more recent write time than *target* - *false* will be ret
 .Functions from hash unit.
 |===
 .s| Script function .s| Description
-| <<hash-blake2b_160,blake2b-160>> .4+^.^| Calculate hash with BLAKE2b algorithm with requested length.
-| <<hash-blake2b_256,blake2b-256>>
-| <<hash-blake2b_384,blake2b-384>>
-| <<hash-blake2b_512,blake2b-512>>
-| <<hash-blake3,blake3/blake3-256>> ^| Calculate hash with BLAKE3 algorithm.
+| <<hash-blake2b,blake2b>> ^| Calculate hash with BLAKE2b algorithm with requested length.
+| <<hash-blake3,blake3>> ^| Calculate hash with BLAKE3 algorithm.
 | <<hash-bytes_to_string,bytes-to-string>> ^| Convert array of bytes to it hex representation at string.
 | <<hash-crc32,crc32>> ^| Calculate check of cyclic redundancy for specific value according to CRC-32/zlib algorithm.
-| <<hash-keccak_224,keccak-224>> .8+^.^| Calculate hash with Keccak algorithm with requested length for specific value. SHA3 use same algorithm, but with different values at internal padding stage.
-| <<hash-keccak_256,keccak-256>>
-| <<hash-keccak_384,keccak-384>>
-| <<hash-keccak_512,keccak-512>>
-| <<hash-sha3_224,sha3-224>>
-| <<hash-sha3_256,sha3-256>>
-| <<hash-sha3_384,sha3-384>>
-| <<hash-sha3_512,sha3-512>>
+| <<hash-keccak,keccak>> .2+^.^| Calculate hash with Keccak algorithm with requested length for specific value. SHA3 use same algorithm, but with different values at internal padding stage.
+| <<hash-sha3,sha3>>
 |===
 
-[[hash-blake2b_160]]
-==== blake2b-160
+[[hash-blake2b]]
+==== blake2b
 
-*byte array* 'hash::blake2b-160'(*string*)
+*byte array* 'hash::blake2'(*string* input) +
+*byte array* 'hash::blake2'(*string* input, *int* length)
 
-Calculate 20 bytes hash with BLAKE2b algorithm.
+Calculate hash with BLAKE2b algorithm.
 
-[[hash-blake2b_256]]
-==== blake2b-256
+.Values of length.
+|===
+.s| Value .s| Description
+| 160 ^| At return will be hash with length equal to the 20 bytes.
+| 256 ^| At return will be hash with length equal to the 32 bytes.
+| 384 ^| At return will be hash with length equal to the 48 bytes.
+| 512 ^| At return will be hash with length equal to the 64 bytes.
+|===
 
-*byte array* 'hash::blake2b-256'(*string*)
-
-Calculate 32 bytes hash with BLAKE2b algorithm.
-
-[[hash-blake2b_384]]
-==== blake2b-384
-
-*byte array* 'hash::blake2b-384'(*string*)
-
-Calculate 48 bytes hash with BLAKE2b algorithm.
-
-[[hash-blake2b_512]]
-==== blake2b-512
-
-*byte array* 'hash::blake2b-512'(*string*)
-
-Calculate 64 bytes hash with BLAKE2b algorithm.
+Return from first version of function equal to the return of second if 256 was used as length.
 
 [[hash-blake3]]
-==== blake3/blake3-256
+==== blake3
 
-*byte array* 'hash::blake3-256'(*string*)
-//*byte array* 'hash::blake3'(*string*, *byte*)
-
-IMPORTANT: Function will be renamed into 'blake3'.
+*byte array* 'hash::blake3'(*string* input) +
+*byte array* 'hash::blake3'(*string* input, *int* length)
 
 Calculate hash with BLAKE3 algorithm.
+Possible length values same as for <<hash-blake2b,BLAKE2b>>.
+Return from first version of function equal to the return of second if 256 was used as length.
 
 ===== Sample using
 
@@ -2241,7 +2307,7 @@ Calculate hash with BLAKE3 algorithm.
     value=", The quick brown fox jumps over the lazy dog"
     readonly="true" />
   <foreach item="String" in="${contents}" delim="," trim="Start" property="content">
-    <echo if="${version::less(program::version(), 2020.06)}">'${content}' -> ${hash::bytes-to-string(hash::blake3-256(content))}</echo>
+    <echo if="${version::greater(program::version(), 2020.05)}">'${content}' -> ${hash::bytes-to-string(hash::blake3(content))}</echo>
   </foreach>
 </project>
 ----
@@ -2302,61 +2368,34 @@ Output will be:
 [Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
 ----
 
-[[hash-keccak_224]]
-==== keccak-224
+[[hash-keccak]]
+==== keccak
 
-*byte array* 'hash::keccak-224'(*string*)
+*byte array* 'hash::keccak'(*string* input) +
+*byte array* 'hash::keccak'(*string* input, *int* length)
 
-Calculate 28 bytes hash with Keccak algorithm.
+Calculate hash with Keccak algorithm.
 
-[[hash-keccak_256]]
-==== keccak-256
+.Values of length.
+|===
+.s| Value .s| Description
+| 224 ^| At return will be hash with length equal to the 28 bytes.
+| 256 ^| At return will be hash with length equal to the 32 bytes.
+| 384 ^| At return will be hash with length equal to the 48 bytes.
+| 512 ^| At return will be hash with length equal to the 64 bytes.
+|===
 
-*byte array* 'hash::keccak-256'(*string*)
+Return from first version of function equal to the return of second if 256 was used as length.
 
-Calculate 32 bytes hash with Keccak algorithm.
+[[hash-sha3]]
+==== sha3
 
-[[hash-keccak_384]]
-==== keccak-384
+*byte array* 'hash::sha3'(*string* input) +
+*byte array* 'hash::sha3'(*string* input, *int* length)
 
-*byte array* 'hash::keccak-384'(*string*)
-
-Calculate 48 bytes hash with Keccak algorithm.
-
-[[hash-keccak_512]]
-==== keccak-512
-
-*byte array* 'hash::keccak-512'(*string*)
-
-Calculate 64 bytes hash with Keccak algorithm.
-
-[[hash-sha3_224]]
-==== sha3-224
-
-*byte array* 'hash::sha3-224'(*string*)
-
-Calculate 28 bytes hash with Keccak/SHA3 algorithm.
-
-[[hash-sha3_256]]
-==== sha3-256
-
-*byte array* 'hash::sha3-256'(*string*)
-
-Calculate 32 bytes hash with Keccak/SHA3 algorithm.
-
-[[hash-sha3_384]]
-==== sha3-384
-
-*byte array* 'hash::sha3-384'(*string*)
-
-Calculate 48 bytes hash with Keccak/SHA3 algorithm.
-
-[[hash-sha3_512]]
-==== sha3-512
-
-*byte array* 'hash::sha3-512'(*string*)
-
-Calculate 64 bytes hash with Keccak/SHA3 algorithm.
+Calculate hash with Keccak/SHA3 algorithm.
+Possible length values same as for <<hash-keccak,Keccak>>.
+Return from first version of function equal to the return of second if 256 was used as length.
 
 === Math unit
 
@@ -2577,7 +2616,7 @@ Make multiplication of the values.
 *bool* 'math::double-near'(*double* x, *double* y, *double* epsilon)
 
 At the epsilon can be set maximum absolute delta between x and y value when last ones are considered near. +
-If used version with two arguments than '2 * DBL_EPSILON' used as epsilon.   
+If used version with two arguments than '2 * DBL_EPSILON' used as epsilon.
 
 Return *true* if values near to each other.
 
@@ -2688,7 +2727,7 @@ Return ID of platform.
 .Values of platform ID.
 |===
 .s| Value .s| Description
-| Win32 | Platform is from Windows family. 
+| Win32 | Platform is from Windows family.
 | Unix | Platform is UNIX like.
 |===
 
@@ -2733,7 +2772,7 @@ Return *true* if current platform from Windows family.
 |===
 .s| Script function .s| Description
 | <<path-change_extension,path::change-extension>> | Change extension of the path. In other words - all after the last point symbol.
-| <<path-combine,path::combine>> | Combine two part of path into the system specific path. Can be used as path normalizer if sub paths present in difference forms.
+| <<path-combine,path::combine>> | Combine two part of path into the system specific path. Can be used as path normalizer.
 | <<path-get_directory_name,path::get-directory-name>> | Get directory name of the path.
 | <<path-get_extension,path::get-extension>> | Get extension of the path. In other words - all after the last point symbol.
 | <<path-get_file_name_without_extension,path::get-file-name-without-extension>> | Get file name without extension.
@@ -2742,6 +2781,7 @@ Return *true* if current platform from Windows family.
 | <<path-get_path_root,path::get-path-root>> | Get root of the path.
 | <<path-get_temp_file_name,path::get-temp-file-name>> | Get unique file name point to the file in the temporary directory. File with zero length will be created.
 | <<path-get_temp_path,path::get-temp-path>> | Get path to the temporary directory.
+| <<path-glob,path::glob>> | Check if input path match according to the wild card argument.
 | <<path-has_extension,path::has-extension>> | Indicate is path have extension.
 | <<path-is_path_rooted,path::is-path-rooted>> | Indicate is path rooted.
 | <<cygpath-get_dos_path,cygpath::get-dos-path>> | Get DOS compatibility path. Only at Win32 platform.
@@ -2762,6 +2802,36 @@ Change extension of the path. In other words - all after the last point symbol.
 *path* 'path::combine'(*string* path_a, *string* path_b)
 
 Combine two part of path into the system specific path. Can be used as path normalizer.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <property
+    name="path"
+    value="${project::get-buildfile-path()}"
+    readonly="true" />
+  <property
+    name="normalized_path"
+    value="${path::combine(path, '')}"
+    readonly="true" />
+  <property
+    name="unix_like_path"
+    value="${cygpath::get-unix-path(path)}"
+    readonly="true" />
+  <property
+    name="windows_like_path"
+    value="${cygpath::get-windows-path(path)}"
+    readonly="true" />
+  <echo>
+    Project path - '${path}'
+    Normalized project path - '${normalized_path}'
+    Unix like project path - '${unix_like_path}'
+    Windows like project path- '${windows_like_path}'
+  </echo>
+</project>
+----
 
 [[path-get_directory_name]]
 ==== get-directory-name
@@ -2818,6 +2888,13 @@ Get unique file name point to the file in the temporary directory. File with zer
 *directory* 'path::get-temp-path'()
 
 Get path to the temporary directory.
+
+[[path-glob]]
+==== glob
+
+*bool* 'path::glob'(*string* input, *string* wild_card)
+
+Return *true* if *input* path match by *wild card* argument.
 
 [[path-has_extension]]
 ==== has-extension
@@ -3087,7 +3164,7 @@ Add quote symbols at the begin and end of the *string*.
 *string* 'string::replace'(*string* string, *string* to_be_replaced, *string* by_replacement)
 
 Provide replace of content in the string. +
-*By replacement* can be empty. In this case function just remove *to be replacing* string from *string* content. 
+*By replacement* can be empty. In this case function just remove *to be replacing* string from *string* content.
 
 NOTE: For replacing content in the file, <<file-replace,replace function from file unit>> can be used.
 
@@ -3295,4 +3372,4 @@ Convert version in the string into string.
 
 == What's next?
 
-Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/4cc005f99954fa3d615edaa5bf8574d6fe8244fc/tests.xml#L4097[tests.xml file], at the 'project_load_from_content' test.
+Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/4cc005f99954fa3d615edaa5bf8574d6fe8244fc/tests.xml[tests.xml file], at the 'project_load_from_content' test.

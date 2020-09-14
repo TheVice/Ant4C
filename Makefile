@@ -19,6 +19,8 @@ common.c: buffer.h
 common.c: range.h
 common.c: string_unit.h
 
+choose_task.c: choose_task.h
+
 conversion.c: conversion.h
 conversion.c: buffer.h
 conversion.c: common.h
@@ -76,6 +78,8 @@ exec.c: string_unit.h
 exec.c: text_encoding.h
 exec.c: xml.h
 
+fail_task.c: fail_task.h
+
 file_system.c: file_system.h
 file_system.c: buffer.h
 file_system.c: common.h
@@ -89,6 +93,7 @@ file_system.c: range.h
 file_system.c: string_unit.h
 file_system.c: text_encoding.h
 
+for_each.c: for_each.h
 for_each.c: buffer.h
 for_each.c: common.h
 for_each.c: file_system.h
@@ -119,6 +124,8 @@ hash.crc32.c: common.h
 hash.sha3.c: hash.h
 hash.sha3.c: buffer.h
 
+if_task.c: if_task.h
+
 interpreter.c: interpreter.h
 interpreter.c: buffer.h
 interpreter.c: common.h
@@ -129,8 +136,10 @@ interpreter.c: echo.h
 interpreter.c: environment.h
 interpreter.c: exec.h
 interpreter.c: file_system.h
+interpreter.c: for_each.h
 interpreter.c: hash.h
 interpreter.c: load_file.h
+interpreter.c: load_tasks.h
 interpreter.c: math_unit.h
 interpreter.c: operating_system.h
 interpreter.c: path.h
@@ -140,9 +149,13 @@ interpreter.c: range.h
 interpreter.c: sleep_unit.h
 interpreter.c: string_unit.h
 interpreter.c: target.h
+interpreter.c: task.h
 interpreter.c: text_encoding.h
+interpreter.c: try_catch.h
 interpreter.c: version.h
 interpreter.c: xml.h
+
+listener.c: listener.h
 
 load_file.c: load_file.h
 load_file.c: buffer.h
@@ -153,6 +166,8 @@ load_file.c: property.h
 load_file.c: range.h
 load_file.c: string_unit.h
 load_file.c: text_encoding.h
+
+load_tasks.c: load_tasks.h
 
 main.c: argument_parser.h
 main.c: buffer.h
@@ -166,6 +181,7 @@ main.c: file_system.h
 main.c: hash.h
 main.c: interpreter.h
 main.c: load_file.h
+main.c: load_tasks.h
 main.c: math_unit.h
 main.c: operating_system.h
 main.c: path.h
@@ -214,6 +230,7 @@ project.c: conversion.h
 project.c: file_system.h
 project.c: interpreter.h
 project.c: load_file.h
+project.c: load_tasks.h
 project.c: path.h
 project.c: property.h
 project.c: range.h
@@ -237,6 +254,8 @@ property.c: text_encoding.h
 range.c: range.h
 range.c: buffer.h
 range.c: common.h
+
+shared_object.c: shared_object.h
 
 sleep_unit.c: sleep_unit.h
 sleep_unit.c: buffer.h
@@ -264,10 +283,18 @@ target.c: string_unit.h
 target.c: text_encoding.h
 target.c: xml.h
 
+task.c: task.h
+task.c: common.h
+task.c: conversion.h
+task.c: interpreter.h
+task.c: project.h
+task.c: range.h
+
 text_encoding.c: text_encoding.h
 text_encoding.c: buffer.h
 text_encoding.c: common.h
 
+try_catch.c: try_catch.h
 try_catch.c: buffer.h
 try_catch.c: common.h
 try_catch.c: file_system.h
@@ -297,6 +324,9 @@ argument_parser.obj: argument_parser.c
 buffer.obj: buffer.c
 	$(CC) $(CFLAGS) -c buffer.c -o $@
 
+choose_task.obj: choose_task.c
+	$(CC) $(CFLAGS) -c choose_task.c -o $@
+
 common.obj: common.c
 	$(CC) $(CFLAGS) -c common.c -o $@
 
@@ -317,6 +347,9 @@ environment.obj: environment.c
 
 exec.obj: exec.c
 	$(CC) $(CFLAGS) -c exec.c -o $@
+
+fail_task.obj: fail_task.c
+	$(CC) $(CFLAGS) -c fail_task.c -o $@
 
 file_system.obj: file_system.c
 	$(CC) $(CFLAGS) -c file_system.c -o $@
@@ -339,11 +372,20 @@ hash.crc32.obj: hash.crc32.c
 hash.sha3.obj: hash.sha3.c
 	$(CC) $(CFLAGS) -c hash.sha3.c -o $@
 
+if_task.obj: if_task.c
+	$(CC) $(CFLAGS) -c if_task.c -o $@
+
 interpreter.obj: interpreter.c
 	$(CC) $(CFLAGS) -c interpreter.c -o $@
 
+listener.obj: listener.c
+	$(CC) $(CFLAGS) -c listener.c -o $@
+
 load_file.obj: load_file.c
 	$(CC) $(CFLAGS) -c load_file.c -o $@
+
+load_tasks.obj: load_tasks.c
+	$(CC) $(CFLAGS) -c load_tasks.c -o $@
 
 main.obj: main.c
 	$(CC) $(CFLAGS) -c main.c -o $@
@@ -366,6 +408,9 @@ property.obj: property.c
 range.obj: range.c
 	$(CC) $(CFLAGS) -c range.c -o $@
 
+shared_object.obj: shared_object.c
+	$(CC) $(CFLAGS) -c shared_object.c -o $@
+
 sleep_unit.obj: sleep_unit.c
 	$(CC) $(CFLAGS) -c sleep_unit.c -o $@
 
@@ -374,6 +419,9 @@ string_unit.obj: string_unit.c
 
 target.obj: target.c
 	$(CC) $(CFLAGS) -c target.c -o $@
+
+task.obj: task.c
+	$(CC) $(CFLAGS) -c task.c -o $@
 
 text_encoding.obj: text_encoding.c
 	$(CC) $(CFLAGS) -c text_encoding.c -o $@
@@ -389,6 +437,7 @@ xml.obj: xml.c
 
 libant4c.a: argument_parser.obj
 libant4c.a: buffer.obj
+libant4c.a: choose_task.obj
 libant4c.a: common.obj
 libant4c.a: conversion.obj
 libant4c.a: copy_move.obj
@@ -396,29 +445,35 @@ libant4c.a: date_time.obj
 libant4c.a: echo.obj
 libant4c.a: environment.obj
 libant4c.a: exec.obj
+libant4c.a: fail_task.obj
 libant4c.a: file_system.obj
 libant4c.a: for_each.obj
 libant4c.a: hash.blake2.obj
 libant4c.a: hash.blake3.obj
-libant4c.a: hash.obj
 libant4c.a: hash.crc32.obj
+libant4c.a: hash.obj
 libant4c.a: hash.sha3.obj
+libant4c.a: if_task.obj
 libant4c.a: interpreter.obj
+libant4c.a: listener.obj
 libant4c.a: load_file.obj
+libant4c.a: load_tasks.obj
 libant4c.a: math_unit.obj
 libant4c.a: operating_system.obj
 libant4c.a: path.obj
 libant4c.a: project.obj
 libant4c.a: property.obj
 libant4c.a: range.obj
+libant4c.a: shared_object.obj
 libant4c.a: sleep_unit.obj
 libant4c.a: string_unit.obj
 libant4c.a: target.obj
+libant4c.a: task.obj
 libant4c.a: text_encoding.obj
 libant4c.a: try_catch.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
@@ -427,5 +482,5 @@ ant4c: main.obj
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj interpreter.obj load_file.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj sleep_unit.obj string_unit.obj target.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean

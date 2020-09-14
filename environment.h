@@ -14,6 +14,15 @@
 struct buffer;
 struct OperatingSystem;
 
+static const uint8_t environment_posix_delimiter = ':';
+static const uint8_t environment_windows_delimiter = ';';
+
+#if defined(_WIN32)
+#define ENVIRONMENT_DELIMITER environment_windows_delimiter
+#else
+#define ENVIRONMENT_DELIMITER environment_posix_delimiter
+#endif
+
 enum SpecialFolder
 {
 	Desktop,

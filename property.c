@@ -53,13 +53,8 @@ uint8_t property_is_name_valid(const uint8_t* name, uint8_t name_length)
 	const uint8_t* name_start = name;
 	const uint8_t* name_finish = name + name_length;
 
-	while (NULL != (pos = string_enumerate(name, name_finish)))
+	while (NULL != (pos = string_enumerate(name, name_finish, &out)))
 	{
-		if (!text_encoding_decode_UTF8_single(name, pos, &out))
-		{
-			return 0;
-		}
-
 		if (INT8_MAX < out)
 		{
 			if (string_to_case(out, string_get_id_of_to_lower_function()) ==
@@ -263,8 +258,7 @@ uint8_t property_set_by_pointer(void* the_property,
 
 	if (prop->read_only)
 	{
-		/*TODO: inform about attempt to set readonly property, but not fail process.*/
-		return 1;
+		return ATTEMPT_TO_WRITE_READ_ONLY_PROPERTY;
 	}
 
 	/*TODO: add append optimization:
@@ -287,17 +281,51 @@ uint8_t property_set_by_pointer(void* the_property,
 				break;
 
 			case property_value_is_integer:
-				if (!int64_to_string(*((const int64_t*)value), &prop->value))
+				if ((ptrdiff_t)sizeof(int64_t) <= value_length)
 				{
-					return 0;
+					if (!int64_to_string(*((const int64_t*)value), &prop->value))
+					{
+						return 0;
+					}
+				}
+				else if ((ptrdiff_t)sizeof(int32_t) <= value_length)
+				{
+					if (!int_to_string(*((const int32_t*)value), &prop->value))
+					{
+						return 0;
+					}
+				}
+				else if ((ptrdiff_t)sizeof(int16_t) <= value_length)
+				{
+					if (!int_to_string(*((const int16_t*)value), &prop->value))
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					if (!int_to_string(*((const int8_t*)value), &prop->value))
+					{
+						return 0;
+					}
 				}
 
 				break;
 
 			case property_value_is_double:
-				if (!double_to_string(*((const double*)value), &prop->value))
+				if ((ptrdiff_t)sizeof(double) <= value_length)
 				{
-					return 0;
+					if (!double_to_string(*((const double*)value), &prop->value))
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					if (!double_to_string(*((const float*)value), &prop->value))
+					{
+						return 0;
+					}
 				}
 
 				break;
@@ -474,8 +502,7 @@ uint8_t property_evaluate_task(void* the_project, struct buffer* properties,
 			   dynamic, over_write, read_only, verbose);
 }
 
-uint8_t property_add_at_project(void* the_project, const struct buffer* properties,
-								uint8_t(*except_filter)(const uint8_t*, uint8_t), uint8_t verbose)
+uint8_t property_add_at_project(void* the_project, const struct buffer* properties, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == properties)
 	{
@@ -486,39 +513,16 @@ uint8_t property_add_at_project(void* the_project, const struct buffer* properti
 	const struct property* prop = NULL;
 	static const uint8_t over_write = 1;
 
-	if (except_filter)
+	while (NULL != (prop = buffer_property_data(properties, i++)))
 	{
-		while (NULL != (prop = buffer_property_data(properties, i++)))
+		const ptrdiff_t size = buffer_size(&prop->value);
+		const void* value = size ? buffer_data(&prop->value, 0) : (const void*)prop;
+
+		if (!project_property_set_value(the_project, prop->name, prop->name_length,
+										value, size, prop->dynamic, over_write,
+										prop->read_only, verbose))
 		{
-			if (except_filter(prop->name, prop->name_length))
-			{
-				continue;
-			}
-
-			const ptrdiff_t size = buffer_size(&prop->value);
-			const void* value = size ? buffer_data(&prop->value, 0) : (const void*)prop;
-
-			if (!project_property_set_value(the_project, prop->name, prop->name_length,
-											value, size, prop->dynamic, over_write,
-											prop->read_only, verbose))
-			{
-				return 0;
-			}
-		}
-	}
-	else
-	{
-		while (NULL != (prop = buffer_property_data(properties, i++)))
-		{
-			const ptrdiff_t size = buffer_size(&prop->value);
-			const void* value = size ? buffer_data(&prop->value, 0) : (const void*)prop;
-
-			if (!project_property_set_value(the_project, prop->name, prop->name_length,
-											value, size, prop->dynamic, over_write,
-											prop->read_only, verbose))
-			{
-				return 0;
-			}
+			return 0;
 		}
 	}
 

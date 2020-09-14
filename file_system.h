@@ -19,16 +19,18 @@ struct buffer;
 struct range;
 
 #if defined(_WIN32)
-uint8_t file_system_append_pre_root(const struct range* path, struct buffer* output);
+uint8_t file_system_append_pre_root(struct buffer* path);
 uint8_t file_system_get_position_after_pre_root(struct range* path);
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path);
+uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW);
 #endif
 
 uint8_t directory_create(const uint8_t* path);
 uint8_t directory_delete(const uint8_t* path);
 
 uint8_t directory_enumerate_file_system_entries(
-	struct buffer* path, const uint8_t entry_type, const uint8_t recurse, struct buffer* output);
+	struct buffer* path, const uint8_t entry_type, const uint8_t recurse,
+	struct buffer* output, uint8_t fail_on_error);
 
 #if defined(_WIN32)
 uint8_t directory_exists_wchar_t(const wchar_t* path);
@@ -39,7 +41,7 @@ int64_t directory_get_creation_time(const uint8_t* path);
 int64_t directory_get_creation_time_utc(const uint8_t* path);
 
 uint8_t directory_get_current_directory(
-	const void* project, const void** the_property, struct buffer* output);
+	const void* project, const void** the_property, struct buffer* output, uint8_t verbose);
 uint8_t directory_get_directory_root(const uint8_t* path, struct range* root);
 
 int64_t directory_get_last_access_time(const uint8_t* path);
@@ -115,6 +117,8 @@ size_t file_write(const void* content, const size_t size_of_content_element,
 uint8_t file_write_all(const uint8_t* path, const struct buffer* content);
 uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, void* stream);
 uint8_t file_write_with_several_steps(const struct buffer* content, void* stream);
+
+uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full_path);
 
 uint8_t dir_get_id_of_get_current_directory_function();
 uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish);

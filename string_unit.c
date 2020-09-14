@@ -110,10 +110,16 @@ uint8_t string_ends_with(const uint8_t* input_start, const uint8_t* input_finish
 	return expected_index == index;
 }
 
-const uint8_t* string_enumerate(const uint8_t* input_start, const uint8_t* input_finish)
+const uint8_t* string_enumerate(const uint8_t* input_start, const uint8_t* input_finish, uint32_t* char_set)
 {
-	uint32_t char_set = 0;
-	const uint8_t offset = text_encoding_decode_UTF8_single(input_start, input_finish, &char_set);
+	static uint32_t internal_char_set = 0;
+
+	if (NULL == char_set)
+	{
+		char_set = &internal_char_set;
+	}
+
+	const uint8_t offset = text_encoding_decode_UTF8_single(input_start, input_finish, char_set);
 	return offset ? input_start + offset : NULL;
 }
 
@@ -131,7 +137,7 @@ ptrdiff_t string_get_length(const uint8_t* input_start, const uint8_t* input_fin
 
 	ptrdiff_t length = 0;
 
-	while (NULL != (input_start = string_enumerate(input_start, input_finish)))
+	while (NULL != (input_start = string_enumerate(input_start, input_finish, NULL)))
 	{
 		++length;
 	}
@@ -157,7 +163,7 @@ ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_f
 	ptrdiff_t index = -1;
 	const uint8_t* pos = NULL;
 
-	while (NULL != (pos = string_enumerate(value_start, value_finish)))
+	while (NULL != (pos = string_enumerate(value_start, value_finish, NULL)))
 	{
 		const ptrdiff_t i = string_index_of_value(input_start, input_finish, value_start, pos, 1);
 		value_start = pos;
@@ -182,7 +188,7 @@ ptrdiff_t string_last_index_of_any(const uint8_t* input_start, const uint8_t* in
 	ptrdiff_t index = -1;
 	const uint8_t* pos = NULL;
 
-	while (NULL != (pos = string_enumerate(value_start, value_finish)))
+	while (NULL != (pos = string_enumerate(value_start, value_finish, NULL)))
 	{
 		const ptrdiff_t i = string_index_of_value(input_start, input_finish, value_start, pos, -1);
 		value_start = pos;
@@ -732,11 +738,22 @@ uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish,
 	return string_transform_to_case(input_start, input_finish, output, to_upper);
 }
 
-enum string_trim_mode { string_trim_mode_all = trim, string_trim_mode_end = trim_end, string_trim_mode_start = trim_start };
-
-uint8_t string_trim_any(struct range* input_output, enum string_trim_mode mode)
+uint8_t string_trim_any(struct range* input_output, uint8_t mode, const uint16_t* trim_symbols,
+						uint8_t count_of_symbols)
 {
-	static const uint8_t trim_symbols[] = { '\0', '\t', ' ', '\n' };
+	static const uint16_t internal_trim_symbols[] =
+	{
+		'\0', '\t', '\n', 11, 12, '\r', ' ', 133, 160,
+		5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198,
+		8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287,
+		12288
+	};
+
+	if (NULL == trim_symbols)
+	{
+		trim_symbols = internal_trim_symbols;
+		count_of_symbols = COUNT_OF(internal_trim_symbols);
+	}
 
 	if (NULL != input_output && input_output->start == input_output->finish)
 	{
@@ -747,42 +764,66 @@ uint8_t string_trim_any(struct range* input_output, enum string_trim_mode mode)
 		NULL == input_output->start ||
 		NULL == input_output->finish ||
 		input_output->finish < input_output->start ||
-		(string_trim_mode_all != mode && string_trim_mode_end != mode && string_trim_mode_start != mode))
+		(trim != mode && trim_end != mode && trim_start != mode))
 	{
 		return 0;
 	}
 
-	if (string_trim_mode_all == mode || string_trim_mode_start == mode)
+	uint32_t out = 0;
+	const uint32_t* finish = &out + 1;
+
+	if (trim == mode || trim_start == mode)
 	{
-		input_output->start = find_any_symbol_like_or_not_like_that(
-								  input_output->start, input_output->finish, trim_symbols, 4, 0, 1);
+		const uint8_t* pos = NULL;
+
+		while (NULL != (pos = string_enumerate(input_output->start, input_output->finish, &out)))
+		{
+			if (finish == find_any_symbol_like_or_not_like_that_UTF32LE(
+					&out, finish, trim_symbols, count_of_symbols, 1, 1))
+			{
+				break;
+			}
+			else
+			{
+				input_output->start = pos;
+			}
+		}
 	}
 
 	if (input_output->start < input_output->finish &&
-		(string_trim_mode_all == mode || string_trim_mode_end == mode))
+		(trim == mode || trim_end == mode))
 	{
+		mode = 0;
+		/**/
+		const uint8_t* expected_finish = input_output->finish;
 		const uint8_t* pos = input_output->start;
 		const uint8_t* prev_pos = pos;
 
-		while (input_output->finish > (pos = find_any_symbol_like_or_not_like_that(
-				pos, input_output->finish, trim_symbols, 4, 0, 1)))
+		while (NULL != (pos = string_enumerate(prev_pos, input_output->finish, &out)))
 		{
-			prev_pos = pos;
-			++pos;
-		}
-
-		uint8_t shift = 1;
-
-		for (uint8_t i = 0; i < 4; ++i)
-		{
-			if (trim_symbols[i] == (*prev_pos))
+			if (finish == find_any_symbol_like_or_not_like_that_UTF32LE(
+					&out, finish, trim_symbols, count_of_symbols, 1, 1))
 			{
-				shift = 0;
-				break;
+				mode = 0;
+				expected_finish = input_output->finish;
 			}
+			else
+			{
+				if (!mode)
+				{
+					expected_finish = prev_pos;
+				}
+
+				mode = 1;
+			}
+
+			prev_pos = pos;
 		}
 
-		input_output->finish = prev_pos + shift;
+		if (expected_finish != input_output->finish)
+		{
+			input_output->finish = expected_finish;
+		}
 	}
 
 	return 1;
@@ -790,17 +831,17 @@ uint8_t string_trim_any(struct range* input_output, enum string_trim_mode mode)
 
 uint8_t string_trim(struct range* input_output)
 {
-	return string_trim_any(input_output, string_trim_mode_all);
+	return string_trim_any(input_output, trim, NULL, 0);
 }
 
 uint8_t string_trim_end(struct range* input_output)
 {
-	return string_trim_any(input_output, string_trim_mode_end);
+	return string_trim_any(input_output, trim_end, NULL, 0);
 }
 
 uint8_t string_trim_start(struct range* input_output)
 {
-	return string_trim_any(input_output, string_trim_mode_start);
+	return string_trim_any(input_output, trim_start, NULL, 0);
 }
 
 uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
@@ -916,125 +957,76 @@ uint8_t string_exec_function(uint8_t function,
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[3];
 
-	struct range argument2;
-
-	struct range argument3;
-
-	argument1.start = argument2.start = argument3.start =
-											argument1.finish = argument2.finish = argument3.finish = NULL;
-
-	switch (arguments_count)
+	if (!common_get_arguments(arguments, arguments_count, values,
+							  (substring == function || pad_left == function || pad_right == function) ? 1 : 0))
 	{
-		case 0:
-			break;
+		return 0;
+	}
 
-		case 1:
-			if (!common_get_one_argument(arguments, &argument1, 0))
-			{
-				/*NOTE: allowed to string unit, where empty string can be as input.*/
-				argument1.start = argument1.finish = (const uint8_t*)&argument1;
-			}
-
-			break;
-
-		case 2:
-			if (!common_get_two_arguments(arguments, &argument1, &argument2, substring == function ? 1 : 0))
-			{
-				if (NULL == argument1.start)
-				{
-					argument1.start = argument1.finish = (const uint8_t*)&argument1;
-				}
-
-				if (NULL == argument2.start)
-				{
-					argument2.start = argument2.finish = (const uint8_t*)&argument2;
-				}
-			}
-
-			break;
-
-		case 3:
-			if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3,
-											(substring == function || pad_left == function || pad_right == function) ? 1 : 0))
-			{
-				if (NULL == argument1.start)
-				{
-					argument1.start = argument1.finish = (const uint8_t*)&argument1;
-				}
-
-				if (NULL == argument2.start)
-				{
-					argument2.start = argument2.finish = (const uint8_t*)&argument2;
-				}
-
-				if (NULL == argument3.start)
-				{
-					argument3.start = argument3.finish = (const uint8_t*)&argument3;
-				}
-			}
-
-			break;
-
-		default:
-			return 0;
+	for (uint8_t i = 0, count = COUNT_OF(values); i < count; ++i)
+	{
+		if (NULL == values[i].start)
+		{
+			values[i].start = values[i].finish = (const uint8_t*)&values[i];
+		}
 	}
 
 	switch (function)
 	{
 		case contains:
 			return (2 == arguments_count) &&
-				   bool_to_string(string_contains(argument1.start, argument1.finish,
-												  argument2.start, argument2.finish), output);
+				   bool_to_string(string_contains(values[0].start, values[0].finish,
+												  values[1].start, values[1].finish), output);
 
 		case ends_with:
 			return (2 == arguments_count) &&
-				   bool_to_string(string_ends_with(argument1.start, argument1.finish,
-												   argument2.start, argument2.finish), output);
+				   bool_to_string(string_ends_with(values[0].start, values[0].finish,
+												   values[1].start, values[1].finish), output);
 
 		case get_length:
 			return (1 == arguments_count) &&
-				   int64_to_string(string_get_length(argument1.start, argument1.finish), output);
+				   int64_to_string(string_get_length(values[0].start, values[0].finish), output);
 
 		case index_of:
 			return (2 == arguments_count) &&
-				   int64_to_string(string_index_of_value(argument1.start, argument1.finish, argument2.start, argument2.finish,
+				   int64_to_string(string_index_of_value(values[0].start, values[0].finish, values[1].start, values[1].finish,
 								   1),
 								   output);
 
 		case last_index_of:
 			return (2 == arguments_count) &&
-				   int64_to_string(string_index_of_value(argument1.start, argument1.finish, argument2.start, argument2.finish,
+				   int64_to_string(string_index_of_value(values[0].start, values[0].finish, values[1].start, values[1].finish,
 								   -1),
 								   output);
 
 		case index_of_any:
 			return (2 == arguments_count) &&
-				   int64_to_string(string_index_of_any(argument1.start, argument1.finish, argument2.start, argument2.finish),
+				   int64_to_string(string_index_of_any(values[0].start, values[0].finish, values[1].start, values[1].finish),
 								   output);
 
 		case last_index_of_any:
 			return (2 == arguments_count) &&
-				   int64_to_string(string_last_index_of_any(argument1.start, argument1.finish, argument2.start,
-								   argument2.finish), output);
+				   int64_to_string(string_last_index_of_any(values[0].start, values[0].finish, values[1].start,
+								   values[1].finish), output);
 
 		case pad_left:
 		case pad_right:
 			return (3 == arguments_count) &&
-				   string_pad(argument1.start, argument1.finish, argument3.start, argument3.finish,
-							  (ptrdiff_t)int64_parse(argument2.start), output, function);
+				   string_pad(values[0].start, values[0].finish, values[2].start, values[2].finish,
+							  (ptrdiff_t)int64_parse(values[1].start), output, function);
 
 		case replace:
 			return (3 == arguments_count) && string_replace(
-					   argument1.start, argument1.finish,
-					   argument2.start, argument2.finish,
-					   argument3.start, argument3.finish,
+					   values[0].start, values[0].finish,
+					   values[1].start, values[1].finish,
+					   values[2].start, values[2].finish,
 					   output);
 
 		case starts_with:
 			return (2 == arguments_count) &&
-				   bool_to_string(string_starts_with(argument1.start, argument1.finish, argument2.start, argument2.finish),
+				   bool_to_string(string_starts_with(values[0].start, values[0].finish, values[1].start, values[1].finish),
 								  output);
 
 		case substring:
@@ -1043,26 +1035,26 @@ uint8_t string_exec_function(uint8_t function,
 			{
 				break;
 			}
-			else if (2 == arguments_count && range_is_null_or_empty(&argument2))
+			else if (2 == arguments_count && range_is_null_or_empty(&values[1]))
 			{
 				break;
 			}
-			else if (3 == arguments_count && (range_is_null_or_empty(&argument2) || range_is_null_or_empty(&argument3)))
+			else if (3 == arguments_count && (range_is_null_or_empty(&values[1]) || range_is_null_or_empty(&values[2])))
 			{
 				break;
 			}
 
-			if (range_is_null_or_empty(&argument1))
+			if (range_is_null_or_empty(&values[0]))
 			{
 				return 1;
 			}
 
-			const ptrdiff_t index = (ptrdiff_t)int64_parse(argument2.start);
+			const ptrdiff_t index = (ptrdiff_t)int64_parse(values[1].start);
 			ptrdiff_t length = -1;
 
 			if (3 == arguments_count)
 			{
-				length = (ptrdiff_t)int64_parse(argument3.start);
+				length = (ptrdiff_t)int64_parse(values[2].start);
 
 				if (length < 0)
 				{
@@ -1070,36 +1062,36 @@ uint8_t string_exec_function(uint8_t function,
 				}
 			}
 
-			return string_substring(argument1.start, argument1.finish, index, length, output);
+			return string_substring(values[0].start, values[0].finish, index, length, output);
 		}
 
 		case to_lower:
 		case to_upper:
 			return (1 == arguments_count) &&
-				   string_transform_to_case(argument1.start, argument1.finish, output, function);
+				   string_transform_to_case(values[0].start, values[0].finish, output, function);
 
 		case trim:
 		case trim_end:
 		case trim_start:
 			return (1 == arguments_count) &&
-				   string_trim_any(&argument1, function) &&
-				   buffer_append(output, argument1.start, range_size(&argument1));
+				   string_trim_any(&values[0], function, /*TODO:*/NULL, 0) &&
+				   buffer_append(output, values[0].start, range_size(&values[0]));
 
 		case quote:
 			return (1 == arguments_count) &&
-				   string_quote(argument1.start, argument1.finish, output);
+				   string_quote(values[0].start, values[0].finish, output);
 
 		case un_quote:
 			return (1 == arguments_count) &&
-				   string_un_quote(&argument1) &&
-				   buffer_append_data_from_range(output, &argument1);
+				   string_un_quote(&values[0]) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case equal:
 			return (2 == arguments_count) &&
-				   bool_to_string(string_equal(argument1.start, argument1.finish, argument2.start, argument2.finish), output);
+				   bool_to_string(string_equal(values[0].start, values[0].finish, values[1].start, values[1].finish), output);
 
 		case empty:
-			return (1 == arguments_count) && bool_to_string(range_is_null_or_empty(&argument1), output);
+			return (1 == arguments_count) && bool_to_string(range_is_null_or_empty(&values[0]), output);
 
 		case UNKNOWN_STRING_FUNCTION:
 		default:
