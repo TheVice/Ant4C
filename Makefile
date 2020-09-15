@@ -45,6 +45,8 @@ date_time.c: conversion.h
 date_time.c: math_unit.h
 date_time.c: range.h
 
+default_listener.c: default_listener.h
+
 echo.c: echo.h
 echo.c: buffer.h
 echo.c: common.h
@@ -339,6 +341,9 @@ copy_move.obj: copy_move.c
 date_time.obj: date_time.c
 	$(CC) $(CFLAGS) -c date_time.c -o $@
 
+default_listener.obj: default_listener.c
+	${CC} ${CFLAGS} -c -fPIC default_listener.c -o $@
+
 echo.obj: echo.c
 	$(CC) $(CFLAGS) -c echo.c -o $@
 
@@ -477,10 +482,14 @@ libant4c.a: xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
+ant4c: libdefault_listener.so
 	$(CC) main.obj -o $@ libant4c.a -lm $(LDCFLAGS)
+
+libdefault_listener.so: default_listener.obj
+	$(CC) -shared -o $@ default_listener.obj
 
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a main.obj argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	-rm ant4c libant4c.a main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean
