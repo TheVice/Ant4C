@@ -3372,4 +3372,4 @@ Convert version in the string into string.
 
 == What's next?
 
-Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/4cc005f99954fa3d615edaa5bf8574d6fe8244fc/tests.xml[tests.xml file], at the 'project_load_from_content' test.
+Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/153b005507b91c577c8af62aa5c8530289903f92/tests.xml[tests.xml file], in the section of 'project_load_from_content' test.
