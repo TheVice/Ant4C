@@ -17,7 +17,7 @@ ant4c (2020.09)
   * Allowed to call executable from the directory that was set
     at the PATH environment variable.
 
- -- TheVice <TheVice>  Mon, 14 Sep 2020 17:11:16 +3000
+ -- TheVice <TheVice>  Mon, 14 Sep 2020 17:11:16 +0300
 
 ant4c (2020.05)
 
