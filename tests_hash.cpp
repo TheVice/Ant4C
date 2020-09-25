@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "echo.h"
 #include "hash.h"
@@ -244,10 +245,10 @@ TEST_F(TestHashAlgorithm, BLAKE3)
 		uint32_t t[2];
 		t[0] = t[1] = 0;
 		uint8_t compressed = 0;
-		uint8_t stack[256];
+		uint8_t stack[1024];
 		uint8_t stack_length = 0;
 		//
-		returned = BLAKE3_init(h, sizeof(h), m, sizeof(m), sizeof(stack));
+		returned = BLAKE3_init(h, COUNT_OF(h), m, COUNT_OF(m), sizeof(stack));
 		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 
 		for (uint16_t i = 0; i < input_length; i += 4096)

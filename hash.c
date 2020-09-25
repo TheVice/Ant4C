@@ -335,14 +335,20 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 		case blake3:
 		{
 			static const uint8_t d = 0;
-			/**/
-			hash_length = hash_length / 8;
-			/**/
-			uint32_t h[8];
-			uint32_t m[16];
-			uint8_t stack[256];
+			static const uint8_t h_size = 8 * sizeof(uint32_t);
+			static const uint8_t m_size = 16 * sizeof(uint32_t);
 
-			if (!BLAKE3_init(h, sizeof(h), m, sizeof(m), sizeof(stack)))
+			if (!buffer_append(output, NULL,
+							   (ptrdiff_t)4096 + h_size + m_size + 1024))
+			{
+				break;
+			}
+
+			uint32_t* h = (uint32_t*)buffer_data(output, size + 4096);
+			uint32_t* m = (uint32_t*)buffer_data(output, size + 4096 + h_size);
+			uint8_t* stack = buffer_data(output, size + 4096 + h_size + m_size);
+
+			if (!BLAKE3_init(h, 8, m, 16, 1024))
 			{
 				break;
 			}
@@ -350,15 +356,11 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 			uint8_t l = 0;
 			uint32_t t[2];
 			t[0] = t[1] = 0;
+			/**/
 			uint8_t compressed = 0;
 			uint8_t stack_length = 0;
-
-			if (!buffer_append(output, NULL, 4096))
-			{
-				break;
-			}
-
 			size_t readed = 0;
+			/**/
 			uint8_t* file_content = buffer_data(output, size);
 
 			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
@@ -370,6 +372,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				}
 			}
 
+			hash_length = hash_length / 8;
 			file_content = buffer_data(output, size + 64);
 
 			if (!file_close(file) ||
