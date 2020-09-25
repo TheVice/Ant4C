@@ -508,6 +508,53 @@ uint8_t Test_BLAKE3(struct buffer* output)
 	return 1;
 }
 
+uint8_t Test_BLAKE3_huge_data(struct buffer* output)
+{
+	static const ptrdiff_t lengths[] =
+	{
+		32 * 1024,
+		/*64 * 1024,
+		128 * 1024,
+		256 * 1024,
+		512 * 1024,
+		1 * 1024 * 1024,
+		2 * 1024 * 1024,
+		4 * 1024 * 1024,
+		8 * 1024 * 1024,
+		16 * 1024 * 1024,
+		32 * 1024 * 1024,*/
+		64 * 1024 * 1024,
+		128 * 1024 * 1024,
+		/*256 * 1024 * 1024,
+		512 * 1024 * 1024*/
+	};
+
+	for (uint8_t i = 0, count = COUNT_OF(lengths); i < count; ++i)
+	{
+		if (!buffer_resize(output, lengths[i]))
+		{
+			printf("This test required %"PRId64" bytes to be allocated.", lengths[i]);
+			printf("%i %s\n", __LINE__, "FAILURE");
+			return 0;
+		}
+
+		struct range in;
+
+		BUFFER_TO_RANGE(in, output);
+
+		uint8_t out[256];
+
+		if (!BLAKE3(in.start, in.finish, 256 / 8, out))
+		{
+			printf("%"PRId64"\n", lengths[i]);
+			printf("%i %s\n", __LINE__, "FAILURE");
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 uint8_t Test_CRC32(struct buffer* output)
 {
 	static const uint8_t* CRC32_inputs[] =
@@ -587,7 +634,7 @@ uint8_t Test_CRC32(struct buffer* output)
 uint8_t Test_Keccak(struct buffer* output)
 {
 	typedef uint8_t(*keccak_function)(const uint8_t*, const uint8_t*, uint16_t hash_length,
-			struct buffer*);
+									  struct buffer*);
 	/**/
 	static const keccak_function keccak_functions[] =
 	{
@@ -951,8 +998,14 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	if (!Test_BLAKE2b_1(&output) ||
-		!Test_BLAKE2b_2(&output))
+	if (!Test_BLAKE2b_1(&output))
+	{
+		buffer_release(&output);
+		printf("%i %s\n", __LINE__, "FAILURE");
+		return EXIT_FAILURE;
+	}
+
+	if (!Test_BLAKE2b_2(&output))
 	{
 		buffer_release(&output);
 		printf("%i %s\n", __LINE__, "FAILURE");
@@ -960,6 +1013,13 @@ int main(int argc, char** argv)
 	}
 
 	if (!Test_BLAKE3(&output))
+	{
+		buffer_release(&output);
+		printf("%i %s\n", __LINE__, "FAILURE");
+		return EXIT_FAILURE;
+	}
+
+	if (!Test_BLAKE3_huge_data(&output))
 	{
 		buffer_release(&output);
 		printf("%i %s\n", __LINE__, "FAILURE");

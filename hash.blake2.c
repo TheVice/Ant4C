@@ -137,7 +137,7 @@ uint8_t BLAKE2b_core(const uint8_t* start, const uint8_t* finish, ptrdiff_t* byt
 	}
 
 	uint64_t t[2];
-	t[0] = t[1] = 0;/*NOTE: using of t[1] not implemented.*/
+	t[1] = 0;/*NOTE: using of t[1] not implemented.*/
 
 	while (start < finish)
 	{
