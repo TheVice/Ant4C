@@ -54,6 +54,10 @@ else()
     if(MINGW)
       target_link_libraries(ant4c.dns ws2_32)
     endif()
+
+    if(USE_PTHREAD)
+      target_link_libraries(ant4c.dns pthread)
+    endif()
   endif()
 endif()
 
