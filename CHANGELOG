@@ -1,6 +1,6 @@
 ant4c (YYYY.MM)
   * Increased stack that used at BLAKE3 algorithm to allow calculate hashes
-    for files with length more than 64 MB.
+    of inputs with huge (more than 32 KB) length.
 
  -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

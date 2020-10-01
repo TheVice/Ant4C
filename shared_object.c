@@ -28,10 +28,6 @@
 
 void* shared_object_load_wchar_t(const wchar_t* path)
 {
-	/*if (!file_exists_wchar_t(path))
-	{
-		return NULL;
-	}*/
 	return (void*)LoadLibraryExW(path, NULL, 0);
 }
 
@@ -59,22 +55,19 @@ void* shared_object_load(const uint8_t* path)
 	/**/
 	return object;
 #else
-	/*if (!file_exists(path))
-	{
-		return NULL;
-	}*/
 	/*
 #ifndef NDEBUG
-	void* ptr = dlopen((const char*)path, RTLD_NOW);
+	uint8_t verbose = 1;
+	void* object = dlopen((const char*)path, RTLD_NOW);
 
-	if (NULL == ptr)
+	if (verbose && NULL == object)
 	{
-		const char* error_str = dlerror();
-		const uint8_t message_length = (uint8_t)common_count_bytes_until(ptr, 0);
-		echo(0, UTF8, NULL, Error, (const uint8_t*)error_str, message_length, 1, 0);
+		const uint8_t* (const uint8_t*)error_str = dlerror();
+		const uint8_t message_length = (uint8_t)common_count_bytes_until(error_str, 0);
+		echo(0, UTF8, NULL, Error, error_str, message_length, 1, 0);
 	}
 
-	return ptr;
+	return object;
 #else*/
 	return dlopen((const char*)path, RTLD_NOW);
 	/*
