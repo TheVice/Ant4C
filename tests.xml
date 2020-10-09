@@ -3573,6 +3573,11 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>exists() -> ${target::exists()}</code>
+      <output>exists() -> </output>
+      <return>0</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>get-current-target() -> ${target::get-current-target()}</code>
       <output>get-current-target() -> </output>
       <return>0</return>
@@ -3581,6 +3586,11 @@
       <code>has-executed('build') -> ${target::has-executed('build')}</code>
       <output>has-executed('build') -> False</output>
       <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>has-executed() -> ${target::has-executed()}</code>
+      <output>has-executed() -> </output>
+      <return>0</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>blake2b-160('') -> ${hash::bytes-to-string(hash::blake2b('', '160'))}</code>

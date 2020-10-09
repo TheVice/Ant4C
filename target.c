@@ -610,9 +610,7 @@ uint8_t target_exec_function(const void* the_project,
 
 	struct range argument;
 
-	argument.start = argument.finish = NULL;
-
-	if (arguments_count && !common_get_one_argument(arguments, &argument, 0))
+	if (arguments_count && !common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}
@@ -620,7 +618,8 @@ uint8_t target_exec_function(const void* the_project,
 	switch (function)
 	{
 		case target_exists_:
-			return bool_to_string(project_target_exists(the_project, argument.start, (uint8_t)range_size(&argument)),
+			return arguments_count &&
+				   bool_to_string(project_target_exists(the_project, argument.start, (uint8_t)range_size(&argument)),
 								  output);
 
 		case get_current_target_:
@@ -629,7 +628,7 @@ uint8_t target_exec_function(const void* the_project,
 				   buffer_append(output, argument.start, function);
 
 		case has_executed_:
-			return bool_to_string(
+			return arguments_count && bool_to_string(
 					   project_target_has_executed(the_project, argument.start, (uint8_t)range_size(&argument)), output);
 
 		case UNKNOWN_TARGET_FUNCTION:

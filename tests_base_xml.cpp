@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "echo.h"
 #include "interpreter.h"
@@ -29,10 +30,15 @@ extern "C" {
 #endif
 #endif
 
+#if defined(_MSC_VER)
+int main_(int argc, char** argv)
+{
+#else
 GTEST_API_ int main(int argc, char** argv)
 {
 	std::cout << "Running main() from ";
-	std::cout << __FILE__ << std::endl;
+	std::cout << __FILE__ << " " << __LINE__ << std::endl;
+#endif
 #ifdef _WIN32
 #ifndef NDEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -42,13 +48,56 @@ GTEST_API_ int main(int argc, char** argv)
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
+#if defined(_MSC_VER)
 
+extern std::string wchar_t_to_char(const std::wstring& input);
+
+GTEST_API_ int wmain(int argc, wchar_t** argv)
+{
+	std::wcout << L"Running wmain() from ";
+	std::wcout << __FILEW__ << L" " << __LINE__ << std::endl;
+	//
+	std::string arguments(0 < argc ? 512 : 0, 0);
+	arguments.clear();
+
+	for (int i = 0; i < argc; ++i)
+	{
+		arguments += wchar_t_to_char(argv[i]);
+		arguments.push_back(0);
+	}
+
+	char** argvA = nullptr;
+
+	if (argc)
+	{
+		const auto size = arguments.size();
+		arguments.append(argc * sizeof(char**), 0);
+		argvA = reinterpret_cast<char**>(&arguments[size]);
+		//
+		const auto start = reinterpret_cast<const uint8_t*>(&arguments[0]);
+		const auto finish = reinterpret_cast<const uint8_t*>(argvA);
+		//
+		int i = 0;
+		const uint8_t* pos = start;
+		static const uint8_t zero = 0;
+
+		do
+		{
+			pos = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 0, 1);
+			argvA[i++] = &arguments[pos - start];
+		}
+		while (i < argc && finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 1, 1)));
+	}
+
+	return main_(argc, argvA);
+}
+#endif
 std::string buffer_to_string(const buffer* input)
 {
-	std::string output((NULL != input && 0 < buffer_size(input)) ? buffer_size(input) : 0, '\0');
+	std::string output((nullptr != input && 0 < buffer_size(input)) ? buffer_size(input) : 0, '\0');
 	output.clear();
 
-	if (NULL != input && NULL != buffer_char_data(input, 0))
+	if (nullptr != input && nullptr != buffer_char_data(input, 0))
 	{
 		output.append(buffer_char_data(input, 0), buffer_size(input));
 	}
@@ -58,24 +107,24 @@ std::string buffer_to_string(const buffer* input)
 
 std::wstring buffer_to_u16string(const buffer* input)
 {
-	std::wstring output((NULL != input &&
+	std::wstring output((nullptr != input &&
 						 0 < buffer_size(input)) ? buffer_size(input) / sizeof(uint16_t) : 0, L'\0');
 	output.clear();
-	const uint16_t* ptr = NULL;
+	const uint16_t* ptr = nullptr;
 
-	if (NULL != input && NULL != (ptr = buffer_uint16_data(input, 0)))
+	if (nullptr != input && nullptr != (ptr = buffer_uint16_data(input, 0)))
 	{
 		switch (sizeof(wchar_t))
 		{
 			case 2:
-				output.append((const wchar_t*)ptr, buffer_size(input) / sizeof(uint16_t));
+				output.append(reinterpret_cast<const wchar_t*>(ptr), buffer_size(input) / sizeof(uint16_t));
 				break;
 
 			case 4:
 			{
 				ptrdiff_t i = 0;
 
-				while (NULL != (ptr = buffer_uint16_data(input, i++)))
+				while (nullptr != (ptr = buffer_uint16_data(input, i++)))
 				{
 					uint16_t value = *ptr;
 					output.push_back(value);
@@ -101,14 +150,14 @@ range buffer_to_range(const buffer* input)
 
 uint8_t string_to_buffer(const std::string& input, buffer* output)
 {
-	return NULL != output && buffer_append_char(output, input.empty() ? NULL : input.data(), input.size());
+	return nullptr != output && buffer_append_char(output, input.empty() ? nullptr : input.data(), input.size());
 }
 
 range string_to_range(const std::string& input)
 {
 	range output;
-	output.start = input.empty() ? NULL : (uint8_t*)input.data();
-	output.finish = input.empty() ? NULL : output.start + input.size();
+	output.start = input.empty() ? nullptr : reinterpret_cast<const uint8_t*>(input.data());
+	output.finish = input.empty() ? nullptr : output.start + input.size();
 	return output;
 }
 
@@ -121,7 +170,7 @@ std::string range_to_string(const uint8_t* start_of_range, const uint8_t* finish
 		return empty;
 	}
 
-	return std::string((const char*)start_of_range, finish_of_range - start_of_range);
+	return std::string(reinterpret_cast<const char*>(start_of_range), finish_of_range - start_of_range);
 }
 
 std::string range_to_string(const range& input)
@@ -131,15 +180,15 @@ std::string range_to_string(const range& input)
 
 std::string range_to_string(const range* input)
 {
-	return (NULL == input) ? range_to_string(NULL, NULL) : range_to_string(input->start, input->finish);
+	return (nullptr == input) ? range_to_string(nullptr, nullptr) : range_to_string(input->start, input->finish);
 }
 
 void null_range_to_empty(range& input)
 {
-	if (NULL == input.start ||
-		NULL == input.finish)
+	if (nullptr == input.start ||
+		nullptr == input.finish)
 	{
-		input.start = input.finish = (const uint8_t*)&input;
+		input.start = input.finish = reinterpret_cast<const uint8_t*>(&input);
 	}
 }
 
@@ -164,7 +213,7 @@ uint8_t buffer_free_with_inner_buffers(buffer* storage)
 uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition,
 		uint8_t verbose)
 {
-	if (NULL == tmp || NULL == condition)
+	if (nullptr == tmp || nullptr == condition)
 	{
 		return 0;
 	}
@@ -180,7 +229,7 @@ uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* 
 
 		auto code = string_to_range(if_);
 
-		if (!interpreter_evaluate_code(NULL, NULL, &code, tmp, verbose))
+		if (!interpreter_evaluate_code(nullptr, nullptr, &code, tmp, verbose))
 		{
 			return 0;
 		}
@@ -256,8 +305,8 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 
 		const uint8_t returned = property_set_by_name(
 									 properties,
-									 (const uint8_t*)name.c_str(), (uint8_t)name.size(),
-									 (const uint8_t*)value.c_str(), value.size(),
+									 reinterpret_cast<const uint8_t*>(name.c_str()), static_cast<uint8_t>(name.size()),
+									 reinterpret_cast<const uint8_t*>(value.c_str()), value.size(),
 									 property_value_is_byte_array,
 									 dynamic, over_write, read_only, verbose);
 
@@ -271,7 +320,7 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 			static const std::string
 			warn_about_failonerror("Failed to set property. Continue as demanded at 'fail on error' option.");
 
-			if (!echo(0, Default, NULL, Warning, (const uint8_t*)warn_about_failonerror.c_str(),
+			if (!echo(0, Default, nullptr, Warning, reinterpret_cast<const uint8_t*>(warn_about_failonerror.c_str()),
 					  warn_about_failonerror.size(), 1, 0))
 			{
 				return 0;
@@ -293,7 +342,8 @@ std::wstring u8string_to_u16string(const std::string& input, buffer* value)
 	static const std::wstring empty;
 
 	if (!text_encoding_UTF8_to_UTF16LE(
-			(const uint8_t*)input.c_str(), (const uint8_t*)input.c_str() + input.size(), value))
+			reinterpret_cast<const uint8_t*>(input.c_str()),
+			reinterpret_cast<const uint8_t*>(input.c_str()) + input.size(), value))
 	{
 		return empty;
 	}

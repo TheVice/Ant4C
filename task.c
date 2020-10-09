@@ -43,9 +43,7 @@ uint8_t task_exec_function(const void* the_project,
 
 	struct range argument;
 
-	argument.start = argument.finish = NULL;
-
-	if (!common_get_one_argument(arguments, &argument, 0))
+	if (!common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}

@@ -1201,9 +1201,11 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 
 	struct range argument;
 
-	argument.start = argument.finish = NULL;
-
-	if (1 == arguments_count && !common_get_one_argument(arguments, &argument, 0))
+	if (!arguments_count)
+	{
+		argument.start = argument.finish = NULL;
+	}
+	else if (!common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}
@@ -1212,7 +1214,7 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 	{
 		case get_folder_path:
 		{
-			if (1 != arguments_count)
+			if (!arguments_count)
 			{
 				break;
 			}
@@ -1235,14 +1237,14 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 			return !arguments_count && environment_get_user_name(output);
 
 		case get_variable:
-			return (1 == arguments_count) &&
+			return arguments_count &&
 				   environment_get_variable(argument.start, argument.finish, output);
 
 		case newline:
 			return !arguments_count && environment_newline(output);
 
 		case variable_exists:
-			return (1 == arguments_count) &&
+			return arguments_count &&
 				   bool_to_string(environment_variable_exists(argument.start, argument.finish),
 								  output);
 

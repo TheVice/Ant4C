@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -142,16 +142,11 @@ uint8_t os_exec_function(uint8_t function, const struct buffer* arguments, uint8
 
 	struct range argument;
 
-	argument.start = argument.finish = NULL;
-
-	if (1 == arguments_count && !common_get_one_argument(arguments, &argument, 0))
-	{
-		return 0;
-	}
-
 	struct OperatingSystem os;
 
-	if (1 == arguments_count && !operating_system_parse(argument.start, argument.finish, &os))
+	if (arguments_count &&
+		(!common_get_arguments(arguments, arguments_count, &argument, 0) ||
+		 !operating_system_parse(argument.start, argument.finish, &os)))
 	{
 		return 0;
 	}

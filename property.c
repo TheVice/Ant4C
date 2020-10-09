@@ -597,7 +597,7 @@ uint8_t property_exec_function(const void* the_project, uint8_t function, const 
 
 	struct range argument;
 
-	if (!common_get_one_argument(arguments, &argument, 0))
+	if (!common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}

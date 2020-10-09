@@ -19,8 +19,8 @@ extern "C" {
 #include <string>
 #include <cstdint>
 
-#define DOUBLE_PARSE(A) double_parse((const uint8_t*)(A))
-#define INT_PARSE(A) int_parse((const uint8_t*)(A))
+#define DOUBLE_PARSE(A) double_parse(reinterpret_cast<const uint8_t*>(A))
+#define INT_PARSE(A) int_parse(reinterpret_cast<const uint8_t*>(A))
 
 struct buffer;
 

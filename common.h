@@ -35,14 +35,6 @@ uint8_t common_string_to_enum(const uint8_t* string_start, const uint8_t* string
 
 uint8_t common_append_string_to_buffer(const uint8_t* input, struct buffer* output);
 
-uint8_t common_unbox_char_data(const struct buffer* box_with_data, uint8_t i, uint8_t j,
-							   struct range* data, uint8_t terminate);
-uint8_t common_get_one_argument(const struct buffer* arguments, struct range* argument, uint8_t terminate);
-uint8_t common_get_two_arguments(const struct buffer* arguments, struct range* argument1,
-								 struct range* argument2, uint8_t terminate);
-uint8_t common_get_three_arguments(const struct buffer* arguments, struct range* argument1,
-								   struct range* argument2, struct range* argument3, uint8_t terminate);
-
 uint8_t common_get_arguments(const struct buffer* boxed_arguments,
 							 uint8_t arguments_count, struct range* arguments, uint8_t terminate);
 
