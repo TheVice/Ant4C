@@ -5,6 +5,7 @@ ant4c (YYYY.MM)
  -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 
 ant4c (2020.09)
+  * Introduced support of modules.
   * Functions from the path unit allowed to operate with empty paths.
     Function 'combine' can be used for normalizing path.
   * Increased list of symbols to trim from string at 'string::trim'
@@ -15,7 +16,7 @@ ant4c (2020.09)
     function 'file::get-checksum'.
   * Added argument for configure algorithm - byte order, hash length,
     to the 'file::get-checksum' function.
-  * Added possibility use external events listener.
+  * Added possibility to use external events listener.
   * Added 'loadtasks' task.
   * For POSIX systems added searching of files with '.build' extension,
     if no file provided at command prompt.
