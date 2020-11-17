@@ -278,7 +278,7 @@ libant4c.a: string_unit.obj
 libant4c.a: target.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj common.obj conversion.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj interpreter.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj string_unit.obj target.obj version.obj xml.obj
+	ar qc $@ argument_parser.obj buffer.obj common.obj conversion.obj date_time.obj echo.obj environment.obj exec.obj file_system.obj interpreter.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj string_unit.obj target.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
