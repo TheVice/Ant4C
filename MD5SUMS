@@ -18,6 +18,11 @@ f0ad7f45a2ad6a3efa22d2af6b636c3b  ant4c-2019.10.21_openbsd_6.4.tgz
 762fb2fe19e2246ca7103b8d4f59deef  ant4c-2019.10.21_openbsd_6.5.tgz
 d301276d44db39e9bd8833a9b80afd90  ant4c-2019.10.21_openbsd_6.6.tgz
 19dd58178124fb383a195bd4f518f49a  ant4c-2019.10.21_openbsd_6.7.tgz
+6c8ca1d0bc910e323fd5b9bc538ca5e0  ant4c-2019.10.21-1.el6.x86_64.rpm
+206095da29159b8cbcc938063e9d18ad  ant4c-2019.10.21-1.el7.x86_64.rpm
+5ecf51f957787268894d24cda75bc77a  ant4c-2019.10.21-1.el8.x86_64.rpm
+394ae44e7e7bc7bd1674d7ab0610ead6  ant4c-2019.10.21-1.fc33.x86_64.rpm
+43683de6f376fcc132143f2a08e04bf8  ant4c-2019.10.21-1.x86_64.rpm
 392eaefa40258068df4ed1bba8b0e42d  libant4c-2019.10.21_freebsd_11.tar.bz
 d9aacd70f7c56e10a12d54888e4cb8c1  libant4c-2019.10.21_freebsd_12.tar.bz
 171bf16aefe9f3aacac6944b82593f3c  libant4c-2019.10.21_openbsd.tar.bz
