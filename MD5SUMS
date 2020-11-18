@@ -16,6 +16,12 @@ c58ad40bf910232b2da90a39b3c5b48d  ant4c-2020.05_freebsd_12.txz
 dd853df7fa0e75c281684bcf3ba08b16  ant4c-2020.05_openbsd_6.5.tgz
 6f3b370ece01c66c39a0fb424fe73a40  ant4c-2020.05_openbsd_6.6.tgz
 6ab7a09d0fdc93a37361e883a4e2352d  ant4c-2020.05_openbsd_6.7.tgz
+42241306519e4b1003dab523af928798  ant4c-2020.05-1.el6.x86_64.rpm
+eddad93118782a89f89872fb5e84bf9b  ant4c-2020.05-1.el7.x86_64.rpm
+caf94d463d37899a397870e850fd5463  ant4c-2020.05-1.el8.x86_64.rpm
+f1cafe98d3a203aed1b3922f62f522ac  ant4c-2020.05-1.fc33.x86_64.rpm
+ef12eb42c56dfc57679138b9040a5191  ant4c-2020.05-1.x86_64.rpm
 b6ae7f6c94ff632bec26df31fa85bd54  libant4c-2020.05_freebsd.tar.bz2
 12fb7ec197f83c2541ffa65e19de6f20  libant4c-2020.05_openbsd.tar.bz2
 7a3a4b349e3e38eb18b322da138ae9ad  libant4c-2020.05_ubuntu.tar.bz2
+fd82c4b3f590292a56e3fbc1d89f1585  libant4c-2020.05_rpm_based.tar.bz
