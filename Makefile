@@ -478,7 +478,7 @@ libant4c.a: text_encoding.obj
 libant4c.a: try_catch.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $(LDCFLAGS) $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	ar qc $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj

@@ -13,10 +13,16 @@ All binaries available on the [release page](https://github.com/TheVice/Ant4C/re
 ### Installing
 Depend on variant available for your system:
 * Unpack *zip* archive to prefer location.
-* For *DEB*, *TGZ* or *TXZ* packages - install program using the system package manager.
+* For packages - install program using the system package manager.
   * Debian based: *dpkg --install \*.deb*.
+  * RPM based: *rpm -Uvh \*.rpm*.
   * FreeBSD: *pkg install \*.txz*.
   * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
+
+#### Checksums
+
+* [MD5SUMS](MD5SUMS)
+* [SHA3-224SUMS](SHA3-224SUMS)
 
 ### Help
 
