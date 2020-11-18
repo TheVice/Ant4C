@@ -30,6 +30,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 #if !defined(__STDC_SEC_API__)

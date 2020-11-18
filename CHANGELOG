@@ -7,7 +7,7 @@ ant4c (2020.04)
     'sleep', 'touch' and 'trycatch' to early exists 'echo' and 'exec'.
   * Added hash unit with 'crc32', 'BLAKE2b', 'BLAKE3',
     'SHA3/Keccak' algorithms. Algorithms 'crc32' and 'BLAKE2b'
-    also available for file::get-checksum script function.
+    also available for 'file::get-checksum' script function.
   * Tag elements 'project' and 'target' internally also marked as tasks.
 
  -- TheVice <TheVice>  Mon, 27 Apr 2020 05:26:22 +0300
@@ -22,6 +22,6 @@ ant4c (2019.10.21)
 
  -- TheVice <TheVice>  Tue, 22 Oct 2019 16:24:46 +0300
 
-# [Unreleased] https://github.com/TheVice/Ant4C/compare/v2020.04...HEAD
+# [Unreleased] https://github.com/TheVice/Ant4C/compare/v2020.04...HEAD	0000000000000000000000000000000000000000
 # [2020.04] https://github.com/TheVice/Ant4C/compare/v2019.10.21...v2020.04	f5972487794a79cb1a55739342268e043578a745
 # [2019.10.21] https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21	1cc404418891657ed04ea6794cc72185fb59a933
