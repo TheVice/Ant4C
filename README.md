@@ -10,13 +10,6 @@ Developing was started in the summer of 2019.
 ## Downloads
 All binaries available on the [release page](https://github.com/TheVice/Ant4C/releases/).
 
-### For RPM based distributions of Linux
-* [CentOS 6 x86-64](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c-2020.09-1.el6.x86_64.rpm)
-* [CentOS 7 x86-64](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c-2020.09-1.el7.x86_64.rpm)
-* [CentOS 8 x86-64](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c-2020.09-1.el8.x86_64.rpm)
-* [Fedora 33 x86-64](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c-2020.09-1.fc33.x86_64.rpm)
-* [openSUSE 15.2 x86-64](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c-2020.09-1.x86_64.rpm)
-
 ### Installing
 Depend on variant available for your system:
 * Unpack *zip* archive to prefer location.
@@ -25,11 +18,6 @@ Depend on variant available for your system:
   * RPM based: *rpm -Uvh \*.rpm*.
   * FreeBSD: *pkg install \*.txz*.
   * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
-
-#### Checksums
-
-* [MD5SUMS](MD5SUMS)
-* [SHA3-224SUMS](SHA3-224SUMS)
 
 ### Help
 
