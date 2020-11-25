@@ -33,9 +33,11 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-static const uint8_t w_array[] = { 1, 2, 4, 8, 16, 32, 64 };
+enum HashType { Hash512 = 0, Hash384, HashUnknown, Hash256, Hash224 };
 
-#define INSTANCE_NUMBER		6
+static const uint16_t permutation_width = 1600;/*25, 50, 100, 200, 400, 800, 1600*/
+static const uint8_t w = 64;/*permutation_width / 25;*/
+static const uint8_t width_on_w = 25;
 
 #define TWO_DIMENSION_TO_ONE_INDEX(X, Y, Y_MAX)	\
 	(X) * (Y_MAX) + Y
@@ -102,7 +104,7 @@ void Round(uint64_t* A, uint64_t RC_i)
 
 	for (uint8_t i = 0; i < 5; i++)
 	{
-		D[i] = C[(i + 4) % 5] ^ ROT(C[(i + 1) % 5], 1, w_array[INSTANCE_NUMBER]);
+		D[i] = C[(i + 4) % 5] ^ ROT(C[(i + 1) % 5], 1, w);
 	}
 
 	for (uint8_t i = 0; i < 5; i++)
@@ -121,7 +123,7 @@ void Round(uint64_t* A, uint64_t RC_i)
 		{
 			B[TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5)] =
 				ROT(A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)],
-					r[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)], w_array[INSTANCE_NUMBER]);
+					r[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)], w);
 		}
 	}
 
@@ -144,7 +146,9 @@ void Round(uint64_t* A, uint64_t RC_i)
 
 void Keccak_f(uint64_t* A)
 {
-	static const uint8_t n_array[] = { 12, 14, 16, 18, 20, 22, 24 };
+	/*l -> log(w) / log(2)
+	number of permutation -> 12 + 2 * l*/
+	static const uint8_t n = 24;/*12, 14, 16, 18, 20, 22, 24*/
 	/**/
 	static const uint64_t RC[] =
 	{
@@ -174,14 +178,104 @@ void Keccak_f(uint64_t* A)
 		0x8000000080008008
 	};
 
-	for (uint8_t i = 0; i < n_array[INSTANCE_NUMBER]; i++)
+	for (uint8_t i = 0; i < n; i++)
 	{
 		Round(A, RC[i]);
 	}
 }
 
-uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_t rate, uint8_t w,
-				struct buffer* P)
+void Keccak_absorption(uint64_t* S, const uint64_t* data, ptrdiff_t/*uint8_t*/ size, uint16_t rate)
+{
+	const uint16_t rate_on_w = rate / w;
+
+	/*Absorption phase*/
+	for (ptrdiff_t/*uint8_t*/ xF = 0, i = 0, j = 0; xF < size; ++xF)
+	{
+		for (i = 0; i < 5; ++i)
+		{
+			for (j = 0; j < 5; ++j)
+			{
+				if ((i + j * 5) < rate_on_w)
+				{
+					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
+						S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ data[width_on_w * xF + i + j * 5];
+				}
+			}
+		}
+
+		Keccak_f(S);
+	}
+}
+
+uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint16_t rate, uint8_t* output)
+{
+	const uint16_t rate_on_w = rate / w;
+
+	/*Squeezing phase*/
+	for (uint8_t xF = 0; ;)
+	{
+		for (uint8_t i = 0; i < 5; i++)
+		{
+			for (uint8_t j = 0; j < 5; j++)
+			{
+				if ((5 * i + j) < rate_on_w)
+				{
+					const uint64_t* s = &(S[TWO_DIMENSION_TO_ONE_INDEX(j, i, 5)]);
+#if __STDC_SEC_API__
+
+					if (0 != memcpy_s(output + xF, sizeof(uint64_t), s, sizeof(uint64_t)))
+					{
+						return 0;
+					}
+
+#else
+					memcpy(output + xF, s, sizeof(uint64_t));
+#endif
+					xF += sizeof(uint64_t);
+
+					if (d_max <= xF)
+					{
+						i = j = 5;
+					}
+				}
+			}
+		}
+
+		if (d_max <= xF)
+		{
+			break;
+		}
+
+		Keccak_f(S);
+	}
+
+	return 1;
+}
+
+uint8_t get_hash_type(uint16_t hash_length)
+{
+	switch (hash_length)
+	{
+		case 224:
+			return Hash224;
+
+		case 256:
+			return Hash256;
+
+		case 384:
+			return Hash384;
+
+		case 512:
+			return Hash512;
+
+		default:
+			break;
+	}
+
+	return HashUnknown;
+}
+
+uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_t rate, struct buffer* P)
 {
 	if (NULL == input ||
 		NULL == P)
@@ -218,7 +312,7 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 	}
 
 	ptrdiff_t s = (size * 8) / rate;
-	s = sizeof(uint64_t) * (s * (1600 / w));
+	s = sizeof(uint64_t) * (s * width_on_w);
 
 	if (!buffer_resize(P, s))
 	{
@@ -294,7 +388,7 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 #endif
 			}
 
-			uint64_t* Pi = ptr + ((1600 / w) * i + j);
+			uint64_t* Pi = ptr + (width_on_w * i + j);
 
 			if (!hash_algorithm_uint8_t_array_to_uint64_t(part, part + 8, Pi))
 			{
@@ -309,28 +403,33 @@ uint8_t Padding(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3, uint16_
 }
 
 uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
-			   uint16_t rate, uint16_t capacity, uint8_t* output)
+			   uint16_t hash_length, uint8_t* output)
 {
+	static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320, 256, 192*/ };
+	const uint8_t hash_type = get_hash_type(hash_length);
+
 	if (NULL == input ||
 		length < 0 ||
 		1 < is_sha3 ||
+		HashUnknown == hash_type ||
 		NULL == output)
 	{
 		return 0;
 	}
 
-	static const uint8_t count = 5;
+	const uint16_t capacity = capacity_array[hash_type];
+	const uint16_t rate = permutation_width - capacity;
 	/*Padding*/
 	struct buffer P;
 	SET_NULL_TO_BUFFER(P);
 
-	if (!Padding(input, length, is_sha3, rate, w_array[INSTANCE_NUMBER], &P))
+	if (!Padding(input, length, is_sha3, rate, &P))
 	{
 		buffer_release(&P);
 		return 0;
 	}
 
-	uint64_t* ptr = (uint64_t*)buffer_data(&P, 0);
+	uint64_t* data = (uint64_t*)buffer_data(&P, 0);
 	/*Initialization*/
 	uint64_t S[] =
 	{
@@ -340,130 +439,26 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 		0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0
 	};
-
-	/*Absorption phase*/
-	for (ptrdiff_t xF = 0, i = 0, j = 0,
-		 size = (buffer_size(&P) / sizeof(uint64_t)) / (1600 / w_array[INSTANCE_NUMBER]); xF < size; xF++)
-	{
-		for (i = 0; i < count; i++)
-		{
-			for (j = 0; j < count; j++)
-			{
-				if ((i + j * count) < (rate / w_array[INSTANCE_NUMBER]))
-				{
-					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, count)] =
-						S[TWO_DIMENSION_TO_ONE_INDEX(i, j, count)] ^ ptr[(1600 / w_array[INSTANCE_NUMBER]) * xF + i + j * 5];
-				}
-			}
-		}
-
-		Keccak_f(S);
-	}
-
-	buffer_release(&P);
 	/**/
-	const uint8_t d_max = (uint8_t)(capacity / (2 * 8));
-
-	/*Squeezing phase*/
-	for (is_sha3 = 0; ;)
-	{
-		for (uint8_t i = 0; i < count; i++)
-		{
-			for (uint8_t j = 0; j < count; j++)
-			{
-				if ((count * i + j) < (rate / w_array[INSTANCE_NUMBER]))
-				{
-					ptr = &(S[TWO_DIMENSION_TO_ONE_INDEX(j, i, count)]);
-#if __STDC_SEC_API__
-
-					if (0 != memcpy_s(output + is_sha3, sizeof(uint64_t), ptr, sizeof(uint64_t)))
-					{
-						return 0;
-					}
-
-#else
-					memcpy(output + is_sha3, ptr, sizeof(uint64_t));
-#endif
-					is_sha3 += sizeof(uint64_t);
-
-					if (d_max <= is_sha3)
-					{
-						i = j = count;
-					}
-				}
-			}
-		}
-
-		if (d_max <= is_sha3)
-		{
-			break;
-		}
-
-		Keccak_f(S);
-	}
-
-	return 1;
-}
-
-enum HashType { Hash512 = 0, Hash384, Hash256 = 3, Hash224 };
-static const uint16_t rate_array[] = { 576, 832, 1024, 1088, 1152, 1216, 1280, 1344, 1408 };
-static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448, 384, 320, 256, 192 };
-
-int8_t hash_length_to_type(uint16_t hash_length)
-{
-	switch (hash_length)
-	{
-		case 224:
-			return Hash224;
-
-		case 256:
-			return Hash256;
-
-		case 384:
-			return Hash384;
-
-		case 512:
-			return Hash512;
-
-		default:
-			break;
-	}
-
-	return -1;
+	Keccak_absorption(S, data, /*(uint8_t)*/((buffer_size(&P) / sizeof(uint64_t)) / width_on_w), rate);
+	buffer_release(&P);
+	return Keccak_squeezing((uint8_t)(hash_length / 8), S, rate, output);
 }
 
 uint8_t hash_algorithm_keccak(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
 							  struct buffer* output)
 {
-	const int8_t hash_type = hash_length_to_type(hash_length);
-
-	if (-1 == hash_type)
-	{
-		return 0;
-	}
-
-	hash_length = hash_length / 8;
-	/**/
 	return buffer_append(output, NULL, UINT8_MAX) &&
-		   Keccak(start, finish - start, 0, rate_array[hash_type], capacity_array[hash_type],
+		   Keccak(start, finish - start, 0, hash_length,
 				  (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
-		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
+		   buffer_resize(output, buffer_size(output) - ((ptrdiff_t)UINT8_MAX - hash_length / 8));
 }
 
 uint8_t hash_algorithm_sha3(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
 							struct buffer* output)
 {
-	const int8_t hash_type = hash_length_to_type(hash_length);
-
-	if (-1 == hash_type)
-	{
-		return 0;
-	}
-
-	hash_length = hash_length / 8;
-	/**/
 	return buffer_append(output, NULL, UINT8_MAX) &&
-		   Keccak(start, finish - start, 1, rate_array[hash_type], capacity_array[hash_type],
+		   Keccak(start, finish - start, 1, hash_length,
 				  (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
-		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
+		   buffer_resize(output, buffer_size(output) - ((ptrdiff_t)UINT8_MAX - hash_length / 8));
 }
