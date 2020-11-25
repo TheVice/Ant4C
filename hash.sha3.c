@@ -184,33 +184,28 @@ void Keccak_f(uint64_t* A)
 	}
 }
 
-void Keccak_absorption(uint64_t* S, const uint64_t* data, ptrdiff_t/*uint8_t*/ size, uint16_t rate)
+void Keccak_absorption(uint64_t* S, const uint64_t* data, uint8_t rate_on_w)
 {
-	const uint16_t rate_on_w = rate / w;
-
 	/*Absorption phase*/
-	for (ptrdiff_t/*uint8_t*/ xF = 0, i = 0, j = 0; xF < size; ++xF)
+	for (uint8_t i = 0, j = 0; i < 5; ++i)
 	{
-		for (i = 0; i < 5; ++i)
+		for (j = 0; j < 5; ++j)
 		{
-			for (j = 0; j < 5; ++j)
+			const uint8_t index = i + j * 5;
+
+			if (index < rate_on_w)
 			{
-				if ((i + j * 5) < rate_on_w)
-				{
-					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
-						S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ data[width_on_w * xF + i + j * 5];
-				}
+				S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
+					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ data[index];
 			}
 		}
-
-		Keccak_f(S);
 	}
+
+	Keccak_f(S);
 }
 
-uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint16_t rate, uint8_t* output)
+uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint8_t rate_on_w, uint8_t* output)
 {
-	const uint16_t rate_on_w = rate / w;
-
 	/*Squeezing phase*/
 	for (uint8_t xF = 0; ;)
 	{
@@ -235,7 +230,7 @@ uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint16_t rate, uint8_t* out
 
 					if (d_max <= xF)
 					{
-						i = j = 5;
+						return 1;
 					}
 				}
 			}
@@ -419,6 +414,7 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 
 	const uint16_t capacity = capacity_array[hash_type];
 	const uint16_t rate = permutation_width - capacity;
+	const uint8_t rate_on_w = (uint8_t)(rate / w);
 	/*Padding*/
 	struct buffer P;
 	SET_NULL_TO_BUFFER(P);
@@ -429,7 +425,6 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 		return 0;
 	}
 
-	uint64_t* data = (uint64_t*)buffer_data(&P, 0);
 	/*Initialization*/
 	uint64_t S[] =
 	{
@@ -440,9 +435,17 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 		0, 0, 0, 0, 0
 	};
 	/**/
-	Keccak_absorption(S, data, /*(uint8_t)*/((buffer_size(&P) / sizeof(uint64_t)) / width_on_w), rate);
+	const uint64_t* start = (const uint64_t*)buffer_data(&P, 0);
+	const uint64_t* finish = (const uint64_t*)(buffer_data(&P, 0) + buffer_size(&P));
+
+	while (start < finish)
+	{
+		Keccak_absorption(S, start, rate_on_w);
+		start += width_on_w;
+	}
+
 	buffer_release(&P);
-	return Keccak_squeezing((uint8_t)(hash_length / 8), S, rate, output);
+	return Keccak_squeezing((uint8_t)(hash_length / 8), S, rate_on_w, output);
 }
 
 uint8_t hash_algorithm_keccak(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
