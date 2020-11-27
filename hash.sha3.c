@@ -270,16 +270,33 @@ uint8_t get_hash_type(uint16_t hash_length)
 	return HashUnknown;
 }
 
-uint8_t GetDelta(ptrdiff_t length, uint8_t rate_in_bytes)
+uint8_t get_maximum_delta(uint8_t rate_in_bytes)
 {
-	const uint8_t remainder = (uint8_t)((length + 1) % rate_in_bytes);
-	return 0 != remainder ? (uint8_t)(rate_in_bytes - (remainder - 1)) : (uint8_t)1;
+	const uint8_t remainder = (1 % rate_in_bytes) - 1;
+	return rate_in_bytes - remainder;
 }
 
-uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
+uint8_t get_delta(uint8_t max_delta, uint8_t current_delta, uint16_t addition)
+{
+	while (current_delta < addition)
+	{
+		addition -= current_delta;
+		current_delta = max_delta;
+	}
+
+	if (0 < addition)
+	{
+		current_delta -= (uint8_t)addition;
+	}
+
+	return 0 == current_delta ? max_delta : current_delta;
+}
+
+uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 			   uint16_t hash_length, uint8_t* output)
 {
 	static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320, 256, 192*/ };
+	static const uint8_t step = 8;
 	const uint8_t hash_type = get_hash_type(hash_length);
 
 	if (NULL == input ||
@@ -294,28 +311,6 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 	const uint16_t capacity = capacity_array[hash_type];
 	const uint16_t rate = permutation_width - capacity;
 	const uint8_t rate_on_w = (uint8_t)(rate / w);
-	/*Padding*/
-	const uint8_t delta = GetDelta(length, (uint8_t)(rate / 8));
-
-	if (144 < delta)
-	{
-		return 0;
-	}
-
-	uint8_t addition[192];
-	addition[0] = is_sha3 ? 6 : 1;
-
-	if (1 == delta)
-	{
-		addition[0] += 128;
-	}
-	else
-	{
-		memset(addition + 1, 0, delta - 2);
-		addition[delta - 1] = 128;
-	}
-
-	is_sha3 = 0;
 	/*Initialization*/
 	uint64_t S[] =
 	{
@@ -334,52 +329,79 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 	};
 	/**/
 	uint8_t xF = 0;
+	/*Padding*/
+	const uint8_t maximum_delta = get_maximum_delta((uint8_t)(rate / 8));
+	uint8_t delta = maximum_delta;
+	/**/
+	uint8_t addition[192];
 	uint8_t* part = (addition + 180);
+	uint8_t is_addition_set = 0;
+	/**/
+	memset(addition, 0, sizeof(addition));
+	addition[0] = is_sha3 ? 6 : 1;
+	is_sha3 = 0;
+	/**/
 	const uint8_t* finish = input + length;
 
-	while (input < finish || is_sha3 < delta)
+	do
 	{
-		if (input + 8 < finish)
+		if (input + step < finish)
 		{
-			if (!hash_algorithm_uint8_t_array_to_uint64_t(input, input + 8, &data[xF++]))
+			if (!hash_algorithm_uint8_t_array_to_uint64_t(input, input + step, &data[xF++]))
 			{
 				return 0;
 			}
 
-			input += 8;
+			input += step;
 		}
 		else
 		{
-			const uint8_t i = (uint8_t)(finish - input);
+			length = (finish - input);
 
-			if (i)
+			if (length)
 			{
 #if __STDC_SEC_API__
 
-				if (0 != memcpy_s(part, i, input, i))
+				if (0 != memcpy_s(part, length, input, length))
 				{
 					return 0;
 				}
 
 #else
-				memcpy(part, input, i);
+				memcpy(part, input, length);
 #endif
-				input += i;
+				input += length;
+			}
+
+			if (!is_addition_set)
+			{
+				delta = get_delta(maximum_delta, delta, (uint16_t)length);
+
+				if (1 == delta)
+				{
+					addition[0] += 128;
+				}
+				else
+				{
+					addition[delta - 1] = 128;
+				}
+
+				is_addition_set = 1;
 			}
 
 #if __STDC_SEC_API__
 
-			if (0 != memcpy_s(part + i, 8 - i, addition + is_sha3, 8 - i))
+			if (0 != memcpy_s(part + length, step - length, addition + is_sha3, step - length))
 			{
 				return 0;
 			}
 
 #else
-			memcpy(part + i, addition + is_sha3, 8 - i);
+			memcpy(part + length, addition + is_sha3, step - length);
 #endif
-			is_sha3 += 8 - i;
+			is_sha3 += step - (uint8_t)length;
 
-			if (!hash_algorithm_uint8_t_array_to_uint64_t(part, part + 8, &data[xF++]))
+			if (!hash_algorithm_uint8_t_array_to_uint64_t(part, part + step, &data[xF++]))
 			{
 				return 0;
 			}
@@ -391,7 +413,13 @@ uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
 			memset(data, 0, sizeof(data));
 			xF = 0;
 		}
+
+		if (!is_addition_set)
+		{
+			delta = get_delta(maximum_delta, delta, step);
+		}
 	}
+	while (input < finish || is_sha3 < delta);
 
 	return Keccak_squeezing((uint8_t)(hash_length / 8), S, rate_on_w, output);
 }
