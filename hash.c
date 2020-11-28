@@ -335,14 +335,20 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 		case blake3:
 		{
 			static const uint8_t d = 0;
-			/**/
-			hash_length = hash_length / 8;
-			/**/
-			uint32_t h[8];
-			uint32_t m[16];
-			uint8_t stack[256];
+			static const uint8_t h_size = 8 * sizeof(uint32_t);
+			static const uint8_t m_size = 16 * sizeof(uint32_t);
 
-			if (!BLAKE3_init(h, sizeof(h), m, sizeof(m), sizeof(stack)))
+			if (!buffer_append(output, NULL,
+							   (ptrdiff_t)4096 + h_size + m_size + 1024))
+			{
+				break;
+			}
+
+			uint32_t* h = (uint32_t*)buffer_data(output, size + 4096);
+			uint32_t* m = (uint32_t*)buffer_data(output, size + 4096 + h_size);
+			uint8_t* stack = buffer_data(output, size + 4096 + h_size + m_size);
+
+			if (!BLAKE3_init(h, 8, m, 16, 1024))
 			{
 				break;
 			}
@@ -350,15 +356,11 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 			uint8_t l = 0;
 			uint32_t t[2];
 			t[0] = t[1] = 0;
+			/**/
 			uint8_t compressed = 0;
 			uint8_t stack_length = 0;
-
-			if (!buffer_append(output, NULL, 4096))
-			{
-				break;
-			}
-
 			size_t readed = 0;
+			/**/
 			uint8_t* file_content = buffer_data(output, size);
 
 			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
@@ -370,6 +372,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				}
 			}
 
+			hash_length = hash_length / 8;
 			file_content = buffer_data(output, size + 64);
 
 			if (!file_close(file) ||
@@ -421,69 +424,91 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 		case keccak:
 		case sha3:
 		{
-			if (224 != hash_length &&
-				256 != hash_length &&
-				384 != hash_length &&
-				512 != hash_length)
+			uint8_t rate_on_w = 0;
+			uint8_t maximum_delta = 0;
+			uint8_t addition[192];
+			uint8_t is_addition_set = 0;
+
+			if (!hash_algorithm_sha3_init(sha3 == algorithm, hash_length,
+										  &rate_on_w, &maximum_delta,
+										  addition, sizeof(addition)))
 			{
 				break;
 			}
 
-			if (!file_read_with_several_steps(file, output))
+			if (!buffer_append(output, NULL, 4096))
 			{
 				break;
 			}
 
-			const ptrdiff_t new_size = buffer_size(output);
-
-			if (!buffer_append(output, NULL, 64))
+			uint64_t S[] =
 			{
-				break;
+				0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0
+			};
+			/**/
+			uint64_t data[] =
+			{
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0
+			};
+			/**/
+			uint8_t xF = 0;
+			uint8_t delta = maximum_delta;
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+			const uint8_t chunk_size = 8 * rate_on_w;
+			uint16_t step = chunk_size;
+
+			while (step < 4096 - chunk_size)
+			{
+				step += chunk_size;
 			}
 
-			struct range content;
-
-			content.start = buffer_data(output, size);
-
-			content.finish = buffer_data(output, new_size);
-
-			if (!buffer_resize(output, size + 64))
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), step, file)) || !is_addition_set)
 			{
-				break;
-			}
+				const uint8_t* start = file_content;
+				const uint8_t* finish = start + readed;
+				const uint8_t* finish_ = start + step;
+				const uint8_t* resume_at = NULL;
+				/**/
+				uint8_t* ptr = finish < finish_ ? &is_addition_set : NULL;
+				finish_ = finish < finish_ ? finish : finish_;
 
-			if (keccak == algorithm)
-			{
-				if (!file_close(file) ||
-					!hash_algorithm_keccak(content.start, content.finish, hash_length, output))
+				do
 				{
-					break;
+					delta = hash_algorithm_sha3_core(
+								S, rate_on_w, data, &xF,
+								delta, maximum_delta,
+								addition, ptr,
+								start, finish_, &resume_at);
+
+					if (!delta)
+					{
+						file_close(file);
+						return 0;
+					}
+
+					start = resume_at < finish_ ? resume_at : finish_;
 				}
-			}
-			else
-			{
-				if (!file_close(file) ||
-					!hash_algorithm_sha3(content.start, content.finish, hash_length, output))
-				{
-					break;
-				}
+				while (start < finish_);
 			}
 
-			content.start = buffer_data(output, size + 64);
-			content.finish = buffer_data(output, 0) + buffer_size(output);
+			hash_length = hash_length / 8;
+			file_content += 64;
 
-			if (NULL == content.start ||
-				NULL == content.finish)
+			if (!file_close(file) ||
+				!Keccak_squeezing((uint8_t)hash_length, S, rate_on_w, file_content))
 			{
 				break;
 			}
 
-			if (!buffer_resize(output, size))
-			{
-				return 0;
-			}
-
-			return hash_algorithm_bytes_to_string(content.start, content.finish, output);
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string(file_content, file_content + hash_length, output);
 		}
 
 		default:
