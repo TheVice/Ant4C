@@ -15,7 +15,7 @@ Depend on variant available for your system:
 * Unpack *zip* archive to prefer location.
 * For packages - install program using the system package manager.
   * Debian based: *dpkg --install \*.deb*.
-  * RPM based: *rpm -Uvh \*.rmp*.
+  * RPM based: *rpm -Uvh \*.rpm*.
   * FreeBSD: *pkg install \*.txz*.
   * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
 
@@ -42,5 +42,5 @@ Build can be done by one of C compilers - MSVC, MinGW, GCC or CLang after config
 ## License
 This project available under terms of [MIT License](LICENSE).
 
-### ant4c.dns and ant4c.regex modules
+### [ant4c.dns](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c.dns.zip) and [ant4c.regex](https://github.com/TheVice/Ant4C/releases/download/v2020.09/ant4c.regex.zip) modules
 Modules available by same, MIT License, but internally they use Boost libraries - that available by [Boost Software License](https://github.com/boostorg/boost/blob/7dd85823c436b0a858c2f97f29b6a44beea71dfb/LICENSE_1_0.txt).

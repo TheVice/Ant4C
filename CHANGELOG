@@ -1,6 +1,8 @@
 ant4c (YYYY.MM)
   * Increased stack that used at BLAKE3 algorithm to allow calculate hashes
     of inputs with huge (more than 32 KB) length.
+  * At implementation of 'SHA3/Keccak' algorithm do not loading whole range
+    of data while calculating hash sum of first one.
 
  -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

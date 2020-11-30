@@ -328,14 +328,13 @@ TEST_F(TestHashAlgorithm, crc32)
 }
 
 extern "C" {
-	uint8_t Keccak(const uint8_t* input, const ptrdiff_t length, uint8_t is_sha3,
-				   uint16_t rate, uint16_t capacity, uint8_t* output);
+	uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
+				   uint16_t hash_length, uint8_t* output);
 };
 
 TEST_F(TestHashAlgorithm, Keccak)
 {
-	static const uint16_t rate[] = { 1152, 1088, 832, 576, 1152, 1088, 832, 576 };
-	static const uint16_t capacity[] = { 448, 512, 768, 1024, 448, 512, 768, 1024 };
+	static const uint16_t hash_length[] = { 224, 256, 384, 512, 224, 256, 384, 512 };
 	//
 	buffer input;
 	SET_NULL_TO_BUFFER(input);
@@ -378,11 +377,11 @@ TEST_F(TestHashAlgorithm, Keccak)
 			ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
 			uint8_t* o = buffer_data(&output, 0);
 			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
-			uint8_t returned = Keccak(ptr, input_length, 3 < i, rate[i], capacity[i], o);
+			uint8_t returned = Keccak(ptr, input_length, 3 < i, hash_length[i], o);
 			ASSERT_EQ(expected_return, returned) <<
 												 input_length << std::endl << (int)i << buffer_free(&input) << buffer_free(&output);
 			//
-			returned = (uint8_t)(capacity[i] / (2 * 8));
+			returned = (uint8_t)(hash_length[i] / 8);
 			ASSERT_TRUE(buffer_append(&output, NULL, 2 * returned + 2)) << buffer_free(&input) << buffer_free(&output);
 			ASSERT_TRUE(buffer_resize(&output, returned)) << buffer_free(&input) << buffer_free(&output);
 			//
