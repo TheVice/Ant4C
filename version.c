@@ -102,8 +102,8 @@ uint8_t version_to_string(const struct Version* version, struct buffer* output)
 		return 0;
 	}
 
-	uint8_t* ptr = buffer_data(output, size);
-	return buffer_resize(output, size + version_to_byte_array(version, ptr));
+	uint8_t* str_version = buffer_data(output, size);
+	return buffer_resize(output, size + version_to_byte_array(version, str_version));
 }
 
 uint8_t version_less(const struct Version* a, const struct Version* b)

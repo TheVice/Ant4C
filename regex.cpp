@@ -18,6 +18,15 @@ std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>> make_outpu
 {
 	std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>> output;
 	std::string tmp = "<property name=\"";
+#if !defined(__MINGW32__) && !defined(__MINGW64__) && defined(__GNUC__) && (__cplusplus < 200000L)
+	output.append(tmp.begin(), tmp.end());
+	output.append(property_name.begin(), property_name.end());
+	tmp = "\" value=\"";
+	output.append(tmp.begin(), tmp.end());
+	output.append(property_value.begin(), property_value.end());
+	tmp = "\" />";
+	output.append(tmp.begin(), tmp.end());
+#else
 	output.append(tmp.cbegin(), tmp.cend());
 	output.append(property_name.cbegin(), property_name.cend());
 	tmp = "\" value=\"";
@@ -25,6 +34,7 @@ std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>> make_outpu
 	output.append(property_value.cbegin(), property_value.cend());
 	tmp = "\" />";
 	output.append(tmp.cbegin(), tmp.cend());
+#endif
 	return output;
 }
 

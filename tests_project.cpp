@@ -697,8 +697,13 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	while (!(build_file = range_to_string(argument_parser_get_build_file(&command_arguments, &argument_value,
 										  i++))).empty())
 	{
+#if defined(__GNUC__) && (__GNUC__ < 5)
+		const auto fonded_path = std::find_if(expected_files.begin(),
+											  expected_files.end(), [&build_file](const std::string & expected_path)
+#else
 		const auto fonded_path = std::find_if(expected_files.cbegin(),
 											  expected_files.cend(), [&build_file](const std::string & expected_path)
+#endif
 		{
 			return build_file == expected_path;
 		});

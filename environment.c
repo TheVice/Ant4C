@@ -674,12 +674,14 @@ uint8_t environment_get_machine_name(struct buffer* name)
 		return 0;
 	}
 
-	if (0 != gethostname((char*)buffer_data(name, size), UINT8_MAX))
+	char* host_name = (char*)buffer_data(name, size);
+
+	if (0 != gethostname(host_name, UINT8_MAX))
 	{
 		return 0;
 	}
 
-	return (size < buffer_size(name)) && buffer_resize(name, size + strlen((char*)buffer_data(name, size)));
+	return (size < buffer_size(name)) && buffer_resize(name, size + strlen(host_name));
 }
 
 #endif
@@ -765,10 +767,10 @@ const struct OperatingSystem* environment_get_operating_system()
 		is_data_of_operating_system_filled = 1;
 #endif
 		{
-			uint8_t* ptr = operating_system.VersionString + Win32NT_str_length;
-			*ptr = ' ';
-			++ptr;
-			is_data_of_operating_system_filled = 0 < version_to_byte_array(&operating_system.Version, ptr);
+			uint8_t* str_version = operating_system.VersionString + Win32NT_str_length;
+			*str_version = ' ';
+			++str_version;
+			is_data_of_operating_system_filled = 0 < version_to_byte_array(&operating_system.Version, str_version);
 		}
 	}
 
@@ -792,15 +794,6 @@ const struct OperatingSystem* environment_get_operating_system()
 		if (!version_parse((const uint8_t*)uname_data.version,
 						   (const uint8_t*)uname_data.version + strlen(uname_data.version),
 						   &operating_system.Version))
-		{
-			/*TODO: call echo with verbose or debug level.*/
-		}
-
-		const uint16_t max_count = COUNT_OF(operating_system.VersionString);
-		const uint16_t count = 4 + strlen(uname_data.sysname) + strlen(uname_data.release) + strlen(
-								   uname_data.version) + strlen(uname_data.machine);
-
-		if (max_count - 1 < count)
 		{
 			return NULL;
 		}

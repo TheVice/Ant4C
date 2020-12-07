@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -11,6 +11,11 @@
 #include "version.h"
 
 #include <stdint.h>
+
+#if !defined(_WIN32)
+#define _POSIXSOURCE 1
+#include <sys/utsname.h>
+#endif
 
 enum PlatformID
 {
@@ -26,7 +31,7 @@ struct OperatingSystem
 #if defined(_WIN32)
 	uint8_t VersionString[INT8_MAX + 1];
 #else
-	uint8_t VersionString[UINT8_MAX + 17];
+	uint8_t VersionString[sizeof(struct utsname) + 4];
 #endif
 };
 

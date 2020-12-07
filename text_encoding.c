@@ -147,27 +147,21 @@ static const uint16_t codes_1258[] =
 enum Endian { Little, Big };
 #endif
 
-void text_encoding_xchange_uint16_t_bytes(uint8_t* input)
+void xchange_uint16_t_bytes(uint16_t* input)
 {
-#ifndef NO_COMMON_UNIT
-	XCHG(input[0], input[1]);
-#else
-	uint8_t tmp = input[0];
-	input[0] = input[1];
-	input[1] = tmp;
-#endif
+	const uint8_t right = (uint8_t)((*input) & 0xFF);
+	const uint8_t left = (uint8_t)((*input) >> 8);
+	*input = (uint16_t)(right << 8);
+	*input += left;
 }
 
-void text_encoding_xchange_uint32_t_bytes(uint16_t* input)
+/*void xchange_uint32_t_bytes(uint32_t* input)
 {
-#ifndef NO_COMMON_UNIT
-	XCHG(input[0], input[1]);
-#else
-	uint16_t tmp = input[0];
-	input[0] = input[1];
-	input[1] = tmp;
-#endif
-}
+	const uint8_t right = (uint16_t)((*input) & 0xFFFF);
+	const uint8_t left = (uint16_t)((*input) >> 16);
+	*input = (uint32_t)(right << 16);
+	*input += left;
+}*/
 
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_get_BOM(
@@ -428,7 +422,7 @@ uint8_t text_encoding_UTF_from_ASCII(
 
 	return 1;
 }
-
+#ifndef NO_COMMON_UNIT
 uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	uint16_t code_page, struct buffer* output)
@@ -559,6 +553,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 	return 1;
 }
+#endif
 #endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
@@ -770,7 +765,7 @@ uint8_t text_encoding_encode_UTF16BE_single(uint32_t input_32LE, uint16_t* outpu
 	else if (input_32LE < 0x10000)
 	{
 		output[0] = input_32LE & 0xFFFF;
-		text_encoding_xchange_uint16_t_bytes((uint8_t*)(&(output[0])));
+		xchange_uint16_t_bytes(&(output[0]));
 		return 1;
 	}
 
@@ -784,7 +779,7 @@ uint8_t text_encoding_encode_UTF16BE_single(uint32_t input_32LE, uint16_t* outpu
 
 	for (input_32LE = 0; input_32LE < 2; ++input_32LE)
 	{
-		text_encoding_xchange_uint16_t_bytes((uint8_t*)(&(output[input_32LE])));
+		xchange_uint16_t_bytes(&(output[input_32LE]));
 	}
 
 	return 2;
@@ -876,7 +871,7 @@ uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const u
 	}
 
 	uint16_t input_16LE = (*input_start);
-	text_encoding_xchange_uint16_t_bytes((uint8_t*)&input_16LE);
+	xchange_uint16_t_bytes(&input_16LE);
 
 	if (input_16LE < 0xD800 || 0xDFFF < input_16LE)
 	{
@@ -1006,17 +1001,22 @@ uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uin
 	if (NULL == input_start ||
 		NULL == input_finish ||
 		NULL == output ||
-		input_finish <= input_start)
+		input_finish <= input_start/* ||
+		1 < input_finish - input_start*/)
 	{
 		return 0;
 	}
 
 	(*output) = (*input_start);
 	/**/
-	uint16_t* out = (uint16_t*)output;
-	text_encoding_xchange_uint16_t_bytes((uint8_t*)(out));
-	text_encoding_xchange_uint16_t_bytes((uint8_t*)(out + 1));
-	text_encoding_xchange_uint32_t_bytes(out);
+	uint16_t right = (uint16_t)((*output) & 0xFFFF);
+	uint16_t left = (uint16_t)((*output) >> 16);
+	/**/
+	xchange_uint16_t_bytes(&right);
+	xchange_uint16_t_bytes(&left);
+	/**/
+	(*output) = (uint32_t)(right << 16);
+	(*output) += left;
 	/**/
 	return 1;
 }
@@ -1257,12 +1257,12 @@ uint8_t text_encoding_UTF8_from_code_page(
 		}
 		else
 		{
-			if (code < min_non_ASCII_char + max_index &&
-				UTF16LE_UNKNOWN_CHAR != ptr[code - min_non_ASCII_char])
-			{
-				(*out) = ptr[code - min_non_ASCII_char];
+			uint16_t table_code;
 
-				if (!text_encoding_decode_UTF16LE_single((const uint16_t*)out, (const uint16_t*)out + 1, out))
+			if (code < min_non_ASCII_char + max_index &&
+				UTF16LE_UNKNOWN_CHAR != (table_code = ptr[code - min_non_ASCII_char]))
+			{
+				if (!text_encoding_decode_UTF16LE_single(&table_code, &table_code + 1, out))
 				{
 					return 0;
 				}
