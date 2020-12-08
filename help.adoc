@@ -17,8 +17,9 @@
 . Go to the https://github.com/TheVice/Ant4C/releases[release page] of the project and choose version for your operation system.
 . Depend on variant available for your system:
 * Unpack 'zip' archive to prefer location.
-* For 'DEB', 'TGZ' or 'TXZ' packages - install program using the system package manager.
+* For packages - install program using the system package manager.
 ** Debian based: 'dpkg --install *.deb'.
+** RPM based: 'rpm -Uvh *.rpm'.
 ** FreeBSD: 'pkg install *.txz'.
 ** OpenBSD: 'pkg_add -Dunsigned *.tgz'.
 
@@ -688,7 +689,7 @@ Enumerate file from the folder and store it file names at the result property.
   <property name="result" value="${result}${hash::bytes-to-string(hash::crc32(line, 'decreasing'))}" />
 </foreach>
 ----
-Enumerate lines from the file, calculate hash of each one by crc32 algorithm and store at the result property. Each loop iteration present to us trimed lines - without space, tabs and other white spaces at the start and end of the line.
+Enumerate lines from the file, calculate hash of each one by crc32 algorithm and store at the result property. Each loop iteration present to us trimmed lines - without space, tabs and other white spaces at the begin and end of the line.
 ----
 <property name="result" value="" />
 <foreach item="String" in="${directory::get-logical-drives()}" property="element">
@@ -2772,7 +2773,7 @@ Return *true* if current platform from Windows family.
 |===
 .s| Script function .s| Description
 | <<path-change_extension,path::change-extension>> | Change extension of the path. In other words - all after the last point symbol.
-| <<path-combine,path::combine>> | Combine two part of path into the system specific path. Can be used as path normalizer.
+| <<path-combine,path::combine>> | Combine two part of path into the system specific path. Can be used for normalizing the path.
 | <<path-get_directory_name,path::get-directory-name>> | Get directory name of the path.
 | <<path-get_extension,path::get-extension>> | Get extension of the path. In other words - all after the last point symbol.
 | <<path-get_file_name_without_extension,path::get-file-name-without-extension>> | Get file name without extension.

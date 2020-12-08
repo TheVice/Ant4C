@@ -6,6 +6,76 @@ endif()
 
 project("Ant4C")
 
+if(MSVC)
+  if (("v140_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET) OR ("v141_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET))
+    set(FLAGS "${FLAGS} -Wall /GS")
+  else()
+    set(FLAGS "${FLAGS} /W4 /GS")
+  endif()
+
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEFAULT_CMAKE_C_FLAGS} ${FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEFAULT_CMAKE_CXX_FLAGS} ${FLAGS}")
+
+  if(CMAKE_CL_64)
+    set(LINK_FLAGS "${LINK_FLAGS} /DynamicBase /NXCompat")
+  else()
+    set(LINK_FLAGS "${LINK_FLAGS} /SafeSEH /DynamicBase /NXCompat")
+  endif()
+else()
+  set(FLAGS "${FLAGS} -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEFAULT_CMAKE_C_FLAGS} ${FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEFAULT_CMAKE_CXX_FLAGS} ${FLAGS}")
+
+  if(${CMAKE_VERSION} LESS 3.0)
+    if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "6.0"))
+      if("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "5.0")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+      else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
+      endif()
+    else()
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+    endif()
+    if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.8"))
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    else()
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    endif()
+  endif()
+endif()
+
+if(DEFINED ENV{CFLAGS})
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS}")
+endif()
+
+if(DEFINED ENV{CPPFLAGS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CPPFLAGS}")
+endif()
+
+if(DEFINED ENV{CXXFLAGS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
+endif()
+
+if(DEFINED ENV{LDFLAGS})
+  set(LINK_FLAGS "${LINK_FLAGS} $ENV{LDFLAGS}")
+endif()
+
+if(DEFINED CFLAGS)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS}")
+endif()
+
+if(DEFINED CPPFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPPFLAGS}")
+endif()
+
+if(DEFINED CXXFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+endif()
+
+if(DEFINED LDFLAGS)
+  set(LINK_FLAGS "${LINK_FLAGS} ${LDFLAGS}")
+endif()
+
 # ant4c
 
 add_library(ant4c STATIC
@@ -95,6 +165,12 @@ if(DEFINED PROGRAM_VERSION)
 endif()
 
 if(NOT MSVC)
+  if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
+    target_compile_options(ant4c PRIVATE "-fPIE")
+    target_compile_options(ant4c_app PRIVATE "-fPIE")
+    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+  endif()
+
   target_link_libraries(ant4c_app m)
 
   if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
@@ -114,70 +190,3 @@ include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
 add_dependencies(ant4c default_listener)
 add_dependencies(ant4c example_of_the_module)
 
-if(MSVC)
-  if (("v140_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET) OR ("v141_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET))
-    set(FLAGS "${FLAGS} -Wall /GS")
-  else()
-    set(FLAGS "${FLAGS} /W4 /GS")
-  endif()
-
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEFAULT_CMAKE_C_FLAGS} ${FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEFAULT_CMAKE_CXX_FLAGS} ${FLAGS}")
-
-  if(CMAKE_CL_64)
-    set(LINK_FLAGS "${LINK_FLAGS} /DynamicBase /NXCompat")
-  else()
-    set(LINK_FLAGS "${LINK_FLAGS} /SafeSEH /DynamicBase /NXCompat")
-  endif()
-else()
-  set(FLAGS "${FLAGS} -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEFAULT_CMAKE_C_FLAGS} ${FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEFAULT_CMAKE_CXX_FLAGS} ${FLAGS}")
-
-  if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
-    target_compile_options(ant4c PRIVATE "-fPIE")
-    target_compile_options(ant4c_app PRIVATE "-fPIE")
-    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
-  endif()
-
-  if(${CMAKE_VERSION} LESS 3.0)
-    if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "6.0"))
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
-    else()
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-    endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  endif()
-endif()
-
-if(DEFINED ENV{CFLAGS})
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS}")
-endif()
-
-if(DEFINED ENV{CPPFLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CPPFLAGS}")
-endif()
-
-if(DEFINED ENV{CXXFLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
-endif()
-
-if(DEFINED ENV{LDFLAGS})
-  set(LINK_FLAGS "${LINK_FLAGS} $ENV{LDFLAGS}")
-endif()
-
-if(DEFINED CFLAGS)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS}")
-endif()
-
-if(DEFINED CPPFLAGS)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPPFLAGS}")
-endif()
-
-if(DEFINED CXXFLAGS)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
-endif()
-
-if(DEFINED LDFLAGS)
-  set(LINK_FLAGS "${LINK_FLAGS} ${LDFLAGS}")
-endif()

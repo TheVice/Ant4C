@@ -81,13 +81,15 @@ std::wstring char_to_wchar_t(const std::string& input)
 	return char_to_wchar_t(input_start, input_finish);
 }
 
-std::string wchar_t_to_char(const std::wstring& input)
+std::string wchar_t_to_char(const wchar_t* input_start, const wchar_t* input_finish)
 {
-	std::string output(2 * input.size(), 0);
+	if (input_finish < input_start)
+	{
+		return std::string();
+	}
+
+	std::string output(2 * (input_finish - input_start), 0);
 	output.clear();
-	/**/
-	const wchar_t* input_start = input.c_str();
-	const wchar_t* input_finish = input_start + input.size();
 	/**/
 	uint8_t out[4];
 	uint8_t bytes = 0;
@@ -131,4 +133,11 @@ std::string wchar_t_to_char(const std::wstring& input)
 	}
 
 	return output;
+}
+
+std::string wchar_t_to_char(const std::wstring& input)
+{
+	const wchar_t* input_start = input.c_str();
+	const wchar_t* input_finish = input_start + input.size();
+	return wchar_t_to_char(input_start, input_finish);
 }

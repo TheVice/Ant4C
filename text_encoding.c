@@ -428,7 +428,7 @@ uint8_t text_encoding_UTF_from_ASCII(
 
 	return 1;
 }
-
+#ifndef NO_COMMON_UNIT
 uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	uint16_t code_page, struct buffer* output)
@@ -559,6 +559,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 	return 1;
 }
+#endif
 #endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
