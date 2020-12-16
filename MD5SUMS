@@ -1,3 +1,7 @@
+9ca2ffe4a0a011643db0a59f7e305b7e  ant4c-2019.10.21-r0_alpine_v3.​10_​x​86_64.apk
+9a137a599e24e70943d29d52dde236f2  ant4c-2019.10.21-r0_alpine_v3.​11_​x​86_64.apk
+c12c79f9e432bcc8a22518ff8a62af7e  ant4c-2019.10.21-r0_alpine_v3.12_​x​86_64.apk
+6d320c79fda35da1081e986332d801e5  ant4c-2019.10.21-r0_alpine_v3.9_​x​86_64.apk
 6c3da2043ee97c2e651ce15c48218801  ant4c_2019.10.21-1bionic1.0_amd64.deb
 da9ddaf488ef4bdc9d46fa3d12b2b163  ant4c_2019.10.21-1focal1.0_amd64.deb
 9af03bc7ef5a831d3e7c1227f09999f7  ant4c_2019.10.21-1trusty1.0_amd64.deb
@@ -23,6 +27,7 @@ d301276d44db39e9bd8833a9b80afd90  ant4c-2019.10.21_openbsd_6.6.tgz
 5ecf51f957787268894d24cda75bc77a  ant4c-2019.10.21-1.el8.x86_64.rpm
 394ae44e7e7bc7bd1674d7ab0610ead6  ant4c-2019.10.21-1.fc33.x86_64.rpm
 43683de6f376fcc132143f2a08e04bf8  ant4c-2019.10.21-1.x86_64.rpm
+fc78c94df5142d2b3735217e849653ba  libant4c-2019.10.21_alpine.tar.bz
 392eaefa40258068df4ed1bba8b0e42d  libant4c-2019.10.21_freebsd_11.tar.bz
 d9aacd70f7c56e10a12d54888e4cb8c1  libant4c-2019.10.21_freebsd_12.tar.bz
 171bf16aefe9f3aacac6944b82593f3c  libant4c-2019.10.21_openbsd.tar.bz
