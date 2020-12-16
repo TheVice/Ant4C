@@ -1,3 +1,7 @@
+8a2e9f44f71e31fd6c89917b3eefed45  ant4c-2020.04-r0_alpine_v3.​10_​x​86_64.apk
+fe48458caa4b9500721110b25444d749  ant4c-2020.04-r0_alpine_v3.​11_​x​86_64.apk
+63a58c14032e245ebd867d21f48d0949  ant4c-2020.04-r0_alpine_v3.12_​x​86_64.apk
+3a3b0b59650bad3f99787910876abc3d  ant4c-2020.04-r0_alpine_v3.​9_​x​86_64.apk
 6457b1c3bb9ebd01cfc20ec5577e40d0  ant4c_2020.04-1bionic1.0_amd64.deb
 87413cba5f1915aa418f761814fb270d  ant4c_2020.04-1focal1.0_amd64.deb
 50bc2f4e6b6c261ccd6fdb3532f67ccc  ant4c_2020.04-1trusty1.0_amd64.deb
@@ -17,6 +21,7 @@ e9787117c403d7e41401dc2bafdf5196  ant4c-2020.04_openbsd_6.7.tgz
 3043ff50ba56499d883c94daa9c000dd  ant4c-2020.04-1.el8.x86_64.rpm
 ae9bb59e9e8aab3469dd2b95fa715e27  ant4c-2020.04-1.fc33.x86_64.rpm
 a8755e4c3d5da3c3032535c8139fe93a  ant4c-2020.04-1.x86_64.rpm
+9adfc112d2b4ccf83103af791e966915  libant4c-2020.04_alpine.tar.bz2
 d6487bad6335135b420d7805e2ef3e29  libant4c-2020.04_freebsd.tar.bz
 7db7d315f7c5edb08a695ceeb881ce5d  libant4c-2020.04_openbsd.tar.bz
 60590dcb8f56ad8f4e0f43fd4acc4550  libant4c-2020.04_ubuntu.tar.bz
