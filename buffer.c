@@ -6,6 +6,9 @@
  */
 
 #include "buffer.h"
+#if !defined(_WIN32) && defined(NDEBUG) && defined(__ALPINE_PREVENT_ILLEGAL_INSTRUCTION__)
+#include "common.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -204,7 +207,12 @@ uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t 
 		}
 
 #else
+#if !defined(_WIN32) && defined(NDEBUG) && defined(__ALPINE_PREVENT_ILLEGAL_INSTRUCTION__)
+		uint8_t* dst = &the_buffer->data[the_buffer->size];
+		MEM_CPY(dst, data, size);
+#else
 		memcpy(&the_buffer->data[the_buffer->size], data, size);
+#endif
 #endif
 	}
 

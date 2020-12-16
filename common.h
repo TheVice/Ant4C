@@ -73,6 +73,14 @@ uint8_t common_is_error_output_stream_standard();
 		++(SRC);												\
 	}
 
+#define MEM_CPY(DST, SRC, LENGTH)								\
+	for (ptrdiff_t counter = 0; counter < LENGTH; ++counter)	\
+	{															\
+		(*(DST)) = (*(SRC));									\
+		++(DST);												\
+		++(SRC);												\
+	}
+
 #if !defined(MAX)
 #define MAX(A, B) ((A) < (B) ? (B) : (A))
 #endif
