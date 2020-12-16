@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2020 https://github.com/TheVice/
  *
  */
 
@@ -37,6 +37,14 @@ uint8_t common_unbox_bool_data(const struct buffer* box_with_data, uint8_t i, ui
 int64_t common_unbox_int64_data(const struct buffer* box_with_data, uint8_t i, uint8_t j);
 
 uint8_t read_file(const char* file_path, struct buffer* content);
+
+#define MEM_CPY(DST, SRC, LENGTH)								\
+	for (ptrdiff_t counter = 0; counter < LENGTH; ++counter)	\
+	{															\
+		(*(DST)) = (*(SRC));									\
+		++(DST);												\
+		++(SRC);												\
+	}
 
 #if !defined(MAX)
 #define MAX(A, B) ((A) < (B) ? (B) : (A))
