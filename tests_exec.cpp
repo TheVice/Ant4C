@@ -102,17 +102,33 @@ protected:
 
 	virtual void SetUp() override
 	{
+		auto init_required = tests_exec_app.empty();
+		//
 		TestsBaseXml::SetUp();
 
 		if (tests_exec_app.empty())
 		{
-			auto result = parse_input_arguments();
-			assert(result);
-			ASSERT_TRUE(result);
+			init_required = parse_input_arguments();
+			assert(init_required);
+			ASSERT_TRUE(init_required);
 			//
-			result = tests_exec_app.empty();
-			assert(!result);
-			ASSERT_FALSE(result);
+			init_required = tests_exec_app.empty();
+			assert(!init_required);
+			ASSERT_FALSE(init_required);
+			//
+			init_required = true;
+		}
+
+		if (init_required)
+		{
+			buffer tmp;
+			SET_NULL_TO_BUFFER(tmp);
+			//
+			const auto path = reinterpret_cast<const uint8_t*>(tests_exec_app.data());
+			ASSERT_TRUE(path_combine(path, path + tests_exec_app.size(), nullptr, nullptr, &tmp)) << buffer_free(&tmp);
+			tests_exec_app = buffer_to_string(&tmp);
+			//
+			buffer_release(&tmp);
 		}
 
 		allow_output_to_console = nodes.first().parent().attribute("allow_output_to_console").as_bool();
@@ -363,7 +379,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 							static_cast<uint32_t>(date_time_millisecond_to_second(time_out)), verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
-					<< "append - '" << static_cast<int>(append) << std::endl
+					<< "tests_exec_app - '" << tests_exec_app << "'" << std::endl
+					<< "append - '" << static_cast<int>(append) << "'" << std::endl
 					<< "program - '" << range_to_string(&program) << "'" << std::endl
 					<< "base directory - '" << base_dir_str << "'" << std::endl
 					<< "command line - '" << command_line_str << "'" << std::endl
@@ -584,7 +601,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_EQ(nullptr, argv[1]) << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
 			ASSERT_TRUE(compare_paths_with_delimiter_independ(arguments[0].node().child_value(), argv[0]))
-					<< arguments[0].node().child_value() << argv[0]
+					<< "Path 1 - \"" << arguments[0].node().child_value() << "\"" << std::endl
+					<< "Path 2 - \"" << argv[0] << "\"" << std::endl
 					<< buffer_free(&temp_file_name) << project_free(&the_project);
 		}
 		else
@@ -610,7 +628,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 				if (!argc)
 				{
 					ASSERT_TRUE(compare_paths_with_delimiter_independ(argument.node().child_value(), argv[argc]))
-							<< argument.node().child_value() << argv[argc]
+							<< "Path 1 - \"" << argument.node().child_value() << "\"" << std::endl
+							<< "Path 2 - \"" << argv[argc] << "\"" << std::endl
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 				else
