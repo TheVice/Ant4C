@@ -185,8 +185,15 @@ include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
 include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
 
+# if(CMAKE_HOST_WIN32)
+#  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
+# endif()
+
 # add_dependencies(ant4c ant4c.dns)
 # add_dependencies(ant4c ant4c.regex)
 add_dependencies(ant4c default_listener)
 add_dependencies(ant4c example_of_the_module)
 
+# if((CMAKE_HOST_WIN32) AND (MSVC))
+#  add_dependencies(ant4c ant4c.net.framework.module)
+# endif()
