@@ -14,6 +14,7 @@ All binaries available on the [release page](https://github.com/TheVice/Ant4C/re
 Depend on variant available for your system:
 * Unpack *zip* archive to prefer location.
 * For packages - install program using the system package manager.
+  * Alpine Linux: *apk add --allow-untrusted \*.apk*.
   * Debian based: *dpkg --install \*.deb*.
   * RPM based: *rpm -Uvh \*.rpm*.
   * FreeBSD: *pkg install \*.txz*.

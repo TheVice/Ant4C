@@ -180,14 +180,21 @@ endif()
 
 set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
 
+set(SOURCES_OF_TESTS)
+set(LIBRARIES4TESTING ant4c)
+
 include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
 include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
 include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
 
+if(CMAKE_HOST_WIN32)
+  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
+endif()
+
 set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
 
-set(SOURCES_OF_TESTS
+list(APPEND SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_argument_parser.cpp"
             "${CMAKE_SOURCE_DIR}/tests_base_xml.cpp"
             "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
@@ -219,7 +226,7 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
   add_executable(ant4c_tests ${SOURCES_OF_TESTS})
 
-  target_link_libraries(ant4c_tests ant4c pugixml GTest::GTest)# GTest::Main)
+  target_link_libraries(ant4c_tests ${LIBRARIES4TESTING} pugixml GTest::GTest)# GTest::Main)
 
   if(NOT MSVC)
     target_link_libraries(ant4c_tests m)
@@ -237,6 +244,10 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   add_dependencies(ant4c_tests ant4c.dns)
   add_dependencies(ant4c_tests ant4c.regex)
   add_dependencies(ant4c_tests example_of_the_module)
+
+  if((CMAKE_HOST_WIN32) AND (MSVC))
+    add_dependencies(ant4c_tests ant4c.net.framework.module)
+  endif()
 
   if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
     add_custom_command(TARGET ant4c_tests POST_BUILD
@@ -303,7 +314,7 @@ else()
       add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
       add_executable(ant4c_tests ${SOURCES_OF_TESTS})
       target_include_directories(ant4c_tests SYSTEM PRIVATE ${pugixml_Path}/src ${GTEST_INCLUDE_DIR})
-      target_link_libraries(ant4c_tests ant4c pugixml ${GTEST_MAIN_LIBRARY})
+      target_link_libraries(ant4c_tests ${LIBRARIES4TESTING} pugixml ${GTEST_MAIN_LIBRARY})
 
       if(NOT MSVC)
         target_link_libraries(ant4c_tests m)
@@ -321,6 +332,10 @@ else()
       add_dependencies(ant4c_tests ant4c.dns)
       add_dependencies(ant4c_tests ant4c.regex)
       add_dependencies(ant4c_tests example_of_the_module)
+
+      if((CMAKE_HOST_WIN32) AND (MSVC))
+        add_dependencies(ant4c_tests ant4c.net.framework.module)
+      endif()
 
       if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
         add_custom_command(TARGET ant4c_tests POST_BUILD

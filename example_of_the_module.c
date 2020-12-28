@@ -50,7 +50,7 @@ const uint8_t* enumerate_tasks(ptrdiff_t index)
 {
 	static const ptrdiff_t count = sizeof(tasks) / sizeof(*tasks);
 
-	if (count <= index)
+	if (index < 0 || count <= index)
 	{
 		return NULL;
 	}
@@ -62,7 +62,7 @@ const uint8_t* enumerate_name_spaces(ptrdiff_t index)
 {
 	static const ptrdiff_t count = sizeof(name_spaces) / sizeof(*name_spaces);
 
-	if (count <= index)
+	if (index < 0 || count <= index)
 	{
 		return NULL;
 	}
@@ -74,7 +74,7 @@ const uint8_t* enumerate_functions(const uint8_t* name_space, ptrdiff_t index)
 {
 	static const ptrdiff_t count = sizeof(all_functions) / sizeof(*all_functions);
 
-	if (NULL == name_space)
+	if (NULL == name_space || index < 0)
 	{
 		return NULL;
 	}

@@ -195,7 +195,7 @@ To define dynamic property set dynamic parameter to the true value.
 
 The output of interpreting of this script will be:
 ----
-[Info]: The property value is 'value'.
+The property value is 'value'.
 ----
 NOTE: For version prior to the 2020.* access to the property value was only via property::get-value function.
 
@@ -212,7 +212,7 @@ NOTE: For version prior to the 2020.* access to the property value was only via 
 And the output:
 
 ----
-[Info]: The length of property value is '5'.
+The length of property value is '5'.
 ----
 
 NOTE: For all version access to the property value at the functions can be provided directly by property name.
@@ -371,10 +371,10 @@ Using 'call' task with 'cascade' attribute equal to the *false* will not run clo
 So output will be next:
 
 ----
-[Info]: Cloning...
-[Info]: Build version - 1
-[Info]: Build version - 1-rev1
-[Info]: Publish versions that was build
+Cloning...
+Build version - 1
+Build version - 1-rev1
+Publish versions that was build
 ----
 
 [[choose_task]]
@@ -2371,9 +2371,9 @@ Return from function version with one argument equal to the return from version 
 
 Output will be:
 ----
-[Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
-[Info]: 'The quick brown fox jumps over the lazy dog' -> '414fa339'
-[Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
+'The quick brown fox jumps over the lazy dog' -> '39a34f41'
+'The quick brown fox jumps over the lazy dog' -> '414fa339'
+'The quick brown fox jumps over the lazy dog' -> '39a34f41'
 ----
 
 [[hash-keccak]]
