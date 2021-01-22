@@ -974,6 +974,76 @@ uint8_t Test_SHA3(struct buffer* output)
 	return 1;
 }
 
+uint8_t Test_xxHash(struct buffer* output)
+{
+	if (!output ||
+		!buffer_resize(output, UINT8_MAX))
+	{
+		return 0;
+	}
+
+	uint8_t* input = buffer_data(output, 0);
+	uint32_t base = 2654435761;
+
+	for (uint16_t i = 0; i < UINT8_MAX; ++i)
+	{
+		input[i] = (uint8_t)((uint32_t)(base >> 24));
+		base *= base;
+	}
+
+	uint8_t lengths[] = { 0, 1, 14, 222 };
+	uint32_t seeds[] = { 0, 2654435761 };
+	/**/
+	uint64_t expected_return[] =
+	{
+		46947589, 917998311, 3093085925, 3582221668,
+		3853126324, 1149343005, 3355904022, 4090480722
+	};
+	/**/
+	uint64_t returned;
+
+	for (uint8_t i = 0, k = 0, count = COUNT_OF(lengths); i < count; ++i)
+	{
+		for (uint8_t j = 0, count = COUNT_OF(seeds); j < count; ++j, ++k)
+		{
+			returned = hash_algorithm_XXH32(input, (uint32_t)lengths[i], (uint32_t)seeds[j]);
+
+			if (expected_return[k] != returned)
+			{
+				printf("%i\nexpected: '%"PRIu64"' \nreturned: '%"PRIu64"' \n%s\n",
+					   k, expected_return[k], returned, "FAILURE");
+				return 0;
+			}
+		}
+	}
+
+	expected_return[0] = 17241709254077376921ull;
+	expected_return[1] = 12427117621484918767ull;
+	expected_return[2] = 5750596776143442648ull;
+	expected_return[3] = 8329478753618994979ull;
+	expected_return[4] = 14986446533618842173ull;
+	expected_return[5] = 6599481375206459851ull;
+	expected_return[6] = 11373004714924552253ull;
+	expected_return[7] = 15875559714628437504ull;
+
+	for (uint8_t i = 0, k = 0, count = COUNT_OF(lengths); i < count; ++i)
+	{
+		for (uint8_t j = 0, count = COUNT_OF(seeds); j < count; ++j, ++k)
+		{
+			returned = hash_algorithm_XXH64(input, lengths[i], seeds[j]);
+
+			if (expected_return[k] != returned)
+			{
+				printf("%i\nexpected: '%"PRIu64"' \nreturned: '%"PRIu64"' \n%s\n",
+					   k, expected_return[k], returned, "FAILURE");
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
 #if defined(_MSC_VER)
 int wmain(int argc, wchar_t** argv)
 #else
@@ -1041,6 +1111,13 @@ int main(int argc, char** argv)
 	}
 
 	if (!Test_SHA3(&output))
+	{
+		buffer_release(&output);
+		printf("%i %s\n", __LINE__, "FAILURE");
+		return EXIT_FAILURE;
+	}
+
+	if (!Test_xxHash(&output))
 	{
 		buffer_release(&output);
 		printf("%i %s\n", __LINE__, "FAILURE");

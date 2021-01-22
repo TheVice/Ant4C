@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2012 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2012 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -45,29 +45,6 @@ static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320,
 
 #define ROT(X, N, W)	\
 	(((X) << ((N) % (W))) | ((X) >> ((W) - ((N) % (W)))))
-
-uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
-	const uint8_t* start, const uint8_t* finish, uint64_t* output)
-{
-	if (NULL == start ||
-		NULL == finish ||
-		finish < start ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	uint8_t j = 0;
-	(*output) = 0;
-
-	while ((--finish) > (start - 1) && j < 16)
-	{
-		(*output) += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
-		(*output) += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
-	}
-
-	return 1;
-}
 
 void Round(uint64_t* A, uint64_t RC_i)
 {
@@ -440,7 +417,6 @@ uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 		return 0;
 	}
 
-#if 1
 	const uint16_t capacity = capacity_array[hash_type];
 	const uint16_t rate = permutation_width - capacity;
 	const uint8_t rate_on_w = (uint8_t)(rate / w);
@@ -458,7 +434,9 @@ uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 	{
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0
+		0, 0, 0, 0, 0, 0,
+		/*NOTE: GCC requires*/
+		0, 0, 0, 0, 0, 0, 0
 	};
 	/**/
 	uint8_t xF = 0;
@@ -471,56 +449,6 @@ uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 	/**/
 	memset(addition, 0, sizeof(addition));
 	addition[0] = is_sha3 ? 6 : 1;
-#else
-	uint8_t rate_on_w = 0;
-	uint8_t maximum_delta = 0;
-	uint8_t addition[192];
-	uint8_t is_addition_set = 0;
-	hash_algorithm_sha3_init(is_sha3, hash_length, &rate_on_w, &maximum_delta, addition, sizeof(addition));
-	uint8_t delta = maximum_delta;
-	uint8_t xF = 0;
-	uint64_t S[] =
-	{
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0
-	};
-	/**/
-	uint64_t data[] =
-	{
-		0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0
-	};
-	/**/
-#endif
-#if 0
-	const uint8_t* start = input;
-	const uint8_t* finish = start + length;
-
-	while ((start < finish) || !is_addition_set)
-	{
-		const uint8_t* finish_ = start + 4096;
-		const uint8_t* resume_at = NULL;
-		uint8_t* ptr = finish < finish_ ? &is_addition_set : NULL;
-		finish_ = finish < finish_ ? finish : finish_;
-		delta = hash_algorithm_sha3_core(
-					S, rate_on_w, data, &xF,
-					delta, maximum_delta,
-					addition, ptr,
-					start, finish_, &resume_at);
-
-		if (!delta)
-		{
-			return 0;
-		}
-
-		start = resume_at < finish_ ? resume_at : finish;
-	}
-
-#else
 	uint8_t* part = (addition + 180);
 	is_sha3 = 0;
 	/**/
@@ -603,7 +531,7 @@ uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 		}
 	}
 	while (input < finish || is_sha3 < delta);
-#endif
+
 	return Keccak_squeezing((uint8_t)(hash_length / 8), S, rate_on_w, output);
 }
 

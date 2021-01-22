@@ -24,6 +24,9 @@ hash.blake3.obj: hash.blake3.c hash.h
 hash.sha3.obj: hash.sha3.c hash.h
 	cc -c hash.sha3.c -o hash.sha3.obj
 
+hash.xxhash.obj: hash.xxhash.c hash.h
+	cc -c hash.xxhash.c -o hash.xxhash.obj
+
 path.obj: path.c path.h
 	cc -c path.c -o path.obj
 
@@ -33,8 +36,19 @@ range.obj: range.c range.h
 hash.obj: hash.c hash.h
 	cc -c hash.c -o hash.obj
 
-hash.a: buffer.obj common.obj conversion.obj file_system.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj path.obj range.obj hash.obj
-	ar rcs hash.a buffer.obj common.obj conversion.obj file_system.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj path.obj range.obj hash.obj
+hash.a: buffer.obj
+hash.a: common.obj
+hash.a: conversion.obj
+hash.a: file_system.obj
+hash.a: hash.crc32.obj
+hash.a: hash.blake2.obj
+hash.a: hash.blake3.obj
+hash.a: hash.sha3.obj
+hash.a: hash.xxhash.obj
+hash.a: path.obj
+hash.a: range.obj
+hash.a: hash.obj
+	ar rcs hash.a buffer.obj common.obj conversion.obj file_system.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj hash.xxhash.obj path.obj range.obj hash.obj
 
 main.obj: main.c
 	cc -c main.c -o main.obj
@@ -43,5 +57,5 @@ main: hash.a main.obj
 	cc main.obj hash.a -o main
 
 clean:
-	rm buffer.obj common.obj conversion.obj file_system.obj hash.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj hash.a main.obj path.obj range.obj main
+	rm buffer.obj common.obj conversion.obj file_system.obj hash.obj hash.crc32.obj hash.blake2.obj hash.blake3.obj hash.sha3.obj hash.xxhash.obj hash.a main.obj path.obj range.obj main
 .PHONY: clean
