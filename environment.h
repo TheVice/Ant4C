@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -12,7 +12,6 @@
 #include <stdint.h>
 
 struct buffer;
-struct OperatingSystem;
 
 static const uint8_t environment_posix_delimiter = ':';
 static const uint8_t environment_windows_delimiter = ';';
@@ -76,7 +75,7 @@ enum SpecialFolder
 
 uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* path);
 uint8_t environment_get_machine_name(struct buffer* name);
-const struct OperatingSystem* environment_get_operating_system();
+const void* environment_get_operating_system();
 uint8_t environment_get_user_name(struct buffer* name);
 uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
 								 struct buffer* variable);

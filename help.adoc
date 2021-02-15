@@ -2720,9 +2720,11 @@ Get integer part from double digital value.
 | <<operating_system-get_platform,operating-system::get-platform>> | Get platform of the operation system.
 | <<operating_system-get_version,operating-system::get-version>> | Get version of the operation system.
 | <<operating_system-to_string,operating-system::to-string>> | Get string representation of the the operation system.
+| <<operating_system-is_windows_server,operating-system::is-windows-server>> | Check is specified operation system Windows Server.
 | <<platform-get_name,platform::get-name>> | Get name of current platform.
 | <<platform-is_unix,platform::is-unix>> | Check is current platform UNIX like.
 | <<platform-is_windows,platform::is-windows>> | Check is current platform Windows.
+| <<platform-is_windows_server,platform::is-windows-server>> | Check is current platform Windows Server.
 |===
 
 [[operating_system-get_platform]]
@@ -2753,6 +2755,13 @@ Get version of operating system.
 
 Get string representation of operating system.
 
+[[operating_system-is_windows_server]]
+==== is-windows-server
+
+*bool* 'operating-system::is-windows-server'(*operating system*)
+
+Return *true* if specified operation system from Windows Server family.
+
 [[platform-get_name]]
 ==== get-name
 
@@ -2773,6 +2782,13 @@ Return *true* if current platform UNIX like.
 *bool* 'platform::is-windows'()
 
 Return *true* if current platform from Windows family.
+
+[[platform-is_windows_server]]
+==== is-windows-server
+
+*bool* 'platform::is-windows-server'()
+
+Return *true* if current platform from Windows Server family.
 
 === Path unit
 

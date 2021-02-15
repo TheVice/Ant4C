@@ -445,7 +445,7 @@ uint8_t evaluate_function(const uint8_t* function,
 
 		case metahost_runtime_:
 			if (1 != values_count ||
-				!metahost_runtime(values[0], values_lengths[0], &values_count) ||
+				!metahost_runtime(values[0], (uint8_t)values_lengths[0], &values_count) ||
 				!bool_to_string(values_count, &output_data))
 			{
 				return 0;

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -16,12 +16,18 @@ extern "C" {
 #include "operating_system.h"
 #include "range.h"
 #include "string_unit.h"
+#include "version.h"
 };
 
 #include <string>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+
+#if !defined(_WIN32)
+#define _POSIXSOURCE 1
+#include <sys/utsname.h>
+#endif
 
 class TestEnvironment : public TestsBaseXml
 {
@@ -186,14 +192,14 @@ TEST(TestEnvironment_, environment_get_machine_name)
 
 TEST(TestEnvironment_, environment_get_operating_system)
 {
-	const OperatingSystem* os = environment_get_operating_system();
+	const void* os = environment_get_operating_system();
 	ASSERT_NE(nullptr, os);
 #if defined(_WIN32)
-	ASSERT_EQ(Win32, os->Platform);
+	ASSERT_EQ(Win32, operating_system_get_platform(os));
 #else
-	ASSERT_EQ(Unix, os->Platform);
+	ASSERT_EQ(Unix, operating_system_get_platform(os));
 #endif
-	ASSERT_LT(0, common_count_bytes_until(os->VersionString, 0));
+	ASSERT_LT(0, common_count_bytes_until(operating_system_to_string(os), 0));
 }
 
 TEST(TestEnvironment_, environment_get_user_name)
@@ -297,19 +303,24 @@ TEST(TestOperatingSystem, operating_system_at_all)
 	{
 		ASSERT_LT(i, COUNT_OF(expected_platforms)) << buffer_free(&input);
 		ASSERT_LT(i, COUNT_OF(expected_versions)) << buffer_free(&input);
+#if defined(_WIN32)
+#define OS_SIZE UINT8_MAX
+#else
+#define OS_SIZE sizeof(struct utsname) + INT8_MAX
+#endif
+		uint8_t os[OS_SIZE];
+		ASSERT_TRUE(operating_system_parse(input_in_range.start, pos, OS_SIZE, os)) << buffer_free(&input);
+		ASSERT_EQ(expected_platforms[i], operating_system_get_platform(os)) << buffer_free(&input);
 		//
-		OperatingSystem os;
-		ASSERT_TRUE(operating_system_parse(input_in_range.start, pos, &os)) << buffer_free(&input);
-		ASSERT_EQ(expected_platforms[i], operating_system_get_platform(&os)) << buffer_free(&input);
-		//
-		const Version returned_version = operating_system_get_version(&os);
-		ASSERT_EQ(expected_versions[i].major, returned_version.major) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].minor, returned_version.minor) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].build, returned_version.build) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].revision, returned_version.revision) << buffer_free(&input);
+		const Version* returned_version = operating_system_get_version(os);
+		ASSERT_NE(nullptr, returned_version) << buffer_free(&input);
+		ASSERT_EQ(expected_versions[i].major, returned_version->major) << buffer_free(&input);
+		ASSERT_EQ(expected_versions[i].minor, returned_version->minor) << buffer_free(&input);
+		ASSERT_EQ(expected_versions[i].build, returned_version->build) << buffer_free(&input);
+		ASSERT_EQ(expected_versions[i].revision, returned_version->revision) << buffer_free(&input);
 		//
 		ASSERT_STREQ((const char*)input_in_range.start,
-					 (const char*)operating_system_to_string(&os)) << buffer_free(&input);
+					 (const char*)operating_system_to_string(os)) << buffer_free(&input);
 		//
 		++i;
 		++pos;

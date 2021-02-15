@@ -165,8 +165,9 @@ if(DEFINED PROGRAM_VERSION)
 endif()
 
 if(NOT MSVC)
-  if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
+  if(NOT MINGW)
     target_compile_options(ant4c PRIVATE "-fPIE")
+    target_compile_options(ant4c PRIVATE "-fPIC")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
     set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
   endif()
@@ -219,7 +220,11 @@ list(APPEND SOURCES_OF_TESTS
 set(pugixml_FOUND 0)
 set(GTest_FOUND False)
 
-find_package(pugixml)
+if((DEFINED ENV{pugixml_issues_390}) OR (DEFINED pugixml_issues_390))# https://github.com/zeux/pugixml/issues/390
+else()
+  find_package(pugixml)
+endif()
+
 find_package(GTest)
 
 if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})

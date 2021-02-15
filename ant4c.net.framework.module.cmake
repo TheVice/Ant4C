@@ -19,9 +19,9 @@ if(MSVC)
 
   add_library(ant4c.net.framework.module.clr
       "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.AssemblyInfo.cs"
-      "${CMAKE_SOURCE_DIR}/CustomAppDomainManager.cs"
-      "${CMAKE_SOURCE_DIR}/IFrameworkNamespace.cs"
-      "${CMAKE_SOURCE_DIR}/VersionDetector.cs")
+      "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.CustomAppDomainManager.cs"
+      "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.IFrameworkNamespace.cs"
+      "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.VersionDetector.cs")
 
   add_library(ant4c.net.framework.module SHARED
       "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.c"

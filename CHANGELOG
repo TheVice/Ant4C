@@ -3,6 +3,8 @@ ant4c (YYYY.MM)
     of inputs with huge (more than 32 KB) length.
   * At implementation of 'SHA3/Keccak' algorithm do not loading whole range
     of data while calculating hash sum of first one.
+  * Added 'operating-system::is-windows-server' and
+    'platform::is-windows-server' functions.
 
  -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

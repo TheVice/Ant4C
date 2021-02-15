@@ -3806,6 +3806,46 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
+      <code>${operating-system::get-platform('Microsoft Windows NT 5.0.0.0')}</code>
+      <output>Win32</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${operating-system::get-version('Linux 4')}</code>
+      <output>4.0.0.0</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${operating-system::to-string('OpenBSD 6.5')}</code>
+      <output>OpenBSD 6.5</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${operating-system::is-windows-server('')}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>string::empty(platform::get-name()) => ${string::empty(platform::get-name())}</code>
+      <output>string::empty(platform::get-name()) => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>string::empty(platform::is-unix()) => ${string::empty(platform::is-unix())}</code>
+      <output>string::empty(platform::is-unix()) => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>string::empty(platform::is-windows()) => ${string::empty(platform::is-windows())}</code>
+      <output>string::empty(platform::is-windows()) => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>string::empty(platform::is-windows-server()) => ${string::empty(platform::is-windows-server())}</code>
+      <output>string::empty(platform::is-windows-server()) => False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
       <code>${path::glob('1.txt', '*.txt')}</code>
       <output>True</output>
       <return>1</return>
