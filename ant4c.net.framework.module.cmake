@@ -17,7 +17,7 @@ if(MSVC)
 
   include(CSharpUtilities)
 
-  add_library(ant4c.net.framework.module.clr
+  add_library(ant4c.net.framework.module.clr SHARED
       "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.AssemblyInfo.cs"
       "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.CustomAppDomainManager.cs"
       "${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.IFrameworkNamespace.cs"
@@ -33,7 +33,12 @@ if(MSVC)
 
   add_dependencies(ant4c.net.framework.module ant4c.net.framework.module.clr)
   target_link_libraries(ant4c.net.framework.module ant4c framework_gate)
-
+  if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
+  target_compile_options(framework_gate PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
+  target_compile_options(framework_gate PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
+  target_compile_options(ant4c.net.framework.module PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
+  target_compile_options(ant4c.net.framework.module PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
+  endif()
   list(APPEND SOURCES_OF_TESTS
             "${CMAKE_SOURCE_DIR}/tests_ant4c.net.framework.module.cpp")
   list(APPEND LIBRARIES4TESTING framework_gate)

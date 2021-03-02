@@ -249,7 +249,7 @@ More complex example is calculating determinate and roots of quadratic polynomia
 
 Full list of functions can be found at the <<unit_reference,unit reference>>.
 
-To call function choose name of unit (or name space) and function name. If function has arguments set them. Some arguments not mandatory, for example like at string::substring.
+To call function choose name of unit (or name space) and function name. If function has arguments set them. Some arguments not mandatory, for example like at <<string-substring,string::substring>>.
 
 All arguments interprets as strings and convert to required type, if it possible, at the moment of function call. If converting is impossible, evaluation will be break with error.
 
@@ -3202,7 +3202,7 @@ If value located at the start of string - *true* will be returned.
 [[string-substring]]
 ==== substring
 
-*string* 'string::substring'(*string* string, *int* position)
+*string* 'string::substring'(*string* string, *int* position) +
 *string* 'string::substring'(*string* string, *int* position, *int* length)
 
 Return sub string of the *string* from *position* with *length*. +
