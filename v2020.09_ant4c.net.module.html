@@ -1,0 +1,1780 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc" />
+<title>ant4c.net.module help</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+</head>
+<body class="article">
+<div id="header">
+<h1>ant4c.net.module help</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <div class="toclevel1"><a href="#history">History</a></div>
+  <div class="toclevel1"><a href="#_installation">Installation</a></div>
+  <div class="toclevel1"><a href="#_module_reference">Module reference</a></div>
+  <div class="toclevel2"><a href="#_types_structure">Types structure</a></div>
+  <div class="toclevel2"><a href="#_host_fx_resolver_unit">Host fx resolver unit</a></div>
+  <div class="toclevel2"><a href="#_net_host_unit">Net host unit</a></div>
+  <div class="toclevel2"><a href="#_file_unit">File unit</a></div></div>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="history">History</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li><p><a href="./v2020.09.202107_ant4c.net.module.html">v2020.09.202107</a></p></li>
+<li>
+<p>
+<strong>v2020.09</strong>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installation">Installation</h2>
+<div class="sectionbody">
+
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://www.nuget.org/packages/ant4c.net.module/">Ant4C.Net</a> (available at NuGet Gallery)
+</p>
+</li>
+</ul></div>
+
+<div class="paragraph"><p>Place dll/so file in the folder known for ant4c application or use direct path to the binary file from the script.<br />
+Use ant4c version that support modules.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_module_reference">Module reference</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_types_structure">Types structure</h3>
+<div class="paragraph"><p>In this document used type <strong>pointer</strong>.<br />
+Next structure describe his relationship to the <strong>string</strong> type.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+string
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+pointer
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>All rest types locate in same hierarchy positions like described at the <a href="./index.html">documentation of Ant4C</a>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_host_fx_resolver_unit">Host fx resolver unit</h3>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 1. Functions from host fx resolver.</caption>
+<col width="50%" />
+<col width="50%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-functions">functions</a></p></td>
+<td align="left" valign="top"><p class="table">Return list of functions available for the current version of host library.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-initialize">initialize</a></p></td>
+<td align="left" valign="top"><p class="table">Initialize unit functions.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-is-function-exists">is-function-exists</a></p></td>
+<td align="left" valign="top"><p class="table">Return <strong>true</strong> in case proposed function exists.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-result-to-string">result-to-string</a></p></td>
+<td align="left" valign="top"><p class="table">Explain return code of some functions from the unit.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-functions">functions</h4>
+<div class="paragraph"><p><strong>string</strong> <em>hostfxr::functions</em>()<br />
+<strong>string</strong> <em>hostfxr::functions</em>(<strong>string</strong> delimiter)</p></div>
+<div class="paragraph"><p>Return list of functions that can be used at current version of host fx resolver.<br />
+If parameter pass - value of first one will be placed between functions.<br />
+If no parameter pass - space symbol will be used as delimiter for names of functions.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">Function <a href="#hostfxr-initialize">initialize</a> should be call before attempt to use this one.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This function have no forward compatibility.<br />
+If host fx resolver publish with new functions, that not described at this help,<br />
+new one&#8217;s will not be in the return of this function.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;project&gt;
+  &lt;choose&gt;
+    &lt;when test="${platform::is-windows()}"&gt;
+      &lt;trycatch&gt;
+        &lt;try&gt;
+          &lt;loadtasks module="ant4c.net.module.dll" /&gt;
+        &lt;/try&gt;
+        &lt;catch&gt;
+           &lt;loadtasks module="libant4c.net.module.dll" /&gt;
+        &lt;/catch&gt;
+      &lt;/trycatch&gt;
+      &lt;property name="path_to_hostfxr" value="hostfxr.dll" /&gt;
+    &lt;/when&gt;
+
+    &lt;when test="${platform::is-unix()}"&gt;
+      &lt;loadtasks module="libant4c.net.module.so" /&gt;
+      &lt;property name="path_to_hostfxr" value="libhostfxr.so" /&gt;
+    &lt;/when&gt;
+  &lt;/choose&gt;
+
+  &lt;property name="is_initialize" value="False" /&gt;
+
+  &lt;trycatch&gt;
+    &lt;try&gt;
+      &lt;property
+        name="is_initialize"
+        value="${hostfxr::initialize(path_to_hostfxr)}" /&gt;
+    &lt;/try&gt;
+  &lt;/trycatch&gt;
+
+  &lt;fail
+    unless="${is_initialize}"
+    message="Module unable to get addresses of functions from host fx resolver library (${path_to_hostfxr})" /&gt;
+
+  &lt;!-- A --&gt;
+  &lt;property name="functions" value="${hostfxr::functions()}" /&gt;
+  &lt;foreach
+    item="String"
+    in="${functions}" delim=" " property="host_function"&gt;
+    &lt;echo&gt;host_function -&gt; ${host_function}&lt;/echo&gt;
+  &lt;/foreach&gt;
+
+  &lt;echo /&gt;
+  &lt;!-- B --&gt;
+  &lt;property name="functions" value="${hostfxr::functions(', ')}" /&gt;
+  &lt;echo&gt;hostfxr::functions -&gt; ${functions}&lt;/echo&gt;
+
+  &lt;echo /&gt;
+  &lt;!-- C --&gt;
+  &lt;property name="functions" value="${hostfxr::functions('|')}" /&gt;
+  &lt;foreach
+    item="String"
+    in="${functions}" delim="|" property="host_function"&gt;
+    &lt;echo&gt;host_function -&gt; ${host_function}&lt;/echo&gt;
+  &lt;/foreach&gt;
+&lt;/project&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-initialize">initialize</h4>
+<div class="paragraph"><p><strong>bool</strong> <em>hostfxr::initialize</em>(<strong>file</strong> path_to_the_host_fx_resolver)</p></div>
+<div class="paragraph"><p>Get addresses of functions from library of host fx resolver.<br />
+If function return <strong>true</strong> other functions, that operate function name, from this name space, can be used.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_2">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;project&gt;
+  &lt;choose&gt;
+    &lt;when test="${platform::is-windows()}"&gt;
+      &lt;trycatch&gt;
+        &lt;try&gt;
+          &lt;loadtasks module="ant4c.net.module.dll" /&gt;
+        &lt;/try&gt;
+        &lt;catch&gt;
+          &lt;loadtasks module="libant4c.net.module.dll" /&gt;
+        &lt;/catch&gt;
+      &lt;/trycatch&gt;
+      &lt;property
+        name="fxr_folder"
+        value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" /&gt;
+      &lt;property name="hostfxr_file_name" value="hostfxr.dll" /&gt;
+    &lt;/when&gt;
+
+    &lt;when test="${platform::is-unix()}"&gt;
+      &lt;loadtasks module="libant4c.net.module.so" /&gt;
+      &lt;property
+        name="fxr_folder"
+        value="/usr/share/dotnet/host/fxr" /&gt;
+      &lt;property name="hostfxr_file_name" value="libhostfxr.so" /&gt;
+    &lt;/when&gt;
+  &lt;/choose&gt;
+
+  &lt;property
+    name="paths_to_hostfxr"
+    value="${directory::enumerate-file-system-entries(fxr_folder, 'file', 'true')}" /&gt;
+
+  &lt;foreach
+    item="String"
+    in="${paths_to_hostfxr}"
+    property="path_to_hostfxr"&gt;
+
+    &lt;property name="is_initialize"
+      value="${string::equal(hostfxr_file_name, string::to-lower(path::get-file-name(path_to_hostfxr)))}" /&gt;
+
+    &lt;property
+      name="is_initialize"
+      value="${hostfxr::initialize(path_to_hostfxr)}"
+      if="${is_initialize}" /&gt;
+
+    &lt;echo&gt;${path_to_hostfxr} -&gt; ${is_initialize}&lt;/echo&gt;
+  &lt;/foreach&gt;
+&lt;/project&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-is-function-exists">is-function-exists</h4>
+<div class="paragraph"><p><strong>bool</strong> <em>hostfxr::is-function-exists</em>(<strong>string</strong> function_name)</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if name of input function available at the current version of host fx resolver.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">Function <a href="#hostfxr-initialize">initialize</a> should be call before attempt to use this one.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This function have no forward compatibility.<br />
+If host fx resolver publish with new functions, that not described at this help,<br />
+new one&#8217;s can not be check by this function. Function return <strong>false</strong> in that case.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_3">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;project&gt;
+  &lt;choose&gt;
+    &lt;when test="${platform::is-windows()}"&gt;
+      &lt;trycatch&gt;
+        &lt;try&gt;
+          &lt;loadtasks module="ant4c.net.module.dll" /&gt;
+        &lt;/try&gt;
+        &lt;catch&gt;
+           &lt;loadtasks module="libant4c.net.module.dll" /&gt;
+        &lt;/catch&gt;
+      &lt;/trycatch&gt;
+    &lt;/when&gt;
+
+    &lt;when test="${platform::is-unix()}"&gt;
+      &lt;loadtasks module="libant4c.net.module.so" /&gt;
+    &lt;/when&gt;
+  &lt;/choose&gt;
+
+  &lt;fail
+    unless="${property::exists('path_to_hostfxr')}"
+    message="Property 'path_to_hostfxr' should be defined to use this script." /&gt;
+
+  &lt;property name="is_initialize" value="False" /&gt;
+
+  &lt;trycatch&gt;
+    &lt;try&gt;
+      &lt;property
+        name="is_initialize"
+        value="${hostfxr::initialize(path_to_hostfxr)}" /&gt;
+    &lt;/try&gt;
+  &lt;/trycatch&gt;
+
+  &lt;fail
+    unless="${is_initialize}"
+    message="Module unable to get addresses of functions from host fx resolver library (${path_to_hostfxr})" /&gt;
+
+  &lt;property name="functions" value="main main-bundle-startupinfo" /&gt;
+
+  &lt;foreach item="String" in="${functions}" delim=" " property="function"&gt;
+    &lt;property
+      name="is_function_exists"
+      value="${hostfxr::is-function-exists(function)}" /&gt;
+
+    &lt;echo&gt;hostfxr::is-function-exists(${function}) -&gt; ${is_function_exists}&lt;/echo&gt;
+  &lt;/foreach&gt;
+&lt;/project&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>ant4c /f:sample.build -D:path_to_hostfxr="...hostfxr.dll"
+ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so"</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-result-to-string">result-to-string</h4>
+<div class="paragraph"><p><strong>string</strong> <em>hostfxr::result-to-string</em>(<strong>int</strong> code)</p></div>
+<div class="paragraph"><p>Return string description of error code.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This function can be used even if <a href="#hostfxr-initialize">initialize</a> function not called or if it returned <strong>false</strong>.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_4">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;project&gt;
+  &lt;choose&gt;
+    &lt;when test="${platform::is-windows()}"&gt;
+      &lt;trycatch&gt;
+        &lt;try&gt;
+          &lt;loadtasks module="ant4c.net.module.dll" /&gt;
+        &lt;/try&gt;
+        &lt;catch&gt;
+           &lt;loadtasks module="libant4c.net.module.dll" /&gt;
+        &lt;/catch&gt;
+      &lt;/trycatch&gt;
+    &lt;/when&gt;
+
+    &lt;when test="${platform::is-unix()}"&gt;
+      &lt;loadtasks module="libant4c.net.module.so" /&gt;
+    &lt;/when&gt;
+  &lt;/choose&gt;
+
+  &lt;property name="codes" value="-1 0 1 3" /&gt;
+  &lt;property name="codes"
+    value="${codes} -2147024808 -2147024809 -2147450714 -2147450713" /&gt;
+
+  &lt;foreach item="String" in="${codes}" delim=" " property="code"&gt;
+    &lt;property name="result_in_string"
+      value="${hostfxr::result-to-string(code)}" /&gt;
+    &lt;echo&gt;hostfxr::result-to-string(${code}) -&gt; ${result_in_string}&lt;/echo&gt;
+  &lt;/foreach&gt;
+&lt;/project&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>Output will be:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>hostfxr::result-to-string(-1) -&gt; 0xffffffff -1 255
+hostfxr::result-to-string(0) -&gt; [host fx resolver]::Success (0x0 0 0)
+hostfxr::result-to-string(1) -&gt; [host fx resolver]::Success_HostAlreadyInitialized (0x1 1 1)
+hostfxr::result-to-string(3) -&gt; 0x3 3 3
+hostfxr::result-to-string(-2147024808) -&gt; 0x80070058 -2147024808 88
+hostfxr::result-to-string(-2147024809) -&gt; [win error]::E_INVALIDARG (0x80070057 -2147024809 87)
+hostfxr::result-to-string(-2147450714) -&gt; [host fx resolver]::HostApiUnsupportedScenario (0x800080a6 -2147450714 166)
+hostfxr::result-to-string(-2147450713) -&gt; 0x800080a7 -2147450713 167</code></pre>
+</div></div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 2. Functions from host fx resolver, depend on version.</caption>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Host version</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-main">main</a></p></td>
+<td align="center" valign="top"><p class="table">1.0+</p></td>
+<td align="left" valign="top"><p class="table">API access to the dotnet tool.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-resolve-sdk">resolve-sdk</a></p></td>
+<td align="center" valign="top"><p class="table">2.0+</p></td>
+<td align="left" valign="top"><p class="table">Get path to the sdk. If host support - function <a href="#hostfxr-resolve-sdk2">resolve-sdk2</a> preferred to use.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-get-available-sdks">get-available-sdks</a></p></td>
+<td rowspan="4" align="center" valign="middle"><p class="table">2.1+</p></td>
+<td align="left" valign="top"><p class="table">Get available sdks at current environment.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-get-native-search-directories">get-native-search-directories</a></p></td>
+<td align="left" valign="top"><p class="table">Get list of directories that will be used while resolving dependency for assembly.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-main-startupinfo">main-startupinfo</a></p></td>
+<td align="left" valign="top"><p class="table">API access to the dotnet tool. Addition parameter can be put.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-resolve-sdk2">resolve-sdk2</a></p></td>
+<td align="left" valign="top"><p class="table">Get path to the sdk.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-close">close</a></p></td>
+<td rowspan="9" align="center" valign="middle"><p class="table">3.0+</p></td>
+<td align="left" valign="top"><p class="table">Close early opened context.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-get-runtime-delegate">get-runtime-delegate</a></p></td>
+<td align="left" valign="top"><p class="table">Get pointer to the delegate of function from the assembly.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-get-runtime-properties">get-runtime-properties</a></p></td>
+<td align="left" valign="top"><p class="table">Get properties of runtime.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-get-runtime-property-value">get-runtime-property-value</a></p></td>
+<td align="left" valign="top"><p class="table">Get value of runtime property.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-initialize-for-dotnet-command-line">initialize-for-dotnet-command-line</a></p></td>
+<td align="left" valign="top"><p class="table">Open context according to assembly.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-initialize-for-runtime-config">initialize-for-runtime-config</a></p></td>
+<td align="left" valign="top"><p class="table">Open context according to json file.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-run-app">run-app</a></p></td>
+<td align="left" valign="top"><p class="table">Run application by opened context.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-set-error-writer">set-error-writer</a></p></td>
+<td align="left" valign="top"><p class="table">Set error writer of resolver.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-set-runtime-property-value">set-runtime-property-value</a></p></td>
+<td align="left" valign="top"><p class="table">Set value of runtime property.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hostfxr-main-bundle-startupinfo">main-bundle-startupinfo</a></p></td>
+<td align="center" valign="top"><p class="table">5.0+</p></td>
+<td align="left" valign="top"><p class="table">Same as <a href="#hostfxr-main-startupinfo">main-startupinfo</a> plus offset of bundle header can be provided.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">Functions from this table can be used only after function <a href="#hostfxr-initialize">initialize</a> return <strong>true</strong>.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-main">main</h4>
+<div class="paragraph"><p><strong>int</strong> <em>hostfxr::main</em>(<strong>string[]</strong> arguments)</p></div>
+<div class="paragraph"><p>This function can do same things that accompanying with host fx resolver dotnet tool can.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_5">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;project&gt;
+  &lt;choose&gt;
+    &lt;when test="${platform::is-windows()}"&gt;
+      &lt;trycatch&gt;
+        &lt;try&gt;
+          &lt;loadtasks module="ant4c.net.module.dll" /&gt;
+        &lt;/try&gt;
+        &lt;catch&gt;
+           &lt;loadtasks module="libant4c.net.module.dll" /&gt;
+        &lt;/catch&gt;
+      &lt;/trycatch&gt;
+    &lt;/when&gt;
+
+    &lt;when test="${platform::is-unix()}"&gt;
+      &lt;loadtasks module="libant4c.net.module.so" /&gt;
+    &lt;/when&gt;
+  &lt;/choose&gt;
+
+  &lt;property name="properties" value="path_to_hostfxr project" /&gt;
+
+  &lt;foreach item="String" in="${properties}" delim=" " property="property_name"&gt;
+    &lt;fail
+      unless="${property::exists(property_name)}"
+      message="Property '${property_name}' should be defined to use this script." /&gt;
+  &lt;/foreach&gt;
+
+  &lt;property name="is_initialize" value="False" /&gt;
+
+  &lt;trycatch&gt;
+    &lt;try&gt;
+      &lt;property
+        name="is_initialize"
+        value="${hostfxr::initialize(path_to_hostfxr)}" /&gt;
+    &lt;/try&gt;
+  &lt;/trycatch&gt;
+
+  &lt;fail
+    unless="${is_initialize}"
+    message="Module unable to get addresses of functions from host fx resolver library (${path_to_hostfxr})" /&gt;
+
+  &lt;property
+    name="return_of_main"
+    value="${hostfxr::main('', 'build', project, '/p:TargetFramework=netcoreapp2.1', '/p:Configuration=Release', '/p:OutputType=Exe')}" /&gt;
+
+  &lt;echo&gt;hostfxr::main(...) -&gt; ${return_of_main}&lt;/echo&gt;
+  &lt;echo&gt;hostfxr::result-to-string(hostfxr::main(...)) -&gt; ${hostfxr::result-to-string(return_of_main)}&lt;/echo&gt;
+&lt;/project&gt;</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">In above example value of first parameter is empty string.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-resolve-sdk">resolve-sdk</h4>
+<div class="paragraph"><p><strong>directory</strong> <em>hostfxr::resolve-sdk</em>(<strong>directory</strong> executable_directory, <strong>directory</strong> working_directory)</p></div>
+<div class="paragraph"><p>Return path to the sdk directory.<br />
+Description of host fx parameters can be found in the documentation of resolver.<br />
+If path can not be located, return code in the string is returned.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Some environment may inform in standard output that sdk not installed if this function called.
+NOTE: If host support - function <a href="#hostfxr-resolve-sdk2">resolve-sdk2</a> preferred to use.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_6">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;if test="${hostfxr::is-function-exists('resolve-sdk')}"&gt;
+  &lt;property name="resolve-sdk"
+    value="${hostfxr::resolve-sdk('', '')}" /&gt;
+
+  &lt;echo&gt;resolve-sdk -&gt; ${resolve-sdk}&lt;/echo&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-get-available-sdks">get-available-sdks</h4>
+<div class="paragraph"><p><strong>directory</strong>[] hostfxr::get-available-sdks()<br />
+<strong>directory</strong>[] hostfxr::get-available-sdks(<strong>directory</strong> executable_directory)</p></div>
+<div class="paragraph"><p>Return paths to directories with installed sdks.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_7">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;if test="${hostfxr::is-function-exists('get-available-sdks')}"&gt;
+  &lt;property name="available-sdks"
+    value="${hostfxr::get-available-sdks()}" /&gt;
+  &lt;!--property name="available-sdks"
+    value="${hostfxr::get-available-sdks('executable_directory')}" /--&gt;
+
+  &lt;foreach item="String" in="${available-sdks}" property="available-sdk"&gt;
+    &lt;echo&gt;available-sdk -&gt; ${available-sdk}&lt;/echo&gt;
+  &lt;/foreach&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-get-native-search-directories">get-native-search-directories</h4>
+<div class="paragraph"><p><strong>string</strong> <em>hostfxr::get-native-search-directories</em>(<strong>string[]</strong> arguments)</p></div>
+<div class="paragraph"><p>This task required .NET executable program.<br />
+In returned string will be list of paths to folders, separated by semicolon (<em>;</em>) symbol on Windows and colonmark (<em>:</em>) on other platforms,<br />
+that used while resolving assembly dependencies.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_8">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;property name="path_delimiter" value=";" if="${platform::is-windows()}" /&gt;
+&lt;property name="path_delimiter" value=":" if="${platform::is-unix()}" /&gt;
+
+&lt;if test="${hostfxr::is-function-exists('get-native-search-directories')}"&gt;
+  &lt;property name="path_to_assembly" value="net_core_app" /&gt;
+  &lt;property
+    name="directories"
+    value="${hostfxr::get-native-search-directories('exec', path_to_assembly)}" /&gt;
+
+  &lt;foreach
+    item="String" in="${directories}"
+    delim="${path_delimiter}" property="directory"&gt;
+    &lt;echo&gt;directory -&gt; ${directory}&lt;/echo&gt;
+  &lt;/foreach&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-main-startupinfo">main-startupinfo</h4>
+<div class="paragraph"><p><strong>int</strong> <em>hostfxr::main-startupinfo</em>(<strong>path</strong> host_path, <strong>path</strong> dotnet_root, <strong>path</strong> application_path, <strong>string[]</strong> arguments)</p></div>
+<div class="paragraph"><p>This function can do same things that accompanying with host fx resolver dotnet tool can.<br />
+Description of host fx parameters can be found in the documentation of resolver.</p></div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-resolve-sdk2">resolve-sdk2</h4>
+<div class="paragraph"><p><strong>string</strong>[] <em>hostfxr::resolve-sdk2</em>(<strong>directory</strong> executable_directory, <strong>directory</strong> working_directory, <strong>int</strong> key)</p></div>
+<div class="paragraph"><p>Get paths to the directories with sdks.<br />
+Function return list of strings, each one have key and path to the directory delimiter with space (' ') symbol.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;property name="dis_allow_pre_release" value="1" readonly="true" /&gt;
+
+&lt;property name="resolve-sdk2"
+  value="${hostfxr::resolve-sdk2('', '', dis_allow_pre_release)}" /&gt;
+
+&lt;foreach
+  item="String" in="${resolve-sdk2}"
+  property="sdk"&gt;
+
+  &lt;echo if="${string::starts-with(sdk, '0 ')}"&gt;sdk -&gt; resolved_sdk_dir&lt;/echo&gt;
+  &lt;echo if="${string::starts-with(sdk, '1 ')}"&gt;sdk -&gt; global_json_path&lt;/echo&gt;
+
+  &lt;echo if="${math::less(2, string::get-length(sdk))}"&gt;'${string::substring(sdk, 2)}'&lt;/echo&gt;
+&lt;/foreach&gt;</code></pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-close">close</h4>
+<div class="paragraph"><p><strong>int</strong> <em>hostfxr::close</em>(<strong>pointer</strong> context)</p></div>
+<div class="paragraph"><p>Close early opened context.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to context.</td>
+</tr></table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-get-runtime-delegate">get-runtime-delegate</h4>
+<div class="paragraph"><p><strong>pointer</strong> <em>hostfxr::get-runtime-delegate</em>(<strong>pointer</strong> context, <strong>string</strong> type_of_delegate, <strong>file</strong> assembly_path, <strong>string</strong> type_name, <strong>string</strong> method_name)<br />
+<strong>pointer</strong> <em>hostfxr::get-runtime-delegate</em>(<strong>pointer</strong> context, <strong>string</strong> type_of_delegate, <strong>file</strong> assembly_path, <strong>string</strong> type_name, <strong>string</strong> method_name, <strong>string</strong> delegate_type_name)</p></div>
+<div class="paragraph"><p>Get pointer to the delegate of function from the assembly. In case of error function return zero start string with return code.</p></div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 3. Types of delegate.</caption>
+<col width="100%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_com_activation</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_load_in_memory_assembly</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_winrt_activation</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_com_register</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_com_unregister</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_load_assembly_and_get_function_pointer</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">host_fxr_hdt_get_function_pointer</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p>Alternative direct int values of types can be used in function call.</p></div>
+<div class="paragraph"><p>This function can be used for checking exists of function in the assembly.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Function <a href="#file-is-assembly">file::is-assembly</a> at second parameter can took returned pointer from this function.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to context.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_9">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;target name="hostfxr_get-runtime-delegate"&gt;
+  &lt;!-- ... --&gt;
+  &lt;if test="${is_context_initialized}"&gt;
+    &lt;property name="runtime_delegate"
+              if="${string::equal('False', property::exists('delegate_type_name'))}"
+              value="${hostfxr::get-runtime-delegate(context, type_of_delegate, assembly_path, type_name, method_name)}" /&gt;
+    &lt;property name="runtime_delegate"
+              if="${property::exists('delegate_type_name')}"
+              value="${hostfxr::get-runtime-delegate(context, type_of_delegate, assembly_path, type_name, method_name, delegate_type_name)}" /&gt;
+
+    &lt;echo&gt;runtime_delegate -&gt; '${runtime_delegate}' -&gt; ${hostfxr::result-to-string(string::trim(runtime_delegate))}&lt;/echo&gt;
+  &lt;/if&gt;
+&lt;/target&gt;
+
+&lt;target name="file_is-assembly"&gt;
+
+  &lt;property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" /&gt;
+
+  &lt;property name="assembly_path" value="ant4c.net.module.clr.dll" /&gt;
+  &lt;property name="type_name" value="Ant4C.Net.Module.Delegates, ant4c.net.module.clr" /&gt;
+  &lt;property name="method_name" value="FileUnit_IsAssembly" /&gt;
+  &lt;property name="delegate_type_name" value="Ant4C.Net.Module.Delegates+FileUnit_IsAssemblyDelegate, ant4c.net.module.clr" /&gt;
+
+  &lt;call target="hostfxr_get-runtime-delegate" /&gt;
+
+&lt;/target&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-get-runtime-properties">get-runtime-properties</h4>
+<div class="paragraph"><p><strong>string</strong> <em>hostfxr::get-runtime-properties</em>(<strong>pointer</strong> context)</p></div>
+<div class="paragraph"><p>Get properties of runtime. In case properties can not be get - return code will be returned.<br />
+Checking is equal (<em>=</em>) symbol exists in the return can detect is properties with values returned or just return code.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to context.</td>
+</tr></table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-get-runtime-property-value">get-runtime-property-value</h4>
+<div class="paragraph"><p><strong>string</strong> <em>hostfxr::get-runtime-property-value</em>(<strong>pointer</strong> context, <strong>string</strong> property_name)</p></div>
+<div class="paragraph"><p>Get value of property. If property do not exists zero start string will be returned with return code.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to context.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_10">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;property name="runtime_property" value="${hostfxr::get-runtime-property-value(context, 'property_name')}" /&gt;
+&lt;echo&gt;runtime_property -&gt; ${runtime_property} -&gt; ${hostfxr::result-to-string(string::trim(runtime_property))}&lt;/echo&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-initialize-for-dotnet-command-line">initialize-for-dotnet-command-line</h4>
+<div class="paragraph"><p><strong>pointer</strong> <em>hostfxr::initialize-for-dotnet-command-line</em>(<strong>path</strong> path_to_assembly, <strong>path</strong> path_to_dot_net_root, <strong>string[]</strong> arguments)</p></div>
+<div class="paragraph"><p>Open context according to assembly.<br />
+Return context or empty context with return code.<br />
+Function <a href="#hostfxr-result-to-string">result-to-string</a> can be used to describe return code if it present.<br />
+See sample using to view how to do this.<br />
+Description of host fx parameters can be found in the documentation of resolver.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_11">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;property
+  name="context"
+  readonly="true"
+  value="${hostfxr::initialize-for-dotnet-command-line('', '', 'assembly', '1', '2', '3', '4', '5')}" /&gt;
+
+&lt;echo&gt;hostfxr::initialize-for-dotnet-command-line -&gt; ${context}&lt;/echo&gt;
+
+&lt;property
+  name="is-context-initialize"
+  value="${string::equal('False', string::contains(context, ' '))}" /&gt;
+
+&lt;echo&gt;is-context-initialize -&gt; ${is-context-initialize}&lt;/echo&gt;
+
+&lt;if test="${is-context-initialize}"&gt;
+  &lt;property name="close" value="${hostfxr::close(context)}" /&gt;
+
+  &lt;echo&gt;hostfxr::close -&gt; ${close} -&gt; ${hostfxr::result-to-string(close)}&lt;/echo&gt;
+&lt;/if&gt;
+
+&lt;if test="${string::equal('False', is-context-initialize)}"&gt;
+  &lt;property
+    name="is-context-initialize"
+    value="${string::substring(context, string::index-of(context, ' '))}" /&gt;
+
+  &lt;echo&gt;is-context-initialize -&gt;${is-context-initialize} -&gt; ${hostfxr::result-to-string(is-context-initialize)}&lt;/echo&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-initialize-for-runtime-config">initialize-for-runtime-config</h4>
+<div class="paragraph"><p><strong>pointer</strong> <em>hostfxr::initialize-for-runtime-config</em>(<strong>path</strong> path_to_assembly, <strong>path</strong> path_to_dot_net_root, <strong>path</strong> path_to_json_file)</p></div>
+<div class="paragraph"><p>Open context according to json file.
+Return context or empty context with return code.<br />
+See sample using to view how to do this.<br />
+Description of host fx parameters can be found in the documentation of resolver.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_12">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;property name="tfm" value="netcoreapp3.1" readonly="true" /&gt;
+&lt;property name="framework_version" value="3.1.0" readonly="true" /&gt;
+
+&lt;property name="content" /&gt;
+&lt;property
+  name="content"
+  value="${content}{&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}  &amp;#x22;runtimeOptions&amp;#x22;: {&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}    &amp;#x22;tfm&amp;#x22;: &amp;#x22;${tfm}&amp;#x22;,&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}    &amp;#x22;rollForward&amp;#x22;: &amp;#x22;LatestMinor&amp;#x22;,&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}    &amp;#x22;framework&amp;#x22;: {&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}      &amp;#x22;name&amp;#x22;: &amp;#x22;Microsoft.NETCore.App&amp;#x22;,&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}      &amp;#x22;version&amp;#x22;: &amp;#x22;${framework_version}&amp;#x22; &amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}    }&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  value="${content}  }&amp;#10;" /&gt;
+&lt;property
+  name="content"
+  readonly="true"
+  value="${content}}" /&gt;
+&lt;echo&gt;content -&gt; ${content}&lt;/echo&gt;
+
+&lt;property
+  readonly="true"
+  name="file_path"
+  value="${path::get-temp-file-name()}" /&gt;
+&lt;echo&gt;file_path -&gt; ${file_path}&lt;/echo&gt;
+
+&lt;echo message="${content}" file="${file_path}" /&gt;
+&lt;echo&gt;file_path -&gt; ${file_path}&lt;/echo&gt;
+
+&lt;property
+  name="context"
+  readonly="true"
+  value="${hostfxr::initialize-for-runtime-config('', '', file_path)}" /&gt;
+&lt;echo&gt;hostfxr::initialize-for-runtime-config -&gt; ${context}&lt;/echo&gt;
+
+&lt;property
+  name="is-context-initialize"
+  value="${string::equal('False', string::contains(context, ' '))}" /&gt;
+&lt;echo&gt;is-context-initialize -&gt; ${is-context-initialize}&lt;/echo&gt;
+
+&lt;if test="${is-context-initialize}"&gt;
+  &lt;property name="close" value="${hostfxr::close(context)}" /&gt;
+  &lt;echo&gt;hostfxr::close -&gt; ${close} -&gt; ${hostfxr::result-to-string(close)}&lt;/echo&gt;
+&lt;/if&gt;
+
+&lt;if test="${string::equal('False', is-context-initialize)}"&gt;
+  &lt;property
+    name="is-context-initialize"
+    value="${string::substring(context, string::index-of(context, ' '))}" /&gt;
+
+  &lt;echo&gt;is-context-initialize -&gt;${is-context-initialize} -&gt; ${hostfxr::result-to-string(is-context-initialize)}&lt;/echo&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-run-app">run-app</h4>
+<div class="paragraph"><p><strong>int</strong> <em>hostfxr::run-app</em>(<strong>pointer</strong> context)</p></div>
+<div class="paragraph"><p>Run application by context.<br />
+Return is returned code of application or returned code of resolver in case application can not be start.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to context.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_13">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;if test="${is-context-initialize}"&gt;
+  &lt;property name="run-app" value="${hostfxr::run-app(context)}" /&gt;
+  &lt;echo&gt;hostfxr::run-app -&gt; ${run-app} -&gt; ${hostfxr::result-to-string(run-app)}&lt;/echo&gt;
+
+  &lt;property name="close" value="${hostfxr::close(context)}" /&gt;
+  &lt;echo&gt;hostfxr::close -&gt; ${close} -&gt; ${hostfxr::result-to-string(close)}&lt;/echo&gt;
+&lt;/if&gt;
+
+&lt;if test="${string::equal('False', is-context-initialize)}"&gt;
+  &lt;property
+    name="is-context-initialize"
+    value="${string::substring(context, string::index-of(context, ' '))}" /&gt;
+
+  &lt;echo&gt;is-context-initialize -&gt;${is-context-initialize} -&gt; ${hostfxr::result-to-string(is-context-initialize)}&lt;/echo&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-set-error-writer">set-error-writer</h4>
+<div class="paragraph"><p><strong>pointer</strong> <em>hostfxr::set-error-writer</em>()<br />
+<strong>pointer</strong> <em>hostfxr::set-error-writer</em>(<strong>file</strong> path_to_file_for_error_writer)</p></div>
+<div class="paragraph"><p>Set error writer of resolver.<br />
+First version will unset error writer.<br />
+If path is empty - that call also unset error writer.<br />
+Function return pointer to the current error writer - pointer to the function used for that purpose.<br />
+If no writer set early - null pointer will be returned.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_14">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;if test="${hostfxr::is-function-exists('set-error-writer')}"&gt;
+  &lt;property name="path_to_file_for_error_writer" value="${path::get-temp-file-name()}" overwrite="false" /&gt;
+
+  &lt;echo&gt;path_to_file_for_error_writer -&gt; '${path_to_file_for_error_writer}'&lt;/echo&gt;
+
+  &lt;property name="error_writer" value="${hostfxr::set-error-writer(path_to_file_for_error_writer)}" /&gt;
+  &lt;echo&gt;hostfxr::set-error-writer(${path_to_file_for_error_writer}) -&gt; '${error_writer}'&lt;/echo&gt;
+
+  &lt;!-- ... --&gt;
+
+  &lt;if test="${string::equal('False', property::is-readonly('path_to_file_for_error_writer'))}"&gt;
+    &lt;property name="path_to_file_for_error_writer" /&gt;
+
+    &lt;property name="error_writer" value="${hostfxr::set-error-writer(path_to_file_for_error_writer)}" /&gt;
+    &lt;echo&gt;hostfxr::set-error-writer(${path_to_file_for_error_writer}) -&gt; '${error_writer}'&lt;/echo&gt;
+  &lt;/if&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-set-runtime-property-value">set-runtime-property-value</h4>
+<div class="paragraph"><p><strong>int</strong> <em>hostfxr::set-runtime-property-value</em>(<strong>pointer</strong> context, <strong>string</strong> property_name)<br />
+<strong>int</strong> <em>hostfxr::set-runtime-property-value</em>(<strong>pointer</strong> context, <strong>string</strong> property_name, <strong>string</strong> property_value)</p></div>
+<div class="paragraph"><p>Set value of runtime property.<br />
+If property not exist new one will be created.<br />
+If value not present - property will have empty value.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to context.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_15">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;if test="${string::equal('False', property::exists('property_value'))}"&gt;
+  &lt;property name="return_of_set_runtime_property_value"
+            value="${hostfxr::set-runtime-property-value(context, property_name)}" /&gt;
+  &lt;echo&gt;hostfxr::set-runtime-property-value(${context}, ${property_name}) -&gt; '${return_of_set_runtime_property_value}' -&gt; ${hostfxr::result-to-string(return_of_set_runtime_property_value)}&lt;/echo&gt;
+&lt;/if&gt;
+
+&lt;if test="${property::exists('property_value')}"&gt;
+  &lt;property name="return_of_set_runtime_property_value"
+            value="${hostfxr::set-runtime-property-value(context, property_name, property_value)}" /&gt;
+  &lt;echo&gt;hostfxr::set-runtime-property-value(${context}, ${property_name}, ${property_value}) -&gt; '${return_of_set_runtime_property_value}' -&gt; ${hostfxr::result-to-string(return_of_set_runtime_property_value)}&lt;/echo&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="hostfxr-main-bundle-startupinfo">main-bundle-startupinfo</h4>
+<div class="paragraph"><p><strong>int</strong> <em>hostfxr::main-bundle-startupinfo</em>(<strong>path</strong> host_path, <strong>path</strong> dotnet_root, <strong>path</strong> application_path, <strong>int64</strong> header_offset, <strong>string[]</strong> arguments)</p></div>
+<div class="paragraph"><p>This function can do same things that accompanying with host fx resolver dotnet tool can.<br />
+Description of host fx parameters can be found in the documentation of resolver.</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_net_host_unit">Net host unit</h3>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 4. Function from net host unit.</caption>
+<col width="50%" />
+<col width="50%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#nethost-get-hostfxr-path">nethost::get-hostfxr-path</a></p></td>
+<td align="left" valign="top"><p class="table">Get path to host fx resolver file.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="nethost-get-hostfxr-path">get-hostfxr-path</h4>
+<div class="paragraph"><p><strong>file</strong> <em>nethost::get-hostfxr-path</em>(<strong>file</strong> path_to_nethost)<br />
+<strong>file</strong> <em>nethost::get-hostfxr-path</em>(<strong>file</strong> path_to_nethost, <strong>path</strong> path_to_assembly)<br />
+<strong>file</strong> <em>nethost::get-hostfxr-path</em>(<strong>file</strong> path_to_nethost, <strong>path</strong> path_to_assembly, <strong>path</strong> path_to_dot_net_root)</p></div>
+<div class="paragraph"><p>Get path to host fx resolver file.<br />
+Returned path can be used at the input of <a href="#hostfxr-initialize">initialize</a> function.</p></div>
+<div class="sect4">
+<h5 id="_sample_using_16">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;project&gt;
+  &lt;choose&gt;
+    &lt;when test="${platform::is-windows()}"&gt;
+      &lt;trycatch&gt;
+        &lt;try&gt;
+          &lt;loadtasks module="ant4c.net.module.dll" /&gt;
+        &lt;/try&gt;
+        &lt;catch&gt;
+          &lt;loadtasks module="libant4c.net.module.dll" /&gt;
+        &lt;/catch&gt;
+      &lt;/trycatch&gt;
+
+      &lt;property
+        name="net_host_folder"
+        value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" /&gt;
+
+      &lt;property
+        name="net_host_folder"
+        value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" /&gt;
+
+      &lt;if test="${string::equal('False', environment::is64bit-process())}"&gt;
+        &lt;property
+          name="net_host_folder"
+          value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" /&gt;
+
+        &lt;property
+          name="net_host_folder"
+          value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" /&gt;
+      &lt;/if&gt;
+
+      &lt;property name="nethost_file_name" value="nethost.dll" /&gt;
+    &lt;/when&gt;
+
+    &lt;when test="${platform::is-unix()}"&gt;
+      &lt;loadtasks module="libant4c.net.module.so" /&gt;
+
+      &lt;property
+        name="net_host_folder"
+        value="/usr/share/dotnet/packs" /&gt;
+
+      &lt;property
+        name="net_host_folder"
+        value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" /&gt;
+
+      &lt;property name="nethost_file_name" value="libnethost.so" /&gt;
+    &lt;/when&gt;
+  &lt;/choose&gt;
+
+  &lt;echo&gt;net_host_folder -&gt; '${net_host_folder}'&lt;/echo&gt;
+
+  &lt;if test="${directory::exists(net_host_folder)}"&gt;
+    &lt;property name="paths_to_nethost"
+              value="${directory::enumerate-file-system-entries(net_host_folder, 'file', 'true')}" /&gt;
+
+    &lt;foreach item="String" in="${paths_to_nethost}" property="path_to_nethost"&gt;
+      &lt;property name="hostfxr_path" /&gt;
+
+      &lt;if test="${string::equal(nethost_file_name, string::to-lower(path::get-file-name(path_to_nethost)))}"&gt;
+        &lt;echo&gt;path_to_nethost -&gt; '${path_to_nethost}'&lt;/echo&gt;
+
+        &lt;property name="hostfxr_path" value="${nethost::get-hostfxr-path(path_to_nethost)}" /&gt;
+
+        &lt;echo&gt;hostfxr_path -&gt; '${hostfxr_path}'&lt;/echo&gt;
+      &lt;/if&gt;
+    &lt;/foreach&gt;
+  &lt;/if&gt;
+&lt;/project&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>Possible output</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>path_to_nethost -&gt; 'C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\3.1.13\runtimes\win-x64\native\nethost.dll'
+hostfxr_path -&gt; 'C:\Program Files\dotnet\host\fxr\5.0.4\hostfxr.dll'
+path_to_nethost -&gt; 'C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\5.0.4\runtimes\win-x64\native\nethost.dll'
+hostfxr_path -&gt; 'C:\Program Files\dotnet\host\fxr\5.0.4\hostfxr.dll'</code></pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>net_host_folder -&gt; '/usr/share/dotnet/packs/Microsoft.NETCore.App.Host.linux-x64'
+path_to_nethost -&gt; '/usr/share/dotnet/packs/Microsoft.NETCore.App.Host.linux-x64/3.1.13/runtimes/linux-x64/native/libnethost.so'
+hostfxr_path -&gt; '/usr/share/dotnet/host/fxr/3.1.13/libhostfxr.so'</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">Not all versions of host fx resolver have accompanying nethost library.</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_file_unit">File unit</h3>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">To access function from this namespace - program option <strong>modulepriority</strong> should be used at ant4c command arguments. Otherwise script with this function will fail according to not founded function from name space <em>file</em>.</td>
+</tr></table>
+</div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 5. Function from file unit.</caption>
+<col width="50%" />
+<col width="50%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#file-is-assembly">file::is-assembly</a></p></td>
+<td align="left" valign="top"><p class="table">Check if file at the given path is .NET assembly. If file not exists function will fail.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="file-is-assembly">is-assembly</h4>
+<div class="paragraph"><p><strong>bool</strong> file::is-assembly(<strong>file</strong> path_to_assembly)<br />
+<strong>bool</strong> file::is-assembly(<strong>file</strong> path_to_assembly, <strong>pointer</strong> the_delegate) (only for hosts that have <em>get-runtime-delegate</em> function)<br />
+<strong>bool</strong> file::is-assembly(<strong>file</strong> path_to_assembly, <strong>file</strong> path_to_assembly_with_main_function) (only for hosts that do not have <em>get-runtime-delegate</em> function)</p></div>
+<div class="paragraph"><p>If path point to the .NET assembly file <strong>true</strong> will be returned.<br />
+If no delegate provided function will generate own based on configuration file that assumed that .NET Core 3.1 is installed (for example see config for <a href="#hostfxr-initialize-for-runtime-config">initialize-for-runtime-config</a> function).<br />
+If host less than 3.1 version it will call main function of CLR side <em>ant4c.net.module</em> library instead.<br />
+Function <a href="#hostfxr-get-runtime-delegate">get-runtime-delegate</a> can be used to obtain <em>the_delegate</em>.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">It is caller response to put valid input data that interpret as pointer to delegate of function.</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_sample_using_17">Sample using</h5>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;property name="is-assembly" value="${file::is-assembly('ant4c.net.module.dll')}" /&gt;
+&lt;echo&gt;is-assembly -&gt; ${is-assembly}&lt;/echo&gt;
+
+&lt;property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll')}" /&gt;
+&lt;echo&gt;is-assembly -&gt; ${is-assembly}&lt;/echo&gt;
+
+&lt;property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_')}" failonerror="false" /&gt;
+
+&lt;if test="${string::equal('False', hostfxr::is-function-exists('get-runtime-delegate'))}"&gt;
+  &lt;property name="is_assembly"
+            value="${file::is-assembly('ant4c.net.module.clr.dll', 'ant4c.net.module.clr.dll')}" /&gt;
+
+  &lt;echo level="Debug"&gt;${target::get-current-target()}:${string::pad-left('', pad_level, '&amp;#09;')}is_assembly -&gt; '${is_assembly}'&lt;/echo&gt;
+&lt;/if&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>ant4c /f:sample.build -modulepriority</code></pre>
+</div></div>
+<div class="paragraph"><p>At first call of function path to non assembly file placed, second path to assembly, third to the non exists file placed and last one call at host without <em>get-runtime-delegate</em> support.</p></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2021-08-10
+</div>
+</div>
+</body>
+</html>
