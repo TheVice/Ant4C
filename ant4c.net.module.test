@@ -1,0 +1,440 @@
+<?xml version="1.0"?>
+<!--
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2021 https://github.com/TheVice/
+ *
+ -->
+ <project name="ant4c.net.module">
+  <choose>
+    <when test="${platform::is-windows()}">
+      <trycatch>
+        <try>
+          <loadtasks module="ant4c.net.module.dll" />
+        </try>
+        <catch>
+           <loadtasks module="libant4c.net.module.dll" />
+        </catch>
+      </trycatch>
+      <property name="path_delimiter" value=";" />
+      <property name="hostfxr_file_name" value="hostfxr.dll" />
+      <property name="nethost_file_name" value="nethost.dll" />
+    </when>
+
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.net.module.so" />
+
+      <property name="path_delimiter" value=":" />
+      <property name="hostfxr_file_name" value="libhostfxr.so" />
+      <property name="nethost_file_name" value="libnethost.so" />
+    </when>
+  </choose>
+
+  <property name="pad_level" value="0" />
+
+  <!-- nethost::get-hostfxr-path -->
+  <target name="nethost_paths">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <choose unless="${property::exists('net_host_folder')}">
+      <when test="${platform::is-windows()}">
+        <property
+          name="net_host_folder"
+          value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" />
+
+        <property
+          name="net_host_folder"
+          value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" />
+
+        <if test="${string::equal('False', environment::is64bit-process())}">
+          <property
+            name="net_host_folder"
+            value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" />
+
+          <property
+            name="net_host_folder"
+            value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" />
+        </if>
+      </when>
+
+      <when test="${platform::is-unix()}">
+        <property
+          name="net_host_folder"
+          value="/usr/share/dotnet/packs" />
+
+        <property
+          name="net_host_folder"
+          value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" />
+      </when>
+    </choose>
+
+    <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}net_host_folder -> ${net_host_folder}</echo>
+
+    <if test="${directory::exists(net_host_folder)}">
+      <property
+        name="paths_to_nethost"
+        value="${directory::enumerate-file-system-entries(net_host_folder, 'file', 'true')}" />
+      <!--echo level="Debug">${string::pad-left('', pad_level, '&#09;')}paths_to_nethost -> ${paths_to_nethost}</echo-->
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <foreach item="String" in="${paths_to_nethost}" property="path_to_nethost">
+        <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}path_to_nethost -> ${path_to_nethost}</echo>
+
+        <property name="hostfxr-path" value="" />
+        <property
+          name="hostfxr-path" value="${nethost::get-hostfxr-path(path_to_nethost)}"
+          if="${string::equal(nethost_file_name, string::to-lower(path::get-file-name(path_to_nethost)))}" />
+
+        <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr-path -> ${hostfxr-path}</echo>
+      </foreach>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::is-function-exists -->
+  <target name="hostfxr_is_function_exists">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="functions" value="close" />
+    <property name="functions" value="${functions} get-available-sdks" />
+    <property name="functions" value="${functions} get-native-search-directories" />
+    <property name="functions" value="${functions} get-runtime-delegate" />
+    <property name="functions" value="${functions} get-runtime-properties" />
+    <property name="functions" value="${functions} get-runtime-property-value" />
+    <property name="functions" value="${functions} initialize-for-dotnet-command-line" />
+    <property name="functions" value="${functions} initialize-for-runtime-config" />
+    <property name="functions" value="${functions} main" />
+    <property name="functions" value="${functions} main-bundle-startupinfo" />
+    <property name="functions" value="${functions} main-startupinfo" />
+    <property name="functions" value="${functions} resolve-sdk" />
+    <property name="functions" value="${functions} resolve-sdk2" />
+    <property name="functions" value="${functions} run-app" />
+    <property name="functions" value="${functions} set-error-writer" />
+    <property name="functions" value="${functions} set-runtime-property-value" />
+
+    <foreach item="String" in="${functions}" delim=" " property="function">
+      <property name="is_function_exists" value="${hostfxr::is-function-exists(function)}" />
+
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::is-function-exists(${function}) -> ${is_function_exists}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="get-path-to-assembly">
+    <fail
+      unless="${property::exists('program_to_run')}"
+      message="Property 'program_to_run' required to run this target."/>
+    <fail
+      unless="${property::exists('folder_with_program_to_run')}"
+      message="Property 'folder_with_program_to_run' required to run this target."/>
+    <fail
+      unless="${property::exists('path_to_hostfxr')}"
+      message="Property 'path_to_hostfxr' required to run this target."/>
+
+    <property
+      name="path_to_assembly"
+      value="${path::get-file-name(path::get-directory-name(path_to_hostfxr))}" />
+    <property
+      name="path_to_assembly"
+      value="${version::parse(path_to_assembly)}" />
+    <property
+      name="path_to_assembly"
+      value="${version::get-major(path_to_assembly)}.${version::get-minor(path_to_assembly)}" />
+    <property
+      name="path_to_assembly"
+      value="netcoreapp${path_to_assembly}" />
+
+    <property
+      name="path_to_assembly"
+      value="${path::combine(folder_with_program_to_run, path::combine(path_to_assembly, program_to_run))}" />
+  </target>
+
+  <!-- hostfxr::main -->
+  <target name="hostfxr_main">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}full path to program to run -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}executing program -> ${path_to_assembly}</echo>
+
+      <property
+        name="return_of_main"
+        value="${hostfxr::main('', path_to_assembly)}" />
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::main -> ${hostfxr::result-to-string(return_of_main)}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::get-native-search-directories -->
+  <target name="hostfxr_get-native-search-directories">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <property
+        name="directories"
+        value="${hostfxr::get-native-search-directories('exec', path_to_assembly)}" />
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::get-native-search-directories -> ${directories}</echo>
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <foreach item="String" in="${directories}" delim="${path_delimiter}" property="directory">
+        <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}search-directory -> ${directory}</echo>
+      </foreach>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::main-startupinfo -->
+  <target name="hostfxr_main-startupinfo">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <!--property
+        name="return_of_main_startupinfo"
+        value="${hostfxr::main-startupinfo(host_path, dotnet_root, app_path, 'exec', path_to_assembly)}" /-->
+
+      <property
+        name="return_of_main_startupinfo"
+        value="${hostfxr::main-startupinfo('', '', '', 'exec', path_to_assembly)}" />
+
+      <echo level="Debug">return_of_main_startupinfo -> ${hostfxr::result-to-string(return_of_main_startupinfo)}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::functions -->
+  <target name="hostfxr_functions">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <call target="hostfxr_is_function_exists" />
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+
+    <property name="host_functions" value="${hostfxr::functions()}" />
+    <!--echo level="Debug">${string::pad-left('', pad_level, '&#09;')}host_functions -> ${host_functions}</echo-->
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <foreach
+      item="String"
+      in="${host_functions}" delim=" " property="host_function">
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <choose>
+        <!-- hostfxr::main -->
+        <when test="${string::equal('main', host_function)}">
+          <if test="${property::exists('program_to_run')}">
+            <if test="${property::exists('folder_with_program_to_run')}">
+              <call target="hostfxr_main" />
+            </if>
+          </if>
+        </when>
+
+        <!-- hostfxr::resolve-sdk -->
+        <when test="${string::equal('resolve-sdk', host_function)}">
+          <property name="resolve-sdk"
+            value="${hostfxr::resolve-sdk('', '')}" />
+          <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::resolve-sdk -> ${resolve-sdk}</echo>
+        </when>
+
+        <!-- hostfxr::get-available-sdks -->
+        <when test="${string::equal('get-available-sdks', host_function)}">
+          <property name="available-sdks"
+            value="${hostfxr::get-available-sdks()}" />
+          <!--property name="available-sdks"
+            value="${hostfxr::get-available-sdks('exe_dir')}" /-->
+          <!--echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::get-available-sdks -> ${available-sdks}</echo-->
+
+          <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+          <foreach item="String" in="${available-sdks}" property="available-sdk">
+            <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}available-sdk -> ${available-sdk}</echo>
+          </foreach>
+          <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+        </when>
+
+        <!-- hostfxr::get-native-search-directories -->
+        <when test="${string::equal('get-native-search-directories', host_function)}">
+          <if test="${property::exists('program_to_run')}">
+            <if test="${property::exists('folder_with_program_to_run')}">
+              <call target="hostfxr_get-native-search-directories" />
+            </if>
+          </if>
+        </when>
+
+        <!-- hostfxr::main-startupinfo -->
+        <when test="${string::equal('main-startupinfo', host_function)}">
+          <if test="${property::exists('program_to_run')}">
+            <if test="${property::exists('folder_with_program_to_run')}">
+              <call target="hostfxr_main-startupinfo" />
+            </if>
+          </if>
+        </when>
+
+        <!-- resolve-sdk2 -->
+        <when test="${string::equal('resolve-sdk2', host_function)}">
+          <property name="resolve-sdk2"
+            value="${hostfxr::resolve-sdk2('', '', '1')}" />
+          <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::resolve-sdk2 -> ${resolve-sdk2}</echo>
+        </when>
+      </choose>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::result-to-string -->
+  <target name="hostfxr_result_to_string">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="codes" value="-1 0 1 2 3" />
+    <property name="codes"
+      value="${codes} -2147024809 -2147450751 -2147450750" />
+    <property name="codes"
+      value="${codes} -2147450749 -2147450748 -2147450747" />
+    <property name="codes"
+      value="${codes} -2147450746 -2147450745 -2147450744" />
+    <property name="codes"
+      value="${codes} -2147450743 -2147450742 -2147450741" />
+    <property name="codes"
+      value="${codes} -2147450740 -2147450739 -2147450738" />
+    <property name="codes"
+      value="${codes} -2147450737 -2147450736 -2147450735" />
+    <property name="codes"
+      value="${codes} -2147450734 -2147450733 -2147450732" />
+    <property name="codes"
+      value="${codes} -2147450731 -2147450730 -2147450729" />
+    <property name="codes"
+      value="${codes} -2147450728 -2147450727 -2147450726" />
+    <property name="codes"
+      value="${codes} -2147450725 -2147450724 -2147450723" />
+    <property name="codes"
+      value="${codes} -2147450722 -2147450721 -2147450720" />
+    <property name="codes"
+      value="${codes} -2147450719 -2147450718 -2147450717" />
+    <property name="codes"
+      value="${codes} -2147450716 -2147450715 -2147450714" />
+
+    <foreach item="String" in="${codes}" delim=" " property="code">
+      <property name="result_in_string"
+        value="${hostfxr::result-to-string(code)}" />
+      <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
+
+      <choose>
+        <when test="${string::equal('-1', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('3', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('-2147450746', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('-2147450737', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('-2147450736', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <otherwise>
+          <fail unless="${string::contains(result_in_string, '(')}" />
+        </otherwise>
+      </choose>
+    </foreach>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::initialize -->
+  <target name="enumerate_hosts_fx_resolvers">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <choose unless="${property::exists('fxr_folder')}">
+      <when test="${platform::is-windows()}">
+        <property
+          name="fxr_folder"
+          value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" />
+      </when>
+      <when test="${platform::is-unix()}">
+        <property
+          name="fxr_folder"
+          value="/usr/share/dotnet/host/fxr" />
+      </when>
+    </choose>
+
+    <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}fxr folder -> ${fxr_folder}</echo>
+
+    <if test="${directory::exists(fxr_folder)}">
+      <property
+        name="paths_to_hostfxr"
+        value="${directory::enumerate-file-system-entries(fxr_folder, 'file', 'true')}" />
+      <!--echo level="Debug">${string::pad-left('', pad_level, '&#09;')}paths_to_hostfxr -> ${paths_to_hostfxr}</echo-->
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <foreach item="String" in="${paths_to_hostfxr}"
+        property="path_to_hostfxr">
+        <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}path_to_hostfxr -> ${path_to_hostfxr}</echo>
+
+        <property name="is_initialize" value="false" />
+
+        <property
+          name="is_initialize" value="${hostfxr::initialize(path_to_hostfxr)}"
+          if="${string::equal(hostfxr_file_name, string::to-lower(path::get-file-name(path_to_hostfxr)))}" />
+        <echo level="Debug">${string::pad-left('', pad_level, '&#09;')}is_initialize -> ${is_initialize}</echo>
+
+        <if test="${is_initialize}">
+          <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+          <call target="hostfxr_functions" />
+          <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+          <echo level="Debug"></echo>
+        </if>
+      </foreach>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="main">
+    <call target="nethost_paths" />
+    <call target="hostfxr_result_to_string" />
+
+    <if test="${property::exists('path_to_hostfxr')}">
+      <property name="is_initialize"
+        value="${hostfxr::initialize(path_to_hostfxr)}" />
+
+      <call target="hostfxr_functions" if="${is_initialize}" />
+      <call target="enumerate_hosts_fx_resolvers" unless="${is_initialize}" />
+    </if>
+
+    <call
+      target="enumerate_hosts_fx_resolvers"
+      unless="${property::exists('path_to_hostfxr')}" />
+  </target>
+</project>
