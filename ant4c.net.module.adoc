@@ -13,6 +13,16 @@ Use ant4c version that support modules.
 
 == Module reference
 
+=== Types structure
+
+In this document used type *pointer*. +
+Next structure describe his relationship to the *string* type.
+
+* string
+** pointer
+
+All rest types locate in same hierarchy positions like described at the documentation of Ant4C.
+
 === Host fx resolver unit
 
 .Functions from host fx resolver.
@@ -83,21 +93,21 @@ new one's will not be in the return of this function.
   <foreach
     item="String"
     in="${functions}" delim=" " property="host_function">
-    <echo level="Debug">host_function -> ${host_function}</echo>
+    <echo>host_function -> ${host_function}</echo>
   </foreach>
 
-  <echo level="Debug" />
+  <echo />
   <!-- B -->
   <property name="functions" value="${hostfxr::functions(', ')}" />
-  <echo level="Debug">hostfxr::functions -> ${functions}</echo>
+  <echo>hostfxr::functions -> ${functions}</echo>
 
-  <echo level="Debug" />
+  <echo />
   <!-- C -->
   <property name="functions" value="${hostfxr::functions('|')}" />
   <foreach
     item="String"
     in="${functions}" delim="|" property="host_function">
-    <echo level="Debug">host_function -> ${host_function}</echo>
+    <echo>host_function -> ${host_function}</echo>
   </foreach>
 </project>
 ----
@@ -105,7 +115,7 @@ new one's will not be in the return of this function.
 [[hostfxr-initialize]]
 ==== initialize
 
-*bool* 'hostfxr::initialize'(*path*)
+*bool* 'hostfxr::initialize'(*file* path_to_the_host_fx_resolver)
 
 Get addresses of functions from library of host fx resolver. +
 If function return *true* other functions, that operate function name, from this name space, can be used.
@@ -122,7 +132,7 @@ If function return *true* other functions, that operate function name, from this
           <loadtasks module="ant4c.net.module.dll" />
         </try>
         <catch>
-           <loadtasks module="libant4c.net.module.dll" />
+          <loadtasks module="libant4c.net.module.dll" />
         </catch>
       </trycatch>
       <property
@@ -157,7 +167,7 @@ If function return *true* other functions, that operate function name, from this
       value="${hostfxr::initialize(path_to_hostfxr)}"
       if="${is_initialize}" />
 
-    <echo level="Debug">${path_to_hostfxr} -> ${is_initialize}</echo>
+    <echo>${path_to_hostfxr} -> ${is_initialize}</echo>
   </foreach>
 </project>
 ----
@@ -165,7 +175,7 @@ If function return *true* other functions, that operate function name, from this
 [[hostfxr-is-function-exists]]
 ==== is-function-exists
 
-*bool* 'hostfxr::is-function-exists'(*string*)
+*bool* 'hostfxr::is-function-exists'(*string* function_name)
 
 Return *true* if name of input function available at the current version of host fx resolver.
 
@@ -222,20 +232,20 @@ new one's can not be check by this function. Function return *false* in that cas
       name="is_function_exists"
       value="${hostfxr::is-function-exists(function)}" />
 
-    <echo level="Debug">hostfxr::is-function-exists(${function}) -> ${is_function_exists}</echo>
+    <echo>hostfxr::is-function-exists(${function}) -> ${is_function_exists}</echo>
   </foreach>
 </project>
 ----
 
 ----
-ant4c /f:sample.build -D:path_to_hostfxr="...hostfxr.dll" -debug+
-ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so" -debug+
+ant4c /f:sample.build -D:path_to_hostfxr="...hostfxr.dll"
+ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so"
 ----
 
 [[hostfxr-result-to-string]]
 ==== result-to-string
 
-*string* 'hostfxr::result-to-string'(*int*)
+*string* 'hostfxr::result-to-string'(*int* code)
 
 Return string description of error code.
 
@@ -270,7 +280,7 @@ NOTE: This function can be used even if <<hostfxr-initialize,initialize>> functi
   <foreach item="String" in="${codes}" delim=" " property="code">
     <property name="result_in_string"
       value="${hostfxr::result-to-string(code)}" />
-    <echo level="Debug">hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
+    <echo>hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
   </foreach>
 </project>
 ----
@@ -296,24 +306,25 @@ hostfxr::result-to-string(-2147450713) -> 0x800080a7 -2147450713 167
 | <<hostfxr-get-native-search-directories,get-native-search-directories>> | Get list of directories that will be used while resolving dependency for assembly.
 | <<hostfxr-main-startupinfo,main-startupinfo>> | API access to the dotnet tool. Addition parameter can be put.
 | <<hostfxr-resolve-sdk2,resolve-sdk2>> | Get path to the sdk.
-| <<hostfxr-close,close>> .9+^.^| 3.0+ | TODO
-| <<hostfxr-get-runtime-delegate,get-runtime-delegate>> | TODO
-| <<hostfxr-get-runtime-properties,get-runtime-properties>> | TODO
-| <<hostfxr-get-runtime-property-value,get-runtime-property-value>> | TODO
-| <<hostfxr-initialize-for-dotnet-command-line,initialize-for-dotnet-command-line>> | TODO
-| <<hostfxr-initialize-for-runtime-config,initialize-for-runtime-config>> | TODO
-| <<hostfxr-run-app,run-app>> | TODO
-| <<hostfxr-set-error-writer,set-error-writer>> | TODO
-| <<hostfxr-set-runtime-property-value,set-runtime-property-value>> | TODO
+| <<hostfxr-close,close>> .9+^.^| 3.0+ | Close early opened context.
+| <<hostfxr-get-runtime-delegate,get-runtime-delegate>> | Get pointer to the delegate of function from the assembly.
+| <<hostfxr-get-runtime-properties,get-runtime-properties>> | Get properties of runtime.
+| <<hostfxr-get-runtime-property-value,get-runtime-property-value>> | Get value of runtime property.
+| <<hostfxr-initialize-for-dotnet-command-line,initialize-for-dotnet-command-line>> | Open context according to assembly.
+| <<hostfxr-initialize-for-runtime-config,initialize-for-runtime-config>> | Open context according to json file.
+| <<hostfxr-run-app,run-app>> | Run application by opened context.
+| <<hostfxr-set-error-writer,set-error-writer>> | Set error writer of resolver.
+| <<hostfxr-set-runtime-property-value,set-runtime-property-value>> | Set value of runtime property.
 | <<hostfxr-main-bundle-startupinfo,main-bundle-startupinfo>> ^| 5.0+ | TODO
 |===
 
 WARNING: Functions from this table can be used only after function <<hostfxr-initialize,initialize>> return *true*.
+WARNING: It is caller response to put valid input data that interpret as pointer to context in functions that have such argument in the input list.
 
 [[hostfxr-main]]
 ==== main
 
-*int* 'hostfxr::main'(*string[]*)
+*int* 'hostfxr::main'(*string[]* arguments)
 
 This function can do same things that accompanying with host fx resolver dotnet tool can.
 
@@ -365,8 +376,8 @@ This function can do same things that accompanying with host fx resolver dotnet 
     name="return_of_main"
     value="${hostfxr::main('', 'build', project, '/p:TargetFramework=netcoreapp2.1', '/p:Configuration=Release', '/p:OutputType=Exe')}" />
 
-  <echo level="Debug">hostfxr::main(...) -> ${return_of_main}</echo>
-  <echo level="Debug">hostfxr::result-to-string(hostfxr::main(...)) -> ${hostfxr::result-to-string(return_of_main)}</echo>
+  <echo>hostfxr::main(...) -> ${return_of_main}</echo>
+  <echo>hostfxr::result-to-string(hostfxr::main(...)) -> ${hostfxr::result-to-string(return_of_main)}</echo>
 </project>
 ----
 
@@ -378,7 +389,7 @@ NOTE: Please note that first parameter of function is empty string.
 *directory* 'hostfxr::resolve-sdk'(*directory* executable_directory, *directory* working_directory)
 
 Return path to the sdk directory. +
-Description of parameters can be found in the documentation of the host fx resolver. +
+Description of host fx parameters can be found in the documentation of resolver. +
 If path can not be located, return code in the string is returned.
 
 NOTE: Some environment may inform in standard output that sdk not installed if this function called.
@@ -391,14 +402,14 @@ NOTE: If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred
   <property name="resolve-sdk"
     value="${hostfxr::resolve-sdk('', '')}" />
 
-  <echo level="Debug">resolve-sdk -> ${resolve-sdk}</echo>
+  <echo>resolve-sdk -> ${resolve-sdk}</echo>
 </if>
 ----
 
 [[hostfxr-get-available-sdks]]
 ==== get-available-sdks
 
-*directory*[] hostfxr::get-available-sdks()
+*directory*[] hostfxr::get-available-sdks() +
 *directory*[] hostfxr::get-available-sdks(*directory* executable_directory)
 
 Return paths to directories with installed sdks.
@@ -413,7 +424,7 @@ Return paths to directories with installed sdks.
     value="${hostfxr::get-available-sdks('executable_directory')}" /-->
 
   <foreach item="String" in="${available-sdks}" property="available-sdk">
-    <echo level="Debug">available-sdk -> ${available-sdk}</echo>
+    <echo>available-sdk -> ${available-sdk}</echo>
   </foreach>
 </if>
 ----
@@ -421,7 +432,7 @@ Return paths to directories with installed sdks.
 [[hostfxr-get-native-search-directories]]
 ==== get-native-search-directories
 
-*string* 'hostfxr::get-native-search-directories'(*string[]*)
+*string* 'hostfxr::get-native-search-directories'(*string[]* arguments)
 
 This task required .NET executable program. +
 In returned string will be list of paths to folders, separated by semicolon (';') symbol on Windows and colonmark (':') on other platforms, +
@@ -442,7 +453,7 @@ that used while resolving assembly dependencies.
   <foreach
     item="String" in="${directories}"
     delim="${path_delimiter}" property="directory">
-    <echo level="Debug">directory -> ${directory}</echo>
+    <echo>directory -> ${directory}</echo>
   </foreach>
 </if>
 ----
@@ -450,11 +461,10 @@ that used while resolving assembly dependencies.
 [[hostfxr-main-startupinfo]]
 ==== main-startupinfo
 
-*int* 'hostfxr::main-startupinfo'(*path* host_path, *path* dotnet_root, *path* application_path, *string[]*arguments)
+*int* 'hostfxr::main-startupinfo'(*path* host_path, *path* dotnet_root, *path* application_path, *string[]* arguments)
 
-This function can do same things that accompanying with host fx resolver dotnet tool can.
-
-Description of parameters can be found in the documentation of the host fx resolver.
+This function can do same things that accompanying with host fx resolver dotnet tool can. +
+Description of host fx parameters can be found in the documentation of resolver.
 
 [[hostfxr-resolve-sdk2]]
 ==== resolve-sdk2
@@ -474,48 +484,311 @@ Function return list of strings, each one have key and path to the directory del
   item="String" in="${resolve-sdk2}"
   property="sdk">
 
-  <echo level="Debug" if="${string::starts-with(sdk, '0 ')}">sdk -> resolved_sdk_dir</echo>
-  <echo level="Debug" if="${string::starts-with(sdk, '1 ')}">sdk -> global_json_path</echo>
+  <echo if="${string::starts-with(sdk, '0 ')}">sdk -> resolved_sdk_dir</echo>
+  <echo if="${string::starts-with(sdk, '1 ')}">sdk -> global_json_path</echo>
 
-  <echo level="Debug" if="${math::less(2, string::get-length(sdk))}">'${string::substring(sdk, 2)}'</echo>
+  <echo if="${math::less(2, string::get-length(sdk))}">'${string::substring(sdk, 2)}'</echo>
 </foreach>
 ----
 
 [[hostfxr-close]]
 ==== close
-TODO
+
+*int* 'hostfxr::close'(*pointer* context)
+
+Close early opened context.
 
 [[hostfxr-get-runtime-delegate]]
 ==== get-runtime-delegate
-TODO
+
+*pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *string* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name) +
+*pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *string* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name, *string* delegate_type_name)
+
+Get pointer to the delegate of function from the assembly. In case of error function return zero start string with return code.
+
+.Types of delegate.
+|===
+| host_fxr_hdt_com_activation
+| host_fxr_hdt_load_in_memory_assembly
+| host_fxr_hdt_winrt_activation
+| host_fxr_hdt_com_register
+| host_fxr_hdt_com_unregister
+| host_fxr_hdt_load_assembly_and_get_function_pointer
+| host_fxr_hdt_get_function_pointer
+|===
+
+Alternative direct int values of types can be used in function call.
+
+This function can be used for checking exists of function in the assembly.
+
+NOTE: There are no other functions in current module that can direct use of returned pointer.
+
+===== Sample using
+
+----
+<target name="hostfxr_get-runtime-delegate">
+  <!-- ... -->
+  <if test="${is_context_initialized}">
+    <property name="runtime_delegate"
+              if="${string::equal('False', property::exists('delegate_type_name'))}"
+              value="${hostfxr::get-runtime-delegate(context, type_of_delegate, assembly_path, type_name, method_name)}" />
+    <property name="runtime_delegate"
+              if="${property::exists('delegate_type_name')}"
+              value="${hostfxr::get-runtime-delegate(context, type_of_delegate, assembly_path, type_name, method_name, delegate_type_name)}" />
+
+    <echo>runtime_delegate -> '${runtime_delegate}' -> ${hostfxr::result-to-string(string::trim(runtime_delegate))}</echo>
+  </if>
+</target>
+
+<target name="file_is-assembly">
+
+  <property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" />
+
+  <property name="assembly_path" value="ant4c.net.module.clr.dll" />
+  <property name="type_name" value="Ant4C.Net.Module.Delegates, ant4c.net.module.clr" />
+  <property name="method_name" value="FileUnit_IsAssembly" />
+  <property name="delegate_type_name" value="Ant4C.Net.Module.Delegates+FileUnit_IsAssemblyDelegate, ant4c.net.module.clr" />
+
+  <call target="hostfxr_get-runtime-delegate" />
+
+</target>
+----
 
 [[hostfxr-get-runtime-properties]]
 ==== get-runtime-properties
-TODO
+
+*string* 'hostfxr::get-runtime-properties'(*pointer* context)
+
+Get properties of runtime. In case properties can not be get - return code will be returned. +
+Checking is equal ('=') symbol exists in the return can detect is properties with values returned or just return code.
 
 [[hostfxr-get-runtime-property-value]]
 ==== get-runtime-property-value
-TODO
+
+*string* 'hostfxr::get-runtime-property-value'(*pointer* context, *string* property_name)}
+
+Get value of property. If property do not exists zero start string will be returned with return code.
+
+===== Sample using
+
+----
+<property name="runtime_property" value="${hostfxr::get-runtime-property-value(context, 'property_name')}" />
+<echo>runtime_property -> ${runtime_property} -> ${hostfxr::result-to-string(string::trim(runtime_property))}</echo>
+----
 
 [[hostfxr-initialize-for-dotnet-command-line]]
 ==== initialize-for-dotnet-command-line
-TODO
+
+*pointer* 'hostfxr::initialize-for-dotnet-command-line'(*path* path_to_assembly, *path* path_to_dot_net_root, *string[]* arguments)
+
+Open context according to assembly. +
+Return context or empty context with return code. +
+Function <<hostfxr-result-to-string,result-to-string>> can be used to describe return code if it present. +
+See sample using to view how to do this. +
+Description of host fx parameters can be found in the documentation of resolver.
+
+===== Sample using
+
+----
+<property
+  name="context"
+  readonly="true"
+  value="${hostfxr::initialize-for-dotnet-command-line('', '', 'assembly', '1', '2', '3', '4', '5')}" />
+
+<echo>hostfxr::initialize-for-dotnet-command-line -> ${context}</echo>
+
+<property
+  name="is-context-initialize"
+  value="${string::equal('False', string::contains(context, ' '))}" />
+
+<echo>is-context-initialize -> ${is-context-initialize}</echo>
+
+<if test="${is-context-initialize}">
+  <property name="close" value="${hostfxr::close(context)}" />
+
+  <echo>hostfxr::close -> ${close} -> ${hostfxr::result-to-string(close)}</echo>
+</if>
+
+<if test="${string::equal('False', is-context-initialize)}">
+  <property
+    name="is-context-initialize"
+    value="${string::substring(context, string::index-of(context, ' '))}" />
+
+  <echo>is-context-initialize ->${is-context-initialize} -> ${hostfxr::result-to-string(is-context-initialize)}</echo>
+</if>
+----
 
 [[hostfxr-initialize-for-runtime-config]]
 ==== initialize-for-runtime-config
-TODO
+
+*pointer* 'hostfxr::initialize-for-runtime-config'(*path* path_to_assembly, *path* path_to_dot_net_root, *path* path_to_json_file)
+
+Open context according to json file.
+Return context or empty context with return code. +
+See sample using to view how to do this. +
+Description of host fx parameters can be found in the documentation of resolver.
+
+===== Sample using
+
+----
+<property name="tfm" value="netcoreapp3.1" readonly="true" />
+<property name="framework_version" value="3.1.0" readonly="true" />
+
+<property name="content" />
+<property
+  name="content"
+  value="${content}{&#10;" />
+<property
+  name="content"
+  value="${content}  &#x22;runtimeOptions&#x22;: {&#10;" />
+<property
+  name="content"
+  value="${content}    &#x22;tfm&#x22;: &#x22;${tfm}&#x22;,&#10;" />
+<property
+  name="content"
+  value="${content}    &#x22;rollForward&#x22;: &#x22;LatestMinor&#x22;,&#10;" />
+<property
+  name="content"
+  value="${content}    &#x22;framework&#x22;: {&#10;" />
+<property
+  name="content"
+  value="${content}      &#x22;name&#x22;: &#x22;Microsoft.NETCore.App&#x22;,&#10;" />
+<property
+  name="content"
+  value="${content}      &#x22;version&#x22;: &#x22;${framework_version}&#x22; &#10;" />
+<property
+  name="content"
+  value="${content}    }&#10;" />
+<property
+  name="content"
+  value="${content}  }&#10;" />
+<property
+  name="content"
+  readonly="true"
+  value="${content}}" />
+<echo>content -> ${content}</echo>
+
+<property
+  readonly="true"
+  name="file_path"
+  value="${path::get-temp-file-name()}" />
+<echo>file_path -> ${file_path}</echo>
+
+<echo message="${content}" file="${file_path}" />
+<echo>file_path -> ${file_path}</echo>
+
+<property
+  name="context"
+  readonly="true"
+  value="${hostfxr::initialize-for-runtime-config('', '', file_path)}" />
+<echo>hostfxr::initialize-for-runtime-config -> ${context}</echo>
+
+<property
+  name="is-context-initialize"
+  value="${string::equal('False', string::contains(context, ' '))}" />
+<echo>is-context-initialize -> ${is-context-initialize}</echo>
+
+<if test="${is-context-initialize}">
+  <property name="close" value="${hostfxr::close(context)}" />
+  <echo>hostfxr::close -> ${close} -> ${hostfxr::result-to-string(close)}</echo>
+</if>
+
+<if test="${string::equal('False', is-context-initialize)}">
+  <property
+    name="is-context-initialize"
+    value="${string::substring(context, string::index-of(context, ' '))}" />
+
+  <echo>is-context-initialize ->${is-context-initialize} -> ${hostfxr::result-to-string(is-context-initialize)}</echo>
+</if>
+----
 
 [[hostfxr-run-app]]
 ==== run-app
-TODO
+
+*int* 'hostfxr::run-app'(*pointer* context)
+
+Run application by context. +
+Return is returned code of application or returned code of resolver in case application can not be start.
+
+===== Sample using
+
+----
+<if test="${is-context-initialize}">
+  <property name="run-app" value="${hostfxr::run-app(context)}" />
+  <echo>hostfxr::run-app -> ${run-app} -> ${hostfxr::result-to-string(run-app)}</echo>
+
+  <property name="close" value="${hostfxr::close(context)}" />
+  <echo>hostfxr::close -> ${close} -> ${hostfxr::result-to-string(close)}</echo>
+</if>
+
+<if test="${string::equal('False', is-context-initialize)}">
+  <property
+    name="is-context-initialize"
+    value="${string::substring(context, string::index-of(context, ' '))}" />
+
+  <echo>is-context-initialize ->${is-context-initialize} -> ${hostfxr::result-to-string(is-context-initialize)}</echo>
+</if>
+----
 
 [[hostfxr-set-error-writer]]
 ==== set-error-writer
-TODO
+
+*pointer* 'hostfxr::set-error-writer'() +
+*pointer* 'hostfxr::set-error-writer'(*file* path_to_file_for_error_writer)
+
+Set error writer of resolver. +
+First version will unset error writer. +
+If path is empty - that call also unset error writer. +
+Function return pointer to the current error writer - pointer to the function used for that purpose. +
+If no writer set early - null pointer will be returned.
+
+===== Sample using
+
+----
+<if test="${hostfxr::is-function-exists('set-error-writer')}">
+  <property name="path_to_file_for_error_writer" value="${path::get-temp-file-name()}" overwrite="false" />
+
+  <echo>path_to_file_for_error_writer -> '${path_to_file_for_error_writer}'</echo>
+
+  <property name="error_writer" value="${hostfxr::set-error-writer(path_to_file_for_error_writer)}" />
+  <echo>hostfxr::set-error-writer(${path_to_file_for_error_writer}) -> '${error_writer}'</echo>
+
+  <!-- ... -->
+
+  <if test="${string::equal('False', property::is-readonly('path_to_file_for_error_writer'))}">
+    <property name="path_to_file_for_error_writer" />
+
+    <property name="error_writer" value="${hostfxr::set-error-writer(path_to_file_for_error_writer)}" />
+    <echo>hostfxr::set-error-writer(${path_to_file_for_error_writer}) -> '${error_writer}'</echo>
+  </if>
+</if>
+----
 
 [[hostfxr-set-runtime-property-value]]
 ==== set-runtime-property-value
-TODO
+
+*int* 'hostfxr::set-runtime-property-value'(*pointer* context, *string* property_name) +
+*int* 'hostfxr::set-runtime-property-value'(*pointer* context, *string* property_name, *string* property_value)
+
+Set value of runtime property. +
+If property not exist new one will be created. +
+If value not present - property will have empty value.
+
+===== Sample using
+
+----
+<if test="${string::equal('False', property::exists('property_value'))}">
+  <property name="return_of_set_runtime_property_value"
+            value="${hostfxr::set-runtime-property-value(context, property_name)}" />
+  <echo>hostfxr::set-runtime-property-value(${context}, ${property_name}) -> '${return_of_set_runtime_property_value}' -> ${hostfxr::result-to-string(return_of_set_runtime_property_value)}</echo>
+</if>
+
+<if test="${property::exists('property_value')}">
+  <property name="return_of_set_runtime_property_value"
+            value="${hostfxr::set-runtime-property-value(context, property_name, property_value)}" />
+  <echo>hostfxr::set-runtime-property-value(${context}, ${property_name}, ${property_value}) -> '${return_of_set_runtime_property_value}' -> ${hostfxr::result-to-string(return_of_set_runtime_property_value)}</echo>
+</if>
+----
 
 [[hostfxr-main-bundle-startupinfo]]
 ==== main-bundle-startupinfo

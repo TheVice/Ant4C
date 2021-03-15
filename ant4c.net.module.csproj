@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>2020.09</Version>
+    <Title>Ant4C.Net.Module.CLR</Title>
+    <Product>Ant4C.Net.Module.CLR</Product>
+    <Copyright>Copyright © 2021 TheVice</Copyright>
+    <Description>CLR side for Ant4C.Net.Module</Description>
+    <AssemblyName>ant4c.net.module.clr</AssemblyName>
+
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="*.*" />
+    <Compile Remove="**/*.*" />
+    <Compile Include="ant4c.net.module.cs" />
+  </ItemGroup>
+
+</Project>

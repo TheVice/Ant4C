@@ -2217,15 +2217,15 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>${property::get_value('My_property')}</code>
+      <code>${property::get-value('My_property')}</code>
       <return>0</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>${property::is_dynamic('My_property')}</code>
+      <code>${property::is-dynamic('My_property')}</code>
       <return>0</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>${property::is_readonly('My_property')}</code>
+      <code>${property::is-readonly('My_property')}</code>
       <return>0</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>

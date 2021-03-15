@@ -164,7 +164,7 @@ int32_t host_fxr_resolve_sdk2(
 	void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
 	const type_of_element* working_dir, int32_t flags,
 	hostfxr_resolve_sdk2_result_type result);
-int32_t host_fxr_run_app(void* ptr_to_host_fxr_object, void* context);
+int32_t host_fxr_run_app(void* ptr_to_host_fxr_object, const void* context);
 hostfxr_error_writer_type host_fxr_set_error_writer(void* ptr_to_host_fxr_object,
 		hostfxr_error_writer_type writer);
 int32_t host_fxr_set_runtime_property_value(

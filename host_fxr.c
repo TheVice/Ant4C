@@ -631,7 +631,7 @@ int32_t host_fxr_resolve_sdk2(
 	return -1;
 }
 
-int32_t host_fxr_run_app(void* ptr_to_host_fxr_object, void* context)
+int32_t host_fxr_run_app(void* ptr_to_host_fxr_object, const void* context)
 {
 	if (ptr_to_host_fxr_object &&
 		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_run_app)

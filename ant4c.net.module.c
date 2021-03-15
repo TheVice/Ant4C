@@ -24,6 +24,179 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
+const void* string_to_pointer(const uint8_t* input, uint8_t length, struct buffer* tmp)
+{
+	if (!input ||
+		!length ||
+		!tmp)
+	{
+		return NULL;
+	}
+
+	if (!buffer_resize(tmp, 0) ||
+		!buffer_append(tmp, input, length) ||
+		!buffer_push_back(tmp, 0))
+	{
+		return NULL;
+	}
+
+	return pointer_parse(buffer_data(tmp, 0));
+}
+
+uint8_t values_to_arguments(
+	const uint8_t** values, const uint16_t* values_lengths,
+	uint8_t values_count, struct buffer* output, const type_of_element*** argv)
+{
+	if (NULL == values ||
+		NULL == values_lengths ||
+		!output ||
+		!argv)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (values_count)
+	{
+		if (!buffer_append(output, NULL, ((ptrdiff_t)1 + values_count) * sizeof(ptrdiff_t)))
+		{
+			return 0;
+		}
+	}
+
+	for (uint16_t i = 0; i < values_count; ++i)
+	{
+		ptrdiff_t* positions = (ptrdiff_t*)buffer_data(output, size);
+		positions[i] = buffer_size(output);
+#if defined(_WIN32)
+
+		if (values_lengths[i] &&
+			!text_encoding_UTF8_to_UTF16LE(values[i], values[i] + values_lengths[i], output))
+		{
+			return 0;
+		}
+
+		if (!buffer_push_back_uint16(output, 0))
+		{
+			return 0;
+		}
+
+#else
+
+		if (values_lengths[i] &&
+			!buffer_append(output, values[i], values_lengths[i]))
+		{
+			return 0;
+		}
+
+		if (!buffer_push_back(output, 0))
+		{
+			return 0;
+		}
+
+#endif
+	}
+
+	if (values_count)
+	{
+		const ptrdiff_t sz = buffer_size(output);
+
+		if (!buffer_append(output, NULL, ((ptrdiff_t)1 + values_count) * sizeof(type_of_element*)) ||
+			!buffer_resize(output, sz))
+		{
+			return 0;
+		}
+
+		const ptrdiff_t* positions = (const ptrdiff_t*)buffer_data(output, size);
+
+		for (uint16_t i = 0; i < values_count; ++i)
+		{
+			const type_of_element* data_at_position = (const type_of_element*)buffer_data(output, positions[i]);
+
+			if (!buffer_append(output, (const uint8_t*)&data_at_position, sizeof(type_of_element*)))
+			{
+				return 0;
+			}
+		}
+
+		*argv = (const type_of_element**)buffer_data(output, sz);
+	}
+	else
+	{
+		*argv = NULL;
+	}
+
+	return 1;
+}
+
+uint8_t value_to_system_path(const uint8_t* input, ptrdiff_t length, struct buffer* output)
+{
+#if defined(_WIN32)
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, (ptrdiff_t)4 * length + INT8_MAX) ||
+		!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+#endif
+
+	if (!buffer_append(output, input, length) ||
+		!buffer_push_back(output, 0))
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+
+	if (!file_system_path_to_pathW(buffer_data(output, size), output))
+	{
+		return 0;
+	}
+
+#endif
+	return 1;
+}
+
+uint8_t values_to_system_paths(
+	const uint8_t** values, const uint16_t* values_lengths,
+	ptrdiff_t* positions, uint8_t values_count, struct buffer* output)
+{
+	if (!values ||
+		!values_lengths ||
+		!positions ||
+		!output)
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 0; i < values_count; ++i)
+	{
+		positions[i] = 0;
+
+		if (!values_lengths[i])
+		{
+			continue;
+		}
+
+		positions[i] = buffer_size(output);
+
+		if (!value_to_system_path(values[i], values_lengths[i], output))
+		{
+			return 0;
+		}
+
+#if defined(_WIN32)
+		positions[i] += values_lengths[i];
+		++positions[i];
+#endif
+	}
+
+	return 1;
+}
+
 uint8_t net_host_get_hostfxr_path(
 	const uint8_t* path_to_net_host_object,
 	uint16_t path_to_net_host_object_length,
@@ -169,91 +342,6 @@ uint8_t net_host_get_hostfxr_path(
 #endif
 }
 
-uint8_t values_to_arguments(
-	const uint8_t** values, const uint16_t* values_lengths,
-	uint8_t values_count, struct buffer* output, const type_of_element*** argv)
-{
-	if (NULL == values ||
-		NULL == values_lengths ||
-		!output ||
-		!argv)
-	{
-		return 0;
-	}
-
-	if (values_count)
-	{
-		if (!buffer_resize(output, ((ptrdiff_t)1 + values_count) * sizeof(ptrdiff_t)))
-		{
-			return 0;
-		}
-	}
-
-	for (uint16_t i = 0; i < values_count; ++i)
-	{
-		ptrdiff_t* positions = (ptrdiff_t*)buffer_data(output, 0);
-		positions[i] = buffer_size(output);
-#if defined(_WIN32)
-
-		if (values_lengths[i] &&
-			!text_encoding_UTF8_to_UTF16LE(values[i], values[i] + values_lengths[i], output))
-		{
-			return 0;
-		}
-
-		if (!buffer_push_back_uint16(output, 0))
-		{
-			return 0;
-		}
-
-#else
-
-		if (values_lengths[i] &&
-			!buffer_append(output, values[i], values_lengths[i]))
-		{
-			return 0;
-		}
-
-		if (!buffer_push_back(output, 0))
-		{
-			return 0;
-		}
-
-#endif
-	}
-
-	if (values_count)
-	{
-		const ptrdiff_t size = buffer_size(output);
-
-		if (!buffer_append(output, NULL, ((ptrdiff_t)1 + values_count) * sizeof(type_of_element*)) ||
-			!buffer_resize(output, size))
-		{
-			return 0;
-		}
-
-		const ptrdiff_t* positions = (const ptrdiff_t*)buffer_data(output, 0);
-
-		for (uint16_t i = 0; i < values_count; ++i)
-		{
-			const type_of_element* data_at_position = (const type_of_element*)buffer_data(output, positions[i]);
-
-			if (!buffer_append(output, (const uint8_t*)&data_at_position, sizeof(type_of_element*)))
-			{
-				return 0;
-			}
-		}
-
-		*argv = (const type_of_element**)buffer_data(output, size);
-	}
-	else
-	{
-		*argv = NULL;
-	}
-
-	return 1;
-}
-
 uint8_t hostfxr_convert_function_name(
 	const uint8_t* name_space,
 	const uint8_t* function_name_start, const uint8_t* function_name_finish,
@@ -357,56 +445,34 @@ uint8_t hostfxr_functions(
 uint8_t host_fx_resolver_init(
 	const uint8_t* path_to_host_fxr,
 	uint16_t path_to_host_fxr_length,
-	struct buffer* host_fxr_object,
+	struct buffer* tmp,
+	void* ptr_to_host_fxr_object,
 	ptrdiff_t size)
 {
 	if (!path_to_host_fxr ||
 		!path_to_host_fxr_length ||
-		!host_fxr_object ||
+		!tmp ||
+		!ptr_to_host_fxr_object ||
 		size < INT8_MAX)
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(host_fxr_object, size) ||
-		!buffer_resize(host_fxr_object, 0))
+	if (!buffer_resize(tmp, 0) ||
+		!value_to_system_path(path_to_host_fxr, path_to_host_fxr_length, tmp))
 	{
 		return 0;
 	}
 
 #if defined(_WIN32)
-
-	if (!buffer_resize(host_fxr_object, (ptrdiff_t)4 * path_to_host_fxr_length + INT8_MAX) ||
-		!buffer_resize(host_fxr_object, 0))
-	{
-		return 0;
-	}
-
-#endif
-
-	if (!buffer_append(host_fxr_object, path_to_host_fxr, path_to_host_fxr_length) ||
-		!buffer_push_back(host_fxr_object, 0))
-	{
-		return 0;
-	}
-
-#if defined(_WIN32)
-
-	if (!file_system_path_to_pathW(buffer_data(host_fxr_object, 0), host_fxr_object))
-	{
-		return 0;
-	}
-
-	const type_of_element* path_to_host_fxr_ = (const type_of_element*)buffer_data(
-				host_fxr_object, (ptrdiff_t)1 + path_to_host_fxr_length);
-	void* ptr_to_host_fxr_object = buffer_data(host_fxr_object, 0);
+	++path_to_host_fxr_length;
+	const type_of_element* path_to_host_fxr_ =
+		(const type_of_element*)buffer_data(tmp, path_to_host_fxr_length);
 #else
-	const type_of_element* path_to_host_fxr_ = (const type_of_element*)buffer_data(host_fxr_object, 0);
-	void* ptr_to_host_fxr_object = (void*)path_to_host_fxr_;
+	const type_of_element* path_to_host_fxr_ = (const type_of_element*)buffer_data(tmp, 0);
 #endif
 
-	if (!buffer_resize(host_fxr_object, size) ||
-		!host_fx_resolver_load(path_to_host_fxr_, ptr_to_host_fxr_object, size))
+	if (!host_fx_resolver_load(path_to_host_fxr_, ptr_to_host_fxr_object, size))
 	{
 		return 0;
 	}
@@ -818,7 +884,7 @@ uint8_t hostfxr_get_available_sdks(
 
 #if defined(_WIN32)
 
-	if (!buffer_resize(output, sizeof(uint64_t)))
+	if (!buffer_resize(output, sizeof(uint32_t)))
 	{
 		return 0;
 	}
@@ -830,47 +896,28 @@ uint8_t hostfxr_get_available_sdks(
 
 	if (executable_directory)
 	{
-#if defined(_WIN32)
-
-		if (!buffer_resize(&exe_dir_, (ptrdiff_t)4 * executable_directory_length + INT8_MAX) ||
-			!buffer_resize(&exe_dir_, 0))
-		{
-			buffer_release(&exe_dir_);
-			return 0;
-		}
-
-#endif
-
-		if (!buffer_append(&exe_dir_, executable_directory, executable_directory_length) ||
-			!buffer_push_back(&exe_dir_, 0))
+		if (!value_to_system_path(executable_directory, executable_directory_length, &exe_dir_))
 		{
 			buffer_release(&exe_dir_);
 			return 0;
 		}
 
 #if defined(_WIN32)
-		const uint8_t* path = buffer_data(&exe_dir_, 0);
-
-		if (!file_system_path_to_pathW(path, &exe_dir_))
-		{
-			buffer_release(&exe_dir_);
-			return 0;
-		}
-
-		exe_dir = (const type_of_element*)buffer_data(&exe_dir_, (ptrdiff_t)executable_directory_length + 1);
+		++executable_directory_length;
+		exe_dir = (const type_of_element*)buffer_data(&exe_dir_, executable_directory_length);
 #else
-		exe_dir = buffer_data(&exe_dir_, 0);
+		exe_dir = (const type_of_element*)buffer_data(&exe_dir_, 0);
 #endif
 	}
 
-	const int32_t result = host_fxr_get_available_sdks(ptr_to_host_fxr_object, exe_dir,
-						   host_fx_resolver_available_sdks);
+	const int32_t code = host_fxr_get_available_sdks(ptr_to_host_fxr_object, exe_dir,
+						 host_fx_resolver_available_sdks);
 	buffer_release(&exe_dir_);
 
-	if (HOST_FX_RESOLVER_NON_SUCCESS(result))
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code))
 	{
 		if (!buffer_resize(output, 0) ||
-			!int_to_string(result, output))
+			!int_to_string(code, output))
 		{
 			return 0;
 		}
@@ -891,7 +938,7 @@ uint8_t hostfxr_get_available_sdks(
 			return 0;
 		}
 
-		ptr_to_host_fxr_object = buffer_data(output, sizeof(uint64_t));
+		ptr_to_host_fxr_object = buffer_data(output, sizeof(uint32_t));
 		exe_dir = (const wchar_t*)(buffer_data(output, 0) + size);
 
 		if (!buffer_resize(output, 0) ||
@@ -918,7 +965,7 @@ uint8_t hostfxr_get_native_search_directories(
 
 #if defined(_WIN32)
 
-	if (!buffer_resize(output, sizeof(uint64_t) + FILENAME_MAX * sizeof(type_of_element)))
+	if (!buffer_resize(output, sizeof(uint32_t) + FILENAME_MAX * sizeof(type_of_element)))
 #else
 	if (!buffer_resize(output, FILENAME_MAX * sizeof(type_of_element)))
 #endif
@@ -938,21 +985,21 @@ uint8_t hostfxr_get_native_search_directories(
 		return 0;
 	}
 
-	int32_t result = 0;
+	int32_t code = 0;
 #if defined(_WIN32)
-	type_of_element* out = (type_of_element*)buffer_data(output, sizeof(uint64_t));
+	type_of_element* out = (type_of_element*)buffer_data(output, sizeof(uint32_t));
 #else
 	type_of_element* out = (type_of_element*)buffer_data(output, 0);
 #endif
 	int32_t required_size = FILENAME_MAX;
 
-	if (HOST_FX_RESOLVER_NON_SUCCESS(result = host_fxr_get_native_search_directories(
-										 ptr_to_host_fxr_object, values_count, argv, out, FILENAME_MAX, &required_size)))
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code = host_fxr_get_native_search_directories(
+			ptr_to_host_fxr_object, values_count, argv, out, FILENAME_MAX, &required_size)))
 	{
-		if ((int32_t)host_fxr_HostApiBufferTooSmall != result ||
+		if ((int32_t)host_fxr_HostApiBufferTooSmall != code ||
 			required_size < FILENAME_MAX ||
 			!buffer_resize(output, required_size * sizeof(type_of_element)) ||
-			HOST_FX_RESOLVER_NON_SUCCESS(/*result = */host_fxr_get_native_search_directories(
+			HOST_FX_RESOLVER_NON_SUCCESS(/*code = */host_fxr_get_native_search_directories(
 						ptr_to_host_fxr_object, values_count, argv,
 						(type_of_element*)buffer_data(output, 0), required_size, &required_size)))
 		{
@@ -963,7 +1010,7 @@ uint8_t hostfxr_get_native_search_directories(
 
 	buffer_release(&arguments);
 #if defined(_WIN32)
-	type_of_element* start = (type_of_element*)buffer_data(output, sizeof(uint64_t));
+	type_of_element* start = (type_of_element*)buffer_data(output, sizeof(uint32_t));
 	out = start;
 
 	while (L'\0' != *out)
@@ -972,22 +1019,486 @@ uint8_t hostfxr_get_native_search_directories(
 	}
 
 	required_size = (int32_t)(out - start);
-	result = 4 * required_size * sizeof(type_of_element);
+	code = (ptrdiff_t)4 * required_size * sizeof(type_of_element);
 
-	if (!buffer_resize(output, result))
+	if (!buffer_resize(output, code))
 	{
 		return 0;
 	}
 
-	start = (type_of_element*)buffer_data(output, sizeof(uint64_t));
+	start = (type_of_element*)buffer_data(output, sizeof(uint32_t));
 	out = start + required_size;
 	return buffer_resize(output, 0) &&
 		   text_encoding_UTF16LE_to_UTF8(start, out, output) &&
 		   buffer_push_back(output, 0);
 #else
-	result = (int32_t)common_count_bytes_until(buffer_data(output, 0), 0);
-	return buffer_resize(output, (ptrdiff_t)result + 1);
+	code = (int32_t)common_count_bytes_until(buffer_data(output, 0), 0);
+	return buffer_resize(output, (ptrdiff_t)code + 1);
 #endif
+}
+
+uint8_t hostfxr_get_runtime_delegate(
+	void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		(5 != values_count && 6 != values_count) ||
+		!output)
+	{
+		return 0;
+	}
+
+	static const uint8_t* types_of_delegate[] =
+	{
+		(const uint8_t*)"host_fxr_hdt_com_activation",
+		(const uint8_t*)"host_fxr_hdt_load_in_memory_assembly",
+		(const uint8_t*)"host_fxr_hdt_winrt_activation",
+		(const uint8_t*)"host_fxr_hdt_com_register",
+		(const uint8_t*)"host_fxr_hdt_com_unregister",
+		(const uint8_t*)"host_fxr_hdt_load_assembly_and_get_function_pointer",
+		(const uint8_t*)"host_fxr_hdt_get_function_pointer"
+	};
+	/**/
+	const void* context = string_to_pointer(
+							  values[0], (uint8_t)values_lengths[0], output);
+
+	if (!context ||
+		!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+	int32_t type_of_delegate = common_string_to_enum(
+								   values[1], values[1] + values_lengths[1],
+								   types_of_delegate, host_fxr_hdt_get_function_pointer + 1);
+
+	if (host_fxr_hdt_get_function_pointer + 1 == type_of_delegate)
+	{
+		if (!buffer_append(output, values[1], values_lengths[1]) ||
+			!buffer_push_back(output, 0))
+		{
+			return 0;
+		}
+
+		type_of_delegate = int_parse(buffer_data(output, 0));
+
+		if (!buffer_resize(output, 0))
+		{
+			return 0;
+		}
+	}
+
+	hostfxr_delegate_function_type the_delegate_function_type = NULL;
+	int32_t code = host_fxr_get_runtime_delegate(
+					   ptr_to_host_fxr_object, context, type_of_delegate, &the_delegate_function_type);
+
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code))
+	{
+		if (!buffer_push_back(output, 0) ||
+			!int_to_string(code, output))
+		{
+			return 0;
+		}
+
+		return 1;
+	}
+
+	if (!value_to_system_path(values[2], values_lengths[2], output))
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+	const ptrdiff_t index = (ptrdiff_t)1 + values_lengths[2];
+#else
+	const ptrdiff_t index = 0;
+#endif
+	const type_of_element** argv = NULL;
+
+	if (!values_to_arguments(values + 3, values_lengths + 3, values_count - 3, output, &argv))
+	{
+		return 0;
+	}
+
+	const type_of_element* assembly_path = (const type_of_element*)buffer_data(output, index);
+	const type_of_element* type_name = argv[0];
+	const type_of_element* method_name = argv[1];
+	const type_of_element* delegate_type_name = 5 < values_count ? argv[2] : NULL;
+	void* unused = NULL;
+	void* the_delegate = NULL;
+	/**/
+	code = the_delegate_function_type(
+			   assembly_path, type_name, method_name,
+			   delegate_type_name, unused, &the_delegate);
+
+	if (!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code))
+	{
+		if (!buffer_push_back(output, 0) ||
+			!int_to_string(code, output))
+		{
+			return 0;
+		}
+
+		return 1;
+	}
+
+	return pointer_to_string(the_delegate, output);
+}
+
+uint8_t hostfxr_get_runtime_properties(
+	void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		1 != values_count ||
+		!output)
+	{
+		return 0;
+	}
+
+	const void* context = string_to_pointer(values[0], (uint8_t)values_lengths[0], output);
+
+	if (!context ||
+		!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+	size_t count = 0;
+	type_of_element** properties_keys = NULL;
+	type_of_element** properties_values = NULL;
+	/**/
+	int32_t code = host_fxr_get_runtime_properties(
+					   ptr_to_host_fxr_object, context,
+					   &count, properties_keys, properties_values);
+
+	if ((int32_t)host_fxr_HostApiBufferTooSmall == code)
+	{
+		if (!buffer_resize(output, 2 * count * sizeof(type_of_element*)))
+		{
+			return 0;
+		}
+
+		memset(buffer_data(output, 0), 0, buffer_size(output));
+		/**/
+		properties_keys = (type_of_element**)buffer_data(output, 0);
+		properties_values = (type_of_element**)buffer_data(output, count * sizeof(type_of_element*));
+		/**/
+		code = host_fxr_get_runtime_properties(ptr_to_host_fxr_object, context, &count, properties_keys,
+											   properties_values);
+	}
+
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code))
+	{
+		return int_to_string(code, output);
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (count && size < INT16_MAX)
+	{
+		if (!buffer_append(output, NULL, INT16_MAX) ||
+			!buffer_resize(output, size))
+		{
+			return 0;
+		}
+	}
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		properties_keys = (type_of_element**)buffer_data(output, 0);
+		properties_values = (type_of_element**)buffer_data(output, count * sizeof(type_of_element*));
+		/**/
+		const type_of_element* key_ = properties_keys[i];
+		const type_of_element* value_ = properties_values[i];
+#if defined(_WIN32)
+
+		if (!buffer_push_back(output, '\'') ||
+			!text_encoding_UTF16LE_to_UTF8(key_, key_ + wcslen(key_), output) ||
+			!buffer_push_back(output, '\'') ||
+			!common_append_string_to_buffer((const uint8_t*)" = ", output) ||
+			!buffer_push_back(output, '\''))
+		{
+			return 0;
+		}
+
+		if (value_)
+		{
+			key_ = value_ + wcslen(value_);
+
+			if (value_ < key_ &&
+				!text_encoding_UTF16LE_to_UTF8(value_, key_, output))
+			{
+				return 0;
+			}
+		}
+
+#else
+
+		if (!buffer_push_back(output, '\'') ||
+			!buffer_append(output, key_, common_count_bytes_until(key_, 0)) ||
+			!buffer_push_back(output, '\'') ||
+			!common_append_string_to_buffer((const uint8_t*)" = ", output) ||
+			!buffer_push_back(output, '\''))
+		{
+			return 0;
+		}
+
+		if (value_)
+		{
+			if (!buffer_append(output, value_, common_count_bytes_until(value_, 0)))
+			{
+				return 0;
+			}
+		}
+
+#endif
+
+		if (!buffer_push_back(output, '\'') ||
+			!buffer_push_back(output, '\n'))
+		{
+			return 0;
+		}
+	}
+
+	if (0 < size && size < buffer_size(output))
+	{
+		const ptrdiff_t new_size = buffer_size(output) - size;
+		const uint8_t* src = buffer_data(output, size);
+		uint8_t* dst = buffer_data(output, 0);
+		/**/
+		MEM_CPY(dst, src, new_size);
+		/**/
+		dst = buffer_data(output, new_size);
+		memset(dst, 0, size);
+		/**/
+		return buffer_resize(output, new_size);
+	}
+
+	return buffer_resize(output, 0) && int_to_string(code, output);
+}
+
+uint8_t hostfxr_get_runtime_property_value(
+	void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		2 != values_count ||
+		!output)
+	{
+		return 0;
+	}
+
+	const void* context = string_to_pointer(values[0], (uint8_t)values_lengths[0], output);
+
+	if (!context ||
+		!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+
+	if (!text_encoding_UTF8_to_UTF16LE(values[1], values[1] + values_lengths[1], output) ||
+		!buffer_push_back_uint16(output, 0))
+	{
+		return 0;
+	}
+
+#else
+
+	if (!buffer_append(output, values[1], values_lengths[1]) ||
+		!buffer_push_back(output, 0))
+	{
+		return 0;
+	}
+
+#endif
+	const type_of_element* name = (const type_of_element*)buffer_data(output, 0);
+	const type_of_element* value = NULL;
+	/**/
+	const int32_t code = host_fxr_get_runtime_property_value(ptr_to_host_fxr_object, context, name, &value);
+
+	if (!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+	if (value)
+	{
+#if defined(_WIN32)
+		name = value + wcslen(value);
+
+		if ((value < name) && !text_encoding_UTF16LE_to_UTF8(value, name, output))
+#else
+		if (!buffer_append(output, value, common_count_bytes_until(value, 0)))
+#endif
+		{
+			return 0;
+		}
+	}
+
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code))
+	{
+		if (!buffer_push_back(output, 0) ||
+			!int_to_string(code, output))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+uint8_t hostfxr_initialize_for_dotnet_command_line(
+	void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		values_count < 2 ||
+		!output)
+	{
+		return 0;
+	}
+
+	ptrdiff_t positions[2];
+
+	if (!buffer_resize(output, 0) ||
+		!values_to_system_paths(values, values_lengths, positions, 2, output))
+	{
+		return 0;
+	}
+
+	const type_of_element** argv = NULL;
+
+	if (2 < values_count)
+	{
+		if (!values_to_arguments(values + 2, values_lengths + 2, values_count - 2, output, &argv))
+		{
+			return 0;
+		}
+	}
+
+	const type_of_element* paths[2];
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		if (positions[i])
+		{
+			paths[i] = (const type_of_element*)buffer_data(output, positions[i]);
+		}
+		else
+		{
+			paths[i] = NULL;
+		}
+	}
+
+	void* context = NULL;
+	const int32_t code = host_fxr_initialize_for_dotnet_command_line_parameters_in_parts(
+							 ptr_to_host_fxr_object, values_count - 2, argv,
+							 paths[0], paths[1], &context);
+
+	if (!buffer_resize(output, 0) ||
+		!pointer_to_string(context, output))
+	{
+		if (context)
+		{
+			host_fxr_close(ptr_to_host_fxr_object, context);
+		}
+
+		return 0;
+	}
+
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code) || !context)
+	{
+		if (!buffer_push_back(output, ' ') ||
+			!int_to_string(code, output))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+uint8_t hostfxr_initialize_for_runtime_config(
+	void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		3 != values_count ||
+		!output)
+	{
+		return 0;
+	}
+
+	ptrdiff_t positions[3];
+
+	if (!buffer_resize(output, 0) ||
+		!values_to_system_paths(values, values_lengths, positions, values_count, output))
+	{
+		return 0;
+	}
+
+	const type_of_element* paths[3];
+
+	for (uint8_t i = 0; i < values_count; ++i)
+	{
+		if (positions[i])
+		{
+			paths[i] = (const type_of_element*)buffer_data(output, positions[i]);
+		}
+		else
+		{
+			paths[i] = NULL;
+		}
+	}
+
+	void* context = NULL;
+	const int32_t code = host_fxr_initialize_for_runtime_config_parameters_in_parts(ptr_to_host_fxr_object,
+						 paths[2], paths[0], paths[1], &context);
+
+	if (!buffer_resize(output, 0) ||
+		!pointer_to_string(context, output))
+	{
+		if (context)
+		{
+			host_fxr_close(ptr_to_host_fxr_object, context);
+		}
+
+		return 0;
+	}
+
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code) || !context)
+	{
+		if (!buffer_push_back(output, ' ') ||
+			!int_to_string(code, output))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 uint8_t hostfxr_main_startupinfo(
@@ -1004,133 +1515,30 @@ uint8_t hostfxr_main_startupinfo(
 		return 0;
 	}
 
-	const ptrdiff_t array_size = sizeof(ptrdiff_t) * ((ptrdiff_t)1 + values_count);
-	ptrdiff_t size = array_size;
+	ptrdiff_t positions[3];
 
-	for (uint16_t i = 0; i < values_count; ++i)
+	if (!buffer_resize(output, 0) ||
+		!values_to_system_paths(values, values_lengths, positions, 3, output))
 	{
-		size += values_lengths[i];
-	}
-
-#if defined(_WIN32)
-
-	if (array_size < size)
-	{
-		size += 3 * INT8_MAX;
-	}
-	else
-#endif
-	{
-		size += 3;
-	}
-
-	size *= sizeof(type_of_element);
-	size += values_count * sizeof(type_of_element*);
-	/**/
-	struct buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
-
-	if (!buffer_resize(&arguments, size) ||
-		!buffer_resize(&arguments, array_size))
-	{
-		buffer_release(&arguments);
 		return 0;
 	}
 
-#if defined(_WIN32)
-
-	for (uint16_t i = 0; i < values_count; ++i)
-	{
-		ptrdiff_t* positions = (ptrdiff_t*)buffer_data(&arguments, 0);
-		positions[i] = buffer_size(&arguments);
-
-		if (values_lengths[i])
-		{
-			if (i < 3)
-			{
-				if (!buffer_resize(output, 0) ||
-					!buffer_append(output, values[i], values_lengths[i]) ||
-					!buffer_push_back(output, 0))
-				{
-					buffer_release(&arguments);
-					return 0;
-				}
-
-				const uint8_t* data = buffer_data(output, 0);
-
-				if (!file_system_path_to_pathW(data, &arguments))
-				{
-					buffer_release(&arguments);
-					return 0;
-				}
-			}
-			else
-			{
-				if (!text_encoding_UTF8_to_UTF16LE(
-						values[i], values[i] + values_lengths[i], &arguments))
-				{
-					buffer_release(&arguments);
-					return 0;
-				}
-			}
-		}
-
-		if (!buffer_push_back_uint16(&arguments, 0))
-		{
-			buffer_release(&arguments);
-			return 0;
-		}
-	}
-
-#else
-
-	for (uint16_t i = 0; i < values_count; ++i)
-	{
-		ptrdiff_t* positions = (ptrdiff_t*)buffer_data(&arguments, 0);
-		positions[i] = buffer_size(&arguments);
-
-		if (values_lengths[i])
-		{
-			if (!buffer_resize(&arguments, 0) ||
-				!buffer_append(&arguments, values[i], values_lengths[i]))
-			{
-				buffer_release(&arguments);
-				return 0;
-			}
-		}
-
-		if (!buffer_push_back(&arguments, 0))
-		{
-			buffer_release(&arguments);
-			return 0;
-		}
-	}
-
-#endif
-	size = buffer_size(&arguments);
-
-	for (uint16_t i = 3; i < values_count; ++i)
-	{
-		const ptrdiff_t* positions = (const ptrdiff_t*)buffer_data(&arguments, 0);
-		const type_of_element* data_at_position = (const type_of_element*)buffer_data(&arguments, positions[i]);
-
-		if (!buffer_append(&arguments, (const uint8_t*)&data_at_position, sizeof(type_of_element*)))
-		{
-			buffer_release(&arguments);
-			return 0;
-		}
-	}
-
 	int32_t argc = values_count - 3;
-	const type_of_element** argv = (const type_of_element**)buffer_data(&arguments, size);
-	/**/
-	const ptrdiff_t* p = (const ptrdiff_t*)buffer_data(&arguments, 0);
-	const type_of_element* host_path = (const type_of_element*)buffer_data(&arguments, p[0]);
-	const type_of_element* dotnet_root = (const type_of_element*)buffer_data(&arguments, p[1]);
-	const type_of_element* app_path = (const type_of_element*)buffer_data(&arguments, p[2]);
+	const type_of_element** argv = NULL;
+
+	if (3 < values_count)
+	{
+		if (!values_to_arguments(values + 3, values_lengths + 3, (uint8_t)argc, output, &argv))
+		{
+			return 0;
+		}
+	}
+
+	const type_of_element* host_path = (const type_of_element*)buffer_data(output, positions[0]);
+	const type_of_element* dotnet_root = (const type_of_element*)buffer_data(output, positions[1]);
+	const type_of_element* app_path = (const type_of_element*)buffer_data(output, positions[2]);
 	/**/
 	argc = host_fxr_main_startupinfo(ptr_to_host_fxr_object, argc, argv, host_path, dotnet_root, app_path);
-	buffer_release(&arguments);
 	/**/
 	return buffer_resize(output, 0) && int_to_string(argc, output);
 }
@@ -1150,7 +1558,7 @@ uint8_t hostfxr_resolve_sdk(
 	}
 
 #if defined(_WIN32)
-	ptrdiff_t size = sizeof(uint64_t) + sizeof(type_of_element) * FILENAME_MAX;
+	ptrdiff_t size = sizeof(uint32_t) + sizeof(type_of_element) * FILENAME_MAX;
 #else
 	ptrdiff_t size = sizeof(type_of_element) * FILENAME_MAX;
 #endif
@@ -1173,20 +1581,20 @@ uint8_t hostfxr_resolve_sdk(
 	}
 
 #if defined(_WIN32)
-	size = sizeof(uint64_t);
+	size = sizeof(uint32_t);
 #else
 	size = 0;
 #endif
 	type_of_element* out = (type_of_element*)buffer_data(output, size);
-	int32_t result = host_fxr_resolve_sdk(ptr_to_host_fxr_object, argv[0]/*exe_dir*/, argv[1]/*working_dir*/, out,
-										  FILENAME_MAX);
+	int32_t code = host_fxr_resolve_sdk(ptr_to_host_fxr_object, argv[0]/*exe_dir*/, argv[1]/*working_dir*/, out,
+										FILENAME_MAX);
 
-	if (FILENAME_MAX < result)
+	if (FILENAME_MAX < code)
 	{
 #if defined(_WIN32)
-		size = sizeof(uint64_t) + sizeof(type_of_element) * result;
+		size = sizeof(uint32_t) + sizeof(type_of_element) * code;
 #else
-		size = sizeof(type_of_element) * result;
+		size = sizeof(type_of_element) * code;
 #endif
 
 		if (!buffer_resize(output, size))
@@ -1196,22 +1604,23 @@ uint8_t hostfxr_resolve_sdk(
 		}
 
 #if defined(_WIN32)
-		size = sizeof(uint64_t);
+		size = sizeof(uint32_t);
 #else
 		size = 0;
 #endif
 		out = (type_of_element*)buffer_data(output, size);
-		result = host_fxr_resolve_sdk(ptr_to_host_fxr_object, argv[0]/*exe_dir*/, argv[1]/*working_dir*/, out,
-									  result);
+		code = host_fxr_resolve_sdk(
+				   ptr_to_host_fxr_object, argv[0]/*exe_dir*/, argv[1]/*working_dir*/,
+				   out, code);
 	}
 
 	buffer_release(&arguments);
 
-	if (0 < result)
+	if (0 < code)
 	{
 #if defined(_WIN32)
 
-		if (!buffer_resize(output, (ptrdiff_t)4 * result + sizeof(uint32_t)))
+		if (!buffer_resize(output, (ptrdiff_t)4 * code + sizeof(uint32_t)))
 		{
 			return 0;
 		}
@@ -1219,14 +1628,14 @@ uint8_t hostfxr_resolve_sdk(
 		out = (type_of_element*)buffer_data(output, size);
 
 		if (!buffer_resize(output, 0) ||
-			!text_encoding_UTF16LE_to_UTF8(out, out + result, output))
+			!text_encoding_UTF16LE_to_UTF8(out, out + code, output))
 		{
 			return 0;
 		}
 
 #else
 
-		if (!buffer_resize(output, result))
+		if (!buffer_resize(output, code))
 		{
 			return 0;
 		}
@@ -1236,7 +1645,7 @@ uint8_t hostfxr_resolve_sdk(
 	else
 	{
 		if (!buffer_resize(output, 0) ||
-			!int_to_string(result, output))
+			!int_to_string(code, output))
 		{
 			return 0;
 		}
@@ -1299,6 +1708,79 @@ uint8_t hostfxr_resolve_sdk2(
 	return 1;
 }
 
+uint8_t hostfxr_set_runtime_property_value(
+	void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		values_count < 2 || 3 < values_count ||
+		!output)
+	{
+		return 0;
+	}
+
+	const void* context = string_to_pointer(values[0], (uint8_t)values_lengths[0], output);
+
+	if (!context ||
+		!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+
+	if (!text_encoding_UTF8_to_UTF16LE(values[1], values[1] + values_lengths[1], output) ||
+		!buffer_push_back_uint16(output, 0))
+#else
+	if (!buffer_append(output, values[1], values_lengths[1]) ||
+		!buffer_push_back(output, 0))
+#endif
+	{
+		return 0;
+	}
+
+	const ptrdiff_t index = buffer_size(output);
+
+	if (3 == values_count && values_lengths[2])
+	{
+#if defined(_WIN32)
+
+		if (!text_encoding_UTF8_to_UTF16LE(values[2], values[2] + values_lengths[2], output))
+#else
+		if (!buffer_append(output, values[2], values_lengths[2]))
+#endif
+		{
+			return 0;
+		}
+	}
+
+#if defined(_WIN32)
+
+	if (!buffer_push_back_uint16(output, 0))
+#else
+	if (!buffer_push_back(output, 0))
+#endif
+	{
+		return 0;
+	}
+
+	const type_of_element* name = (const type_of_element*)buffer_data(output, 0);
+	const type_of_element* value = (const type_of_element*)buffer_data(output, index);
+	/**/
+	const int32_t code = host_fxr_set_runtime_property_value(ptr_to_host_fxr_object, context, name, value);
+
+	if (!buffer_resize(output, 0) ||
+		!int_to_string(code, output))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 /*uint8_t file_is_assembly(const uint8_t* path, uint16_t length, uint8_t* returned)
 {
 	if (!path ||
@@ -1316,6 +1798,62 @@ uint8_t hostfxr_resolve_sdk2(
 	*returned = 0 < buffer_size(&output_data);
 	return buffer_resize(&output_data, 0);
 }*/
+
+void* error_writer = NULL;
+
+#if defined(_WIN32)
+static struct buffer content;
+static uint8_t is_content_initialized = 0;
+
+void host_fx_resolver_error_writer(const type_of_element* message)
+{
+	if (is_content_initialized)
+	{
+		if (!buffer_resize(&content, 0))
+		{
+			return;
+		}
+	}
+	else
+	{
+		SET_NULL_TO_BUFFER(content);
+		is_content_initialized = 1;
+	}
+
+	if (error_writer)
+	{
+		if (!text_encoding_UTF16LE_to_UTF8(message, message + wcslen(message), &content) ||
+			!buffer_push_back(&content, '\n'))
+		{
+			return;
+		}
+
+		if (!file_write_with_several_steps(&content, error_writer))
+		{
+			return;
+		}
+
+		file_flush(error_writer);
+	}
+}
+#else
+void host_fx_resolver_error_writer(const type_of_element* message)
+{
+	if (error_writer)
+	{
+		static const uint8_t n = '\n';
+
+		if (!file_write(message, sizeof(type_of_element), common_count_bytes_until(message, 0), error_writer) ||
+			!file_write(&n, sizeof(type_of_element), 1, error_writer))
+		{
+			return;
+		}
+
+		file_flush(error_writer);
+	}
+}
+
+#endif
 
 static struct buffer output_data;
 static uint8_t is_buffer_initialized = 0;
@@ -1359,9 +1897,6 @@ void host_fx_resolver_sdk2(int32_t key, const type_of_element* value)
 		buffer_resize(&output_data, 0);
 	}
 }
-
-struct buffer host_fxr_object_;
-static uint8_t is_host_fxr_object_initialized = 0;
 
 static const uint8_t* name_spaces[] =
 {
@@ -1480,6 +2015,13 @@ const uint8_t* enumerate_functions(const uint8_t* name_space, ptrdiff_t index)
 	return NULL;
 }
 
+#if defined(_WIN32)
+extern uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** output);
+#endif
+
+static uint8_t host_fxr_object[UINT8_MAX];
+static uint8_t is_host_fxr_object_initialized = 0;
+
 uint8_t evaluate_function(
 	const uint8_t* function,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
@@ -1507,12 +2049,6 @@ uint8_t evaluate_function(
 		is_buffer_initialized = 1;
 	}
 
-	if (!is_host_fxr_object_initialized)
-	{
-		SET_NULL_TO_BUFFER(host_fxr_object_);
-		is_host_fxr_object_initialized = 1;
-	}
-
 	const uint8_t* ptr = NULL;
 	ptrdiff_t function_number = 0;
 
@@ -1538,7 +2074,7 @@ uint8_t evaluate_function(
 		return 0;
 	}
 
-	void* ptr_to_host_fxr_object = buffer_data(&host_fxr_object_, 0);
+	void* ptr_to_host_fxr_object = is_host_fxr_object_initialized ? host_fxr_object : NULL;
 
 	switch (function_number)
 	{
@@ -1585,11 +2121,10 @@ uint8_t evaluate_function(
 				values_lengths = &one;
 			}
 
-			if (!hostfxr_functions(
-					ptr_to_host_fxr_object,
-					name_spaces[1], all_functions[1],
-					values[0], values_lengths[0],
-					hostfxr_functions_, &output_data))
+			if (!hostfxr_functions(ptr_to_host_fxr_object,
+								   name_spaces[1], all_functions[1],
+								   values[0], values_lengths[0],
+								   hostfxr_result_to_string_, &output_data))
 			{
 				return 0;
 			}
@@ -1602,25 +2137,17 @@ uint8_t evaluate_function(
 				return 0;
 			}
 
-			if (buffer_size(&host_fxr_object_))
+			if (is_host_fxr_object_initialized)
 			{
-				host_fx_resolver_unload(ptr_to_host_fxr_object);
-
-				if (!buffer_resize(&host_fxr_object_, 0))
-				{
-					return 0;
-				}
+				host_fx_resolver_unload(host_fxr_object);
+				is_host_fxr_object_initialized = 0;
 			}
 
-			values_count = host_fx_resolver_init(values[0], values_lengths[0], &host_fxr_object_, UINT8_MAX);
+			is_host_fxr_object_initialized = host_fx_resolver_init(
+												 values[0], values_lengths[0], &output_data, host_fxr_object, UINT8_MAX);
 
-			if (!values_count &&
-				!buffer_resize(&host_fxr_object_, 0))
-			{
-				return 0;
-			}
-
-			if (!bool_to_string(values_count, &output_data))
+			if (!buffer_resize(&output_data, 0) ||
+				!bool_to_string(is_host_fxr_object_initialized, &output_data))
 			{
 				return 0;
 			}
@@ -1664,11 +2191,31 @@ uint8_t evaluate_function(
 			}
 		}
 		break;
-#if 0
 
 		case hostfxr_close_:
-			break;
-#endif
+		{
+			if (1 != values_count ||
+				!ptr_to_host_fxr_object)
+			{
+				return 0;
+			}
+
+			ptr = string_to_pointer(values[0], (uint8_t)values_lengths[0], &output_data);
+
+			if (!ptr)
+			{
+				return 0;
+			}
+
+			const int32_t code = host_fxr_close(ptr_to_host_fxr_object, ptr);
+
+			if (!buffer_resize(&output_data, 0) ||
+				!int_to_string(code, &output_data))
+			{
+				return 0;
+			}
+		}
+		break;
 
 		case hostfxr_get_available_sdks_:
 			if (1 < values_count)
@@ -1693,27 +2240,58 @@ uint8_t evaluate_function(
 			break;
 
 		case hostfxr_get_native_search_directories_:
-			if (!hostfxr_get_native_search_directories(
-					ptr_to_host_fxr_object,
-					values, values_lengths, values_count,
-					&output_data))
+			if (!hostfxr_get_native_search_directories(ptr_to_host_fxr_object,
+					values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
 
 			break;
-#if 0
-			hostfxr_get_runtime_delegate_:
-				break;
-			hostfxr_get_runtime_properties_:
-				break;
-			hostfxr_get_runtime_property_value_:
-				break;
-			hostfxr_initialize_for_dotnet_command_line_:
-				break;
-			hostfxr_initialize_for_runtime_config_:
-				break;
-#endif
+
+		case hostfxr_get_runtime_delegate_:
+			if (!hostfxr_get_runtime_delegate(ptr_to_host_fxr_object,
+											  values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case hostfxr_get_runtime_properties_:
+			if (!hostfxr_get_runtime_properties(ptr_to_host_fxr_object,
+												values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case hostfxr_get_runtime_property_value_:
+			if (!hostfxr_get_runtime_property_value(ptr_to_host_fxr_object,
+													values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case hostfxr_initialize_for_dotnet_command_line_:
+			if (!hostfxr_initialize_for_dotnet_command_line(ptr_to_host_fxr_object,
+					values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case hostfxr_initialize_for_runtime_config_:
+			if (!hostfxr_initialize_for_runtime_config(ptr_to_host_fxr_object,
+					values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
 
 		case hostfxr_main_:
 		{
@@ -1729,19 +2307,18 @@ uint8_t evaluate_function(
 				return 0;
 			}
 
-			const int32_t result = host_fxr_main(ptr_to_host_fxr_object, values_count, argv);
+			const int32_t code = host_fxr_main(ptr_to_host_fxr_object, values_count, argv);
 
 			if (!buffer_resize(&output_data, 0) ||
-				!int_to_string(result, &output_data))
+				!int_to_string(code, &output_data))
 			{
 				return 0;
 			}
 		}
 		break;
-#if 0
-		hostfxr_main_bundle_startupinfo_:
-			break;
-#endif
+
+		/*case hostfxr_main_bundle_startupinfo_:
+			break;*/
 
 		case hostfxr_main_startupinfo_:
 			if (!hostfxr_main_startupinfo(ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
@@ -1766,13 +2343,97 @@ uint8_t evaluate_function(
 			}
 
 			break;
+
+		case hostfxr_run_app_:
+		{
+			if (1 != values_count ||
+				!ptr_to_host_fxr_object)
+			{
+				return 0;
+			}
+
+			ptr = string_to_pointer(values[0], (uint8_t)values_lengths[0], &output_data);
+
+			if (!ptr)
+			{
+				return 0;
+			}
+
+			const int32_t code = host_fxr_run_app(ptr_to_host_fxr_object, ptr);
+
+			if (!buffer_resize(&output_data, 0) ||
+				!int_to_string(code, &output_data))
+			{
+				return 0;
+			}
+		}
+		break;
+
+		case hostfxr_set_error_writer_:
+			if (1 < values_count)
+			{
+				return 0;
+			}
+
+			ptr = NULL;
+
+			if (!values_count || !values_lengths[0])
+			{
+				ptr = (const void*)host_fxr_set_error_writer(ptr_to_host_fxr_object, NULL);
+			}
+
+			if (error_writer && !file_close(error_writer))
+			{
+				return 0;
+			}
+
+			error_writer = NULL;
+
+			if (values_count && values_lengths[0])
+			{
+				if (!value_to_system_path(values[0], values_lengths[0], &output_data))
+				{
+					return 0;
+				}
+
+#if defined(_WIN32)
+
+				if (!file_open_wchar_t(
+						(const wchar_t*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]),
+						L"ab", &error_writer))
+				{
+					return 0;
+				}
+
+#else
+
+				if (!file_open(buffer_data(&output_data, 0), (const uint8_t*)"ab", &error_writer))
+				{
+					return 0;
+				}
+
+#endif
+				ptr = (const void*)host_fxr_set_error_writer(ptr_to_host_fxr_object, host_fx_resolver_error_writer);
+			}
+
+			if (!buffer_resize(&output_data, 0) ||
+				!pointer_to_string(ptr, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case hostfxr_set_runtime_property_value_:
+			if (!hostfxr_set_runtime_property_value(ptr_to_host_fxr_object,
+													values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
 #if 0
-		hostfxr_run_app_:
-			break;
-		hostfxr_set_error_writer_:
-			break;
-		hostfxr_set_runtime_property_value_:
-			break;
+
 		case file_is_assembly_:
 			if (1 != values_count ||
 				!file_is_assembly(values[0], values_lengths[0], &values_count) ||
@@ -1828,25 +2489,6 @@ uint8_t evaluate_function(
 			}
 
 			break;
-
-		case metahost_runtime_:
-			if (1 != values_count ||
-				!metahost_runtime(values[0], values_lengths[0], &values_count) ||
-				!bool_to_string(values_count, &output_data))
-			{
-				return 0;
-			}
-
-			break;
-
-		case metahost_get_clr_version_from_file_:
-			if (1 != values_count ||
-				!metahost_get_clr_version_from_file(values[0], values_lengths[0]))
-			{
-				return 0;
-			}
-
-			break;
 #endif
 
 		default:
@@ -1863,10 +2505,25 @@ void module_release()
 {
 	if (is_host_fxr_object_initialized)
 	{
-		void* ptr_to_host_fxr_object = buffer_data(&host_fxr_object_, 0);
-		host_fx_resolver_unload(ptr_to_host_fxr_object);
-		buffer_release(&host_fxr_object_);
+		if (error_writer)
+		{
+			host_fxr_set_error_writer(host_fxr_object, NULL);
+			file_close(error_writer);
+			error_writer = NULL;
+		}
+
+		host_fx_resolver_unload(host_fxr_object);
+		is_host_fxr_object_initialized = 0;
 	}
+
+#if defined(_WIN32)
+
+	if (is_content_initialized)
+	{
+		buffer_release(&content);
+	}
+
+#endif
 
 	if (is_buffer_initialized)
 	{
