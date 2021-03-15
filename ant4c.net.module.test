@@ -590,9 +590,22 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
+  <!-- file::is-assembly -->
   <target name="file_is-assembly">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
+    <trycatch>
+      <try>
+        <property name="is_assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_')}" />
+      </try>
+      <catch>
+        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')} file is missing.</echo>
+      </catch>
+    </trycatch>
+
+    <property name="is_assembly" value="${file::is-assembly('ant4c.net.module.clr.dll')}" />
+    <property name="is_assembly" value="${file::is-assembly('ant4c.net.module.dll')}" />
+    <!--
     <property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" />
 
     <property name="assembly_path" value="ant4c.net.module.clr.dll" />
@@ -602,6 +615,18 @@
 
     <call target="hostfxr_get-runtime-delegate" />
 
+    <trycatch>
+      <try>
+        <property name="is_assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_', runtime_delegate)}" />
+      </try>
+      <catch>
+        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')} file is missing.</echo>
+      </catch>
+    </trycatch>
+
+    <property name="is_assembly" value="${file::is-assembly('ant4c.net.module.clr.dll', runtime_delegate)}" />
+    <property name="is_assembly" value="${file::is-assembly('ant4c.net.module.dll', runtime_delegate)}" />
+    -->
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 

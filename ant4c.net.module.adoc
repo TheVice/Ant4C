@@ -521,7 +521,7 @@ Alternative direct int values of types can be used in function call.
 
 This function can be used for checking exists of function in the assembly.
 
-NOTE: There are no other functions in current module that can direct use of returned pointer.
+NOTE: Function <<file-is-assembly,file::is-assembly>> at second parameter can took returned pointer from this function.
 
 ===== Sample using
 
@@ -565,7 +565,7 @@ Checking is equal ('=') symbol exists in the return can detect is properties wit
 [[hostfxr-get-runtime-property-value]]
 ==== get-runtime-property-value
 
-*string* 'hostfxr::get-runtime-property-value'(*pointer* context, *string* property_name)}
+*string* 'hostfxr::get-runtime-property-value'(*pointer* context, *string* property_name)
 
 Get value of property. If property do not exists zero start string will be returned with return code.
 
@@ -793,3 +793,43 @@ If value not present - property will have empty value.
 [[hostfxr-main-bundle-startupinfo]]
 ==== main-bundle-startupinfo
 TODO
+
+=== File unit
+
+IMPORTANT: To access function from this namespace - program option *modulepriority* should be used at ant4c command arguments. Otherwise script with this function will fail according to not founded function from name space 'file'.
+
+.Function from file unit.
+|===
+.s| Script function .s| Description
+| <<file-is-assembly,file::is-assembly>> | Check if file at the given path is .NET assembly. If file not exists function will fail.
+|===
+
+[[file-is-assembly]]
+==== is-assembly
+
+*bool* file::is-assembly(*file* path_to_assembly) +
+*bool* file::is-assembly(*file* path_to_assembly, *pointer* the_delegate)
+
+If path point to the .NET assembly file *true* will be returned. +
+If no delegate provided function will generate own based on configuration file that assumed that .NET Core 3.1 is installed (for example see config for <<hostfxr-initialize-for-runtime-config,initialize-for-runtime-config>> function). +
+If host less than 3.1 version it will call main function of CLR side 'ant4c.net.module' library instead. +
+Function <<hostfxr-get-runtime-delegate,get-runtime-delegate>> can be used to obtain 'the_delegate'.
+
+===== Sample using
+
+----
+<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.dll')}" />
+<echo>is-assembly -> ${is-assembly}</echo>
+
+<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll')}" />
+<echo>is-assembly -> ${is-assembly}</echo>
+
+<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_')}" failonerror="false" />
+----
+
+----
+ant4c /f:sample.build -modulepriority
+----
+
+At first call of function path to non assembly file placed, second path to assembly and at the last to the non exists file placed.
+
