@@ -31,15 +31,22 @@ struct buffer;
 #endif
 
 uint8_t net_host_load(
-	const type_of_element* path_to_net_host_object,
-	const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root,
-	void** net_host_object, struct buffer* path_to_host_fxr);
+	const type_of_element* path_to_net_host_library,
+	const type_of_element* path_to_assembly,
+	const type_of_element* path_to_dot_net_root,
+	void** net_host_object,
+	struct buffer* path_to_host_fxr);
 
 uint8_t host_fx_resolver_load(
-	const type_of_element* path_to_host_fxr, void* ptr_to_host_fxr_object, ptrdiff_t size);
+	const type_of_element* path_to_host_fxr,
+	void* ptr_to_host_fxr_object,
+	ptrdiff_t size);
 void host_fx_resolver_unload(void* ptr_to_host_fxr_object);
+
 uint8_t host_fx_resolver_is_function_exists(
-	const void* ptr_to_host_fxr_object, const uint8_t* function_name, uint8_t function_name_length);
+	const void* ptr_to_host_fxr_object,
+	const uint8_t* function_name,
+	uint8_t function_name_length);
 
 enum hostfxr_resolve_sdk2_result_keys
 {
@@ -119,56 +126,101 @@ typedef void(calling_convention* hostfxr_resolve_sdk2_result_type)(
 typedef void(calling_convention* hostfxr_error_writer_type)(
 	const type_of_element* message);
 
-int32_t host_fxr_close(void* ptr_to_host_fxr_object, const void* context);
+int32_t host_fxr_close(
+	const void* ptr_to_host_fxr_object,
+	const void* context);
 int32_t host_fxr_get_available_sdks(
-	void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* exe_dir,
 	hostfxr_get_available_sdks_result_type result);
 int32_t host_fxr_get_native_search_directories(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
-	type_of_element* output, int32_t output_size, int32_t* required_output_size);
+	const void* ptr_to_host_fxr_object,
+	const int32_t argc,
+	const type_of_element** argv,
+	type_of_element* output,
+	int32_t output_size,
+	int32_t* required_output_size);
 int32_t host_fxr_get_runtime_delegate(
-	void* ptr_to_host_fxr_object, const void* context,
-	int32_t type_of_delegate, hostfxr_delegate_function_type* the_delegate);
+	const void* ptr_to_host_fxr_object,
+	const void* context,
+	int32_t type_of_delegate,
+	hostfxr_delegate_function_type* the_delegate);
 int32_t host_fxr_get_runtime_properties(
-	void* ptr_to_host_fxr_object, const void* context,
-	size_t* count, type_of_element** keys, type_of_element** values);
+	const void* ptr_to_host_fxr_object,
+	const void* context,
+	size_t* count,
+	type_of_element** keys,
+	type_of_element** values);
 int32_t host_fxr_get_runtime_property_value(
-	void* ptr_to_host_fxr_object, const void* context, const type_of_element* name,
+	const void* ptr_to_host_fxr_object,
+	const void* context,
+	const type_of_element* name,
 	const type_of_element** value);
 int32_t host_fxr_initialize_for_dotnet_command_line(
-	void* ptr_to_host_fxr_object, int32_t argc, const type_of_element** argv,
-	const void* parameters, void** context);
+	const void* ptr_to_host_fxr_object,
+	int32_t argc,
+	const type_of_element** argv,
+	const void* parameters,
+	void** context);
 int32_t host_fxr_initialize_for_dotnet_command_line_parameters_in_parts(
-	void* ptr_to_host_fxr_object, int32_t argc, const type_of_element** argv,
-	const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root, void** context);
+	const void* ptr_to_host_fxr_object,
+	int32_t argc,
+	const type_of_element** argv,
+	const type_of_element* path_to_assembly,
+	const type_of_element* path_to_dot_net_root,
+	void** context);
 int32_t host_fxr_initialize_for_runtime_config(
-	void* ptr_to_host_fxr_object, const type_of_element* runtime_config_path,
-	const void* parameters, void** context);
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* runtime_config_path,
+	const void* parameters,
+	void** context);
 int32_t host_fxr_initialize_for_runtime_config_parameters_in_parts(
-	void* ptr_to_host_fxr_object, const type_of_element* runtime_config_path,
-	const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root, void** context);
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* runtime_config_path,
+	const type_of_element* path_to_assembly,
+	const type_of_element* path_to_dot_net_root,
+	void** context);
 int32_t host_fxr_main(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv);
+	const void* ptr_to_host_fxr_object,
+	const int32_t argc,
+	const type_of_element** argv);
 int32_t host_fxr_main_bundle_startupinfo(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
-	const type_of_element* host_path, const type_of_element* dotnet_root,
-	const type_of_element* app_path, int64_t bundle_header_offset);
+	const void* ptr_to_host_fxr_object,
+	const int32_t argc,
+	const type_of_element** argv,
+	const type_of_element* host_path,
+	const type_of_element* dotnet_root,
+	const type_of_element* app_path,
+	int64_t bundle_header_offset);
 int32_t host_fxr_main_startupinfo(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
-	const type_of_element* host_path, const type_of_element* dotnet_root,
+	const void* ptr_to_host_fxr_object,
+	const int32_t argc,
+	const type_of_element** argv,
+	const type_of_element* host_path,
+	const type_of_element* dotnet_root,
 	const type_of_element* app_path);
 int32_t host_fxr_resolve_sdk(
-	void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
-	const type_of_element* working_dir, type_of_element* output, int32_t output_size);
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* exe_dir,
+	const type_of_element* working_dir,
+	type_of_element* output,
+	int32_t output_size);
 int32_t host_fxr_resolve_sdk2(
-	void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
-	const type_of_element* working_dir, int32_t flags,
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* exe_dir,
+	const type_of_element* working_dir,
+	int32_t flags,
 	hostfxr_resolve_sdk2_result_type result);
-int32_t host_fxr_run_app(void* ptr_to_host_fxr_object, const void* context);
-hostfxr_error_writer_type host_fxr_set_error_writer(void* ptr_to_host_fxr_object,
-		hostfxr_error_writer_type writer);
+int32_t host_fxr_run_app(
+	const void* ptr_to_host_fxr_object,
+	const void* context);
+hostfxr_error_writer_type host_fxr_set_error_writer(
+	const void* ptr_to_host_fxr_object,
+	hostfxr_error_writer_type writer);
 int32_t host_fxr_set_runtime_property_value(
-	void* ptr_to_host_fxr_object, const void* context,
-	const type_of_element* name, const type_of_element* value);
+	const void* ptr_to_host_fxr_object,
+	const void* context,
+	const type_of_element* name,
+	const type_of_element* value);
 
 #endif

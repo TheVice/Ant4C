@@ -315,11 +315,10 @@ hostfxr::result-to-string(-2147450713) -> 0x800080a7 -2147450713 167
 | <<hostfxr-run-app,run-app>> | Run application by opened context.
 | <<hostfxr-set-error-writer,set-error-writer>> | Set error writer of resolver.
 | <<hostfxr-set-runtime-property-value,set-runtime-property-value>> | Set value of runtime property.
-| <<hostfxr-main-bundle-startupinfo,main-bundle-startupinfo>> ^| 5.0+ | TODO
+| <<hostfxr-main-bundle-startupinfo,main-bundle-startupinfo>> ^| 5.0+ | Same as <<hostfxr-main-startupinfo,main-startupinfo>> plus offset of bundle header can be provided.
 |===
 
 WARNING: Functions from this table can be used only after function <<hostfxr-initialize,initialize>> return *true*.
-WARNING: It is caller response to put valid input data that interpret as pointer to context in functions that have such argument in the input list.
 
 [[hostfxr-main]]
 ==== main
@@ -381,7 +380,7 @@ This function can do same things that accompanying with host fx resolver dotnet 
 </project>
 ----
 
-NOTE: Please note that first parameter of function is empty string.
+NOTE: In above example value of first parameter is empty string.
 
 [[hostfxr-resolve-sdk]]
 ==== resolve-sdk
@@ -498,6 +497,8 @@ Function return list of strings, each one have key and path to the directory del
 
 Close early opened context.
 
+WARNING: It is caller response to put valid input data that interpret as pointer to context.
+
 [[hostfxr-get-runtime-delegate]]
 ==== get-runtime-delegate
 
@@ -522,6 +523,8 @@ Alternative direct int values of types can be used in function call.
 This function can be used for checking exists of function in the assembly.
 
 NOTE: Function <<file-is-assembly,file::is-assembly>> at second parameter can took returned pointer from this function.
+
+WARNING: It is caller response to put valid input data that interpret as pointer to context.
 
 ===== Sample using
 
@@ -562,12 +565,16 @@ NOTE: Function <<file-is-assembly,file::is-assembly>> at second parameter can to
 Get properties of runtime. In case properties can not be get - return code will be returned. +
 Checking is equal ('=') symbol exists in the return can detect is properties with values returned or just return code.
 
+WARNING: It is caller response to put valid input data that interpret as pointer to context.
+
 [[hostfxr-get-runtime-property-value]]
 ==== get-runtime-property-value
 
 *string* 'hostfxr::get-runtime-property-value'(*pointer* context, *string* property_name)
 
 Get value of property. If property do not exists zero start string will be returned with return code.
+
+WARNING: It is caller response to put valid input data that interpret as pointer to context.
 
 ===== Sample using
 
@@ -710,6 +717,8 @@ Description of host fx parameters can be found in the documentation of resolver.
 Run application by context. +
 Return is returned code of application or returned code of resolver in case application can not be start.
 
+WARNING: It is caller response to put valid input data that interpret as pointer to context.
+
 ===== Sample using
 
 ----
@@ -774,6 +783,8 @@ Set value of runtime property. +
 If property not exist new one will be created. +
 If value not present - property will have empty value.
 
+WARNING: It is caller response to put valid input data that interpret as pointer to context.
+
 ===== Sample using
 
 ----
@@ -792,7 +803,118 @@ If value not present - property will have empty value.
 
 [[hostfxr-main-bundle-startupinfo]]
 ==== main-bundle-startupinfo
-TODO
+
+*int* 'hostfxr::main-bundle-startupinfo'(*path* host_path, *path* dotnet_root, *path* application_path, *int64* header_offset, *string[]* arguments)
+
+This function can do same things that accompanying with host fx resolver dotnet tool can. +
+Description of host fx parameters can be found in the documentation of resolver.
+
+=== Net host unit
+
+.Function from net host unit.
+|===
+.s| Script function .s| Description
+| <<nethost-get-hostfxr-path,nethost::get-hostfxr-path>> | Get path to host fx resolver file.
+|===
+
+[[nethost-get-hostfxr-path]]
+==== get-hostfxr-path
+
+*file* 'nethost::get-hostfxr-path'(*file* path_to_nethost) +
+*file* 'nethost::get-hostfxr-path'(*file* path_to_nethost, *path* path_to_assembly) +
+*file* 'nethost::get-hostfxr-path'(*file* path_to_nethost, *path* path_to_assembly, *path* path_to_dot_net_root)
+
+Get path to host fx resolver file. +
+Returned path can be used at the input of <<hostfxr-initialize,initialize>> function.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <choose>
+    <when test="${platform::is-windows()}">
+      <trycatch>
+        <try>
+          <loadtasks module="ant4c.net.module.dll" />
+        </try>
+        <catch>
+          <loadtasks module="libant4c.net.module.dll" />
+        </catch>
+      </trycatch>
+
+      <property
+        name="net_host_folder"
+        value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" />
+
+      <property
+        name="net_host_folder"
+        value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" />
+
+      <if test="${string::equal('False', environment::is64bit-process())}">
+        <property
+          name="net_host_folder"
+          value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" />
+
+        <property
+          name="net_host_folder"
+          value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" />
+      </if>
+
+      <property name="nethost_file_name" value="nethost.dll" />
+    </when>
+
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.net.module.so" />
+
+      <property
+        name="net_host_folder"
+        value="/usr/share/dotnet/packs" />
+
+      <property
+        name="net_host_folder"
+        value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" />
+
+      <property name="nethost_file_name" value="libnethost.so" />
+    </when>
+  </choose>
+
+  <echo>net_host_folder -> '${net_host_folder}'</echo>
+
+  <if test="${directory::exists(net_host_folder)}">
+    <property name="paths_to_nethost"
+              value="${directory::enumerate-file-system-entries(net_host_folder, 'file', 'true')}" />
+
+    <foreach item="String" in="${paths_to_nethost}" property="path_to_nethost">
+      <property name="hostfxr_path" />
+
+      <if test="${string::equal(nethost_file_name, string::to-lower(path::get-file-name(path_to_nethost)))}">
+        <echo>path_to_nethost -> '${path_to_nethost}'</echo>
+
+        <property name="hostfxr_path" value="${nethost::get-hostfxr-path(path_to_nethost)}" />
+
+        <echo>hostfxr_path -> '${hostfxr_path}'</echo>
+      </if>
+    </foreach>
+  </if>
+</project>
+----
+
+Possible output
+----
+path_to_nethost -> 'C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\3.1.13\runtimes\win-x64\native\nethost.dll'
+hostfxr_path -> 'C:\Program Files\dotnet\host\fxr\5.0.4\hostfxr.dll'
+path_to_nethost -> 'C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\5.0.4\runtimes\win-x64\native\nethost.dll'
+hostfxr_path -> 'C:\Program Files\dotnet\host\fxr\5.0.4\hostfxr.dll'
+----
+or
+----
+net_host_folder -> '/usr/share/dotnet/packs/Microsoft.NETCore.App.Host.linux-x64'
+path_to_nethost -> '/usr/share/dotnet/packs/Microsoft.NETCore.App.Host.linux-x64/3.1.13/runtimes/linux-x64/native/libnethost.so'
+hostfxr_path -> '/usr/share/dotnet/host/fxr/3.1.13/libhostfxr.so'
+----
+
+IMPORTANT: Not all versions of host fx resolver have accompanying nethost library.
 
 === File unit
 
@@ -815,6 +937,8 @@ If no delegate provided function will generate own based on configuration file t
 If host less than 3.1 version it will call main function of CLR side 'ant4c.net.module' library instead. +
 Function <<hostfxr-get-runtime-delegate,get-runtime-delegate>> can be used to obtain 'the_delegate'.
 
+WARNING: It is caller response to put valid input data that interpret as pointer to delegate of function.
+
 ===== Sample using
 
 ----
@@ -832,4 +956,3 @@ ant4c /f:sample.build -modulepriority
 ----
 
 At first call of function path to non assembly file placed, second path to assembly and at the last to the non exists file placed.
-

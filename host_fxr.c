@@ -38,20 +38,20 @@ static struct _paths paths;
 
 typedef int32_t(*get_hostfxr_path_type)(type_of_element* output, size_t* output_size, const void* parameters);
 
-uint8_t net_host_load(const type_of_element* path_to_net_host_object,
+uint8_t net_host_load(const type_of_element* path_to_net_host_library,
 					  const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root,
 					  void** net_host_object, struct buffer* path_to_host_fxr)
 {
-	if (!path_to_net_host_object || !path_to_host_fxr)
+	if (!path_to_net_host_library || !path_to_host_fxr)
 	{
 		return 0;
 	}
 
 	void* net_host_object_ = NULL;
 #if defined(_WIN32)
-	net_host_object_ = shared_object_load_wchar_t(path_to_net_host_object);
+	net_host_object_ = shared_object_load_wchar_t(path_to_net_host_library);
 #else
-	net_host_object_ = shared_object_load(path_to_net_host_object);
+	net_host_object_ = shared_object_load(path_to_net_host_library);
 #endif
 
 	if (!net_host_object_)
@@ -89,7 +89,7 @@ uint8_t net_host_load(const type_of_element* path_to_net_host_object,
 			required_size < FILENAME_MAX ||
 			!buffer_resize(path_to_host_fxr, size) ||
 			!buffer_append(path_to_host_fxr, NULL, required_size * sizeof(type_of_element)) ||
-			host_fxr_Success != (/*result = */get_hostfxr_path((type_of_element*)buffer_data(
+			host_fxr_Success != (get_hostfxr_path((type_of_element*)buffer_data(
 					path_to_host_fxr, size), &required_size, parameters)))
 		{
 			shared_object_unload(net_host_object_);
@@ -336,7 +336,7 @@ void host_fx_resolver_unload(void* ptr_to_host_fxr_object)
 
 	shared_object_unload(ptr_to_host_fxr_object_->shared_object);
 
-	ptr_to_host_fxr_object_->shared_object = NULL;
+	memset(ptr_to_host_fxr_object, 0, sizeof(struct host_fxr));
 }
 
 uint8_t host_fx_resolver_is_function_exists(
@@ -369,7 +369,7 @@ uint8_t host_fx_resolver_is_function_exists(
 		return 0;
 	}
 
-	struct host_fxr* ptr_to_host_fxr_object_ = (struct host_fxr*)ptr_to_host_fxr_object;
+	const struct host_fxr* ptr_to_host_fxr_object_ = (const struct host_fxr*)ptr_to_host_fxr_object;
 
 	for (uint8_t i = 0, count = COUNT_OF(host_fxr_functions_string); i < count; ++i)
 	{
@@ -437,37 +437,38 @@ uint8_t host_fx_resolver_is_function_exists(
 	return 0;
 }
 
-int32_t host_fxr_close(void* ptr_to_host_fxr_object, const void* context)
+int32_t host_fxr_close(const void* ptr_to_host_fxr_object, const void* context)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_close)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_close)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_close(context);
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_close(context);
 	}
 
 	return -1;
 }
 
 int32_t host_fxr_get_available_sdks(
-	void* ptr_to_host_fxr_object, const type_of_element* exe_dir, hostfxr_get_available_sdks_result_type result)
+	const void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
+	hostfxr_get_available_sdks_result_type result)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_available_sdks)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_available_sdks)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_available_sdks(exe_dir, result);
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_available_sdks(exe_dir, result);
 	}
 
 	return -1;
 }
 
 int32_t host_fxr_get_native_search_directories(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
+	const void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
 	type_of_element* output, int32_t output_size, int32_t* required_output_size)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_native_search_directories)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_native_search_directories)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_native_search_directories(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_native_search_directories(
 				   argc, argv, output, output_size, required_output_size);
 	}
 
@@ -475,13 +476,13 @@ int32_t host_fxr_get_native_search_directories(
 }
 
 int32_t host_fxr_get_runtime_delegate(
-	void* ptr_to_host_fxr_object, const void* context,
+	const void* ptr_to_host_fxr_object, const void* context,
 	int32_t type_of_delegate, hostfxr_delegate_function_type* the_delegate)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_delegate)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_delegate)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_delegate(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_delegate(
 				   context, type_of_delegate, the_delegate);
 	}
 
@@ -489,13 +490,13 @@ int32_t host_fxr_get_runtime_delegate(
 }
 
 int32_t host_fxr_get_runtime_properties(
-	void* ptr_to_host_fxr_object, const void* context,
+	const void* ptr_to_host_fxr_object, const void* context,
 	size_t* count, type_of_element** keys, type_of_element** values)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_properties)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_properties)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_properties(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_properties(
 				   context, count, keys, values);
 	}
 
@@ -503,12 +504,13 @@ int32_t host_fxr_get_runtime_properties(
 }
 
 int32_t host_fxr_get_runtime_property_value(
-	void* ptr_to_host_fxr_object, const void* context, const type_of_element* name, const type_of_element** value)
+	const void* ptr_to_host_fxr_object, const void* context, const type_of_element* name,
+	const type_of_element** value)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_property_value)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_property_value)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_property_value(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_runtime_property_value(
 				   context, name, value);
 	}
 
@@ -516,13 +518,13 @@ int32_t host_fxr_get_runtime_property_value(
 }
 
 int32_t host_fxr_initialize_for_dotnet_command_line(
-	void* ptr_to_host_fxr_object, int32_t argc, const type_of_element** argv,
+	const void* ptr_to_host_fxr_object, int32_t argc, const type_of_element** argv,
 	const void* parameters, void** context)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_dotnet_command_line)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_dotnet_command_line)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_dotnet_command_line(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_dotnet_command_line(
 				   argc, argv, parameters, context);
 	}
 
@@ -530,7 +532,7 @@ int32_t host_fxr_initialize_for_dotnet_command_line(
 }
 
 int32_t host_fxr_initialize_for_dotnet_command_line_parameters_in_parts(
-	void* ptr_to_host_fxr_object, int32_t argc, const type_of_element** argv,
+	const void* ptr_to_host_fxr_object, int32_t argc, const type_of_element** argv,
 	const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root, void** context)
 {
 	const void* parameters = NULL;
@@ -539,13 +541,13 @@ int32_t host_fxr_initialize_for_dotnet_command_line_parameters_in_parts(
 }
 
 int32_t host_fxr_initialize_for_runtime_config(
-	void* ptr_to_host_fxr_object, const type_of_element* runtime_config_path,
+	const void* ptr_to_host_fxr_object, const type_of_element* runtime_config_path,
 	const void* parameters, void** context)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_runtime_config)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_runtime_config)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_runtime_config(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_initialize_for_runtime_config(
 				   runtime_config_path, parameters, context);
 	}
 
@@ -553,7 +555,7 @@ int32_t host_fxr_initialize_for_runtime_config(
 }
 
 int32_t host_fxr_initialize_for_runtime_config_parameters_in_parts(
-	void* ptr_to_host_fxr_object, const type_of_element* runtime_config_path,
+	const void* ptr_to_host_fxr_object, const type_of_element* runtime_config_path,
 	const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root, void** context)
 {
 	const void* parameters = NULL;
@@ -562,26 +564,26 @@ int32_t host_fxr_initialize_for_runtime_config_parameters_in_parts(
 			   ptr_to_host_fxr_object, runtime_config_path, parameters, context);
 }
 
-int32_t host_fxr_main(void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv)
+int32_t host_fxr_main(const void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main(argc, argv);
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main(argc, argv);
 	}
 
 	return -1;
 }
 
 int32_t host_fxr_main_bundle_startupinfo(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
+	const void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
 	const type_of_element* host_path, const type_of_element* dotnet_root,
 	const type_of_element* app_path, int64_t bundle_header_offset)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_bundle_startupinfo)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_bundle_startupinfo)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_bundle_startupinfo(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_bundle_startupinfo(
 				   argc, argv, host_path, dotnet_root, app_path, bundle_header_offset);
 	}
 
@@ -589,14 +591,14 @@ int32_t host_fxr_main_bundle_startupinfo(
 }
 
 int32_t host_fxr_main_startupinfo(
-	void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
+	const void* ptr_to_host_fxr_object, const int32_t argc, const type_of_element** argv,
 	const type_of_element* host_path, const type_of_element* dotnet_root,
 	const type_of_element* app_path)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_startupinfo)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_startupinfo)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_startupinfo(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_main_startupinfo(
 				   argc, argv, host_path, dotnet_root, app_path);
 	}
 
@@ -604,13 +606,13 @@ int32_t host_fxr_main_startupinfo(
 }
 
 int32_t host_fxr_resolve_sdk(
-	void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
+	const void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
 	const type_of_element* working_dir, type_of_element* output, int32_t output_size)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk(
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk(
 				   exe_dir, working_dir, output, output_size);
 	}
 
@@ -618,51 +620,54 @@ int32_t host_fxr_resolve_sdk(
 }
 
 int32_t host_fxr_resolve_sdk2(
-	void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
+	const void* ptr_to_host_fxr_object, const type_of_element* exe_dir,
 	const type_of_element* working_dir, int32_t flags,
 	hostfxr_resolve_sdk2_result_type result)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk2)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk2)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk2(exe_dir, working_dir, flags, result);
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk2(
+				exe_dir, working_dir, flags, result);
 	}
 
 	return -1;
 }
 
-int32_t host_fxr_run_app(void* ptr_to_host_fxr_object, const void* context)
+int32_t host_fxr_run_app(const void* ptr_to_host_fxr_object, const void* context)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_run_app)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_run_app)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_run_app(context);
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_run_app(context);
 	}
 
 	return -1;
 }
 
 hostfxr_error_writer_type host_fxr_set_error_writer(
-	void* ptr_to_host_fxr_object, hostfxr_error_writer_type writer)
+	const void* ptr_to_host_fxr_object, hostfxr_error_writer_type writer)
 {
 	hostfxr_error_writer_type result = NULL;
 
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_error_writer)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_error_writer)
 	{
-		result = ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_error_writer(writer);
+		result = ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_error_writer(writer);
 	}
 
 	return result;
 }
 
 int32_t host_fxr_set_runtime_property_value(
-	void* ptr_to_host_fxr_object, const void* context, const type_of_element* name, const type_of_element* value)
+	const void* ptr_to_host_fxr_object, const void* context, const type_of_element* name,
+	const type_of_element* value)
 {
 	if (ptr_to_host_fxr_object &&
-		((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value)
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value)
 	{
-		return ((struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value(context, name, value);
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value(
+				context, name, value);
 	}
 
 	return -1;

@@ -78,19 +78,21 @@ namespace Ant4C.Net.Module
                     {
                         return is_assembly ? 1 : 0;
                     }
+
+                    return 2;
                 }
 
                 break;
             }
 
-            return 0;
+            return -1;
         }
 
         public static int Main(string[] argv)
         {
             if (3 != argv.Length)
             {
-                return 0;
+                return -1;
             }
 
             var arguments = new string[argv.Length - 1];
@@ -104,7 +106,7 @@ namespace Ant4C.Net.Module
                 }
             }
 
-            return 0;
+            return -1;
         }
     }
 }
