@@ -191,7 +191,7 @@ uint8_t values_to_system_paths(
 		}
 
 #if defined(_WIN32)
-		positions[i] = values_lengths[i];
+		positions[i] += values_lengths[i];
 		++positions[i];
 #endif
 	}
@@ -1829,7 +1829,8 @@ uint8_t file_is_assembly(
 	/**/
 	typedef uint8_t(delegate_calling_convention * custom_entry_point_fn)(struct assembly_argument args);
 
-	if (!values ||
+	if (!ptr_to_host_fxr_object ||
+		!values ||
 		!values_lengths ||
 		(1 != values_count && 2 != values_count) ||
 		!output)
@@ -1837,37 +1838,35 @@ uint8_t file_is_assembly(
 		return 0;
 	}
 
-	const void* the_delegate = NULL;
+	static const uint8_t* ant4c_net_clr = (const uint8_t*)"ant4c.net.module.clr.dll";
+	/**/
+	const uint8_t* get_runtime_delegate = all_functions[1][7];
+	const uint8_t get_runtime_delegate_length = (uint8_t)common_count_bytes_until(get_runtime_delegate, 0);
 
-	if (1 == values_count)
+	if (!hostfxr_is_function_exists(
+			ptr_to_host_fxr_object, name_spaces[1],
+			get_runtime_delegate, get_runtime_delegate_length, output))
 	{
-		static const uint8_t* ant4c_net_clr = (const uint8_t*)"ant4c.net.module.clr.dll";
+		return 0;
+	}
 
-		if (!ptr_to_host_fxr_object)
-		{
-			return 0;
-		}
+	uint8_t is_function_exist = 0;
 
-		const uint8_t* get_runtime_delegate = all_functions[1][7];
-		values_count = (uint8_t)common_count_bytes_until(get_runtime_delegate, 0);
+	if (!bool_parse(buffer_data(output, 0), buffer_size(output), &is_function_exist))
+	{
+		return 0;
+	}
 
-		if (!hostfxr_is_function_exists(ptr_to_host_fxr_object, name_spaces[1],
-										get_runtime_delegate, values_count, output))
-		{
-			return 0;
-		}
+	if (!buffer_resize(output, 0))
+	{
+		return 0;
+	}
 
-		if (!bool_parse(buffer_data(output, 0), buffer_size(output), &values_count))
-		{
-			return 0;
-		}
+	if (is_function_exist)
+	{
+		const void* the_delegate = NULL;
 
-		if (!buffer_resize(output, 0))
-		{
-			return 0;
-		}
-
-		if (values_count)
+		if (1 == values_count)
 		{
 			static const uint8_t* json_file_content =
 				(const uint8_t*)""								\
@@ -1988,64 +1987,91 @@ uint8_t file_is_assembly(
 		}
 		else
 		{
+			the_delegate = string_to_pointer(values[1], (uint8_t)values_lengths[1], output);
+		}
+
+		if (!the_delegate)
+		{
+			return 0;
+		}
+
+		if (!buffer_resize(output, 0) ||
+			!value_to_system_path(values[0], values_lengths[0], output))
+		{
+			return 0;
+		}
+
+		struct assembly_argument custom_argument;
+
+#if defined(_WIN32)
+		custom_argument.path = (const type_of_element*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]);
+
+#else
+		custom_argument.path = (const type_of_element*)buffer_data(output, 0);
+
+#endif
+		if (!custom_argument.path)
+		{
+			return 0;
+		}
+
+		const uint8_t is_assembly = ((custom_entry_point_fn)the_delegate)(custom_argument);
+
+		if (!buffer_resize(output, 0) ||
+			!bool_to_string(is_assembly, output))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		const type_of_element* argv[5];
+#if defined(_WIN32)
+		argv[0] = L"";
+		argv[2] = L"file";
+		argv[3] = L"is-assembly";
+#else
+		argv[0] = (const uint8_t*)"";
+		argv[2] = name_spaces[2];
+		argv[3] = all_functions[2][0];
+#endif
+
+		if (1 == values_count)
+		{
 			if (!value_to_system_path(values[0], values_lengths[0], output))
 			{
 				return 0;
 			}
 
 #if defined(_WIN32)
-			const type_of_element* argv[] = { L"", L"ant4c.net.module.clr.dll", L"file", L"is-assembly", (const wchar_t*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]) };
+			argv[1] = L"ant4c.net.module.clr.dll";
+			argv[4] = (const wchar_t*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]);
 #else
-			const type_of_element* argv[] = { (const uint8_t*)"", ant4c_net_clr, name_spaces[2], all_functions[2][0], buffer_data(output, 0) };
+			argv[1] = ant4c_net_clr;
+			argv[4] = buffer_data(output, 0);
 #endif
-			values_count = COUNT_OF(argv);
-			const int32_t code = host_fxr_main(ptr_to_host_fxr_object, values_count, argv);
+		}
+		else
+		{
+			ptrdiff_t positions[2];
 
-			if (!buffer_resize(output, 0) ||
-				!bool_to_string((uint8_t)code, output))
+			if (!values_to_system_paths(values, values_lengths, positions, values_count, output))
 			{
 				return 0;
 			}
 
-			return 1;
+			argv[1] = (const type_of_element*)buffer_data(output, positions[1]);
+			argv[4] = (const type_of_element*)buffer_data(output, positions[0]);
 		}
-	}
-	else
-	{
-		the_delegate = string_to_pointer(values[1], (uint8_t)values_lengths[1], output);
-	}
 
-	if (!the_delegate)
-	{
-		return 0;
-	}
+		values_count = COUNT_OF(argv);
+		const int32_t code = host_fxr_main(ptr_to_host_fxr_object, values_count, argv);
 
-	if (!buffer_resize(output, 0) ||
-		!value_to_system_path(values[0], values_lengths[0], output))
-	{
-		return 0;
-	}
-
-	struct assembly_argument custom_argument;
-
-#if defined(_WIN32)
-	custom_argument.path = (const type_of_element*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]);
-
-#else
-	custom_argument.path = (const type_of_element*)buffer_data(output, 0);
-
-#endif
-	if (!custom_argument.path)
-	{
-		return 0;
-	}
-
-	const uint8_t is_assembly = ((custom_entry_point_fn)the_delegate)(custom_argument);
-
-	if (!buffer_resize(output, 0) ||
-		!bool_to_string(is_assembly, output))
-	{
-		return 0;
+		if (!buffer_resize(output, 0) ||
+			!bool_to_string((uint8_t)code, output))
+		{
+			return 0;
+		}
 	}
 
 	return 1;

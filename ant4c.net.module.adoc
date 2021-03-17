@@ -930,7 +930,8 @@ IMPORTANT: To access function from this namespace - program option *modulepriori
 ==== is-assembly
 
 *bool* file::is-assembly(*file* path_to_assembly) +
-*bool* file::is-assembly(*file* path_to_assembly, *pointer* the_delegate)
+*bool* file::is-assembly(*file* path_to_assembly, *pointer* the_delegate) (only for hosts that have 'get-runtime-delegate' function) +
+*bool* file::is-assembly(*file* path_to_assembly, *file* path_to_assembly_with_main_function) (only for hosts that do not have 'get-runtime-delegate' function)
 
 If path point to the .NET assembly file *true* will be returned. +
 If no delegate provided function will generate own based on configuration file that assumed that .NET Core 3.1 is installed (for example see config for <<hostfxr-initialize-for-runtime-config,initialize-for-runtime-config>> function). +
@@ -949,10 +950,18 @@ WARNING: It is caller response to put valid input data that interpret as pointer
 <echo>is-assembly -> ${is-assembly}</echo>
 
 <property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_')}" failonerror="false" />
+
+<if test="${string::equal('False', hostfxr::is-function-exists('get-runtime-delegate'))}">
+  <property name="is_assembly"
+            value="${file::is-assembly('ant4c.net.module.clr.dll', 'ant4c.net.module.clr.dll')}" />
+
+  <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_assembly -> '${is_assembly}'</echo>
+</if>
+
 ----
 
 ----
 ant4c /f:sample.build -modulepriority
 ----
 
-At first call of function path to non assembly file placed, second path to assembly and at the last to the non exists file placed.
+At first call of function path to non assembly file placed, second path to assembly, third to the non exists file placed and last one call at host without 'get-runtime-delegate' support.

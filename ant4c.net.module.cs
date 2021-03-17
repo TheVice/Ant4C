@@ -82,7 +82,8 @@ namespace Ant4C.Net.Module
                     return 2;
                 }
 
-                break;
+                default:
+                    break;
             }
 
             return -1;

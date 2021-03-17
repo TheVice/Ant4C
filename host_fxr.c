@@ -90,7 +90,7 @@ uint8_t net_host_load(const type_of_element* path_to_net_host_library,
 			!buffer_resize(path_to_host_fxr, size) ||
 			!buffer_append(path_to_host_fxr, NULL, required_size * sizeof(type_of_element)) ||
 			host_fxr_Success != (get_hostfxr_path((type_of_element*)buffer_data(
-					path_to_host_fxr, size), &required_size, parameters)))
+									 path_to_host_fxr, size), &required_size, parameters)))
 		{
 			shared_object_unload(net_host_object_);
 			return 0;
@@ -628,7 +628,7 @@ int32_t host_fxr_resolve_sdk2(
 		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk2)
 	{
 		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_resolve_sdk2(
-				exe_dir, working_dir, flags, result);
+				   exe_dir, working_dir, flags, result);
 	}
 
 	return -1;
@@ -667,7 +667,7 @@ int32_t host_fxr_set_runtime_property_value(
 		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value)
 	{
 		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value(
-				context, name, value);
+				   context, name, value);
 	}
 
 	return -1;
