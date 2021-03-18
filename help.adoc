@@ -129,17 +129,19 @@ Property will be read only at the script file.
 
 ==== Sample using
 
-. ant4c
-. ant4c -buildfile:project_file.build
-. ant4c build
-. ant4c -D:version="2020.05" build publish
-. ant4c -listener:"default_listener.dll"
+----
+ant4c
+ant4c -buildfile:project_file.build
+ant4c build
+ant4c -D:version="2020.05" build publish
+ant4c -listener:"default_listener.dll"
+----
 
-1) Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed. +
-2) Run project from 'project_file.build' file. +
-3) Run 'build' target at all '.build' file from current directory. +
-4) Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
-5) Set path to the listener while run at the Windows platform.
+. Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed.
+. Run project from 'project_file.build' file.
+. Run 'build' target at all '.build' file from current directory.
+. Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
+. Set path to the listener while run at the Windows platform.
 
 === Project
 

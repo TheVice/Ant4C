@@ -63,7 +63,7 @@ namespace Ant4C.Net.Module
             return 2;
         }
     }
-#endif
+#else
     public static class Program
     {
         public static int FileNameSpace(string[] arguments)
@@ -110,4 +110,5 @@ namespace Ant4C.Net.Module
             return -1;
         }
     }
+#endif
 }

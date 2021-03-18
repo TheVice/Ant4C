@@ -26,6 +26,12 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
+#if defined(_WIN32)
+static const type_of_element* zero = L"\0";
+#else
+static const type_of_element* zero = (const type_of_element*)"\0";
+#endif
+
 const void* string_to_pointer(const uint8_t* input, uint8_t length, struct buffer* tmp)
 {
 	if (!input ||
@@ -941,15 +947,15 @@ uint8_t hostfxr_get_native_search_directories(
 #if defined(_WIN32)
 	wchar_t* start = (wchar_t*)buffer_data(output, sizeof(uint32_t));
 	code = (int32_t)wcslen(start);
-	code = (ptrdiff_t)4 * code + INT8_MAX;
+	required_size = (ptrdiff_t)3 * code;
 
-	if (!buffer_resize(output, code))
+	if (!buffer_append(output, NULL, required_size))
 	{
 		return 0;
 	}
 
 	start = (wchar_t*)buffer_data(output, sizeof(uint32_t));
-	out = (wchar_t*)buffer_data(output, 0) + buffer_size(output);
+	out = start + code;
 	/**/
 	return buffer_resize(output, 0) &&
 		   text_encoding_UTF16LE_to_UTF8(start, out, output);
@@ -1326,6 +1332,7 @@ uint8_t hostfxr_initialize_for_dotnet_command_line(
 	for (uint8_t i = 0; i < 2; ++i)
 	{
 		paths[i] = (const type_of_element*)buffer_data(output, positions[i]);
+		paths[i] = paths[i] ? paths[i] : zero;
 	}
 
 	void* context = NULL;
@@ -1383,6 +1390,7 @@ uint8_t hostfxr_initialize_for_runtime_config(
 	for (uint8_t i = 0; i < values_count; ++i)
 	{
 		paths[i] = (const type_of_element*)buffer_data(output, positions[i]);
+		paths[i] = paths[i] ? paths[i] : zero;
 	}
 
 	void* context = NULL;
@@ -1461,10 +1469,13 @@ uint8_t hostfxr_main_bundle_startupinfo(
 	const type_of_element* dotnet_root = (const type_of_element*)buffer_data(output, positions[1]);
 	const type_of_element* app_path = (const type_of_element*)buffer_data(output, positions[2]);
 	/**/
+	host_path = host_path ? host_path : zero;
+	dotnet_root = dotnet_root ? dotnet_root : zero;
+	app_path = app_path ? app_path : zero;
+	/**/
 	argc = host_fxr_main_bundle_startupinfo(
 			   ptr_to_host_fxr_object, argc, argv,
 			   host_path, dotnet_root, app_path, bundle_header_offset);
-	/**/
 	return buffer_resize(output, 0) && int_to_string(argc, output);
 }
 
@@ -1505,8 +1516,11 @@ uint8_t hostfxr_main_startupinfo(
 	const type_of_element* dotnet_root = (const type_of_element*)buffer_data(output, positions[1]);
 	const type_of_element* app_path = (const type_of_element*)buffer_data(output, positions[2]);
 	/**/
-	argc = host_fxr_main_startupinfo(ptr_to_host_fxr_object, argc, argv, host_path, dotnet_root, app_path);
+	host_path = host_path ? host_path : zero;
+	dotnet_root = dotnet_root ? dotnet_root : zero;
+	app_path = app_path ? app_path : zero;
 	/**/
+	argc = host_fxr_main_startupinfo(ptr_to_host_fxr_object, argc, argv, host_path, dotnet_root, app_path);
 	return buffer_resize(output, 0) && int_to_string(argc, output);
 }
 
