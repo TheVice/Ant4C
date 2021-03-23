@@ -907,7 +907,9 @@ hostfxr_path -> 'C:\Program Files\dotnet\host\fxr\5.0.4\hostfxr.dll'
 path_to_nethost -> 'C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\5.0.4\runtimes\win-x64\native\nethost.dll'
 hostfxr_path -> 'C:\Program Files\dotnet\host\fxr\5.0.4\hostfxr.dll'
 ----
+
 or
+
 ----
 net_host_folder -> '/usr/share/dotnet/packs/Microsoft.NETCore.App.Host.linux-x64'
 path_to_nethost -> '/usr/share/dotnet/packs/Microsoft.NETCore.App.Host.linux-x64/3.1.13/runtimes/linux-x64/native/libnethost.so'
