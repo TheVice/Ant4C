@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -160,83 +160,6 @@ uint8_t common_append_string_to_buffer(const uint8_t* input, struct buffer* outp
 	}
 
 	return buffer_append(output, input, common_count_bytes_until(input, 0));
-}
-
-uint8_t common_unbox_char_data(const struct buffer* box_with_data, uint8_t i, uint8_t j,
-							   struct range* data, uint8_t terminate)
-{
-	struct buffer* boxed_data = NULL;
-
-	if (NULL == box_with_data ||
-		NULL == data ||
-		1 < terminate)
-	{
-		return 0;
-	}
-
-	if (NULL == (boxed_data = buffer_buffer_data(box_with_data, i)))
-	{
-		return 0;
-	}
-
-	if (buffer_size(boxed_data))
-	{
-		if (terminate && !buffer_push_back(boxed_data, 0))
-		{
-			return 0;
-		}
-	}
-
-	if (NULL == (data->start = buffer_data(boxed_data, j)))
-	{
-		return 0;
-	}
-
-	data->finish = buffer_data(boxed_data, 0) + buffer_size(boxed_data);
-
-	if (terminate && data->start < data->finish)
-	{
-		data->finish -= terminate;
-	}
-
-	return 1;
-}
-
-uint8_t common_get_one_argument(const struct buffer* arguments,	struct range* argument, uint8_t terminate)
-{
-	if (NULL == arguments || NULL == argument)
-	{
-		return 0;
-	}
-
-	return common_unbox_char_data(arguments, 0, 0, argument, terminate);
-}
-
-uint8_t common_get_two_arguments(const struct buffer* arguments, struct range* argument1,
-								 struct range* argument2, uint8_t terminate)
-{
-	if (NULL == arguments || NULL == argument1 || NULL == argument2)
-	{
-		return 0;
-	}
-
-	const uint8_t ret1 = common_unbox_char_data(arguments, 0, 0, argument1, terminate);
-	const uint8_t ret2 = common_unbox_char_data(arguments, 1, 0, argument2, terminate);
-	return ret1 && ret2;
-}
-
-uint8_t common_get_three_arguments(const struct buffer* arguments, struct range* argument1,
-								   struct range* argument2, struct range* argument3, uint8_t terminate)
-{
-	if (NULL == arguments || NULL == argument1 || NULL == argument2 || NULL == argument3)
-	{
-		return 0;
-	}
-
-	const uint8_t ret1 = common_unbox_char_data(arguments, 0, 0, argument1, terminate);
-	const uint8_t ret2 = common_unbox_char_data(arguments, 1, 0, argument2, terminate);
-	const uint8_t ret3 = common_unbox_char_data(arguments, 2, 0, argument3, terminate);
-	return ret1 && ret2 && ret3;
 }
 
 uint8_t common_get_arguments(const struct buffer* boxed_arguments, uint8_t arguments_count,

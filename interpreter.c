@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -582,7 +582,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 
 				struct range path;
 
-				if (!common_get_one_argument(&values, &path, 0))
+				if (!common_get_arguments(&values, 1, &path, 0))
 				{
 					path.start = path.finish = (const uint8_t*)&path;
 				}

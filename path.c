@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -1230,7 +1230,7 @@ uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, 
 
 	struct range argument;
 
-	if (!common_get_one_argument(arguments, &argument, 0))
+	if (!common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}

@@ -121,17 +121,19 @@ Property will be read only at the script file.
 
 ==== Sample using
 
-. ant4c
-. ant4c -buildfile:project_file.build
-. ant4c build
-. ant4c -D:version="2020.05" build publish
-. ant4c -listener:"default_listener.dll"
+----
+ant4c
+ant4c -buildfile:project_file.build
+ant4c build
+ant4c -D:version="2020.05" build publish
+ant4c -listener:"default_listener.dll"
+----
 
-1) Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed. +
-2) Run project from 'project_file.build' file. +
-3) Run 'build' target at all '.build' file from current directory. +
-4) Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
-5) Set path to the listener while run at the Windows platform.
+. Run program. It search all files with '.build' extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed.
+. Run project from 'project_file.build' file.
+. Run 'build' target at all '.build' file from current directory.
+. Set to the property 'version' value equal to the '2020.05' and run targets 'build' and 'publish'.
+. Set path to the listener while run at the Windows platform.
 
 === Project
 
@@ -187,7 +189,7 @@ To define dynamic property set dynamic parameter to the true value.
 
 The output of interpreting of this script will be:
 ----
-[Info]: The property value is 'value'.
+The property value is 'value'.
 ----
 NOTE: For version prior to the 2020.* access to the property value was only via property::get-value function.
 
@@ -204,7 +206,7 @@ NOTE: For version prior to the 2020.* access to the property value was only via 
 And the output:
 
 ----
-[Info]: The length of property value is '5'.
+The length of property value is '5'.
 ----
 
 NOTE: For all version access to the property value at the functions can be provided directly by property name.
@@ -241,7 +243,7 @@ More complex example is calculating determinate and roots of quadratic polynomia
 
 Full list of functions can be found at the <<unit_reference,unit reference>>.
 
-To call function choose name of unit (or name space) and function name. If function has arguments set them. Some arguments not mandatory, for example like at string::substring.
+To call function choose name of unit (or name space) and function name. If function has arguments set them. Some arguments not mandatory, for example like at <<string-substring,string::substring>>.
 
 All arguments interprets as strings and convert to required type, if it possible, at the moment of function call. If converting is impossible, evaluation will be break with error.
 
@@ -363,10 +365,10 @@ Using 'call' task with 'cascade' attribute equal to the *false* will not run clo
 So output will be next:
 
 ----
-[Info]: Cloning...
-[Info]: Build version - 1
-[Info]: Build version - 1-rev1
-[Info]: Publish versions that was build
+Cloning...
+Build version - 1
+Build version - 1-rev1
+Publish versions that was build
 ----
 
 [[choose_task]]
@@ -2178,8 +2180,6 @@ Return from first version of function equal to the return of second if increasin
 </project>
 ----
 
-IMPORTANT: Current implementation of Keccak/SHA3 algorithm request that all file content should be loaded into memory.
-
 [[file-get_creation_time]]
 ==== get-creation-time
 
@@ -2365,9 +2365,9 @@ Return from function version with one argument equal to the return from version 
 
 Output will be:
 ----
-[Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
-[Info]: 'The quick brown fox jumps over the lazy dog' -> '414fa339'
-[Info]: 'The quick brown fox jumps over the lazy dog' -> '39a34f41'
+'The quick brown fox jumps over the lazy dog' -> '39a34f41'
+'The quick brown fox jumps over the lazy dog' -> '414fa339'
+'The quick brown fox jumps over the lazy dog' -> '39a34f41'
 ----
 
 [[hash-keccak]]
@@ -2714,9 +2714,11 @@ Get integer part from double digital value.
 | <<operating_system-get_platform,operating-system::get-platform>> | Get platform of the operation system.
 | <<operating_system-get_version,operating-system::get-version>> | Get version of the operation system.
 | <<operating_system-to_string,operating-system::to-string>> | Get string representation of the the operation system.
+| <<operating_system-is_windows_server,operating-system::is-windows-server>> | Check is specified operation system Windows Server.
 | <<platform-get_name,platform::get-name>> | Get name of current platform.
 | <<platform-is_unix,platform::is-unix>> | Check is current platform UNIX like.
 | <<platform-is_windows,platform::is-windows>> | Check is current platform Windows.
+| <<platform-is_windows_server,platform::is-windows-server>> | Check is current platform Windows Server.
 |===
 
 [[operating_system-get_platform]]
@@ -2747,6 +2749,13 @@ Get version of operating system.
 
 Get string representation of operating system.
 
+[[operating_system-is_windows_server]]
+==== is-windows-server
+
+*bool* 'operating-system::is-windows-server'(*operating system*)
+
+Return *true* if specified operation system from Windows Server family.
+
 [[platform-get_name]]
 ==== get-name
 
@@ -2767,6 +2776,13 @@ Return *true* if current platform UNIX like.
 *bool* 'platform::is-windows'()
 
 Return *true* if current platform from Windows family.
+
+[[platform-is_windows_server]]
+==== is-windows-server
+
+*bool* 'platform::is-windows-server'()
+
+Return *true* if current platform from Windows Server family.
 
 === Path unit
 
@@ -3180,7 +3196,7 @@ If value located at the start of string - *true* will be returned.
 [[string-substring]]
 ==== substring
 
-*string* 'string::substring'(*string* string, *int* position)
+*string* 'string::substring'(*string* string, *int* position) +
 *string* 'string::substring'(*string* string, *int* position, *int* length)
 
 Return sub string of the *string* from *position* with *length*. +

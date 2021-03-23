@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -234,143 +234,111 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[3];
 
-	struct range argument2;
-
-	struct range argument3;
-
-	argument1.start = argument2.start = argument1.finish = argument2.finish =
-											argument3.start = argument3.finish = NULL;
-
-	double double_argument_1 = 0;
-
-	double double_argument_2 = 0;
-
-	double double_argument_3 = 0;
-
-	if (1 == arguments_count)
+	if (arguments_count && !common_get_arguments(arguments, arguments_count, values, 1))
 	{
-		if (!common_get_one_argument(arguments, &argument1, 1))
-		{
-			return 0;
-		}
-
-		double_argument_1 = double_parse(argument1.start);
+		return 0;
 	}
-	else if (2 == arguments_count)
-	{
-		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
-		{
-			return 0;
-		}
 
-		double_argument_1 = double_parse(argument1.start);
-		double_argument_2 = double_parse(argument2.start);
-	}
-	else if (3 == arguments_count)
-	{
-		if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, 1))
-		{
-			return 0;
-		}
+	double double_values[COUNT_OF(values)];
 
-		double_argument_1 = double_parse(argument1.start);
-		double_argument_2 = double_parse(argument2.start);
-		double_argument_3 = double_parse(argument3.start);
+	for (uint8_t i = 0, count = COUNT_OF(values); i < count; ++i)
+	{
+		double_values[i] = arguments_count <= i ? 0.0 : double_parse(values[i].start);
 	}
 
 	switch (function)
 	{
 		case abs_:
-			return 1 == arguments_count && double_to_string(math_abs(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_abs(double_values[0]), output);
 
 		case ceiling_:
-			return 1 == arguments_count && double_to_string(math_ceiling(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_ceiling(double_values[0]), output);
 
 		case floor_:
-			return 1 == arguments_count && double_to_string(math_floor(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_floor(double_values[0]), output);
 
 		case round_:
-			return 1 == arguments_count && double_to_string(math_round(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_round(double_values[0]), output);
 
 		case acos_:
-			if (1 != arguments_count || double_argument_1 < -1 || 1 < double_argument_1)
+			if (1 != arguments_count || double_values[0] < -1 || 1 < double_values[0])
 			{
 				break;
 			}
 
-			return double_to_string(math_acos(double_argument_1), output);
+			return double_to_string(math_acos(double_values[0]), output);
 
 		case asin_:
-			if (1 != arguments_count || double_argument_1 < -1 || 1 < double_argument_1)
+			if (1 != arguments_count || double_values[0] < -1 || 1 < double_values[0])
 			{
 				break;
 			}
 
-			return double_to_string(math_asin(double_argument_1), output);
+			return double_to_string(math_asin(double_values[0]), output);
 
 		case atan_:
-			return 1 == arguments_count && double_to_string(math_atan(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_atan(double_values[0]), output);
 
 		case atan2_:
-			return 2 == arguments_count && double_to_string(math_atan2(double_argument_1, double_argument_2), output);
+			return 2 == arguments_count && double_to_string(math_atan2(double_values[0], double_values[1]), output);
 
 		case cos_:
-			return 1 == arguments_count && double_to_string(math_cos(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_cos(double_values[0]), output);
 
 		case cosh_:
-			return 1 == arguments_count && double_to_string(math_cosh(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_cosh(double_values[0]), output);
 
 		case exp_:
-			return 1 == arguments_count && double_to_string(math_exp(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_exp(double_values[0]), output);
 
 		case log_:
-			return 1 == arguments_count && double_to_string(math_log(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_log(double_values[0]), output);
 
 		case log10_:
-			return 1 == arguments_count && double_to_string(math_log10(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_log10(double_values[0]), output);
 
 		case max_:
-			return 2 == arguments_count && double_to_string(math_max(double_argument_1, double_argument_2), output);
+			return 2 == arguments_count && double_to_string(math_max(double_values[0], double_values[1]), output);
 
 		case min_:
-			return 2 == arguments_count && double_to_string(math_min(double_argument_1, double_argument_2), output);
+			return 2 == arguments_count && double_to_string(math_min(double_values[0], double_values[1]), output);
 
 		case pow_:
-			return 2 == arguments_count && double_to_string(math_pow(double_argument_1, double_argument_2), output);
+			return 2 == arguments_count && double_to_string(math_pow(double_values[0], double_values[1]), output);
 
 		case sign_:
-			return 1 == arguments_count && int_to_string(math_sign(double_argument_1), output);
+			return 1 == arguments_count && int_to_string(math_sign(double_values[0]), output);
 
 		case sin_:
-			return 1 == arguments_count && double_to_string(math_sin(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_sin(double_values[0]), output);
 
 		case sinh_:
-			return 1 == arguments_count && double_to_string(math_sinh(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_sinh(double_values[0]), output);
 
 		case sqrt_:
-			if (1 != arguments_count || double_argument_1 < 0)
+			if (1 != arguments_count || double_values[0] < 0)
 			{
 				return 0;
 			}
 
-			return double_to_string(math_sqrt(double_argument_1), output);
+			return double_to_string(math_sqrt(double_values[0]), output);
 
 		case tan_:
-			return 1 == arguments_count && double_to_string(math_tan(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_tan(double_values[0]), output);
 
 		case tanh_:
-			return 1 == arguments_count && double_to_string(math_tanh(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_tanh(double_values[0]), output);
 
 		case cot_:
-			return 1 == arguments_count && double_to_string(math_cot(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_cot(double_values[0]), output);
 
 		case coth_:
-			return 1 == arguments_count && double_to_string(math_coth(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_coth(double_values[0]), output);
 
 		case truncate_:
-			return 1 == arguments_count && int64_to_string(math_truncate(double_argument_1), output);
+			return 1 == arguments_count && int64_to_string(math_truncate(double_values[0]), output);
 
 		case PI_:
 			return !arguments_count && double_to_string(PI, output);
@@ -379,27 +347,27 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 			return !arguments_count && double_to_string(E, output);
 
 		case degrees_:
-			return 1 == arguments_count && double_to_string(math_degrees(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_degrees(double_values[0]), output);
 
 		case radians_:
-			return 1 == arguments_count && double_to_string(math_radians(double_argument_1), output);
+			return 1 == arguments_count && double_to_string(math_radians(double_values[0]), output);
 
 		case addition_:
-			return 2 == arguments_count && double_to_string(double_argument_1 + double_argument_2, output);
+			return 2 == arguments_count && double_to_string(double_values[0] + double_values[1], output);
 
 		case subtraction_:
-			return 2 == arguments_count && double_to_string(double_argument_1 - double_argument_2, output);
+			return 2 == arguments_count && double_to_string(double_values[0] - double_values[1], output);
 
 		case multiplication_:
-			return 2 == arguments_count && double_to_string(double_argument_1 * double_argument_2, output);
+			return 2 == arguments_count && double_to_string(double_values[0] * double_values[1], output);
 
 		case division_:
-			if (2 != arguments_count || math_double_near(double_argument_2, 0.0, 2 * DBL_EPSILON))
+			if (2 != arguments_count || math_double_near(double_values[1], 0.0, 2 * DBL_EPSILON))
 			{
 				break;
 			}
 
-			return double_to_string(double_argument_1 / double_argument_2, output);
+			return double_to_string(double_values[0] / double_values[1], output);
 
 		case epsilon_:
 			return !arguments_count && double_to_string(DBL_EPSILON, output);
@@ -409,20 +377,20 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 			{
 				if (2 == arguments_count)
 				{
-					double_argument_3 = 2 * DBL_EPSILON;
+					double_values[2] = 2 * DBL_EPSILON;
 				}
 
-				const uint8_t is_near = math_double_near(double_argument_1, double_argument_2, double_argument_3);
+				const uint8_t is_near = math_double_near(double_values[0], double_values[1], double_values[2]);
 				return bool_to_string(is_near, output);
 			}
 
 			break;
 
 		case less_:
-			return 2 == arguments_count && bool_to_string(double_argument_1 < double_argument_2, output);
+			return 2 == arguments_count && bool_to_string(double_values[0] < double_values[1], output);
 
 		case greater_:
-			return 2 == arguments_count && bool_to_string(double_argument_1 > double_argument_2, output);
+			return 2 == arguments_count && bool_to_string(double_values[0] > double_values[1], output);
 
 		case UNKNOWN_MATH_FUNCTION:
 		default:

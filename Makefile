@@ -1,5 +1,7 @@
 all: ant4c
 
+ant4c.net.module.c: ant4c.net.module.h
+
 argument_parser.c: argument_parser.h
 argument_parser.c: buffer.h
 argument_parser.c: common.h
@@ -125,6 +127,8 @@ hash.crc32.c: common.h
 
 hash.sha3.c: hash.h
 hash.sha3.c: buffer.h
+
+host_fxr.c: host_fxr.h
 
 if_task.c: if_task.h
 
@@ -320,6 +324,9 @@ xml.c: range.h
 xml.c: string_unit.h
 xml.c: text_encoding.h
 
+ant4c.net.module.obj: ant4c.net.module.c
+	$(CC) $(CFLAGS) -c -fPIC ant4c.net.module.c -o $@
+
 argument_parser.obj: argument_parser.c
 	$(CC) $(CFLAGS) -c argument_parser.c -o $@
 
@@ -376,6 +383,9 @@ hash.crc32.obj: hash.crc32.c
 
 hash.sha3.obj: hash.sha3.c
 	$(CC) $(CFLAGS) -c hash.sha3.c -o $@
+
+host_fxr.obj: host_fxr.c
+	$(CC) $(CFLAGS) -c -fPIC host_fxr.c -o $@
 
 if_task.obj: if_task.c
 	$(CC) $(CFLAGS) -c if_task.c -o $@
@@ -483,13 +493,21 @@ libant4c.a: xml.obj
 ant4c: libant4c.a
 ant4c: main.obj
 ant4c: libdefault_listener.so
+ant4c: libant4c.net.module.so
 	$(CC) main.obj -o $@ libant4c.a -lm $(LDCFLAGS)
 
 libdefault_listener.so: default_listener.obj
 	$(CC) -shared -o $@ default_listener.obj
 
+libnet_gate.a: host_fxr.obj
+	ar qc $@ host_fxr.obj
+
+libant4c.net.module.so: libnet_gate.a
+libant4c.net.module.so: ant4c.net.module.obj
+	$(CC) -shared -o $@ libnet_gate.a ant4c.net.module.obj
+
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	-rm ant4c libant4c.a libant4c.net.module.so libnet_gate.a ant4c.net.module.obj host_fxr.obj main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean

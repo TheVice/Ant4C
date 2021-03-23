@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -12,6 +12,7 @@
 #include "operating_system.h"
 #include "range.h"
 #include "text_encoding.h"
+#include "version.h"
 
 #include <string.h>
 
@@ -19,7 +20,6 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-static struct OperatingSystem operating_system;
 static uint8_t is_data_of_operating_system_filled = 0;
 
 #define ENVIRONMENT_UNKNOWN_SPECIAL_FOLDER (CDBurning + 1)
@@ -528,7 +528,6 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 #endif
 #include <sys/utsname.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 
 uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* path)
@@ -674,12 +673,14 @@ uint8_t environment_get_machine_name(struct buffer* name)
 		return 0;
 	}
 
-	if (0 != gethostname((char*)buffer_data(name, size), UINT8_MAX))
+	char* host_name = (char*)buffer_data(name, size);
+
+	if (0 != gethostname(host_name, UINT8_MAX))
 	{
 		return 0;
 	}
 
-	return (size < buffer_size(name)) && buffer_resize(name, size + strlen((char*)buffer_data(name, size)));
+	return (size < buffer_size(name)) && buffer_resize(name, size + strlen(host_name));
 }
 
 #endif
@@ -719,10 +720,7 @@ struct Version GetWindowsVersion()
 		ver.major = 6;
 	}
 
-	/*
-		IsWindowsXPOrGreater();
-		IsWindowsServer();
-	*/
+	/*IsWindowsXPOrGreater();*/
 #else
 	/*TODO: call VerSetConditionMask, VerifyVersionInfoW via pointers.*/
 	static const struct Version versions[] = { {10, 0, 0, 0}, {6, 3, 0, 0}, {6, 2, 0, 0}, {6, 1, 0, 0}, {6, 0, 0, 0} };
@@ -748,41 +746,47 @@ struct Version GetWindowsVersion()
 	return ver;
 }
 
-const struct OperatingSystem* environment_get_operating_system()
+static uint8_t operating_system[UINT8_MAX];
+#if defined(_MSC_VER) && (_MSC_VER >= 1800)
+#else
+uint8_t IsWindowsServer()
+{
+	OSVERSIONINFOEXW osvi;
+	memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+	osvi.wProductType = VER_NT_WORKSTATION;
+	DWORDLONG const dwlConditionMask = VerSetConditionMask(0, VER_PRODUCT_TYPE, VER_EQUAL);
+	/**/
+	return !VerifyVersionInfoW(&osvi, VER_PRODUCT_TYPE, dwlConditionMask);
+}
+#endif
+const void* environment_get_operating_system()
 {
 	if (!is_data_of_operating_system_filled)
 	{
-		operating_system.Platform = Win32;
-		operating_system.Version = GetWindowsVersion();
-#if __STDC_SEC_API__
-		is_data_of_operating_system_filled = (0 == memcpy_s(operating_system.VersionString, INT8_MAX, Win32NT_str,
-											  Win32NT_str_length));
+		struct Version ver = GetWindowsVersion();
+		is_data_of_operating_system_filled = operating_system_init(
+				Win32, 0 < IsWindowsServer(), &ver, (ptrdiff_t)sizeof(operating_system), operating_system);
 
-		if (is_data_of_operating_system_filled)
-#else
-		memcpy(operating_system.VersionString, Win32NT_str, Win32NT_str_length);
-
-		is_data_of_operating_system_filled = 1;
-#endif
+		if (!is_data_of_operating_system_filled)
 		{
-			uint8_t* ptr = operating_system.VersionString + Win32NT_str_length;
-			*ptr = ' ';
-			++ptr;
-			is_data_of_operating_system_filled = 0 < version_to_byte_array(&operating_system.Version, ptr);
+			return NULL;
 		}
 	}
 
-	return &operating_system;
+	return operating_system;
 }
 
 #else
 
-const struct OperatingSystem* environment_get_operating_system()
+static uint8_t operating_system[sizeof(struct utsname) + INT8_MAX];
+
+const void* environment_get_operating_system()
 {
 	if (!is_data_of_operating_system_filled)
 	{
+		struct Version ver;
 		struct utsname uname_data;
-		operating_system.Platform = Unix;
 
 		if (-1 == uname(&uname_data))
 		{
@@ -791,27 +795,27 @@ const struct OperatingSystem* environment_get_operating_system()
 
 		if (!version_parse((const uint8_t*)uname_data.version,
 						   (const uint8_t*)uname_data.version + strlen(uname_data.version),
-						   &operating_system.Version))
-		{
-			/*TODO: call echo with verbose or debug level.*/
-		}
-
-		const uint16_t max_count = COUNT_OF(operating_system.VersionString);
-		const uint16_t count = 4 + strlen(uname_data.sysname) + strlen(uname_data.release) + strlen(
-								   uname_data.version) + strlen(uname_data.machine);
-
-		if (max_count - 1 < count)
+						   &ver))
 		{
 			return NULL;
 		}
 
-		sprintf((char* const)operating_system.VersionString, "%s %s %s %s",
-				uname_data.sysname, uname_data.release,
-				uname_data.version, uname_data.machine);
-		is_data_of_operating_system_filled = 1;
+		const uint8_t* version_string[] =
+		{
+			(const uint8_t*)uname_data.sysname, (const uint8_t*)uname_data.release,
+			(const uint8_t*)uname_data.version, (const uint8_t*)uname_data.machine
+		};
+		/**/
+		is_data_of_operating_system_filled = operating_system_init(
+				Unix, &ver, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
+
+		if (!is_data_of_operating_system_filled)
+		{
+			return NULL;
+		}
 	}
 
-	return &operating_system;
+	return operating_system;
 }
 
 #endif
@@ -1079,10 +1083,10 @@ uint8_t environment_is64bit_operating_system()
 #else
 	static const uint8_t* x86_64 = (const uint8_t*)"x86_64";
 	static const uint8_t* amd64 = (const uint8_t*)"amd64";
-	const struct OperatingSystem* os = environment_get_operating_system();
-	return string_contains(os->VersionString, os->VersionString + common_count_bytes_until(os->VersionString, 0),
+	const uint8_t* version_string = operating_system_to_string(environment_get_operating_system());
+	return string_contains(version_string, version_string + common_count_bytes_until(version_string, 0),
 						   x86_64, x86_64 + 6) ||
-		   string_contains(os->VersionString, os->VersionString + common_count_bytes_until(os->VersionString, 0),
+		   string_contains(version_string, version_string + common_count_bytes_until(version_string, 0),
 						   amd64, amd64 + 5);
 #endif
 }
@@ -1201,9 +1205,11 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 
 	struct range argument;
 
-	argument.start = argument.finish = NULL;
-
-	if (1 == arguments_count && !common_get_one_argument(arguments, &argument, 0))
+	if (!arguments_count)
+	{
+		argument.start = argument.finish = NULL;
+	}
+	else if (!common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}
@@ -1212,7 +1218,7 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 	{
 		case get_folder_path:
 		{
-			if (1 != arguments_count)
+			if (!arguments_count)
 			{
 				break;
 			}
@@ -1226,23 +1232,21 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 			return !arguments_count && environment_get_machine_name(output);
 
 		case get_operating_system:
-		{
-			const struct OperatingSystem* os = environment_get_operating_system();
-			return !arguments_count && common_append_string_to_buffer(os->VersionString, output);
-		}
+			return !arguments_count &&
+				   common_append_string_to_buffer(operating_system_to_string(environment_get_operating_system()), output);
 
 		case get_user_name:
 			return !arguments_count && environment_get_user_name(output);
 
 		case get_variable:
-			return (1 == arguments_count) &&
+			return arguments_count &&
 				   environment_get_variable(argument.start, argument.finish, output);
 
 		case newline:
 			return !arguments_count && environment_newline(output);
 
 		case variable_exists:
-			return (1 == arguments_count) &&
+			return arguments_count &&
 				   bool_to_string(environment_variable_exists(argument.start, argument.finish),
 								  output);
 

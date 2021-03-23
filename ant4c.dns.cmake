@@ -9,8 +9,19 @@ add_library(ant4c.dns SHARED
   "${CMAKE_SOURCE_DIR}/dns.cpp"
   "${CMAKE_SOURCE_DIR}/dns.h")
 
+if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
+if(MSVC)
+  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
+  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
+else()
+  set_target_properties(ant4c.dns PROPERTIES CXX_STANDARD 11)
+  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+endif()
+else()
 if(NOT MSVC)
   set_target_properties(ant4c.dns PROPERTIES CXX_STANDARD 11)
+endif()
 endif()
 
 if(Boost_FOUND)
@@ -122,7 +133,7 @@ if(CMAKE_HOST_WIN32)
   endif()
 endif()
 
-if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
+if(("GNU" STREQUAL CMAKE_CXX_COMPILER_ID) AND (NOT MINGW))
   #target_compile_options(ant4c.dns PRIVATE "-fPIE")
   set_target_properties(ant4c.dns PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
 endif()

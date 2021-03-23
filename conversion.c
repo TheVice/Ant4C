@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -153,7 +153,7 @@ void* pointer_parse(const uint8_t* value)
 	}
 
 	char* ch = NULL;
-	return (void*)strtoll((const char*)value, &ch, 16);
+	return (void*)(ptrdiff_t)strtoll((const char*)value, &ch, 16);
 }
 
 uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string)
@@ -192,7 +192,7 @@ uint8_t bool_exec_function(uint8_t function, const struct buffer* arguments, uin
 
 	struct range argument;
 
-	if (!common_get_one_argument(arguments, &argument, 0))
+	if (!common_get_arguments(arguments, arguments_count, &argument, 0))
 	{
 		return 0;
 	}
@@ -230,7 +230,7 @@ uint8_t conversion_exec_function(uint8_t name_space, uint8_t function,
 
 	struct range argument;
 
-	if (!common_get_one_argument(arguments, &argument, 1))
+	if (!common_get_arguments(arguments, arguments_count, &argument, 1))
 	{
 		return 0;
 	}

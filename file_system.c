@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -2700,35 +2700,11 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[3];
 
-	struct range argument2;
-
-	struct range argument3;
-
-	argument1.start = argument2.start = argument1.finish = argument2.finish =
-											argument3.start = argument3.finish = NULL;
-
-	if (1 == arguments_count)
+	if (arguments_count && !common_get_arguments(arguments, arguments_count, values, 1))
 	{
-		if (!common_get_one_argument(arguments, &argument1, 1))
-		{
-			return 0;
-		}
-	}
-	else if (2 == arguments_count)
-	{
-		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
-		{
-			return 0;
-		}
-	}
-	else if (3 == arguments_count)
-	{
-		if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, 1))
-		{
-			return 0;
-		}
+		return 0;
 	}
 
 	switch (function)
@@ -2742,7 +2718,7 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 			}
 
 			const uint8_t entry_type = common_string_to_enum(
-										   argument2.start, argument2.finish, entry_types_str, UNKNOWN_ENTRY_TYPE);
+										   values[1].start, values[1].finish, entry_types_str, UNKNOWN_ENTRY_TYPE);
 
 			if (UNKNOWN_ENTRY_TYPE == entry_type)
 			{
@@ -2752,7 +2728,7 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 			uint8_t recurse = 0;
 
 			if (3 == arguments_count &&
-				!bool_parse(argument3.start, range_size(&argument3), &recurse))
+				!bool_parse(values[2].start, range_size(&values[2]), &recurse))
 			{
 				break;
 			}
@@ -2762,38 +2738,38 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 		}
 
 		case dir_exists:
-			return 1 == arguments_count && bool_to_string(directory_exists(argument1.start), output);
+			return 1 == arguments_count && bool_to_string(directory_exists(values[0].start), output);
 
 		case dir_get_creation_time:
-			return 1 == arguments_count && int64_to_string(directory_get_creation_time(argument1.start), output);
+			return 1 == arguments_count && int64_to_string(directory_get_creation_time(values[0].start), output);
 
 		case dir_get_creation_time_utc:
-			return 1 == arguments_count && int64_to_string(directory_get_creation_time_utc(argument1.start), output);
+			return 1 == arguments_count && int64_to_string(directory_get_creation_time_utc(values[0].start), output);
 
 		case get_directory_root:
 			return 1 == arguments_count &&
-				   directory_get_directory_root(argument1.start, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   directory_get_directory_root(values[0].start, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case dir_get_last_access_time:
-			return 1 == arguments_count && int64_to_string(directory_get_last_access_time(argument1.start), output);
+			return 1 == arguments_count && int64_to_string(directory_get_last_access_time(values[0].start), output);
 
 		case dir_get_last_access_time_utc:
-			return 1 == arguments_count && int64_to_string(directory_get_last_access_time_utc(argument1.start), output);
+			return 1 == arguments_count && int64_to_string(directory_get_last_access_time_utc(values[0].start), output);
 
 		case dir_get_last_write_time:
-			return 1 == arguments_count && int64_to_string(directory_get_last_write_time(argument1.start), output);
+			return 1 == arguments_count && int64_to_string(directory_get_last_write_time(values[0].start), output);
 
 		case dir_get_last_write_time_utc:
-			return 1 == arguments_count && int64_to_string(directory_get_last_write_time_utc(argument1.start), output);
+			return 1 == arguments_count && int64_to_string(directory_get_last_write_time_utc(values[0].start), output);
 
 		case get_logical_drives:
 			return 0 == arguments_count && directory_get_logical_drives(output);
 
 		case get_parent_directory:
 			return 1 == arguments_count &&
-				   directory_get_parent_directory(argument1.start, argument1.finish, &argument2) &&
-				   buffer_append_data_from_range(output, &argument2);
+				   directory_get_parent_directory(values[0].start, values[0].finish, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 
 		case UNKNOWN_DIR_FUNCTION:
 		default:
@@ -2835,85 +2811,66 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[3];
 
-	struct range argument2;
-
-	struct range argument3;
-
-	argument1.start = argument2.start = argument3.start =
-											argument1.finish = argument2.finish = argument3.finish = NULL;
-
-	if (1 == arguments_count)
+	if (!common_get_arguments(arguments, arguments_count, values, 1))
 	{
-		if (!common_get_one_argument(arguments, &argument1, 1))
-		{
-			return 0;
-		}
+		return 0;
 	}
-	else if (2 == arguments_count)
+
+	for (uint8_t i = arguments_count, count = COUNT_OF(values); i < count; ++i)
 	{
-		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
-		{
-			return 0;
-		}
-	}
-	else
-	{
-		if (!common_get_three_arguments(arguments, &argument1, &argument2, &argument3, 1))
-		{
-			return 0;
-		}
+		values[i].start = values[i].finish = NULL;
 	}
 
 	switch (function)
 	{
 		case file_exists_:
 			return 1 == arguments_count &&
-				   bool_to_string(file_exists(argument1.start), output);
+				   bool_to_string(file_exists(values[0].start), output);
 
 		case file_get_checksum_:
 			return (2 == arguments_count || 3 == arguments_count) &&
-				   file_get_checksum(argument1.start, &argument2, &argument3, output);
+				   file_get_checksum(values[0].start, &values[1], &values[2], output);
 
 		case file_get_creation_time_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_creation_time(argument1.start), output);
+				   int64_to_string(file_get_creation_time(values[0].start), output);
 
 		case file_get_creation_time_utc_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_creation_time_utc(argument1.start), output);
+				   int64_to_string(file_get_creation_time_utc(values[0].start), output);
 
 		case file_get_last_access_time_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_access_time(argument1.start), output);
+				   int64_to_string(file_get_last_access_time(values[0].start), output);
 
 		case file_get_last_access_time_utc_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_access_time_utc(argument1.start), output);
+				   int64_to_string(file_get_last_access_time_utc(values[0].start), output);
 
 		case file_get_last_write_time_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_write_time(argument1.start), output);
+				   int64_to_string(file_get_last_write_time(values[0].start), output);
 
 		case file_get_last_write_time_utc_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_write_time_utc(argument1.start), output);
+				   int64_to_string(file_get_last_write_time_utc(values[0].start), output);
 
 		case file_get_length_:
 			return 1 == arguments_count &&
-				   int64_to_string(file_get_length(argument1.start), output);
+				   int64_to_string(file_get_length(values[0].start), output);
 
 		case file_up_to_date_:
 			return 2 == arguments_count &&
-				   bool_to_string(file_up_to_date(argument1.start, argument2.start), output);
+				   bool_to_string(file_up_to_date(values[0].start, values[1].start), output);
 
 		case file_replace_:
 			return 3 == arguments_count &&
 				   bool_to_string(
-					   file_replace(argument1.start,
-									argument2.start, argument2.finish,
-									argument3.start, argument3.finish), output);
+					   file_replace(values[0].start,
+									values[1].start, values[1].finish,
+									values[2].start, values[2].finish), output);
 
 		case UNKNOWN_FILE_FUNCTION:
 		default:

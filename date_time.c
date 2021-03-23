@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -758,32 +758,18 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 		return 0;
 	}
 
-	struct range argument1;
+	struct range values[2];
 
-	struct range argument2;
-
-	argument1.start = argument2.start = argument1.finish = argument2.finish = NULL;
-
-	if (1 == arguments_count)
+	if (arguments_count && !common_get_arguments(arguments, arguments_count, values, 1))
 	{
-		if (!common_get_one_argument(arguments, &argument1, 1))
-		{
-			return 0;
-		}
-	}
-	else if (2 == arguments_count)
-	{
-		if (!common_get_two_arguments(arguments, &argument1, &argument2, 1))
-		{
-			return 0;
-		}
+		return 0;
 	}
 
 	switch (function)
 	{
 		case format_to_string:
 			return 2 == arguments_count &&
-				   datetime_format_to_string(int64_parse(argument1.start), argument2.start, output);
+				   datetime_format_to_string(int64_parse(values[0].start), values[1].start, output);
 
 		case parse:
 		case to_string:
@@ -796,7 +782,7 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 			uint8_t second = 0;
 
 			if (1 != arguments_count ||
-				!datetime_parse(argument1.start, argument1.finish, &year, &month, &day, &hour, &minute, &second))
+				!datetime_parse(values[0].start, values[0].finish, &year, &month, &day, &hour, &minute, &second))
 			{
 				break;
 			}
@@ -805,44 +791,44 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 		}
 
 		case get_day:
-			return 1 == arguments_count && int_to_string(datetime_get_day(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_day(int64_parse(values[0].start)), output);
 
 		case get_day_of_week:
-			return 1 == arguments_count && int_to_string(datetime_get_day_of_week(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_day_of_week(int64_parse(values[0].start)), output);
 
 		case get_day_of_year:
-			return 1 == arguments_count && int_to_string(datetime_get_day_of_year(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_day_of_year(int64_parse(values[0].start)), output);
 
 		case get_days_in_month:
 			return 2 == arguments_count &&
-				   int_to_string(datetime_get_days_in_month(int_parse(argument1.start), (uint8_t)int_parse(argument2.start)),
+				   int_to_string(datetime_get_days_in_month(int_parse(values[0].start), (uint8_t)int_parse(values[1].start)),
 								 output);
 
 		case get_hour:
-			return 1 == arguments_count && int_to_string(datetime_get_hour(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_hour(int64_parse(values[0].start)), output);
 
 		case get_millisecond:
 			/*TODO:*/
 			break;
 
 		case get_minute:
-			return 1 == arguments_count && int_to_string(datetime_get_minute(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_minute(int64_parse(values[0].start)), output);
 
 		case get_month:
-			return 1 == arguments_count && int_to_string(datetime_get_month(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_month(int64_parse(values[0].start)), output);
 
 		case get_second:
-			return 1 == arguments_count && int_to_string(datetime_get_second(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_second(int64_parse(values[0].start)), output);
 
 		case get_ticks:
 			/*TODO:*/
 			break;
 
 		case get_year:
-			return 1 == arguments_count && int_to_string(datetime_get_year(int64_parse(argument1.start)), output);
+			return 1 == arguments_count && int_to_string(datetime_get_year(int64_parse(values[0].start)), output);
 
 		case is_leap_year:
-			return 1 == arguments_count && bool_to_string(datetime_is_leap_year(int_parse(argument1.start)), output);
+			return 1 == arguments_count && bool_to_string(datetime_is_leap_year(int_parse(values[0].start)), output);
 
 		case ticks:
 			if (!arguments_count)
@@ -881,7 +867,7 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 			uint8_t second = 0;
 
 			if (1 != arguments_count ||
-				!datetime_parse(argument1.start, argument1.finish, &year, &month, &day, &hour, &minute, &second))
+				!datetime_parse(values[0].start, values[0].finish, &year, &month, &day, &hour, &minute, &second))
 			{
 				break;
 			}
@@ -946,9 +932,7 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 
 	struct range argument;
 
-	argument.start = argument.finish = NULL;
-
-	if (!common_get_one_argument(arguments, &argument, 1))
+	if (!common_get_arguments(arguments, arguments_count, &argument, 1))
 	{
 		return 0;
 	}

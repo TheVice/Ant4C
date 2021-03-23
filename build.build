@@ -78,8 +78,12 @@
 		  commandline="${property::get-value('cmake_arguments')}"
 		  workingdir="${property::get-value('cmake_working_dir')}" />
 
+	<property name="cmake_target"
+			  value="ant4c_app"
+			  overwrite="false" />
+
 	<property name="cmake_arguments"
-			  value="--build ${string::quote(property::get-value('cmake_working_dir'))} --config Release" />
+			  value="--build ${string::quote(property::get-value('cmake_working_dir'))} --target ${property::get-value('cmake_target')} --config Release" />
 
 	<echo message="${property::get-value('cmake')} ${property::get-value('cmake_arguments')}"
 		  level="Verbose" />

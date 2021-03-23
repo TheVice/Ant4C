@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -17,13 +17,12 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-static const uint8_t point = '.';
-
-static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-#define COUNT_OF_DIGITS COUNT_OF(digits)
-
 uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, struct Version* version)
 {
+	static const uint8_t point = '.';
+	static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+#define COUNT_OF_DIGITS COUNT_OF(digits)
+
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) || NULL == version)
 	{
 		return 0;
@@ -103,8 +102,8 @@ uint8_t version_to_string(const struct Version* version, struct buffer* output)
 		return 0;
 	}
 
-	uint8_t* ptr = buffer_data(output, size);
-	return buffer_resize(output, size + version_to_byte_array(version, ptr));
+	uint8_t* str_version = buffer_data(output, size);
+	return buffer_resize(output, size + version_to_byte_array(version, str_version));
 }
 
 uint8_t version_less(const struct Version* a, const struct Version* b)
@@ -197,62 +196,51 @@ uint8_t version_exec_function(uint8_t function, const struct buffer* arguments, 
 		return 0;
 	}
 
-	struct range argument_1;
+	struct range values[2];
 
-	struct range argument_2;
-
-	argument_1.start = argument_2.start = argument_1.finish = argument_2.finish = NULL;
-
-	if (1 == arguments_count && !common_get_one_argument(arguments, &argument_1, 1))
+	if (arguments_count && !common_get_arguments(arguments, arguments_count, values, 1))
 	{
 		return 0;
 	}
 
-	if (2 == arguments_count && !common_get_two_arguments(arguments, &argument_1, &argument_2, 1))
+	struct Version versions[COUNT_OF(values)];
+
+	for (uint8_t i = 0, count = COUNT_OF(values); i < count; ++i)
 	{
-		return 0;
-	}
-
-	struct Version version_1;
-
-	struct Version version_2;
-
-	version_1.major = version_2.major = version_1.minor = version_2.minor = version_1.build = version_2.build =
-											version_1.revision = version_2.revision = 0;
-
-	if (!version_parse(argument_1.start, argument_1.finish, &version_1))
-	{
-		return 0;
-	}
-
-	if (2 == arguments_count && !version_parse(argument_2.start, argument_2.finish, &version_2))
-	{
-		return 0;
+		if (arguments_count <= i)
+		{
+			versions[i].major = versions[i].minor =
+									versions[i].build = versions[i].revision = 0;
+		}
+		else if (!version_parse(values[i].start, values[i].finish, &versions[i]))
+		{
+			return 0;
+		}
 	}
 
 	switch (function)
 	{
 		case parse:
 		case to_string:
-			return 1 == arguments_count && version_to_string(&version_1, output);
+			return 1 == arguments_count && version_to_string(&versions[0], output);
 
 		case get_major:
-			return 1 == arguments_count && int_to_string(version_1.major, output);
+			return 1 == arguments_count && int_to_string(versions[0].major, output);
 
 		case get_minor:
-			return 1 == arguments_count && int_to_string(version_1.minor, output);
+			return 1 == arguments_count && int_to_string(versions[0].minor, output);
 
 		case get_build:
-			return 1 == arguments_count && int_to_string(version_1.build, output);
+			return 1 == arguments_count && int_to_string(versions[0].build, output);
 
 		case get_revision:
-			return 1 == arguments_count && int_to_string(version_1.revision, output);
+			return 1 == arguments_count && int_to_string(versions[0].revision, output);
 
 		case less_:
-			return 2 == arguments_count && bool_to_string(version_less(&version_1, &version_2), output);
+			return 2 == arguments_count && bool_to_string(version_less(&versions[0], &versions[1]), output);
 
 		case greater_:
-			return 2 == arguments_count && bool_to_string(version_greater(&version_1, &version_2), output);
+			return 2 == arguments_count && bool_to_string(version_greater(&versions[0], &versions[1]), output);
 
 		case UNKNOWN_VERSION_FUNCTION:
 		default:

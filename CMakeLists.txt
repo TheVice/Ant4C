@@ -6,8 +6,64 @@ endif()
 
 project("Ant4C")
 
+if(DEFINED ENV{CFLAGS})
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS}")
+endif()
+
+if(DEFINED ENV{CPPFLAGS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CPPFLAGS}")
+endif()
+
+if(DEFINED ENV{CXXFLAGS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
+endif()
+
+if(DEFINED ENV{LDFLAGS})
+  set(LINK_FLAGS "${LINK_FLAGS} $ENV{LDFLAGS}")
+endif()
+
+if(DEFINED CFLAGS)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS}")
+endif()
+
+if(DEFINED CPPFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPPFLAGS}")
+endif()
+
+if(DEFINED CXXFLAGS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+endif()
+
+if(DEFINED LDFLAGS)
+  set(LINK_FLAGS "${LINK_FLAGS} ${LDFLAGS}")
+endif()
+
+set(LIBRARIES4TESTING ant4c)
+
+if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
+if(CMAKE_CL_64)
+  set(LINK_FLAGS "${LINK_FLAGS} /DynamicBase /NXCompat")
+else()
+  set(LINK_FLAGS "${LINK_FLAGS} /SafeSEH /DynamicBase /NXCompat")
+endif()
+
+include("${CMAKE_SOURCE_DIR}/ant4c.cmake")
+include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
+
+include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
+include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
+
+# if(CMAKE_HOST_WIN32)
+#   include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
+# endif()
+
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
+include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
+
+else()
+
 if(MSVC)
-  if (("v140_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET) OR ("v141_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET))
+  if(("v140_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET) OR ("v141_clang_c2" STREQUAL CMAKE_GENERATOR_TOOLSET))
     set(FLAGS "${FLAGS} -Wall /GS")
   else()
     set(FLAGS "${FLAGS} /W4 /GS")
@@ -42,38 +98,6 @@ else()
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     endif()
   endif()
-endif()
-
-if(DEFINED ENV{CFLAGS})
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS}")
-endif()
-
-if(DEFINED ENV{CPPFLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CPPFLAGS}")
-endif()
-
-if(DEFINED ENV{CXXFLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
-endif()
-
-if(DEFINED ENV{LDFLAGS})
-  set(LINK_FLAGS "${LINK_FLAGS} $ENV{LDFLAGS}")
-endif()
-
-if(DEFINED CFLAGS)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS}")
-endif()
-
-if(DEFINED CPPFLAGS)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPPFLAGS}")
-endif()
-
-if(DEFINED CXXFLAGS)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
-endif()
-
-if(DEFINED LDFLAGS)
-  set(LINK_FLAGS "${LINK_FLAGS} ${LDFLAGS}")
 endif()
 
 # ant4c
@@ -165,8 +189,9 @@ if(DEFINED PROGRAM_VERSION)
 endif()
 
 if(NOT MSVC)
-  if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
+  if(NOT MINGW)
     target_compile_options(ant4c PRIVATE "-fPIE")
+    target_compile_options(ant4c PRIVATE "-fPIC")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
     set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
   endif()
@@ -180,20 +205,19 @@ endif()
 
 set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
 
-include("${CMAKE_SOURCE_DIR}/dns-CMakeLists.txt")
-include("${CMAKE_SOURCE_DIR}/regex-CMakeLists.txt")
+include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
+include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
 include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
+include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
 
 # if(CMAKE_HOST_WIN32)
 #  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
 # endif()
 
-# add_dependencies(ant4c ant4c.dns)
-# add_dependencies(ant4c ant4c.regex)
+endif()
+
 add_dependencies(ant4c default_listener)
 add_dependencies(ant4c example_of_the_module)
 
-# if((CMAKE_HOST_WIN32) AND (MSVC))
-#  add_dependencies(ant4c ant4c.net.framework.module)
-# endif()
+

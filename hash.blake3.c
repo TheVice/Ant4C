@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 https://github.com/TheVice/
+ * Copyright (c) 2020 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -33,7 +33,7 @@ enum BLAKE3_DOMAIN_FLAGS
 	KEYED_HASH = 16, DERIVE_KEY_CONTEXT = 32, DERIVE_KEY_MATERIAL = 64*/
 };
 
-#define BLAKE3_STACK_LENGTH (uint8_t)8
+#define BLAKE3_STACK_LENGTH (uint8_t)32
 #define BLAKE3_BLOCK_LENGTH (uint8_t)(16 * sizeof(uint32_t))
 #define BLAKE3_CHUNK_LENGTH (uint16_t)1024
 #define BLAKE3_OUTPUT_LENGTH (uint8_t)(8 * sizeof(uint32_t))
@@ -292,11 +292,6 @@ uint8_t BLAKE3_update_chunk_data(
 
 #define PUSH_CHUNK_TO_STACK_SEC(INPUT, STACK, STACK_LENGTH)							\
 	\
-	if ((BLAKE3_STACK_LENGTH) == (STACK_LENGTH))									\
-	{\
-		return 0;\
-	}\
-	\
 	if (0 != memcpy_s((STACK) + (uint64_t)(STACK_LENGTH) * (BLAKE3_OUTPUT_LENGTH),	\
 					  (BLAKE3_OUTPUT_LENGTH), (INPUT), (BLAKE3_OUTPUT_LENGTH)))		\
 	{																				\
@@ -306,11 +301,6 @@ uint8_t BLAKE3_update_chunk_data(
 	++(STACK_LENGTH);
 
 #define PUSH_CHUNK_TO_STACK(INPUT, STACK, STACK_LENGTH)								\
-	\
-	if ((BLAKE3_STACK_LENGTH) == (STACK_LENGTH))									\
-	{\
-		return 0;\
-	}\
 	\
 	memcpy((STACK) + (uint64_t)(STACK_LENGTH) * (BLAKE3_OUTPUT_LENGTH),				\
 		   (INPUT), (BLAKE3_OUTPUT_LENGTH));										\
@@ -421,12 +411,14 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 			return 0;
 		}
 
-		/**/
+		if ((BLAKE3_STACK_LENGTH) == *stack_length)
+		{
+			return 0;
+		}
+
 #if __STDC_SEC_API__
-		/**/
 		PUSH_CHUNK_TO_STACK_SEC(h, stack, *stack_length);
 #else
-		/**/
 		PUSH_CHUNK_TO_STACK(h, stack, *stack_length);
 #endif
 #if __STDC_SEC_API__
@@ -469,6 +461,11 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 		for (uint64_t index = 0; index < number_of_chunks; ++index)
 		{
 			if (!MERGE(stack, stack_length, t, d))
+			{
+				return 0;
+			}
+
+			if ((BLAKE3_STACK_LENGTH) == *stack_length)
 			{
 				return 0;
 			}
@@ -598,7 +595,7 @@ uint8_t BLAKE3_init(uint32_t* h, uint8_t h_length,
 		h_length < BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t) ||
 		NULL == m ||
 		m_length < BLAKE3_BLOCK_LENGTH / sizeof(uint32_t) ||
-		stack_length < BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH)
+		stack_length < (uint16_t)BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH)
 	{
 		return 0;
 	}
@@ -636,7 +633,7 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 
 	if (!BLAKE3_init(h, BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t),
 					 m, BLAKE3_BLOCK_LENGTH / sizeof(uint32_t),
-					 BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH))
+					 (uint16_t)BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH))
 	{
 		return 0;
 	}
@@ -645,7 +642,7 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 	uint32_t t[2];
 	t[0] = t[1] = 0;
 	uint8_t compressed = 0;
-	uint8_t stack[BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH];
+	uint8_t stack[(uint16_t)BLAKE3_STACK_LENGTH * BLAKE3_OUTPUT_LENGTH];
 	uint8_t stack_length = 0;
 
 	if (0 < length && !BLAKE3_core(start, (uint64_t)length, m, &l, h, &compressed, t, stack, &stack_length, d))

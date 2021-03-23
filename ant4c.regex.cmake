@@ -10,8 +10,19 @@ add_library(ant4c.regex SHARED
   "${CMAKE_SOURCE_DIR}/text_encoding.c"
   "${CMAKE_SOURCE_DIR}/text_encoding.cpp")
 
+if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
+if(MSVC)
+  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
+  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
+else()
+  set_target_properties(ant4c.regex PROPERTIES CXX_STANDARD 11)
+  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+endif()
+else()
 if(NOT MSVC)
   set_target_properties(ant4c.regex PROPERTIES CXX_STANDARD 11)
+endif()
 endif()
 
 target_compile_definitions(ant4c.regex PUBLIC NO_BUFFER_UNIT)
@@ -66,7 +77,7 @@ else()
   endif()
 endif()
 
-if(("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}") AND (NOT MINGW))
+if(("GNU" STREQUAL CMAKE_CXX_COMPILER_ID) AND (NOT MINGW))
   #target_compile_options(ant4c.regex PRIVATE "-fPIE")
   set_target_properties(ant4c.regex PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
 endif()
