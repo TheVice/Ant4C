@@ -291,7 +291,11 @@ TEST(TestOperatingSystem, operating_system_at_all)
 	ASSERT_TRUE(buffer_push_back(&input, zero)) << buffer_free(&input);
 	//
 	const PlatformID expected_platforms[] = { Win32, Unix };
-	const Version expected_versions[] = { {6, 2, 9200, 0}, {6, 5, 0, 0} };
+	//
+	const uint8_t expected_majors[] = { 6, 6 };
+	const uint8_t expected_minors[] = { 2, 5 };
+	const uint16_t expected_builds[] = { 9200, 0 };
+	const uint8_t expected_revisions[] = { 0, 0 };
 	//
 	range input_in_range = buffer_to_range(&input);
 	const uint8_t* pos = input_in_range.start;
@@ -302,7 +306,7 @@ TEST(TestOperatingSystem, operating_system_at_all)
 										   &zero, 1, 1, 1)))
 	{
 		ASSERT_LT(i, COUNT_OF(expected_platforms)) << buffer_free(&input);
-		ASSERT_LT(i, COUNT_OF(expected_versions)) << buffer_free(&input);
+		ASSERT_LT(i, COUNT_OF(expected_majors)) << buffer_free(&input);
 #if defined(_WIN32)
 #define OS_SIZE UINT8_MAX
 #else
@@ -312,12 +316,12 @@ TEST(TestOperatingSystem, operating_system_at_all)
 		ASSERT_TRUE(operating_system_parse(input_in_range.start, pos, OS_SIZE, os)) << buffer_free(&input);
 		ASSERT_EQ(expected_platforms[i], operating_system_get_platform(os)) << buffer_free(&input);
 		//
-		const Version* returned_version = operating_system_get_version(os);
+		const auto returned_version = operating_system_get_version(os);
 		ASSERT_NE(nullptr, returned_version) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].major, returned_version->major) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].minor, returned_version->minor) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].build, returned_version->build) << buffer_free(&input);
-		ASSERT_EQ(expected_versions[i].revision, returned_version->revision) << buffer_free(&input);
+		ASSERT_EQ(expected_majors[i], version_get_major(returned_version)) << buffer_free(&input);
+		ASSERT_EQ(expected_minors[i], version_get_minor(returned_version)) << buffer_free(&input);
+		ASSERT_EQ(expected_builds[i], version_get_build(returned_version)) << buffer_free(&input);
+		ASSERT_EQ(expected_revisions[i], version_get_revision(returned_version)) << buffer_free(&input);
 		//
 		ASSERT_STREQ((const char*)input_in_range.start,
 					 (const char*)operating_system_to_string(os)) << buffer_free(&input);

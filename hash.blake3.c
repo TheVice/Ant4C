@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 https://github.com/TheVice/
+ * Copyright (c) 2020 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -534,13 +534,13 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 
 	if (0 == stack_length)
 	{
-		domain_flags = d | (0 < compressed ? 0 : CHUNK_START) | CHUNK_END | ROOT;
+		domain_flags |= (0 < compressed ? 0 : CHUNK_START) | CHUNK_END | ROOT;
 		return BLAKE3_get_bytes_from_root_chunk(hash_length, h, m, l, domain_flags, output);
 	}
 
 	if (0 < BLAKE3_BLOCK_LENGTH * compressed + l)
 	{
-		domain_flags = d | (0 < compressed ? 0 : CHUNK_START) | CHUNK_END;
+		domain_flags |= (0 < compressed ? 0 : CHUNK_START) | CHUNK_END;
 	}
 	else
 	{
@@ -550,7 +550,7 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 #else
 		memcpy(m, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_BLOCK_LENGTH);
 #endif
-		domain_flags = d | PARENT;
+		domain_flags |= PARENT;
 		l = BLAKE3_BLOCK_LENGTH;
 		t[0] = t[1] = 0;
 	}

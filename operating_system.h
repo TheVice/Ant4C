@@ -19,19 +19,18 @@ enum PlatformID
 };
 
 struct buffer;
-struct Version;
 
 #if !defined(_WIN32)
-uint8_t operating_system_init(uint8_t platformID, const struct Version* version,
+uint8_t operating_system_init(uint8_t platformID, const void* version,
 							  const uint8_t** version_string, ptrdiff_t size, void* os);
 #else
 uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
-							  const struct Version* version, ptrdiff_t size, void* os);
+							  const void* version, ptrdiff_t size, void* os);
 #endif
 
 uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrdiff_t size, void* os);
 enum PlatformID operating_system_get_platform(const void* os);
-const struct Version* operating_system_get_version(const void* os);
+const uint8_t* operating_system_get_version(const void* os);
 const uint8_t* operating_system_to_string(const void* os);
 uint8_t operating_system_is_windows_server(const void* os);
 

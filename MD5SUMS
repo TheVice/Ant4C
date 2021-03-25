@@ -1,3 +1,7 @@
+d5420450ac1be73fcbc61b869d1f1e23  ant4c-2020.09-r0_alpine_v3.10_x86_64.apk
+9a1aa38844732b5139313e31ea2ff7ac  ant4c-2020.09-r0_alpine_v3.11_x​86_64.apk
+34ac423484613b184934d963f356ac3c  ant4c-2020.09-r0_alpine_v3​.12_​​x​86_64.apk
+1ba2bc25abe900239276d7095ae8c3df  ant4c-2020.09-r0_alpine_v3.9_x​86_64.apk
 911bf5119a15fe459a3bb7cd1aa8deec  ant4c_2020.09_freebsd_11.txz
 0849bb43aef7b39d48bc9d6b570d81fc  ant4c_2020.09_freebsd_12.txz
 2d882ebc5709c4487b82a0b10172e002  ant4c_2020.09_openbsd_6.4.tgz
@@ -23,6 +27,9 @@ cd6f7389d91aaadb4d0f2219ea090024  ant4c.dns.zip
 e7490634d2aec451d7600ceab14505ed  ant4c.net.framework.module.2020.9.0.nupkg
 74a05a60c97ae69a806763f0c839d4b5  ant4c.net.module.2020.9.0.nupkg
 bf03f07cd71a15c7037d53bef0b315b8  ant4c.regex.zip
+b19fd0d5a9c337078be53fba1f9ae049  ant4c.dns_and_ant4c.regex_modules_alpine.zip
+f348a06db974da4b15f741206f429df8  ant4c.dns_and_ant4c.regex_modules_rpm_based.zip
+4f284a0deb576837c683deb79363c856  libant4c-2020.09_alpine.tar.bz2
 296e39f5d916d85b961ea9049ad48a5b  libant4c-2020.09_freebsd.tar.bz2
 935aca6f8a2bef6cafc7e1698b375948  libant4c-2020.09_openbsd.tar.bz2
 a1b12d39acee4d6d00201f30f27329c5  libant4c-2020.09_ubuntu.tar.bz

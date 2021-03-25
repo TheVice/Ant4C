@@ -37,21 +37,39 @@ ant4c_net_framework_module_sources = [
 
 ant4c_static_library = static_library('ant4c', ant4c_sources)
 
-default_listener_dynamic_library = shared_library('default_listener', 'default_listener.c')
-example_of_the_module_dynamic_library = shared_library('example_of_the_module', 'example_of_the_module.c', link_with : ant4c_static_library)
+default_listener_shared_library = shared_library(
+  'default_listener', 'default_listener.c',
+  c_args : ['-Ddefault_listener_EXPORTS'])
+example_of_the_module_shared_library = shared_library(
+  'example_of_the_module', 'example_of_the_module.c',
+  link_with : ant4c_static_library,
+  c_args : ['-Dexample_of_the_module_EXPORTS'])
 
 cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required : false)
+dl_dep = cc.find_library('dl', required : false)
 
-executable('ant4c_app', 'main.c', link_with : ant4c_static_library, dependencies : [ m_dep ])
+ant4c_executable = executable('ant4c_app', 'main.c',
+  link_with : ant4c_static_library, dependencies : [ m_dep, dl_dep ])
 
 net_gate_static_library = static_library('net_gate', 'host_fxr.c')
-framework_gate_static_library = static_library('framework_gate', framework_gate_sources)
-
-ant4c_net_module_shared_library = shared_library('ant4c.net.module', 'ant4c.net.module.c', link_with : [ net_gate_static_library, ant4c_static_library ])
-ant4c_net_framework_module_shared_library = shared_library('ant4c.net.framework.module', ant4c_net_framework_module_sources, link_with : [ framework_gate_static_library, ant4c_static_library ])
+ant4c_net_module_shared_library = shared_library(
+  'ant4c.net.module', 'ant4c.net.module.c',
+  link_with : [ net_gate_static_library, ant4c_static_library ],
+  dependencies : [ m_dep, dl_dep ],
+  c_args : ['-Dant4c_net_module_EXPORTS'])
 
 tests_exec_app_exe = executable('tests_exec_app', 'tests_exec_app.c')
+
+if 'windows' == build_machine.system()
+  framework_gate_static_library = static_library(
+    'framework_gate', framework_gate_sources)
+  ant4c_net_framework_module_shared_library = shared_library(
+    'ant4c.net.framework.module',
+    ant4c_net_framework_module_sources,
+    link_with : [ framework_gate_static_library, ant4c_static_library ],
+    c_args : ['-Dant4c_net_framework_module_EXPORTS'])
+endif
 
 # dns.cpp
 # regex.cpp

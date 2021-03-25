@@ -29,13 +29,13 @@
 
 struct OperatingSystem
 {
-	enum PlatformID Platform;
-	struct Version Version;
-	uint8_t IsServer;
+	enum PlatformID platform;
+	uint8_t version[VERSION_SIZE];
+	uint8_t is_server;
 #if defined(_WIN32)
-	uint8_t VersionString[INT8_MAX + 1];
+	uint8_t description[INT8_MAX + 1];
 #else
-	uint8_t VersionString[sizeof(struct utsname) + 4];
+	uint8_t description[sizeof(struct utsname) + 4];
 #endif
 };
 
@@ -45,11 +45,11 @@ static const uint8_t* server_label = (const uint8_t*)"Server";
 #define Server_str_length	6
 
 #if !defined(_WIN32)
-uint8_t operating_system_init(uint8_t platformID, const struct Version* version,
+uint8_t operating_system_init(uint8_t platformID, const void* version,
 							  const uint8_t** version_string, ptrdiff_t size, void* os)
 #else
 uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
-							  const struct Version* version, ptrdiff_t size, void* os)
+							  const void* version, ptrdiff_t size, void* os)
 #endif
 {
 	if (size < (ptrdiff_t)sizeof(struct OperatingSystem) ||
@@ -60,65 +60,65 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 
 	memset(os, 0, size);
 	struct OperatingSystem* operating_system = (struct OperatingSystem*)os;
-	operating_system->Platform = platformID;
+	operating_system->platform = platformID;
 #if defined(_WIN32)
-	operating_system->IsServer = is_server;
+	operating_system->is_server = is_server;
 #endif
 
 	if (version)
 	{
 #if __STDC_SEC_API__
 
-		if (0 != memcpy_s(&operating_system->Version, sizeof(struct Version), version, sizeof(struct Version)))
+		if (0 != memcpy_s(&operating_system->version, VERSION_SIZE, version, VERSION_SIZE))
 		{
 			return 0;
 		}
 
 		if (Win32 == platformID &&
-			0 != memcpy_s(operating_system->VersionString,
+			0 != memcpy_s(operating_system->description,
 						  INT8_MAX, windows_label, Win32NT_str_length))
 		{
 			return 0;
 		}
 
 #else
-		memcpy(&operating_system->Version, version, sizeof(struct Version));
+		memcpy(&operating_system->version, version, VERSION_SIZE);
 
 		if (Win32 == platformID)
 		{
-			memcpy(operating_system->VersionString, windows_label, Win32NT_str_length);
+			memcpy(operating_system->description, windows_label, Win32NT_str_length);
 		}
 
 #endif
-		uint8_t* str_version = operating_system->VersionString;
+		uint8_t* ptr = operating_system->description;
 
 		if (Win32 == platformID)
 		{
-			str_version += Win32NT_str_length;
-			*str_version = ' ';
-			++str_version;
+			ptr += Win32NT_str_length;
+			*ptr = ' ';
+			++ptr;
 #if defined(_WIN32)
 
 			if (is_server)
 			{
 #if __STDC_SEC_API__
 
-				if (0 != memcpy_s(str_version, INT8_MAX - Win32NT_str_length, server_label, Server_str_length))
+				if (0 != memcpy_s(ptr, INT8_MAX - Win32NT_str_length, server_label, Server_str_length))
 				{
 					return 0;
 				}
 
 #else
-				memcpy(str_version, INT8_MAX - Win32NT_str_length, server_label, Server_str_length);
+				memcpy(ptr, INT8_MAX - Win32NT_str_length, server_label, Server_str_length);
 #endif
-				str_version += Server_str_length;
-				*str_version = ' ';
-				++str_version;
+				ptr += Server_str_length;
+				*ptr = ' ';
+				++ptr;
 			}
 
 #endif
 
-			if (!version_to_byte_array(version, str_version))
+			if (!version_to_byte_array(version, ptr))
 			{
 				return 0;
 			}
@@ -129,13 +129,13 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 		{
 #if __STDC_SEC_API__
 			size = sprintf_s(
-					   (char* const)str_version, sizeof(operating_system->VersionString),
+					   (char* const)ptr, sizeof(operating_system->VersionString),
 					   "%s %s %s %s",
 					   version_string[0], version_string[1],
 					   version_string[2], version_string[3]);
 #else
 			size = sprintf(
-					   (char* const)str_version, "%s %s %s %s",
+					   (char* const)ptr, "%s %s %s %s",
 					   version_string[0], version_string[1],
 					   version_string[2], version_string[3]);
 #endif
@@ -171,34 +171,35 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 
 	if (string_starts_with(start, finish, windows_label, windows_label + Win32NT_str_length))
 	{
-		operating_system->Platform = Win32;
-		operating_system->IsServer = string_contains(
-										 start + Win32NT_str_length, finish, server_label,
-										 server_label + Server_str_length);
+		operating_system->platform = Win32;
+		operating_system->is_server = string_contains(
+										  start + Win32NT_str_length, finish, server_label,
+										  server_label + Server_str_length);
 	}
 	else
 	{
-		operating_system->Platform = Unix;
+		operating_system->platform = Unix;
 	}
 
 	/*TODO: os->Platform = MacOSX;*/
 
-	if (!version_parse(start, finish, &operating_system->Version))
+	if (!version_parse(start, finish, operating_system->version))
 	{
 		return 0;
 	}
 
+	size = finish - start;
 #if __STDC_SEC_API__
 
-	if (0 != memcpy_s(&operating_system->VersionString, sizeof(operating_system->VersionString), start,
-					  MIN((ptrdiff_t)sizeof(operating_system->VersionString), finish - start)))
+	if (0 != memcpy_s(&operating_system->description, sizeof(operating_system->description),
+					  start, MIN((ptrdiff_t)sizeof(operating_system->description), size)))
 	{
 		return 0;
 	}
 
 #else
-	memcpy(&operating_system->VersionString, start,
-		   MIN((ptrdiff_t)sizeof(operating_system->VersionString), finish - start));
+	memcpy(&operating_system->description, start,
+		   MIN((ptrdiff_t)sizeof(operating_system->description), size));
 #endif
 	return 1;
 }
@@ -210,21 +211,19 @@ enum PlatformID operating_system_get_platform(const void* os)
 		return UINT8_MAX;
 	}
 
-	const struct OperatingSystem* operating_system = (const struct OperatingSystem*)os;
-	return operating_system->Platform;
+	return ((const struct OperatingSystem*)os)->platform;
 }
 
-const struct Version* operating_system_get_version(const void* os)
+const uint8_t* operating_system_get_version(const void* os)
 {
 	if (NULL == os)
 	{
-		static struct Version ver;
-		ver.major = ver.minor = ver.build = ver.revision = 0;
-		return &ver;
+		static uint8_t version[VERSION_SIZE];
+		memset(version, 0, VERSION_SIZE);
+		return version;
 	}
 
-	const struct OperatingSystem* operating_system = (const struct OperatingSystem*)os;
-	return &operating_system->Version;
+	return ((const struct OperatingSystem*)os)->version;
 }
 
 const uint8_t* operating_system_to_string(const void* os)
@@ -234,8 +233,7 @@ const uint8_t* operating_system_to_string(const void* os)
 		return NULL;
 	}
 
-	const struct OperatingSystem* operating_system = (const struct OperatingSystem*)os;
-	return operating_system->VersionString;
+	return ((const struct OperatingSystem*)os)->description;
 }
 
 uint8_t operating_system_is_windows_server(const void* os)
@@ -245,8 +243,7 @@ uint8_t operating_system_is_windows_server(const void* os)
 		return 0;
 	}
 
-	const struct OperatingSystem* operating_system = (const struct OperatingSystem*)os;
-	return operating_system->IsServer;
+	return ((const struct OperatingSystem*)os)->is_server;
 }
 
 const uint8_t* platform_get_name()
@@ -258,7 +255,7 @@ const uint8_t* platform_get_name()
 		return NULL;
 	}
 
-	return os->VersionString;
+	return os->description;
 }
 
 uint8_t platform_is_unix()
@@ -281,7 +278,7 @@ uint8_t platform_is_windows_server()
 		return 0;
 	}
 
-	return os->IsServer;
+	return os->is_server;
 #else
 	return 0;
 #endif
@@ -322,7 +319,7 @@ uint8_t os_exec_function(uint8_t function, const struct buffer* arguments, uint8
 
 	struct OperatingSystem os;
 
-	if (!common_get_arguments(arguments, arguments_count, &argument, 0) ||
+	if (!common_get_arguments(arguments, arguments_count, &argument, 1) ||
 		!operating_system_parse(argument.start, argument.finish, sizeof(struct OperatingSystem), &os))
 	{
 		return 0;
