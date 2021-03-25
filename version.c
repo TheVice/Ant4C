@@ -103,9 +103,8 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, u
 	}
 
 	uint8_t i = 0;
-
 	input_start = find_any_symbol_like_or_not_like_that(
-							   input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
+					  input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
 
 	for (; input_start < input_finish && i < 4; ++i, ++input_start, version += sizeof(uint32_t))
 	{

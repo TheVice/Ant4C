@@ -14,6 +14,7 @@ extern "C" {
 #include "environment.h"
 #include "interpreter.h"
 #include "operating_system.h"
+#include "path.h"
 #include "range.h"
 #include "string_unit.h"
 #include "version.h"
@@ -205,30 +206,46 @@ TEST(TestEnvironment_, environment_get_operating_system)
 TEST(TestEnvironment_, environment_get_user_name)
 {
 #if defined(_WIN32)
-	const uint8_t* variable_name = (const uint8_t*)"USERNAME";
-	const uint8_t variable_name_length = 8;
+	const uint8_t* names[] = { (const uint8_t*)"USERNAME" };
+	const uint8_t lengths[] = { 8 };
 #else
-	const uint8_t* variable_name = (const uint8_t*)"LOGNAME";
-	const uint8_t variable_name_length = 7;
+	const uint8_t* names[] = { (const uint8_t*)"LOGNAME", (const uint8_t*)"HOME" };
+	const uint8_t lengths[] = { 7, 4 };
 #endif
 	buffer result;
 	SET_NULL_TO_BUFFER(result);
 	//
 	ASSERT_TRUE(environment_get_user_name(&result)) << buffer_free(&result);
+	ASSERT_LT(0L, buffer_size(&result)) << buffer_free(&result);
+	const auto returned(buffer_to_string(&result));
+
+	for (uint8_t i = 0, count = COUNT_OF(names); i < count; ++i)
+	{
+		ASSERT_TRUE(buffer_resize(&result, 0))
+				<< "'" << returned << "'" << std::endl << buffer_free(&result);
+
+		if (environment_get_variable(names[i], names[i] + lengths[i], &result))
+		{
+			break;
+		}
+	}
+
+	ASSERT_LT(0L, buffer_size(&result))
+			<< "'" << returned << "'" << std::endl << buffer_free(&result);
 	//
-	buffer expected_result;
-	SET_NULL_TO_BUFFER(expected_result);
+	auto variable_value(buffer_to_range(&result));
+	auto expected_result = range_to_string(variable_value);
 	//
-	const std::string returned(buffer_to_string(&result));
 	ASSERT_TRUE(
-		environment_get_variable(variable_name, variable_name + variable_name_length, &expected_result))
-			<< "Expected value for variable is '" << returned << "'" << std::endl
-			<< buffer_free(&expected_result) << buffer_free(&result);
-	const std::string expected_return(buffer_to_string(&expected_result));
-	ASSERT_EQ(expected_return, returned) << buffer_free(&expected_result) << buffer_free(&result);
+		path_get_file_name(variable_value.start, variable_value.finish, &variable_value))
+			<< "'" << returned << "'" << std::endl
+			<< "'" << expected_result << "'" << std::endl
+			<< buffer_free(&result);
 	//
-	buffer_release(&expected_result);
+	expected_result = range_to_string(variable_value);
 	buffer_release(&result);
+	//
+	ASSERT_EQ(expected_result, returned);
 }
 
 TEST(TestEnvironment_, environment_newline)
