@@ -21,11 +21,11 @@ enum PlatformID
 struct buffer;
 
 #if !defined(_WIN32)
-uint8_t operating_system_init(uint8_t platformID, const void* version,
+uint8_t operating_system_init(uint8_t platformID, const uint8_t* version,
 							  const uint8_t** version_string, ptrdiff_t size, void* os);
 #else
 uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
-							  const void* version, ptrdiff_t size, void* os);
+							  const uint8_t* version, ptrdiff_t size, void* os);
 #endif
 
 uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrdiff_t size, void* os);

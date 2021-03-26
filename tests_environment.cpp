@@ -34,6 +34,10 @@ class TestEnvironment : public TestsBaseXml
 {
 };
 
+class TestOperatingSystem : public TestsBaseXml
+{
+};
+
 TEST(TestEnvironment_, environment_get_folder_path)
 {
 	static const uint8_t verbose = 0;
@@ -292,7 +296,99 @@ TEST_F(TestEnvironment, environment_variable_exists)
 	}
 }
 
-TEST(TestOperatingSystem, operating_system_at_all)
+#if defined(_WIN32)
+#define OS_SIZE UINT8_MAX
+#else
+#define OS_SIZE sizeof(struct utsname) + INT8_MAX
+#endif
+
+TEST_F(TestOperatingSystem, operating_system_init)
+{
+	for (const auto& node : nodes)
+	{
+		const auto platformID = (uint8_t)INT_PARSE(
+									node.node().select_node("platformID").node().child_value());
+#if defined(_WIN32)
+		const std::string is_server_value(node.node().select_node("is_server").node().child_value());
+		uint8_t is_server = 0;
+
+		if (!is_server_value.empty())
+		{
+			ASSERT_TRUE
+			(bool_parse(reinterpret_cast<const uint8_t*>(is_server_value.data()), is_server_value.size(), &is_server));
+		}
+
+#else
+		const auto version_string_node = node.node().select_node("version_string").node();
+		//
+		const std::string value_1(version_string_node.attribute("value_1").as_string());
+		const std::string value_2(version_string_node.attribute("value_2").as_string());
+		const std::string value_3(version_string_node.attribute("value_3").as_string());
+		const std::string value_4(version_string_node.attribute("value_4").as_string());
+		//
+		const uint8_t* version_string[] =
+		{
+			reinterpret_cast<const uint8_t*>(value_1.data()),
+			reinterpret_cast<const uint8_t*>(value_2.data()),
+			reinterpret_cast<const uint8_t*>(value_3.data()),
+			reinterpret_cast<const uint8_t*>(value_4.data())
+		};
+#endif
+		const uint8_t* ptr_version = NULL;
+		uint8_t version[VERSION_SIZE];
+		const std::string version_str(node.node().select_node("version").node().child_value());
+
+		if (!version_str.empty())
+		{
+			const auto version_str_range(string_to_range(version_str));
+			ASSERT_TRUE(version_parse(version_str_range.start, version_str_range.finish, version));
+			ptr_version = version;
+		}
+
+		uint8_t os[OS_SIZE];
+#if !defined(_WIN32)
+		ASSERT_TRUE(operating_system_init(platformID, ptr_version, version_string, OS_SIZE, os));
+#else
+		ASSERT_TRUE(operating_system_init(platformID, is_server, ptr_version, OS_SIZE, os));
+#endif
+		ASSERT_EQ(platformID, operating_system_get_platform(os));
+#if defined(_WIN32)
+		ASSERT_EQ(is_server, operating_system_is_windows_server(os));
+#endif
+		const auto returned_version = operating_system_get_version(os);
+
+		if (version_str.empty())
+		{
+			ASSERT_EQ(0ul, version_get_major(returned_version));
+			ASSERT_EQ(0ul, version_get_minor(returned_version));
+			ASSERT_EQ(0ul, version_get_build(returned_version));
+			ASSERT_EQ(0ul, version_get_revision(returned_version));
+#if !defined(_WIN32)
+			ptr_version = operating_system_to_string(os);
+			std::string returned_os_information((const char*)ptr_version);
+			std::string expected;
+
+			for (auto i = 0; i < 4; ++i)
+			{
+				expected += (const char*)version_string[i];
+			}
+
+			ASSERT_EQ(expected, returned_os_information);
+#endif
+		}
+		else
+		{
+			ASSERT_EQ(version_get_major(ptr_version), version_get_major(returned_version));
+			ASSERT_EQ(version_get_minor(ptr_version), version_get_minor(returned_version));
+			ASSERT_EQ(version_get_build(ptr_version), version_get_build(returned_version));
+			ASSERT_EQ(version_get_revision(ptr_version), version_get_revision(returned_version));
+		}
+
+		--node_count;
+	}
+}
+
+TEST(TestOperatingSystem_, operating_system_at_all)
 {
 	static const uint8_t zero = '\0';
 	//
@@ -324,11 +420,7 @@ TEST(TestOperatingSystem, operating_system_at_all)
 	{
 		ASSERT_LT(i, COUNT_OF(expected_platforms)) << buffer_free(&input);
 		ASSERT_LT(i, COUNT_OF(expected_majors)) << buffer_free(&input);
-#if defined(_WIN32)
-#define OS_SIZE UINT8_MAX
-#else
-#define OS_SIZE sizeof(struct utsname) + INT8_MAX
-#endif
+		//
 		uint8_t os[OS_SIZE];
 		ASSERT_TRUE(operating_system_parse(input_in_range.start, pos, OS_SIZE, os)) << buffer_free(&input);
 		ASSERT_EQ(expected_platforms[i], operating_system_get_platform(os)) << buffer_free(&input);

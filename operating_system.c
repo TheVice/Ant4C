@@ -45,11 +45,11 @@ static const uint8_t* server_label = (const uint8_t*)"Server";
 #define Server_str_length	6
 
 #if !defined(_WIN32)
-uint8_t operating_system_init(uint8_t platformID, const void* version,
+uint8_t operating_system_init(uint8_t platformID, const uint8_t* version,
 							  const uint8_t** version_string, ptrdiff_t size, void* os)
 #else
 uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
-							  const void* version, ptrdiff_t size, void* os)
+							  const uint8_t* version, ptrdiff_t size, void* os)
 #endif
 {
 	if (size < (ptrdiff_t)sizeof(struct OperatingSystem) ||
@@ -69,54 +69,51 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 	{
 #if __STDC_SEC_API__
 
-		if (0 != memcpy_s(&operating_system->version, VERSION_SIZE, version, VERSION_SIZE))
-		{
-			return 0;
-		}
-
-		if (Win32 == platformID &&
-			0 != memcpy_s(operating_system->description,
-						  INT8_MAX, windows_label, Win32NT_str_length))
+		if (0 != memcpy_s(operating_system->version, VERSION_SIZE, version, VERSION_SIZE))
 		{
 			return 0;
 		}
 
 #else
-		memcpy(&operating_system->version, version, VERSION_SIZE);
-
-		if (Win32 == platformID)
-		{
-			memcpy(operating_system->description, windows_label, Win32NT_str_length);
-		}
-
+		memcpy(operating_system->version, version, VERSION_SIZE);
 #endif
 		uint8_t* ptr = operating_system->description;
+#if __STDC_SEC_API__
+		size = (ptrdiff_t)sizeof(operating_system->description);
+#endif
 
 		if (Win32 == platformID)
 		{
-			ptr += Win32NT_str_length;
-			*ptr = ' ';
-			++ptr;
-#if defined(_WIN32)
+			const uint8_t* labels[] = { windows_label, server_label };
+			uint8_t labels_lengths[] = { Win32NT_str_length, Server_str_length };
 
-			if (is_server)
+			for (uint8_t i = 0, count = COUNT_OF(labels); i < count; ++i)
 			{
 #if __STDC_SEC_API__
 
-				if (0 != memcpy_s(ptr, INT8_MAX - Win32NT_str_length, server_label, Server_str_length))
+				if (0 != memcpy_s(ptr, size, labels[i], labels_lengths[i]))
 				{
 					return 0;
 				}
 
 #else
-				memcpy(ptr, INT8_MAX - Win32NT_str_length, server_label, Server_str_length);
+				memcpy(ptr, labels[i], labels_lengths[i]);
 #endif
-				ptr += Server_str_length;
+				ptr += labels_lengths[i];
 				*ptr = ' ';
 				++ptr;
-			}
+#if __STDC_SEC_API__
+				size -= (ptrdiff_t)labels_lengths[i] + 2;
+#endif
+#if defined(_WIN32)
+
+				if (!is_server)
+				{
+					break;
+				}
 
 #endif
+			}
 
 			if (!version_to_byte_array(version, ptr))
 			{
@@ -127,18 +124,23 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 #if !defined(_WIN32)
 		else
 		{
+			if (!version_string)
+			{
+				return 0;
+			}
+
 #if __STDC_SEC_API__
 			size = sprintf_s(
-					   (char* const)ptr, sizeof(operating_system->VersionString),
-					   "%s %s %s %s",
-					   version_string[0], version_string[1],
-					   version_string[2], version_string[3]);
+					   (char* const)ptr, size,
 #else
 			size = sprintf(
-					   (char* const)ptr, "%s %s %s %s",
-					   version_string[0], version_string[1],
-					   version_string[2], version_string[3]);
+					   (char* const)ptr,
 #endif
+					   "%s %s %s %s",
+					   version_string[0],
+					   version_string[1],
+					   version_string[2],
+					   version_string[3]);
 
 			if (size < 1)
 			{
@@ -191,14 +193,14 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 	size = finish - start;
 #if __STDC_SEC_API__
 
-	if (0 != memcpy_s(&operating_system->description, sizeof(operating_system->description),
+	if (0 != memcpy_s(operating_system->description, sizeof(operating_system->description),
 					  start, MIN((ptrdiff_t)sizeof(operating_system->description), size)))
 	{
 		return 0;
 	}
 
 #else
-	memcpy(&operating_system->description, start,
+	memcpy(operating_system->description, start,
 		   MIN((ptrdiff_t)sizeof(operating_system->description), size));
 #endif
 	return 1;

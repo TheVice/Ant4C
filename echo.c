@@ -108,8 +108,20 @@ uint8_t echo_win32(HANDLE output, const uint16_t* message, uint16_t count_of_cha
 		return 0;
 	}
 
+	BOOL result1 = 0;
 	DWORD chars_that_was_written = 0;
-	const BOOL result1 = WriteConsoleW(output, message, count_of_chars, &chars_that_was_written, NULL);
+	DWORD mode = 0;
+
+	if (GetConsoleMode(output, &mode))
+	{
+		result1 = WriteConsoleW(output, message, count_of_chars, &chars_that_was_written, NULL);
+	}
+	else
+	{
+		result1 = WriteFile(output, message, sizeof(uint16_t) * count_of_chars, &chars_that_was_written, NULL);
+		chars_that_was_written /= sizeof(uint16_t);
+	}
+
 	const uint8_t result2 = count_of_chars == chars_that_was_written;
 	return result1 && result2;
 }

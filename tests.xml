@@ -593,6 +593,26 @@
       <return>0</return>
     </environment_variable_exists>
   </TestEnvironment>
+  <TestOperatingSystem>
+    <operating_system_init>
+      <platformID></platformID>
+      <is_server></is_server>
+      <version_string value_1="" value_2="" value_3="" value_4="" />
+      <version></version>
+    </operating_system_init>
+    <operating_system_init>
+      <platformID></platformID>
+      <is_server>true</is_server>
+      <version_string value_1="" value_2="" value_3="" value_4="" />
+      <version>5.0.0.0</version>
+    </operating_system_init>
+    <operating_system_init>
+      <platformID>1</platformID>
+      <is_server></is_server>
+      <version_string value_1="Linux " value_2="" value_3="" value_4="" />
+      <version>4.0.0.0</version>
+    </operating_system_init>
+  </TestOperatingSystem>
   <TestExec allow_output_to_console="true">
     <exec_with_redirect_to_tmp_file>
       <append></append>
