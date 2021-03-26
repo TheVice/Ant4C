@@ -17,7 +17,76 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, struct Version* version)
+struct version_
+{
+	uint32_t major;
+	uint32_t minor;
+	uint32_t build;
+	uint32_t revision;
+};
+
+uint8_t version_init(uint8_t* version, uint8_t size,
+					 uint32_t major, uint32_t minor, uint32_t build, uint32_t revision)
+{
+	if (size < sizeof(struct version_))
+	{
+		return 0;
+	}
+
+	struct version_* the_version = (struct version_*)version;
+
+	the_version->major = major;
+
+	the_version->minor = minor;
+
+	the_version->build = build;
+
+	the_version->revision = revision;
+
+	return 1;
+}
+
+uint32_t version_get_major(const uint8_t* version)
+{
+	if (!version)
+	{
+		return 0;
+	}
+
+	return ((const struct version_*)version)->major;
+}
+
+uint32_t version_get_minor(const uint8_t* version)
+{
+	if (!version)
+	{
+		return 0;
+	}
+
+	return ((const struct version_*)version)->minor;
+}
+
+uint32_t version_get_build(const uint8_t* version)
+{
+	if (!version)
+	{
+		return 0;
+	}
+
+	return ((const struct version_*)version)->build;
+}
+
+uint32_t version_get_revision(const uint8_t* version)
+{
+	if (!version)
+	{
+		return 0;
+	}
+
+	return ((const struct version_*)version)->revision;
+}
+
+uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, uint8_t* version)
 {
 	static const uint8_t point = '.';
 	static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -28,23 +97,20 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, s
 		return 0;
 	}
 
-	uint32_t* ver_in_parts[4];
-	ver_in_parts[0] = &version->major;
-	ver_in_parts[1] = &version->minor;
-	ver_in_parts[2] = &version->build;
-	ver_in_parts[3] = &version->revision;
-	/**/
-	const uint8_t count = COUNT_OF(ver_in_parts);
-	uint8_t i = 0;
+	if (!version_init(version, VERSION_SIZE, 0, 0, 0, 0))
+	{
+		return 0;
+	}
 
-	for (input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS,
-					   1, 1);
-		 input_start < input_finish && i < count; ++i, ++input_start)
+	uint8_t i = 0;
+	input_start = find_any_symbol_like_or_not_like_that(
+					  input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
+
+	for (; input_start < input_finish && i < 4; ++i, ++input_start, version += sizeof(uint32_t))
 	{
 		if (input_finish == input_start ||
-			input_start + 1 == find_any_symbol_like_or_not_like_that(input_start, input_start + 1, digits,
-					COUNT_OF_DIGITS, 1,
-					1))
+			input_start + 1 == find_any_symbol_like_or_not_like_that(
+				input_start, input_start + 1, digits, COUNT_OF_DIGITS, 1, 1))
 		{
 			if (i == 0)
 			{
@@ -54,7 +120,7 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, s
 			break;
 		}
 
-		*(ver_in_parts[i]) = (uint32_t)int_parse(input_start);
+		*((uint32_t*)version) = (uint32_t)int_parse(input_start);
 		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, &point, 1, 1, 1);
 	}
 
@@ -63,32 +129,34 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, s
 		return 0;
 	}
 
-	while (i < count)
-	{
-		*(ver_in_parts[i++]) = 0;
-	}
-
 	return 1;
 }
 
-uint8_t version_to_byte_array(const struct Version* version, uint8_t* output)
+uint8_t version_to_byte_array(const uint8_t* version, uint8_t* output)
 {
 	if (NULL == version || NULL == output)
 	{
 		return 0;
 	}
 
+	struct version_* the_version = (struct version_*)version;
+
 #if __STDC_SEC_API__
 	const uint8_t length = (uint8_t)sprintf_s(
-							   (char* const)output, 64, "%u.%u.%u.%u", version->major, version->minor, version->build, version->revision);
+							   (char* const)output, 64,
 #else
 	const uint8_t length = (uint8_t)sprintf(
-							   (char* const)output, "%u.%u.%u.%u", version->major, version->minor, version->build, version->revision);
+							   (char* const)output,
 #endif
+							   "%u.%u.%u.%u",
+							   the_version->major,
+							   the_version->minor,
+							   the_version->build,
+							   the_version->revision);
 	return length;
 }
 
-uint8_t version_to_string(const struct Version* version, struct buffer* output)
+uint8_t version_to_string(const uint8_t* version, struct buffer* output)
 {
 	if (NULL == version || NULL == output)
 	{
@@ -106,27 +174,31 @@ uint8_t version_to_string(const struct Version* version, struct buffer* output)
 	return buffer_resize(output, size + version_to_byte_array(version, str_version));
 }
 
-uint8_t version_less(const struct Version* a, const struct Version* b)
+uint8_t version_less(const uint8_t* version_a, const uint8_t* version_b)
 {
-	if (NULL == a ||
-		NULL == b)
+	if (NULL == version_a ||
+		NULL == version_b)
 	{
 		return 0;
 	}
 
-	if (a->major < b->major)
+	const struct version_* the_a = (const struct version_*)version_a;
+	const struct version_* the_b = (const struct version_*)version_b;
+
+	if (the_a->major < the_b->major)
 	{
 		return 1;
 	}
-	else if (a->major == b->major && a->minor < b->minor)
+	else if (the_a->major == the_b->major && the_a->minor < the_b->minor)
 	{
 		return 1;
 	}
-	else if (a->major == b->major && a->minor == b->minor && a->build < b->build)
+	else if (the_a->major == the_b->major && the_a->minor == the_b->minor && the_a->build < the_b->build)
 	{
 		return 1;
 	}
-	else if (a->major == b->major && a->minor == b->minor && a->build == b->build && a->revision < b->revision)
+	else if (the_a->major == the_b->major && the_a->minor == the_b->minor &&
+			 the_a->build == the_b->build && the_a->revision < the_b->revision)
 	{
 		return 1;
 	}
@@ -134,27 +206,31 @@ uint8_t version_less(const struct Version* a, const struct Version* b)
 	return 0;
 }
 
-uint8_t version_greater(const struct Version* a, const struct Version* b)
+uint8_t version_greater(const uint8_t* version_a, const uint8_t* version_b)
 {
-	if (NULL == a ||
-		NULL == b)
+	if (NULL == version_a ||
+		NULL == version_b)
 	{
 		return 0;
 	}
 
-	if (a->major > b->major)
+	const struct version_* the_a = (const struct version_*)version_a;
+	const struct version_* the_b = (const struct version_*)version_b;
+
+	if (the_a->major > the_b->major)
 	{
 		return 1;
 	}
-	else if (a->major == b->major && a->minor > b->minor)
+	else if (the_a->major == the_b->major && the_a->minor > the_b->minor)
 	{
 		return 1;
 	}
-	else if (a->major == b->major && a->minor == b->minor && a->build > b->build)
+	else if (the_a->major == the_b->major && the_a->minor == the_b->minor && the_a->build > the_b->build)
 	{
 		return 1;
 	}
-	else if (a->major == b->major && a->minor == b->minor && a->build == b->build && a->revision > b->revision)
+	else if (the_a->major == the_b->major && the_a->minor == the_b->minor && the_a->build == the_b->build &&
+			 the_a->revision > the_b->revision)
 	{
 		return 1;
 	}
@@ -203,16 +279,20 @@ uint8_t version_exec_function(uint8_t function, const struct buffer* arguments, 
 		return 0;
 	}
 
-	struct Version versions[COUNT_OF(values)];
+	uint8_t versions[2 * VERSION_SIZE];
 
-	for (uint8_t i = 0, count = COUNT_OF(values); i < count; ++i)
+	for (ptrdiff_t i = 0, count = 2; i < count; ++i)
 	{
+		uint8_t* version = versions + i * VERSION_SIZE;
+
 		if (arguments_count <= i)
 		{
-			versions[i].major = versions[i].minor =
-									versions[i].build = versions[i].revision = 0;
+			if (!version_init(version, VERSION_SIZE, 0, 0, 0, 0))
+			{
+				return 0;
+			}
 		}
-		else if (!version_parse(values[i].start, values[i].finish, &versions[i]))
+		else if (!version_parse(values[i].start, values[i].finish, version))
 		{
 			return 0;
 		}
@@ -222,25 +302,25 @@ uint8_t version_exec_function(uint8_t function, const struct buffer* arguments, 
 	{
 		case parse:
 		case to_string:
-			return 1 == arguments_count && version_to_string(&versions[0], output);
+			return 1 == arguments_count && version_to_string(versions, output);
 
 		case get_major:
-			return 1 == arguments_count && int_to_string(versions[0].major, output);
+			return 1 == arguments_count && int_to_string(version_get_major(versions), output);
 
 		case get_minor:
-			return 1 == arguments_count && int_to_string(versions[0].minor, output);
+			return 1 == arguments_count && int_to_string(version_get_minor(versions), output);
 
 		case get_build:
-			return 1 == arguments_count && int_to_string(versions[0].build, output);
+			return 1 == arguments_count && int_to_string(version_get_build(versions), output);
 
 		case get_revision:
-			return 1 == arguments_count && int_to_string(versions[0].revision, output);
+			return 1 == arguments_count && int_to_string(version_get_revision(versions), output);
 
 		case less_:
-			return 2 == arguments_count && bool_to_string(version_less(&versions[0], &versions[1]), output);
+			return 2 == arguments_count && bool_to_string(version_less(versions, versions + VERSION_SIZE), output);
 
 		case greater_:
-			return 2 == arguments_count && bool_to_string(version_greater(&versions[0], &versions[1]), output);
+			return 2 == arguments_count && bool_to_string(version_greater(versions, versions + VERSION_SIZE), output);
 
 		case UNKNOWN_VERSION_FUNCTION:
 		default:

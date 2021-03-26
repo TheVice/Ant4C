@@ -656,9 +656,7 @@ uint8_t environment_get_machine_name(struct buffer* name)
 
 	return text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name);
 }
-
 #else
-
 uint8_t environment_get_machine_name(struct buffer* name)
 {
 	if (NULL == name)
@@ -682,14 +680,17 @@ uint8_t environment_get_machine_name(struct buffer* name)
 
 	return (size < buffer_size(name)) && buffer_resize(name, size + strlen(host_name));
 }
-
 #endif
 #if defined(_WIN32)
-
-struct Version GetWindowsVersion()
+uint8_t environment_get_windows_version(void* version)
 {
-	struct Version ver;
-	ver.major = ver.minor = ver.build = ver.revision = 0;
+	if (!version)
+	{
+		return 0;
+	}
+
+	uint8_t the_version[2];
+	memset(the_version, 0, sizeof(the_version));
 #if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #if _WIN32_WINNT > 0x0603
 
@@ -698,52 +699,54 @@ struct Version GetWindowsVersion()
 	if (IsWindowsVersionOrGreater(10, 0, 0))
 #endif
 	{
-		ver.major = 10;
+		the_version[0] = 10;
 	}
 	else if (IsWindows8Point1OrGreater())
 	{
-		ver.major = 6;
-		ver.minor = 3;
+		the_version[0] = 6;
+		the_version[1] = 3;
 	}
 	else if (IsWindows8OrGreater())
 	{
-		ver.major = 6;
-		ver.minor = 2;
+		the_version[0] = 6;
+		the_version[1] = 2;
 	}
 	else if (IsWindows7OrGreater())
 	{
-		ver.major = 6;
-		ver.minor = 1;
+		the_version[0] = 6;
+		the_version[1] = 1;
 	}
 	else if (IsWindowsVistaOrGreater())
 	{
-		ver.major = 6;
+		the_version[0] = 6;
 	}
 
-	/*IsWindowsXPOrGreater();*/
 #else
-	/*TODO: call VerSetConditionMask, VerifyVersionInfoW via pointers.*/
-	static const struct Version versions[] = { {10, 0, 0, 0}, {6, 3, 0, 0}, {6, 2, 0, 0}, {6, 1, 0, 0}, {6, 0, 0, 0} };
+	static uint8_t majors[] = { 10, 6, 6, 6, 6 };
+	static uint8_t minors[] = { 0, 3, 2, 1, 0 };
 	DWORDLONG const dwlConditionMask = VerSetConditionMask(
 										   VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL),
 										   VER_MINORVERSION, VER_GREATER_EQUAL);
 
-	for (uint8_t i = 0, count = COUNT_OF(versions); i < count; ++i)
+	for (uint8_t i = 0, count = COUNT_OF(majors); i < count; ++i)
 	{
 		OSVERSIONINFOEXW osvi;
 		memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
 		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
-		osvi.dwMajorVersion = versions[i].major;
-		osvi.dwMinorVersion = versions[i].minor;
+		osvi.dwMajorVersion = majors[i];
+		osvi.dwMinorVersion = minors[i];
 
 		if (VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask))
 		{
-			return versions[i];
+			the_version[0] = majors[i];
+			the_version[1] = minors[i];
+			/**/
+			break;
 		}
 	}
 
 #endif
-	return ver;
+	return version_init(version, VERSION_SIZE, the_version[0], the_version[1], 0, 0);
 }
 
 static uint8_t operating_system[UINT8_MAX];
@@ -764,9 +767,16 @@ const void* environment_get_operating_system()
 {
 	if (!is_data_of_operating_system_filled)
 	{
-		struct Version ver = GetWindowsVersion();
+		uint8_t version[VERSION_SIZE];
+
+		if (!environment_get_windows_version(version))
+		{
+			return 0;
+		}
+
 		is_data_of_operating_system_filled = operating_system_init(
-				Win32, 0 < IsWindowsServer(), &ver, (ptrdiff_t)sizeof(operating_system), operating_system);
+				Win32, 0 < IsWindowsServer(), version,
+				(ptrdiff_t)sizeof(operating_system), operating_system);
 
 		if (!is_data_of_operating_system_filled)
 		{
@@ -785,7 +795,7 @@ const void* environment_get_operating_system()
 {
 	if (!is_data_of_operating_system_filled)
 	{
-		struct Version ver;
+		uint8_t version[VERSION_SIZE];
 		struct utsname uname_data;
 
 		if (-1 == uname(&uname_data))
@@ -795,7 +805,7 @@ const void* environment_get_operating_system()
 
 		if (!version_parse((const uint8_t*)uname_data.version,
 						   (const uint8_t*)uname_data.version + strlen(uname_data.version),
-						   &ver))
+						   version))
 		{
 			return NULL;
 		}
@@ -807,7 +817,7 @@ const void* environment_get_operating_system()
 		};
 		/**/
 		is_data_of_operating_system_filled = operating_system_init(
-				Unix, &ver, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
+				Unix, version, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
 
 		if (!is_data_of_operating_system_filled)
 		{

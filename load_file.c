@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -91,8 +91,6 @@
 	{																												\
 		return 0;																									\
 	}																												\
-	\
-	(START) = buffer_data((OUTPUT), (SIZE));																		\
 	\
 	{																												\
 		const ptrdiff_t sz = buffer_size(OUTPUT);																	\

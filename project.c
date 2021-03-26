@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -1129,14 +1129,14 @@ uint8_t program_exec_function(uint8_t function, const struct buffer* arguments, 
 		case version_:
 		{
 			static const uint8_t* program_version = (const uint8_t*)(PROGRAM_VERSION);
-			struct Version version;
+			uint8_t version[VERSION_SIZE];
 
-			if (!version_parse(program_version, program_version + PROGRAM_VERSION_LENGTH, &version))
+			if (!version_parse(program_version, program_version + PROGRAM_VERSION_LENGTH, version))
 			{
 				break;
 			}
 
-			return version_to_string(&version, output);
+			return version_to_string(version, output);
 		}
 
 		case current_directory_:
