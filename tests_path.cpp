@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -11,6 +11,7 @@ extern "C" {
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
+#include "file_system.h"
 #include "interpreter.h"
 #include "path.h"
 #include "range.h"
@@ -443,36 +444,39 @@ TEST(TestPath_, path_get_directory_for_current_image)
 	buffer_release(&output);
 }
 
-TEST(TestPath_, cygpath_get_dos_path)
+TEST_F(TestPath, cygpath_get_dos_path)
 {
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 #if defined(_WIN32)
-	const uint8_t* paths[] =
-	{
-		(const uint8_t*)"C:\\Program Files\\Windows Defender Advanced Threat Protection"
-	};
-	//
-	const uint16_t paths_lengths[] =
-	{
-		60
-	};
-	//
-	const std::string expected_outputs[] =
-	{
-		"C:\\PROGRA~1\\WIF4A9~1"
-	};
 
-	for (size_t i = 0, count = COUNT_OF(paths); i < count; ++i)
+	for (const auto& node : nodes)
 	{
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(cygpath_get_dos_path(paths[i], paths[i] + paths_lengths[i], &output)) << buffer_free(&output);
-		ASSERT_EQ(expected_outputs[i], buffer_to_string(&output)) << buffer_free(&output);
+		const std::string input(node.node().select_node("input").node().child_value());
+
+		if (!directory_exists(reinterpret_cast<const uint8_t*>(input.data())))
+		{
+			--node_count;
+			continue;
+		}
+
+		const auto input_in_range(string_to_range(input));
+		const std::string expected_output(node.node().select_node("output").node().child_value());
+		//
+		ASSERT_TRUE(cygpath_get_dos_path(input_in_range.start, input_in_range.finish, &output))
+				<< input << std::endl << buffer_free(&output);
+		//
+		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
+		//
+		node_count = 0;
+		break;
 	}
 
+	ASSERT_LT(0L, buffer_size(&output)) << buffer_free(&output);
 #else
 	const uint8_t* path_start = (const uint8_t*)"/";
 	ASSERT_FALSE(cygpath_get_dos_path(path_start, path_start + 1, &output)) << buffer_free(&output);//TODO:
+	node_count = 0;
 #endif
 	buffer_release(&output);
 }

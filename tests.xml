@@ -612,6 +612,14 @@
       <version_string value_1="Linux " value_2="" value_3="" value_4="" />
       <version>4.0.0.0</version>
     </operating_system_init>
+    <operating_system_parse>
+      <input>Microsoft Windows NT 6.2.9200</input>
+      <output platform="0" major="6" minor="2" build="9200" revision="0" />
+    </operating_system_parse>
+    <operating_system_parse>
+      <input>OpenBSD 6.5 GENERIC.MP#3 amd64</input>
+      <output platform="1" major="6" minor="5" build="0" revision="0" />
+    </operating_system_parse>
   </TestOperatingSystem>
   <TestExec allow_output_to_console="true">
     <exec_with_redirect_to_tmp_file>
@@ -2403,8 +2411,10 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-windows()}">
-      <code>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => ${cygpath::get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection')}</code>
-      <output>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => C:\PROGRA~1\WIF4A9~1</output>
+      <!--code>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => ${cygpath::get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection')}</code>
+      <output>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => C:\PROGRA~1\WIF4A9~1</output-->
+      <code>get-dos-path('C:\Program Files\Internet Explorer') => ${cygpath::get-dos-path('C:\Program Files\Internet Explorer')}</code>
+      <output>get-dos-path('C:\Program Files\Internet Explorer') => C:\PROGRA~1\INTERN~1</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-unix()}">
@@ -4388,6 +4398,14 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <path_glob input="Lawyer" wild_card="*Law*" result="true" />
     <path_glob input="La" wild_card="*Law*" result="false" />
     <path_glob input="aw" wild_card="*Law*" result="false" />
+    <cygpath_get_dos_path>
+      <input>C:\Program Files\Windows Defender Advanced Threat Protection</input>
+      <output>C:\PROGRA~1\WIF4A9~1</output>
+    </cygpath_get_dos_path>
+    <cygpath_get_dos_path>
+      <input>C:\Program Files\Internet Explorer</input>
+      <output>C:\PROGRA~1\INTERN~1</output>
+    </cygpath_get_dos_path>
   </TestPath>
   <TestProject>
     <project_property_set_value>

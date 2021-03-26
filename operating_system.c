@@ -84,7 +84,9 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 
 		if (Win32 == platformID)
 		{
-			const uint8_t* labels[] = { windows_label, server_label };
+			const uint8_t* labels[2];
+			labels[0] = windows_label;
+			labels[1] = server_label;
 			uint8_t labels_lengths[] = { Win32NT_str_length, Server_str_length };
 
 			for (uint8_t i = 0, count = COUNT_OF(labels); i < count; ++i)

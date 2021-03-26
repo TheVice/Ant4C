@@ -304,6 +304,8 @@ TEST_F(TestEnvironment, environment_variable_exists)
 
 TEST_F(TestOperatingSystem, operating_system_init)
 {
+	uint8_t os[OS_SIZE];
+
 	for (const auto& node : nodes)
 	{
 		const auto platformID = (uint8_t)INT_PARSE(
@@ -345,7 +347,6 @@ TEST_F(TestOperatingSystem, operating_system_init)
 			ptr_version = version;
 		}
 
-		uint8_t os[OS_SIZE];
 #if !defined(_WIN32)
 		ASSERT_TRUE(operating_system_init(platformID, ptr_version, version_string, OS_SIZE, os));
 #else
@@ -388,59 +389,39 @@ TEST_F(TestOperatingSystem, operating_system_init)
 	}
 }
 
-TEST(TestOperatingSystem_, operating_system_at_all)
+TEST_F(TestOperatingSystem, operating_system_parse)
 {
-	static const uint8_t zero = '\0';
-	//
-	buffer input;
-	SET_NULL_TO_BUFFER(input);
-	//
-	ASSERT_TRUE(common_append_string_to_buffer((const uint8_t*)"Microsoft Windows NT 6.2.9200",
-				&input)) << buffer_free(&input);
-	ASSERT_TRUE(buffer_push_back(&input, zero)) << buffer_free(&input);
-	//
-	ASSERT_TRUE(common_append_string_to_buffer((const uint8_t*)"OpenBSD 6.5 GENERIC.MP#3 amd64",
-				&input)) << buffer_free(&input);
-	ASSERT_TRUE(buffer_push_back(&input, zero)) << buffer_free(&input);
-	//
-	const PlatformID expected_platforms[] = { Win32, Unix };
-	//
-	const uint8_t expected_majors[] = { 6, 6 };
-	const uint8_t expected_minors[] = { 2, 5 };
-	const uint16_t expected_builds[] = { 9200, 0 };
-	const uint8_t expected_revisions[] = { 0, 0 };
-	//
-	range input_in_range = buffer_to_range(&input);
-	const uint8_t* pos = input_in_range.start;
-	uint8_t i = 0;
+	uint8_t os[OS_SIZE];
 
-	while (input_in_range.finish != (pos = find_any_symbol_like_or_not_like_that(pos,
-										   input_in_range.finish,
-										   &zero, 1, 1, 1)))
+	for (const auto& node : nodes)
 	{
-		ASSERT_LT(i, COUNT_OF(expected_platforms)) << buffer_free(&input);
-		ASSERT_LT(i, COUNT_OF(expected_majors)) << buffer_free(&input);
+		std::string input(node.node().select_node("input").node().child_value());
 		//
-		uint8_t os[OS_SIZE];
-		ASSERT_TRUE(operating_system_parse(input_in_range.start, pos, OS_SIZE, os)) << buffer_free(&input);
-		ASSERT_EQ(expected_platforms[i], operating_system_get_platform(os)) << buffer_free(&input);
+		const auto output_node(node.node().select_node("output").node());
+		const auto expected_platform = output_node.attribute("platform").as_int();
+		const auto expected_is_server = output_node.attribute("is_server").as_bool();
+		const auto expected_major = output_node.attribute("major").as_uint();
+		const auto expected_minor = output_node.attribute("minor").as_uint();
+		const auto expected_build = output_node.attribute("build").as_uint();
+		const auto expected_revision = output_node.attribute("revision").as_uint();
+		//
+		const auto input_in_range(string_to_range(input));
+		ASSERT_TRUE(operating_system_parse(input_in_range.start, input_in_range.finish, OS_SIZE, os)) << input;
+		//
+		ASSERT_EQ(expected_platform, operating_system_get_platform(os)) << input;
+		ASSERT_EQ(expected_is_server, operating_system_is_windows_server(os)) << input;
 		//
 		const auto returned_version = operating_system_get_version(os);
-		ASSERT_NE(nullptr, returned_version) << buffer_free(&input);
-		ASSERT_EQ(expected_majors[i], version_get_major(returned_version)) << buffer_free(&input);
-		ASSERT_EQ(expected_minors[i], version_get_minor(returned_version)) << buffer_free(&input);
-		ASSERT_EQ(expected_builds[i], version_get_build(returned_version)) << buffer_free(&input);
-		ASSERT_EQ(expected_revisions[i], version_get_revision(returned_version)) << buffer_free(&input);
+		ASSERT_NE(nullptr, returned_version) << input;
+		ASSERT_EQ(expected_major, version_get_major(returned_version)) << input;
+		ASSERT_EQ(expected_minor, version_get_minor(returned_version)) << input;
+		ASSERT_EQ(expected_build, version_get_build(returned_version)) << input;
+		ASSERT_EQ(expected_revision, version_get_revision(returned_version)) << input;
 		//
-		ASSERT_STREQ((const char*)input_in_range.start,
-					 (const char*)operating_system_to_string(os)) << buffer_free(&input);
+		ASSERT_STREQ(input.data(), reinterpret_cast<const char*>(operating_system_to_string(os))) << input;
 		//
-		++i;
-		++pos;
-		input_in_range.start = find_any_symbol_like_or_not_like_that(pos, input_in_range.finish, &zero, 1, 0, 1);
+		--node_count;
 	}
-
-	buffer_release(&input);
 }
 
 TEST(TestPlatform, platform_at_all)
