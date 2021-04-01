@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -1006,7 +1006,15 @@ uint8_t Test_xxHash(struct buffer* output)
 	{
 		for (uint8_t j = 0, count = COUNT_OF(seeds); j < count; ++j, ++k)
 		{
-			returned = hash_algorithm_XXH32(input, (uint32_t)lengths[i], (uint32_t)seeds[j]);
+			uint32_t result;
+
+			if (!hash_algorithm_XXH32(input, input + lengths[i], (uint32_t)seeds[j], &result))
+			{
+				printf("%i %s\n", __LINE__, "FAILURE");
+				return 0;
+			}
+
+			returned = result;
 
 			if (expected_return[k] != returned)
 			{
@@ -1030,7 +1038,11 @@ uint8_t Test_xxHash(struct buffer* output)
 	{
 		for (uint8_t j = 0, count = COUNT_OF(seeds); j < count; ++j, ++k)
 		{
-			returned = hash_algorithm_XXH64(input, lengths[i], seeds[j]);
+			if (!hash_algorithm_XXH64(input, input + lengths[i], seeds[j], &returned))
+			{
+				printf("%i %s\n", __LINE__, "FAILURE");
+				return 0;
+			}
 
 			if (expected_return[k] != returned)
 			{

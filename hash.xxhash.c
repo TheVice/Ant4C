@@ -13,90 +13,240 @@
 
 #include "hash.h"
 
+#if !defined(__STDC_SEC_API__)
+#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
+#endif
+
+#include "common.h"
+
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
-#define ROTATE_LEFT_UINT32_T(VALUE, OFFSET)				\
+#define ROTATE_LEFT_UINT32_T(VALUE, OFFSET)		\
 	(((VALUE) << (OFFSET)) | (VALUE) >> (32 - (OFFSET)))
 
-uint32_t hash_algorithm_XXH32(const uint8_t* input, uint32_t length, uint32_t seed)
-{
-	static const uint32_t PRIME32_1 = 0x9E3779B1U;
-	static const uint32_t PRIME32_2 = 0x85EBCA77U;
-	static const uint32_t PRIME32_3 = 0xC2B2AE3DU;
-	static const uint32_t PRIME32_4 = 0x27D4EB2FU;
-	static const uint32_t PRIME32_5 = 0x165667B1U;
+static const uint32_t PRIME32_1 = 0x9E3779B1U;
+static const uint32_t PRIME32_2 = 0x85EBCA77U;
+static const uint32_t PRIME32_3 = 0xC2B2AE3DU;
+static const uint32_t PRIME32_4 = 0x27D4EB2FU;
+static const uint32_t PRIME32_5 = 0x165667B1U;
 
-	if (length && !input)
+#define XXH32_INIT_ACCUMULATORS(ACCUMULATORS, SEED, IS_CHUNK_ONE)							\
+	if (!(ACCUMULATORS))																	\
+	{																						\
+		return 0;																			\
+	}																						\
+	\
+	if (IS_CHUNK_ONE)																		\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME32_5;												\
+	}																						\
+	else																					\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME32_1 + PRIME32_2;									\
+		(ACCUMULATORS)[1] = (SEED) + PRIME32_2;												\
+		(ACCUMULATORS)[2] = (SEED);															\
+		(ACCUMULATORS)[3] = (SEED) - PRIME32_1;												\
+	}
+
+#define XXH32_CORE_CHUNKS(START, FINISH, ACCUMULATORS)										\
+	while (16 <= (FINISH) - (START))\
+	{\
+		for (uint8_t i = 0; i < 4; ++i, (START) += 4)\
+		{\
+			uint32_t result;																\
+			\
+			if (!hash_algorithm_uint8_t_array_to_uint32_t((START), (START) + 4, &result))	\
+			{																				\
+				return 0;																	\
+			}																				\
+			\
+			(ACCUMULATORS)[i] += result * PRIME32_2;										\
+			(ACCUMULATORS)[i] = ROTATE_LEFT_UINT32_T((ACCUMULATORS)[i], 13);				\
+			(ACCUMULATORS)[i] *= PRIME32_1;													\
+		}																					\
+	}
+
+#define XXH32_CORE_CHUNKS_POST(ACCUMULATORS)				\
+	(ACCUMULATORS)[4] +=									\
+			ROTATE_LEFT_UINT32_T((ACCUMULATORS)[0], 1) +	\
+			ROTATE_LEFT_UINT32_T((ACCUMULATORS)[1], 7) +	\
+			ROTATE_LEFT_UINT32_T((ACCUMULATORS)[2], 12) +	\
+			ROTATE_LEFT_UINT32_T((ACCUMULATORS)[3], 18);
+
+#define XXH32_FINAL(START, FINISH, LAST_ACCUMULATOR)									\
+	for (; 4 <= (FINISH) - (START); (START) += 4)										\
+	{																					\
+		uint32_t result;																\
+		\
+		if (!hash_algorithm_uint8_t_array_to_uint32_t((START), (START) + 4, &result))	\
+		{																				\
+			return 0;																	\
+		}																				\
+		\
+		(LAST_ACCUMULATOR) += result * PRIME32_3;										\
+		(LAST_ACCUMULATOR) = ROTATE_LEFT_UINT32_T((LAST_ACCUMULATOR), 17) * PRIME32_4;	\
+	}																					\
+	\
+	for (; 1 <= (FINISH)- (START); ++(START))											\
+	{																					\
+		(LAST_ACCUMULATOR) += ((uint32_t)(*(START))) * PRIME32_5;						\
+		(LAST_ACCUMULATOR) = ROTATE_LEFT_UINT32_T((LAST_ACCUMULATOR), 11) * PRIME32_1;	\
+	}																					\
+	\
+	(LAST_ACCUMULATOR) ^= (LAST_ACCUMULATOR) >> 15;										\
+	(LAST_ACCUMULATOR) *= PRIME32_2;													\
+	(LAST_ACCUMULATOR) ^= (LAST_ACCUMULATOR) >> 13;										\
+	(LAST_ACCUMULATOR) *= PRIME32_3;													\
+	(LAST_ACCUMULATOR) ^= (LAST_ACCUMULATOR) >> 16;
+
+#define XXHASH_CORE(START, FINISH, QUEUE, QUEUE_SIZE, MAX_QUEUE_SIZE,								\
+					ACCUMULATORS, IS_ACCUMULATORS_INITIALIZED, SEED,								\
+					TYPE, INIT_ACCUMULATORS, CORE_CHUNKS)											\
+if (!(START) ||																						\
+	!(FINISH) ||																					\
+	!(QUEUE) ||																						\
+	!(ACCUMULATORS) ||																				\
+	!(IS_ACCUMULATORS_INITIALIZED) ||																\
+	(FINISH) < (START))																				\
+{																									\
+	return 0;																						\
+}																									\
+\
+(ACCUMULATORS)[4] += (TYPE)((FINISH) - (START));													\
+\
+if (*(QUEUE_SIZE))																					\
+{																									\
+	const ptrdiff_t size = MIN((MAX_QUEUE_SIZE) - *(QUEUE_SIZE), (FINISH) - (START));				\
+	uint8_t* queue_finish = (QUEUE) + *(QUEUE_SIZE);												\
+	MEM_CPY_C(queue_finish, (START), size);															\
+	*(QUEUE_SIZE) += (uint8_t)size;																	\
+	(START) += size;																				\
+}																									\
+\
+if (!(*(IS_ACCUMULATORS_INITIALIZED)))																\
+{																									\
+	if ((MAX_QUEUE_SIZE) == *(QUEUE_SIZE) || (MAX_QUEUE_SIZE) <= (FINISH) - (START))				\
+	{																								\
+		INIT_ACCUMULATORS((ACCUMULATORS), (SEED), 0)												\
+		*(IS_ACCUMULATORS_INITIALIZED) = 1;															\
+	}																								\
+}																									\
+\
+if ((MAX_QUEUE_SIZE) == *(QUEUE_SIZE))																\
+{																									\
+	const uint8_t* queue_start = (QUEUE);															\
+	const uint8_t* queue_finish = (QUEUE) + *(QUEUE_SIZE);											\
+	CORE_CHUNKS(queue_start, queue_finish, (ACCUMULATORS))											\
+	*(QUEUE_SIZE) = 0;																				\
+}																									\
+\
+CORE_CHUNKS((START), (FINISH), (ACCUMULATORS));														\
+\
+if (start < finish)																					\
+{																									\
+	const uint8_t size = MIN((MAX_QUEUE_SIZE), (uint8_t)((FINISH) - (START)));						\
+	MEM_CPY_C((QUEUE), (START), size);																\
+	*(QUEUE_SIZE) += size;																			\
+	(START) += size;																				\
+}																									\
+\
+return (START) == (FINISH);
+
+uint8_t hash_algorithm_XXH32_core(
+	const uint8_t* start, const uint8_t* finish,
+	uint8_t* queue, uint8_t* queue_size, uint8_t max_queue_size,
+	uint32_t* accumulators,	uint8_t* is_accumulators_initialized,
+	uint32_t seed)
+{
+	XXHASH_CORE(
+		start, finish,
+		queue, queue_size, max_queue_size,
+		accumulators, is_accumulators_initialized,
+		seed,
+		uint32_t,
+		XXH32_INIT_ACCUMULATORS,
+		XXH32_CORE_CHUNKS);
+}
+
+#define XXHASH_FINAL(QUEUE_START, QUEUE_FINISH,														\
+					 ACCUMULATORS, IS_ACCUMULATORS_INITIALIZED,										\
+					 SEED, OUTPUT,																	\
+					 INIT_ACCUMULATORS, CORE_CHUNKS, CORE_CHUNKS_POST,								\
+					 FINAL)																			\
+if (!(QUEUE_START) ||																				\
+	!(QUEUE_FINISH) ||																				\
+	!(ACCUMULATORS) ||																				\
+	!(OUTPUT) ||																					\
+	(QUEUE_FINISH) < (QUEUE_START))																	\
+{																									\
+	return 0;																						\
+}																									\
+\
+if (!(IS_ACCUMULATORS_INITIALIZED))																	\
+{																									\
+	INIT_ACCUMULATORS((ACCUMULATORS), (SEED), 1)													\
+	(ACCUMULATORS)[4] += (ACCUMULATORS)[0];															\
+}																									\
+else																								\
+{																									\
+	CORE_CHUNKS((QUEUE_START), (QUEUE_FINISH), (ACCUMULATORS));										\
+	CORE_CHUNKS_POST(ACCUMULATORS);																	\
+}																									\
+\
+FINAL((QUEUE_START), (QUEUE_FINISH), (ACCUMULATORS)[4]);											\
+*(OUTPUT) = (ACCUMULATORS)[4];																		\
+return 1;
+
+uint8_t hash_algorithm_XXH32_final(
+	const uint8_t* queue_start, const uint8_t* queue_finish,
+	uint32_t* accumulators, uint8_t is_accumulators_initialized,
+	uint32_t seed, uint32_t* output)
+{
+	XXHASH_FINAL(
+		queue_start, queue_finish,
+		accumulators, is_accumulators_initialized,
+		seed, output,
+		XXH32_INIT_ACCUMULATORS,
+		XXH32_CORE_CHUNKS,
+		XXH32_CORE_CHUNKS_POST,
+		XXH32_FINAL)
+}
+
+uint8_t hash_algorithm_XXH32(
+	const uint8_t* start, const uint8_t* finish,
+	uint32_t seed, uint32_t* output)
+{
+	if (!start ||
+		!finish ||
+		!output ||
+		finish < start)
 	{
 		return 0;
 	}
 
+	uint8_t queue[16];
+	uint8_t queue_size = 0;
+	uint8_t max_queue_size = 16;
 	uint32_t accumulators[5];
-
-	if (length < 16)
-	{
-		accumulators[4] = seed + PRIME32_5;
-		/**/
-		accumulators[4] += length;
-	}
-	else
-	{
-		accumulators[0] = seed + PRIME32_1 + PRIME32_2;
-		accumulators[1] = seed + PRIME32_2;
-		accumulators[2] = seed;
-		accumulators[3] = seed - PRIME32_1;
-		/**/
-		accumulators[4] = length;
-
-		while (16 <= length)
-		{
-			for (uint8_t i = 0; i < 4; ++i, input += 4, length -= 4)
-			{
-				if (!hash_algorithm_uint8_t_array_to_uint32_t(input, input + 4, &seed))
-				{
-					return 0;
-				}
-
-				accumulators[i] += seed * PRIME32_2;
-				accumulators[i] = ROTATE_LEFT_UINT32_T(accumulators[i], 13);
-				accumulators[i] *= PRIME32_1;
-			}
-		}
-
-		accumulators[4] += ROTATE_LEFT_UINT32_T(accumulators[0], 1) +
-						   ROTATE_LEFT_UINT32_T(accumulators[1], 7) +
-						   ROTATE_LEFT_UINT32_T(accumulators[2], 12) +
-						   ROTATE_LEFT_UINT32_T(accumulators[3], 18);
-	}
-
-	for (; 4 <= length; input += 4, length -= 4)
-	{
-		if (!hash_algorithm_uint8_t_array_to_uint32_t(input, input + 4, &seed))
-		{
-			return 0;
-		}
-
-		accumulators[4] += seed * PRIME32_3;
-		accumulators[4] = ROTATE_LEFT_UINT32_T(accumulators[4], 17) * PRIME32_4;
-	}
-
-	for (; 1 <= length; ++input, --length)
-	{
-		accumulators[4] += ((uint32_t)(*input)) * PRIME32_5;
-		accumulators[4] = ROTATE_LEFT_UINT32_T(accumulators[4], 11) * PRIME32_1;
-	}
-
-	accumulators[4] = accumulators[4] ^ (accumulators[4] >> 15);
-	accumulators[4] = accumulators[4] * PRIME32_2;
-	accumulators[4] = accumulators[4] ^ (accumulators[4] >> 13);
-	accumulators[4] = accumulators[4] * PRIME32_3;
-	accumulators[4] = accumulators[4] ^ (accumulators[4] >> 16);
+	uint8_t is_accumulators_initialized = 0;
 	/**/
-	return accumulators[4];
+	accumulators[4] = 0;
+
+	if (!hash_algorithm_XXH32_core(start, finish,
+								   queue, &queue_size, max_queue_size,
+								   accumulators, &is_accumulators_initialized, seed))
+	{
+		return 0;
+	}
+
+	return hash_algorithm_XXH32_final(
+			   queue, queue + queue_size,
+			   accumulators, is_accumulators_initialized, seed, output);
 }
 
-#define ROTATE_LEFT_UINT64_T(VALUE, OFFSET)				\
+#define ROTATE_LEFT_UINT64_T(VALUE, OFFSET)		\
 	(((VALUE) << (OFFSET)) | (VALUE) >> (64 - (OFFSET)))
 
 #define XXH64_ROUND(OUT, IN, LINE)				\
@@ -110,99 +260,162 @@ uint32_t hash_algorithm_XXH32(const uint8_t* input, uint32_t length, uint32_t se
 	(OUT) *= PRIME64_1;							\
 	(OUT) += PRIME64_4;
 
-uint64_t hash_algorithm_XXH64(const uint8_t* input, uint64_t length, uint64_t seed)
-{
-	static const uint64_t PRIME64_1 = 0x9E3779B185EBCA87ULL;
-	static const uint64_t PRIME64_2 = 0xC2B2AE3D27D4EB4FULL;
-	static const uint64_t PRIME64_3 = 0x165667B19E3779F9ULL;
-	static const uint64_t PRIME64_4 = 0x85EBCA77C2B2AE63ULL;
-	static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
+static const uint64_t PRIME64_1 = 0x9E3779B185EBCA87ULL;
+static const uint64_t PRIME64_2 = 0xC2B2AE3D27D4EB4FULL;
+static const uint64_t PRIME64_3 = 0x165667B19E3779F9ULL;
+static const uint64_t PRIME64_4 = 0x85EBCA77C2B2AE63ULL;
+static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
 
-	if (length && !input)
+#define XXH64_INIT_ACCUMULATORS(ACCUMULATORS, SEED, IS_CHUNK_ONE)							\
+	if (!(ACCUMULATORS))																	\
+	{																						\
+		return 0;																			\
+	}																						\
+	\
+	if (IS_CHUNK_ONE)																		\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME64_5;												\
+	}																						\
+	else																					\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME64_1 + PRIME64_2;									\
+		(ACCUMULATORS)[1] = (SEED) + PRIME64_2;												\
+		(ACCUMULATORS)[2] = (SEED);															\
+		(ACCUMULATORS)[3] = (SEED) - PRIME64_1;												\
+	}
+
+#define XXH64_CORE_CHUNKS(START, FINISH, ACCUMULATORS)										\
+	while (32 <= (FINISH) - (START))														\
+	{																						\
+		for (uint8_t i = 0; i < 4; ++i, (START) += 8)										\
+		{\
+			uint64_t result;																\
+			\
+			if (!hash_algorithm_uint8_t_array_to_uint64_t((START), (START) + 8, &result))	\
+			{																				\
+				return 0;																	\
+			}																				\
+			\
+			XXH64_ROUND((ACCUMULATORS)[i], (ACCUMULATORS)[i], result);						\
+		}																					\
+	}
+
+#define XXH64_CORE_CHUNKS_POST(ACCUMULATORS)						\
+	uint64_t result_1 =												\
+			ROTATE_LEFT_UINT64_T((ACCUMULATORS)[0], 1) +			\
+			ROTATE_LEFT_UINT64_T((ACCUMULATORS)[1], 7) +			\
+			ROTATE_LEFT_UINT64_T((ACCUMULATORS)[2], 12) +			\
+			ROTATE_LEFT_UINT64_T((ACCUMULATORS)[3], 18);			\
+	\
+	for (uint8_t i = 0; i < 4; ++i)									\
+	{																\
+		uint64_t result_2;											\
+		XXH64_MERGE(result_1, result_2, (ACCUMULATORS)[i]);			\
+	}																\
+	\
+	(ACCUMULATORS)[4] += result_1;
+
+#define XXH64_FINAL(START, FINISH, LAST_ACCUMULATOR)									\
+	for (; 8 <= (FINISH) - (START); (START) += 8)										\
+	{																					\
+		uint64_t result;																\
+		\
+		if (!hash_algorithm_uint8_t_array_to_uint64_t((START), (START) + 8, &result))	\
+		{																				\
+			return 0;																	\
+		}																				\
+		\
+		XXH64_ROUND(result, 0, result);													\
+		(LAST_ACCUMULATOR) ^= result;													\
+		(LAST_ACCUMULATOR) = ROTATE_LEFT_UINT64_T((LAST_ACCUMULATOR), 27) * PRIME64_1;	\
+		(LAST_ACCUMULATOR) += PRIME64_4;												\
+	}																					\
+	\
+	for (; 4 <= (FINISH) - (START); (START) += 4)										\
+	{																					\
+		uint32_t result;																\
+		\
+		if (!hash_algorithm_uint8_t_array_to_uint32_t((START), (START) + 4, &result))	\
+		{																				\
+			return 0;																	\
+		}																				\
+		\
+		(LAST_ACCUMULATOR) ^= (uint64_t)result * PRIME64_1;								\
+		(LAST_ACCUMULATOR) = ROTATE_LEFT_UINT64_T((LAST_ACCUMULATOR), 23) * PRIME64_2;	\
+		(LAST_ACCUMULATOR) += PRIME64_3;												\
+	}																					\
+	\
+	for (; 1 <= (FINISH) - (START); ++(START))											\
+	{																					\
+		(LAST_ACCUMULATOR) ^= ((uint64_t)(*(START))) * PRIME64_5;						\
+		(LAST_ACCUMULATOR) = ROTATE_LEFT_UINT64_T((LAST_ACCUMULATOR), 11) * PRIME64_1;	\
+	}																					\
+	\
+	(LAST_ACCUMULATOR) ^= (LAST_ACCUMULATOR) >> 33;										\
+	(LAST_ACCUMULATOR) *= PRIME64_2;													\
+	(LAST_ACCUMULATOR) ^= (LAST_ACCUMULATOR) >> 29;										\
+	(LAST_ACCUMULATOR) *= PRIME64_3;													\
+	(LAST_ACCUMULATOR) ^= (LAST_ACCUMULATOR) >> 32;
+
+uint8_t hash_algorithm_XXH64_core(
+	const uint8_t* start, const uint8_t* finish,
+	uint8_t* queue, uint8_t* queue_size, uint8_t max_queue_size,
+	uint64_t* accumulators, uint8_t* is_accumulators_initialized,
+	uint64_t seed)
+{
+	XXHASH_CORE(
+		start, finish,
+		queue, queue_size, max_queue_size,
+		accumulators, is_accumulators_initialized,
+		seed,
+		uint64_t,
+		XXH64_INIT_ACCUMULATORS,
+		XXH64_CORE_CHUNKS);
+}
+
+uint8_t hash_algorithm_XXH64_final(
+	const uint8_t* queue_start, const uint8_t* queue_finish,
+	uint64_t* accumulators, uint8_t is_accumulators_initialized,
+	uint64_t seed, uint64_t* output)
+{
+	XXHASH_FINAL(
+		queue_start, queue_finish,
+		accumulators, is_accumulators_initialized,
+		seed, output,
+		XXH64_INIT_ACCUMULATORS,
+		XXH64_CORE_CHUNKS,
+		XXH64_CORE_CHUNKS_POST,
+		XXH64_FINAL)
+}
+
+uint8_t hash_algorithm_XXH64(
+	const uint8_t* start, const uint8_t* finish,
+	uint64_t seed, uint64_t* output)
+{
+	if (!start ||
+		!finish ||
+		!output ||
+		finish < start)
 	{
 		return 0;
 	}
 
-	const uint64_t length_ = length;
+	uint8_t queue[32];
+	uint8_t queue_size = 0;
+	uint8_t max_queue_size = 32;
 	uint64_t accumulators[5];
-
-	if (length < 32)
-	{
-		accumulators[4] = seed + PRIME64_5;
-	}
-	else
-	{
-		accumulators[0] = seed + PRIME64_1 + PRIME64_2;
-		accumulators[1] = seed + PRIME64_2;
-		accumulators[2] = seed;
-		accumulators[3] = seed - PRIME64_1;
-		/**/
-		accumulators[4] = 0;
-
-		while (32 <= length)
-		{
-			for (uint8_t i = 0; i < 4; ++i, input += 8, length -= 8)
-			{
-				if (!hash_algorithm_uint8_t_array_to_uint64_t(input, input + 8, &seed))
-				{
-					return 0;
-				}
-
-				XXH64_ROUND(accumulators[i], accumulators[i], seed);
-			}
-		}
-
-		accumulators[4] += ROTATE_LEFT_UINT64_T(accumulators[0], 1) +
-						   ROTATE_LEFT_UINT64_T(accumulators[1], 7) +
-						   ROTATE_LEFT_UINT64_T(accumulators[2], 12) +
-						   ROTATE_LEFT_UINT64_T(accumulators[3], 18);
-
-		for (uint8_t i = 0; i < 4; ++i)
-		{
-			XXH64_MERGE(accumulators[4], seed, accumulators[i]);
-		}
-	}
-
-	accumulators[4] += length_;
-
-	for (; 8 <= length; input += 8, length -= 8)
-	{
-		if (!hash_algorithm_uint8_t_array_to_uint64_t(input, input + 8, &seed))
-		{
-			return 0;
-		}
-
-		XXH64_ROUND(accumulators[3], 0, seed);
-		accumulators[4] = accumulators[4] ^ accumulators[3];
-		accumulators[4] = ROTATE_LEFT_UINT64_T(accumulators[4], 27) * PRIME64_1;
-		accumulators[4] = accumulators[4] + PRIME64_4;
-	}
-
-	for (; 4 <= length; input += 4, length -= 4)
-	{
-		uint32_t* ptr = (uint32_t*)&seed;
-
-		if (!hash_algorithm_uint8_t_array_to_uint32_t(input, input + 4, ptr))
-		{
-			return 0;
-		}
-
-		accumulators[4] ^= (uint64_t)(*ptr) * PRIME64_1;
-		accumulators[4] = ROTATE_LEFT_UINT64_T(accumulators[4], 23) * PRIME64_2;
-		accumulators[4] = accumulators[4] + PRIME64_3;
-	}
-
-	for (; 1 <= length; ++input, --length)
-	{
-		accumulators[4] ^= ((uint64_t)(*input)) * PRIME64_5;
-		accumulators[4] = ROTATE_LEFT_UINT64_T(accumulators[4], 11) * PRIME64_1;
-	}
-
-	accumulators[4] ^= accumulators[4] >> 33;
-	accumulators[4] *= PRIME64_2;
-	accumulators[4] ^= accumulators[4] >> 29;
-	accumulators[4] *= PRIME64_3;
-	accumulators[4] ^= accumulators[4] >> 32;
+	uint8_t is_accumulators_initialized = 0;
 	/**/
-	return accumulators[4];
+	accumulators[4] = 0;
+
+	if (!hash_algorithm_XXH64_core(start, finish,
+								   queue, &queue_size, max_queue_size,
+								   accumulators, &is_accumulators_initialized, seed))
+	{
+		return 0;
+	}
+
+	return hash_algorithm_XXH64_final(
+			   queue, queue + queue_size,
+			   accumulators, is_accumulators_initialized, seed, output);
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -69,6 +69,17 @@ void* common_get_error_output_stream();
 		++(DST);												\
 		++(SRC);												\
 	}
+
+#if __STDC_SEC_API__
+#define MEM_CPY_C(DST, SRC, LENGTH)								\
+	if (0 != memcpy_s((DST), (LENGTH), (SRC), (LENGTH)))		\
+	{															\
+		return 0;												\
+	}
+#else
+#define MEM_CPY_C(DST, SRC, LENGTH)								\
+	memcpy((DST), (SRC), (LENGTH));
+#endif
 
 #if !defined(MAX)
 #define MAX(A, B) ((A) < (B) ? (B) : (A))
