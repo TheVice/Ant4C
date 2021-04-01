@@ -20,6 +20,14 @@ Depend on variant available for your system:
   * FreeBSD: *pkg install \*.txz*.
   * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
 
+### Modules
+Starting from version 2020.09 program support modules - binary files that increase functional by adding functions and/or tasks to the program.
+
+* [Regex](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module that increase functional by adding ***regex*** task.
+* [Dns](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module with **dns** namespace that contain function *get-host-name*.
+* [ant4c.net.framework.module](https://www.nuget.org/packages/ant4c.net.framework.module/). Module with namespaces **framework**, **metahost** and added to exists one **file** function *is-assembly*.
+* [ant4c.net.module](https://www.nuget.org/packages/ant4c.net.module/). Module to interact with installed .NET Core via namespaces **nethost**, **hostfxr** and function *is-assembly* from **file** namespace.
+
 ### Help
 
 Help available at the [help.html file](https://github.com/TheVice/Ant4C/releases/download/v2020.09/help.html).
