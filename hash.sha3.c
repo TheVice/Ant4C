@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2012 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2012 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -45,29 +45,6 @@ static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320,
 
 #define ROT(X, N, W)	\
 	(((X) << ((N) % (W))) | ((X) >> ((W) - ((N) % (W)))))
-
-uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
-	const uint8_t* start, const uint8_t* finish, uint64_t* output)
-{
-	if (NULL == start ||
-		NULL == finish ||
-		finish < start ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	uint8_t j = 0;
-	(*output) = 0;
-
-	while ((--finish) > (start - 1) && j < 16)
-	{
-		(*output) += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
-		(*output) += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
-	}
-
-	return 1;
-}
 
 void Round(uint64_t* A, uint64_t RC_i)
 {

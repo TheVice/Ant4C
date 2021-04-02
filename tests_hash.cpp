@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -476,6 +476,74 @@ TEST_F(TestHashAlgorithm, sha3)
 	}
 
 	buffer_release(&output);
+}
+
+TEST_F(TestHashAlgorithm, xxHash)
+{
+	static const std::string algorithms[] =
+	{ "XXH32", "XXH64" };
+	std::string input(256, '\0');
+	uint32_t base = 2654435761;
+
+	for (size_t i = 0, count = input.size(); i < count; ++i)
+	{
+		input[i] = static_cast<uint32_t>(base >> 24);
+		base *= base;
+	}
+
+	for (const auto& node : nodes)
+	{
+		const auto length = node.node().attribute("length").as_ullong();
+		ASSERT_LT(length, input.size()) << node_count;
+		//
+		const auto algorithm = std::string(node.node().attribute("algorithm").as_string());
+		const auto seed = node.node().attribute("seed").as_ullong();
+		const auto expected_return = node.node().attribute("return").as_ullong();
+		//
+		auto input_in_range = string_to_range(input);
+		input_in_range.finish = input_in_range.start + length;
+		//
+		uint64_t returned = 0;
+
+		if (algorithms[0] == algorithm)
+		{
+			ASSERT_LE(length, UINT32_MAX) <<
+										  node_count << std::endl << algorithm << std::endl <<
+										  seed << std::endl << length << std::endl << expected_return;
+			ASSERT_LE(seed, UINT32_MAX) <<
+										node_count << std::endl << algorithm << std::endl <<
+										seed << std::endl << length << std::endl << expected_return;
+			//
+			uint32_t result = 0;
+			ASSERT_TRUE(hash_algorithm_XXH32(
+							input_in_range.start,
+							input_in_range.finish,
+							static_cast<uint32_t>(seed),
+							&result)) <<
+									  node_count << std::endl << algorithm << std::endl <<
+									  seed << std::endl << length << std::endl << expected_return;
+			returned = result;
+		}
+		else if (algorithms[1] == algorithm)
+		{
+			uint64_t result = 0;
+			ASSERT_TRUE(hash_algorithm_XXH64(
+							input_in_range.start,
+							input_in_range.finish,
+							seed,
+							&result)) <<
+									  node_count << std::endl << algorithm << std::endl <<
+									  seed << std::endl << length << std::endl << expected_return;
+			returned = result;
+		}
+
+		ASSERT_EQ(expected_return, returned) <<
+											 node_count << std::endl <<
+											 algorithm << std::endl <<
+											 seed << std::endl << length;
+		//
+		--node_count;
+	}
 }
 
 TEST_F(TestHashAlgorithm, file_get_checksum)

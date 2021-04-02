@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -14,6 +14,10 @@
 struct buffer;
 struct range;
 
+uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
+	const uint8_t* start, const uint8_t* finish, uint32_t* output);
+uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
+	const uint8_t* start, const uint8_t* finish, uint64_t* output);
 uint8_t hash_algorithm_bytes_to_string(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output);
 
@@ -68,6 +72,35 @@ uint8_t hash_algorithm_keccak(
 uint8_t hash_algorithm_sha3(
 	const uint8_t* start, const uint8_t* finish,
 	uint16_t hash_length, struct buffer* output);
+
+uint8_t hash_algorithm_XXH32_core(
+	const uint8_t* start, const uint8_t* finish,
+	uint8_t* queue, uint8_t* queue_size, uint8_t max_queue_size,
+	uint32_t* accumulators,
+	uint8_t* is_accumulators_initialized,
+	uint32_t seed);
+uint8_t hash_algorithm_XXH32_final(
+	const uint8_t* queue_start, const uint8_t* queue_finish,
+	uint32_t* accumulators, uint8_t is_accumulators_initialized,
+	uint32_t seed, uint32_t* output);
+
+uint8_t hash_algorithm_XXH32(
+	const uint8_t* start, const uint8_t* finish,
+	uint32_t seed, uint32_t* output);
+
+uint8_t hash_algorithm_XXH64_core(
+	const uint8_t* start, const uint8_t* finish,
+	uint8_t* queue, uint8_t* queue_size, uint8_t max_queue_size,
+	uint64_t* accumulators, uint8_t* is_accumulators_initialized,
+	uint64_t seed);
+uint8_t hash_algorithm_XXH64_final(
+	const uint8_t* queue_start, const uint8_t* queue_finish,
+	uint64_t* accumulators, uint8_t is_accumulators_initialized,
+	uint64_t seed, uint64_t* output);
+
+uint8_t hash_algorithm_XXH64(
+	const uint8_t* start, const uint8_t* finish,
+	uint64_t seed, uint64_t* output);
 
 uint8_t hash_algorithm_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* arguments,

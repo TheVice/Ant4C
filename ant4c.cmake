@@ -32,6 +32,7 @@ set(ANT4C_SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/hash.crc32.c"
   "${CMAKE_SOURCE_DIR}/hash.h"
   "${CMAKE_SOURCE_DIR}/hash.sha3.c"
+  "${CMAKE_SOURCE_DIR}/hash.xxhash.c"
   "${CMAKE_SOURCE_DIR}/if_task.c"
   "${CMAKE_SOURCE_DIR}/if_task.h"
   "${CMAKE_SOURCE_DIR}/interpreter.c"

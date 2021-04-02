@@ -1408,6 +1408,22 @@
       <SHA3_384>7063465e08a93bce31cd89d2e3ca8f602498696e253592ed26f07bf7e703cf328581e1471a7ba7ab119b1a9ebdf8be41</SHA3_384>
       <SHA3_512>01dedd5de4ef14642445ba5f5b97c15e47b9ad931326e4b0727cd94cefc44fff23f07bf543139939b49128caf436dc1bdee54fcb24023a08d9403f9b4bf0d450</SHA3_512>
     </sha3>
+    <xxHash algorithm="XXH32" return="46947589" /><!-- BE -> 0x02CC5D05 -->
+    <xxHash algorithm="XXH32" seed="2654435761" return="917998311" /><!-- BE -> 0x36B78AE7 -->
+    <xxHash algorithm="XXH32" length="1" return="3093085925" /><!-- BE -> 0xB85CBEE5 -->
+    <xxHash algorithm="XXH32" length="1" seed="2654435761" return="3582221668" /><!-- BE -> 0xD5845D64 -->
+    <xxHash algorithm="XXH32" length="14" return="3853126324" /><!-- BE -> 0xE5AA0AB4 -->
+    <xxHash algorithm="XXH32" length="14" seed="2654435761" return="1149343005" /><!-- BE -> 0x4481951D -->
+    <xxHash algorithm="XXH32" length="222" return="3355904022" /><!-- BE -> 0xC8070816 -->
+    <xxHash algorithm="XXH32" length="222" seed="2654435761" return="4090480722" /><!-- BE -> 0xF3CFC852 -->
+    <xxHash algorithm="XXH64" return="17241709254077376921" /><!-- BE -> 0xEF46DB3751D8E999 -->
+    <xxHash algorithm="XXH64" seed="2654435761" return="12427117621484918767" /><!-- BE -> 0xAC75FDA2929B17EF -->
+    <xxHash algorithm="XXH64" length="1" return="5750596776143442648" /><!-- BE -> 0x4FCE394CC88952D8 -->
+    <xxHash algorithm="XXH64" length="1" seed="2654435761" return="8329478753618994979" /><!-- BE -> 0x739840CB819FA723 -->
+    <xxHash algorithm="XXH64" length="14" return="14986446533618842173" /><!-- BE -> 0xCFFA8DB881BC3A3D -->
+    <xxHash algorithm="XXH64" length="14" seed="2654435761" return="6599481375206459851" /><!-- BE -> 0x5B9611585EFCC9CB -->
+    <xxHash algorithm="XXH64" length="222" return="11373004714924552253" /><!-- BE -> 0x9DD507880DEBB03D -->
+    <xxHash algorithm="XXH64" length="222" seed="2654435761" return="15875559714628437504" /><!-- BE -> 0xDC515172B8EE0600 -->
     <file_get_checksum>
       <blake2b-512 input="0">786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce</blake2b-512>
       <blake2b-512 input="1">2fa3f686df876995167e7c2e5d74c4c7b6e48f8068fe0e44208344d480f7904c36963e44115fe3eb2a3ac8694c28bcb4f5a0f3276f2e79487d8219057a506e4b</blake2b-512>

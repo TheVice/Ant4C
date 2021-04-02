@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -20,8 +20,54 @@
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
-uint8_t hash_algorithm_bytes_to_string(const uint8_t* start, const uint8_t* finish,
-									   struct buffer* output)
+uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
+	const uint8_t* start, const uint8_t* finish, uint32_t* output)
+{
+	if (NULL == start ||
+		NULL == finish ||
+		finish < start ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	uint8_t j = 0;
+	(*output) = 0;
+
+	while ((--finish) > (start - 1) && j < 8)
+	{
+		(*output) += (uint32_t)(((*finish) & 0xF0) >> 4) * ((uint32_t)1 << (4 * (7 - (j++))));
+		(*output) += (uint32_t)((*finish) & 0x0F) * ((uint32_t)1 << (4 * (7 - (j++))));
+	}
+
+	return 1;
+}
+
+uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
+	const uint8_t* start, const uint8_t* finish, uint64_t* output)
+{
+	if (NULL == start ||
+		NULL == finish ||
+		finish < start ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	uint8_t j = 0;
+	(*output) = 0;
+
+	while ((--finish) > (start - 1) && j < 16)
+	{
+		(*output) += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
+		(*output) += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
+	}
+
+	return 1;
+}
+
+uint8_t hash_algorithm_bytes_to_string(
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
 	if (NULL == start ||
 		NULL == finish ||

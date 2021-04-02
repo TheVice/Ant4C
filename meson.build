@@ -5,7 +5,7 @@ ant4c_sources = [
   'conversion.c', 'copy_move.c', 'date_time.c', 'echo.c',
   'environment.c', 'exec.c', 'fail_task.c', 'file_system.c',
   'for_each.c', 'hash.blake2.c', 'hash.blake3.c', 'hash.c',
-  'hash.crc32.c', 'hash.sha3.c', 'if_task.c',
+  'hash.crc32.c', 'hash.sha3.c', 'hash.xxhash.c', 'if_task.c',
   'interpreter.c', 'listener.c', 'load_file.c', 'load_tasks.c',
   'math_unit.c', 'operating_system.c', 'path.c', 'project.c',
   'property.c', 'range.c', 'shared_object.c', 'sleep_unit.c',
