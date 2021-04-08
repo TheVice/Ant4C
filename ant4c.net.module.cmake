@@ -24,10 +24,8 @@ endif()
 endif()
 if((NOT MSVC) AND (NOT MINGW))
   target_compile_options(net_gate PRIVATE "-fPIC")
-  target_compile_options(ant4c.net.module PRIVATE "-fPIE")
   target_compile_options(ant4c.net.module PRIVATE "-fPIC")
-
-  set_target_properties(ant4c.net.module PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+  set_target_properties(ant4c.net.module PROPERTIES LINK_FLAGS "-Wl,-z,now")
 endif()
 
 target_link_libraries(ant4c.net.module ant4c net_gate)
