@@ -29,6 +29,11 @@
 #include <stddef.h>
 #include <string.h>
 
+#if defined(__clang__) && defined(NDEBUG)
+#include <stdio.h>
+#include <inttypes.h>
+#endif
+
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
@@ -40,13 +45,42 @@ static const uint8_t w = 64;/*permutation_width / 25;*/
 /*static const uint8_t width_on_w = 25;*/
 static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320, 256, 192*/ };
 
+#if defined(__clang__) && defined(NDEBUG)
+char tech_out[24];
+#endif
+
 #define TWO_DIMENSION_TO_ONE_INDEX(X, Y, Y_MAX)	\
 	(X) * (Y_MAX) + Y
 
 #define ROT(X, N, W)	\
 	(((X) << ((N) % (W))) | ((X) >> ((W) - ((N) % (W)))))
 
-void Round(uint64_t* A, uint64_t RC_i)
+void theta(uint64_t* A, uint64_t* C, uint64_t* D)
+{
+	for (uint8_t i = 0; i < 5; ++i)
+	{
+		C[i] = A[TWO_DIMENSION_TO_ONE_INDEX(i, 0, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 1, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 2, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 3, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 4, 5)];
+	}
+
+	for (uint8_t i = 0; i < 5; ++i)
+	{
+		D[i] = C[(i + 4) % 5] ^ ROT(C[(i + 1) % 5], 1, w);
+	}
+
+	for (uint8_t i = 0; i < 5; ++i)
+	{
+		for (uint8_t j = 0; j < 5; ++j)
+		{
+			A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^= D[i];
+		}
+	}
+}
+
+void rho_pi(const uint64_t* A, uint64_t* B)
 {
 	static const uint8_t r[] =
 	{
@@ -56,59 +90,30 @@ void Round(uint64_t* A, uint64_t RC_i)
 		28, 55, 25, 21, 56,
 		27, 20, 39, 8, 14
 	};
-	/**/
-	uint64_t B[] =
-	{
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0
-	};
-	/**/
-	uint64_t C[] = { 0, 0, 0, 0, 0 };
-	/**/
-	uint64_t D[] = { 0, 0, 0, 0, 0 };
 
-	/*theta step*/
-	for (uint8_t i = 0; i < 5; i++)
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		C[i] = A[TWO_DIMENSION_TO_ONE_INDEX(i, 0, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 1, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 2, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 3, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 4, 5)];
-	}
-
-	for (uint8_t i = 0; i < 5; i++)
-	{
-		D[i] = C[(i + 4) % 5] ^ ROT(C[(i + 1) % 5], 1, w);
-	}
-
-	for (uint8_t i = 0; i < 5; i++)
-	{
-		for (uint8_t j = 0; j < 5; j++)
+		for (uint8_t j = 0; j < 5; ++j)
 		{
-			A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
-				A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ D[i];
-		}
-	}
-
-	/*rho and pi steps*/
-	for (uint8_t i = 0; i < 5; i++)
-	{
-		for (uint8_t j = 0; j < 5; j++)
-		{
+#if defined(__clang__) && defined(NDEBUG)
+			const uint8_t index_1 = TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5);
+			const uint8_t index_2 = TWO_DIMENSION_TO_ONE_INDEX(i, j, 5);
+			B[index_1] = ROT(A[index_2], r[index_2], w);
+			sprintf(tech_out, "%"PRId64, B[index_1]);
+#else
 			B[TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5)] =
 				ROT(A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)],
 					r[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)], w);
+#endif
 		}
 	}
+}
 
-	/*chi step*/
-	for (uint8_t i = 0; i < 5; i++)
+void chi(uint64_t* A, const uint64_t* B)
+{
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		for (uint8_t j = 0; j < 5; j++)
+		for (uint8_t j = 0; j < 5; ++j)
 		{
 			A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
 				B[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^
@@ -116,18 +121,18 @@ void Round(uint64_t* A, uint64_t RC_i)
 				 B[TWO_DIMENSION_TO_ONE_INDEX((i + 2) % 5, j, 5)]);
 		}
 	}
+}
 
-	/*iota step*/
-	A[TWO_DIMENSION_TO_ONE_INDEX(0, 0, 5)] =
-		A[TWO_DIMENSION_TO_ONE_INDEX(0, 0, 5)] ^ RC_i;
+void iota(uint64_t* A, uint64_t RC_i)
+{
+	A[TWO_DIMENSION_TO_ONE_INDEX(0, 0, 5)] ^= RC_i;
 }
 
 void Keccak_f(uint64_t* A)
 {
 	/*l -> log(w) / log(2)
-	number of permutation -> 12 + 2 * l*/
-	static const uint8_t n = 24;/*12, 14, 16, 18, 20, 22, 24*/
-	/**/
+	number of permutation -> 12 + 2 * l
+	static const uint8_t n = 12, 14, 16, 18, 20, 22, 24*/
 	static const uint64_t RC[] =
 	{
 		0x0000000000000001,
@@ -155,10 +160,17 @@ void Keccak_f(uint64_t* A)
 		0x0000000080000001,
 		0x8000000080008008
 	};
+	/**/
+	uint64_t B[25];
+	uint64_t* C = B;
+	uint64_t* D = B + 5;
 
-	for (uint8_t i = 0; i < n; i++)
+	for (uint8_t i = 0; i < 24; ++i)
 	{
-		Round(A, RC[i]);
+		theta(A, C, D);
+		rho_pi(A, B);
+		chi(A, B);
+		iota(A, RC[i]);
 	}
 }
 
@@ -173,8 +185,7 @@ void Keccak_absorption(uint64_t* S, const uint64_t* data, uint8_t rate_on_w)
 
 			if (index < rate_on_w)
 			{
-				S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
-					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ data[index];
+				S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^= data[index];
 			}
 		}
 	}
@@ -187,9 +198,9 @@ uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint8_t rate_on_w, uint8_t*
 	/*Squeezing phase*/
 	for (uint8_t xF = 0; ;)
 	{
-		for (uint8_t i = 0; i < 5; i++)
+		for (uint8_t i = 0; i < 5; ++i)
 		{
-			for (uint8_t j = 0; j < 5; j++)
+			for (uint8_t j = 0; j < 5; ++j)
 			{
 				if ((5 * i + j) < rate_on_w)
 				{
