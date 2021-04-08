@@ -470,14 +470,11 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 		case keccak:
 		case sha3:
 		{
-			uint8_t rate_on_w = 0;
-			uint8_t maximum_delta = 0;
-			uint8_t addition[192];
-			uint8_t is_addition_set = 0;
+			uint8_t rate_on_w;
+			uint8_t maximum_delta;
 
-			if (!hash_algorithm_sha3_init(sha3 == algorithm, hash_length,
-										  &rate_on_w, &maximum_delta,
-										  addition, sizeof(addition)))
+			if (!hash_algorithm_sha3_init(
+					hash_length, &rate_on_w, &maximum_delta))
 			{
 				break;
 			}
@@ -487,6 +484,8 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				break;
 			}
 
+			uint8_t queue[192];
+			uint8_t queue_size = 0;
 			uint64_t S[] =
 			{
 				0, 0, 0, 0, 0,
@@ -496,59 +495,28 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				0, 0, 0, 0, 0
 			};
 			/**/
-			uint64_t data[] =
-			{
-				0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0
-			};
-			/**/
-			uint8_t xF = 0;
-			uint8_t delta = maximum_delta;
 			size_t readed = 0;
 			uint8_t* file_content = buffer_data(output, size);
-			const uint8_t chunk_size = 8 * rate_on_w;
-			uint16_t step = chunk_size;
 
-			while (step < 4096 - chunk_size)
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				step += chunk_size;
-			}
+				const uint8_t* finish = file_content + readed;
+				readed = hash_algorithm_sha3_core(file_content, finish, queue, &queue_size, maximum_delta, S, rate_on_w);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), step, file)) || !is_addition_set)
-			{
-				const uint8_t* start = file_content;
-				const uint8_t* finish = start + readed;
-				const uint8_t* finish_ = start + step;
-				const uint8_t* resume_at = NULL;
-				/**/
-				uint8_t* ptr = finish < finish_ ? &is_addition_set : NULL;
-				finish_ = finish < finish_ ? finish : finish_;
-
-				do
+				if (!readed)
 				{
-					delta = hash_algorithm_sha3_core(
-								S, rate_on_w, data, &xF,
-								delta, maximum_delta,
-								addition, ptr,
-								start, finish_, &resume_at);
-
-					if (!delta)
-					{
-						file_close(file);
-						return 0;
-					}
-
-					start = resume_at < finish_ ? resume_at : finish_;
+					file_close(file);
+					return 0;
 				}
-				while (start < finish_);
 			}
 
 			hash_length = hash_length / 8;
 			file_content += 64;
 
 			if (!file_close(file) ||
-				!Keccak_squeezing((uint8_t)hash_length, S, rate_on_w, file_content))
+				!hash_algorithm_sha3_final(
+					sha3 == algorithm, queue, queue_size, maximum_delta, S, rate_on_w,
+					(uint8_t)hash_length, file_content))
 			{
 				break;
 			}
