@@ -26,13 +26,12 @@
 #include "hash.h"
 #include "buffer.h"
 
+#if defined(__clang__) && defined(NDEBUG)
+#include "echo.h"
+#endif
+
 #include <stddef.h>
 #include <string.h>
-
-#if defined(__clang__) && defined(NDEBUG)
-#include <stdio.h>
-#include <inttypes.h>
-#endif
 
 #if !defined(__STDC_SEC_API__)
 #define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
@@ -44,10 +43,6 @@ static const uint16_t permutation_width = 1600;/*25, 50, 100, 200, 400, 800, 160
 static const uint8_t w = 64;/*permutation_width / 25;*/
 /*static const uint8_t width_on_w = 25;*/
 static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320, 256, 192*/ };
-
-#if defined(__clang__) && defined(NDEBUG)
-char tech_out[24];
-#endif
 
 #define TWO_DIMENSION_TO_ONE_INDEX(X, Y, Y_MAX)	\
 	(X) * (Y_MAX) + Y
@@ -99,7 +94,7 @@ void rho_pi(const uint64_t* A, uint64_t* B)
 			const uint8_t index_1 = TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5);
 			const uint8_t index_2 = TWO_DIMENSION_TO_ONE_INDEX(i, j, 5);
 			B[index_1] = ROT(A[index_2], r[index_2], w);
-			sprintf(tech_out, "%"PRId64, B[index_1]);
+			echo(0, 0, NULL, None, (const uint8_t*)&B[index_1], sizeof(uint64_t), 0, 0);
 #else
 			B[TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5)] =
 				ROT(A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)],
