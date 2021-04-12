@@ -145,6 +145,88 @@ uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 #endif
 }
 
+uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
+{
+	static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	static const uint8_t count_of_digits = COUNT_OF(digits);
+	/**/
+	value_start = find_any_symbol_like_or_not_like_that(
+					  value_start, value_finish,
+					  digits, count_of_digits, 1, 1);
+	value_finish = find_any_symbol_like_or_not_like_that(
+					   value_start, value_finish,
+					   digits, count_of_digits, 0, 1);
+
+	if (value_finish == value_start)
+	{
+		return 0;
+	}
+
+	uint64_t result = 0;
+	uint64_t multi = 10000000000000000000u;
+	uint8_t value = *value_start;
+	const uint8_t size = MIN((uint8_t)(value_finish - value_start), 20);
+	value_finish = value_start + size;
+
+	if (20 == size)
+	{
+		if ('0' != value && '1' != value)
+		{
+			return UINT64_MAX;
+		}
+
+		do
+		{
+			value = *value_start;
+
+			for (uint8_t i = 0; i < count_of_digits; ++i)
+			{
+				if (digits[i] == value)
+				{
+					const uint64_t prev_result = result;
+					result += multi * i;
+					value = result < prev_result;
+
+					if (value)
+					{
+						return UINT64_MAX;
+					}
+
+					break;
+				}
+			}
+
+			multi /= 10;
+			++value_start;
+		}
+		while (value_start != value_finish);
+	}
+	else
+	{
+		multi = 1;
+
+		do
+		{
+			--value_finish;
+			value = *value_finish;
+
+			for (uint8_t i = 0; i < count_of_digits; ++i)
+			{
+				if (digits[i] == value)
+				{
+					result += multi * i;
+					break;
+				}
+			}
+
+			multi *= 10;
+		}
+		while (value_start != value_finish);
+	}
+
+	return result;
+}
+
 void* pointer_parse(const uint8_t* value)
 {
 	if (NULL == value)

@@ -228,7 +228,7 @@ uint8_t hash_algorithm_XXH32(
 
 	uint8_t queue[16];
 	uint8_t queue_size = 0;
-	uint8_t max_queue_size = 16;
+	const uint8_t max_queue_size = 16;
 	uint32_t accumulators[5];
 	uint8_t is_accumulators_initialized = 0;
 	/**/
@@ -402,7 +402,7 @@ uint8_t hash_algorithm_XXH64(
 
 	uint8_t queue[32];
 	uint8_t queue_size = 0;
-	uint8_t max_queue_size = 32;
+	const uint8_t max_queue_size = 32;
 	uint64_t accumulators[5];
 	uint8_t is_accumulators_initialized = 0;
 	/**/

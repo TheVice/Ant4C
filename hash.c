@@ -127,7 +127,9 @@ static const uint8_t* hash_function_str[] =
 	(const uint8_t*)"bytes-to-string",
 	(const uint8_t*)"crc32",
 	(const uint8_t*)"keccak",
-	(const uint8_t*)"sha3"
+	(const uint8_t*)"sha3",
+	(const uint8_t*)"xxh32",
+	(const uint8_t*)"xxh64"
 };
 
 enum hash_function
@@ -136,6 +138,7 @@ enum hash_function
 	bytes_to_string,
 	crc32,
 	keccak, sha3,
+	xxh32, xxh64,
 	UNKNOWN_HASH_FUNCTION
 };
 
@@ -197,8 +200,9 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 
 			if (2 == arguments_count)
 			{
-				hash_length = common_string_to_enum(values[1].start, values[1].finish, crc32_parameters_str,
-													UNKNOWN_CRC32_PARAMETER);
+				hash_length = common_string_to_enum(
+								  values[1].start, values[1].finish,
+								  crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
 
 				if (UNKNOWN_CRC32_PARAMETER == hash_length)
 				{
@@ -228,6 +232,52 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 			return (1 == arguments_count || 2 == arguments_count) &&
 				   hash_algorithm_sha3(values[0].start, values[0].finish, hash_length, output);
 
+		case xxh32:
+		{
+			if (!buffer_push_back_uint32(output, 0))
+			{
+				return 0;
+			}
+
+			if (!arguments_count || 2 < arguments_count)
+			{
+				break;
+			}
+
+			uint32_t seed = 0;
+
+			if (2 == arguments_count)
+			{
+				seed = (uint32_t)uint64_parse(values[1].start, values[1].finish);
+			}
+
+			uint32_t* ptr = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+			return hash_algorithm_XXH32(values[0].start, values[0].finish, seed, ptr);
+		}
+
+		case xxh64:
+		{
+			if (!buffer_append(output, NULL, sizeof(uint64_t)))
+			{
+				return 0;
+			}
+
+			if (!arguments_count || 2 < arguments_count)
+			{
+				break;
+			}
+
+			uint64_t seed = 0;
+
+			if (2 == arguments_count)
+			{
+				seed = uint64_parse(values[1].start, values[1].finish);
+			}
+
+			uint64_t* ptr = (uint64_t*)buffer_data(output, buffer_size(output) - sizeof(uint64_t));
+			return hash_algorithm_XXH64(values[0].start, values[0].finish, seed, ptr);
+		}
+
 		case UNKNOWN_HASH_FUNCTION:
 		default:
 			break;
@@ -251,21 +301,23 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 
 	if (!range_is_null_or_empty(algorithm_parameter))
 	{
-		if (crc32 != algorithm)
+		if (crc32 == algorithm)
 		{
-			hash_length = (uint16_t)int_parse(algorithm_parameter->start);
+			hash_length = common_string_to_enum(
+							  algorithm_parameter->start, algorithm_parameter->finish,
+							  crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
 
-			if (hash_length < 8 || 1024 < hash_length)
+			if (UNKNOWN_CRC32_PARAMETER == hash_length)
 			{
 				return 0;
 			}
 		}
-		else
+		else if (xxh32 != algorithm &&
+				 xxh64 != algorithm)
 		{
-			hash_length = common_string_to_enum(algorithm_parameter->start, algorithm_parameter->finish,
-												crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
+			hash_length = (uint16_t)int_parse(algorithm_parameter->start);
 
-			if (UNKNOWN_CRC32_PARAMETER == hash_length)
+			if (hash_length < 8 || 1024 < hash_length)
 			{
 				return 0;
 			}
@@ -523,6 +575,108 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 
 			return buffer_resize(output, size) &&
 				   hash_algorithm_bytes_to_string(file_content, file_content + hash_length, output);
+		}
+
+		case xxh32:
+		{
+			if (!buffer_append(output, NULL, 4096))
+			{
+				break;
+			}
+
+			uint8_t queue[16];
+			uint8_t queue_size = 0;
+			const uint8_t max_queue_size = 16;
+			uint32_t accumulators[5];
+			uint8_t is_accumulators_initialized = 0;
+			/**/
+			accumulators[4] = 0;
+			/**/
+			uint32_t seed = 0;
+
+			if (!range_is_null_or_empty(algorithm_parameter))
+			{
+				seed = (uint32_t)uint64_parse(algorithm_parameter->start, algorithm_parameter->finish);
+			}
+
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				const uint8_t* finish = file_content + readed;
+
+				if (!hash_algorithm_XXH32_core(file_content, finish,
+											   queue, &queue_size, max_queue_size,
+											   accumulators, &is_accumulators_initialized, seed))
+				{
+					file_close(file);
+					return 0;
+				}
+			}
+
+			if (!file_close(file) ||
+				!hash_algorithm_XXH32_final(
+					queue, queue + queue_size,
+					accumulators, is_accumulators_initialized, seed, &seed))
+			{
+				return 0;
+			}
+
+			file_content = (uint8_t*)&seed;
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string(file_content, file_content + sizeof(uint32_t), output);
+		}
+
+		case xxh64:
+		{
+			if (!buffer_append(output, NULL, 4096))
+			{
+				break;
+			}
+
+			uint8_t queue[32];
+			uint8_t queue_size = 0;
+			const uint8_t max_queue_size = 32;
+			uint64_t accumulators[5];
+			uint8_t is_accumulators_initialized = 0;
+			/**/
+			accumulators[4] = 0;
+			/**/
+			uint64_t seed = 0;
+
+			if (!range_is_null_or_empty(algorithm_parameter))
+			{
+				seed = uint64_parse(algorithm_parameter->start, algorithm_parameter->finish);
+			}
+
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				const uint8_t* finish = file_content + readed;
+
+				if (!hash_algorithm_XXH64_core(file_content, finish,
+											   queue, &queue_size, max_queue_size,
+											   accumulators, &is_accumulators_initialized, seed))
+				{
+					file_close(file);
+					return 0;
+				}
+			}
+
+			if (!file_close(file) ||
+				!hash_algorithm_XXH64_final(
+					queue, queue + queue_size,
+					accumulators, is_accumulators_initialized, seed, &seed))
+			{
+				return 0;
+			}
+
+			file_content = (uint8_t*)&seed;
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string(file_content, file_content + sizeof(uint64_t), output);
 		}
 
 		default:

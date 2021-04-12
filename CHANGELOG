@@ -1,12 +1,18 @@
 ant4c (YYYY.MM)
-  * Increased stack that used at BLAKE3 algorithm to allow calculate hashes
-    of inputs with huge (more than 32 KB) length.
-  * At implementation of 'SHA3/Keccak' algorithm do not loading whole range
-    of data while calculating hash sum of first one.
+  * Increased stack that used at BLAKE3 algorithm to allow calculate
+    hashes of inputs with huge (more than 32 KB) length.
+  * At implementation of 'SHA3/Keccak' algorithm do not loading whole
+    range of data while calculating hash sum of first one.
+  * Clang: added workaroung code that prevents optimization that cause
+    distortion of the function that calculate 'Keccak' and 'SHA3' sums.
+    Previous releases for FreeBSD and OpenBSD systems was build by Clang
+    compiler.
   * Added 'operating-system::is-windows-server' and
     'platform::is-windows-server' functions.
   * Added new line after target name while print project help for
     target that do not have 'description'.
+  * Added calculation of hash sums according to 'xxh32' and 'xxh64'
+    algorithms.
   * WIN32: fixed using at 'echo' task for scenario when output stream
     redirected to the file by capability of operation system -
     for example: 'ant4c.exe > 1.txt'.

@@ -3715,53 +3715,83 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-224('') -> ${hash::bytes-to-string(hash::keccak('', '224'))}</code>
-      <output>hash::keccak-224('') -> f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd</output>
+      <code>hash::keccak('', '224') -> ${hash::bytes-to-string(hash::keccak('', '224'))}</code>
+      <output>hash::keccak('', '224') -> f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-256('') -> ${hash::bytes-to-string(hash::keccak('', '256'))}</code>
-      <output>hash::keccak-256('') -> c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470</output>
+      <code>hash::keccak('', '256') -> ${hash::bytes-to-string(hash::keccak('', '256'))}</code>
+      <output>hash::keccak('', '256') -> c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-256('') -> ${hash::bytes-to-string(hash::keccak(''))}</code>
-      <output>hash::keccak-256('') -> c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470</output>
+      <code>hash::keccak('', '256') -> ${hash::bytes-to-string(hash::keccak(''))}</code>
+      <output>hash::keccak('', '256') -> c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-384('') -> ${hash::bytes-to-string(hash::keccak('', '384'))}</code>
-      <output>hash::keccak-384('') -> 2c23146a63a29acf99e73b88f8c24eaa7dc60aa771780ccc006afbfa8fe2479b2dd2b21362337441ac12b515911957ff</output>
+      <code>hash::keccak('', '384') -> ${hash::bytes-to-string(hash::keccak('', '384'))}</code>
+      <output>hash::keccak('', '384') -> 2c23146a63a29acf99e73b88f8c24eaa7dc60aa771780ccc006afbfa8fe2479b2dd2b21362337441ac12b515911957ff</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::keccak-512('') -> ${hash::bytes-to-string(hash::keccak('', '512'))}</code>
-      <output>hash::keccak-512('') -> 0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e</output>
+      <code>hash::keccak('', '512') -> ${hash::bytes-to-string(hash::keccak('', '512'))}</code>
+      <output>hash::keccak('', '512') -> 0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-224('') -> ${hash::bytes-to-string(hash::sha3('', '224'))}</code>
-      <output>hash::sha3-224('') -> 6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7</output>
+      <code>hash::sha3('', '224') -> ${hash::bytes-to-string(hash::sha3('', '224'))}</code>
+      <output>hash::sha3('', '224') -> 6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-256('') -> ${hash::bytes-to-string(hash::sha3('', '256'))}</code>
-      <output>hash::sha3-256('') -> a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</output>
+      <code>hash::sha3('', '256') -> ${hash::bytes-to-string(hash::sha3('', '256'))}</code>
+      <output>hash::sha3('', '256') -> a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-256('') -> ${hash::bytes-to-string(hash::sha3(''))}</code>
-      <output>hash::sha3-256('') -> a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</output>
+      <code>hash::sha3('', '256') -> ${hash::bytes-to-string(hash::sha3(''))}</code>
+      <output>hash::sha3('', '256') -> a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-384('') -> ${hash::bytes-to-string(hash::sha3('', '384'))}</code>
-      <output>hash::sha3-384('') -> 0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004</output>
+      <code>hash::sha3('', '384') -> ${hash::bytes-to-string(hash::sha3('', '384'))}</code>
+      <output>hash::sha3('', '384') -> 0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>hash::sha3-512('') -> ${hash::bytes-to-string(hash::sha3('', '512'))}</code>
-      <output>hash::sha3-512('') -> a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26</output>
+      <code>hash::sha3('', '512') -> ${hash::bytes-to-string(hash::sha3('', '512'))}</code>
+      <output>hash::sha3('', '512') -> a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::xxh32('') -> ${hash::bytes-to-string(hash::xxh32(''))}</code>
+      <output>hash::xxh32('') -> 055dcc02</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::xxh32('', '0') -> ${hash::bytes-to-string(hash::xxh32('', '0'))}</code>
+      <output>hash::xxh32('', '0') -> 055dcc02</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::xxh32('', '2654435761') -> ${hash::bytes-to-string(hash::xxh32('', '2654435761'))}</code>
+      <output>hash::xxh32('', '2654435761') -> e78ab736</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::xxh64('') -> ${hash::bytes-to-string(hash::xxh64(''))}</code>
+      <output>hash::xxh64('') -> 99e9d85137db46ef</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::xxh64('', '0') -> ${hash::bytes-to-string(hash::xxh64('', '0'))}</code>
+      <output>hash::xxh64('', '0') -> 99e9d85137db46ef</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>hash::xxh64('', '2654435761') -> ${hash::bytes-to-string(hash::xxh64('', '2654435761'))}</code>
+      <output>hash::xxh64('', '2654435761') -> ef179b92a2fd75ac</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -3944,6 +3974,14 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </load_tasks_evaluate_task>
     <load_tasks_evaluate_task>
       <module>ant4c.regex.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <!--load_tasks_evaluate_task if="${platform::is-windows()}">
+      <module>ant4c.net.framework.module.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task-->
+    <load_tasks_evaluate_task>
+      <module>ant4c.net.module.dll</module>
       <return>1</return>
     </load_tasks_evaluate_task>
     <!--load_tasks_evaluate_task><TODO />
@@ -4761,6 +4799,24 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
 
         <property name="checksum" value="${file::get-checksum(file, 'sha3')}" />
         <fail unless="${string::equal('a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'xxh32')}" />
+        <fail unless="${string::equal('055dcc02', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'xxh32', '0')}" />
+        <fail unless="${string::equal('055dcc02', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'xxh32', '2654435761')}" />
+        <fail unless="${string::equal('e78ab736', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'xxh64')}" />
+        <fail unless="${string::equal('99e9d85137db46ef', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'xxh64', '0')}" />
+        <fail unless="${string::equal('99e9d85137db46ef', checksum)}" message="checksum - ${checksum}" />
+
+        <property name="checksum" value="${file::get-checksum(file, 'xxh64', '2654435761')}" />
+        <fail unless="${string::equal('ef179b92a2fd75ac', checksum)}" message="checksum - ${checksum}" />
 
         <property name="file_get-creation-time" value="${file::get-creation-time(property::get-value('file'))}" />
         <property name="file_get-creation-time-utc" value="${file::get-creation-time-utc(property::get-value('file'))}" />
@@ -6306,6 +6362,17 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <target_return>0</target_return>
       <content line="5"><![CDATA[<property name="project.onfailure" value="GiveUp" />]]></content>
       <content line="17"><![CDATA[<property name="project.onfailure" value="CleanUp2" />]]></content>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter4/Transformer.Build.Refactored.xml" crc32="3afe9291" />
+      <return>1</return>
+      <target_return>1</target_return>
+      <content line="5"><![CDATA[	<property name="project.onfailure" value="fail"/>]]></content>
+      <content line="7"><![CDATA[	<property name="core.directory" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />&x10;	<mkdir dir="${core.directory}" unless="${directory::exists(core.directory)}" /> ]]></content>
+      <content line="15"><![CDATA[	<property name="vss.dbpath" value="${path::combine(path::get-temp-path(), 'srcsafe.ini')}"/>]]></content>
+      <content line="18" />
+      <content line="19" />
+      <content line="20" />
     </project_load_from_build_file>
   </TestProject>
   <TestProgram>

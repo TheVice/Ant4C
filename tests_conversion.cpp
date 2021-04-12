@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -16,6 +16,7 @@ extern "C" {
 #include <cfloat>
 #include <string>
 #include <climits>
+#include <cstring>
 
 class TestConversion : public TestsBaseXml
 {
@@ -201,6 +202,32 @@ TEST(TestConversion_, long_to_string)
 	}
 
 	buffer_release(&output);
+}
+
+TEST(TestConversion_, uint64_parse)
+{
+	const uint8_t* input[] =
+	{
+		(const uint8_t*)"0",
+		(const uint8_t*)" 1",
+		(const uint8_t*)"  9223372036854775807",
+		(const uint8_t*)"  18446744073709551615   ",
+		(const uint8_t*)"  18446744073709551616  "
+	};
+	//
+	const uint64_t expected_output[] = { 0, 1, INT64_MAX, UINT64_MAX, UINT64_MAX };
+
+	for (uint8_t i = 0,
+		 count = sizeof(input) / sizeof(input[0]); i < count; ++i)
+	{
+		range input_in_range;
+		input_in_range.start = input[i];
+		input_in_range.finish = input[i] + std::strlen((const char*)input[i]);
+		//
+		const uint64_t returned = uint64_parse(input_in_range.start, input_in_range.finish);
+		//
+		ASSERT_EQ(expected_output[i], returned) << input[i];
+	}
 }
 
 TEST(TestConversion_, pointer_to_string_and_parse)

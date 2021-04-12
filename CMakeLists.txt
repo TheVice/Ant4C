@@ -40,6 +40,19 @@ endif()
 
 set(LIBRARIES4TESTING ant4c)
 
+if(DEFINED USE_BOOST)
+  include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
+  include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
+endif()
+
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
+include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
+include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
+
+if(CMAKE_HOST_WIN32)
+  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
+endif()
+
 if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 if(CMAKE_CL_64)
   set(LINK_FLAGS "${LINK_FLAGS} /DynamicBase /NXCompat")
@@ -48,24 +61,10 @@ else()
 endif()
 
 include("${CMAKE_SOURCE_DIR}/ant4c.cmake")
-include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
-
 include("${CMAKE_SOURCE_DIR}/gtest.cmake")
 include("${CMAKE_SOURCE_DIR}/pugixml.cmake")
 include("${CMAKE_SOURCE_DIR}/ant4c_tests.cmake")
 
-include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
-
-if(CMAKE_HOST_WIN32)
-  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
-endif()
-
-include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
-
-add_dependencies(ant4c_tests ant4c.dns)
-add_dependencies(ant4c_tests ant4c.regex)
 add_dependencies(ant4c_tests tests_exec_app)
 add_dependencies(ant4c_tests example_of_the_module)
 else()
@@ -214,18 +213,6 @@ endif()
 
 set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
 
-set(SOURCES_OF_TESTS)
-
-include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
-include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
-include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
-
-if(CMAKE_HOST_WIN32)
-  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
-endif()
-
 set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
 
 list(APPEND SOURCES_OF_TESTS
@@ -279,8 +266,6 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   endif()
 
   add_dependencies(ant4c_tests tests_exec_app)
-  add_dependencies(ant4c_tests ant4c.dns)
-  add_dependencies(ant4c_tests ant4c.regex)
   add_dependencies(ant4c_tests example_of_the_module)
 
   if((CMAKE_HOST_WIN32) AND (MSVC))
@@ -367,8 +352,6 @@ else()
       endif()
 
       add_dependencies(ant4c_tests tests_exec_app)
-      add_dependencies(ant4c_tests ant4c.dns)
-      add_dependencies(ant4c_tests ant4c.regex)
       add_dependencies(ant4c_tests example_of_the_module)
 
       if((CMAKE_HOST_WIN32) AND (MSVC))
@@ -398,3 +381,14 @@ else()
 endif()
 
 endif()
+
+if(DEFINED USE_BOOST)
+  add_dependencies(ant4c_tests ant4c.dns)
+  add_dependencies(ant4c_tests ant4c.regex)
+endif()
+
+if(CMAKE_HOST_WIN32)
+  add_dependencies(ant4c_tests ant4c.net.framework.module)
+endif()
+
+add_dependencies(ant4c_tests ant4c.net.module)

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -27,6 +27,8 @@ uint8_t long_to_string(long long_value, struct buffer* output_string);
 
 int64_t int64_parse(const uint8_t* value);
 uint8_t int64_to_string(int64_t int_value, struct buffer* output_string);
+
+uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish);
 
 void* pointer_parse(const uint8_t* value);
 uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string);
