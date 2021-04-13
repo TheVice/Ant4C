@@ -152,7 +152,7 @@ uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 	/**/
 	value_start = find_any_symbol_like_or_not_like_that(
 					  value_start, value_finish,
-					  digits, count_of_digits, 1, 1);
+					  digits + 1, count_of_digits - 1, 1, 1);
 	value_finish = find_any_symbol_like_or_not_like_that(
 					   value_start, value_finish,
 					   digits, count_of_digits, 0, 1);
@@ -164,13 +164,17 @@ uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 
 	uint64_t result = 0;
 	uint64_t multi = 10000000000000000000u;
-	uint8_t value = *value_start;
-	const uint8_t size = MIN((uint8_t)(value_finish - value_start), 20);
-	value_finish = value_start + size;
+	const uint8_t size = (uint8_t)(value_finish - value_start);
 
-	if (20 == size)
+	if (20 < size)
 	{
-		if ('0' != value && '1' != value)
+		return UINT64_MAX;
+	}
+	else if (20 == size)
+	{
+		uint8_t value = *value_start;
+
+		if ('1' != value)
 		{
 			return UINT64_MAX;
 		}
@@ -208,7 +212,7 @@ uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 		do
 		{
 			--value_finish;
-			value = *value_finish;
+			const uint8_t value = *value_finish;
 
 			for (uint8_t i = 0; i < count_of_digits; ++i)
 			{

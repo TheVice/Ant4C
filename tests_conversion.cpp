@@ -212,10 +212,16 @@ TEST(TestConversion_, uint64_parse)
 		(const uint8_t*)" 1",
 		(const uint8_t*)"  9223372036854775807",
 		(const uint8_t*)"  18446744073709551615   ",
-		(const uint8_t*)"  18446744073709551616  "
+		(const uint8_t*)"  18446744073709551616  ",
+		(const uint8_t*)"00000000000000000018446744073709551614   ",
+		(const uint8_t*)"100000000000000000000",
 	};
 	//
-	const uint64_t expected_output[] = { 0, 1, INT64_MAX, UINT64_MAX, UINT64_MAX };
+	const uint64_t expected_output[] =
+	{
+		0, 1, INT64_MAX, UINT64_MAX,
+		UINT64_MAX, UINT64_MAX - 1, UINT64_MAX
+	};
 
 	for (uint8_t i = 0,
 		 count = sizeof(input) / sizeof(input[0]); i < count; ++i)

@@ -182,11 +182,7 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 	buffer_release(&output);
 }
 
-extern "C" {
-	extern uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length, uint8_t* output);
-};
-
-TEST_F(TestHashAlgorithm, BLAKE3)
+TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 {
 	buffer input;
 	SET_NULL_TO_BUFFER(input);
@@ -196,30 +192,33 @@ TEST_F(TestHashAlgorithm, BLAKE3)
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 	ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
+	//
+	const uint8_t* start = buffer_data(&output, 0);
+	//
+	ASSERT_NE(nullptr, start) << buffer_free(&input) << buffer_free(&output);
 
 	for (const auto& node : nodes)
 	{
 		const auto input_length = (uint16_t)INT_PARSE(node.node().select_node("input").node().child_value());
 		ASSERT_LT(input_length, 31745) << buffer_free(&input) << buffer_free(&output);
 		//
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto hash_length = (uint16_t)INT_PARSE(node.node().select_node("hash_length").node().child_value());
 		const auto expected_output(get_data_from_nodes(node, "output"));
 		//
-		const uint8_t* start = buffer_data(&output, 0);
-		const uint8_t* finish = buffer_data(&output, 131);
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
+		auto returned = hash_algorithm_blake3(ptr, ptr + input_length, hash_length, &output);
+		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 		//
-		ASSERT_NE(nullptr, start) << buffer_free(&input) << buffer_free(&output);
+		const uint8_t* finish = buffer_data(&output, 0) + buffer_size(&output);
 		ASSERT_NE(nullptr, finish) << buffer_free(&input) << buffer_free(&output);
 		ASSERT_LT(start, finish) << buffer_free(&input) << buffer_free(&output);
 		//
-		auto returned = BLAKE3(ptr, ptr + input_length, 131, buffer_data(&output, 0));
-		ASSERT_EQ(expected_return, returned) << buffer_free(&input) << buffer_free(&output);
-		//
-		ASSERT_TRUE(buffer_resize(&output, 131)) << buffer_free(&input) << buffer_free(&output);
 		returned = hash_algorithm_bytes_to_string(start, finish, &output);
-		ASSERT_EQ(expected_return, returned) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 		//
-		ASSERT_STREQ(expected_output.c_str(), (const char*)finish) << buffer_free(&input) << buffer_free(&output);
+		const auto l = hash_length / 4;
+		ASSERT_STREQ(expected_output.substr(0, l).c_str(),
+					 (const char*)finish) << buffer_free(&input) << buffer_free(&output);
 
 		if (0 == input_length)
 		{
@@ -227,45 +226,15 @@ TEST_F(TestHashAlgorithm, BLAKE3)
 			continue;
 		}
 
-		returned = BLAKE3(ptr + 1, ptr + input_length + 1, 131, buffer_data(&output, 0));
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
+		returned = hash_algorithm_blake3(ptr + 1, ptr + input_length + 1, hash_length, &output);
 		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 		//
-		ASSERT_TRUE(buffer_resize(&output, 131)) << buffer_free(&input) << buffer_free(&output);
 		returned = hash_algorithm_bytes_to_string(start, finish, &output);
 		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 		//
-		ASSERT_STRNE(expected_output.c_str(), (const char*)finish) << buffer_free(&input) << buffer_free(&output);
-		//
-		static const uint8_t d = 0;
-		//
-		uint32_t m[16];
-		uint32_t h[8];
-		//
-		uint8_t l = 0;
-		uint32_t t[2];
-		t[0] = t[1] = 0;
-		uint8_t compressed = 0;
-		uint8_t stack[1024];
-		uint8_t stack_length = 0;
-		//
-		returned = BLAKE3_init(h, COUNT_OF(h), m, COUNT_OF(m), sizeof(stack));
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
-
-		for (uint16_t i = 0; i < input_length; i += 4096)
-		{
-			returned = BLAKE3_core(ptr + i, std::min(4096, input_length - i), m, &l, h, &compressed, t, stack,
-								   &stack_length, d);
-			ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
-		}
-
-		returned = BLAKE3_final(stack, stack_length, compressed, t, h, m, l, d, 131, buffer_data(&output, 0));
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
-		//
-		ASSERT_TRUE(buffer_resize(&output, 131)) << buffer_free(&input) << buffer_free(&output);
-		returned = hash_algorithm_bytes_to_string(start, finish, &output);
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
-		//
-		ASSERT_STREQ(expected_output.c_str(), (const char*)finish) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_STRNE(expected_output.substr(0, l).c_str(),
+					 (const char*)finish) << buffer_free(&input) << buffer_free(&output);
 		//
 		--node_count;
 	}
@@ -327,9 +296,12 @@ TEST_F(TestHashAlgorithm, crc32)
 	buffer_release(&output);
 }
 
-extern "C" {
-	uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
-				   uint16_t hash_length, uint8_t* output);
+typedef uint8_t(*Keccak)(
+	const uint8_t* start, const uint8_t* finish,
+	uint16_t hash_length, struct buffer* output);
+static const Keccak Keccak_functions[] =
+{
+	&hash_algorithm_keccak, &hash_algorithm_sha3
 };
 
 TEST_F(TestHashAlgorithm, Keccak)
@@ -343,6 +315,8 @@ TEST_F(TestHashAlgorithm, Keccak)
 	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
+	//
+	ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
 
 	for (const auto& node : nodes)
 	{
@@ -374,10 +348,10 @@ TEST_F(TestHashAlgorithm, Keccak)
 				continue;
 			}
 
-			ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
-			uint8_t* o = buffer_data(&output, 0);
 			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
-			uint8_t returned = Keccak(ptr, input_length, 3 < i, hash_length[i], o);
+			//
+			auto returned = (Keccak_functions[3 < i])(ptr, ptr + input_length, hash_length[i], &output);
+			//
 			ASSERT_EQ(expected_return, returned) <<
 												 input_length << std::endl << (int)i << buffer_free(&input) << buffer_free(&output);
 			//
@@ -405,12 +379,6 @@ TEST_F(TestHashAlgorithm, Keccak)
 
 TEST_F(TestHashAlgorithm, sha3)
 {
-	typedef uint8_t(*Keccak)(const uint8_t*, const uint8_t*, uint16_t hash_length, buffer*);
-	static const Keccak functions[] =
-	{
-		&hash_algorithm_keccak, &hash_algorithm_sha3
-	};
-	//
 	static const uint16_t hash_lengths[] =
 	{
 		224, 256, 384, 512,
@@ -453,7 +421,8 @@ TEST_F(TestHashAlgorithm, sha3)
 			auto input_in_range(string_to_range(input));
 			null_range_to_empty(input_in_range);
 			//
-			auto returned = (functions[i < 4 ? 0 : 1])(input_in_range.start, input_in_range.finish, hash_lengths[i],
+			auto returned = (Keccak_functions[i < 4 ? 0 : 1])(input_in_range.start, input_in_range.finish,
+							hash_lengths[i],
 							&output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl << (int)i << buffer_free(&output);
 			//

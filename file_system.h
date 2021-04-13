@@ -22,6 +22,8 @@ struct range;
 uint8_t file_system_append_pre_root(struct buffer* path);
 uint8_t file_system_get_position_after_pre_root(struct range* path);
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path);
+uint8_t file_system_path_in_range_to_pathW(
+	const uint8_t* path_start, const uint8_t* path_finish, struct buffer* pathW);
 uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW);
 #endif
 

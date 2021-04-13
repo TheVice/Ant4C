@@ -373,6 +373,25 @@ uint8_t directory_exists_wchar_t(const wchar_t* path)
 	return close_return && is_directory;
 }
 
+uint8_t file_system_path_in_range_to_pathW(
+	const uint8_t* path_start, const uint8_t* path_finish, struct buffer* pathW)
+{
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
+		NULL == pathW)
+	{
+		return 0;
+	}
+
+	if (path_is_path_rooted(path_start, path_finish) &&
+		!string_starts_with(path_start, path_finish, pre_root_path, pre_root_path + pre_root_path_length) &&
+		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF8_to_UTF16LE(path_start, path_finish, pathW) && buffer_push_back_uint16(pathW, 0);
+}
+
 uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 {
 	if (NULL == path ||
@@ -382,20 +401,7 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 	}
 
 	const ptrdiff_t length = common_count_bytes_until(path, 0);
-
-	if (!length)
-	{
-		return 0;
-	}
-
-	if (path_is_path_rooted(path, path + length) &&
-		!string_starts_with(path, path + length, pre_root_path, pre_root_path + pre_root_path_length) &&
-		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
-	{
-		return 0;
-	}
-
-	return text_encoding_UTF8_to_UTF16LE(path, path + length, pathW) && buffer_push_back_uint16(pathW, 0);
+	return file_system_path_in_range_to_pathW(path, path + length, pathW);
 }
 #else
 #define FILE_STAT(PATH)									\
