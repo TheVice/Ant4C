@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
+
+#include "stdc_secure_api.h"
 
 #include "buffer.h"
 #if !defined(_WIN32) && defined(NDEBUG) && defined(__ALPINE_PREVENT_ILLEGAL_INSTRUCTION__)
@@ -12,10 +14,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static struct buffer pool;
 static uint8_t is_pool_init = 0;
@@ -174,7 +172,7 @@ uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t 
 
 		if (0 < the_buffer->size && NULL != the_buffer->data)
 		{
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 			if (0 != memcpy_s(new_data, capacity, the_buffer->data, the_buffer->size))
 			{
@@ -199,17 +197,17 @@ uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t 
 
 	if (NULL != data)
 	{
-#if __STDC_SEC_API__
+#if !defined(_WIN32) && defined(NDEBUG) && defined(__ALPINE_PREVENT_ILLEGAL_INSTRUCTION__)
+		uint8_t* dst = &the_buffer->data[the_buffer->size];
+		MEM_CPY(dst, data, size);
+#else
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(&the_buffer->data[the_buffer->size], the_buffer->capacity - the_buffer->size, data, size))
 		{
 			return 0;
 		}
 
-#else
-#if !defined(_WIN32) && defined(NDEBUG) && defined(__ALPINE_PREVENT_ILLEGAL_INSTRUCTION__)
-		uint8_t* dst = &the_buffer->data[the_buffer->size];
-		MEM_CPY(dst, data, size);
 #else
 		memcpy(&the_buffer->data[the_buffer->size], data, size);
 #endif

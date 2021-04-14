@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "ant4c.net.module.h"
 
 #include "buffer.h"
@@ -21,10 +23,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 #if defined(_WIN32)
 static const type_of_element* zero = L"\0";
@@ -458,7 +456,7 @@ uint8_t hostfxr_result_code_to_string(int32_t code, struct buffer* output)
 	}
 
 	char* ptr = (char*)buffer_data(output, size);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	code = sprintf_s(ptr, 32, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
 #else
 	code = sprintf(ptr, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));

@@ -72,7 +72,7 @@ uint8_t common_get_module_priority();
 		++(SRC);												\
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 #define MEM_CPY_C(DST, SRC, LENGTH)								\
 	if (0 != memcpy_s((DST), (LENGTH), (SRC), (LENGTH)))		\
 	{															\

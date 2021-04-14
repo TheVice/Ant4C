@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -12,15 +12,13 @@
  * https://tools.ietf.org/html/rfc7693
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
 #include "buffer.h"
 #include "range.h"
 
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const uint64_t IV[] =
 {
@@ -172,8 +170,13 @@ uint8_t BLAKE2b_final(const uint8_t* start, ptrdiff_t* bytes_compressed, uint8_t
 
 	if (0 < bytes_remaining)
 	{
-#if __STDC_SEC_API__
-		memcpy_s(chunk, 128, start, bytes_remaining);
+#if __STDC_LIB_EXT1__
+
+		if (0 != memcpy_s(chunk, 128, start, bytes_remaining))
+		{
+			return 0;
+		}
+
 #else
 		memcpy(chunk, start, bytes_remaining);
 #endif

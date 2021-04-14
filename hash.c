@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
 #include "buffer.h"
 #include "common.h"
@@ -15,10 +17,6 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
 	const uint8_t* start, const uint8_t* finish, uint32_t* output)
@@ -94,7 +92,7 @@ uint8_t hash_algorithm_bytes_to_string(
 
 	while (start < finish && size < max_size)
 	{
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 		const int32_t sz = sprintf_s(ptr, 3, (*start) < 16 ? "0%x" : "%x", *start);
 #else
 		const int32_t sz = sprintf(ptr, (*start) < 16 ? "0%x" : "%x", *start);
@@ -397,8 +395,14 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				}
 
 				last = file_content + 4096;
-#if __STDC_SEC_API__
-				memcpy_s(last, 128, file_content + 4096 - 128, 128);
+#if __STDC_LIB_EXT1__
+
+				if (0 != memcpy_s(last, 128, file_content + 4096 - 128, 128))
+				{
+					file_close(file);
+					return 0;
+				}
+
 #else
 				memcpy(last, file_content + 4096 - 128, 128);
 #endif

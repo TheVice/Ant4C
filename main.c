@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
+
+#include "stdc_secure_api.h"
 
 #include "argument_parser.h"
 #include "buffer.h"
@@ -58,13 +60,9 @@
 #endif
 #endif
 
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
-
 #define LOGO (const uint8_t*)"Program version "PROGRAM_VERSION"\n"																\
 	"The MIT License (MIT)\n"																									\
-	"Copyright (c) 2019 - 2020 https://github.com/TheVice/"
+	"Copyright (c) 2019 - 2021 https://github.com/TheVice/"
 #define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
 #define SAMPLE_USING (const uint8_t*)"Sample using - [options] <target> ..."
 #define SAMPLE_USING_LENGTH 37

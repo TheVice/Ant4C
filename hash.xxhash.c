@@ -11,12 +11,9 @@
  * https://github.com/Cyan4973/xxHash/blob/ff5df558b7bad19bc060d756f4dbd528b202c820/doc/xxhash_spec.md
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
-
 #include "common.h"
 
 #include <stddef.h>

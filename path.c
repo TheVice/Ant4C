@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
+
+#include "stdc_secure_api.h"
 
 #include "path.h"
 #include "buffer.h"
@@ -28,10 +30,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 #ifndef L_tmpnam_s
 #define L_tmpnam_s L_tmpnam
@@ -495,7 +493,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 	}
 
 	uint8_t* temp_file_path = buffer_data(temp_file_name, size);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != tmpnam_s((char*)temp_file_path, L_tmpnam_s))
 	{
@@ -565,7 +563,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 	}
 
 	length = buffer_size(temp_file_name) - temp_path_finish;
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != memcpy_s(temp_file_path, length, temp_path_, length))
 	{

@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "target.h"
 #include "buffer.h"
 #include "common.h"
@@ -21,10 +23,6 @@
 
 #include <stddef.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const uint8_t depends_delimiter = ',';
 
@@ -150,7 +148,7 @@ uint8_t target_set_name(struct target* the_target, const uint8_t* name, uint8_t 
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
 	{

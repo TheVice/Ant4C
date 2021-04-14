@@ -198,10 +198,11 @@ endif()
 
 if(NOT MSVC)
   if(NOT MINGW)
-    target_compile_options(ant4c PRIVATE "-fPIE")
+    # target_compile_options(ant4c PRIVATE "-fPIE")
     target_compile_options(ant4c PRIVATE "-fPIC")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
-    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+    # set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-Wl,-z,now")
   endif()
 
   target_link_libraries(ant4c_app m)

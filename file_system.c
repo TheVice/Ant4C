@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
+
+#include "stdc_secure_api.h"
 
 #include "file_system.h"
 #include "buffer.h"
@@ -32,10 +34,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#endif
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
 enum entry_types { directory_entry, file_entry, all_entries, UNKNOWN_ENTRY_TYPE };
@@ -122,7 +120,7 @@ uint8_t _buffer_append_pre(struct buffer* the_buffer, const uint8_t* data, ptrdi
 	if (NULL != data)
 	{
 		uint8_t* dst = buffer_data(the_buffer, 0);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(dst, size, data, size))
 		{
@@ -1713,7 +1711,7 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != (*output));
 #else
 	(*output) = (void*)_wfopen(path, mode);
@@ -1809,7 +1807,7 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	buffer_release(&pathW);
 	return returned;
 #else
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != (*output));
 #else
 	(*output) = (void*)fopen((const char*)path, (const char*)mode);
@@ -1827,7 +1825,7 @@ size_t file_read(void* content, const size_t size_of_content_element,
 		return 0;
 	}
 
-#if __STDC_SEC_API__ && defined(_MSC_VER)
+#if __STDC_LIB_EXT1__ && defined(_MSC_VER)
 	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, stream);
 #else
 	return fread(content, size_of_content_element, count_of_elements, stream);

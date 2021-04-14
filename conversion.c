@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "conversion.h"
 #include "buffer.h"
 #include "common.h"
@@ -14,10 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const char* False = "False";
 static const char* True = "True";
@@ -96,7 +94,7 @@ double double_parse(const uint8_t* value)
 
 uint8_t double_to_string(double double_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(double_value, 386, "%.16lf", output_string);
 #else
 	DIGIT_TO_STRING(double_value, 386, "%.16lf", output_string);
@@ -110,7 +108,7 @@ int32_t int_parse(const uint8_t* value)
 
 uint8_t int_to_string(int32_t int_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(int_value, 12, "%i", output_string);
 #else
 	DIGIT_TO_STRING(int_value, 12, "%i", output_string);
@@ -124,7 +122,7 @@ long long_parse(const uint8_t* value)
 
 uint8_t long_to_string(long long_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(long_value, 24, "%ld", output_string);
 #else
 	DIGIT_TO_STRING(long_value, 24, "%ld", output_string);
@@ -138,7 +136,7 @@ int64_t int64_parse(const uint8_t* value)
 
 uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(int_value, 24, "%"PRId64, output_string);
 #else
 	DIGIT_TO_STRING(int_value, 24, "%"PRId64, output_string);
@@ -244,7 +242,7 @@ void* pointer_parse(const uint8_t* value)
 
 uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(pointer_value, 32, "%p", output_string);
 #else
 	DIGIT_TO_STRING(pointer_value, 32, "%p", output_string);

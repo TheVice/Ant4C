@@ -23,6 +23,8 @@
  * https://csrc.nist.gov/publications/detail/fips/202/final
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
 #include "buffer.h"
 #include "common.h"
@@ -33,10 +35,6 @@
 
 #include <stddef.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const uint8_t w = 64;
 
@@ -223,7 +221,7 @@ uint8_t Keccak_squeezing(uint64_t* S, uint8_t rate_on_w, uint8_t d_max, uint8_t*
 				if (TWO_DIMENSION_TO_ONE_INDEX(i, j, 5) < rate_on_w)
 				{
 					const uint64_t* s = &(S[TWO_DIMENSION_TO_ONE_INDEX(j, i, 5)]);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 					if (0 != memcpy_s(output + xF, sizeof(uint64_t), s, sizeof(uint64_t)))
 					{
@@ -308,7 +306,7 @@ uint8_t hash_algorithm_sha3_core(
 	if (0 < *queue_size)
 	{
 		const uint8_t length = (uint8_t)MIN(finish - start, maximum_delta - *queue_size);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(queue + *queue_size, maximum_delta - *queue_size, start, length))
 		{
@@ -345,7 +343,7 @@ uint8_t hash_algorithm_sha3_core(
 	if (start < finish)
 	{
 		*queue_size = (uint8_t)(finish - start);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(queue, maximum_delta, start, *queue_size))
 		{

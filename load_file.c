@@ -15,10 +15,6 @@
 #include "string_unit.h"
 #include "text_encoding.h"
 
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
-
 #define READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(FILE_, START, FINISH, SIZE, USE_OFFSET, TYPE, OUTPUT, CONVERTER)	\
 	if (!buffer_resize((OUTPUT), sizeof(uint64_t)) ||																	\
 		!file_read_with_several_steps((FILE_), (OUTPUT)))																\

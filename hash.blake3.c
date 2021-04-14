@@ -11,15 +11,13 @@
  * https://github.com/BLAKE3-team/BLAKE3-specs/raw/master/blake3.pdf
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
 #include "buffer.h"
 
 #include <stddef.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const uint32_t IV[] =
 {
@@ -139,7 +137,7 @@ uint8_t BLAKE3_compress_XOF(uint32_t* h, const uint32_t* m, const uint32_t* t, u
 
 uint8_t BLAKE3_hash_input(uint8_t d, const uint8_t* input, const uint32_t* t, uint8_t* h)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
 	{
@@ -247,7 +245,7 @@ uint8_t BLAKE3_update_chunk_data(
 
 	if (0 < (*l))
 	{
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 		GET_DATA_FOR_CHUNK_SEC(input, length, m, (*l), processed);
 #else
 		GET_DATA_FOR_CHUNK(input, length, m, (*l), processed);
@@ -282,7 +280,7 @@ uint8_t BLAKE3_update_chunk_data(
 		length -= BLAKE3_BLOCK_LENGTH;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	GET_DATA_FOR_CHUNK_SEC(input + index, length, m, (*l), processed);
 #else
 	GET_DATA_FOR_CHUNK(input + index, length, m, (*l), processed);
@@ -337,7 +335,7 @@ uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t 
 	{
 		static const uint32_t local_t[] = { 0, 0 };
 		uint32_t* m = (uint32_t*)(stack + ((uint64_t)((*stack_length) - 2) * BLAKE3_OUTPUT_LENGTH));
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
 		{
@@ -353,7 +351,7 @@ uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t 
 			return 0;
 		}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(m, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
 		{
@@ -416,12 +414,12 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 			return 0;
 		}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 		PUSH_CHUNK_TO_STACK_SEC(h, stack, *stack_length);
 #else
 		PUSH_CHUNK_TO_STACK(h, stack, *stack_length);
 #endif
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
 		{
@@ -429,7 +427,6 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 		}
 
 #else
-		/**/
 		memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
 #endif
 		t[0] += 1;
@@ -470,7 +467,7 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 				return 0;
 			}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 			PUSH_CHUNK_TO_STACK_SEC(output + index * BLAKE3_OUTPUT_LENGTH, stack, *stack_length);
 #else
 			PUSH_CHUNK_TO_STACK(output + index * BLAKE3_OUTPUT_LENGTH, stack, *stack_length);
@@ -545,8 +542,14 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 	else
 	{
 		stack_length -= 2;
-#if __STDC_SEC_API__
-		memcpy_s(m, BLAKE3_BLOCK_LENGTH, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_BLOCK_LENGTH);
+#if __STDC_LIB_EXT1__
+
+		if (0 != memcpy_s(m, BLAKE3_BLOCK_LENGTH, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH,
+						  BLAKE3_BLOCK_LENGTH))
+		{
+			return 0;
+		}
+
 #else
 		memcpy(m, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_BLOCK_LENGTH);
 #endif
@@ -559,10 +562,19 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 	{
 		--stack_length;
 		uint8_t block[BLAKE3_BLOCK_LENGTH];
-#if __STDC_SEC_API__
-		memcpy_s(block, BLAKE3_OUTPUT_LENGTH,
-				 stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH);
-		memcpy_s(block + BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH);
+#if __STDC_LIB_EXT1__
+
+		if (0 != memcpy_s(block, BLAKE3_OUTPUT_LENGTH,
+						  stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH))
+		{
+			return 0;
+		}
+
+		if (0 != memcpy_s(block + BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
+		{
+			return 0;
+		}
+
 #else
 		memcpy(block, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH);
 		memcpy(block + BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH);
@@ -573,8 +585,13 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 			return 0;
 		}
 
-#if __STDC_SEC_API__
-		memcpy_s(m, BLAKE3_BLOCK_LENGTH, block, BLAKE3_BLOCK_LENGTH);
+#if __STDC_LIB_EXT1__
+
+		if (0 != memcpy_s(m, BLAKE3_BLOCK_LENGTH, block, BLAKE3_BLOCK_LENGTH))
+		{
+			return 0;
+		}
+
 #else
 		memcpy(m, block, BLAKE3_BLOCK_LENGTH);
 #endif
@@ -600,7 +617,7 @@ uint8_t BLAKE3_init(uint32_t* h, uint8_t h_length,
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
 	{
