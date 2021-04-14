@@ -998,9 +998,9 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftCreationTime.dwHighDateTime << 32) + file_data.ftCreationTime.dwLowDateTime);
 #else
 	DIRECTORY_STAT(path);
-	int64_t result = directory_status.st_atim.tv_sec;
-	result = directory_status.st_mtim.tv_sec < result ? directory_status.st_mtim.tv_sec : result;
-	result = directory_status.st_ctim.tv_sec < result ? directory_status.st_ctim.tv_sec : result;
+	int64_t result = directory_status.st_atime;
+	result = directory_status.st_mtime < result ? directory_status.st_mtime : result;
+	result = directory_status.st_ctime < result ? directory_status.st_ctime : result;
 	return result;
 #endif
 }
@@ -1051,7 +1051,7 @@ int64_t directory_get_last_access_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastAccessTime.dwHighDateTime << 32) + file_data.ftLastAccessTime.dwLowDateTime);
 #else
 	DIRECTORY_STAT(path);
-	return directory_status.st_atim.tv_sec;
+	return directory_status.st_atime;
 #endif
 }
 
@@ -1080,7 +1080,7 @@ int64_t directory_get_last_write_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastWriteTime.dwHighDateTime << 32) + file_data.ftLastWriteTime.dwLowDateTime);
 #else
 	DIRECTORY_STAT(path);
-	return directory_status.st_mtim.tv_sec;
+	return directory_status.st_mtime;
 #endif
 }
 
@@ -1637,9 +1637,9 @@ int64_t file_get_creation_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftCreationTime.dwHighDateTime << 32) + file_data.ftCreationTime.dwLowDateTime);
 #else
 	FILE_STAT(path);
-	int64_t result = file_status.st_atim.tv_sec;
-	result = file_status.st_mtim.tv_sec < result ? file_status.st_mtim.tv_sec : result;
-	result = file_status.st_ctim.tv_sec < result ? file_status.st_ctim.tv_sec : result;
+	int64_t result = file_status.st_atime;
+	result = file_status.st_mtime < result ? file_status.st_mtime : result;
+	result = file_status.st_ctime < result ? file_status.st_ctime : result;
 	return result;
 #endif
 }
@@ -1669,7 +1669,7 @@ int64_t file_get_last_access_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastAccessTime.dwHighDateTime << 32) + file_data.ftLastAccessTime.dwLowDateTime);
 #else
 	FILE_STAT(path);
-	return file_status.st_atim.tv_sec;
+	return file_status.st_atime;
 #endif
 }
 
@@ -1698,7 +1698,7 @@ int64_t file_get_last_write_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastWriteTime.dwHighDateTime << 32) + file_data.ftLastWriteTime.dwLowDateTime);
 #else
 	FILE_STAT(path);
-	return file_status.st_mtim.tv_sec;
+	return file_status.st_mtime;
 #endif
 }
 #if defined(_WIN32)
