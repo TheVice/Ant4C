@@ -3973,21 +3973,49 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
     </load_tasks_evaluate_task>
     <load_tasks_evaluate_task>
+      <module>libant4c.dns.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>libant4c.dns.so</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
       <module>ant4c.regex.dll</module>
       <return>1</return>
     </load_tasks_evaluate_task>
-    <!--load_tasks_evaluate_task if="${platform::is-windows()}">
+    <load_tasks_evaluate_task>
+      <module>libant4c.regex.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>libant4c.regex.so</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
       <module>ant4c.net.framework.module.dll</module>
       <return>1</return>
-    </load_tasks_evaluate_task-->
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>libant4c.net.framework.module.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
     <load_tasks_evaluate_task>
       <module>ant4c.net.module.dll</module>
       <return>1</return>
     </load_tasks_evaluate_task>
-    <!--load_tasks_evaluate_task><TODO />
+    <load_tasks_evaluate_task>
+      <module>libant4c.net.module.dll</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>libant4c.net.module.so</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <TODO><load_tasks_evaluate_task>
       <path>.</path>
       <return>1</return>
-    </load_tasks_evaluate_task-->
+    </load_tasks_evaluate_task></TODO>
   </TestLoadTasks>
   <TestMathUnit>
     <math_abs>
@@ -6204,7 +6232,6 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <name>load dns function</name>
     </project_load_from_content>
-    <project_load_from_build_file />
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />
       <return>1</return>
@@ -6357,6 +6384,16 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <target_return>1</target_return>
     </project_load_from_build_file>
     <project_load_from_build_file>
+      <file path="Chapter4/Transformer.Build.xml" crc32="c18db98a" />
+      <return>1</return>
+      <target_return>1</target_return>
+      <content line="5"><![CDATA[ <property name="project.onfailure" value="fail"/>]]></content>
+      <content line="7" />
+      <content line="8" />
+      <content line="9" />
+      <TODO>Targets</TODO>
+    </project_load_from_build_file>
+    <project_load_from_build_file>
       <file path="Chapter4/ErrorHandlingExample.xml" crc32="79bbe18a" />
       <return>1</return>
       <target_return>0</target_return>
@@ -6368,11 +6405,30 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
       <target_return>1</target_return>
       <content line="5"><![CDATA[	<property name="project.onfailure" value="fail"/>]]></content>
-      <content line="7"><![CDATA[	<property name="core.directory" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />&x10;	<mkdir dir="${core.directory}" unless="${directory::exists(core.directory)}" /> ]]></content>
+
+      <content line="6"><![CDATA[	<property name="core.directory" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />]]></content>
+      <content line="7"><![CDATA[	<!--mkdir dir="${core.directory}" unless="${directory::exists(core.directory)}" /-->]]></content>
+
       <content line="15"><![CDATA[	<property name="vss.dbpath" value="${path::combine(path::get-temp-path(), 'srcsafe.ini')}"/>]]></content>
+
       <content line="18" />
       <content line="19" />
       <content line="20" />
+    </project_load_from_build_file>
+    <project_load_from_build_file>
+      <file path="Chapter4/Transformer.Deploy.xml" crc32="b5e28ef4" />
+      <return>1</return>
+      <target_return>1</target_return>
+      <content line="5"><![CDATA[	<property name="project.onfailure" value="fail"/>]]></content>
+
+      <content line="6"><![CDATA[	<property name="core.directory" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::crc32(datetime::now-utc())))}" />]]></content>
+      <content line="7"><![CDATA[	<!--mkdir dir="${core.directory}" unless="${directory::exists(core.directory)}" /-->]]></content>
+
+      <content line="9"><![CDATA[	<property name="core.deploy" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::blake2b(datetime::now-utc())))}" />]]></content>
+      <content line="10"><![CDATA[	<!--mkdir dir="${core.deploy}" unless="${directory::exists(core.deploy)}" /-->]]></content>
+
+      <content line="11"><![CDATA[	<property name="core.environment" value="${path::combine(path::get-temp-path(), hash::bytes-to-string(hash::blake3(datetime::now-utc())))}" />]]></content>
+      <content line="12"><![CDATA[	<!--mkdir dir="${core.environment}" unless="${directory::exists(core.environment)}" /-->]]></content>
     </project_load_from_build_file>
   </TestProject>
   <TestProgram>

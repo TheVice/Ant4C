@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -131,7 +131,8 @@ protected:
 			buffer_release(&tmp);
 		}
 
-		allow_output_to_console = nodes.first().parent().attribute("allow_output_to_console").as_bool();
+		allow_output_to_console =
+			nodes.cbegin()->parent().attribute("allow_output_to_console").as_bool();
 	}
 
 	void load_input_data(const pugi::xpath_node& node);
@@ -310,16 +311,6 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &temp_file_name, &condition, verbose))
-				<< buffer_free(&temp_file_name) << project_free(&the_project);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		load_input_data(node);
 
 		for (auto& the_property : input_properties)
@@ -695,16 +686,6 @@ TEST_F(TestExec, exec_get_program_full_path)
 
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose))
-				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		ASSERT_TRUE(buffer_resize(&path_to_the_program, 0)) << buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		//

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -104,15 +104,6 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &output, &condition, verbose)) << buffer_free(&output);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string code(get_data_from_nodes(node, "code"));
 		const std::string expected_output(get_data_from_nodes(node, ("output")));
 		const uint8_t expected_return = (uint8_t)INT_PARSE(

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -105,41 +105,6 @@ std::string buffer_to_string(const buffer* input)
 	return output;
 }
 
-std::wstring buffer_to_u16string(const buffer* input)
-{
-	std::wstring output((nullptr != input &&
-						 0 < buffer_size(input)) ? buffer_size(input) / sizeof(uint16_t) : 0, L'\0');
-	output.clear();
-	const uint16_t* ptr = nullptr;
-
-	if (nullptr != input && nullptr != (ptr = buffer_uint16_data(input, 0)))
-	{
-		switch (sizeof(wchar_t))
-		{
-			case 2:
-				output.append(reinterpret_cast<const wchar_t*>(ptr), buffer_size(input) / sizeof(uint16_t));
-				break;
-
-			case 4:
-			{
-				ptrdiff_t i = 0;
-
-				while (nullptr != (ptr = buffer_uint16_data(input, i++)))
-				{
-					uint16_t value = *ptr;
-					output.push_back(value);
-				}
-			}
-			break;
-
-			default:
-				break;
-		}
-	}
-
-	return output;
-}
-
 range buffer_to_range(const buffer* input)
 {
 	range output;
@@ -210,35 +175,57 @@ uint8_t buffer_free_with_inner_buffers(buffer* storage)
 	return 0;
 }
 
-uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition,
-		uint8_t verbose)
+uint8_t is_this_node_pass_by_if_condition(
+	const pugi::xpath_node& node, buffer* tmp, uint8_t* condition, uint8_t verbose)
 {
 	if (nullptr == tmp || nullptr == condition)
 	{
 		return 0;
 	}
 
-	const std::string if_(node.node().attribute("if").as_string());
+	static const char* attributes[2] = { "if", "unless" };
+	std::string node_attributes;
 
-	if (!if_.empty())
+	for (const auto& attribute : attributes)
+	{
+		const auto attribute_value = node.node().attribute(attribute).as_string();
+
+		if (!common_count_bytes_until(reinterpret_cast<const uint8_t*>(attribute_value), 0))
+		{
+			continue;
+		}
+
+		node_attributes += " ";
+		node_attributes.append(attribute);
+		node_attributes += "=\"";
+		node_attributes.append(attribute_value);
+		node_attributes += "\"";
+	}
+
+	if (!node_attributes.empty())
 	{
 		if (!buffer_resize(tmp, 0))
 		{
 			return 0;
 		}
 
-		auto code = string_to_range(if_);
+		const auto code = string_to_range(node_attributes);
+		verbose = interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
+					  nullptr, nullptr, code.start, code.finish, condition, tmp, verbose);
+		buffer_release_inner_buffers(tmp);
 
-		if (!interpreter_evaluate_code(nullptr, nullptr, &code, tmp, verbose))
+		if (!verbose)
 		{
 			return 0;
 		}
 
-		code = buffer_to_range(tmp);
-		return bool_parse(code.start, range_size(&code), condition);
+		*condition = !(*condition);
+	}
+	else
+	{
+		*condition = 1;
 	}
 
-	(*condition) = 1;
 	return 1;
 }
 
@@ -337,27 +324,6 @@ uint8_t properties_free(buffer* properties)
 	return 0;
 }
 
-std::wstring u8string_to_u16string(const std::string& input, buffer* value)
-{
-	static const std::wstring empty;
-
-	if (!text_encoding_UTF8_to_UTF16LE(
-			reinterpret_cast<const uint8_t*>(input.c_str()),
-			reinterpret_cast<const uint8_t*>(input.c_str()) + input.size(), value))
-	{
-		return empty;
-	}
-
-	return buffer_to_u16string(value);
-}
-
-extern std::wstring char_to_wchar_t(const std::string& input);
-
-std::wstring u8string_to_u16string(const std::string& input)
-{
-	return char_to_wchar_t(input);
-}
-
 std::string TestsBaseXml::tests_xml;
 pugi::xml_document TestsBaseXml::document;
 std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;
@@ -420,7 +386,28 @@ void TestsBaseXml::load_nodes()
 {
 	const auto* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
 	const auto test_path = std::string("Tests") + "/" + test_info->test_case_name() + "/" + test_info->name();
-	nodes = document.select_nodes(pugi::xpath_query(test_path.c_str()));
+	const auto all_nodes = document.select_nodes(pugi::xpath_query(test_path.c_str()));
+	nodes.clear();
+	//
+	struct buffer tmp;
+	SET_NULL_TO_BUFFER(tmp);
+	uint8_t condition = 0;
+
+	for (const auto& node : all_nodes)
+	{
+		verbose = node.node().attribute("verbose").as_bool();
+		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose))
+				<< test_path << std::endl << buffer_free(&tmp);
+
+		if (!condition)
+		{
+			continue;
+		}
+
+		nodes.push_back(node);
+	}
+
+	buffer_release(&tmp);
 }
 
 bool TestsBaseXml::load_document(pugi::xml_document& doc, const std::string& xml_file, unsigned int options)
@@ -457,11 +444,11 @@ void TestsBaseXml::SetUp()
 	load_nodes();
 	node_count = nodes.size();
 	ASSERT_NE(0u, node_count) << "Test has no any case(s)." << std::endl;
-	verbose = nodes.first().parent().attribute("verbose").as_bool();
 }
 
 void TestsBaseXml::TearDown()
 {
+	nodes.clear();
 	ASSERT_EQ(0u, node_count);
 }
 

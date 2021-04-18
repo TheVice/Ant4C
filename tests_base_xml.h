@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -16,6 +16,7 @@ extern "C" {
 #include <gtest/gtest.h>
 
 #include <map>
+#include <list>
 #include <string>
 #include <cstdint>
 
@@ -25,7 +26,6 @@ extern "C" {
 struct buffer;
 
 std::string buffer_to_string(const buffer* input);
-std::wstring buffer_to_u16string(const buffer* input);
 range buffer_to_range(const buffer* input);
 
 uint8_t string_to_buffer(const std::string& input, buffer* output);
@@ -41,8 +41,6 @@ uint8_t buffer_free(buffer* input);
 uint8_t buffer_resize_and_free_inner_buffers(buffer* storage);
 uint8_t buffer_free_with_inner_buffers(buffer* storage);
 
-uint8_t is_this_node_pass_by_if_condition(const pugi::xpath_node& node, buffer* tmp, uint8_t* condition,
-		uint8_t verbose);
 std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::string& name_of_nodes);
 
 uint8_t project_free(void* the_project);
@@ -57,29 +55,29 @@ void property_load_from_node(const pugi::xml_node& property,
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties);
 uint8_t properties_free(buffer* properties);
 
-std::wstring u8string_to_u16string(const std::string& input);
+extern std::wstring char_to_wchar_t(const std::string& input);
 
 class TestsBaseXml : public testing::Test
 {
 protected:
-	pugi::xpath_node_set nodes;
-	std::size_t node_count;
-	uint8_t verbose;
+	static std::map<std::string, std::string*> predefine_arguments;
 
 private:
 	static std::string tests_xml;
 	static pugi::xml_document document;
 
-private:
-	void load_nodes();
-
 protected:
-	static std::map<std::string, std::string*> predefine_arguments;
+	std::list<pugi::xpath_node> nodes;
+	std::size_t node_count;
+	uint8_t verbose;
 
 protected:
 	static bool parse_input_arguments();
 	static bool load_document(pugi::xml_document& doc, const std::string& xml_file,
 							  unsigned int options = pugi::parse_default | pugi::parse_ws_pcdata_single);
+
+private:
+	void load_nodes();
 
 protected:
 	TestsBaseXml();

@@ -254,44 +254,21 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 
 TEST_F(TestFileSystem, directory_exists)
 {
-	buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
-
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose)) << buffer_free(&tmp);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string input(node.node().select_node("input").node().child_value());
 		const auto expected_return = (uint8_t)INT_PARSE(
 										 node.node().select_node("return").node().child_value());
 		//
 		auto returned = directory_exists((const uint8_t*)input.c_str());
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&tmp);
+		ASSERT_EQ(expected_return, returned) << input;
 #if defined(_WIN32)
-		const auto input_in_range(string_to_range(input));
-		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-		returned = text_encoding_UTF8_to_UTF16LE(input_in_range.start, input_in_range.finish, &tmp);
-		ASSERT_EQ(!input.empty(), returned) << input << std::endl << buffer_free(&tmp);
-
-		if (!input.empty())
-		{
-			ASSERT_TRUE(buffer_push_back_uint16(&tmp, 0)) << buffer_free(&tmp);
-		}
-
-		returned = directory_exists_wchar_t(buffer_wchar_t_data(&tmp, 0));
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&tmp);
+		const auto input_w(char_to_wchar_t(input));
+		returned = directory_exists_wchar_t(input_w.c_str());
+		ASSERT_EQ(expected_return, returned) << input;
 #endif
 		--node_count;
 	}
-
-	buffer_release(&tmp);
 }
 
 TEST(TestFileSystem_, directory_get_time_attributes)
@@ -529,44 +506,21 @@ TEST(TestFileSystem_, file_create)
 
 TEST_F(TestFileSystem, file_exists)
 {
-	buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
-
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose)) << buffer_free(&tmp);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string input(node.node().select_node("input").node().child_value());
 		const auto expected_return = (uint8_t)INT_PARSE(
 										 node.node().select_node("return").node().child_value());
 		//
 		auto returned = file_exists((const uint8_t*)input.c_str());
-		ASSERT_EQ(expected_return, returned) << input << buffer_free(&tmp);
+		ASSERT_EQ(expected_return, returned) << input;
 #if defined(_WIN32)
-		const auto input_in_range(string_to_range(input));
-		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-		returned = text_encoding_UTF8_to_UTF16LE(input_in_range.start, input_in_range.finish, &tmp);
-		ASSERT_EQ(!input.empty(), returned) << input << std::endl << buffer_free(&tmp);
-
-		if (!input.empty())
-		{
-			ASSERT_TRUE(buffer_push_back_uint16(&tmp, 0)) << buffer_free(&tmp);
-		}
-
-		returned = file_exists_wchar_t(buffer_wchar_t_data(&tmp, 0));
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&tmp);
+		const auto input_w(char_to_wchar_t(input));
+		returned = file_exists_wchar_t(input_w.c_str());
+		ASSERT_EQ(expected_return, returned) << input;
 #endif
 		--node_count;
 	}
-
-	buffer_release(&tmp);
 }
 
 TEST_F(TestFileSystem, file_read_lines)

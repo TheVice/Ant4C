@@ -62,15 +62,6 @@ TEST_F(TestPath, path_combine)
 
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &path, &condition, verbose)) << buffer_free(&path);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string path1(node.node().select_node("path1").node().child_value());
 		const std::string path2(node.node().select_node("path2").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
@@ -95,20 +86,8 @@ TEST_F(TestPath, path_combine)
 
 TEST_F(TestPath, path_get_directory_name)
 {
-	buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
-
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose)) << buffer_free(&tmp);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_directory(node.node().select_node("directory").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
@@ -118,13 +97,11 @@ TEST_F(TestPath, path_get_directory_name)
 		range directory;
 		directory.start = directory.finish = NULL;
 		const uint8_t returned = path_get_directory_name(path_in_range.start, path_in_range.finish, &directory);
-		ASSERT_EQ(expected_return, returned) << buffer_free(&tmp);
-		ASSERT_EQ(expected_directory, range_to_string(directory)) << buffer_free(&tmp);
+		ASSERT_EQ(expected_return, returned);
+		ASSERT_EQ(expected_directory, range_to_string(directory));
 		//
 		--node_count;
 	}
-
-	buffer_release(&tmp);
 }
 
 TEST_F(TestPath, path_get_extension)
@@ -149,20 +126,8 @@ TEST_F(TestPath, path_get_extension)
 
 TEST_F(TestPath, path_get_file_name)
 {
-	buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
-
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose)) << buffer_free(&tmp);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_file_name(node.node().select_node("file_name").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
@@ -172,13 +137,11 @@ TEST_F(TestPath, path_get_file_name)
 		range file_name;
 		file_name.start = file_name.finish = NULL;
 		const uint8_t returned = path_get_file_name(path_in_range.start, path_in_range.finish, &file_name);
-		ASSERT_EQ(expected_return, returned) << buffer_free(&tmp);
-		ASSERT_EQ(expected_file_name, range_to_string(file_name)) << buffer_free(&tmp);
+		ASSERT_EQ(expected_return, returned);
+		ASSERT_EQ(expected_file_name, range_to_string(file_name));
 		//
 		--node_count;
 	}
-
-	buffer_release(&tmp);
 }
 
 TEST_F(TestPath, path_get_file_name_without_extension)
@@ -209,16 +172,6 @@ TEST_F(TestPath, path_get_full_path)
 
 	for (const auto& node : nodes)
 	{
-		uint8_t condition = 0;
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &full_path, &condition,
-					verbose)) << buffer_free(&full_path);
-
-		if (!condition)
-		{
-			--node_count;
-			continue;
-		}
-
 		const std::string root_path(node.node().select_node("root_path").node().child_value());
 		const std::string path(node.node().select_node("path").node().child_value());
 		const std::string expected_full_path(node.node().select_node("full_path").node().child_value());
