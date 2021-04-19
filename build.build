@@ -97,4 +97,63 @@
 			You can get tool, that accept this script, here https://github.com/TheVice/Ant4C
 		</echo>
 	</target>
+
+	<target name="run_module">
+		<fail unless="${property::exists('module')}" message="property module must be set to run '${target::get-current-target()}' target." />
+
+		<property name="cmake_arguments"
+				  value="--build ${string::quote(property::get-value('cmake_working_dir'))} --target ${property::get-value('module')} --config Release" />
+
+		<echo message="${property::get-value('cmake')} ${property::get-value('cmake_arguments')}"
+			  level="Verbose" />
+
+		<exec program="${property::get-value('cmake')}"
+			  commandline="${property::get-value('cmake_arguments')}"
+			  workingdir="${property::get-value('cmake_working_dir')}" />
+
+		<property name="ant4c" unless="${property::exists('ant4c')}" value="${path::combine(cmake_working_dir, 'ant4c')}" />
+		<property name="test" value="${path::combine(project::get-base-directory(), property::get-value('module').xml)}" />
+
+		<fail unless="${file::exists(test)}" message="Test file '${test}' not found. Testing of ${module} can not be provided." />
+
+		<property name="cmake_arguments"
+				  value="/f:${string::quote(test)}" />
+
+		<echo message="${property::get-value('ant4c')} ${property::get-value('cmake_arguments')}"
+			  level="Verbose" />
+
+		<exec program="${property::get-value('ant4c')}"
+			  commandline="${property::get-value('cmake_arguments')}"
+			  workingdir="${property::get-value('cmake_working_dir')}" />
+	</target>
+
+	<target name="run_BOOST_based_module">
+		<property name="BOOST_ROOT"
+				  unless="${property::exists('BOOST_ROOT')}"
+				  if="${environment::variable-exists('BOOST_ROOT')}"
+				  value="${path::combine(environment::get-variable('BOOST_ROOT'), '')}" />
+		<echo message="${BOOST_ROOT}" level="Verbose" />
+
+		<property name="cmake_arguments"
+				  value="-DUSE_BOOST=1 -DBOOST_ROOT=${string::quote(BOOST_ROOT)} ${project::get-base-directory()}" />
+
+		<echo message="${property::get-value('cmake')} ${property::get-value('cmake_arguments')}"
+			  level="Verbose" />
+
+		<exec program="${property::get-value('cmake')}"
+			  commandline="${property::get-value('cmake_arguments')}"
+			  workingdir="${property::get-value('cmake_working_dir')}" />
+
+		<call target="run_module" />
+	</target>
+
+	<target name="ant4c.dns">
+		<property name="module" value="${target::get-current-target()}" />
+		<call target="run_BOOST_based_module" />
+	</target>
+
+	<target name="ant4c.regex">
+		<property name="module" value="${target::get-current-target()}" />
+		<call target="run_BOOST_based_module" />
+	</target>
 </project>

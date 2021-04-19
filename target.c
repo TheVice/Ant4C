@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "target.h"
 #include "buffer.h"
 #include "common.h"
@@ -21,10 +23,6 @@
 
 #include <stddef.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const uint8_t depends_delimiter = ',';
 
@@ -113,18 +111,13 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 			return 0;
 		}
 
-		if (!echo(0, UTF8, NULL, Info, buffer_data(target_description, 0),
-				  buffer_size(target_description), 1, verbose))
-		{
-			return 0;
-		}
-
-		return 1;
+		return echo(0, UTF8, NULL, Info, buffer_data(target_description, 0),
+					buffer_size(target_description), 1, verbose);
 	}
 
 	if (range_in_parts_is_null_or_empty(attributes_finish, element_finish))
 	{
-		return 1;
+		return echo(0, Default, NULL, Info, (const uint8_t*)"\n", 1, 0, verbose);
 	}
 
 	if (!range_from_string((const uint8_t*)"description\0", 12, 1, target_description) ||
@@ -135,7 +128,7 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 
 	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, target_description, &(the_target->tasks)))
 	{
-		return 1;
+		return echo(0, Default, NULL, Info, (const uint8_t*)"\n", 1, 0, verbose);
 	}
 
 	if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
@@ -155,7 +148,7 @@ uint8_t target_set_name(struct target* the_target, const uint8_t* name, uint8_t 
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
 	{

@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "version.h"
 #include "buffer.h"
 #include "common.h"
@@ -12,10 +14,6 @@
 #include "range.h"
 
 #include <stdio.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 struct version_
 {
@@ -141,7 +139,7 @@ uint8_t version_to_byte_array(const uint8_t* version, uint8_t* output)
 
 	struct version_* the_version = (struct version_*)version;
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	const uint8_t length = (uint8_t)sprintf_s(
 							   (char* const)output, 64,
 #else

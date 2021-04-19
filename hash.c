@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
 #include "buffer.h"
 #include "common.h"
@@ -16,12 +18,54 @@
 #include <stddef.h>
 #include <string.h>
 
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
+uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
+	const uint8_t* start, const uint8_t* finish, uint32_t* output)
+{
+	if (NULL == start ||
+		NULL == finish ||
+		finish < start ||
+		NULL == output)
+	{
+		return 0;
+	}
 
-uint8_t hash_algorithm_bytes_to_string(const uint8_t* start, const uint8_t* finish,
-									   struct buffer* output)
+	uint8_t j = 0;
+	(*output) = 0;
+
+	while ((--finish) > (start - 1) && j < 8)
+	{
+		(*output) += (uint32_t)(((*finish) & 0xF0) >> 4) * ((uint32_t)1 << (4 * (7 - (j++))));
+		(*output) += (uint32_t)((*finish) & 0x0F) * ((uint32_t)1 << (4 * (7 - (j++))));
+	}
+
+	return 1;
+}
+
+uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
+	const uint8_t* start, const uint8_t* finish, uint64_t* output)
+{
+	if (NULL == start ||
+		NULL == finish ||
+		finish < start ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	uint8_t j = 0;
+	(*output) = 0;
+
+	while ((--finish) > (start - 1) && j < 16)
+	{
+		(*output) += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
+		(*output) += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
+	}
+
+	return 1;
+}
+
+uint8_t hash_algorithm_bytes_to_string(
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
 	if (NULL == start ||
 		NULL == finish ||
@@ -48,7 +92,7 @@ uint8_t hash_algorithm_bytes_to_string(const uint8_t* start, const uint8_t* fini
 
 	while (start < finish && size < max_size)
 	{
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 		const int32_t sz = sprintf_s(ptr, 3, (*start) < 16 ? "0%x" : "%x", *start);
 #else
 		const int32_t sz = sprintf(ptr, (*start) < 16 ? "0%x" : "%x", *start);
@@ -81,7 +125,9 @@ static const uint8_t* hash_function_str[] =
 	(const uint8_t*)"bytes-to-string",
 	(const uint8_t*)"crc32",
 	(const uint8_t*)"keccak",
-	(const uint8_t*)"sha3"
+	(const uint8_t*)"sha3",
+	(const uint8_t*)"xxh32",
+	(const uint8_t*)"xxh64"
 };
 
 enum hash_function
@@ -90,6 +136,7 @@ enum hash_function
 	bytes_to_string,
 	crc32,
 	keccak, sha3,
+	xxh32, xxh64,
 	UNKNOWN_HASH_FUNCTION
 };
 
@@ -151,8 +198,9 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 
 			if (2 == arguments_count)
 			{
-				hash_length = common_string_to_enum(values[1].start, values[1].finish, crc32_parameters_str,
-													UNKNOWN_CRC32_PARAMETER);
+				hash_length = common_string_to_enum(
+								  values[1].start, values[1].finish,
+								  crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
 
 				if (UNKNOWN_CRC32_PARAMETER == hash_length)
 				{
@@ -182,6 +230,52 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 			return (1 == arguments_count || 2 == arguments_count) &&
 				   hash_algorithm_sha3(values[0].start, values[0].finish, hash_length, output);
 
+		case xxh32:
+		{
+			if (!buffer_push_back_uint32(output, 0))
+			{
+				return 0;
+			}
+
+			if (!arguments_count || 2 < arguments_count)
+			{
+				break;
+			}
+
+			uint32_t seed = 0;
+
+			if (2 == arguments_count)
+			{
+				seed = (uint32_t)uint64_parse(values[1].start, values[1].finish);
+			}
+
+			uint32_t* ptr = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+			return hash_algorithm_XXH32(values[0].start, values[0].finish, seed, ptr);
+		}
+
+		case xxh64:
+		{
+			if (!buffer_append(output, NULL, sizeof(uint64_t)))
+			{
+				return 0;
+			}
+
+			if (!arguments_count || 2 < arguments_count)
+			{
+				break;
+			}
+
+			uint64_t seed = 0;
+
+			if (2 == arguments_count)
+			{
+				seed = uint64_parse(values[1].start, values[1].finish);
+			}
+
+			uint64_t* ptr = (uint64_t*)buffer_data(output, buffer_size(output) - sizeof(uint64_t));
+			return hash_algorithm_XXH64(values[0].start, values[0].finish, seed, ptr);
+		}
+
 		case UNKNOWN_HASH_FUNCTION:
 		default:
 			break;
@@ -205,21 +299,23 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 
 	if (!range_is_null_or_empty(algorithm_parameter))
 	{
-		if (crc32 != algorithm)
+		if (crc32 == algorithm)
 		{
-			hash_length = (uint16_t)int_parse(algorithm_parameter->start);
+			hash_length = common_string_to_enum(
+							  algorithm_parameter->start, algorithm_parameter->finish,
+							  crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
 
-			if (hash_length < 8 || 1024 < hash_length)
+			if (UNKNOWN_CRC32_PARAMETER == hash_length)
 			{
 				return 0;
 			}
 		}
-		else
+		else if (xxh32 != algorithm &&
+				 xxh64 != algorithm)
 		{
-			hash_length = common_string_to_enum(algorithm_parameter->start, algorithm_parameter->finish,
-												crc32_parameters_str, UNKNOWN_CRC32_PARAMETER);
+			hash_length = (uint16_t)int_parse(algorithm_parameter->start);
 
-			if (UNKNOWN_CRC32_PARAMETER == hash_length)
+			if (hash_length < 8 || 1024 < hash_length)
 			{
 				return 0;
 			}
@@ -299,8 +395,14 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				}
 
 				last = file_content + 4096;
-#if __STDC_SEC_API__
-				memcpy_s(last, 128, file_content + 4096 - 128, 128);
+#if __STDC_LIB_EXT1__
+
+				if (0 != memcpy_s(last, 128, file_content + 4096 - 128, 128))
+				{
+					file_close(file);
+					return 0;
+				}
+
 #else
 				memcpy(last, file_content + 4096 - 128, 128);
 #endif
@@ -424,14 +526,11 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 		case keccak:
 		case sha3:
 		{
-			uint8_t rate_on_w = 0;
-			uint8_t maximum_delta = 0;
-			uint8_t addition[192];
-			uint8_t is_addition_set = 0;
+			uint8_t rate_on_w;
+			uint8_t maximum_delta;
 
-			if (!hash_algorithm_sha3_init(sha3 == algorithm, hash_length,
-										  &rate_on_w, &maximum_delta,
-										  addition, sizeof(addition)))
+			if (!hash_algorithm_sha3_init(
+					hash_length, &rate_on_w, &maximum_delta))
 			{
 				break;
 			}
@@ -441,6 +540,8 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				break;
 			}
 
+			uint8_t queue[192];
+			uint8_t queue_size = 0;
 			uint64_t S[] =
 			{
 				0, 0, 0, 0, 0,
@@ -450,65 +551,136 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				0, 0, 0, 0, 0
 			};
 			/**/
-			uint64_t data[] =
-			{
-				0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0
-			};
-			/**/
-			uint8_t xF = 0;
-			uint8_t delta = maximum_delta;
 			size_t readed = 0;
 			uint8_t* file_content = buffer_data(output, size);
-			const uint8_t chunk_size = 8 * rate_on_w;
-			uint16_t step = chunk_size;
 
-			while (step < 4096 - chunk_size)
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				step += chunk_size;
-			}
+				const uint8_t* finish = file_content + readed;
+				readed = hash_algorithm_sha3_core(file_content, finish, queue, &queue_size, maximum_delta, S, rate_on_w);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), step, file)) || !is_addition_set)
-			{
-				const uint8_t* start = file_content;
-				const uint8_t* finish = start + readed;
-				const uint8_t* finish_ = start + step;
-				const uint8_t* resume_at = NULL;
-				/**/
-				uint8_t* ptr = finish < finish_ ? &is_addition_set : NULL;
-				finish_ = finish < finish_ ? finish : finish_;
-
-				do
+				if (!readed)
 				{
-					delta = hash_algorithm_sha3_core(
-								S, rate_on_w, data, &xF,
-								delta, maximum_delta,
-								addition, ptr,
-								start, finish_, &resume_at);
-
-					if (!delta)
-					{
-						file_close(file);
-						return 0;
-					}
-
-					start = resume_at < finish_ ? resume_at : finish_;
+					file_close(file);
+					return 0;
 				}
-				while (start < finish_);
 			}
 
 			hash_length = hash_length / 8;
 			file_content += 64;
 
 			if (!file_close(file) ||
-				!Keccak_squeezing((uint8_t)hash_length, S, rate_on_w, file_content))
+				!hash_algorithm_sha3_final(
+					sha3 == algorithm, queue, queue_size, maximum_delta, S, rate_on_w,
+					(uint8_t)hash_length, file_content))
 			{
 				break;
 			}
 
 			return buffer_resize(output, size) &&
 				   hash_algorithm_bytes_to_string(file_content, file_content + hash_length, output);
+		}
+
+		case xxh32:
+		{
+			if (!buffer_append(output, NULL, 4096))
+			{
+				break;
+			}
+
+			uint8_t queue[16];
+			uint8_t queue_size = 0;
+			const uint8_t max_queue_size = 16;
+			uint32_t accumulators[5];
+			uint8_t is_accumulators_initialized = 0;
+			/**/
+			accumulators[4] = 0;
+			/**/
+			uint32_t seed = 0;
+
+			if (!range_is_null_or_empty(algorithm_parameter))
+			{
+				seed = (uint32_t)uint64_parse(algorithm_parameter->start, algorithm_parameter->finish);
+			}
+
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				const uint8_t* finish = file_content + readed;
+
+				if (!hash_algorithm_XXH32_core(file_content, finish,
+											   queue, &queue_size, max_queue_size,
+											   accumulators, &is_accumulators_initialized, seed))
+				{
+					file_close(file);
+					return 0;
+				}
+			}
+
+			if (!file_close(file) ||
+				!hash_algorithm_XXH32_final(
+					queue, queue + queue_size,
+					accumulators, is_accumulators_initialized, seed, &seed))
+			{
+				return 0;
+			}
+
+			file_content = (uint8_t*)&seed;
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string(file_content, file_content + sizeof(uint32_t), output);
+		}
+
+		case xxh64:
+		{
+			if (!buffer_append(output, NULL, 4096))
+			{
+				break;
+			}
+
+			uint8_t queue[32];
+			uint8_t queue_size = 0;
+			const uint8_t max_queue_size = 32;
+			uint64_t accumulators[5];
+			uint8_t is_accumulators_initialized = 0;
+			/**/
+			accumulators[4] = 0;
+			/**/
+			uint64_t seed = 0;
+
+			if (!range_is_null_or_empty(algorithm_parameter))
+			{
+				seed = uint64_parse(algorithm_parameter->start, algorithm_parameter->finish);
+			}
+
+			size_t readed = 0;
+			uint8_t* file_content = buffer_data(output, size);
+
+			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			{
+				const uint8_t* finish = file_content + readed;
+
+				if (!hash_algorithm_XXH64_core(file_content, finish,
+											   queue, &queue_size, max_queue_size,
+											   accumulators, &is_accumulators_initialized, seed))
+				{
+					file_close(file);
+					return 0;
+				}
+			}
+
+			if (!file_close(file) ||
+				!hash_algorithm_XXH64_final(
+					queue, queue + queue_size,
+					accumulators, is_accumulators_initialized, seed, &seed))
+			{
+				return 0;
+			}
+
+			file_content = (uint8_t*)&seed;
+			return buffer_resize(output, size) &&
+				   hash_algorithm_bytes_to_string(file_content, file_content + sizeof(uint64_t), output);
 		}
 
 		default:

@@ -32,6 +32,7 @@ set(ANT4C_SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/hash.crc32.c"
   "${CMAKE_SOURCE_DIR}/hash.h"
   "${CMAKE_SOURCE_DIR}/hash.sha3.c"
+  "${CMAKE_SOURCE_DIR}/hash.xxhash.c"
   "${CMAKE_SOURCE_DIR}/if_task.c"
   "${CMAKE_SOURCE_DIR}/if_task.h"
   "${CMAKE_SOURCE_DIR}/interpreter.c"
@@ -58,6 +59,7 @@ set(ANT4C_SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/shared_object.h"
   "${CMAKE_SOURCE_DIR}/sleep_unit.c"
   "${CMAKE_SOURCE_DIR}/sleep_unit.h"
+  "${CMAKE_SOURCE_DIR}/stdc_secure_api.h"
   "${CMAKE_SOURCE_DIR}/string_unit.c"
   "${CMAKE_SOURCE_DIR}/string_unit.h"
   "${CMAKE_SOURCE_DIR}/target.c"
@@ -99,7 +101,11 @@ if(NOT MSVC)
     target_compile_options(ant4c PRIVATE "-fPIE")
     target_compile_options(ant4c PRIVATE "-fPIC")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
-    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+    if(APPLE)
+      #set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie")
+    else()
+      set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+    endif()
   endif()
 
   target_link_libraries(ant4c_app m)

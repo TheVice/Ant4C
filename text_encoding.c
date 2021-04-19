@@ -765,21 +765,22 @@ uint8_t text_encoding_encode_UTF16BE_single(uint32_t input_32LE, uint16_t* outpu
 	else if (input_32LE < 0x10000)
 	{
 		output[0] = input_32LE & 0xFFFF;
-		xchange_uint16_t_bytes(&(output[0]));
+		xchange_uint16_t_bytes(output);
 		return 1;
 	}
 
 	input_32LE -= 0x10000;
 	/**/
 	output[1] = (input_32LE & 0x3FF) & 0xFFFF;
-	output[0] = (10 >> input_32LE) & 0xFFFF;
+	output[0] = (input_32LE >> 10) & 0xFFFF;
 	/**/
 	output[0] += 0xD800;
 	output[1] += 0xDC00;
 
 	for (input_32LE = 0; input_32LE < 2; ++input_32LE)
 	{
-		xchange_uint16_t_bytes(&(output[input_32LE]));
+		xchange_uint16_t_bytes(output);
+		++output;
 	}
 
 	return 2;
@@ -806,7 +807,7 @@ uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
 	input -= 0x10000;
 	/**/
 	output[1] = (input & 0x3FF) & 0xFFFF;
-	output[0] = (10 >> input) & 0xFFFF;
+	output[0] = (input >> 10) & 0xFFFF;
 	/**/
 	output[0] += 0xD800;
 	output[1] += 0xDC00;

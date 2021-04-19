@@ -40,6 +40,19 @@ endif()
 
 set(LIBRARIES4TESTING ant4c)
 
+if(DEFINED USE_BOOST)
+  include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
+  include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
+endif()
+
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
+include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
+include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
+
+#if(CMAKE_HOST_WIN32)
+#  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
+#endif()
+
 if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 if(CMAKE_CL_64)
   set(LINK_FLAGS "${LINK_FLAGS} /DynamicBase /NXCompat")
@@ -48,17 +61,6 @@ else()
 endif()
 
 include("${CMAKE_SOURCE_DIR}/ant4c.cmake")
-include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
-
-include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
-
-# if(CMAKE_HOST_WIN32)
-#   include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
-# endif()
-
-include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
 
 else()
 
@@ -135,6 +137,7 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/hash.crc32.c"
             "${CMAKE_SOURCE_DIR}/hash.h"
             "${CMAKE_SOURCE_DIR}/hash.sha3.c"
+            "${CMAKE_SOURCE_DIR}/hash.xxhash.c"
             "${CMAKE_SOURCE_DIR}/if_task.c"
             "${CMAKE_SOURCE_DIR}/if_task.h"
             "${CMAKE_SOURCE_DIR}/interpreter.c"
@@ -161,6 +164,7 @@ add_library(ant4c STATIC
             "${CMAKE_SOURCE_DIR}/shared_object.h"
             "${CMAKE_SOURCE_DIR}/sleep_unit.c"
             "${CMAKE_SOURCE_DIR}/sleep_unit.h"
+            "${CMAKE_SOURCE_DIR}/stdc_secure_api.h"
             "${CMAKE_SOURCE_DIR}/string_unit.c"
             "${CMAKE_SOURCE_DIR}/string_unit.h"
             "${CMAKE_SOURCE_DIR}/target.c"
@@ -190,10 +194,14 @@ endif()
 
 if(NOT MSVC)
   if(NOT MINGW)
-    target_compile_options(ant4c PRIVATE "-fPIE")
+    # target_compile_options(ant4c PRIVATE "-fPIE")
     target_compile_options(ant4c PRIVATE "-fPIC")
     target_compile_options(ant4c_app PRIVATE "-fPIE")
-    set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+    # set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
+    if(APPLE)
+    else()
+      set_target_properties(ant4c_app PROPERTIES LINK_FLAGS "-Wl,-z,now")
+    endif()
   endif()
 
   target_link_libraries(ant4c_app m)
@@ -204,16 +212,6 @@ if(NOT MSVC)
 endif()
 
 set_target_properties(ant4c_app PROPERTIES OUTPUT_NAME ant4c)
-
-include("${CMAKE_SOURCE_DIR}/ant4c.dns.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.regex.cmake")
-include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
-include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
-
-# if(CMAKE_HOST_WIN32)
-#  include("${CMAKE_SOURCE_DIR}/ant4c.net.framework.module.cmake")
-# endif()
 
 endif()
 

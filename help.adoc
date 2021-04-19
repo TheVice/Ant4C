@@ -221,7 +221,7 @@ NOTE: For all version access to the property value at the functions can be provi
 </project>
 ----
 
-At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL data base world.
+At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL database world.
 
 More complex example is calculating determinate and roots of quadratic polynomial: three properties (D, X1 and X2) can be dynamic and input values (a, b, c) can be static.
 
@@ -2152,6 +2152,8 @@ Calculate hash sum of file according to algorithm.
 | crc32 ^| Calculate hash with CRC-32/zlib algorithm.
 | blake2b ^| Calculate hash with BLAKE2b algorithm with requested length.
 | blake3 ^| Calculate hash with BLAKE3 algorithm.
+| xxh32 ^| Calculate hash with xxHash32 algorithm.
+| xxh64 ^| Calculate hash with xxHash64 algorithm.
 |===
 
 Value of 'algorithm parameter' depend of 'algorithm'.
@@ -2159,6 +2161,7 @@ For 'crc32' it can be <<hash-crc32,decreasing or increasing>>.
 For 'blake2b' - 160, 256, 384 or 512.
 For 'blake3' - 256, 384 or 512.
 For 'keccak' and 'sha3' - 224, 256, 384 or 512.
+For 'xxh32' and 'xxh64' - seed value, by default equal to the 0. For 32 version - any value from range of uint32_t values, for 64 - from uint64_t.
 Return from first version of function equal to the return of second if increasing or 256 was used as argument parameter.
 
 ===== Sample using
@@ -2268,6 +2271,8 @@ If *source file* have more recent write time than *target* - *false* will be ret
 | <<hash-crc32,crc32>> ^| Calculate check of cyclic redundancy for specific value according to CRC-32/zlib algorithm.
 | <<hash-keccak,keccak>> .2+^.^| Calculate hash with Keccak algorithm with requested length for specific value. SHA3 use same algorithm, but with different values at internal padding stage.
 | <<hash-sha3,sha3>>
+| <<hash-xxh32,xxh32>> | Calculate hash sum with xxHash32 algorithm.
+| <<hash-xxh64,xxh64>> | Calculate hash sum with xxHash64 algorithm.
 |===
 
 [[hash-blake2b]]
@@ -2398,6 +2403,24 @@ Return from first version of function equal to the return of second if 256 was u
 Calculate hash with Keccak/SHA3 algorithm.
 Possible length values same as for <<hash-keccak,Keccak>>.
 Return from first version of function equal to the return of second if 256 was used as length.
+
+[[hash-xxh32]]
+==== xxh32
+
+*byte array* 'hash::xxh32'(*string* input) +
+*byte array* 'hash::xxh32'(*string* input, *uint32_t* seed)
+
+Calculate hash sum with xxHash32 algorithm. +
+First version of function equal to the second for case when seed parameter equal to the '0'.
+
+[[hash-xxh64]]
+==== xxh64
+
+*byte array* 'hash::xxh64'(*string* input) +
+*byte array* 'hash::xxh64'(*string* input, *uint64_t* seed)
+
+Calculate hash sum with xxHash64 algorithm. +
+First version of function equal to the second for case when seed parameter equal to the '0'.
 
 === Math unit
 

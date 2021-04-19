@@ -13,10 +13,6 @@
 
 #include <stdio.h>
 
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
-
 #define FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step) \
 	if ((NULL == start) || (NULL == finish) ||												\
 		(NULL == that) || (that_length < 1) ||												\

@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "conversion.h"
 #include "buffer.h"
 #include "common.h"
@@ -14,10 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 static const char* False = "False";
 static const char* True = "True";
@@ -96,7 +94,7 @@ double double_parse(const uint8_t* value)
 
 uint8_t double_to_string(double double_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(double_value, 386, "%.16lf", output_string);
 #else
 	DIGIT_TO_STRING(double_value, 386, "%.16lf", output_string);
@@ -110,7 +108,7 @@ int32_t int_parse(const uint8_t* value)
 
 uint8_t int_to_string(int32_t int_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(int_value, 12, "%i", output_string);
 #else
 	DIGIT_TO_STRING(int_value, 12, "%i", output_string);
@@ -124,7 +122,7 @@ long long_parse(const uint8_t* value)
 
 uint8_t long_to_string(long long_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(long_value, 24, "%ld", output_string);
 #else
 	DIGIT_TO_STRING(long_value, 24, "%ld", output_string);
@@ -138,11 +136,97 @@ int64_t int64_parse(const uint8_t* value)
 
 uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(int_value, 24, "%"PRId64, output_string);
 #else
 	DIGIT_TO_STRING(int_value, 24, "%"PRId64, output_string);
 #endif
+}
+
+uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
+{
+	static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	static const uint8_t count_of_digits = COUNT_OF(digits);
+	/**/
+	value_start = find_any_symbol_like_or_not_like_that(
+					  value_start, value_finish,
+					  digits + 1, count_of_digits - 1, 1, 1);
+	value_finish = find_any_symbol_like_or_not_like_that(
+					   value_start, value_finish,
+					   digits, count_of_digits, 0, 1);
+
+	if (value_finish == value_start)
+	{
+		return 0;
+	}
+
+	uint64_t result = 0;
+	uint64_t multi = 10000000000000000000u;
+	const uint8_t size = (uint8_t)(value_finish - value_start);
+
+	if (20 < size)
+	{
+		return UINT64_MAX;
+	}
+	else if (20 == size)
+	{
+		uint8_t value = *value_start;
+
+		if ('1' != value)
+		{
+			return UINT64_MAX;
+		}
+
+		do
+		{
+			value = *value_start;
+
+			for (uint8_t i = 0; i < count_of_digits; ++i)
+			{
+				if (digits[i] == value)
+				{
+					const uint64_t prev_result = result;
+					result += multi * i;
+					value = result < prev_result;
+
+					if (value)
+					{
+						return UINT64_MAX;
+					}
+
+					break;
+				}
+			}
+
+			multi /= 10;
+			++value_start;
+		}
+		while (value_start != value_finish);
+	}
+	else
+	{
+		multi = 1;
+
+		do
+		{
+			--value_finish;
+			const uint8_t value = *value_finish;
+
+			for (uint8_t i = 0; i < count_of_digits; ++i)
+			{
+				if (digits[i] == value)
+				{
+					result += multi * i;
+					break;
+				}
+			}
+
+			multi *= 10;
+		}
+		while (value_start != value_finish);
+	}
+
+	return result;
 }
 
 void* pointer_parse(const uint8_t* value)
@@ -158,7 +242,7 @@ void* pointer_parse(const uint8_t* value)
 
 uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string)
 {
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(pointer_value, 32, "%p", output_string);
 #else
 	DIGIT_TO_STRING(pointer_value, 32, "%p", output_string);

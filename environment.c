@@ -16,10 +16,6 @@
 
 #include <string.h>
 
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
-
 static uint8_t is_data_of_operating_system_filled = 0;
 
 #define ENVIRONMENT_UNKNOWN_SPECIAL_FOLDER (CDBurning + 1)

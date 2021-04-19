@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "date_time.h"
 #include "buffer.h"
 #include "common.h"
@@ -16,10 +18,6 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
 
 #define CLOCK_T	((clock_t)-1)
 #define TIME_T	((time_t)-1)
@@ -276,7 +274,7 @@ uint8_t datetime_to_char_array(const struct tm* tm_, char* output)
 	}
 
 	uint8_t length = 0;
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	length += (uint8_t)sprintf_s(output + length, 75 - length, 9 < tm_->tm_mday ? "%i." : "0%i.", tm_->tm_mday);
 	length += (uint8_t)sprintf_s(output + length, 75 - length, 9 < tm_->tm_mon ? "%i." : "0%i.", tm_->tm_mon);
 	length += (uint8_t)sprintf_s(output + length, 75 - length, "%i ", tm_->tm_year);
@@ -473,7 +471,7 @@ int64_t datetime_now_utc()
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	UTC_TIME_STDC_SEC_API(&now);
 #else
 	UTC_TIME(&now);
@@ -491,7 +489,7 @@ int64_t datetime_now()
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	LOCAL_TIME_STDC_SEC_API(&now);
 #else
 	LOCAL_TIME(&now);
@@ -608,12 +606,12 @@ long datetime_get_bias()
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	LOCAL_TIME_STDC_SEC_API(&now);
 #else
 	LOCAL_TIME(&now);
 #endif
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	UTC_TIME_STDC_SEC_API(&now);
 #else
 	UTC_TIME(&now);

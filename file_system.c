@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "file_system.h"
 #include "buffer.h"
 #include "common.h"
@@ -32,10 +34,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#endif
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
 enum entry_types { directory_entry, file_entry, all_entries, UNKNOWN_ENTRY_TYPE };
@@ -122,7 +120,7 @@ uint8_t _buffer_append_pre(struct buffer* the_buffer, const uint8_t* data, ptrdi
 	if (NULL != data)
 	{
 		uint8_t* dst = buffer_data(the_buffer, 0);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(dst, size, data, size))
 		{
@@ -373,6 +371,25 @@ uint8_t directory_exists_wchar_t(const wchar_t* path)
 	return close_return && is_directory;
 }
 
+uint8_t file_system_path_in_range_to_pathW(
+	const uint8_t* path_start, const uint8_t* path_finish, struct buffer* pathW)
+{
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
+		NULL == pathW)
+	{
+		return 0;
+	}
+
+	if (path_is_path_rooted(path_start, path_finish) &&
+		!string_starts_with(path_start, path_finish, pre_root_path, pre_root_path + pre_root_path_length) &&
+		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
+	{
+		return 0;
+	}
+
+	return text_encoding_UTF8_to_UTF16LE(path_start, path_finish, pathW) && buffer_push_back_uint16(pathW, 0);
+}
+
 uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 {
 	if (NULL == path ||
@@ -382,20 +399,7 @@ uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
 	}
 
 	const ptrdiff_t length = common_count_bytes_until(path, 0);
-
-	if (!length)
-	{
-		return 0;
-	}
-
-	if (path_is_path_rooted(path, path + length) &&
-		!string_starts_with(path, path + length, pre_root_path, pre_root_path + pre_root_path_length) &&
-		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
-	{
-		return 0;
-	}
-
-	return text_encoding_UTF8_to_UTF16LE(path, path + length, pathW) && buffer_push_back_uint16(pathW, 0);
+	return file_system_path_in_range_to_pathW(path, path + length, pathW);
 }
 #else
 #define FILE_STAT(PATH)									\
@@ -994,9 +998,9 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftCreationTime.dwHighDateTime << 32) + file_data.ftCreationTime.dwLowDateTime);
 #else
 	DIRECTORY_STAT(path);
-	int64_t result = directory_status.st_atim.tv_sec;
-	result = directory_status.st_mtim.tv_sec < result ? directory_status.st_mtim.tv_sec : result;
-	result = directory_status.st_ctim.tv_sec < result ? directory_status.st_ctim.tv_sec : result;
+	int64_t result = directory_status.st_atime;
+	result = directory_status.st_mtime < result ? directory_status.st_mtime : result;
+	result = directory_status.st_ctime < result ? directory_status.st_ctime : result;
 	return result;
 #endif
 }
@@ -1047,7 +1051,7 @@ int64_t directory_get_last_access_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastAccessTime.dwHighDateTime << 32) + file_data.ftLastAccessTime.dwLowDateTime);
 #else
 	DIRECTORY_STAT(path);
-	return directory_status.st_atim.tv_sec;
+	return directory_status.st_atime;
 #endif
 }
 
@@ -1076,7 +1080,7 @@ int64_t directory_get_last_write_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastWriteTime.dwHighDateTime << 32) + file_data.ftLastWriteTime.dwLowDateTime);
 #else
 	DIRECTORY_STAT(path);
-	return directory_status.st_mtim.tv_sec;
+	return directory_status.st_mtime;
 #endif
 }
 
@@ -1633,9 +1637,9 @@ int64_t file_get_creation_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftCreationTime.dwHighDateTime << 32) + file_data.ftCreationTime.dwLowDateTime);
 #else
 	FILE_STAT(path);
-	int64_t result = file_status.st_atim.tv_sec;
-	result = file_status.st_mtim.tv_sec < result ? file_status.st_mtim.tv_sec : result;
-	result = file_status.st_ctim.tv_sec < result ? file_status.st_ctim.tv_sec : result;
+	int64_t result = file_status.st_atime;
+	result = file_status.st_mtime < result ? file_status.st_mtime : result;
+	result = file_status.st_ctime < result ? file_status.st_ctime : result;
 	return result;
 #endif
 }
@@ -1665,7 +1669,7 @@ int64_t file_get_last_access_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastAccessTime.dwHighDateTime << 32) + file_data.ftLastAccessTime.dwLowDateTime);
 #else
 	FILE_STAT(path);
-	return file_status.st_atim.tv_sec;
+	return file_status.st_atime;
 #endif
 }
 
@@ -1694,7 +1698,7 @@ int64_t file_get_last_write_time_utc(const uint8_t* path)
 			   ((int64_t)file_data.ftLastWriteTime.dwHighDateTime << 32) + file_data.ftLastWriteTime.dwLowDateTime);
 #else
 	FILE_STAT(path);
-	return file_status.st_mtim.tv_sec;
+	return file_status.st_mtime;
 #endif
 }
 #if defined(_WIN32)
@@ -1707,7 +1711,7 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 		return 0;
 	}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != (*output));
 #else
 	(*output) = (void*)_wfopen(path, mode);
@@ -1803,7 +1807,7 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	buffer_release(&pathW);
 	return returned;
 #else
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != (*output));
 #else
 	(*output) = (void*)fopen((const char*)path, (const char*)mode);
@@ -1821,7 +1825,7 @@ size_t file_read(void* content, const size_t size_of_content_element,
 		return 0;
 	}
 
-#if __STDC_SEC_API__ && defined(_MSC_VER)
+#if __STDC_LIB_EXT1__ && defined(_MSC_VER)
 	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, stream);
 #else
 	return fread(content, size_of_content_element, count_of_elements, stream);

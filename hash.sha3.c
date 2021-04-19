@@ -23,22 +23,20 @@
  * https://csrc.nist.gov/publications/detail/fips/202/final
  */
 
+#include "stdc_secure_api.h"
+
 #include "hash.h"
 #include "buffer.h"
+#include "common.h"
+
+#if defined(__clang__) && defined(NDEBUG)
+#include "echo.h"
+#endif
 
 #include <stddef.h>
 #include <string.h>
 
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
-#endif
-
-enum HashType { Hash512 = 0, Hash384, HashUnknown, Hash256, Hash224 };
-
-static const uint16_t permutation_width = 1600;/*25, 50, 100, 200, 400, 800, 1600*/
-static const uint8_t w = 64;/*permutation_width / 25;*/
-/*static const uint8_t width_on_w = 25;*/
-static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320, 256, 192*/ };
+static const uint8_t w = 64;
 
 #define TWO_DIMENSION_TO_ONE_INDEX(X, Y, Y_MAX)	\
 	(X) * (Y_MAX) + Y
@@ -46,30 +44,32 @@ static const uint16_t capacity_array[] = { 1024, 768, 576, 512, 448/*, 384, 320,
 #define ROT(X, N, W)	\
 	(((X) << ((N) % (W))) | ((X) >> ((W) - ((N) % (W)))))
 
-uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
-	const uint8_t* start, const uint8_t* finish, uint64_t* output)
+void theta(uint64_t* A, uint64_t* C, uint64_t* D)
 {
-	if (NULL == start ||
-		NULL == finish ||
-		finish < start ||
-		NULL == output)
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		return 0;
+		C[i] = A[TWO_DIMENSION_TO_ONE_INDEX(i, 0, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 1, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 2, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 3, 5)] ^
+			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 4, 5)];
 	}
 
-	uint8_t j = 0;
-	(*output) = 0;
-
-	while ((--finish) > (start - 1) && j < 16)
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		(*output) += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
-		(*output) += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
+		D[i] = C[(i + 4) % 5] ^ ROT(C[(i + 1) % 5], 1, w);
 	}
 
-	return 1;
+	for (uint8_t i = 0; i < 5; ++i)
+	{
+		for (uint8_t j = 0; j < 5; ++j)
+		{
+			A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^= D[i];
+		}
+	}
 }
 
-void Round(uint64_t* A, uint64_t RC_i)
+void rho_pi(const uint64_t* A, uint64_t* B)
 {
 	static const uint8_t r[] =
 	{
@@ -79,59 +79,30 @@ void Round(uint64_t* A, uint64_t RC_i)
 		28, 55, 25, 21, 56,
 		27, 20, 39, 8, 14
 	};
-	/**/
-	uint64_t B[] =
-	{
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0
-	};
-	/**/
-	uint64_t C[] = { 0, 0, 0, 0, 0 };
-	/**/
-	uint64_t D[] = { 0, 0, 0, 0, 0 };
 
-	/*theta step*/
-	for (uint8_t i = 0; i < 5; i++)
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		C[i] = A[TWO_DIMENSION_TO_ONE_INDEX(i, 0, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 1, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 2, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 3, 5)] ^
-			   A[TWO_DIMENSION_TO_ONE_INDEX(i, 4, 5)];
-	}
-
-	for (uint8_t i = 0; i < 5; i++)
-	{
-		D[i] = C[(i + 4) % 5] ^ ROT(C[(i + 1) % 5], 1, w);
-	}
-
-	for (uint8_t i = 0; i < 5; i++)
-	{
-		for (uint8_t j = 0; j < 5; j++)
+		for (uint8_t j = 0; j < 5; ++j)
 		{
-			A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
-				A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ D[i];
-		}
-	}
-
-	/*rho and pi steps*/
-	for (uint8_t i = 0; i < 5; i++)
-	{
-		for (uint8_t j = 0; j < 5; j++)
-		{
+#if defined(__clang__) && defined(NDEBUG)
+			const uint8_t index_1 = TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5);
+			const uint8_t index_2 = TWO_DIMENSION_TO_ONE_INDEX(i, j, 5);
+			B[index_1] = ROT(A[index_2], r[index_2], w);
+			echo(0, 0, NULL, None, (const uint8_t*)&B[index_1], sizeof(uint64_t), 0, 0);
+#else
 			B[TWO_DIMENSION_TO_ONE_INDEX(j, (2 * i + 3 * j) % 5, 5)] =
 				ROT(A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)],
 					r[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)], w);
+#endif
 		}
 	}
+}
 
-	/*chi step*/
-	for (uint8_t i = 0; i < 5; i++)
+void chi(uint64_t* A, const uint64_t* B)
+{
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		for (uint8_t j = 0; j < 5; j++)
+		for (uint8_t j = 0; j < 5; ++j)
 		{
 			A[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
 				B[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^
@@ -139,18 +110,18 @@ void Round(uint64_t* A, uint64_t RC_i)
 				 B[TWO_DIMENSION_TO_ONE_INDEX((i + 2) % 5, j, 5)]);
 		}
 	}
+}
 
-	/*iota step*/
-	A[TWO_DIMENSION_TO_ONE_INDEX(0, 0, 5)] =
-		A[TWO_DIMENSION_TO_ONE_INDEX(0, 0, 5)] ^ RC_i;
+void iota(uint64_t* A, uint64_t RC_i)
+{
+	A[TWO_DIMENSION_TO_ONE_INDEX(0, 0, 5)] ^= RC_i;
 }
 
 void Keccak_f(uint64_t* A)
 {
 	/*l -> log(w) / log(2)
-	number of permutation -> 12 + 2 * l*/
-	static const uint8_t n = 24;/*12, 14, 16, 18, 20, 22, 24*/
-	/**/
+	number of permutation -> 12 + 2 * l
+	static const uint8_t n = 12, 14, 16, 18, 20, 22, 24*/
 	static const uint64_t RC[] =
 	{
 		0x0000000000000001,
@@ -178,26 +149,33 @@ void Keccak_f(uint64_t* A)
 		0x0000000080000001,
 		0x8000000080008008
 	};
+	/**/
+	uint64_t B[25];
+	uint64_t* C = B;
+	uint64_t* D = B + 5;
 
-	for (uint8_t i = 0; i < n; i++)
+	for (uint8_t i = 0; i < 24; ++i)
 	{
-		Round(A, RC[i]);
+		theta(A, C, D);
+		rho_pi(A, B);
+		chi(A, B);
+		iota(A, RC[i]);
 	}
 }
 
-void Keccak_absorption(uint64_t* S, const uint64_t* data, uint8_t rate_on_w)
+void Keccak_absorption(const uint64_t* data, uint64_t* S, uint8_t rate_on_w)
 {
 	/*Absorption phase*/
-	for (uint8_t i = 0, j = 0; i < 5; ++i)
+	for (uint8_t i = 0; i < 5; ++i)
 	{
-		for (j = 0; j < 5; ++j)
+		for (uint8_t j = 0; j < 5; ++j)
 		{
-			const uint8_t index = i + j * 5;
+			const uint8_t source_index = TWO_DIMENSION_TO_ONE_INDEX(j, i, 5);
 
-			if (index < rate_on_w)
+			if (source_index < rate_on_w)
 			{
-				S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] =
-					S[TWO_DIMENSION_TO_ONE_INDEX(i, j, 5)] ^ data[index];
+				const uint8_t destination_index = TWO_DIMENSION_TO_ONE_INDEX(i, j, 5);
+				S[destination_index] ^= data[source_index];
 			}
 		}
 	}
@@ -205,19 +183,45 @@ void Keccak_absorption(uint64_t* S, const uint64_t* data, uint8_t rate_on_w)
 	Keccak_f(S);
 }
 
-uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint8_t rate_on_w, uint8_t* output)
+uint8_t Keccak_absorption_bytes(const uint8_t* data, uint64_t* S, uint8_t rate_on_w)
+{
+	if (!data ||
+		!S ||
+		18 < rate_on_w)
+	{
+		return 0;
+	}
+
+	uint64_t data_[18];
+
+	for (uint8_t i = 0; i < rate_on_w; ++i)
+	{
+		const uint8_t* start = data + 8 * i;
+		const uint8_t* finish = start + 8;
+
+		if (!hash_algorithm_uint8_t_array_to_uint64_t(start, finish, &data_[i]))
+		{
+			return 0;
+		}
+	}
+
+	Keccak_absorption(data_, S, rate_on_w);
+	return 1;
+}
+
+uint8_t Keccak_squeezing(uint64_t* S, uint8_t rate_on_w, uint8_t d_max, uint8_t* output)
 {
 	/*Squeezing phase*/
-	for (uint8_t xF = 0; ;)
+	for (uint8_t xF = 0; xF < d_max;)
 	{
-		for (uint8_t i = 0; i < 5; i++)
+		for (uint8_t i = 0; i < 5; ++i)
 		{
-			for (uint8_t j = 0; j < 5; j++)
+			for (uint8_t j = 0; j < 5; ++j)
 			{
-				if ((5 * i + j) < rate_on_w)
+				if (TWO_DIMENSION_TO_ONE_INDEX(i, j, 5) < rate_on_w)
 				{
 					const uint64_t* s = &(S[TWO_DIMENSION_TO_ONE_INDEX(j, i, 5)]);
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 					if (0 != memcpy_s(output + xF, sizeof(uint64_t), s, sizeof(uint64_t)))
 					{
@@ -237,213 +241,171 @@ uint8_t Keccak_squeezing(uint8_t d_max, uint64_t* S, uint8_t rate_on_w, uint8_t*
 			}
 		}
 
-		if (d_max <= xF)
-		{
-			break;
-		}
-
 		Keccak_f(S);
 	}
 
-	return 1;
-}
-
-uint8_t get_hash_type(uint16_t hash_length)
-{
-	switch (hash_length)
-	{
-		case 224:
-			return Hash224;
-
-		case 256:
-			return Hash256;
-
-		case 384:
-			return Hash384;
-
-		case 512:
-			return Hash512;
-
-		default:
-			break;
-	}
-
-	return HashUnknown;
-}
-
-uint8_t get_delta(uint8_t max_delta, uint8_t current_delta, uint16_t addition)
-{
-	while (current_delta < addition)
-	{
-		addition -= current_delta;
-		current_delta = max_delta;
-	}
-
-	if (0 < addition)
-	{
-		current_delta -= (uint8_t)addition;
-	}
-
-	return 0 == current_delta ? max_delta : current_delta;
+	return 0;
 }
 
 uint8_t hash_algorithm_sha3_init(
-	uint8_t is_sha3, uint16_t hash_length,
-	uint8_t* rate_on_w, uint8_t* maximum_delta,
-	uint8_t* addition, uint8_t addition_length)
+	uint16_t hash_length,
+	uint8_t* rate_on_w,
+	uint8_t* maximum_delta)
 {
-	const uint8_t hash_type = get_hash_type(hash_length);
+	static const uint16_t permutation_width = 1600;
+	static const uint16_t capacity_array[] = { 1024, 768, 512, 448 };
+	static const uint16_t hash_lengths[] = { 512, 384, 256, 224 };
 
-	if (1 < is_sha3 ||
-		HashUnknown == hash_type ||
-		NULL == rate_on_w ||
-		NULL == maximum_delta ||
-		NULL == addition ||
-		addition_length < 192)
-	{
-		return 0;
-	}
-
-	const uint16_t capacity = capacity_array[hash_type];
-	const uint16_t rate = permutation_width - capacity;
-	/**/
-	*rate_on_w = (uint8_t)(rate / w);
-	*maximum_delta = (*rate_on_w) * 8;
-	/**/
-	memset(addition, 0, addition_length);
-	addition[0] = is_sha3 ? 6 : 1;
-	/**/
-	return 1;
-}
-
-uint8_t hash_algorithm_sha3_core(
-	uint64_t* S, uint8_t rate_on_w,
-	uint64_t* data, uint8_t* xF,
-	uint8_t delta, uint8_t maximum_delta,
-	uint8_t* addition, uint8_t* is_addition_set,
-	const uint8_t* start, const uint8_t* finish,
-	const uint8_t** resume_at)
-{
-	static const uint8_t step = 8;
-
-	if (NULL == S ||
-		NULL == data ||
-		NULL == xF ||
-		NULL == addition ||
-		finish < start ||
-		NULL == start)
+	if (NULL == rate_on_w ||
+		NULL == maximum_delta)
 	{
 		return 0;
 	}
 
 	uint8_t i = 0;
-	uint8_t* part = addition + 180;
 
 	do
 	{
-		if (start + step <= finish)
+		if (hash_lengths[i] == hash_length)
 		{
-			if (!hash_algorithm_uint8_t_array_to_uint64_t(start, start + step, &data[*xF]))
-			{
-				return 0;
-			}
-
-			start += step;
-			*xF = *xF + 1;
-		}
-		else if (!is_addition_set)
-		{
-			*resume_at = start;
-			return delta;
-		}
-		else
-		{
-			const uint8_t length = (uint8_t)(finish - start);
-
-			if (length)
-			{
-#if __STDC_SEC_API__
-
-				if (0 != memcpy_s(part, length, start, length))
-				{
-					return 0;
-				}
-
-#else
-				memcpy(part, start, length);
-#endif
-				start += length;
-			}
-
-			if (0 == *is_addition_set)
-			{
-				delta = get_delta(maximum_delta, delta, length);
-
-				if (1 == delta)
-				{
-					addition[0] += 128;
-				}
-				else
-				{
-					addition[delta - 1] = 128;
-				}
-
-				*is_addition_set = 1;
-			}
-
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(part + length, step - length, addition + i, step - length))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(part + length, addition + i, step - length);
-#endif
-			i += step - length;
-
-			if (!hash_algorithm_uint8_t_array_to_uint64_t(part, part + step, &data[*xF]))
-			{
-				return 0;
-			}
-
-			*xF = *xF + 1;
+			break;
 		}
 
-		if (NULL == is_addition_set || 0 == *is_addition_set)
-		{
-			delta = get_delta(maximum_delta, delta, step);
-		}
+		++i;
 	}
-	while (*xF != rate_on_w);
+	while (i < 4);
 
-	Keccak_absorption(S, data, rate_on_w);
-	memset(data, 0, sizeof(uint64_t) * rate_on_w);
-	*xF = 0;
-	*resume_at = start;
-	return delta;
+	if (4 == i)
+	{
+		return 0;
+	}
+
+	const uint16_t capacity = capacity_array[i];
+	const uint16_t rate = permutation_width - capacity;
+	/**/
+	*rate_on_w = (uint8_t)(rate / w);
+	*maximum_delta = (*rate_on_w) * 8;
+	/**/
+	return 1;
+}
+
+uint8_t hash_algorithm_sha3_core(
+	const uint8_t* start, const uint8_t* finish,
+	uint8_t* queue, uint8_t* queue_size, uint8_t maximum_delta,
+	uint64_t* S, uint8_t rate_on_w)
+{
+	if (!start ||
+		!finish ||
+		!queue ||
+		!queue_size ||
+		!S)
+	{
+		return 0;
+	}
+
+	if (0 < *queue_size)
+	{
+		const uint8_t length = (uint8_t)MIN(finish - start, maximum_delta - *queue_size);
+#if __STDC_LIB_EXT1__
+
+		if (0 != memcpy_s(queue + *queue_size, maximum_delta - *queue_size, start, length))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(queue + *queue_size, start, length);
+#endif
+		start += length;
+		*queue_size += length;
+	}
+
+	if (maximum_delta == *queue_size)
+	{
+		if (!Keccak_absorption_bytes(queue, S, rate_on_w))
+		{
+			return 0;
+		}
+
+		*queue_size = 0;
+	}
+
+	while (start + maximum_delta <= finish)
+	{
+		if (!Keccak_absorption_bytes(start, S, rate_on_w))
+		{
+			return 0;
+		}
+
+		start += maximum_delta;
+	}
+
+	if (start < finish)
+	{
+		*queue_size = (uint8_t)(finish - start);
+#if __STDC_LIB_EXT1__
+
+		if (0 != memcpy_s(queue, maximum_delta, start, *queue_size))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(queue, start, *queue_size);
+#endif
+	}
+
+	return 1;
+}
+
+uint8_t hash_algorithm_sha3_final(
+	uint8_t is_sha3,
+	uint8_t* queue, uint8_t queue_size, uint8_t maximum_delta,
+	uint64_t* S, uint8_t rate_on_w, uint8_t d_max,
+	uint8_t* output)
+{
+	const uint8_t delta = maximum_delta - queue_size;
+	memset(queue + queue_size, 0, delta);
+	queue[queue_size] = is_sha3 ? 6 : 1;
+
+	if (1 == delta)
+	{
+		queue[maximum_delta - 1] = (is_sha3 ? 6 : 1) + 128;
+	}
+	else
+	{
+		queue[maximum_delta - 1] = 128;
+	}
+
+	if (!Keccak_absorption_bytes(queue, S, rate_on_w))
+	{
+		return 0;
+	}
+
+	return Keccak_squeezing(S, rate_on_w, d_max, output);
 }
 
 uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 			   uint16_t hash_length, uint8_t* output)
 {
-	static const uint8_t step = 8;
-	const uint8_t hash_type = get_hash_type(hash_length);
-
 	if (NULL == input ||
 		length < 0 ||
 		1 < is_sha3 ||
-		HashUnknown == hash_type ||
 		NULL == output)
 	{
 		return 0;
 	}
 
-	const uint16_t capacity = capacity_array[hash_type];
-	const uint16_t rate = permutation_width - capacity;
-	const uint8_t rate_on_w = (uint8_t)(rate / w);
-	/*Initialization*/
+	uint8_t rate_on_w;
+	uint8_t maximum_delta;
+
+	if (!hash_algorithm_sha3_init(hash_length, &rate_on_w, &maximum_delta))
+	{
+		return 0;
+	}
+
+	uint8_t queue[192];
+	uint8_t queue_size = 0;
 	uint64_t S[] =
 	{
 		0, 0, 0, 0, 0,
@@ -452,110 +414,16 @@ uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 		0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0
 	};
-	/**/
-	uint64_t data[] =
+
+	if (!hash_algorithm_sha3_core(input, input + length, queue, &queue_size, maximum_delta, S, rate_on_w))
 	{
-		0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0,
-		/*NOTE: GCC requires*/
-		0, 0, 0, 0, 0, 0, 0
-	};
-	/**/
-	uint8_t xF = 0;
-	/*Padding*/
-	const uint8_t maximum_delta = rate_on_w * 8;
-	uint8_t delta = maximum_delta;
-	/**/
-	uint8_t addition[192];
-	uint8_t is_addition_set = 0;
-	/**/
-	memset(addition, 0, sizeof(addition));
-	addition[0] = is_sha3 ? 6 : 1;
-	uint8_t* part = (addition + 180);
-	is_sha3 = 0;
-	/**/
-	const uint8_t* finish = input + length;
-
-	do
-	{
-		if (input + step < finish)
-		{
-			if (!hash_algorithm_uint8_t_array_to_uint64_t(input, input + step, &data[xF++]))
-			{
-				return 0;
-			}
-
-			input += step;
-		}
-		else
-		{
-			length = (finish - input);
-
-			if (length)
-			{
-#if __STDC_SEC_API__
-
-				if (0 != memcpy_s(part, length, input, length))
-				{
-					return 0;
-				}
-
-#else
-				memcpy(part, input, length);
-#endif
-				input += length;
-			}
-
-			if (!is_addition_set)
-			{
-				delta = get_delta(maximum_delta, delta, (uint16_t)length);
-
-				if (1 == delta)
-				{
-					addition[0] += 128;
-				}
-				else
-				{
-					addition[delta - 1] = 128;
-				}
-
-				is_addition_set = 1;
-			}
-
-#if __STDC_SEC_API__
-
-			if (0 != memcpy_s(part + length, step - length, addition + is_sha3, step - length))
-			{
-				return 0;
-			}
-
-#else
-			memcpy(part + length, addition + is_sha3, step - length);
-#endif
-			is_sha3 += step - (uint8_t)length;
-
-			if (!hash_algorithm_uint8_t_array_to_uint64_t(part, part + step, &data[xF++]))
-			{
-				return 0;
-			}
-		}
-
-		if (xF == rate_on_w)
-		{
-			Keccak_absorption(S, data, rate_on_w);
-			memset(data, 0, sizeof(data));
-			xF = 0;
-		}
-
-		if (!is_addition_set)
-		{
-			delta = get_delta(maximum_delta, delta, step);
-		}
+		return 0;
 	}
-	while (input < finish || is_sha3 < delta);
 
-	return Keccak_squeezing((uint8_t)(hash_length / 8), S, rate_on_w, output);
+	hash_length = hash_length / 8;
+	return hash_algorithm_sha3_final(
+			   is_sha3, queue, queue_size, maximum_delta, S, rate_on_w,
+			   (uint8_t)hash_length, output);
 }
 
 uint8_t hash_algorithm_keccak(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,

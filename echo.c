@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -16,10 +16,6 @@
 
 #if defined(_WIN32)
 #include <windows.h>
-#endif
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
 #if defined(_WIN32)
@@ -75,9 +71,6 @@ uint8_t echo_is_level_enabled(uint8_t level)
 #if defined(_WIN32)
 HANDLE echo_get_win32_console_output(uint8_t level)
 {
-	static HANDLE output_stream = INVALID_HANDLE_VALUE;
-	static HANDLE error_output_stream = INVALID_HANDLE_VALUE;
-
 	if (ECHO_UNKNOWN_LEVEL <= level)
 	{
 		return INVALID_HANDLE_VALUE;
@@ -85,6 +78,8 @@ HANDLE echo_get_win32_console_output(uint8_t level)
 
 	if (Error != level)
 	{
+		static HANDLE output_stream = INVALID_HANDLE_VALUE;
+
 		if (INVALID_HANDLE_VALUE == output_stream)
 		{
 			output_stream = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -92,6 +87,8 @@ HANDLE echo_get_win32_console_output(uint8_t level)
 
 		return output_stream;
 	}
+
+	static HANDLE error_output_stream = INVALID_HANDLE_VALUE;
 
 	if (INVALID_HANDLE_VALUE == error_output_stream)
 	{

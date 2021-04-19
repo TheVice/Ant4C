@@ -884,34 +884,38 @@ const uint8_t* project_get_listener_task_name(const void* the_project)
 	return buffer_data(listener_task_name, 0);
 }
 
-uint8_t project_print_default_target(const void* the_project, uint8_t verbose)
+uint8_t project_print_default_target(const void* the_project, struct buffer* tmp, uint8_t verbose)
 {
+	if (!tmp)
+	{
+		return 0;
+	}
+
 	const void* the_property = NULL;
 
 	if (project_get_default_target(the_project, &the_property, verbose))
 	{
-		struct buffer property_value;
-		SET_NULL_TO_BUFFER(property_value);
-
-		if (!property_get_by_pointer(the_property, &property_value))
+		if (!buffer_resize(tmp, 0))
 		{
-			buffer_release(&property_value);
+			return 0;
+		}
+
+		if (!property_get_by_pointer(the_property, tmp))
+		{
 			return 0;
 		}
 
 		if (!interpreter_actualize_property_value(
 				the_project, NULL, property_get_id_of_get_value_function(),
-				the_property, 0, &property_value, verbose))
+				the_property, 0, tmp, verbose))
 		{
-			buffer_release(&property_value);
 			return 0;
 		}
 
 		if (!project_target_exists(the_project,
-								   buffer_data(&property_value, 0),
-								   (uint8_t)buffer_size(&property_value)))
+								   buffer_data(tmp, 0),
+								   (uint8_t)buffer_size(tmp)))
 		{
-			buffer_release(&property_value);
 			return 0;
 		}
 
@@ -919,19 +923,15 @@ uint8_t project_print_default_target(const void* the_project, uint8_t verbose)
 				  (const uint8_t*)"\nDefault target: ",
 				  17, 0, verbose))
 		{
-			buffer_release(&property_value);
 			return 0;
 		}
 
 		if (!echo(0, Default, NULL, Info,
-				  buffer_data(&property_value, 0),
-				  buffer_size(&property_value), 1, verbose))
+				  buffer_data(tmp, 0),
+				  buffer_size(tmp), 1, verbose))
 		{
-			buffer_release(&property_value);
 			return 0;
 		}
-
-		buffer_release(&property_value);
 	}
 
 	return 1;
@@ -1040,7 +1040,7 @@ uint8_t project_evaluate_task(void* the_project,
 
 		if (project_help && returned)
 		{
-			returned = project_print_default_target(the_project, verbose);
+			returned = project_print_default_target(the_project, elements, verbose);
 		}
 	}
 

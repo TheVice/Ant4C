@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "operating_system.h"
 #include "buffer.h"
 #include "common.h"
@@ -21,10 +23,6 @@
 
 #define _POSIXSOURCE 1
 #include <sys/utsname.h>
-#endif
-
-#if !defined(__STDC_SEC_API__)
-#define __STDC_SEC_API__ ((__STDC_LIB_EXT1__) || (__STDC_SECURE_LIB__) || (__STDC_WANT_LIB_EXT1__) || (__STDC_WANT_SECURE_LIB__))
 #endif
 
 struct OperatingSystem
@@ -67,7 +65,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 
 	if (version)
 	{
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(operating_system->version, VERSION_SIZE, version, VERSION_SIZE))
 		{
@@ -78,18 +76,20 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 		memcpy(operating_system->version, version, VERSION_SIZE);
 #endif
 		uint8_t* ptr = operating_system->description;
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 		size = (ptrdiff_t)sizeof(operating_system->description);
 #endif
 
 		if (Win32 == platformID)
 		{
-			const uint8_t* labels[] = { windows_label, server_label };
+			const uint8_t* labels[2];
+			labels[0] = windows_label;
+			labels[1] = server_label;
 			uint8_t labels_lengths[] = { Win32NT_str_length, Server_str_length };
 
 			for (uint8_t i = 0, count = COUNT_OF(labels); i < count; ++i)
 			{
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 				if (0 != memcpy_s(ptr, size, labels[i], labels_lengths[i]))
 				{
@@ -102,7 +102,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 				ptr += labels_lengths[i];
 				*ptr = ' ';
 				++ptr;
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 				size -= (ptrdiff_t)labels_lengths[i] + 2;
 #endif
 #if defined(_WIN32)
@@ -129,7 +129,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 				return 0;
 			}
 
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 			size = sprintf_s(
 					   (char* const)ptr, size,
 #else
@@ -191,7 +191,7 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 	}
 
 	size = finish - start;
-#if __STDC_SEC_API__
+#if __STDC_LIB_EXT1__
 
 	if (0 != memcpy_s(operating_system->description, sizeof(operating_system->description),
 					  start, MIN((ptrdiff_t)sizeof(operating_system->description), size)))

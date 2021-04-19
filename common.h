@@ -72,6 +72,17 @@ uint8_t common_get_module_priority();
 		++(SRC);												\
 	}
 
+#if __STDC_LIB_EXT1__
+#define MEM_CPY_C(DST, SRC, LENGTH)								\
+	if (0 != memcpy_s((DST), (LENGTH), (SRC), (LENGTH)))		\
+	{															\
+		return 0;												\
+	}
+#else
+#define MEM_CPY_C(DST, SRC, LENGTH)								\
+	memcpy((DST), (SRC), (LENGTH));
+#endif
+
 #if !defined(MAX)
 #define MAX(A, B) ((A) < (B) ? (B) : (A))
 #endif

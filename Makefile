@@ -128,6 +128,9 @@ hash.crc32.c: common.h
 hash.sha3.c: hash.h
 hash.sha3.c: buffer.h
 
+hash.xxhash.c: hash.h
+hash.xxhash.c: common.h
+
 host_fxr.c: host_fxr.h
 
 if_task.c: if_task.h
@@ -384,6 +387,9 @@ hash.crc32.obj: hash.crc32.c
 hash.sha3.obj: hash.sha3.c
 	$(CC) $(CFLAGS) -c hash.sha3.c -o $@
 
+hash.xxhash.obj: hash.xxhash.c hash.h
+	cc -c hash.xxhash.c -o hash.xxhash.obj
+
 host_fxr.obj: host_fxr.c
 	$(CC) $(CFLAGS) -c -fPIC host_fxr.c -o $@
 
@@ -468,6 +474,7 @@ libant4c.a: hash.blake3.obj
 libant4c.a: hash.crc32.obj
 libant4c.a: hash.obj
 libant4c.a: hash.sha3.obj
+libant4c.a: hash.xxhash.obj
 libant4c.a: if_task.obj
 libant4c.a: interpreter.obj
 libant4c.a: listener.obj
@@ -488,7 +495,7 @@ libant4c.a: text_encoding.obj
 libant4c.a: try_catch.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	ar qc $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj hash.xxhash.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
@@ -509,5 +516,5 @@ libant4c.net.module.so: ant4c.net.module.obj
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a libant4c.net.module.so libnet_gate.a ant4c.net.module.obj host_fxr.obj main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	-rm ant4c libant4c.a libant4c.net.module.so libnet_gate.a ant4c.net.module.obj host_fxr.obj main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj hash.xxhash.obj if_task.obj interpreter.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean
