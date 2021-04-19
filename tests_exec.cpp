@@ -5,7 +5,7 @@
  *
  */
 
-#include "tests_base_xml.h"
+#include "tests_exec.h"
 
 extern "C" {
 #include "argument_parser.h"
@@ -18,7 +18,6 @@ extern "C" {
 #include "path.h"
 #include "project.h"
 #include "property.h"
-#include "range.h"
 };
 
 #include <string>
@@ -37,108 +36,173 @@ extern "C" {
 		const range* base_dir, buffer* tmp, uint8_t verbose);
 };
 
-class TestExec : public TestsBaseXml
-{
-protected:
-	static std::string tests_exec_app;
-
-protected:
-	uint8_t append;
-
-	std::string program_str;
-	range program;
-
-	std::string base_dir_str;
-	range base_dir;
-
-	std::string command_line_str;
-	range command_line;
-
-	std::string pid_property_str;
-	void* pid_property;
-
-	std::string result_property_str;
-	void* result_property;
-
-	std::string working_dir_str;
-	range working_dir;
-
-	std::string environment_variables_str;
-	range environment_variables;
-
-	uint8_t spawn;
-	uint32_t time_out;
-	uint8_t expected_return;
-	int32_t result_property_value;
-
-	uint8_t allow_output_to_console;
-
-protected:
-	TestExec() :
-		TestsBaseXml(),
-		append(),
-		program_str(),
-		program(),
-		base_dir_str(),
-		base_dir(),
-		command_line_str(),
-		command_line(),
-		pid_property_str(),
-		pid_property(),
-		result_property_str(),
-		result_property(),
-		working_dir_str(),
-		working_dir(),
-		environment_variables_str(),
-		environment_variables(),
-		spawn(),
-		time_out(),
-		expected_return(),
-		result_property_value(),
-		allow_output_to_console()
-	{
-		predefine_arguments.insert(std::make_pair("--tests_exec_app=", &tests_exec_app));
-	}
-
-	virtual void SetUp() override
-	{
-		auto init_required = tests_exec_app.empty();
-		//
-		TestsBaseXml::SetUp();
-
-		if (tests_exec_app.empty())
-		{
-			init_required = parse_input_arguments();
-			assert(init_required);
-			ASSERT_TRUE(init_required);
-			//
-			init_required = tests_exec_app.empty();
-			assert(!init_required);
-			ASSERT_FALSE(init_required);
-			//
-			init_required = true;
-		}
-
-		if (init_required)
-		{
-			buffer tmp;
-			SET_NULL_TO_BUFFER(tmp);
-			//
-			const auto path = reinterpret_cast<const uint8_t*>(tests_exec_app.data());
-			ASSERT_TRUE(path_combine(path, path + tests_exec_app.size(), nullptr, nullptr, &tmp)) << buffer_free(&tmp);
-			tests_exec_app = buffer_to_string(&tmp);
-			//
-			buffer_release(&tmp);
-		}
-
-		allow_output_to_console =
-			nodes.cbegin()->parent().attribute("allow_output_to_console").as_bool();
-	}
-
-	void load_input_data(const pugi::xpath_node& node);
-};
-
 std::string TestExec::tests_exec_app;
+
+static void add_slash(std::string& path)
+{
+	if (path.empty())
+	{
+		return;
+	}
+
+#if defined(_WIN32)
+
+	if ('\\' != *(path.rbegin()))
+	{
+		path += '\\';
+	}
+
+#else
+
+	if ('/' != *(path.rbegin()))
+	{
+		path += '/';
+	}
+
+#endif
+}
+
+std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
+{
+	static std::string current_directory;
+
+	if (!tmp ||
+		!result)
+	{
+		if (result)
+		{
+			*result = 0;
+		}
+
+		return current_directory;
+	}
+
+	if (current_directory.empty())
+	{
+		if (!path_get_directory_for_current_process(tmp))
+		{
+			*result = 0;
+			return current_directory;
+		}
+
+		current_directory = buffer_to_string(tmp);
+		add_slash(current_directory);
+	}
+
+	*result = 1;
+	return current_directory;
+}
+
+std::string TestExec::get_path_to_directory_with_image(buffer* tmp, uint8_t* result)
+{
+	static std::string path_to_directory_with_image;
+
+	if (!tmp ||
+		!result)
+	{
+		if (result)
+		{
+			*result = 0;
+		}
+
+		return path_to_directory_with_image;
+	}
+
+	if (path_to_directory_with_image.empty())
+	{
+		if (!path_get_directory_for_current_image(tmp))
+		{
+			std::cerr << "[Warning]: unable to get path to directory with image." << std::endl;
+			std::cerr <<
+					  "[Warning]: function 'path_get_directory_for_current_image' probably not implemented for used operation system."
+					  << std::endl;
+
+			if (!tests_exec_app.empty())
+			{
+				auto working_dir = string_to_range(tests_exec_app);
+
+				if (!path_get_directory_name(
+						working_dir.start, working_dir.finish, &working_dir))
+				{
+					*result = 0;
+					return path_to_directory_with_image;
+				}
+
+				path_to_directory_with_image = range_to_string(working_dir);
+			}
+		}
+		else
+		{
+			path_to_directory_with_image = buffer_to_string(tmp);
+		}
+
+		add_slash(path_to_directory_with_image);
+	}
+
+	*result = 1;
+	return path_to_directory_with_image;
+}
+
+TestExec::TestExec() :
+	TestsBaseXml(),
+	append(),
+	program_str(),
+	program(),
+	base_dir_str(),
+	base_dir(),
+	command_line_str(),
+	command_line(),
+	pid_property_str(),
+	pid_property(),
+	result_property_str(),
+	result_property(),
+	working_dir_str(),
+	working_dir(),
+	environment_variables_str(),
+	environment_variables(),
+	spawn(),
+	time_out(),
+	expected_return(),
+	result_property_value(),
+	allow_output_to_console()
+{
+	predefine_arguments.insert(std::make_pair("--tests_exec_app=", &tests_exec_app));
+}
+
+void TestExec::SetUp()
+{
+	auto init_required = tests_exec_app.empty();
+	//
+	TestsBaseXml::SetUp();
+
+	if (tests_exec_app.empty())
+	{
+		init_required = parse_input_arguments();
+		assert(init_required);
+		ASSERT_TRUE(init_required);
+		//
+		init_required = tests_exec_app.empty();
+		assert(!init_required);
+		ASSERT_FALSE(init_required);
+		//
+		init_required = true;
+	}
+
+	if (init_required)
+	{
+		buffer tmp;
+		SET_NULL_TO_BUFFER(tmp);
+		//
+		const auto path(string_to_range(tests_exec_app));
+		ASSERT_TRUE(path_combine(path.start, path.finish, nullptr, nullptr, &tmp)) << buffer_free(&tmp);
+		tests_exec_app = buffer_to_string(&tmp);
+		//
+		buffer_release(&tmp);
+	}
+
+	allow_output_to_console =
+		nodes.cbegin()->parent().attribute("allow_output_to_console").as_bool();
+}
 
 void TestExec::load_input_data(const pugi::xpath_node& node)
 {

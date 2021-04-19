@@ -5,7 +5,7 @@
  *
  */
 
-#include "tests_base_xml.h"
+#include "tests_exec.h"
 
 extern "C" {
 #include "load_tasks.h"
@@ -20,57 +20,28 @@ extern "C" {
 #include <ostream>
 #include <iostream>
 
-class TestLoadTasks : public TestsBaseXml
+class TestLoadTasks : public TestExec
 {
 };
 
 TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 {
-	std::string path_to_directory_with_image;
-	//
 	buffer task_arguments;
 	SET_NULL_TO_BUFFER(task_arguments);
-
-	if (!path_get_directory_for_current_image(&task_arguments))
-	{
-		std::cerr << "[Warning]: unable to get path to directory with image." << std::endl;
-		std::cerr <<
-				  "[Warning]: function 'path_get_directory_for_current_image' probably not implemented for used operation system."
-				  << std::endl;
-	}
-	else
-	{
-		path_to_directory_with_image = buffer_to_string(&task_arguments);
-
-		if (!path_to_directory_with_image.empty())
-		{
-#if defined(_WIN32)
-
-			if ('\\' != *(path_to_directory_with_image.rbegin()))
-			{
-				path_to_directory_with_image += '\\';
-			}
-
-#else
-
-			if ('/' != *(path_to_directory_with_image.rbegin()))
-			{
-				path_to_directory_with_image += '/';
-			}
-
-#endif
-		}
-	}
-
+	//
+	uint8_t task_attributes_count = 0;
+	//
+	const auto path_to_directory_with_image = get_path_to_directory_with_image(
+				&task_arguments, &task_attributes_count);
+	ASSERT_TRUE(task_attributes_count) << buffer_free(&task_arguments);
 	ASSERT_TRUE(buffer_resize(&task_arguments, 0)) << buffer_free(&task_arguments);
 	//
-	ASSERT_TRUE(path_get_directory_for_current_process(&task_arguments)) << buffer_free(&task_arguments);
-	const auto current_directory(buffer_to_string(&task_arguments));
+	const auto current_directory(get_directory_for_current_process(&task_arguments, &task_attributes_count));
+	ASSERT_TRUE(task_attributes_count) << buffer_free(&task_arguments);
 	ASSERT_TRUE(buffer_resize(&task_arguments, 0)) << buffer_free(&task_arguments);
 	//
 	const uint8_t** task_attributes = nullptr;
 	const uint8_t* task_attributes_lengths = nullptr;
-	uint8_t task_attributes_count = 0;
 	//
 	ASSERT_TRUE(load_tasks_get_attributes_and_arguments_for_task(
 					&task_attributes, &task_attributes_lengths, &task_attributes_count, &task_arguments))
@@ -83,8 +54,8 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 
 	for (const auto& node : nodes)
 	{
-		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
-										 node.node().select_node("return").node().child_value()));
+		expected_return = static_cast<uint8_t>(INT_PARSE(
+				node.node().select_node("return").node().child_value()));
 		const uint8_t* path = nullptr;
 
 		for (uint8_t i = 0; i < task_attributes_count; ++i)
