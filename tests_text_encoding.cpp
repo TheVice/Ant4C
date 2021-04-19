@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -910,6 +910,73 @@ TEST_F(TestTextEncoding, text_encoding_UTF8_from_code_page)
 
 	buffer_release(&output);
 }
+
+TEST_F(TestTextEncoding, text_encoding_encode_UTF16)
+{
+	uint32_t input_digit;
+	const auto start = &input_digit;
+	const auto finish = start + 1;
+	//
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+
+	for (const auto& node : nodes)
+	{
+		const auto expected_size =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("expected_size").node().child_value()));
+		//
+		const auto endian = static_cast<uint8_t>(INT_PARSE(node.node().select_node("endian").node().child_value()));
+		//
+		const auto input = std::string(node.node().select_node("input").node().child_value());
+		const auto input_in_range(string_to_range(input));
+		input_digit = static_cast<uint32_t>(uint64_parse(input_in_range.start, input_in_range.finish));
+		//
+		ASSERT_TRUE(buffer_resize(&output, 0))
+				<< input << std::endl
+				<< static_cast<uint32_t>(endian) << std::endl
+				<< buffer_free(&output);
+		//
+		ASSERT_TRUE(text_encoding_encode_UTF16(start, finish, endian, &output))
+				<< input << std::endl
+				<< static_cast<uint32_t>(endian) << std::endl
+				<< buffer_free(&output);
+		//
+		ASSERT_EQ(expected_size, buffer_size(&output))
+				<< input << std::endl
+				<< static_cast<uint32_t>(endian) << std::endl
+				<< buffer_free(&output);
+		//
+		const auto expected_outputs = node.node().select_nodes("output");
+		ASSERT_EQ(expected_size / sizeof(uint16_t), expected_outputs.size())
+				<< input << std::endl
+				<< static_cast<uint32_t>(endian) << std::endl
+				<< buffer_free(&output);
+		//
+		input_digit = 0;
+
+		for (const auto& out : expected_outputs)
+		{
+			const auto returned_output = buffer_uint16_data(&output, input_digit);
+			ASSERT_NE(nullptr, returned_output);
+			//
+			const auto expected_output =
+				static_cast<uint16_t>(INT_PARSE(out.node().child_value()));
+			//
+			ASSERT_EQ(*returned_output, expected_output)
+					<< input << std::endl
+					<< input_digit << std::endl
+					<< static_cast<uint32_t>(endian) << std::endl
+					<< buffer_free(&output);
+			//
+			++input_digit;
+		}
+
+		--node_count;
+	}
+
+	buffer_release(&output);
+}
+
 /*
 text_encoding_UTF8_to_UTF16BE
 text_encoding_UTF16BE_to_UTF8

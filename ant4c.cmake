@@ -59,6 +59,7 @@ set(ANT4C_SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/shared_object.h"
   "${CMAKE_SOURCE_DIR}/sleep_unit.c"
   "${CMAKE_SOURCE_DIR}/sleep_unit.h"
+  "${CMAKE_SOURCE_DIR}/stdc_secure_api.h"
   "${CMAKE_SOURCE_DIR}/string_unit.c"
   "${CMAKE_SOURCE_DIR}/string_unit.h"
   "${CMAKE_SOURCE_DIR}/target.c"

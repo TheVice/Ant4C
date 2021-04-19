@@ -71,9 +71,6 @@ uint8_t echo_is_level_enabled(uint8_t level)
 #if defined(_WIN32)
 HANDLE echo_get_win32_console_output(uint8_t level)
 {
-	static HANDLE output_stream = INVALID_HANDLE_VALUE;
-	static HANDLE error_output_stream = INVALID_HANDLE_VALUE;
-
 	if (ECHO_UNKNOWN_LEVEL <= level)
 	{
 		return INVALID_HANDLE_VALUE;
@@ -81,6 +78,8 @@ HANDLE echo_get_win32_console_output(uint8_t level)
 
 	if (Error != level)
 	{
+		static HANDLE output_stream = INVALID_HANDLE_VALUE;
+
 		if (INVALID_HANDLE_VALUE == output_stream)
 		{
 			output_stream = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -88,6 +87,8 @@ HANDLE echo_get_win32_console_output(uint8_t level)
 
 		return output_stream;
 	}
+
+	static HANDLE error_output_stream = INVALID_HANDLE_VALUE;
 
 	if (INVALID_HANDLE_VALUE == error_output_stream)
 	{

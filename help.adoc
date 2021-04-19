@@ -229,7 +229,7 @@ NOTE: For all version access to the property value at the functions can be provi
 </project>
 ----
 
-At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL data base world.
+At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL database world.
 
 More complex example is calculating determinate and roots of quadratic polynomial: three properties (D, X1 and X2) can be dynamic and input values (a, b, c) can be static.
 

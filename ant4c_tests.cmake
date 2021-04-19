@@ -9,6 +9,7 @@ list(APPEND SOURCES_OF_TESTS
   "${CMAKE_SOURCE_DIR}/tests_date_time.cpp"
   "${CMAKE_SOURCE_DIR}/tests_environment.cpp"
   "${CMAKE_SOURCE_DIR}/tests_exec.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_exec.h"
   "${CMAKE_SOURCE_DIR}/tests_file_system.cpp"
   "${CMAKE_SOURCE_DIR}/tests_hash.cpp"
   "${CMAKE_SOURCE_DIR}/tests_interpreter.cpp"
