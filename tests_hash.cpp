@@ -49,6 +49,43 @@ uint8_t input_generator(buffer* input, ptrdiff_t count)
 	return 1;
 }
 
+static const uint8_t input_array_to[] =
+{
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	9, 8, 7, 6, 5, 4, 3, 2, 1, 0
+};
+
+TEST(TestHashAlgorithm_, hash_algorithm_uint8_t_array_to_uint32_t)
+{
+	uint32_t output;
+
+	for (uint8_t i = 0, count = COUNT_OF(input_array_to); i < count; ++i)
+	{
+		ASSERT_TRUE(hash_algorithm_uint8_t_array_to_uint32_t(input_array_to, input_array_to + i, &output));
+	}
+}
+
+TEST(TestHashAlgorithm_, hash_algorithm_uint8_t_array_to_uint64_t)
+{
+	uint64_t output;
+
+	for (uint8_t i = 0, count = COUNT_OF(input_array_to); i < count; ++i)
+	{
+		ASSERT_TRUE(hash_algorithm_uint8_t_array_to_uint64_t(input_array_to, input_array_to + i, &output));
+	}
+}
+
 TEST(TestHashAlgorithm_, hash_algorithm_bytes_to_string)
 {
 	std::string input(UINT8_MAX + 1, '\0');
