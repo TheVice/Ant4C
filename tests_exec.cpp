@@ -38,61 +38,6 @@ extern "C" {
 
 std::string TestExec::tests_exec_app;
 
-static void add_slash(std::string& path)
-{
-	if (path.empty())
-	{
-		return;
-	}
-
-#if defined(_WIN32)
-
-	if ('\\' != *(path.rbegin()))
-	{
-		path += '\\';
-	}
-
-#else
-
-	if ('/' != *(path.rbegin()))
-	{
-		path += '/';
-	}
-
-#endif
-}
-
-std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
-{
-	static std::string current_directory;
-
-	if (!tmp ||
-		!result)
-	{
-		if (result)
-		{
-			*result = 0;
-		}
-
-		return current_directory;
-	}
-
-	if (current_directory.empty())
-	{
-		if (!path_get_directory_for_current_process(tmp))
-		{
-			*result = 0;
-			return current_directory;
-		}
-
-		current_directory = buffer_to_string(tmp);
-		add_slash(current_directory);
-	}
-
-	*result = 1;
-	return current_directory;
-}
-
 std::string TestExec::get_path_to_directory_with_image(buffer* tmp, uint8_t* result)
 {
 	static std::string path_to_directory_with_image;
@@ -366,7 +311,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	buffer the_project;
 	SET_NULL_TO_BUFFER(the_project);
 	//
-	ASSERT_TRUE(project_new(&the_project));
+	ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
 	//
 	buffer temp_file_name;
 	SET_NULL_TO_BUFFER(temp_file_name);

@@ -55,6 +55,9 @@ void property_load_from_node(const pugi::xml_node& property,
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties);
 uint8_t properties_free(buffer* properties);
 
+void add_slash(std::string& path);
+std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);
+
 extern std::wstring char_to_wchar_t(const std::string& input);
 
 class TestsBaseXml : public testing::Test
@@ -72,6 +75,7 @@ protected:
 	uint8_t verbose;
 
 protected:
+	static std::string get_path_to_directory_with_source(uint8_t* result);
 	static bool parse_input_arguments();
 	static bool load_document(pugi::xml_document& doc, const std::string& xml_file,
 							  unsigned int options = pugi::parse_default | pugi::parse_ws_pcdata_single);

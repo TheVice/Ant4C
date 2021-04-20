@@ -13,6 +13,7 @@ extern "C" {
 #include "conversion.h"
 #include "echo.h"
 #include "interpreter.h"
+#include "path.h"
 #include "project.h"
 #include "property.h"
 #include "text_encoding.h"
@@ -324,9 +325,92 @@ uint8_t properties_free(buffer* properties)
 	return 0;
 }
 
+void add_slash(std::string& path)
+{
+	if (path.empty())
+	{
+		return;
+	}
+
+#if defined(_WIN32)
+
+	if ('\\' != *(path.rbegin()))
+	{
+		path += '\\';
+	}
+
+#else
+
+	if ('/' != *(path.rbegin()))
+	{
+		path += '/';
+	}
+
+#endif
+}
+
+std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
+{
+	static std::string current_directory;
+
+	if (!tmp ||
+		!result)
+	{
+		if (result)
+		{
+			*result = 0;
+		}
+
+		return current_directory;
+	}
+
+	if (current_directory.empty())
+	{
+		if (!path_get_directory_for_current_process(tmp))
+		{
+			*result = 0;
+			return current_directory;
+		}
+
+		current_directory = buffer_to_string(tmp);
+		add_slash(current_directory);
+	}
+
+	*result = 1;
+	return current_directory;
+}
+
 std::string TestsBaseXml::tests_xml;
 pugi::xml_document TestsBaseXml::document;
 std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;
+
+std::string TestsBaseXml::get_path_to_directory_with_source(uint8_t* result)
+{
+	static std::string path_to_source;
+
+	if (!result)
+	{
+		return path_to_source;
+	}
+
+	if (path_to_source.empty())
+	{
+		path_to_source = __FILE__;
+		auto path_in_range(string_to_range(path_to_source));
+
+		if (!path_get_directory_name(path_in_range.start, path_in_range.finish, &path_in_range))
+		{
+			*result = 0;
+			return path_to_source;
+		}
+
+		path_to_source = range_to_string(path_in_range);
+		add_slash(path_to_source);
+	}
+
+	*result = 1;
+	return path_to_source;
+}
 
 static bool starts_with_(const std::string& input, const std::string& value)
 {
