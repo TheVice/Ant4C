@@ -1,4 +1,13 @@
 
+if(DEFINED PUGIXML_BINARY_PATH)
+  string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../pugixml)
+  find_library(full_path_pugixml pugixml ${PUGIXML_BINARY_PATH})
+  add_library(pugixml STATIC IMPORTED)
+
+  #target_include_directories(...)
+  include_directories(${pugixml_Path}/src)
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION ${full_path_pugixml})
+else()
 set(pugixml_FOUND 0)
 
 if((DEFINED ENV{pugixml_issues_390}) OR (DEFINED pugixml_issues_390))# https://github.com/zeux/pugixml/issues/390
@@ -35,4 +44,5 @@ else()
   endif()
 
   message(STATUS "pugixml was found.")
+endif()
 endif()
