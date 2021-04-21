@@ -26,6 +26,20 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <sys/param.h>
+#endif
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach-o/dyld.h>
+#endif
+
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+#include <sys/sysctl.h>
+#include <errno.h>
+#endif
+
 #endif
 
 #include <stdio.h>
@@ -832,9 +846,9 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 
 	while (buffer_append(path, NULL, sizeof(uint16_t) * FILENAME_MAX + sizeof(uint32_t)))
 	{
-		wchar_t* ptr = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
+		wchar_t* pathW = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
 		const ptrdiff_t expected_size = (buffer_size(path) - size) / sizeof(uint16_t) - sizeof(uint32_t);
-		const DWORD real_size = GetModuleFileNameW(NULL, ptr, (DWORD)expected_size);
+		const DWORD real_size = GetModuleFileNameW(NULL, pathW, (DWORD)expected_size);
 
 		if (!real_size)
 		{
@@ -846,41 +860,87 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 			continue;
 		}
 
-		if (!buffer_resize(path, size + real_size) ||
-			!buffer_append(path, NULL, (ptrdiff_t)4 * (real_size + (ptrdiff_t)1) + sizeof(uint32_t)))
+		if (!buffer_resize(path, size) ||
+			!buffer_append(path, NULL, (ptrdiff_t)4 * real_size + sizeof(uint32_t)))
 		{
 			return 0;
 		}
 
-		ptr = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
+		pathW = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
 
-		if (!buffer_resize(path, size))
+		if (!buffer_resize(path, size) ||
+			!text_encoding_UTF16LE_to_UTF8(pathW, pathW + real_size, path))
 		{
 			return 0;
 		}
 
-		if (!text_encoding_UTF16LE_to_UTF8(ptr, ptr + real_size, path))
-		{
-			return 0;
-		}
-
-		struct range directory;
-
-		if (!path_get_directory_name(buffer_data(path, size), buffer_data(path, 0) + buffer_size(path), &directory))
-		{
-			return 0;
-		}
-
-		return buffer_resize(path, size + range_size(&directory));
+		break;
 	}
 
-#elif defined(__linux__)
+#elif defined(__APPLE__) && defined(__MACH__)
 
-	while (buffer_append_wchar_t(path, NULL, FILENAME_MAX))
+	while (buffer_append(path, NULL, FILENAME_MAX))
+	{
+		uint8_t* ptr = buffer_data(path, size);
+		uint32_t expected_size = (uint32_t)(buffer_size(path) - size);
+
+		if (0 != _NSGetExecutablePath((char*)ptr, &expected_size))
+		{
+			continue;
+		}
+
+		if (!buffer_resize(path, size + expected_size))
+		{
+			return 0;
+		}
+
+		break;
+	}
+
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+	int mib[4];
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+
+	while (buffer_append(path, NULL, FILENAME_MAX))
+	{
+		size_t expected_size = (size_t)(buffer_size(path) - size);
+		uint8_t* ptr = buffer_data(path, size);
+
+		if (0 == sysctl(mib, 4, ptr, &expected_size, NULL, 0))
+		{
+			if (!buffer_resize(path, size + expected_size))
+			{
+				return 0;
+			}
+
+			break;
+		}
+
+		if (ENOMEM != errno)
+		{
+			return 0;
+		}
+	}
+
+#elif defined(__OpenBSD__)
+	/*TODO*/
+#elif defined(__linux__) || defined(BSD)
+#if defined(__linux__)
+	static const char* path_ = "/proc/self/exe";
+#elif defined(__NetBSD__)
+	static const char* path_ = "/proc/curproc/exe";
+#elif defined(__DragonFly__)
+	static const char* path_ = "/proc/curproc/file";
+#endif
+
+	while (buffer_append(path, NULL, FILENAME_MAX))
 	{
 		uint8_t* ptr = buffer_data(path, size);
 		const ptrdiff_t expected_size = buffer_size(path) - size;
-		ptrdiff_t real_size = readlink("/proc/self/exe", (char*)ptr, expected_size);
+		const ptrdiff_t real_size = readlink(path_, (char*)ptr, expected_size);
 
 		if (-1 == real_size)
 		{
@@ -892,21 +952,27 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 			continue;
 		}
 
-		struct range directory;
-
-		if (!path_get_directory_name(ptr, ptr + real_size, &directory))
+		if (!buffer_resize(path, size + real_size))
 		{
 			return 0;
 		}
 
-		return buffer_resize(path, size + range_size(&directory));
+		break;
 	}
 
 #else
-	(void)size;
-	/*TODO:*/
+	/*TODO*/
 #endif
-	return 0;
+	struct range directory;
+	directory.start = buffer_data(path, size);
+	directory.finish = buffer_data(path, 0) + buffer_size(path);
+
+	if (!path_get_directory_name(directory.start, directory.finish, &directory))
+	{
+		return 0;
+	}
+
+	return buffer_resize(path, size + range_size(&directory));
 }
 
 const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void* the_target,
