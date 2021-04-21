@@ -7,7 +7,8 @@
 
   <choose>
     <when test="${platform::is-unix()}">
-      <loadtasks module="libant4c.dns.so" />
+      <loadtasks module="libant4c.dns.so" failonerror="false" />
+      <loadtasks module="libant4c.dns.dylib" failonerror="false" />
     </when>
     <when test="${platform::is-windows()}">
       <loadtasks module="ant4c.dns.dll" failonerror="false" />

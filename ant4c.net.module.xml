@@ -24,7 +24,14 @@
       </when>
 
       <when test="${platform::is-unix()}">
-        <loadtasks module="libant4c.net.module.so" />
+        <trycatch>
+          <try>
+            <loadtasks module="libant4c.net.module.so" />
+          </try>
+          <catch>
+            <loadtasks module="libant4c.net.module.dylib" />
+          </catch>
+        </trycatch>
       </when>
     </choose>
   </target>

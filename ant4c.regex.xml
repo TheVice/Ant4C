@@ -6,7 +6,8 @@
 
   <choose>
     <when test="${platform::is-unix()}">
-      <loadtasks module="libant4c.regex.so" />
+      <loadtasks module="libant4c.regex.so" failonerror="false" />
+      <loadtasks module="libant4c.regex.dylib" unless="${task::exists('regex')}" />
     </when>
     <when test="${platform::is-windows()}">
       <loadtasks module="ant4c.regex.dll" failonerror="false" />

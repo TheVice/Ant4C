@@ -127,11 +127,14 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 			continue;
 		}
 
+		const std::string full_path_to_module(reinterpret_cast<const char*>(full_path));
 		static const void* the_target = nullptr;
 		const auto returned = load_tasks_evaluate_task(&the_project, the_target, &task_arguments, verbose);
 		//
 		ASSERT_EQ(expected_return, returned)
-				<< buffer_free_with_inner_buffers(&task_arguments) << std::endl << project_free(&the_project);
+				<< full_path_to_module
+				<< buffer_free_with_inner_buffers(&task_arguments) << std::endl
+				<< project_free(&the_project);
 		//
 		project_clear(&the_project);
 		//
@@ -167,17 +170,17 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 	for (const auto& node : nodes)
 	{
 		const auto name_of_module(node.node().select_node("module").node().child_value());
-		auto full_path = path_to_directory_with_image + name_of_module;
+		auto full_path_to_module = path_to_directory_with_image + name_of_module;
 
-		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path.c_str())) &&
+		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path_to_module.c_str())) &&
 			path_to_directory_with_image != current_directory)
 		{
-			full_path = current_directory + name_of_module;
+			full_path_to_module = current_directory + name_of_module;
 
-			if (!file_exists(reinterpret_cast<const uint8_t*>(full_path.c_str())))
+			if (!file_exists(reinterpret_cast<const uint8_t*>(full_path_to_module.c_str())))
 			{
 				std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
-				std::cout << "'" << full_path << "'" << std::endl;
+				std::cout << "'" << full_path_to_module << "'" << std::endl;
 				std::cout << "doesn't exist." << std::endl;
 				std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
 				//
@@ -187,12 +190,12 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 		}
 
 		const auto name_of_build_file(node.node().select_node("build_file").node().child_value());
-		full_path = path_to_source + name_of_build_file;
+		const auto full_path_to_script_file = path_to_source + name_of_build_file;
 
-		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path.c_str())))
+		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path_to_script_file.c_str())))
 		{
 			std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
-			std::cout << "'" << full_path << "'" << std::endl;
+			std::cout << "'" << full_path_to_script_file << "'" << std::endl;
 			std::cout << "doesn't exist." << std::endl;
 			std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
 			//
@@ -204,27 +207,30 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 		const auto target_name_in_range(string_to_range(target_name));
 		//
 		project_clear(&the_project);
-		const auto path_to_build_file(string_to_range(full_path));
+		const auto path_to_build_file(string_to_range(full_path_to_script_file));
 		static const uint8_t project_help = 0;
 		//
 		ASSERT_TRUE(project_load_from_build_file(
 						&path_to_build_file, &current_directory_in_range,
 						Default, &the_project, project_help, verbose))
-				<< full_path << std::endl
+				<< full_path_to_module << std::endl
+				<< full_path_to_script_file << std::endl
 				<< current_directory << std::endl
 				<< project_free(&the_project);
 
 		if (range_is_null_or_empty(&target_name_in_range))
 		{
 			ASSERT_TRUE(project_evaluate_default_target(&the_project, verbose))
-					<< full_path << std::endl
+					<< full_path_to_module << std::endl
+					<< full_path_to_script_file << std::endl
 					<< current_directory << std::endl
 					<< project_free(&the_project);
 		}
 		else
 		{
 			ASSERT_TRUE(target_evaluate_by_name(&the_project, &target_name_in_range, verbose))
-					<< full_path << std::endl
+					<< full_path_to_module << std::endl
+					<< full_path_to_script_file << std::endl
 					<< current_directory << std::endl
 					<< target_name << std::endl
 					<< project_free(&the_project);
