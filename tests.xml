@@ -6151,11 +6151,12 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
           </when>
           <when test="${platform::is-windows()}">
             <loadtasks module="example_of_the_module.dll" failonerror="false" />
-            <loadtasks module="libexample_of_the_module.dll" unless="${task::exists('regex')}" failonerror="false" />
+            <loadtasks module="libexample_of_the_module.dll" unless="${task::exists('task_without_attributes')}" failonerror="false" />
           </when>
         </choose>
 
-        <fail if="${property::exists('content_of_the_task_from_script')}" />
+        <fail if="${property::exists('content_of_the_task_from_script')}"
+              message="Property 'content_of_the_task_from_script' should not exists at this point." />
 
         <task_without_attributes/>
         <fail unless="${property::exists('content_of_the_task_from_script')}" />
