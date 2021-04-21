@@ -66,7 +66,7 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 	{
 		expected_return = static_cast<uint8_t>(INT_PARSE(
 				node.node().select_node("return").node().child_value()));
-		const uint8_t* full_path = nullptr;
+		const uint8_t* full_path = reinterpret_cast<const uint8_t*>("");
 
 		for (uint8_t i = 0; i < task_attributes_count; ++i)
 		{
@@ -127,7 +127,7 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 			continue;
 		}
 
-		const std::string full_path_to_module(reinterpret_cast<const char*>(full_path));
+		const std::string full_path_to_module(full_path ? reinterpret_cast<const char*>(full_path) : "");
 		static const void* the_target = nullptr;
 		const auto returned = load_tasks_evaluate_task(&the_project, the_target, &task_arguments, verbose);
 		//
