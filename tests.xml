@@ -3981,6 +3981,10 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
     </load_tasks_evaluate_task>
     <load_tasks_evaluate_task>
+      <module>libant4c.dns.dylib</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
       <module>ant4c.regex.dll</module>
       <return>1</return>
     </load_tasks_evaluate_task>
@@ -3990,6 +3994,10 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </load_tasks_evaluate_task>
     <load_tasks_evaluate_task>
       <module>libant4c.regex.so</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>libant4c.regex.dylib</module>
       <return>1</return>
     </load_tasks_evaluate_task>
     <load_tasks_evaluate_task>
@@ -4012,6 +4020,10 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <module>libant4c.net.module.so</module>
       <return>1</return>
     </load_tasks_evaluate_task>
+    <load_tasks_evaluate_task>
+      <module>libant4c.net.module.dylib</module>
+      <return>1</return>
+    </load_tasks_evaluate_task>
     <TODO><load_tasks_evaluate_task>
       <path>.</path>
       <return>1</return>
@@ -4026,6 +4038,10 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
       <module>libant4c.dns.so</module>
+      <build_file>ant4c.dns.xml</build_file>
+    </project_load_from_build_file>
+    <project_load_from_build_file if="${platform::is-unix()}">
+      <module>libant4c.dns.dylib</module>
       <build_file>ant4c.dns.xml</build_file>
     </project_load_from_build_file>
     <!--project_load_from_build_file if="${platform::is-windows()}">
@@ -4049,6 +4065,11 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <build_file>ant4c.net.module.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
+    <project_load_from_build_file if="${platform::is-unix()}">
+      <module>libant4c.net.module.dylib</module>
+      <build_file>ant4c.net.module.xml</build_file>
+      <target>test_hostfxr_result-to-string</target>
+    </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
       <module>ant4c.regex.dll</module>
       <build_file>ant4c.regex.xml</build_file>
@@ -4059,6 +4080,10 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
       <module>libant4c.regex.so</module>
+      <build_file>ant4c.regex.xml</build_file>
+    </project_load_from_build_file>
+    <project_load_from_build_file if="${platform::is-unix()}">
+      <module>libant4c.regex.dylib</module>
       <build_file>ant4c.regex.xml</build_file>
     </project_load_from_build_file>
   </TestLoadTasks>
@@ -6147,7 +6172,8 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <project>
         <choose>
           <when test="${platform::is-unix()}">
-            <loadtasks module="libexample_of_the_module.so" />
+            <loadtasks module="libexample_of_the_module.so" failonerror="false" />
+            <loadtasks module="libexample_of_the_module.dylib" unless="${task::exists('task_without_attributes')}" failonerror="false" />
           </when>
           <when test="${platform::is-windows()}">
             <loadtasks module="example_of_the_module.dll" failonerror="false" />

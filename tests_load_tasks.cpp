@@ -66,7 +66,7 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 	{
 		expected_return = static_cast<uint8_t>(INT_PARSE(
 				node.node().select_node("return").node().child_value()));
-		const uint8_t* path = nullptr;
+		const uint8_t* full_path = nullptr;
 
 		for (uint8_t i = 0; i < task_attributes_count; ++i)
 		{
@@ -112,12 +112,17 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 			{
 				ASSERT_TRUE(buffer_push_back(attribute_value_in_buffer, 0))
 						<< buffer_free_with_inner_buffers(&task_arguments) << std::endl << project_free(&the_project);
-				path = buffer_data(attribute_value_in_buffer, 0);
+				full_path = buffer_data(attribute_value_in_buffer, 0);
 			}
 		}
 
-		if (expected_return && !file_exists(path))
+		if (expected_return && !file_exists(full_path))
 		{
+			std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
+			std::cout << "'" << full_path << "'" << std::endl;
+			std::cout << "doesn't exist." << std::endl;
+			std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
+			//
 			--node_count;
 			continue;
 		}
@@ -171,6 +176,11 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 
 			if (!file_exists(reinterpret_cast<const uint8_t*>(full_path.c_str())))
 			{
+				std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
+				std::cout << "'" << full_path << "'" << std::endl;
+				std::cout << "doesn't exist." << std::endl;
+				std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
+				//
 				--node_count;
 				continue;
 			}
@@ -181,6 +191,11 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 
 		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path.c_str())))
 		{
+			std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
+			std::cout << "'" << full_path << "'" << std::endl;
+			std::cout << "doesn't exist." << std::endl;
+			std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
+			//
 			--node_count;
 			continue;
 		}
