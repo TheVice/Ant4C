@@ -66,7 +66,7 @@ TEST_F(TestLoadTasks, load_tasks_evaluate_task)
 	{
 		expected_return = static_cast<uint8_t>(INT_PARSE(
 				node.node().select_node("return").node().child_value()));
-		const uint8_t* full_path = reinterpret_cast<const uint8_t*>("");
+		const uint8_t* full_path = nullptr;
 
 		for (uint8_t i = 0; i < task_attributes_count; ++i)
 		{

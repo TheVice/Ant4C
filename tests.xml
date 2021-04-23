@@ -4551,12 +4551,12 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <path_glob input="La" wild_card="*Law*" result="false" />
     <path_glob input="aw" wild_card="*Law*" result="false" />
     <cygpath_get_dos_path>
-      <input>C:\Program Files\Windows Defender Advanced Threat Protection</input>
-      <output>C:\PROGRA~1\WIF4A9~1</output>
-    </cygpath_get_dos_path>
-    <cygpath_get_dos_path>
       <input>C:\Program Files\Internet Explorer</input>
       <output>C:\PROGRA~1\INTERN~1</output>
+    </cygpath_get_dos_path>
+    <cygpath_get_dos_path>
+      <input>C:\Program Files\Windows Defender Advanced Threat Protection</input>
+      <output>C:\PROGRA~1\WIF4A9~1</output>
     </cygpath_get_dos_path>
   </TestPath>
   <TestProject>
