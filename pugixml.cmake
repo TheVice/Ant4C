@@ -1,6 +1,10 @@
 
 if(DEFINED PUGIXML_BINARY_PATH)
+  if(CMAKE_HOST_WIN32)
+  string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../../pugixml)
+  else()
   string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../pugixml)
+  endif()
   find_library(full_path_pugixml pugixml ${PUGIXML_BINARY_PATH})
   add_library(pugixml STATIC IMPORTED)
 

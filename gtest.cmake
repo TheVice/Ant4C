@@ -1,6 +1,10 @@
 
 if(DEFINED GTEST_BINARY_PATH)
+  if(CMAKE_HOST_WIN32)
+  string(REPLACE "\\" "/" gtest_Path ${GTEST_BINARY_PATH}/../../googletest)
+  else()
   string(REPLACE "\\" "/" gtest_Path ${GTEST_BINARY_PATH}/../googletest)
+  endif()
 
   set(GTEST_INCLUDE_DIR ${gtest_Path}/include)
   set(GTEST_INCLUDE_DIRS ${gtest_Path} ${GTEST_INCLUDE_DIR})
