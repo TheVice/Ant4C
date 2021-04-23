@@ -4498,16 +4498,18 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <full_path></full_path>
       <return></return>
     </path_get_full_path>
-    <path_get_full_path if="${platform::is-windows()}">
+    <path_get_full_path>
       <root_path>C:\</root_path>
       <path>C:\Windows\System32</path>
-      <full_path>C:\Windows\System32</full_path>
+      <full_path if="${platform::is-unix()}">C:/C:/Windows/System32</full_path>
+      <full_path if="${platform::is-windows()}">C:\Windows\System32</full_path>
       <return>1</return>
     </path_get_full_path>
-    <path_get_full_path if="${platform::is-windows()}">
+    <path_get_full_path>
       <root_path>C:\Windows\System32</root_path>
       <path>..\..\</path>
-      <full_path>C:\</full_path>
+      <full_path if="${platform::is-unix()}">C:/</full_path>
+      <full_path if="${platform::is-windows()}">C:\</full_path>
       <return>1</return>
     </path_get_full_path>
     <path_get_full_path if="${platform::is-windows()}">
@@ -4516,26 +4518,37 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <full_path></full_path>
       <return>0</return>
     </path_get_full_path>
-    <path_get_full_path if="${platform::is-unix()}">
+    <path_get_full_path>
       <root_path>/tmp</root_path>
       <path>../</path>
-      <full_path>/</full_path>
+      <full_path if="${platform::is-unix()}">/</full_path>
+      <full_path if="${platform::is-windows()}">\</full_path>
       <return>1</return>
     </path_get_full_path>
-    <TODO><path_get_full_path if="${platform::is-unix()}">
+    <path_get_full_path if="${platform::is-unix()}">
       <root_path>/tmp</root_path>
       <root_path_length>4</root_path_length>
       <path>/..</path>
       <path_length>3</path_length>
-      <full_path>/</full_path>
-      <return>1</return>
-    </path_get_full_path></TODO>
-    <path_get_full_path if="${platform::is-windows()}">
+      <full_path />
+      <return>0</return>
+    </path_get_full_path>
+    <path_get_full_path>
       <root_path>C:\</root_path>
       <root_path_length>3</root_path_length>
       <path>sample.build</path>
       <path_length>12</path_length>
-      <full_path>C:\sample.build</full_path>
+      <full_path if="${platform::is-unix()}">C:/sample.build</full_path>
+      <full_path if="${platform::is-windows()}">C:\sample.build</full_path>
+      <return>1</return>
+    </path_get_full_path>
+    <path_get_full_path>
+      <root_path>C:\</root_path>
+      <root_path_length>3</root_path_length>
+      <path>C:\Users\MyUser~1\AppData</path>
+      <path_length>25</path_length>
+      <full_path if="${platform::is-unix()}">C:/C:/Users/MyUser~1/AppData</full_path>
+      <full_path if="${platform::is-windows()}">C:\Users\MyUser~1\AppData</full_path>
       <return>1</return>
     </path_get_full_path>
     <path_glob input="" wild_card="" result="" />

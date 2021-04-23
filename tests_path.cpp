@@ -172,9 +172,14 @@ TEST_F(TestPath, path_get_full_path)
 
 	for (const auto& node : nodes)
 	{
+		std::list<pugi::xpath_node> expected_full_path;
+		ASSERT_TRUE(select_nodes_by_condition(node.node().select_nodes("full_path"), expected_full_path, &full_path))
+				<< buffer_free(&full_path);
+		ASSERT_EQ(1ull, expected_full_path.size());
+		//
+		const std::string expected_full_path_str(expected_full_path.cbegin()->node().child_value());
 		const std::string root_path(node.node().select_node("root_path").node().child_value());
 		const std::string path(node.node().select_node("path").node().child_value());
-		const std::string expected_full_path(node.node().select_node("full_path").node().child_value());
 		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
 		//
 		const range root_path_in_range(string_to_range(root_path));
@@ -187,7 +192,7 @@ TEST_F(TestPath, path_get_full_path)
 
 		if (returned)
 		{
-			ASSERT_EQ(expected_full_path, buffer_to_string(&full_path)) << buffer_free(&full_path);
+			ASSERT_EQ(expected_full_path_str, buffer_to_string(&full_path)) << buffer_free(&full_path);
 		}
 
 		--node_count;
@@ -419,7 +424,8 @@ TEST_F(TestPath, cygpath_get_dos_path)
 		ASSERT_TRUE(cygpath_get_dos_path(input_in_range.start, input_in_range.finish, &output))
 				<< input << std::endl << buffer_free(&output);
 		//
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
+		EXPECT_EQ(expected_output, buffer_to_string(&output))
+				<< input << std::endl << buffer_free(&output);
 		//
 		node_count = 0;
 		break;

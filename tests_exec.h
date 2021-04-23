@@ -14,8 +14,6 @@ extern "C" {
 #include <string>
 #include <cstdint>
 
-std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);
-
 class TestExec : public TestsBaseXml
 {
 protected:

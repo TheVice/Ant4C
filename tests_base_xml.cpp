@@ -380,6 +380,36 @@ std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
 	return current_directory;
 }
 
+uint8_t select_nodes_by_condition(const pugi::xpath_node_set& all_nodes, std::list<pugi::xpath_node>& nodes,
+								  buffer* tmp)
+{
+	if (!tmp)
+	{
+		return 0;
+	}
+
+	uint8_t condition = 0;
+
+	for (const auto& node : all_nodes)
+	{
+		const uint8_t verbose = node.node().attribute("verbose").as_bool();
+
+		if (!is_this_node_pass_by_if_condition(node, tmp, &condition, verbose))
+		{
+			return 0;
+		}
+
+		if (!condition)
+		{
+			continue;
+		}
+
+		nodes.push_back(node);
+	}
+
+	return !nodes.empty();
+}
+
 std::string TestsBaseXml::tests_xml;
 pugi::xml_document TestsBaseXml::document;
 std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;
@@ -475,22 +505,10 @@ void TestsBaseXml::load_nodes()
 	//
 	struct buffer tmp;
 	SET_NULL_TO_BUFFER(tmp);
-	uint8_t condition = 0;
-
-	for (const auto& node : all_nodes)
-	{
-		verbose = node.node().attribute("verbose").as_bool();
-		ASSERT_TRUE(is_this_node_pass_by_if_condition(node, &tmp, &condition, verbose))
-				<< test_path << std::endl << buffer_free(&tmp);
-
-		if (!condition)
-		{
-			continue;
-		}
-
-		nodes.push_back(node);
-	}
-
+	//
+	ASSERT_TRUE(select_nodes_by_condition(all_nodes, nodes, &tmp))
+			<< test_path << std::endl << buffer_free(&tmp);
+	//
 	buffer_release(&tmp);
 }
 

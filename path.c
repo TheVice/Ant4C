@@ -51,13 +51,7 @@
 
 static const uint8_t point = '.';
 static const uint8_t tilde = '~';
-
-#if defined(_WIN32)
-static const uint8_t upper_level[] = { '\\', '.', '.' };
-#else
-static const uint8_t upper_level[] = { '/', '.', '.' };
-#endif
-#define UPPER_LEVEL_LENGTH COUNT_OF(upper_level)
+static const uint8_t* upper_level = (const uint8_t*)"..";
 
 uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_finish,
 							  const uint8_t* ext_start, const uint8_t* ext_finish, struct buffer* path)
@@ -296,6 +290,7 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 	}
 
 	const ptrdiff_t size = buffer_size(full_path);
+#if !defined(_WIN32)
 
 	if (tilde == (*path_start))
 	{
@@ -304,131 +299,83 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 			return 0;
 		}
 	}
-	else if (!path_is_path_rooted(path_start, path_finish))
-	{
-		if (range_in_parts_is_null_or_empty(root_start, root_finish))
-		{
-			return 0;
-		}
 
-		if (!buffer_append(full_path, root_start, root_finish - root_start))
+#endif
+
+	if (!path_is_path_rooted(path_start, path_finish))
+	{
+		if (!string_replace(root_start, root_finish,
+#if defined(_WIN32)
+							&path_posix_delimiter, &path_posix_delimiter + 1,
+#else
+							&path_windows_delimiter, &path_windows_delimiter + 1,
+#endif
+							&PATH_DELIMITER, &PATH_DELIMITER + 1, full_path))
 		{
 			return 0;
 		}
 	}
 
-	const ptrdiff_t start_path_length = buffer_size(full_path) - size;
-
-	if (0 < start_path_length)
+	if (!path_combine_in_place(full_path, size, path_start, path_finish))
 	{
-		if (!buffer_append(full_path, NULL, start_path_length + path_finish - path_start + 1) ||
-			!buffer_resize(full_path, size + start_path_length))
-		{
-			return 0;
-		}
+		return 0;
 	}
 
-	uint8_t* start = NULL;
-	uint8_t* finish = NULL;
+	ptrdiff_t index;
+	const uint8_t* start = buffer_data(full_path, 0);
+	const uint8_t* finish = start + buffer_size(full_path);
 
-	if (0 < start_path_length)
+	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + 2)))
 	{
-		start = buffer_data(full_path, size);
-		finish = start + start_path_length;
-
-		if (!path_combine(start, finish, path_start, path_finish, full_path))
+		if (string_starts_with(start, finish, upper_level, upper_level + 2))
 		{
 			return 0;
 		}
 
-		start = buffer_data(full_path, size + 2 * start_path_length);
-		finish = buffer_data(full_path, 0) + buffer_size(full_path);
+#if defined(_WIN32)
 
-		if (NULL == start || !buffer_resize(full_path, size + start_path_length))
+		if (start + 2 < finish &&
+			':' == start[1] &&
+			string_starts_with(start + 2, finish, upper_level, upper_level + 2))
 		{
 			return 0;
 		}
 
-		if (!buffer_append(full_path, start, finish - start))
-		{
-			return 0;
-		}
-	}
+#else
 
-	start = buffer_data(full_path, size);
-	finish = 0 < buffer_size(full_path) ? (buffer_data(full_path, 0) + buffer_size(full_path)) : NULL;
-	ptrdiff_t index = 0;
-	const uint8_t* real_start = start;
-
-	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + UPPER_LEVEL_LENGTH)))
-	{
-		if (0 == index)
+		if (PATH_DELIMITER == *start &&
+			string_starts_with(start + 1, finish, upper_level, upper_level + 2))
 		{
 			return 0;
 		}
 
-		const uint8_t* start_ = find_any_symbol_like_or_not_like_that(start + index - 1, real_start, &PATH_DELIMITER,
-								1, 1,
-								-1);
-		start = start + index + UPPER_LEVEL_LENGTH;
+#endif
+		const uint8_t* start_1 = find_any_symbol_like_or_not_like_that(
+									 start + index - 1, start, &PATH_DELIMITER, 1, 0, -1);
+		start_1 = find_any_symbol_like_or_not_like_that(start_1, start, &PATH_DELIMITER, 1, 1, -1);
+		/**/
+		const uint8_t* start_2 = find_any_symbol_like_or_not_like_that(
+									 start + index + 3, finish, &PATH_DELIMITER, 1, 0, 1);
+		index = start_1 - start;
+		/**/
+		uint8_t* dst = buffer_data(full_path, index);
 
-		if (!buffer_resize(full_path, size + start_ - real_start))
+		if (start_2 == finish)
+		{
+			++dst;
+		}
+
+		for (; start_2 < finish; ++start_2, ++dst)
+		{
+			*dst = *start_2;
+		}
+
+		if (!buffer_resize(full_path, dst - start))
 		{
 			return 0;
 		}
 
-		if (start < finish)
-		{
-			if (!buffer_append(full_path, start, finish - start))
-			{
-				return 0;
-			}
-
-			start -= index + UPPER_LEVEL_LENGTH;
-			finish = (buffer_data(full_path, 0) + buffer_size(full_path));
-		}
-		else
-		{
-			start = finish = NULL;
-			break;
-		}
-	}
-
-	if (size == buffer_size(full_path))
-	{
-		if (!buffer_append(full_path, path_start, path_finish - path_start))
-		{
-			return 0;
-		}
-	}
-
-	start = buffer_data(full_path, size);
-	finish = 0 < buffer_size(full_path) ? (buffer_data(full_path, 0) + buffer_size(full_path)) : NULL;
-
-	if (!range_in_parts_is_null_or_empty(start, finish))
-	{
-		if (string_contains(start, finish, &tilde, &tilde + 1) ||
-			finish != find_any_symbol_like_or_not_like_that(start, finish, &tilde, 1, 1, 1))
-		{
-			return 0;
-		}
-	}
-
-	index = buffer_size(full_path) - size;
-
-	if (0 < index)
-	{
-		const ptrdiff_t current_index = index;
-
-		if (!common_replace_double_byte_by_single(start, &index, PATH_DELIMITER))
-		{
-			return 0;
-		}
-
-		if (current_index != index && !buffer_resize(full_path, size + index))
-		{
-			return 0;
-		}
+		finish = start + buffer_size(full_path);
 	}
 
 	return 1;

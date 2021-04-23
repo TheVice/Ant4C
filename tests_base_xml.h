@@ -57,6 +57,8 @@ uint8_t properties_free(buffer* properties);
 
 void add_slash(std::string& path);
 std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);
+uint8_t select_nodes_by_condition(
+	const pugi::xpath_node_set& all_nodes, std::list<pugi::xpath_node>& nodes, buffer* tmp);
 
 extern std::wstring char_to_wchar_t(const std::string& input);
 
