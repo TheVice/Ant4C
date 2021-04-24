@@ -188,7 +188,10 @@ TEST_F(TestPath, path_get_full_path)
 		ASSERT_TRUE(buffer_resize(&full_path, 0)) << buffer_free(&full_path);
 		const uint8_t returned = path_get_full_path(root_path_in_range.start, root_path_in_range.finish,
 								 path_in_range.start, path_in_range.finish, &full_path);
-		ASSERT_EQ(expected_return, returned) << buffer_to_string(&full_path) << std::endl << buffer_free(&full_path);
+		ASSERT_EQ(expected_return, returned) << buffer_to_string(&full_path)
+											 << path << std::endl
+											 << root_path << std::endl
+											 << std::endl << buffer_free(&full_path);
 
 		if (returned)
 		{

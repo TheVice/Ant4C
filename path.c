@@ -50,7 +50,9 @@
 #endif
 
 static const uint8_t point = '.';
+#if !defined(_WIN32)
 static const uint8_t tilde = '~';
+#endif
 static const uint8_t* upper_level = (const uint8_t*)"..";
 
 uint8_t path_change_extension(const uint8_t* path_start, const uint8_t* path_finish,
@@ -321,13 +323,17 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 		return 0;
 	}
 
-	ptrdiff_t index;
 	const uint8_t* start = buffer_data(full_path, 0);
 	const uint8_t* finish = start + buffer_size(full_path);
+	const uint8_t* pos = start;
 
-	while (-1 != (index = string_index_of(start, finish, upper_level, upper_level + 2)))
+	while (finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, &PATH_DELIMITER, 1, 1, 1)))
 	{
-		if (string_starts_with(start, finish, upper_level, upper_level + 2))
+		if (string_starts_with(start, finish, upper_level, upper_level + 2) &&
+			(start + 2 == finish ||
+			 (start + 3 < finish &&
+			  PATH_DELIMITER == *(start + 2))
+			))
 		{
 			return 0;
 		}
@@ -336,7 +342,11 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 
 		if (start + 2 < finish &&
 			':' == start[1] &&
-			string_starts_with(start + 2, finish, upper_level, upper_level + 2))
+			string_starts_with(start + 3, finish, upper_level, upper_level + 2) &&
+			(start + 4 == finish ||
+			 (start + 6 < finish &&
+			  PATH_DELIMITER == *(start + 5))
+			))
 		{
 			return 0;
 		}
@@ -344,41 +354,49 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 #else
 
 		if (PATH_DELIMITER == *start &&
-			string_starts_with(start + 1, finish, upper_level, upper_level + 2))
+			string_starts_with(start + 1, finish, upper_level, upper_level + 2) &&
+			(start + 3 == finish ||
+			 (start + 4 < finish &&
+			  PATH_DELIMITER == *(start + 3))
+			))
 		{
 			return 0;
 		}
 
 #endif
-		const uint8_t* start_1 = find_any_symbol_like_or_not_like_that(
-									 start + index - 1, start, &PATH_DELIMITER, 1, 0, -1);
-		start_1 = find_any_symbol_like_or_not_like_that(start_1, start, &PATH_DELIMITER, 1, 1, -1);
-		/**/
-		const uint8_t* start_2 = find_any_symbol_like_or_not_like_that(
-									 start + index + 3, finish, &PATH_DELIMITER, 1, 0, 1);
-		index = start_1 - start;
-		/**/
-		uint8_t* dst = buffer_data(full_path, index);
+		++pos;
 
-		if (start_2 == finish)
+		if (!string_starts_with(pos, finish, upper_level, upper_level + 2))
 		{
-			++dst;
+			continue;
 		}
 
-		for (; start_2 < finish; ++start_2, ++dst)
-		{
-			*dst = *start_2;
-		}
+		pos += 2;
 
-		if (!buffer_resize(full_path, dst - start))
+		if (finish == pos ||
+			PATH_DELIMITER == *pos)
 		{
-			return 0;
-		}
+			const uint8_t* start_1 = find_any_symbol_like_or_not_like_that(
+										 pos - 3, start, &PATH_DELIMITER, 1, 0, -1);
+			start_1 = find_any_symbol_like_or_not_like_that(start_1, start, &PATH_DELIMITER, 1, 1, -1);
+			start_1 = find_any_symbol_like_or_not_like_that(start_1, finish, &PATH_DELIMITER, 1, 0, 1);
+			/**/
+			const uint8_t* start_2 = find_any_symbol_like_or_not_like_that(
+										 pos, finish, &PATH_DELIMITER, 1, 0, 1);
+			/**/
+			uint8_t* dst = buffer_data(full_path, start_1 - start);
 
-		finish = start + buffer_size(full_path);
+			for (; start_2 < finish; ++start_2, ++dst)
+			{
+				*dst = *start_2;
+			}
+
+			pos = find_any_symbol_like_or_not_like_that(start_1, start, &PATH_DELIMITER, 1, 1, -1);
+			finish = dst;
+		}
 	}
 
-	return 1;
+	return buffer_resize(full_path, finish - start);
 }
 
 uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish, struct range* root)
