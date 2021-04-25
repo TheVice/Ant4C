@@ -16,16 +16,16 @@ Depend on variant available for your system:
 * For packages - install program using the system package manager.
   * Alpine Linux: *apk add --allow-untrusted \*.apk*.
   * Debian based: *dpkg --install \*.deb*.
-  * RPM based: *rpm -Uvh \*.rpm*.
   * FreeBSD: *pkg install \*.txz*.
   * OpenBSD: *pkg_add -Dunsigned \*.tgz*.
+  * RPM based: *rpm -Uvh \*.rpm*.
 
 ### Modules
 Starting from version 2020.09 program support modules - binary files that increase functional by adding functions and/or tasks to the program.
 
-* [Regex](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module that increase functional by adding ***regex*** task.
 * [Dns](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module with **dns** namespace that contain function *get-host-name*.
-* [ant4c.net.framework.module](https://www.nuget.org/packages/ant4c.net.framework.module/). Module with namespaces **framework**, **metahost** and added to exists one **file** function *is-assembly*.
+* [Regex](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module that increase functional by adding ***regex*** task.
+* [ant4c.net.framework.module](https://www.nuget.org/packages/ant4c.net.framework.module/). Module with namespaces **framework**, **metahost** and added to exists one **file** function *is-assembly*. Available only for Windows platform.
 * [ant4c.net.module](https://www.nuget.org/packages/ant4c.net.module/). Module to interact with installed .NET Core via namespaces **nethost**, **hostfxr** and function *is-assembly* from **file** namespace.
 
 ### Help
@@ -46,7 +46,17 @@ Optional for [Eclipse IDE](https://www.eclipse.org/downloads/) users:
 ```
 
 ## Building
-Build can be done by one of C compilers - MSVC, MinGW, GCC or CLang after configuring was done with [CMake](https://www.cmake.org/download/).
+
+### Supported Platforms
+
+* Apple macOS
+* FreeBSD
+* Linux
+* Microsoft Windows
+* OpenBSD
+
+Build can be done by one of C compilers - MSVC, MinGW, GCC or Clang after configuring was done with [CMake](https://www.cmake.org/download/).
+Alternative 'make' tool or 'meson' can be used to build from source.
 
 ## License
 This project available under terms of [MIT License](LICENSE).

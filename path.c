@@ -280,6 +280,53 @@ uint8_t path_get_file_name_without_extension(const uint8_t* path_start, const ui
 	return string_trim(file_name);
 }
 
+uint8_t path_is_start_valid(const uint8_t* start, const uint8_t* finish)
+{
+	const ptrdiff_t length = finish - start;
+
+	if (string_starts_with(start, finish, upper_level, upper_level + 2))
+	{
+		if (2 == length)
+		{
+			return 0;
+		}
+
+		if (PATH_DELIMITER == *(start + 2))
+		{
+			return 0;
+		}
+	}
+
+#if defined(_WIN32)
+
+	if (2 < length &&
+		':' == start[1] &&
+		string_starts_with(start + 3, finish, upper_level, upper_level + 2) &&
+		(4 == length ||
+		 (4 < length &&
+		  PATH_DELIMITER == *(start + 5))
+		))
+	{
+		return 0;
+	}
+
+#else
+
+	if (length &&
+		PATH_DELIMITER == *start &&
+		string_starts_with(start + 1, finish, upper_level, upper_level + 2) &&
+		(3 == length ||
+		 (3 < length &&
+		  PATH_DELIMITER == *(start + 4))
+		))
+	{
+		return 0;
+	}
+
+#endif
+	return 1;
+}
+
 uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish,
 						   const uint8_t* path_start, const uint8_t* path_finish, struct buffer* full_path)
 {
@@ -329,41 +376,11 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 
 	while (finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, &PATH_DELIMITER, 1, 1, 1)))
 	{
-		if (string_starts_with(start, finish, upper_level, upper_level + 2) &&
-			(start + 2 == finish ||
-			 (start + 3 < finish &&
-			  PATH_DELIMITER == *(start + 2))
-			))
+		if (!path_is_start_valid(start, finish))
 		{
 			return 0;
 		}
 
-#if defined(_WIN32)
-
-		if (start + 2 < finish &&
-			':' == start[1] &&
-			string_starts_with(start + 3, finish, upper_level, upper_level + 2) &&
-			(start + 4 == finish ||
-			 (start + 6 < finish &&
-			  PATH_DELIMITER == *(start + 5))
-			))
-		{
-			return 0;
-		}
-
-#else
-
-		if (PATH_DELIMITER == *start &&
-			string_starts_with(start + 1, finish, upper_level, upper_level + 2) &&
-			(start + 3 == finish ||
-			 (start + 4 < finish &&
-			  PATH_DELIMITER == *(start + 3))
-			))
-		{
-			return 0;
-		}
-
-#endif
 		++pos;
 
 		if (!string_starts_with(pos, finish, upper_level, upper_level + 2))

@@ -3,7 +3,7 @@ ant4c (YYYY.MM)
     hashes of inputs with huge (more than 32 KB) length.
   * At implementation of 'SHA3/Keccak' algorithm do not loading whole
     range of data while calculating hash sum of first one.
-  * Clang: added workaroung code that prevents optimization that cause
+  * Clang: added workaround code that prevents optimization that cause
     distortion of the function that calculate 'Keccak' and 'SHA3' sums.
     Previous releases for FreeBSD and OpenBSD systems was build by Clang
     compiler.
@@ -15,6 +15,10 @@ ant4c (YYYY.MM)
     algorithms.
   * Fixed encoding to the UTF16BE and UTF16LE symbols that transforming
     into surrogate pairs.
+  * Fixed issue at the 'path_get_full_path' function,
+    added possibility to deal with paths that contains '..':
+    'C:\a..a\', '/tmp/a..a' for example.
+  * Allowed to build at Apple macOS environment.
   * WIN32: fixed using at 'echo' task for scenario when output stream
     redirected to the file by capability of operation system -
     for example: 'ant4c.exe > 1.txt'.

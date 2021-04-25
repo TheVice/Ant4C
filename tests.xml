@@ -4586,6 +4586,10 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <full_path>/..a</full_path>
       <return>1</return>
     </path_get_full_path>
+    <path_get_full_path>
+      <root_path>..</root_path>
+      <full_path />
+    </path_get_full_path>
     <path_glob input="" wild_card="" result="" />
     <path_glob input="Law" wild_card="Law*" result="true" />
     <path_glob input="Laws" wild_card="Law*" result="true" />
