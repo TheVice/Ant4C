@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -109,5 +109,12 @@ uint8_t program_get_attributes_and_arguments_for_task(
 uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 							  struct buffer* task_arguments, const uint8_t* attributes_finish,
 							  const uint8_t* element_finish, uint8_t verbose);
+
+uint8_t program_set_log_file(
+	const struct range* path_to_log_file, const struct range* current_directory,
+	struct buffer* tmp, void** file_stream);
+uint8_t program_set_listener(
+	const struct range* path_to_listener, const struct range* current_directory,
+	struct buffer* tmp, void** listener_object);
 
 #endif

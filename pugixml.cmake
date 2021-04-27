@@ -1,16 +1,24 @@
 
 if(DEFINED PUGIXML_BINARY_PATH)
-  if(CMAKE_HOST_WIN32)
+  if(MSVC)
   string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../../pugixml)
   else()
   string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../pugixml)
-  endif()
   find_library(full_path_pugixml pugixml ${PUGIXML_BINARY_PATH})
+  endif()
   add_library(pugixml STATIC IMPORTED)
 
-  #target_include_directories(...)
   include_directories(${pugixml_Path}/src)
+
+  if(MSVC)
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_DEBUG "${PUGIXML_BINARY_PATH}/Debug/pugixml.lib")
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELEASE "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
+
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
+  else()
   set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION ${full_path_pugixml})
+  endif()
 else()
 set(pugixml_FOUND 0)
 

@@ -370,7 +370,7 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(full_path, 0);
+	const uint8_t* start = buffer_data(full_path, size);
 	const uint8_t* finish = start + buffer_size(full_path);
 	const uint8_t* pos = start;
 
@@ -401,7 +401,7 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 			const uint8_t* start_2 = find_any_symbol_like_or_not_like_that(
 										 pos, finish, &PATH_DELIMITER, 1, 0, 1);
 			/**/
-			uint8_t* dst = buffer_data(full_path, start_1 - start);
+			uint8_t* dst = buffer_data(full_path, size + start_1 - start);
 
 			for (; start_2 < finish; ++start_2, ++dst)
 			{
@@ -413,7 +413,7 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 		}
 	}
 
-	return buffer_resize(full_path, finish - start);
+	return buffer_resize(full_path, size + finish - start);
 }
 
 uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish, struct range* root)

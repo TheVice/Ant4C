@@ -3438,9 +3438,9 @@ Addition samples of using can be found at the develop branch of the project, at 
 
 If internal functions and tasks not enough, and even if put it all together can not be used to create required functional, - may be modules can be used to resolved requests, because starting from version 2020.09 program support they - binary files that increase functional by adding functions and/or tasks to the program.
 
-* [Dns](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module with **dns** namespace that contain function *get-host-name*.
-* [Regex](https://github.com/TheVice/Ant4C/releases/tag/v2020.09). Module that increase functional by adding ***regex*** task.
-* [ant4c.net.framework.module](https://www.nuget.org/packages/ant4c.net.framework.module/). Module with namespaces **framework**, **metahost** and added to exists one **file** function *is-assembly*. Available only for Windows platform.
-* [ant4c.net.module](https://www.nuget.org/packages/ant4c.net.module/). Module to interact with installed .NET Core via namespaces **nethost**, **hostfxr** and function *is-assembly* from **file** namespace.
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.09[Dns]. Module with **dns** namespace that contain function *get-host-name*.
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.09[Regex]. Module that increase functional by adding ***regex*** task.
+* https://www.nuget.org/packages/ant4c.net.framework.module/[ant4c.net.framework.module]. Module with namespaces **framework**, **metahost** and added to exists one **file** function *is-assembly*. Available only for Windows platform.
+* https://www.nuget.org/packages/ant4c.net.module/[ant4c.net.module]. Module to interact with installed .NET Core via namespaces **nethost**, **hostfxr** and function *is-assembly* from **file** namespace.
 
 See module documentation to understand it possibility.

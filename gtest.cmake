@@ -1,6 +1,6 @@
 
 if(DEFINED GTEST_BINARY_PATH)
-  if(CMAKE_HOST_WIN32)
+  if(MSVC)
   string(REPLACE "\\" "/" gtest_Path ${GTEST_BINARY_PATH}/../../googletest)
   else()
   string(REPLACE "\\" "/" gtest_Path ${GTEST_BINARY_PATH}/../googletest)
@@ -10,13 +10,23 @@ if(DEFINED GTEST_BINARY_PATH)
   set(GTEST_INCLUDE_DIRS ${gtest_Path} ${GTEST_INCLUDE_DIR})
 
   set(GTEST_MAIN_LIBRARY gtest)
-
+  if(NOT MSVC)
   find_library(GTest ${GTEST_MAIN_LIBRARY} ${GTEST_BINARY_PATH})
+  endif()
 
   add_library(${GTEST_MAIN_LIBRARY} STATIC IMPORTED)
-  #target_include_directories(${GTEST_MAIN_LIBRARY} SYSTEM INTERFACE ${GTEST_INCLUDE_DIRS})
+
   include_directories(${GTEST_INCLUDE_DIRS})
+
+  if(MSVC)
+  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_DEBUG ${PUGIXML_BINARY_PATH}/Debug/gtest.lib)
+  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_RELEASE ${PUGIXML_BINARY_PATH}/Release/gtest.lib)
+
+  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_MINSIZEREL ${PUGIXML_BINARY_PATH}/Release/gtest.lib)
+  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO ${PUGIXML_BINARY_PATH}/Release/gtest.lib)
+  else()
   set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION ${GTest})
+  endif()
 
   list(APPEND LIBRARIES4TESTING ${GTEST_MAIN_LIBRARY})
 else()
