@@ -18,15 +18,23 @@
 . Depend on variant available for your system:
 * Unpack 'zip' archive to prefer location.
 * For packages - install program using the system package manager.
-** Alpine Linux: 'apk add --allow-untrusted *.apk'.
-** Debian based: 'dpkg --install *.deb'.
-** RPM based: 'rpm -Uvh *.rpm'.
-** FreeBSD: 'pkg install *.txz'.
-** OpenBSD: 'pkg_add -Dunsigned *.tgz'.
+** Alpine Linux: *apk add --allow-untrusted \*.apk*.
+** Debian based: *dpkg --install \*.deb*.
+** FreeBSD: *pkg install \*.txz*.
+** OpenBSD: *pkg_add -Dunsigned \*.tgz*.
+** RPM based: *rpm -Uvh \*.rpm*.
 
 === Build from source
 
-Before chose this way, make sure you have https://www.cmake.org/download/[CMake] tool and C compiler. +
+==== Supported Platforms
+
+* Apple macOS
+* FreeBSD
+* Linux
+* Microsoft Windows
+* OpenBSD
+
+Before choose this way, make sure you have https://www.cmake.org/download/[CMake] tool and C compiler. +
 Optional, if you have previous version of Ant4C, you can use build script file to build new one directly, otherwise addition work in command prompt will be required.
 
 . Unpack/clone source files.
@@ -42,6 +50,8 @@ Optional, if you have previous version of Ant4C, you can use build script file t
 * For MSVC use '-G "Visual Studio 16 2019" <path to project>'. If used different version of Visual Studio refer to the documentation of name of last one.
 . Build project using command 'cmake --build . --config Release'.
 . If no one of steps below not failed - Ant4C is ready to use.
+
+Alternative 'make' tool or 'meson' can be used to build from source.
 
 == Fundamentals
 
@@ -491,7 +501,9 @@ Copy or move file or/and directory.
 [[delete_task]]
 === <delete>
 
-Will delete file or/and directory. If no path set to directory or/and file - task will fail. If at file or directory set path to directory or file, in other word by deleting one thing requested opposite, task will fail. If file or/and directory not exists task will finish with out any error.
+Will delete file or/and directory. If no path set to directory or/and file - task will fail. +
+If at file or directory set path to directory or file, in other word by deleting one thing requested opposite, task will fail. +
+If file or/and directory not exists task will finish with out any error.
 
 .Parameters of the 'delete' task.
 |===
@@ -3414,3 +3426,12 @@ Convert version in the string into string.
 == What's next?
 
 Addition samples of using can be found at the develop branch of the project, at the https://github.com/TheVice/Ant4C/blob/153b005507b91c577c8af62aa5c8530289903f92/tests.xml[tests.xml file], in the section of 'project_load_from_content' test.
+
+If internal functions and tasks not enough, and even if put it all together can not be used to create required functional, - may be modules can be used to resolved requests, because starting from version 2020.09 program support they - binary files that increase functional by adding functions and/or tasks to the program.
+
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.09[Dns]. Module with **dns** namespace that contain function *get-host-name*.
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.09[Regex]. Module that increase functional by adding ***regex*** task.
+* https://www.nuget.org/packages/ant4c.net.framework.module/[ant4c.net.framework.module]. Module with namespaces **framework**, **metahost** and added to exists one **file** function *is-assembly*. Available only for Windows platform.
+* https://www.nuget.org/packages/ant4c.net.module/[ant4c.net.module]. Module to interact with installed .NET Core via namespaces **nethost**, **hostfxr** and function *is-assembly* from **file** namespace.
+
+See module documentation to understand it possibility.

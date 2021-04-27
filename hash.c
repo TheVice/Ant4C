@@ -30,12 +30,12 @@ uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
 	}
 
 	uint8_t j = 0;
-	(*output) = 0;
+	*output = 0;
 
 	while ((--finish) > (start - 1) && j < 8)
 	{
-		(*output) += (uint32_t)(((*finish) & 0xF0) >> 4) * ((uint32_t)1 << (4 * (7 - (j++))));
-		(*output) += (uint32_t)((*finish) & 0x0F) * ((uint32_t)1 << (4 * (7 - (j++))));
+		*output += (uint32_t)(((*finish) & 0xF0) >> 4) * ((uint32_t)1 << (4 * (7 - (j++))));
+		*output += (uint32_t)((*finish) & 0x0F) * ((uint32_t)1 << (4 * (7 - (j++))));
 	}
 
 	return 1;
@@ -53,12 +53,12 @@ uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
 	}
 
 	uint8_t j = 0;
-	(*output) = 0;
+	*output = 0;
 
 	while ((--finish) > (start - 1) && j < 16)
 	{
-		(*output) += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
-		(*output) += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
+		*output += (uint64_t)(((*finish) & 0xF0) >> 4) * ((uint64_t)1 << (4 * (15 - (j++))));
+		*output += (uint64_t)((*finish) & 0x0F) * ((uint64_t)1 << (4 * (15 - (j++))));
 	}
 
 	return 1;

@@ -1028,11 +1028,9 @@ uint8_t environment_is64bit_process()
 
 uint8_t environment_is64bit_operating_system()
 {
-	if (environment_is64bit_process())
-	{
-		return 1;
-	}
-
+#if defined(_WIN64) || defined(__amd64) || defined(__x86_64)
+	return 1;
+#else
 #if defined(_WIN32)
 	typedef BOOL(WINAPI * LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
 	typedef BOOL(WINAPI * LPFN_ISWOW64PROCESS2)(HANDLE, PUSHORT, PUSHORT);
@@ -1094,6 +1092,7 @@ uint8_t environment_is64bit_operating_system()
 						   x86_64, x86_64 + 6) ||
 		   string_contains(version_string, version_string + common_count_bytes_until(version_string, 0),
 						   amd64, amd64 + 5);
+#endif
 #endif
 }
 

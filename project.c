@@ -542,12 +542,12 @@ uint8_t project_load_and_evaluate_target(
 		return 0;
 	}
 
-	struct buffer target_name_;
-
-	SET_NULL_TO_BUFFER(target_name_);
-
 	if (!project_help)
 	{
+		struct buffer target_name_;
+
+		SET_NULL_TO_BUFFER(target_name_);
+
 		if (argument_parser_get_target(arguments, &target_name_, 0))
 		{
 			int index = 0;
@@ -568,14 +568,15 @@ uint8_t project_load_and_evaluate_target(
 		{
 			is_loaded = project_evaluate_default_target(the_project, verbose);
 		}
+
+		if (is_loaded)
+		{
+			is_loaded = project_on_success(the_project, NULL, &target_name_, verbose);
+		}
+
+		buffer_release(&target_name_);
 	}
 
-	if (is_loaded)
-	{
-		is_loaded = project_on_success(the_project, NULL, &target_name_, verbose);
-	}
-
-	buffer_release(&target_name_);
 	listener_project_finished(build_file->start, the_project, is_loaded, verbose);
 	return is_loaded;
 }
@@ -1509,4 +1510,67 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 
 	project_unload(inherit_all_in_a_buffer);
 	return inherit_properties;
+}
+
+uint8_t program_set_log_file(
+	const struct range* path_to_log_file, const struct range* current_directory,
+	struct buffer* tmp, void** file_stream)
+{
+	if (range_is_null_or_empty(path_to_log_file))
+	{
+		return 1;
+	}
+
+	if (range_is_null_or_empty(current_directory) ||
+		!tmp)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(tmp);
+
+	if (!path_get_full_path(current_directory->start, current_directory->finish, path_to_log_file->start,
+							path_to_log_file->finish, tmp) ||
+		!buffer_push_back(tmp, 0))
+	{
+		return 0;
+	}
+
+	if (!file_open(buffer_data(tmp, size), (const uint8_t*)"ab", file_stream))
+	{
+		return 0;
+	}
+
+	common_set_output_stream(file_stream);
+	common_set_error_output_stream(file_stream);
+	/**/
+	return 1;
+}
+
+uint8_t program_set_listener(
+	const struct range* path_to_listener, const struct range* current_directory,
+	struct buffer* tmp, void** listener_object)
+{
+	if (range_is_null_or_empty(path_to_listener))
+	{
+		return 1;
+	}
+
+	if (range_is_null_or_empty(current_directory) ||
+		!tmp)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(tmp);
+
+	if (!path_get_full_path(current_directory->start, current_directory->finish, path_to_listener->start,
+							path_to_listener->finish, tmp) ||
+		!buffer_push_back(tmp, 0))
+	{
+		return 0;
+	}
+
+	const uint8_t* full_path_to_listener = buffer_data(tmp, size);
+	return load_listener(full_path_to_listener, listener_object);
 }

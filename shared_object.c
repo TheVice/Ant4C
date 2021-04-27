@@ -62,7 +62,7 @@ void* shared_object_load(const uint8_t* path)
 
 	if (verbose && NULL == object)
 	{
-		const uint8_t* (const uint8_t*)error_str = dlerror();
+		const uint8_t* error_str = (const uint8_t*)dlerror();
 		const uint8_t message_length = (uint8_t)common_count_bytes_until(error_str, 0);
 		echo(0, UTF8, NULL, Error, error_str, message_length, 1, 0);
 	}

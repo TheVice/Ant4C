@@ -93,15 +93,16 @@ uint8_t file_read_all(const uint8_t* path, struct buffer* output);
 uint8_t file_read_lines(const uint8_t* path, struct buffer* output);
 uint8_t file_read_with_several_steps(void* stream, struct buffer* content);
 
-uint8_t file_replace(const uint8_t* path,
-					 const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
-					 const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish);
+uint8_t file_replace(
+	const uint8_t* path,
+	const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
+	const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish);
 
 uint8_t file_seek(void* stream, long offset, int32_t origin);
 
 uint8_t file_set_attributes(
-	const uint8_t* path, uint8_t archive, uint8_t hidden, uint8_t normal, uint8_t readonly,
-	uint8_t system_attribute);
+	const uint8_t* path, uint8_t archive, uint8_t hidden,
+	uint8_t normal, uint8_t readonly, uint8_t system_attribute);
 
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time);
 uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time);
@@ -128,8 +129,9 @@ uint8_t dir_exec_function(
 	uint8_t function, const struct buffer* arguments, uint8_t arguments_count, struct buffer* output);
 
 uint8_t file_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						   struct buffer* output);
+uint8_t file_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output);
 
 uint8_t attrib_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
