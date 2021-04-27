@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 https://github.com/TheVice/
  *
  */
 
@@ -179,8 +179,12 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 
 				struct range* element = buffer_range_data(elements, count - 1);
 
-				element->start = start;
+				if (!element)
+				{
+					return 0;
+				}
 
+				element->start = start;
 				element->finish = tag_finish_pos;
 			}
 

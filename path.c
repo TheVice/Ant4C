@@ -464,7 +464,6 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 
 	const ptrdiff_t size = buffer_size(temp_file_name);
 #if !defined(_WIN32)
-	int fd = -1;
 
 	if (!buffer_append_char(temp_file_name, "/tmp/fileXXXXXX", 15) ||
 		!buffer_push_back(temp_file_name, 0))
@@ -473,6 +472,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 	}
 
 	char* temp_file_path = (char*)buffer_data(temp_file_name, size);
+	int fd;
 
 	if (-1 == (fd = mkstemp(temp_file_path)))
 	{

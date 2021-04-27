@@ -1351,6 +1351,7 @@ uint8_t file_append(const uint8_t* path, const struct range* data, uint16_t enco
 
 	if (!file_write_with_encoding(data, encoding, file))
 	{
+		file_close(file);
 		return 0;
 	}
 
@@ -2363,7 +2364,7 @@ uint8_t file_replace_with_same_length(
 
 	while (0 < (readed = file_read(content, sizeof(uint8_t), size, stream)))
 	{
-		long index = -1;
+		long index;
 		const uint8_t* sub_content = content;
 
 		while (-1 != (index = (long)string_index_of(sub_content, content + readed, to_be_replaced,
