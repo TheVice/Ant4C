@@ -171,28 +171,33 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 	{
 		const auto name_of_module(node.node().select_node("module").node().child_value());
 		auto full_path_to_module = path_to_directory_with_image + name_of_module;
+		uint8_t exists = file_exists(reinterpret_cast<const uint8_t*>(full_path_to_module.c_str()));
 
-		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path_to_module.c_str())) &&
-			path_to_directory_with_image != current_directory)
+		if (!exists)
 		{
-			full_path_to_module = current_directory + name_of_module;
-
-			if (!file_exists(reinterpret_cast<const uint8_t*>(full_path_to_module.c_str())))
+			if (path_to_directory_with_image != current_directory)
 			{
-				std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
-				std::cout << "'" << full_path_to_module << "'" << std::endl;
-				std::cout << "doesn't exist." << std::endl;
-				std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
-				//
-				--node_count;
-				continue;
+				full_path_to_module = current_directory + name_of_module;
+				exists = file_exists(reinterpret_cast<const uint8_t*>(full_path_to_module.c_str()));
 			}
+		}
+
+		if (!exists)
+		{
+			std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
+			std::cout << "'" << full_path_to_module << "'" << std::endl;
+			std::cout << "doesn't exist." << std::endl;
+			std::cout << __FUNCTION__ << ": test case " << node_count << " will be skip." << std::endl;
+			//
+			--node_count;
+			continue;
 		}
 
 		const auto name_of_build_file(node.node().select_node("build_file").node().child_value());
 		const auto full_path_to_script_file = path_to_source + name_of_build_file;
+		exists = file_exists(reinterpret_cast<const uint8_t*>(full_path_to_script_file.c_str()));
 
-		if (!file_exists(reinterpret_cast<const uint8_t*>(full_path_to_script_file.c_str())))
+		if (!exists)
 		{
 			std::cout << __FUNCTION__ << "[" << __LINE__ << "]:" << " file" << std::endl;
 			std::cout << "'" << full_path_to_script_file << "'" << std::endl;
