@@ -1,0 +1,206 @@
+name: CMake
+
+on:
+  push:
+    branches:
+    - develop
+
+  pull_request:
+    branches:
+    - develop
+
+jobs:
+  build_on_windows:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest]
+        TargetPlatform: [x64, Win32]
+
+    steps:
+
+    # - name: Download and unpack Google Test
+    #   if: ${{ 'Windows' == runner.os }}
+    #   shell: pwsh
+    #   run: |
+    #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
+    #     (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\googletest.tar.gz")
+    #     mkdir "$env:TEMP\googletest"
+    #     tar -xzf "$env:TEMP\googletest.tar.gz" -C "$env:TEMP\googletest"
+
+    # - name: Download and unpack pugixml
+    #   if: ${{ 'Windows' == runner.os }}
+    #   shell: pwsh
+    #   run: |
+    #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
+    #     (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\pugixml.tar.gz")
+    #     mkdir "$env:TEMP\pugixml"
+    #     tar -xzf "$env:TEMP\pugixml.tar.gz" -C "$env:TEMP\pugixml"
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Fetch prebuild of third-party libraries
+      run: git fetch origin ${{ matrix.os }}
+
+    - name: Checkout third-party libraries
+      run: git checkout origin/${{ matrix.os }} -- .
+
+    - name: Create Build Environment
+      if: ${{ 'Windows' == runner.os }}
+      run: cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+
+    - name: Create project files
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      # run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
+      run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+
+    - name: Build Debug
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: cmake --build . --config Debug
+
+    - name: Build Release
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: cmake --build . --config Release
+
+    - name: Run main application Debug
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c.exe
+
+    - name: Run main application Release
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c.exe
+
+    - name: Run tests Debug
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c_tests.exe")
+        {
+          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c_tests.exe")
+          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\" -Recurse
+        }
+
+    - name: Run tests Release
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe")
+        {
+          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe")
+          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\" -Recurse
+        }
+
+    - name: Upload binaries
+      if: ${{ 'Windows' == runner.os }}
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        # Artifact name
+        name: ${{ matrix.os }}-${{ matrix.TargetPlatform }}
+
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+
+        # Duration after which artifact will expire in days. 0 means using default retention.
+        # Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
+        retention-days: 1
+
+  build_on_unix_like:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        BUILD_TYPE: [Debug, Release]
+
+    steps:
+
+    # - name: Download and unpack Google Test
+    #   if: ${{ 'Windows' != runner.os }}
+    #   shell: pwsh
+    #   run: |
+    #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
+    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/googletest.tar.gz")
+    #     mkdir "/tmp/googletest"
+    #     tar -xzf "/tmp/googletest.tar.gz" -C "/tmp/googletest"
+
+    # - name: Download and unpack pugixml
+    #   if: ${{ 'Windows' != runner.os }}
+    #   shell: pwsh
+    #   run: |
+    #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
+    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/pugixml.tar.gz")
+    #     mkdir "/tmp/pugixml"
+    #     tar -xzf "/tmp/pugixml.tar.gz" -C "/tmp/pugixml"
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Fetch prebuild of third-party libraries
+      run: git fetch origin ${{ matrix.os }}
+
+    - name: Checkout third-party libraries
+      run: git checkout origin/${{ matrix.os }} -- .
+
+    - name: Create Build Environment
+      if: ${{ 'Windows' != runner.os }}
+      run: cmake -E make_directory ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+
+    - name: Create project files
+      if: ${{ 'Windows' != runner.os }}
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      # run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_PATH="/tmp/googletest/googletest-release-1.8.1" -DPUGIXML_PATH="/tmp/pugixml/pugixml-1.9"
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }}
+
+    - name: Build
+      if: ${{ 'Windows' != runner.os }}
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: cmake --build . --config ${{ matrix.BUILD_TYPE }}
+
+    - name: Run main application
+      if: ${{ 'Windows' != runner.os }}
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c
+
+    - name: Run tests
+      if: ${{ 'Windows' != runner.os }}
+      shell: pwsh
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests")
+        {
+          ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests --tests_xml=${{ github.workspace }}/tests.xml --tests_exec_app=${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/tests_exec_app --tests_base_directory=${{ github.workspace }}
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests")
+          Get-ChildItem -Path "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}" -Recurse
+        }
+
+    - name: Upload binaries
+      if: ${{ 'Windows' != runner.os }}
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        # Artifact name
+        name: ${{ matrix.os }}-${{ matrix.BUILD_TYPE }}
+
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+
+        # Duration after which artifact will expire in days. 0 means using default retention.
+        # Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
+        retention-days: 1

@@ -1,0 +1,104 @@
+build_on_windows:
+
+  tags:
+    - windows
+
+  parallel:
+    matrix:
+      - TargetPlatform: [x64, Win32]
+
+  script: |
+    git fetch origin windows-latest
+    git checkout origin/windows-latest -- .
+
+    [string[]]$cmakes = @()
+    $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
+    $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+
+    $build_directory = Join-Path -ChildPath "build-${env:TargetPlatform}" -Path "${env:CI_PROJECT_DIR}"
+    $arguments = "-E make_directory {0}" -f $build_directory
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+
+    cd "$build_directory"
+
+    $arguments = "{0} -A {1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+
+    $arguments = "--build . --config Debug"
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+
+    $arguments = "--build . --config Release"
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+
+    $build_directory_Debug = Join-Path -ChildPath "Debug" -Path "$build_directory"
+
+    $ant4c_Debug = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_Debug"
+    Start-Process -FilePath "$ant4c_Debug" -NoNewWindow -Wait
+
+    $build_directory_Release = Join-Path -ChildPath "Release" -Path "$build_directory"
+
+    $ant4c_Release = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_Release"
+    Start-Process -FilePath "$ant4c_Release" -NoNewWindow -Wait
+
+    $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
+
+    $ant4c_tests_Debug = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory_Debug"
+
+    if (Test-Path -Path "$ant4c_tests_Debug")
+    {
+      $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_Debug"
+      $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
+      Start-Process -FilePath "$ant4c_tests_Debug" -ArgumentList $arguments -NoNewWindow -Wait
+    }
+    else
+    {
+      $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests_Debug
+      Write-Warning -Message $message
+      Get-ChildItem -Path "$build_directory_Debug" -Recurse
+    }
+
+    $ant4c_tests_Release = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory_Release"
+
+    if (Test-Path -Path "$ant4c_tests_Release")
+    {
+      $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_Release"
+      $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
+      Start-Process -FilePath "$ant4c_tests_Release" -ArgumentList $arguments -NoNewWindow -Wait
+    }
+    else
+    {
+      $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests_Release
+      Write-Warning -Message $message
+      Get-ChildItem -Path "$build_directory_Release" -Recurse
+    }
+
+  artifacts:
+    paths:
+      - "$CI_PROJECT_DIR\\build-$TargetPlatform"
+
+build_on_unix_like:
+
+  tags:
+    - unix-like
+
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
+
+  script:
+    - git fetch origin ubuntu-latest
+    - git checkout origin/ubuntu-latest -- .
+
+    - cmake -E make_directory $CI_PROJECT_DIR/build-$BUILD_TYPE
+    - cd $CI_PROJECT_DIR/build-$BUILD_TYPE
+
+    - cmake $CI_PROJECT_DIR -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DGTEST_BINARY_PATH=$CI_PROJECT_DIR/ubuntu-latest -DPUGIXML_BINARY_PATH=$CI_PROJECT_DIR/ubuntu-latest
+    - cmake --build . --config $BUILD_TYPE
+
+    - if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c; fi
+    - if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests --tests_xml=$CI_PROJECT_DIR/tests.xml --tests_exec_app=$CI_PROJECT_DIR/build-$BUILD_TYPE/tests_exec_app --tests_base_directory=$CI_PROJECT_DIR; fi
+    - if [ ! -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then echo "File '"$CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
+
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/build-$BUILD_TYPE
