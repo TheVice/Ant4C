@@ -402,6 +402,10 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	buffer path;
 	SET_NULL_TO_BUFFER(path);
 	//
+	ASSERT_TRUE(directory_get_current_directory(NULL, NULL, &path, verbose))
+			<< buffer_free(&path);
+	const auto current_directory(buffer_to_string(&path));
+	//
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
 	auto path_in_range(buffer_to_range(&path));
 	//
@@ -429,6 +433,8 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	ASSERT_EQ(path_that_was_set, current_path) << buffer_free(&path);
 	//
 	buffer_release(&path);
+	//
+	ASSERT_TRUE(directory_set_current_directory(reinterpret_cast<const uint8_t*>(current_directory.c_str())));
 }
 
 TEST(TestFileSystem_, file_copy)
