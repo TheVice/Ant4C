@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -62,7 +62,7 @@
 
 #define LOGO (const uint8_t*)"Program version "PROGRAM_VERSION"\n"																\
 	"The MIT License (MIT)\n"																									\
-	"Copyright (c) 2019 - 2021 https://github.com/TheVice/"
+	"Copyright (c) 2019 - 2021 TheVice"
 #define LOGO_LENGTH common_count_bytes_until(LOGO, 0)
 #define SAMPLE_USING (const uint8_t*)"Sample using - [options] <target> ..."
 #define SAMPLE_USING_LENGTH 37

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="build">
-	<description>Build the project https://github.com/TheVice/Ant4C</description>
+	<description>Build the project Ant4C</description>
 
 	<property name="nant.onfailure" value="note_nant_users" />
 

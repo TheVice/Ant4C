@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 https://github.com/TheVice/
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -545,6 +545,7 @@ uint8_t project_load_and_evaluate_target(
 	if (!project_help)
 	{
 		struct buffer target_name_;
+
 		SET_NULL_TO_BUFFER(target_name_);
 
 		if (argument_parser_get_target(arguments, &target_name_, 0))
