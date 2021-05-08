@@ -1,13 +1,7 @@
-cmake_minimum_required(VERSION 2.8.12)
-
-# project(dns)
-
-# find_package(Boost COMPONENTS asio)
-find_package(Boost COMPONENTS system)
 
 add_library(ant4c.dns SHARED
-  "${CMAKE_SOURCE_DIR}/dns.cpp"
-  "${CMAKE_SOURCE_DIR}/dns.h")
+  "${CMAKE_CURRENT_SOURCE_DIR}/dns.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dns.h")
 
 if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 if(MSVC)
@@ -23,6 +17,9 @@ if(NOT MSVC)
   set_target_properties(ant4c.dns PROPERTIES CXX_STANDARD 11)
 endif()
 endif()
+
+# find_package(Boost COMPONENTS asio)
+find_package(Boost COMPONENTS system)
 
 if(Boost_FOUND)
   target_include_directories(ant4c.dns SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})

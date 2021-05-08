@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>2020.9</Version>
+    <Title>Ant4C.Net.Framework.Module.CLR</Title>
+    <Product>Ant4C.Net.Framework.Module.CLR</Product>
+    <Copyright>Copyright © 2020 TheVice</Copyright>
+    <Description>CLR side for Ant4C.Net.Framework.Module</Description>
+    <AssemblyName>ant4c.net.framework.module.clr</AssemblyName>
+    <AssemblyTitle>Ant4C.Net.Framework.Module.CLR</AssemblyTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="*.*" />
+    <Compile Remove="**/*.*" />
+    <Compile Include="CustomAppDomainManager.cs" />
+    <Compile Include="IFrameworkNamespace.cs" />
+    <Compile Include="VersionDetector.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net20;net40</TargetFrameworks>
+  </PropertyGroup>
+
+</Project>

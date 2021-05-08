@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<project name="ant4c.net.framework.xml">
+  <fail
+    unless="${platform::is-windows()}"
+    message="This module not design to work outside of Windows platform." />
+
+  <property name="path_to_module" value="ant4c.net.framework.module.dll" overwrite="false" />
+  <property name="path_to_file_with_clr" value="ant4c.net.framework.module.clr.dll" overwrite="false" />
+
+  <fail
+    unless="${file::exists(path_to_module)}"
+    message="File '${path_to_module}' is not exists." />
+
+  <fail
+    unless="${file::exists(path_to_file_with_clr)}"
+    message="File '${path_to_file_with_clr}' is not exists." />
+
+  <loadtasks module="${path_to_module}" />
+
+  <property name="is-assembly" />
+
+  <trycatch>
+    <try>
+      <property name="is-assembly" value="${file::is-assembly(path_to_module)}" />
+    </try>
+    <catch>
+      <echo level="Warning">Evaluation of 'file::is-assembly' was failed. Make sure that ant4c was run with 'modulepriority' set to on.</echo>
+    </catch>
+  </trycatch>
+
+  <echo level="Verbose">is-assembly -> ${is-assembly}</echo>
+
+  <trycatch>
+    <try>
+      <property name="is-assembly" value="${file::is-assembly(path_to_file_with_clr)}" />
+    </try>
+    <catch>
+      <echo level="Warning">Evaluation of 'file::is-assembly' was failed. Make sure that ant4c was run with 'modulepriority' set to on.</echo>
+    </catch>
+  </trycatch>
+
+  <echo level="Verbose">is-assembly -> ${is-assembly}</echo>
+
+  <property name="clr-version-from-file" value="${metahost::get-clr-version-from-file(path_to_file_with_clr)}" />
+  <echo level="Verbose">clr-version-from-file -> ${clr-version-from-file}</echo>
+
+  <property name="is-assembly" value="${file::is-assembly('ant4c.net.framework.module.clr.dll_')}" failonerror="false" />
+
+  <property name="framework-directory" value="${framework::get-framework-directory()}" />
+  <echo level="Verbose">framework-directory -> ${framework-directory}</echo>
+
+  <property name="framework-directory" value="${framework::get-framework-directory('net-4.0')}" />
+  <echo level="Verbose">framework-directory -> ${framework-directory}</echo>
+
+  <property name="frameworks" value="${framework::get-frameworks()}" />
+  <echo level="Verbose">frameworks -> ${frameworks}</echo>
+
+  <property name="frameworks" value="${framework::get-frameworks('All')}" />
+  <echo level="Verbose">frameworks -> ${frameworks}</echo>
+
+  <property name="clr-version" value="${framework::get-clr-version()}" />
+  <echo level="Verbose">clr-version -> ${clr-version}</echo>
+
+  <property name="runtime-framework" value="${framework::get-runtime-framework()}" />
+  <echo level="Verbose">runtime-framework -> ${runtime-framework}</echo>
+
+  <property name="framework-exists" value="${framework::exists('net-4.0')}" />
+  <echo level="Verbose">framework-exists -> ${framework-exists}</echo>
+
+  <property name="runtime_v2" value="${metahost::runtime('v2.0.50727')}" />
+  <echo level="Verbose">runtime_v2 -> ${runtime_v2}</echo>
+
+  <property name="runtime_v4" value="${metahost::runtime('v4.0.30319')}" />
+  <echo level="Verbose">runtime_v4 -> ${runtime_v4}</echo>
+</project>

@@ -59,6 +59,7 @@ void add_slash(std::string& path);
 std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);
 uint8_t select_nodes_by_condition(
 	const pugi::xpath_node_set& all_nodes, std::list<pugi::xpath_node>& nodes, buffer* tmp);
+std::string get_path_to_directory_with_source(uint8_t* result);
 
 extern std::wstring char_to_wchar_t(const std::string& input);
 
@@ -77,7 +78,6 @@ protected:
 	uint8_t verbose;
 
 protected:
-	static std::string get_path_to_directory_with_source(uint8_t* result);
 	static bool parse_input_arguments();
 	static bool load_document(pugi::xml_document& doc, const std::string& xml_file,
 							  unsigned int options = pugi::parse_default | pugi::parse_ws_pcdata_single);

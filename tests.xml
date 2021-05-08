@@ -752,19 +752,19 @@
     <exec_get_program_full_path if="${platform::is-windows()}">
       <program>C:\my_program</program>
       <base_dir></base_dir>
-      <output>\\?\C:\my_program</output>
+      <output>C:\my_program</output>
       <return>1</return>
     </exec_get_program_full_path>
     <exec_get_program_full_path if="${platform::is-windows()}">
       <program>my_program</program>
       <base_dir>C:\</base_dir>
-      <output>\\?\C:\my_program</output>
+      <output>C:\my_program</output>
       <return>1</return>
     </exec_get_program_full_path>
     <exec_get_program_full_path if="${platform::is-windows()}">
       <program>C:\my_program</program>
       <base_dir>A:\</base_dir>
-      <output>\\?\C:\my_program</output>
+      <output>C:\my_program</output>
       <return>1</return>
     </exec_get_program_full_path>
     <exec_get_program_full_path if="${platform::is-unix()}">

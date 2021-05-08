@@ -1,14 +1,10 @@
 
-cmake_minimum_required(VERSION 2.8.12)
-
-#project(ant4c.regex)
-
-find_package(Boost COMPONENTS regex)
 add_library(ant4c.regex SHARED
-  "${CMAKE_SOURCE_DIR}/regex.cpp"
-  "${CMAKE_SOURCE_DIR}/regex.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/regex.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/regex.h"
   "${CMAKE_SOURCE_DIR}/text_encoding.c"
-  "${CMAKE_SOURCE_DIR}/text_encoding.cpp")
+  "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
+  "${CMAKE_SOURCE_DIR}/text_encoding.h")
 
 if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 if(MSVC)
@@ -27,6 +23,8 @@ endif()
 
 target_compile_definitions(ant4c.regex PUBLIC NO_BUFFER_UNIT)
 target_compile_definitions(ant4c.regex PUBLIC NO_COMMON_UNIT)
+
+find_package(Boost COMPONENTS regex)
 
 if(Boost_FOUND)
   target_include_directories(ant4c.regex SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})

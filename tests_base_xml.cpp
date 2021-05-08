@@ -410,11 +410,7 @@ uint8_t select_nodes_by_condition(const pugi::xpath_node_set& all_nodes, std::li
 	return !nodes.empty();
 }
 
-std::string TestsBaseXml::tests_xml;
-pugi::xml_document TestsBaseXml::document;
-std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;
-
-std::string TestsBaseXml::get_path_to_directory_with_source(uint8_t* result)
+std::string get_path_to_directory_with_source(uint8_t* result)
 {
 	static std::string path_to_source;
 
@@ -444,8 +440,12 @@ std::string TestsBaseXml::get_path_to_directory_with_source(uint8_t* result)
 
 static bool starts_with_(const std::string& input, const std::string& value)
 {
-	return (value.size() <= input.size() && value == input.substr(0, value.size()));
+	return value.size() <= input.size() && value == input.substr(0, value.size());
 }
+
+std::string TestsBaseXml::tests_xml;
+pugi::xml_document TestsBaseXml::document;
+std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;
 
 bool TestsBaseXml::parse_input_arguments()
 {

@@ -10,12 +10,15 @@
 extern "C" {
 #include "buffer.h"
 #include "common.h"
-#include "range.h"
-#include "path.h"
-#include "exec.h"
 #include "echo.h"
-#include "text_encoding.h"
+#include "environment.h"
+#include "exec.h"
+#include "file_system.h"
+#include "path.h"
 #include "project.h"
+#include "range.h"
+#include "string_unit.h"
+#include "text_encoding.h"
 
 #include "meta_host.h"
 #include "runtime_info.h"
@@ -168,7 +171,6 @@ TEST(TestMetaHost, meta_host_enumerate_installed_runtimes)
 	meta_host_release();
 	buffer_release(&installed_runtimes);
 }
-
 //meta_host_enumerate_loaded_runtimes
 //meta_host_exit_process
 #if 0
@@ -235,47 +237,139 @@ TEST(TestRunTimeInfo, run_time_at_all)
 	//runtime_info_set_default_startup_flags
 }
 #endif
-TEST(ant4c_net_framework_module, at_all)
+TEST(TestLoadTasks_, ant4c_net_framework_module)
 {
-	static const std::string code_sample =
-		"<project>"
-		"  <loadtasks module=\"ant4c.net.framework.module.dll\" />"
+	static const std::string xml_file("ant4c.net.framework.xml");
+	static const std::string clr_module_file("ant4c.net.framework.module.clr.dll");
+	static const std::string csharp_project_file("ant4c.net.framework.module.clr.csproj");
+	//
+	uint8_t result;
+	//
+	const auto source_directory(get_path_to_directory_with_source(&result));
+	ASSERT_TRUE(result);
+	ASSERT_FALSE(source_directory.empty());
+	//
+	const auto module_source_directory = source_directory + "modules\\ant4c.net.framework\\";
+	//
+	const auto path_to_xml_file = module_source_directory + xml_file;
+	ASSERT_TRUE(file_exists(reinterpret_cast<const uint8_t*>(path_to_xml_file.c_str()))) << path_to_xml_file;
+	//
+	const auto path_to_csharp_project_file = module_source_directory + csharp_project_file;
+	ASSERT_TRUE(
+		file_exists(
+			reinterpret_cast<const uint8_t*>(path_to_csharp_project_file.c_str()))) << path_to_csharp_project_file;
 #ifndef NDEBUG
-		"  <fail unless=\"${directory::exists(path::combine(program::current-directory(), 'Debug'))}\" />"
-		"  <property name=\"is-assembly\" value=\"${file::is-assembly(path::combine(path::combine(program::current-directory(), 'Debug'), ant4c.net.framework.module.dll))}\" />"
-		"  <property name=\"is-assembly\" value=\"${file::is-assembly(path::combine(path::combine(program::current-directory(), 'Debug'), ant4c.net.framework.module.clr.dll))}\" />"
-		"  <property name=\"clr-version-from-file\" value=\"${metahost::get-clr-version-from-file(path::combine(path::combine(program::current-directory(), 'Debug'), ant4c.net.framework.module.clr.dll))}\" />"
+	const auto path_to_clr_module =
+		module_source_directory + "bin\\Debug\\net40\\" + clr_module_file;
 #else
-		"  <fail unless=\"${directory::exists(path::combine(program::current-directory(), 'Release'))}\" />"
-		"  <property name=\"is-assembly\" value=\"${file::is-assembly(path::combine(path::combine(program::current-directory(), 'Release'), ant4c.net.framework.module.dll))}\" />"
-		"  <property name=\"is-assembly\" value=\"${file::is-assembly(path::combine(path::combine(program::current-directory(), 'Release'), ant4c.net.framework.module.clr.dll))}\" />"
-		"  <property name=\"clr-version-from-file\" value=\"${metahost::get-clr-version-from-file(path::combine(path::combine(program::current-directory(), 'Release'), ant4c.net.framework.module.clr.dll))}\" />"
+	const auto path_to_clr_module =
+		module_source_directory + "bin\\Release\\net40\\" + clr_module_file;
 #endif
-		"  <property name=\"is-assembly\" value=\"${file::is-assembly('ant4c.net.framework.module.clr.dll_')}\" failonerror=\"false\" />"
-		"  <property name=\"framework-directory\" value=\"${framework::get-framework-directory()}\" />"
-		"  <property name=\"framework-directory\" value=\"${framework::get-framework-directory('net-4.0')}\" />"
-		"  <property name=\"frameworks\" value=\"${framework::get-frameworks()}\" />"
-		"  <property name=\"frameworks\" value=\"${framework::get-frameworks('All')}\" />"
-		"  <property name=\"clr-version\" value=\"${framework::get-clr-version()}\" />"
-		"  <property name=\"runtime-framework\" value=\"${framework::get-runtime-framework()}\" />"
-		"  <property name=\"framework-exists\" value=\"${framework::exists('net-4.0')}\" />"
-		"  <property name=\"runtime_v2\" value=\"${metahost::runtime('v2.0.50727')}\" />"
-		"  <property name=\"runtime_v4\" value=\"${metahost::runtime('v4.0.30319')}\" />"
-		"</project>";
+	buffer path;
+	SET_NULL_TO_BUFFER(path);
+	range working_dir;
+
+	if (!file_up_to_date(reinterpret_cast<const uint8_t*>(path_to_csharp_project_file.c_str()),
+						 reinterpret_cast<const uint8_t*>(path_to_clr_module.c_str())))
+	{
+		ASSERT_TRUE(environment_get_folder_path(ProgramFiles, &path)) << buffer_free(&path);
+		static const uint8_t* dot_net = reinterpret_cast<const uint8_t*>("dotnet\\dotnet.exe");
+		static const uint8_t dot_net_length = 17;
+		ASSERT_TRUE(
+			path_combine_in_place(
+				&path, 0, dot_net, dot_net + dot_net_length)) << buffer_free(&path);
+		//
+		const auto path_to_dot_net(buffer_to_string(&path));
+		ASSERT_TRUE(
+			file_exists(
+				reinterpret_cast<const uint8_t*>(path_to_dot_net.c_str())))
+				<< path_to_dot_net << std::endl << buffer_free(&path);
+		//
+		working_dir = string_to_range(module_source_directory);
+		//
+		std::string arguments = "build /p:TargetFrameworks=net40 /p:Configuration=";
+#ifndef NDEBUG
+		arguments += "Debug";
+#else
+		arguments += "Release";
+#endif
+		arguments += " \"" + path_to_csharp_project_file + "\"";
+		const auto arguments_in_range(string_to_range(arguments));
+		//
+		ASSERT_TRUE(
+			exec(nullptr, nullptr, 0, &path, nullptr, &arguments_in_range,
+				 nullptr, nullptr, nullptr, &working_dir, nullptr, 0, 0, 0)) << buffer_free(&path);
+	}
+
+	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+	ASSERT_TRUE(path_get_directory_for_current_process(&path)) << buffer_free(&path);
+#ifndef NDEBUG
+	static const uint8_t* sub_path_to_module = reinterpret_cast<const uint8_t*>(
+				"modules\\ant4c.net.framework\\Debug\\ant4c.net.framework.module.dll");
+	static const uint8_t sub_path_to_module_length = 64;
+#else
+	static const uint8_t* sub_path_to_module = reinterpret_cast<const uint8_t*>(
+				"modules\\ant4c.net.framework\\Release\\ant4c.net.framework.module.dll");
+	static const uint8_t sub_path_to_module_length = 66;
+#endif
+	ASSERT_TRUE(path_combine_in_place(
+					&path, 0, sub_path_to_module, sub_path_to_module + sub_path_to_module_length)) << buffer_free(&path);
+	const auto path_to_module(buffer_to_string(&path));
+	ASSERT_TRUE(file_exists(reinterpret_cast<const uint8_t*>(path_to_module.c_str())))
+			<< path_to_module << std::endl << buffer_free(&path);
 	//
-	const auto content = string_to_range(code_sample);
+	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+	ASSERT_TRUE(path_get_directory_for_current_image(&path)) << buffer_free(&path);
 	//
-	buffer the_project;
-	SET_NULL_TO_BUFFER(the_project);
+	working_dir = string_to_range(clr_module_file);
+	ASSERT_TRUE(path_combine_in_place(&path, 0, working_dir.start, working_dir.finish)) << buffer_free(&path);
 	//
-	auto returned = project_new(&the_project);
-	ASSERT_TRUE(returned) << project_free(&the_project);
+	const auto path_to_clr_module_at_image_folder(buffer_to_string(&path));
+
+	if (!file_up_to_date(reinterpret_cast<const uint8_t*>(path_to_clr_module.c_str()),
+						 reinterpret_cast<const uint8_t*>(path_to_clr_module_at_image_folder.c_str())))
+	{
+		ASSERT_TRUE(file_copy(reinterpret_cast<const uint8_t*>(path_to_clr_module.c_str()),
+							  reinterpret_cast<const uint8_t*>(path_to_clr_module_at_image_folder.c_str())))
+				<< path_to_clr_module << std::endl
+				<< path_to_clr_module_at_image_folder << std::endl
+				<< buffer_free(&path);
+	}
+
+	const auto path_to_build_file(string_to_range(path_to_xml_file));
 	//
-	const auto current_priority = common_get_module_priority();
+	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+	ASSERT_TRUE(project_new(&path)) << project_free(&path);
+	//
+	working_dir.start = reinterpret_cast<const uint8_t*>("path_to_module");
+	working_dir.finish = reinterpret_cast<const uint8_t*>(path_to_module.c_str());
+	ASSERT_TRUE(project_property_set_value(
+					&path,
+					working_dir.start, 14,
+					working_dir.finish, static_cast<ptrdiff_t>(path_to_module.size()),
+					0, 0, 1, 0)) << project_free(&path);
+	//
+	working_dir.start = reinterpret_cast<const uint8_t*>("path_to_file_with_clr");
+	working_dir.finish = reinterpret_cast<const uint8_t*>(path_to_clr_module_at_image_folder.c_str());
+	ASSERT_TRUE(project_property_set_value(
+					&path,
+					working_dir.start, 21,
+					working_dir.finish, static_cast<ptrdiff_t>(path_to_clr_module_at_image_folder.size()),
+					0, 0, 1, 0)) << project_free(&path);
+	//
+	working_dir = string_to_range(path_to_module);
+	ASSERT_TRUE(
+		path_get_directory_name(
+			working_dir.start, working_dir.finish, &working_dir)) << project_free(&path);
+	//
+	result = common_get_module_priority();
 	common_set_module_priority(1);
-	returned = project_load_from_content(content.start, content.finish, &the_project, 0, 0);
-	common_set_module_priority(current_priority);
-	ASSERT_TRUE(returned) << project_free(&the_project);
 	//
-	project_unload(&the_project);
+	ASSERT_TRUE(
+		project_load_from_build_file(
+			&path_to_build_file, &working_dir,
+			Default, &path, 0, 0)) << project_free(&path);
+	//
+	common_set_module_priority(result);
+	project_unload(&path);
 }

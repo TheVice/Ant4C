@@ -5,7 +5,7 @@
  *
  */
 
-#include "ant4c.net.framework.module.h"
+#include "ant4c.net.framework.h"
 
 #include "buffer.h"
 #include "conversion.h"
