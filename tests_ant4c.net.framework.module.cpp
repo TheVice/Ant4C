@@ -272,7 +272,23 @@ TEST(TestLoadTasks_, ant4c_net_framework_module)
 	if (!file_up_to_date(reinterpret_cast<const uint8_t*>(path_to_csharp_project_file.c_str()),
 						 reinterpret_cast<const uint8_t*>(path_to_clr_module.c_str())))
 	{
-		ASSERT_TRUE(environment_get_folder_path(ProgramFiles, &path)) << buffer_free(&path);
+#ifndef _WIN64
+		working_dir.start = reinterpret_cast<const uint8_t*>("ProgramW6432");
+		working_dir.finish = working_dir.start + common_count_bytes_until(working_dir.start, 0);
+
+		if (environment_variable_exists(working_dir.start, working_dir.finish))
+		{
+			ASSERT_TRUE(environment_get_variable(working_dir.start, working_dir.finish, &path))
+					<< buffer_free(&path);
+		}
+		else
+		{
+#endif
+			ASSERT_TRUE(environment_get_folder_path(ProgramFiles, &path)) << buffer_free(&path);
+#ifndef _WIN64
+		}
+
+#endif
 		static const uint8_t* dot_net = reinterpret_cast<const uint8_t*>("dotnet\\dotnet.exe");
 		static const uint8_t dot_net_length = 17;
 		ASSERT_TRUE(
