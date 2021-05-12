@@ -4,7 +4,7 @@
     if="${task::exists('regex')}"
     message="${project::get-name()} - 'regex' task already exists. Terminating evaluation of script." />
 
-  <choose>
+  <choose unless="${property::exists('path_to_module')}">
     <when test="${platform::is-unix()}">
       <loadtasks module="libant4c.regex.so" failonerror="false" />
       <loadtasks module="libant4c.regex.dylib" unless="${task::exists('regex')}" />
@@ -14,6 +14,8 @@
       <loadtasks module="libant4c.regex.dll" unless="${task::exists('regex')}" />
     </when>
   </choose>
+
+  <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
 
   <fail
     unless="${task::exists('regex')}"

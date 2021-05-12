@@ -8,7 +8,7 @@
     Function 'get-host-name' from 'dns' namespace already exists.
     Terminating evaluation of script." />
 
-  <choose>
+  <choose unless="${property::exists('path_to_module')}">
     <when test="${platform::is-unix()}">
       <loadtasks module="libant4c.dns.so" failonerror="false" />
       <loadtasks module="libant4c.dns.dylib" failonerror="false" />
@@ -18,6 +18,8 @@
       <loadtasks module="libant4c.dns.dll" failonerror="false" />
     </when>
   </choose>
+
+  <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
 
   <trycatch>
     <try>

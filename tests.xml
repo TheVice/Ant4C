@@ -3955,136 +3955,64 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </interpreter_evaluate_task>
   </TestInterpreter>
   <TestLoadTasks>
-    <load_tasks_evaluate_task>
-      <assembly />
-      <path />
-      <module />
-      <enumerate_tasks />
-      <enumerate_name_spaces />
-      <enumerate_functions />
-      <get_attributes_and_arguments_for_task />
-      <evaluate_task />
-      <evaluate_function />
-      <module_release />
-      <return />
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>ant4c.dns.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.dns.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.dns.so</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.dns.dylib</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>ant4c.regex.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.regex.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.regex.so</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.regex.dylib</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>ant4c.net.framework.module.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.net.framework.module.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>ant4c.net.module.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.net.module.dll</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.net.module.so</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <load_tasks_evaluate_task>
-      <module>libant4c.net.module.dylib</module>
-      <return>1</return>
-    </load_tasks_evaluate_task>
-    <TODO><load_tasks_evaluate_task>
-      <path>.</path>
-      <return>1</return>
-    </load_tasks_evaluate_task></TODO>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>ant4c.dns.dll</module>
-      <build_file>ant4c.dns.xml</build_file>
+      <path_to_module>modules\dns\ant4c.dns.dll</path_to_module>
+      <build_file>modules\dns\dns.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>libant4c.dns.dll</module>
-      <build_file>ant4c.dns.xml</build_file>
+      <path_to_module>modules\dns\libant4c.dns.dll</path_to_module>
+      <build_file>modules\dns\dns.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <module>libant4c.dns.so</module>
-      <build_file>ant4c.dns.xml</build_file>
+      <path_to_module>modules/dns/libant4c.dns.so</path_to_module>
+      <build_file>modules/dns/dns.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <module>libant4c.dns.dylib</module>
-      <build_file>ant4c.dns.xml</build_file>
+      <path_to_module>modules/dns/libant4c.dns.dylib</path_to_module>
+      <build_file>modules/dns/dns.xml</build_file>
     </project_load_from_build_file>
     <!--project_load_from_build_file if="${platform::is-windows()}">
-      <module>ant4c.net.framework.module.dll</module>
+      <path_to_module>modules\ant4c.net.framework\ant4c.net.framework.module.dll</path_to_module>
+      <build_file>modules\ant4c.net.framework\ant4c.net.framework.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>libant4c.net.framework.module.dll</module>
+      <path_to_module>libant4c.net.framework.module.dll</path_to_module>
     </project_load_from_build_file-->
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>ant4c.net.module.dll</module>
+      <path_to_module>ant4c.net.module.dll</path_to_module>
       <build_file>ant4c.net.module.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>libant4c.net.module.dll</module>
+      <path_to_module>libant4c.net.module.dll</path_to_module>
       <build_file>ant4c.net.module.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <module>libant4c.net.module.so</module>
+      <path_to_module>libant4c.net.module.so</path_to_module>
       <build_file>ant4c.net.module.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <module>libant4c.net.module.dylib</module>
+      <path_to_module>libant4c.net.module.dylib</path_to_module>
       <build_file>ant4c.net.module.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>ant4c.regex.dll</module>
-      <build_file>ant4c.regex.xml</build_file>
+      <path_to_module>modules\regex\ant4c.regex.dll</path_to_module>
+      <build_file>modules\regex\regex.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <module>libant4c.regex.dll</module>
-      <build_file>ant4c.regex.xml</build_file>
+      <path_to_module>modules\regex\libant4c.regex.dll</path_to_module>
+      <build_file>modules\regex\regex.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <module>libant4c.regex.so</module>
-      <build_file>ant4c.regex.xml</build_file>
+      <path_to_module>modules/regex/libant4c.regex.so</path_to_module>
+      <build_file>modules/regex/regex.xml</build_file>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <module>libant4c.regex.dylib</module>
-      <build_file>ant4c.regex.xml</build_file>
+      <path_to_module>modules/regex/libant4c.regex.dylib</path_to_module>
+      <build_file>modules/regex/regex.xml</build_file>
     </project_load_from_build_file>
   </TestLoadTasks>
   <TestMathUnit>
