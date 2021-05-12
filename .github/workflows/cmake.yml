@@ -24,13 +24,29 @@ on:
     - 'CMakeLists.txt'
 
 jobs:
-  build_on_windows:
-    runs-on: ${{ matrix.os }}
-
+  build:
     strategy:
       matrix:
-        os: [windows-latest]
-        TargetPlatform: [x64, Win32]
+        include:
+        - os: macos-latest
+          BUILD_TYPE: Debug
+
+        - os: macos-latest
+          BUILD_TYPE: Release
+
+        - os: ubuntu-latest
+          BUILD_TYPE: Debug
+
+        - os: ubuntu-latest
+          BUILD_TYPE: Release
+
+        - os: windows-latest
+          TargetPlatform: x64
+
+        - os: windows-latest
+          TargetPlatform: Win32
+
+    runs-on: ${{ matrix.os }}
 
     steps:
 
@@ -52,6 +68,24 @@ jobs:
     #     mkdir "$env:TEMP\pugixml"
     #     tar -xzf "$env:TEMP\pugixml.tar.gz" -C "$env:TEMP\pugixml"
 
+    # - name: Download and unpack Google Test
+    #   if: ${{ 'Windows' != runner.os }}
+    #   shell: pwsh
+    #   run: |
+    #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
+    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/googletest.tar.gz")
+    #     mkdir "/tmp/googletest"
+    #     tar -xzf "/tmp/googletest.tar.gz" -C "/tmp/googletest"
+
+    # - name: Download and unpack pugixml
+    #   if: ${{ 'Windows' != runner.os }}
+    #   shell: pwsh
+    #   run: |
+    #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
+    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/pugixml.tar.gz")
+    #     mkdir "/tmp/pugixml"
+    #     tar -xzf "/tmp/pugixml.tar.gz" -C "/tmp/pugixml"
+
     - name: Checkout
       uses: actions/checkout@v2
 
@@ -65,11 +99,26 @@ jobs:
       if: ${{ 'Windows' == runner.os }}
       run: cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
 
+    - name: Create Build Environment
+      if: ${{ 'Windows' != runner.os }}
+      run: cmake -E make_directory ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+
     - name: Create project files
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       # run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
       run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+
+    - name: Create project files
+      if: ${{ 'Windows' != runner.os }}
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      # run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_PATH="/tmp/googletest/googletest-release-1.8.1" -DPUGIXML_PATH="/tmp/pugixml/pugixml-1.9"
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }}
+
+    - name: Build
+      if: ${{ 'Windows' != runner.os }}
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: cmake --build . --config ${{ matrix.BUILD_TYPE }}
 
     - name: Build Debug
       if: ${{ 'Windows' == runner.os }}
@@ -80,6 +129,11 @@ jobs:
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       run: cmake --build . --config Release
+
+    - name: Run main application
+      if: ${{ 'Windows' != runner.os }}
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c
 
     - name: Run main application Debug
       if: ${{ 'Windows' == runner.os }}
@@ -119,77 +173,6 @@ jobs:
           Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\" -Recurse
         }
 
-    - name: Upload binaries
-      if: ${{ 'Windows' == runner.os }}
-      uses: actions/upload-artifact@v2.2.3
-      with:
-        # Artifact name
-        name: ${{ matrix.os }}-${{ matrix.TargetPlatform }}
-
-        # A file, directory or wildcard pattern that describes what to upload
-        path: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-
-        # Duration after which artifact will expire in days. 0 means using default retention.
-        # Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
-        retention-days: 1
-
-  build_on_unix_like:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest]
-        BUILD_TYPE: [Debug, Release]
-
-    steps:
-
-    # - name: Download and unpack Google Test
-    #   if: ${{ 'Windows' != runner.os }}
-    #   shell: pwsh
-    #   run: |
-    #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
-    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/googletest.tar.gz")
-    #     mkdir "/tmp/googletest"
-    #     tar -xzf "/tmp/googletest.tar.gz" -C "/tmp/googletest"
-
-    # - name: Download and unpack pugixml
-    #   if: ${{ 'Windows' != runner.os }}
-    #   shell: pwsh
-    #   run: |
-    #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
-    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/pugixml.tar.gz")
-    #     mkdir "/tmp/pugixml"
-    #     tar -xzf "/tmp/pugixml.tar.gz" -C "/tmp/pugixml"
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Fetch prebuild of third-party libraries
-      run: git fetch origin ${{ matrix.os }}
-
-    - name: Checkout third-party libraries
-      run: git checkout origin/${{ matrix.os }} -- .
-
-    - name: Create Build Environment
-      if: ${{ 'Windows' != runner.os }}
-      run: cmake -E make_directory ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-
-    - name: Create project files
-      if: ${{ 'Windows' != runner.os }}
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-      # run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_PATH="/tmp/googletest/googletest-release-1.8.1" -DPUGIXML_PATH="/tmp/pugixml/pugixml-1.9"
-      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }}
-
-    - name: Build
-      if: ${{ 'Windows' != runner.os }}
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-      run: cmake --build . --config ${{ matrix.BUILD_TYPE }}
-
-    - name: Run main application
-      if: ${{ 'Windows' != runner.os }}
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-      run: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c
-
     - name: Run tests
       if: ${{ 'Windows' != runner.os }}
       shell: pwsh
@@ -206,15 +189,23 @@ jobs:
         }
 
     - name: Upload binaries
-      if: ${{ 'Windows' != runner.os }}
+      if: ${{ 'Windows' == runner.os }}
       uses: actions/upload-artifact@v2.2.3
       with:
         # Artifact name
-        name: ${{ matrix.os }}-${{ matrix.BUILD_TYPE }}
+        name: ${{ matrix.os }}-${{ matrix.TargetPlatform }}
 
         # A file, directory or wildcard pattern that describes what to upload
-        path: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+        path: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
 
         # Duration after which artifact will expire in days. 0 means using default retention.
         # Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
+        retention-days: 1
+
+    - name: Upload binaries
+      if: ${{ 'Windows' != runner.os }}
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.BUILD_TYPE }}
+        path: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
         retention-days: 1
