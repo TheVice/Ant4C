@@ -52,7 +52,6 @@ jobs:
 
     # - name: Download and unpack Google Test
     #   if: ${{ 'Windows' == runner.os }}
-    #   shell: pwsh
     #   run: |
     #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
     #     (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\googletest.tar.gz")
@@ -61,7 +60,6 @@ jobs:
 
     # - name: Download and unpack pugixml
     #   if: ${{ 'Windows' == runner.os }}
-    #   shell: pwsh
     #   run: |
     #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
     #     (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\pugixml.tar.gz")
@@ -95,27 +93,45 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - name: Create Build Environment
+    - name: Create Build Environment (Windows)
       if: ${{ 'Windows' == runner.os }}
       run: cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
 
-    - name: Create Build Environment
+    - name: Create Build Environment (Unix like)
       if: ${{ 'Windows' != runner.os }}
       run: cmake -E make_directory ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
 
-    - name: Create project files
+    - name: Create Build Environment (MinGW)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      run: |
+        cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
+        cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
+
+    - name: Create project files (Windows)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       # run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
       run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
 
-    - name: Create project files
+    - name: Create project files (Unix like)
       if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
       # run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_PATH="/tmp/googletest/googletest-release-1.8.1" -DPUGIXML_PATH="/tmp/pugixml/pugixml-1.9"
       run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }}
 
-    - name: Build
+    - name: Create project files (MinGW Debug)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
+      # run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
+      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+
+    - name: Create project files (MinGW Release)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
+      # run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
+      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+
+    - name: Build (Unix like)
       if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
       run: cmake --build . --config ${{ matrix.BUILD_TYPE }}
@@ -128,6 +144,16 @@ jobs:
     - name: Build Release
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: cmake --build . --config Release
+
+    - name: Build (MinGW Debug)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
+      run: cmake --build . --config Debug
+
+    - name: Build (MinGW Release)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
       run: cmake --build . --config Release
 
     - name: Run main application
@@ -144,6 +170,16 @@ jobs:
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c.exe
+
+    - name: Run main application (MinGW Debug)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
+      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c.exe
+
+    - name: Run main application (MinGW Release)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
+      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c.exe
 
     - name: Run tests Debug
       if: ${{ 'Windows' == runner.os }}
@@ -186,6 +222,34 @@ jobs:
         {
           Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests")
           Get-ChildItem -Path "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}" -Recurse
+        }
+
+    - name: Run tests (MinGW Debug)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c_tests.exe")
+        {
+          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c_tests.exe")
+          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\" -Recurse
+        }
+
+    - name: Run tests (MinGW Release)
+      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c_tests.exe")
+        {
+          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c_tests.exe")
+          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\" -Recurse
         }
 
     - name: Upload binaries

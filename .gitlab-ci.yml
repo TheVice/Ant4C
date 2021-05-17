@@ -1,4 +1,4 @@
-build_on_windows:
+build_with_MSVC:
 
   tags:
     - windows
@@ -17,28 +17,28 @@ build_on_windows:
 
     $build_directory = Join-Path -ChildPath "build-${env:TargetPlatform}" -Path "${env:CI_PROJECT_DIR}"
     $arguments = "-E make_directory {0}" -f $build_directory
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     cd "$build_directory"
 
-    $arguments = "{0} -A {1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+    $arguments = "{0} -A {1} -DGTEST_BINARY_PATH={0}/windows-latest/${1} -DPUGIXML_BINARY_PATH={0}/windows-latest/${1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     $arguments = "--build . --config Debug"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     $arguments = "--build . --config Release"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     $build_directory_Debug = Join-Path -ChildPath "Debug" -Path "$build_directory"
 
     $ant4c_Debug = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_Debug"
-    Start-Process -FilePath "$ant4c_Debug" -NoNewWindow -Wait
+    Start-Process -FilePath "$ant4c_Debug" -NoNewWindow -Wait -PassThru
 
     $build_directory_Release = Join-Path -ChildPath "Release" -Path "$build_directory"
 
     $ant4c_Release = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_Release"
-    Start-Process -FilePath "$ant4c_Release" -NoNewWindow -Wait
+    Start-Process -FilePath "$ant4c_Release" -NoNewWindow -Wait -PassThru
 
     $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
 
@@ -48,7 +48,7 @@ build_on_windows:
     {
       $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_Debug"
       $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
-      Start-Process -FilePath "$ant4c_tests_Debug" -ArgumentList $arguments -NoNewWindow -Wait
+      Start-Process -FilePath "$ant4c_tests_Debug" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
     }
     else
     {
@@ -63,7 +63,7 @@ build_on_windows:
     {
       $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_Release"
       $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
-      Start-Process -FilePath "$ant4c_tests_Release" -ArgumentList $arguments -NoNewWindow -Wait
+      Start-Process -FilePath "$ant4c_tests_Release" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
     }
     else
     {
@@ -75,6 +75,60 @@ build_on_windows:
   artifacts:
     paths:
       - "$CI_PROJECT_DIR\\build-$TargetPlatform"
+
+build_with_MinGW:
+
+  tags:
+    - windows
+
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
+
+  script: |
+    git fetch origin windows-latest
+    git checkout origin/windows-latest -- .
+
+    [string[]]$cmakes = @()
+    $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
+    $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+
+    [string[]]$mingw_makes = @()
+    $mingw_makes += Get-ChildItem -File -Include mingw32-make.exe -Path $env:ProgramFiles\*\bin\*.* -Recurse
+
+    $directory_path = Split-Path -Path $mingw_makes[0] -Parent
+    $env:PATH="$env:PATH;$directory_path"
+
+    $build_directory = Join-Path -ChildPath "build-MinGW-${env:BUILD_TYPE}" -Path "${env:CI_PROJECT_DIR}"
+    $arguments = "-E make_directory {0}" -f $build_directory
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    cd "$build_directory"
+
+    $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DGTEST_BINARY_PATH={0}/windows-latest/x64 -DPUGIXML_BINARY_PATH={0}/windows-latest/x64" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    $arguments = "--build . --config ${env:BUILD_TYPE}"
+    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    $ant4c = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory"
+    Start-Process -FilePath "$ant4c" -NoNewWindow -Wait -PassThru
+
+    $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
+    $ant4c_tests = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory"
+
+    if (Test-Path -Path "$ant4c_tests")
+    {
+      $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path $build_directory
+      $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
+      Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    }
+    else
+    {
+      $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
+      Write-Warning -Message $message
+      Get-ChildItem -Path "$build_directory" -Recurse
+    }
 
 build_on_unix_like:
 
