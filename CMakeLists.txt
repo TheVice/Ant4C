@@ -276,7 +276,7 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
   add_dependencies(ant4c_tests tests_exec_app)
   add_dependencies(ant4c_tests example_of_the_module)
 
-  if((CMAKE_HOST_WIN32) AND (MSVC))
+  if(MSVC)
     add_dependencies(ant4c_tests ant4c.net.framework.module)
   endif()
 
@@ -362,7 +362,7 @@ else()
       add_dependencies(ant4c_tests tests_exec_app)
       add_dependencies(ant4c_tests example_of_the_module)
 
-      if((CMAKE_HOST_WIN32) AND (MSVC))
+      if(MSVC)
         add_dependencies(ant4c_tests ant4c.net.framework.module)
       endif()
 
@@ -393,10 +393,6 @@ endif()
 if(DEFINED USE_BOOST)
   add_dependencies(ant4c_tests ant4c.dns)
   add_dependencies(ant4c_tests ant4c.regex)
-endif()
-
-if(CMAKE_HOST_WIN32)
-  add_dependencies(ant4c_tests ant4c.net.framework.module)
 endif()
 
 add_dependencies(ant4c_tests ant4c.net.module)

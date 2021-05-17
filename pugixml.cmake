@@ -1,6 +1,6 @@
 
 if(DEFINED PUGIXML_BINARY_PATH)
-  if(MSVC)
+  if(MSVC OR MINGW)
   string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../../pugixml)
   else()
   string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../pugixml)
@@ -16,6 +16,12 @@ if(DEFINED PUGIXML_BINARY_PATH)
 
   set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
   set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
+  elseif(MINGW)
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_DEBUG "${PUGIXML_BINARY_PATH}/MinGW-W64-Debug/libpugixml.a")
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELEASE "${PUGIXML_BINARY_PATH}/MinGW-W64-Release/libpugixml.a")
+
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${PUGIXML_BINARY_PATH}/MinGW-W64-Release/libpugixml.a")
+  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${PUGIXML_BINARY_PATH}/MinGW-W64-Release/libpugixml.a")
   else()
   set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION ${full_path_pugixml})
   endif()
