@@ -21,7 +21,7 @@ build_with_MSVC:
 
     cd "$build_directory"
 
-    $arguments = "{0} -A {1} -DGTEST_BINARY_PATH={0}/windows-latest/${1} -DPUGIXML_BINARY_PATH={0}/windows-latest/${1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
+    $arguments = "{0} -A {1} -DGTEST_BINARY_PATH={0}/windows-latest/{1} -DPUGIXML_BINARY_PATH={0}/windows-latest/{1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
     Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     $arguments = "--build . --config Debug"
