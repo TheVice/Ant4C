@@ -135,6 +135,8 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 						0, 0, 1, verbose))
 				<< "Path to module: '" << path_to_module << "'" << std::endl
 				<< "Path to script: '" << path_to_script << "'" << std::endl
+				<< "Name of module: '" << name_of_module << "'" << std::endl
+				<< "Directory with image: '" << directory_with_image << "'" << std::endl
 				<< "Current directory: '" << current_directory << "'" << std::endl
 				<< project_free(&the_project);
 		//
@@ -144,6 +146,8 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 						Default, &the_project, project_help, verbose))
 				<< "Path to module: '" << path_to_module << "'" << std::endl
 				<< "Path to script: '" << path_to_script << "'" << std::endl
+				<< "Name of module: '" << name_of_module << "'" << std::endl
+				<< "Directory with image: '" << directory_with_image << "'" << std::endl
 				<< "Current directory: '" << current_directory << "'" << std::endl
 				<< project_free(&the_project);
 
@@ -152,6 +156,8 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 			ASSERT_TRUE(project_evaluate_default_target(&the_project, verbose))
 					<< "Path to module: '" << path_to_module << "'" << std::endl
 					<< "Path to script: '" << path_to_script << "'" << std::endl
+					<< "Name of module: '" << name_of_module << "'" << std::endl
+					<< "Directory with image: '" << directory_with_image << "'" << std::endl
 					<< "Current directory: '" << current_directory << "'" << std::endl
 					<< project_free(&the_project);
 		}
@@ -160,6 +166,8 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 			ASSERT_TRUE(target_evaluate_by_name(&the_project, &target_name_in_range, verbose))
 					<< "Path to module: '" << path_to_module << "'" << std::endl
 					<< "Path to script: '" << path_to_script << "'" << std::endl
+					<< "Name of module: '" << name_of_module << "'" << std::endl
+					<< "Directory with image: '" << directory_with_image << "'" << std::endl
 					<< "Current directory: '" << current_directory << "'" << std::endl
 					<< "Target name: '" << target_name << "'" << std::endl
 					<< project_free(&the_project);
