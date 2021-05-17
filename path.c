@@ -871,7 +871,11 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 			continue;
 		}
 
-		if (!buffer_resize(path, size + expected_size))
+		const uint8_t* finish = buffer_data(path, 0) + buffer_size(path);
+		static const uint8_t zero = 0;
+		finish = find_any_symbol_like_or_not_like_that(ptr, finish, &zero, 1, 1, 1);
+
+		if (!buffer_resize(path, finish - buffer_data(path, 0)))
 		{
 			return 0;
 		}
