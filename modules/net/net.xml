@@ -11,7 +11,7 @@
   <property name="folder_with_program_to_run" value="${path::combine(project::get-base-directory(), path::combine('bin', 'Release'))}" overwrite="false" />
 
   <target name="load_tasks">
-    <choose>
+    <choose unless="${property::exists('path_to_module')}">
       <when test="${platform::is-windows()}">
         <trycatch>
           <try>
@@ -34,6 +34,8 @@
         </trycatch>
       </when>
     </choose>
+
+    <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
   </target>
 
   <!-- nethost::get-hostfxr-path -->

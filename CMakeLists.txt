@@ -54,8 +54,9 @@ if(DEFINED USE_BOOST)
 endif()
 
 include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
-include("${CMAKE_SOURCE_DIR}/example_of_the_module.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c.net.module.cmake")
+include("${CMAKE_SOURCE_DIR}/modules/example.cmake")
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/modules/net")
 
 if(MSVC)
   if(CMAKE_CL_64)
@@ -70,10 +71,8 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 include("${CMAKE_SOURCE_DIR}/ant4c.cmake")
 include("${CMAKE_SOURCE_DIR}/gtest.cmake")
 include("${CMAKE_SOURCE_DIR}/pugixml.cmake")
-include("${CMAKE_SOURCE_DIR}/ant4c_tests.cmake")
+include("${CMAKE_SOURCE_DIR}/tests.cmake")
 
-add_dependencies(ant4c_tests tests_exec_app)
-add_dependencies(ant4c_tests example_of_the_module)
 else()
 
 if(MSVC)
@@ -273,13 +272,6 @@ if((1 EQUAL ${pugixml_FOUND}) AND ${GTest_FOUND})
     set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
   endif()
 
-  add_dependencies(ant4c_tests tests_exec_app)
-  add_dependencies(ant4c_tests example_of_the_module)
-
-  if(MSVC)
-    add_dependencies(ant4c_tests ant4c.net.framework.module)
-  endif()
-
   if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
     add_custom_command(TARGET ant4c_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
@@ -359,13 +351,6 @@ else()
         set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
       endif()
 
-      add_dependencies(ant4c_tests tests_exec_app)
-      add_dependencies(ant4c_tests example_of_the_module)
-
-      if(MSVC)
-        add_dependencies(ant4c_tests ant4c.net.framework.module)
-      endif()
-
       if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
         add_custom_command(TARGET ant4c_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
@@ -395,4 +380,10 @@ if(DEFINED USE_BOOST)
   add_dependencies(ant4c_tests ant4c.regex)
 endif()
 
+if(MSVC)
+  add_dependencies(ant4c_tests ant4c.net.framework.module)
+endif()
+
 add_dependencies(ant4c_tests ant4c.net.module)
+add_dependencies(ant4c_tests tests_exec_app)
+add_dependencies(ant4c_tests example_of_the_module)

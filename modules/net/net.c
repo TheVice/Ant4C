@@ -7,7 +7,7 @@
 
 #include "stdc_secure_api.h"
 
-#include "ant4c.net.module.h"
+#include "net.h"
 
 #include "buffer.h"
 #include "common.h"

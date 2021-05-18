@@ -5,7 +5,7 @@
  *
  */
 
-#include "example_of_the_module.h"
+#include "example.h"
 #include "buffer.h"
 
 static struct buffer output_data;

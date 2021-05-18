@@ -2,9 +2,11 @@
 add_library(example_of_the_module SHARED
             "${CMAKE_SOURCE_DIR}/buffer.c"
             "${CMAKE_SOURCE_DIR}/buffer.h"
-            "${CMAKE_SOURCE_DIR}/example_of_the_module.c"
-            "${CMAKE_SOURCE_DIR}/example_of_the_module.h")
+            "${CMAKE_SOURCE_DIR}/modules/example.c"
+            "${CMAKE_SOURCE_DIR}/modules/example.h")
 #target_link_libraries(example_of_the_module ant4c)
+
+target_include_directories(example_of_the_module PUBLIC ${CMAKE_SOURCE_DIR})
 
 if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 if(MSVC)

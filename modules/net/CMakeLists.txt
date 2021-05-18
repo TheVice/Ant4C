@@ -1,10 +1,12 @@
 add_library(net_gate
-  "${CMAKE_SOURCE_DIR}/host_fxr.c"
-  "${CMAKE_SOURCE_DIR}/host_fxr.h")
+  "${CMAKE_CURRENT_SOURCE_DIR}/host_fxr.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/host_fxr.h")
+
+target_include_directories(net_gate PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
 
 add_library(ant4c.net.module SHARED
-  "${CMAKE_SOURCE_DIR}/ant4c.net.module.c"
-  "${CMAKE_SOURCE_DIR}/ant4c.net.module.h")
+  "${CMAKE_CURRENT_SOURCE_DIR}/net.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/net.h")
 if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
 if(MSVC)
   target_compile_options(net_gate PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)

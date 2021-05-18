@@ -3979,23 +3979,23 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <path_to_module>libant4c.net.framework.module.dll</path_to_module>
     </project_load_from_build_file-->
     <project_load_from_build_file if="${platform::is-windows()}">
-      <path_to_module>ant4c.net.module.dll</path_to_module>
-      <build_file>ant4c.net.module.xml</build_file>
+      <path_to_module>modules\net\ant4c.net.module.dll</path_to_module>
+      <build_file>modules\net\net.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
-      <path_to_module>libant4c.net.module.dll</path_to_module>
-      <build_file>ant4c.net.module.xml</build_file>
+      <path_to_module>modules\net\libant4c.net.module.dll</path_to_module>
+      <build_file>modules\net\net.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <path_to_module>libant4c.net.module.so</path_to_module>
-      <build_file>ant4c.net.module.xml</build_file>
+      <path_to_module>modules/net/libant4c.net.module.so</path_to_module>
+      <build_file>modules/net/net.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
-      <path_to_module>libant4c.net.module.dylib</path_to_module>
-      <build_file>ant4c.net.module.xml</build_file>
+      <path_to_module>modules/net/libant4c.net.module.dylib</path_to_module>
+      <build_file>modules/net/net.xml</build_file>
       <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
