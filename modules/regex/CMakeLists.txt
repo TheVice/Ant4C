@@ -75,7 +75,7 @@ else()
   endif()
 endif()
 
-if((NOT MSVC) AND (NOT MINGW))
+if((NOT MSVC) AND (NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
   #target_compile_options(ant4c.regex PRIVATE "-fPIE")
   if(APPLE)
     #set_target_properties(ant4c.regex PROPERTIES LINK_FLAGS "-pie")

@@ -130,7 +130,7 @@ if(CMAKE_HOST_WIN32)
   endif()
 endif()
 
-if((NOT MSVC) AND (NOT MINGW))
+if((NOT MSVC) AND (NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
   #target_compile_options(ant4c.dns PRIVATE "-fPIE")
   if(APPLE)
     #set_target_properties(ant4c.dns PROPERTIES LINK_FLAGS "-pie")

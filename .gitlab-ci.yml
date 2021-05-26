@@ -24,10 +24,10 @@ build_with_MSVC:
     $arguments = "{0} -A {1} -DGTEST_BINARY_PATH={0}/windows-latest/{1} -DPUGIXML_BINARY_PATH={0}/windows-latest/{1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
     Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
-    $arguments = "--build . --config Debug"
+    $arguments = "--build . --config Debug --parallel $env:NUMBER_OF_PROCESSORS"
     Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
-    $arguments = "--build . --config Release"
+    $arguments = "--build . --config Release --parallel $env:NUMBER_OF_PROCESSORS"
     Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     $build_directory_Debug = Join-Path -ChildPath "Debug" -Path "$build_directory"
@@ -108,7 +108,7 @@ build_with_MinGW:
     $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DGTEST_BINARY_PATH={0}/windows-latest/x64 -DPUGIXML_BINARY_PATH={0}/windows-latest/x64" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
     Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
-    $arguments = "--build . --config ${env:BUILD_TYPE}"
+    $arguments = "--build . --config ${env:BUILD_TYPE} --parallel $env:NUMBER_OF_PROCESSORS"
     Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     $ant4c = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory"

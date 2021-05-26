@@ -2129,6 +2129,11 @@ uint8_t file_set_attributes(const uint8_t* path,
 	buffer_release(&pathW);
 	return returned;
 #else
+	(void)archive;
+	(void)hidden;
+	(void)normal;
+	(void)readonly;
+	(void)system_attribute;
 	return 1;
 #endif
 }

@@ -1,7 +1,22 @@
 
-set(SOURCES_OF_EXEC_APP "${CMAKE_SOURCE_DIR}/tests_exec_app.c")
+include("${CMAKE_SOURCE_DIR}/gtest.cmake")
+include("${CMAKE_SOURCE_DIR}/pugixml.cmake")
 
-list(APPEND SOURCES_OF_TESTS
+add_executable(tests_exec_app
+  "${CMAKE_SOURCE_DIR}/tests_exec_app.c"
+)
+
+target_compile_options(tests_exec_app PRIVATE
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
+)
+
+add_executable(ant4c_tests
+  "${CMAKE_SOURCE_DIR}/tests.cmake"
+  "${CMAKE_SOURCE_DIR}/gtest.cmake"
+  "${CMAKE_SOURCE_DIR}/pugixml.cmake"
+  "${CMAKE_SOURCE_DIR}/tests.xml"
   "${CMAKE_SOURCE_DIR}/tests_argument_parser.cpp"
   "${CMAKE_SOURCE_DIR}/tests_base_xml.cpp"
   "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
@@ -22,44 +37,60 @@ list(APPEND SOURCES_OF_TESTS
   "${CMAKE_SOURCE_DIR}/tests_string_unit.cpp"
   "${CMAKE_SOURCE_DIR}/tests_text_encoding.cpp"
   "${CMAKE_SOURCE_DIR}/tests_xml.cpp"
-  "${CMAKE_SOURCE_DIR}/text_encoding.cpp")
-
-add_executable(tests_exec_app ${SOURCES_OF_EXEC_APP})
-add_executable(ant4c_tests ${SOURCES_OF_TESTS})
-
-target_include_directories(ant4c_tests SYSTEM PRIVATE ${pugixml_Path}/src ${GTEST_INCLUDE_DIR})
-target_link_libraries(ant4c_tests ${LIBRARIES4TESTING} pugixml)
+  "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
+)
 
 if(MSVC)
-  target_compile_options(tests_exec_app PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
-  target_compile_options(tests_exec_app PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
+  target_sources(ant4c_tests PRIVATE
+    "${CMAKE_SOURCE_DIR}/tests_ant4c.net.framework.module.cpp"
+  )
+endif()
 
-  target_compile_options(ant4c_tests PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
-  target_compile_options(ant4c_tests PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
-else()
-  set_target_properties(tests_exec_app PROPERTIES CXX_STANDARD 11)
-  target_compile_options(tests_exec_app PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-  target_compile_options(tests_exec_app PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+target_compile_options(ant4c_tests PRIVATE
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+)
 
-  set_target_properties(ant4c_tests PROPERTIES CXX_STANDARD 11)
-  target_compile_options(ant4c_tests PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-  target_compile_options(ant4c_tests PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+target_include_directories(ant4c_tests
+  SYSTEM PRIVATE ${pugixml_Path}/src ${GTEST_INCLUDE_DIR})
+target_link_libraries(ant4c_tests
+  ant4c
+  ${DL_LIB}
+  ${M_LIB}
+  ${GTEST_MAIN_LIBRARY}
+  pugixml
+  $<$<C_COMPILER_ID:MSVC>:framework_gate>
+)
 
-  target_link_libraries(ant4c_tests m)
-
-  if((NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
-    target_link_libraries(ant4c_tests dl)
-  endif()
+if(NOT MSVC)
+  set_property(TARGET tests_exec_app PROPERTY C_STANDARD 11)
+  set_property(TARGET ant4c_tests PROPERTY CXX_STANDARD 11)
 endif()
 
 if(DEFINED PUGIXML_HEADER_ONLY)
-  target_compile_definitions(ant4c_tests PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY})
+  target_compile_definitions(ant4c_tests
+    PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY}
+  )
 endif()
 
-if(EXISTS ${CMAKE_SOURCE_DIR}/tests.xml)
-  add_custom_command(TARGET ant4c_tests POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
+add_dependencies(ant4c_tests
+  tests_exec_app
+  ant4c.net.module
+  example_of_the_module
+  $<$<C_COMPILER_ID:MSVC>:ant4c.net.framework>
+  default_listener
+)
+
+if(DEFINED USE_BOOST)
+  add_dependencies(ant4c_tests
+    ant4c.dns
+    ant4c.regex
+  )
 endif()
+
+add_custom_command(TARGET ant4c_tests POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/tests.xml")
 
 add_custom_command(TARGET ant4c_tests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")

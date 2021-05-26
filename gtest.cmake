@@ -33,14 +33,12 @@ if(DEFINED GTEST_BINARY_PATH)
   else()
   set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION ${GTest})
   endif()
-
-  list(APPEND LIBRARIES4TESTING ${GTEST_MAIN_LIBRARY})
 else()
 set(GTest_FOUND False)
 find_package(GTest)
 
 if(${GTest_FOUND})
-  list(APPEND LIBRARIES4TESTING GTest::GTest)
+  set(GTEST_MAIN_LIBRARY GTest::GTest)
 else()
   message(STATUS "Search GTest via defined GTEST_PATH if such exists.")
 
@@ -83,8 +81,6 @@ else()
   if(("GNU" STREQUAL CMAKE_CXX_COMPILER_ID) AND (NOT MINGW))
     target_compile_options(${GTEST_MAIN_LIBRARY} PRIVATE "-fPIE")
   endif()
-
-  list(APPEND LIBRARIES4TESTING ${GTEST_MAIN_LIBRARY})
 
   message(STATUS "GTest was found.")
 endif()
