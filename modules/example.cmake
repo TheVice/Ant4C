@@ -9,13 +9,12 @@ add_library(example_of_the_module SHARED
 
 target_include_directories(example_of_the_module PUBLIC ${CMAKE_SOURCE_DIR})
 
-if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
-if(MSVC)
-  target_compile_options(example_of_the_module PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
-  target_compile_options(example_of_the_module PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
-else()
-  set_target_properties(example_of_the_module PROPERTIES C_STANDARD 11)
-  target_compile_options(example_of_the_module PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-  target_compile_options(example_of_the_module PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
+if(NOT MSVC)
+  set_property(TARGET example_of_the_module PROPERTY C_STANDARD 11)
 endif()
-endif()
+
+target_compile_options(example_of_the_module PRIVATE
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
+)

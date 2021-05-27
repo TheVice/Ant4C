@@ -78,9 +78,14 @@ add_dependencies(ant4c_tests
   tests_exec_app
   ant4c.net.module
   example_of_the_module
-  $<$<C_COMPILER_ID:MSVC>:ant4c.net.framework>
   default_listener
 )
+
+if(MSVC)
+  add_dependencies(ant4c_tests
+    ant4c.net.framework.module
+  )
+endif()
 
 if(DEFINED USE_BOOST)
   add_dependencies(ant4c_tests

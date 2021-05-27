@@ -75,11 +75,7 @@ else()
   target_compile_definitions(${GTEST_MAIN_LIBRARY} PRIVATE GTEST_HAS_PTHREAD=0)
 
   if(NOT MSVC)
-    set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES CXX_STANDARD 11)
-  endif()
-
-  if(("GNU" STREQUAL CMAKE_CXX_COMPILER_ID) AND (NOT MINGW))
-    target_compile_options(${GTEST_MAIN_LIBRARY} PRIVATE "-fPIE")
+    set_property(TARGET ${GTEST_MAIN_LIBRARY} PROPERTY CXX_STANDARD 11)
   endif()
 
   message(STATUS "GTest was found.")

@@ -8,6 +8,8 @@
 #ifndef __HOST_FXR_H__
 #define __HOST_FXR_H__
 
+#include "net.common.h"
+
 #if defined(_WIN32)
 #include <wchar.h>
 #endif
@@ -16,19 +18,6 @@
 #include <stdint.h>
 
 struct buffer;
-
-#if defined(_WIN32)
-#define type_of_element wchar_t
-#define calling_convention __cdecl
-#define delegate_calling_convention __stdcall
-#define host_fxr_PATH_DELIMITER ';'
-#define host_fxr_PATH_DELIMITER_wchar_t L';'
-#else
-#define type_of_element uint8_t
-#define calling_convention
-#define delegate_calling_convention
-#define host_fxr_PATH_DELIMITER ':'
-#endif
 
 uint8_t net_host_load(
 	const type_of_element* path_to_net_host_library,

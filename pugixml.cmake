@@ -54,11 +54,7 @@ else()
   endif()
 
   if(NOT MSVC)
-    set_target_properties(pugixml PROPERTIES CXX_STANDARD 11)
-  endif()
-
-  if(("GNU" STREQUAL CMAKE_CXX_COMPILER_ID) AND (NOT MINGW))
-    target_compile_options(pugixml PRIVATE "-fPIE")
+    set_property(TARGET pugixml PROPERTY CXX_STANDARD 11)
   endif()
 
   message(STATUS "pugixml was found.")

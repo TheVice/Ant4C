@@ -1,22 +1,10 @@
 
 add_library(ant4c.dns SHARED
+  "${CMAKE_CURRENT_SOURCE_DIR}/dns.adoc"
   "${CMAKE_CURRENT_SOURCE_DIR}/dns.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/dns.h")
-
-if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
-if(MSVC)
-  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
-  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
-else()
-  set_target_properties(ant4c.dns PROPERTIES CXX_STANDARD 11)
-  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-  target_compile_options(ant4c.dns PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-endif()
-else()
-if(NOT MSVC)
-  set_target_properties(ant4c.dns PROPERTIES CXX_STANDARD 11)
-endif()
-endif()
+  "${CMAKE_CURRENT_SOURCE_DIR}/dns.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dns.xml"
+)
 
 # find_package(Boost COMPONENTS asio)
 find_package(Boost COMPONENTS system)
@@ -69,7 +57,7 @@ else()
   endif()
 endif()
 
-if(CMAKE_HOST_WIN32)
+if(CMAKE_HOST_WIN32 AND (NOT (DEFINED _WIN32_WINNT)))
   set(WindowsVersion ${CMAKE_SYSTEM_VERSION})
   string(FIND ${WindowsVersion} "10.0." pos)
 
@@ -130,11 +118,12 @@ if(CMAKE_HOST_WIN32)
   endif()
 endif()
 
-if((NOT MSVC) AND (NOT MINGW) AND (NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "OpenBSD")))
-  #target_compile_options(ant4c.dns PRIVATE "-fPIE")
-  if(APPLE)
-    #set_target_properties(ant4c.dns PROPERTIES LINK_FLAGS "-pie")
-  else()
-    set_target_properties(ant4c.dns PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
-  endif()
+if(NOT MSVC)
+  set_property(TARGET ant4c.dns PROPERTY CXX_STANDARD 11)
 endif()
+
+target_compile_options(ant4c.dns PRIVATE
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+)

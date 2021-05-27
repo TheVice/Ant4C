@@ -90,7 +90,6 @@ set(
   "${CMAKE_SOURCE_DIR}/hash.h"
   "${CMAKE_SOURCE_DIR}/hash.sha3.c"
   "${CMAKE_SOURCE_DIR}/hash.xxhash.c"
-  "${CMAKE_SOURCE_DIR}/help.adoc"
   "${CMAKE_SOURCE_DIR}/if_task.c"
   "${CMAKE_SOURCE_DIR}/if_task.h"
   "${CMAKE_SOURCE_DIR}/interpreter.c"
@@ -175,6 +174,7 @@ add_executable(
   "${CMAKE_SOURCE_DIR}/MD5SUMS"
   "${CMAKE_SOURCE_DIR}/README.md"
   "${CMAKE_SOURCE_DIR}/SHA3-224SUMS"
+  "${CMAKE_SOURCE_DIR}/help.adoc"
   "${CMAKE_SOURCE_DIR}/main.c"
 )
 
