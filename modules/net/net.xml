@@ -652,6 +652,64 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
+  <!-- hostpolicy::initialize -->
+  <target name="hostpolicy_initialize">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail
+      unless="${property::exists('path_to_hostpolicy')}"
+      message="Property 'path_to_hostpolicy' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostpolicy -> ${path_to_hostpolicy}</echo>
+
+    <property
+      name="is_initialize"
+      value="${hostpolicy::initialize(path_to_hostpolicy)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_initialize -> ${is_initialize}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostpolicy::functions -->
+  <target name="hostpolicy_functions">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="host_policy_functions" value="${corehost::functions()}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(host_policy_functions) -> ${string::empty(host_policy_functions)}</echo>
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <foreach item="String"
+      in="${host_policy_functions}" delim=" " property="host_function">
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostpolicy::is-function-exists -->
+  <target name="hostpolicy_is-function-exists">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="functions" value="initialize" />
+    <property name="functions" value="${functions} load" />
+    <property name="functions" value="${functions} main" />
+    <property name="functions" value="${functions} main-with-output-buffer" />
+    <property name="functions" value="${functions} resolve-component-dependencies" />
+    <property name="functions" value="${functions} set-error-writer" />
+    <property name="functions" value="${functions} unload" />
+
+    <foreach item="String" in="${functions}" delim=" " property="function">
+      <property name="is_function_exists" value="${corehost::is-function-exists(function)}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::is-function-exists(${function}) -> ${is_function_exists}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
   <!-- file::is-assembly -->
   <target name="file_is-assembly">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
@@ -817,6 +875,10 @@
     <call target="hostfxr_get-runtime-delegate" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_get-runtime-delegate -> DONE</echo>
   </target>
+
+  <target name="test_hostpolicy_initialize" depends="load_tasks,hostpolicy_initialize" />
+  <target name="test_hostpolicy_functions" depends="test_hostpolicy_initialize,hostpolicy_functions" />
+  <target name="test_hostpolicy_is-function-exists" depends="test_hostpolicy_initialize,hostpolicy_is-function-exists" />
 
   <target name="test_file_is-assembly" depends="test_hostfxr_initialize">
     <if test="${string::equal(bool::parse('false'), property::exists('path_to_file'))}">
