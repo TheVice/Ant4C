@@ -31,6 +31,7 @@ add_executable(ant4c_tests
   "${CMAKE_SOURCE_DIR}/tests_load_file.cpp"
   "${CMAKE_SOURCE_DIR}/tests_load_tasks.cpp"
   "${CMAKE_SOURCE_DIR}/tests_math_unit.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_net.module.cpp"
   "${CMAKE_SOURCE_DIR}/tests_path.cpp"
   "${CMAKE_SOURCE_DIR}/tests_project.cpp"
   "${CMAKE_SOURCE_DIR}/tests_property.cpp"

@@ -4225,6 +4225,32 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <output>2</output>
     </math_round>
   </TestMathUnit>
+  <TestNetModule>
+    <host_interface_exec_function>
+      <code>${hostinterface::initialize('123456')}</code>
+      <!--
+      <code>${hostinterface::set-config()}</code>
+      <code>${hostinterface::set-framework-directory()}</code>
+      <code>${hostinterface::set-framework-name()}</code>
+      <code>${hostinterface::set-dependency-file()}</code>
+      <code>${hostinterface::set-framework-dependent()}</code>
+      <code>${hostinterface::set-paths-for-probing()}</code>
+      <code>${hostinterface::set-patch-roll-forward()}</code>
+      <code>${hostinterface::set-prerelease-roll-forward()}</code>
+      <code>${hostinterface::set-host-mode()}</code>
+      <code>${hostinterface::set-target-framework-moniker()}</code>
+      <code>${hostinterface::set-additional-dependency-serialized()}</code>
+      <code>${hostinterface::set-framework-version()}</code>
+      <code>${hostinterface::set-framework-names()}</code>
+      <code>${hostinterface::set-framework-directories()}</code>
+      <code>${hostinterface::set-framework-requested-versions()}</code>
+      <code>${hostinterface::set-framework-found-versions()}</code>
+      <code>${hostinterface::set-host-command()}</code>
+      <code>${hostinterface::set-host-information()}</code>
+      <code>${hostinterface::set-file-bundle-header-offset()}</code>
+      -->
+    </host_interface_exec_function>
+  </TestNetModule>
   <TestPath>
     <path_change_extension>
       <input></input>

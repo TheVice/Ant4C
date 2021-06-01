@@ -137,7 +137,7 @@
 
     <foreach item="String" in="${codes}" delim=" " property="code">
       <property name="result_in_string"
-        value="${hostfxr::result-to-string(code)}" />
+        value="${net::result-to-string(code)}" />
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
 
       <choose>
@@ -710,6 +710,22 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
+  <!-- hostinterface::initialize -->
+  <target name="host_interface_initialize">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostinterface::initialize('123456') -> ${hostinterface::initialize('123456')}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- corehost::load -->
+  <target name="core_host_load">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostinterface::initialize('369365249') -> ${hostinterface::initialize('369365249')}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::load() -> ${corehost::load()}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::unload() -> ${corehost::unload()}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
   <!-- file::is-assembly -->
   <target name="file_is-assembly">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
@@ -879,6 +895,8 @@
   <target name="test_hostpolicy_initialize" depends="load_tasks,hostpolicy_initialize" />
   <target name="test_hostpolicy_functions" depends="test_hostpolicy_initialize,hostpolicy_functions" />
   <target name="test_hostpolicy_is-function-exists" depends="test_hostpolicy_initialize,hostpolicy_is-function-exists" />
+  <target name="test_host_interface_initialize" depends="load_tasks,host_interface_initialize" />
+  <target name="test_core_host_load" depends="test_hostpolicy_initialize,core_host_load" />
 
   <target name="test_file_is-assembly" depends="test_hostfxr_initialize">
     <if test="${string::equal(bool::parse('false'), property::exists('path_to_file'))}">

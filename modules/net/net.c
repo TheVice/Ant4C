@@ -5,7 +5,7 @@
  *
  */
 
-#include "stdc_secure_api.h"
+/*#include "stdc_secure_api.h"*/
 
 #include "net.h"
 
@@ -19,6 +19,7 @@
 #include "text_encoding.h"
 
 #include "host_fxr.h"
+#include "host_interface.h"
 #include "host_policy.h"
 
 #include <stdio.h>
@@ -437,14 +438,14 @@ uint8_t host_fx_resolver_init(
 uint8_t is_function_exists(
 	const void* ptr_to_object, const uint8_t* name_space,
 	const uint8_t* function_name, uint16_t function_name_length,
-	const is_function_exists_type is_function_exists,
+	const is_function_exists_type is_exists,
 	struct buffer* output)
 {
 	if (!ptr_to_object ||
 		!name_space ||
 		!function_name ||
 		!function_name_length ||
-		!is_function_exists ||
+		!is_exists ||
 		!output)
 	{
 		return 0;
@@ -459,370 +460,10 @@ uint8_t is_function_exists(
 
 	function_name = buffer_data(output, 0);
 	function_name_length = (uint16_t)buffer_size(output);
-	function_name_length = is_function_exists(
+	function_name_length = is_exists(
 							   ptr_to_object, function_name, (uint8_t)function_name_length);
 	/**/
 	return buffer_resize(output, 0) && bool_to_string(0 < function_name_length, output);
-}
-
-uint8_t hostfxr_result_code_to_string(int32_t code, struct buffer* output)
-{
-	if (!output)
-	{
-		return 0;
-	}
-
-	const ptrdiff_t size = buffer_size(output);
-
-	if (!buffer_append(output, NULL, 32))
-	{
-		return 0;
-	}
-
-	char* ptr = (char*)buffer_data(output, size);
-#if __STDC_LIB_EXT1__
-	code = sprintf_s(ptr, 32, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
-#else
-	code = sprintf(ptr, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
-#endif
-	return buffer_resize(output, size + code);
-}
-
-uint8_t hostfxr_result_to_string(int32_t code, struct buffer* output)
-{
-	if (!output)
-	{
-		return 0;
-	}
-
-	switch (code)
-	{
-		case host_fxr_Success:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::Success", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_Success_HostAlreadyInitialized:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::Success_HostAlreadyInitialized",
-												output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_Success_DifferentRuntimeProperties:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::Success_DifferentRuntimeProperties",
-												output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case win_error_E_INVALIDARG:
-			if (!common_append_string_to_buffer((const uint8_t*)"[win error]::E_INVALIDARG", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_InvalidArgFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::InvalidArgFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreHostLibLoadFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreHostLibLoadFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreHostLibMissingFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreHostLibMissingFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreHostEntryPointFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreHostEntryPointFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreHostCurHostFindFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreHostCurHostFindFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreClrResolveFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreClrResolveFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreClrBindFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreClrBindFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreClrInitFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreClrInitFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreClrExeFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreClrExeFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_ResolverInitFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::ResolverInitFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_ResolverResolveFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::ResolverResolveFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostCurExeFindFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostCurExeFindFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostInitFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostInitFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostSdkFindFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostSdkFindFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostInvalidArgs:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostInvalidArgs", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_InvalidConfigFile:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::InvalidConfigFile", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_AppArgNotRunnable:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::AppArgNotRunnable", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_AppHostExeNotBoundFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::AppHostExeNotBoundFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_FrameworkMissingFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::FrameworkMissingFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_HostApiFailed:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::HostApiFailed", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_HostApiBufferTooSmall:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::HostApiBufferTooSmall", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostUnknownCommand:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostUnknownCommand", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostAppRootFindFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostAppRootFindFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_SdkResolverResolveFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::SdkResolverResolveFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_FrameworkCompatFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::FrameworkCompatFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_FrameworkCompatRetry:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::FrameworkCompatRetry", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_AppHostExeNotBundle:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::AppHostExeNotBundle", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_BundleExtractionFailure:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::BundleExtractionFailure", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_BundleExtractionIOError:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::BundleExtractionIOError", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_LibHostDuplicateProperty:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::LibHostDuplicateProperty", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_HostApiUnsupportedVersion:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::HostApiUnsupportedVersion", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_HostInvalidState:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::HostInvalidState", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_HostPropertyNotFound:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::HostPropertyNotFound", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_CoreHostIncompatibleConfig:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::CoreHostIncompatibleConfig", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		case host_fxr_HostApiUnsupportedScenario:
-			if (!common_append_string_to_buffer((const uint8_t*)"[host fx resolver]::HostApiUnsupportedScenario", output))
-			{
-				return 0;
-			}
-
-			break;
-
-		default:
-			return hostfxr_result_code_to_string(code, output);
-	}
-
-	if (!buffer_append_char(output, " (", 2) ||
-		!hostfxr_result_code_to_string(code, output) ||
-		!buffer_push_back(output, ')'))
-	{
-		return 0;
-	}
-
-	return 1;
 }
 
 void host_fx_resolver_available_sdks(int32_t count, const type_of_element** directories);
@@ -1789,21 +1430,23 @@ uint8_t hostfxr_set_runtime_property_value(
 
 static const uint8_t* name_spaces[] =
 {
+	(const uint8_t*)"net",
 	(const uint8_t*)"nethost",
 	(const uint8_t*)"hostfxr",
 	(const uint8_t*)"hostpolicy",
+	(const uint8_t*)"hostinterface",
 	(const uint8_t*)"corehost",
 	(const uint8_t*)"file"
 };
 
-static const uint8_t* all_functions[][21] =
+static const uint8_t* all_functions[][22] =
 {
+	{ (const uint8_t*)"result-to-string", NULL },
 	{ (const uint8_t*)"get-hostfxr-path", NULL },
 	{
 		(const uint8_t*)"functions",
 		(const uint8_t*)"initialize",
 		(const uint8_t*)"is-function-exists",
-		(const uint8_t*)"result-to-string",
 		/**/
 		(const uint8_t*)"close",
 		(const uint8_t*)"get-available-sdks",
@@ -1823,8 +1466,28 @@ static const uint8_t* all_functions[][21] =
 		(const uint8_t*)"set-runtime-property-value",
 		NULL
 	},
+	{ (const uint8_t*)"initialize", NULL },
 	{
 		(const uint8_t*)"initialize",
+		(const uint8_t*)"set-additional-dependency-serialized",
+		(const uint8_t*)"set-configuration",
+		(const uint8_t*)"set-dependency-file",
+		(const uint8_t*)"set-file-bundle-header-offset",
+		(const uint8_t*)"set-framework-dependent",
+		(const uint8_t*)"set-framework-directories",
+		(const uint8_t*)"set-framework-directory",
+		(const uint8_t*)"set-framework-found-versions",
+		(const uint8_t*)"set-framework-name",
+		(const uint8_t*)"set-framework-names",
+		(const uint8_t*)"set-framework-requested-versions",
+		(const uint8_t*)"set-framework-version",
+		(const uint8_t*)"set-host-command",
+		(const uint8_t*)"set-host-information",
+		(const uint8_t*)"set-host-mode",
+		(const uint8_t*)"set-patch-roll-forward",
+		(const uint8_t*)"set-paths-for-probing",
+		(const uint8_t*)"set-prerelease-roll-forward",
+		(const uint8_t*)"set-target-framework-moniker",
 		NULL
 	},
 	{
@@ -1841,40 +1504,6 @@ static const uint8_t* all_functions[][21] =
 		NULL
 	},
 	{ (const uint8_t*)"is-assembly", NULL },
-};
-
-enum ant4c_net_module_
-{
-	net_host_get_hostfxr_path_,
-	/**/
-	hostfxr_functions_,
-	hostfxr_initialize_,
-	hostfxr_is_function_exists_,
-	hostfxr_result_to_string_,
-	/**/
-	hostfxr_close_,
-	hostfxr_get_available_sdks_,
-	hostfxr_get_native_search_directories_,
-	hostfxr_get_runtime_delegate_,
-	hostfxr_get_runtime_properties_,
-	hostfxr_get_runtime_property_value_,
-	hostfxr_initialize_for_dotnet_command_line_,
-	hostfxr_initialize_for_runtime_config_,
-	hostfxr_main_,
-	hostfxr_main_bundle_startupinfo_,
-	hostfxr_main_startupinfo_,
-	hostfxr_resolve_sdk_,
-	hostfxr_resolve_sdk2_,
-	hostfxr_run_app_,
-	hostfxr_set_error_writer_,
-	hostfxr_set_runtime_property_value_,
-	/**/
-	hostpolicy_initialize_,
-	/**/
-	corehost_functions_,
-	corehost_is_function_exists_,
-	/**/
-	file_is_assembly_
 };
 
 uint8_t file_is_assembly(
@@ -2384,7 +2013,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_functions_:
+		case host_fxr_functions_:
 			if (1 < values_count)
 			{
 				return 0;
@@ -2411,7 +2040,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_initialize_:
+		case host_fxr_initialize_:
 			if (1 != values_count)
 			{
 				return 0;
@@ -2434,7 +2063,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_is_function_exists_:
+		case host_fxr_is_function_exists_:
 			if (1 != values_count)
 			{
 				return 0;
@@ -2450,7 +2079,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_result_to_string_:
+		case net_result_to_string_:
 		{
 			if (1 != values_count)
 			{
@@ -2466,14 +2095,14 @@ uint8_t evaluate_function(
 			const int32_t code = int_parse(buffer_data(&output_data, 0));
 
 			if (!buffer_resize(&output_data, 0) ||
-				!hostfxr_result_to_string(code, &output_data))
+				!result_code_to_string(code, &output_data))
 			{
 				return 0;
 			}
 		}
 		break;
 
-		case hostfxr_close_:
+		case host_fxr_close_:
 		{
 			if (1 != values_count ||
 				!ptr_to_host_fxr_object)
@@ -2498,7 +2127,7 @@ uint8_t evaluate_function(
 		}
 		break;
 
-		case hostfxr_get_available_sdks_:
+		case host_fxr_get_available_sdks_:
 			if (1 < values_count)
 			{
 				return 0;
@@ -2520,7 +2149,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_get_native_search_directories_:
+		case host_fxr_get_native_search_directories_:
 			if (!hostfxr_get_native_search_directories(ptr_to_host_fxr_object,
 					values, values_lengths, values_count, &output_data))
 			{
@@ -2529,7 +2158,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_get_runtime_delegate_:
+		case host_fxr_get_runtime_delegate_:
 			if (!hostfxr_get_runtime_delegate(ptr_to_host_fxr_object,
 											  values, values_lengths, values_count, &output_data))
 			{
@@ -2538,7 +2167,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_get_runtime_properties_:
+		case host_fxr_get_runtime_properties_:
 			if (!hostfxr_get_runtime_properties(ptr_to_host_fxr_object,
 												values, values_lengths, values_count, &output_data))
 			{
@@ -2547,7 +2176,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_get_runtime_property_value_:
+		case host_fxr_get_runtime_property_value_:
 			if (!hostfxr_get_runtime_property_value(ptr_to_host_fxr_object,
 													values, values_lengths, values_count, &output_data))
 			{
@@ -2556,7 +2185,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_initialize_for_dotnet_command_line_:
+		case host_fxr_initialize_for_dotnet_command_line_:
 			if (!hostfxr_initialize_for_dotnet_command_line(ptr_to_host_fxr_object,
 					values, values_lengths, values_count, &output_data))
 			{
@@ -2565,7 +2194,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_initialize_for_runtime_config_:
+		case host_fxr_initialize_for_runtime_config_:
 			if (!hostfxr_initialize_for_runtime_config(ptr_to_host_fxr_object,
 					values, values_lengths, values_count, &output_data))
 			{
@@ -2574,7 +2203,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_main_:
+		case host_fxr_main_:
 		{
 			if (!ptr_to_host_fxr_object)
 			{
@@ -2598,7 +2227,7 @@ uint8_t evaluate_function(
 		}
 		break;
 
-		case hostfxr_main_bundle_startupinfo_:
+		case host_fxr_main_bundle_startupinfo_:
 			if (!hostfxr_main_bundle_startupinfo(
 					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
@@ -2607,7 +2236,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_main_startupinfo_:
+		case host_fxr_main_startupinfo_:
 			if (!hostfxr_main_startupinfo(ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
@@ -2615,7 +2244,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_resolve_sdk_:
+		case host_fxr_resolve_sdk_:
 			if (!hostfxr_resolve_sdk(ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
@@ -2623,7 +2252,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_resolve_sdk2_:
+		case host_fxr_resolve_sdk2_:
 			if (!hostfxr_resolve_sdk2(ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
@@ -2631,7 +2260,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_run_app_:
+		case host_fxr_run_app_:
 		{
 			if (1 != values_count ||
 				!ptr_to_host_fxr_object)
@@ -2656,7 +2285,7 @@ uint8_t evaluate_function(
 		}
 		break;
 
-		case hostfxr_set_error_writer_:
+		case host_fxr_set_error_writer_:
 			if (1 < values_count)
 			{
 				return 0;
@@ -2711,7 +2340,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostfxr_set_runtime_property_value_:
+		case host_fxr_set_runtime_property_value_:
 			if (!hostfxr_set_runtime_property_value(ptr_to_host_fxr_object,
 													values, values_lengths, values_count, &output_data))
 			{
@@ -2720,7 +2349,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case hostpolicy_initialize_:
+		case host_policy_initialize_:
 			if (1 != values_count)
 			{
 				return 0;
@@ -2743,7 +2372,36 @@ uint8_t evaluate_function(
 
 			break;
 
-		case corehost_functions_:
+		case host_interface_initialize_:
+		{
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			struct buffer argument;
+
+			SET_NULL_TO_BUFFER(argument);
+
+			if (!buffer_append(&argument, values[0], values_lengths[0]) ||
+				!buffer_append_buffer(&output_data, &argument, 1))
+			{
+				buffer_release(&argument);
+				return 0;
+			}
+
+			values_count = host_interface_exec_function((uint8_t)function_number, &output_data, values_count);
+			buffer_release(&argument);
+
+			if (!buffer_resize(&output_data, 0) ||
+				!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+		}
+		break;
+
+		case core_host_functions_:
 			if (1 < values_count)
 			{
 				return 0;
@@ -2770,7 +2428,7 @@ uint8_t evaluate_function(
 
 			break;
 
-		case corehost_is_function_exists_:
+		case core_host_is_function_exists_:
 			if (1 != values_count)
 			{
 				return 0;
@@ -2780,6 +2438,39 @@ uint8_t evaluate_function(
 					ptr_to_host_policy_object,
 					name_spaces[3],
 					values[0], values_lengths[0], core_host_is_function_exists, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		/*case core_host_initialize_:
+			break;*/
+
+		case core_host_load_:
+			if (values_count ||
+				!int_to_string(core_host_load(ptr_to_host_policy_object, host_interface_get()), &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		/*case core_host_main_:
+			break;
+
+		case core_host_main_with_output_buffer_:
+			break;
+
+		case core_host_resolve_component_dependencies_:
+			break;
+
+		case core_host_set_error_writer_:
+			break;*/
+
+		case core_host_unload_:
+			if (values_count ||
+				!int_to_string(core_host_unload(ptr_to_host_policy_object), &output_data))
 			{
 				return 0;
 			}

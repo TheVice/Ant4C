@@ -2,6 +2,8 @@
 add_library(net_gate
   "${CMAKE_CURRENT_SOURCE_DIR}/host_fxr.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/host_fxr.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/host_interface.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/host_interface.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/host_policy.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/host_policy.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.common.h"

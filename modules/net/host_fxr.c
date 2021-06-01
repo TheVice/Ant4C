@@ -5,6 +5,8 @@
  *
  */
 
+#include "stdc_secure_api.h"
+
 #include "host_fxr.h"
 #include "buffer.h"
 #include "common.h"
@@ -143,8 +145,8 @@ typedef int32_t(calling_convention* hostfxr_resolve_sdk2_type)(
 	const type_of_element* exe_dir, const type_of_element* working_dir,
 	int32_t flags, hostfxr_resolve_sdk2_result_type result);
 typedef int32_t(calling_convention* hostfxr_run_app_type)(const void* context);
-typedef hostfxr_error_writer_type(calling_convention* hostfxr_set_error_writer_type)(
-	hostfxr_error_writer_type writer);
+typedef error_writer_type(calling_convention* hostfxr_set_error_writer_type)(
+	error_writer_type writer);
 typedef int32_t(calling_convention* hostfxr_set_runtime_property_value_type)(
 	const void* context, const type_of_element* name, const type_of_element* value);
 
@@ -437,6 +439,143 @@ uint8_t host_fx_resolver_is_function_exists(
 	return 0;
 }
 
+uint8_t int_to_hex_and_byte_representation(int32_t code, struct buffer* output)
+{
+	if (!output)
+	{
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 32))
+	{
+		return 0;
+	}
+
+	char* ptr = (char*)buffer_data(output, size);
+#if __STDC_LIB_EXT1__
+	code = sprintf_s(ptr, 32, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
+#else
+	code = sprintf(ptr, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
+#endif
+	return buffer_resize(output, size + code);
+}
+
+uint8_t result_code_to_string(int32_t code, struct buffer* output)
+{
+	if (!output)
+	{
+		return 0;
+	}
+
+	static const int32_t codes[] =
+	{
+		host_fxr_Success,
+		host_fxr_Success_HostAlreadyInitialized,
+		host_fxr_Success_DifferentRuntimeProperties,
+		win_error_E_INVALIDARG,
+		host_fxr_InvalidArgFailure,
+		host_fxr_CoreHostLibLoadFailure,
+		host_fxr_CoreHostLibMissingFailure,
+		host_fxr_CoreHostEntryPointFailure,
+		host_fxr_CoreHostCurHostFindFailure,
+		host_fxr_CoreClrResolveFailure,
+		host_fxr_CoreClrBindFailure,
+		host_fxr_CoreClrInitFailure,
+		host_fxr_CoreClrExeFailure,
+		host_fxr_ResolverInitFailure,
+		host_fxr_ResolverResolveFailure,
+		host_fxr_LibHostCurExeFindFailure,
+		host_fxr_LibHostInitFailure,
+		host_fxr_LibHostSdkFindFailure,
+		host_fxr_LibHostInvalidArgs,
+		host_fxr_InvalidConfigFile,
+		host_fxr_AppArgNotRunnable,
+		host_fxr_AppHostExeNotBoundFailure,
+		host_fxr_FrameworkMissingFailure,
+		host_fxr_HostApiFailed,
+		host_fxr_HostApiBufferTooSmall,
+		host_fxr_LibHostUnknownCommand,
+		host_fxr_LibHostAppRootFindFailure,
+		host_fxr_SdkResolverResolveFailure,
+		host_fxr_FrameworkCompatFailure,
+		host_fxr_FrameworkCompatRetry,
+		host_fxr_AppHostExeNotBundle,
+		host_fxr_BundleExtractionFailure,
+		host_fxr_BundleExtractionIOError,
+		host_fxr_LibHostDuplicateProperty,
+		host_fxr_HostApiUnsupportedVersion,
+		host_fxr_HostInvalidState,
+		host_fxr_HostPropertyNotFound,
+		host_fxr_CoreHostIncompatibleConfig,
+		host_fxr_HostApiUnsupportedScenario
+	};
+	/**/
+	static const uint8_t* strings[] =
+	{
+		(const uint8_t*)"[fx]::Success",
+		(const uint8_t*)"[fx]::Success_HostAlreadyInitialized",
+		(const uint8_t*)"[fx]::Success_DifferentRuntimeProperties",
+		(const uint8_t*)"[win]::E_INVALIDARG",
+		(const uint8_t*)"[fx]::InvalidArgFailure",
+		(const uint8_t*)"[fx]::CoreHostLibLoadFailure",
+		(const uint8_t*)"[fx]::CoreHostLibMissingFailure",
+		(const uint8_t*)"[fx]::CoreHostEntryPointFailure",
+		(const uint8_t*)"[fx]::CoreHostCurHostFindFailure",
+		(const uint8_t*)"[fx]::CoreClrResolveFailure",
+		(const uint8_t*)"[fx]::CoreClrBindFailure",
+		(const uint8_t*)"[fx]::CoreClrInitFailure",
+		(const uint8_t*)"[fx]::CoreClrExeFailure",
+		(const uint8_t*)"[fx]::ResolverInitFailure",
+		(const uint8_t*)"[fx]::ResolverResolveFailure",
+		(const uint8_t*)"[fx]::LibHostCurExeFindFailure",
+		(const uint8_t*)"[fx]::LibHostInitFailure",
+		(const uint8_t*)"[fx]::LibHostSdkFindFailure",
+		(const uint8_t*)"[fx]::LibHostInvalidArgs",
+		(const uint8_t*)"[fx]::InvalidConfigFile",
+		(const uint8_t*)"[fx]::AppArgNotRunnable",
+		(const uint8_t*)"[fx]::AppHostExeNotBoundFailure",
+		(const uint8_t*)"[fx]::FrameworkMissingFailure",
+		(const uint8_t*)"[fx]::HostApiFailed",
+		(const uint8_t*)"[fx]::HostApiBufferTooSmall",
+		(const uint8_t*)"[fx]::LibHostUnknownCommand",
+		(const uint8_t*)"[fx]::LibHostAppRootFindFailure",
+		(const uint8_t*)"[fx]::SdkResolverResolveFailure",
+		(const uint8_t*)"[fx]::FrameworkCompatFailure",
+		(const uint8_t*)"[fx]::FrameworkCompatRetry",
+		(const uint8_t*)"[fx]::AppHostExeNotBundle",
+		(const uint8_t*)"[fx]::BundleExtractionFailure",
+		(const uint8_t*)"[fx]::BundleExtractionIOError",
+		(const uint8_t*)"[fx]::LibHostDuplicateProperty",
+		(const uint8_t*)"[fx]::HostApiUnsupportedVersion",
+		(const uint8_t*)"[fx]::HostInvalidState",
+		(const uint8_t*)"[fx]::HostPropertyNotFound",
+		(const uint8_t*)"[fx]::CoreHostIncompatibleConfig",
+		(const uint8_t*)"[fx]::HostApiUnsupportedScenario"
+	};
+
+	for (uint8_t i = 0, count = COUNT_OF(codes); i < count; ++i)
+	{
+		if (codes[i] != code)
+		{
+			continue;
+		}
+
+		if (!common_append_string_to_buffer(strings[i], output) ||
+			!buffer_append_char(output, " (", 2) ||
+			!int_to_hex_and_byte_representation(code, output) ||
+			!buffer_push_back(output, ')'))
+		{
+			return 0;
+		}
+
+		return 1;
+	}
+
+	return int_to_hex_and_byte_representation(code, output);
+}
+
 int32_t host_fxr_close(const void* ptr_to_host_fxr_object, const void* context)
 {
 	if (ptr_to_host_fxr_object &&
@@ -645,10 +784,10 @@ int32_t host_fxr_run_app(const void* ptr_to_host_fxr_object, const void* context
 	return -1;
 }
 
-hostfxr_error_writer_type host_fxr_set_error_writer(
-	const void* ptr_to_host_fxr_object, hostfxr_error_writer_type writer)
+error_writer_type host_fxr_set_error_writer(
+	const void* ptr_to_host_fxr_object, error_writer_type writer)
 {
-	hostfxr_error_writer_type result = NULL;
+	error_writer_type result = NULL;
 
 	if (ptr_to_host_fxr_object &&
 		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_error_writer)

@@ -10,10 +10,6 @@
 
 #include "net.common.h"
 
-#if defined(_WIN32)
-#include <wchar.h>
-#endif
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -36,6 +32,8 @@ uint8_t host_fx_resolver_is_function_exists(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t* function_name,
 	uint8_t function_name_length);
+
+uint8_t result_code_to_string(int32_t code, struct buffer* output);
 
 enum hostfxr_resolve_sdk2_result_keys
 {
@@ -112,8 +110,6 @@ typedef int32_t(delegate_calling_convention* hostfxr_delegate_function_type)(
 	void** the_delegate);
 typedef void(calling_convention* hostfxr_resolve_sdk2_result_type)(
 	int32_t key, const type_of_element* value);
-typedef void(calling_convention* hostfxr_error_writer_type)(
-	const type_of_element* message);
 
 int32_t host_fxr_close(
 	const void* ptr_to_host_fxr_object,
@@ -203,9 +199,9 @@ int32_t host_fxr_resolve_sdk2(
 int32_t host_fxr_run_app(
 	const void* ptr_to_host_fxr_object,
 	const void* context);
-hostfxr_error_writer_type host_fxr_set_error_writer(
+error_writer_type host_fxr_set_error_writer(
 	const void* ptr_to_host_fxr_object,
-	hostfxr_error_writer_type writer);
+	error_writer_type writer);
 int32_t host_fxr_set_runtime_property_value(
 	const void* ptr_to_host_fxr_object,
 	const void* context,
