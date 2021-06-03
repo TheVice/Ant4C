@@ -465,9 +465,13 @@ const void* environment_get_operating_system()
 			(const uint8_t*)uname_data.sysname, (const uint8_t*)uname_data.release,
 			(const uint8_t*)uname_data.version, (const uint8_t*)uname_data.machine
 		};
-		/**/
+#if defined(__APPLE__) && defined(__MACH__)
+		const uint8_t platformID = macOS;
+#else
+		const uint8_t platformID = Unix;
+#endif
 		is_data_of_operating_system_filled = operating_system_init(
-				Unix, version, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
+				platformID, version, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
 
 		if (!is_data_of_operating_system_filled)
 		{

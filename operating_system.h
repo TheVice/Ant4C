@@ -14,8 +14,8 @@
 enum PlatformID
 {
 	Win32,
-	Unix/*,
-	MacOSX*/
+	Unix,
+	macOS
 };
 
 struct buffer;
@@ -33,8 +33,10 @@ enum PlatformID operating_system_get_platform(const void* os);
 const uint8_t* operating_system_get_version(const void* os);
 const uint8_t* operating_system_to_string(const void* os);
 uint8_t operating_system_is_windows_server(const void* os);
+const uint8_t* operating_system_get_platform_name(const void* os);
 
 const uint8_t* platform_get_name();
+uint8_t platform_is_macos();
 uint8_t platform_is_unix();
 uint8_t platform_is_windows();
 uint8_t platform_is_windows_server();

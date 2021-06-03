@@ -211,6 +211,8 @@ TEST(TestEnvironment_, environment_get_operating_system)
 	ASSERT_NE(nullptr, os);
 #if defined(_WIN32)
 	ASSERT_EQ(Win32, operating_system_get_platform(os));
+#elif (defined(__APPLE__) && defined(__MACH__))
+	ASSERT_EQ(macOS, operating_system_get_platform(os));
 #else
 	ASSERT_EQ(Unix, operating_system_get_platform(os));
 #endif
@@ -445,8 +447,30 @@ TEST_F(TestOperatingSystem, operating_system_parse)
 	}
 }
 
+TEST(TestPlatform, platform_get_name)
+{
+	const std::string platform_name(
+		reinterpret_cast<const char*>(platform_get_name()));
+	ASSERT_FALSE(platform_name.empty());
+#if defined(_WIN32)
+	static const std::string win32_str("win32");
+	ASSERT_EQ(win32_str, platform_name);
+#elif (defined(__APPLE__) && defined(__MACH__))
+	static const std::string macos_str("macos");
+	ASSERT_EQ(macos_str, platform_name);
+#else
+	static const std::string unix_str("unix");
+	ASSERT_EQ(unix_str, platform_name);
+#endif
+}
+
 TEST(TestPlatform, platform_at_all)
 {
-	ASSERT_NE(nullptr, platform_get_name());
+	if (platform_is_macos())
+	{
+		ASSERT_EQ(platform_is_macos(), platform_is_unix());
+		ASSERT_NE(platform_is_macos(), platform_is_windows());
+	}
+
 	ASSERT_NE(platform_is_unix(), platform_is_windows());
 }

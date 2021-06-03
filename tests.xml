@@ -3883,7 +3883,7 @@
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${operating-system::get-platform('Microsoft Windows NT 5.0.0.0')}</code>
-      <output>Win32</output>
+      <output>win32</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -4226,30 +4226,35 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </math_round>
   </TestMathUnit>
   <TestNetModule>
-    <host_interface_exec_function>
+    <functions>
       <code>${hostinterface::initialize('123456')}</code>
-      <!--
-      <code>${hostinterface::set-config()}</code>
-      <code>${hostinterface::set-framework-directory()}</code>
-      <code>${hostinterface::set-framework-name()}</code>
-      <code>${hostinterface::set-dependency-file()}</code>
-      <code>${hostinterface::set-framework-dependent()}</code>
-      <code>${hostinterface::set-paths-for-probing()}</code>
-      <code>${hostinterface::set-patch-roll-forward()}</code>
-      <code>${hostinterface::set-prerelease-roll-forward()}</code>
-      <code>${hostinterface::set-host-mode()}</code>
-      <code>${hostinterface::set-target-framework-moniker()}</code>
-      <code>${hostinterface::set-additional-dependency-serialized()}</code>
-      <code>${hostinterface::set-framework-version()}</code>
-      <code>${hostinterface::set-framework-names()}</code>
-      <code>${hostinterface::set-framework-directories()}</code>
-      <code>${hostinterface::set-framework-requested-versions()}</code>
-      <code>${hostinterface::set-framework-found-versions()}</code>
-      <code>${hostinterface::set-host-command()}</code>
-      <code>${hostinterface::set-host-information()}</code>
-      <code>${hostinterface::set-file-bundle-header-offset()}</code>
-      -->
-    </host_interface_exec_function>
+      <code>${hostinterface::set-additional-dependency-serialized('a/b/c')}</code>
+      <code>${hostinterface::set-application-path('C:\dotnet.exe')}</code>
+      <code>${hostinterface::set-config-keys('a', 'b', 'c', 'd', 'e')}</code>
+      <code>${hostinterface::set-config-values('123', '4567', '89', '0', '5')}</code>
+      <code>${hostinterface::set-dependency-file('C:\1\2\3\4\5\6\7\8\9\0')}</code>
+      <code>${hostinterface::set-dotnet-root('C:\program')}</code>
+      <code>${hostinterface::set-file-bundle-header-offset('1')}</code>
+      <code>${hostinterface::set-framework-dependent('1')}</code>
+      <code>${hostinterface::set-framework-directories('C:\', 'D:\', 'E:\')}</code>
+      <code>${hostinterface::set-framework-directory('C:\a\b\c')}</code>
+      <code>${hostinterface::set-framework-found-versions('', '3.1.0')}</code>
+      <code>${hostinterface::set-framework-name('Microsoft.NETCore.App')}</code>
+      <code>${hostinterface::set-framework-names('', 'Microsoft.NETCore.App')}</code>
+      <code>${hostinterface::set-framework-requested-versions('', '3.1.0')}</code>
+      <code>${hostinterface::set-framework-version('3.1.0')}</code>
+      <code>${hostinterface::set-host-command('--?')}</code>
+      <code>${hostinterface::set-host-mode('10')}</code>
+      <code>${hostinterface::set-host-mode('libhost')}</code>
+      <code>${hostinterface::set-host-path('C:\program\dotnet.exe')}</code>
+      <code>${hostinterface::set-patch-roll-forward('1')}</code>
+      <code>${hostinterface::set-paths-for-probing(
+                path::combine(environment::get-folder-path('UserProfile'), '.nuget\packages'),
+                path::combine(environment::get-folder-path('UserProfile'), '.dotnet\NuGetFallbackFolder'),
+                path::combine(environment::get-folder-path('ProgramFiles'), 'dotnet\sdk\NuGetFallbackFolder'))}</code>
+      <code>${hostinterface::set-prerelease-roll-forward('0')}</code>
+      <code>${hostinterface::set-target-framework-moniker('netcoreapp3.1')}</code>
+    </functions>
   </TestNetModule>
   <TestPath>
     <path_change_extension>

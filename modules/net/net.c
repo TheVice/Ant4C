@@ -5,9 +5,12 @@
  *
  */
 
-/*#include "stdc_secure_api.h"*/
-
 #include "net.h"
+
+#include "arguments.h"
+#include "host_fxr.h"
+#include "host_interface.h"
+#include "host_policy.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -17,10 +20,6 @@
 #include "range.h"
 #include "string_unit.h"
 #include "text_encoding.h"
-
-#include "host_fxr.h"
-#include "host_interface.h"
-#include "host_policy.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -49,160 +48,6 @@ const void* string_to_pointer(const uint8_t* input, uint8_t length, struct buffe
 	}
 
 	return pointer_parse(buffer_data(tmp, 0));
-}
-
-uint8_t values_to_arguments(
-	const uint8_t** values, const uint16_t* values_lengths,
-	uint8_t values_count, struct buffer* output, const type_of_element*** argv)
-{
-	if (NULL == values ||
-		NULL == values_lengths ||
-		!output ||
-		!argv)
-	{
-		return 0;
-	}
-
-	const ptrdiff_t size = buffer_size(output);
-
-	if (values_count)
-	{
-		if (!buffer_append(output, NULL, ((ptrdiff_t)1 + values_count) * sizeof(ptrdiff_t)))
-		{
-			return 0;
-		}
-	}
-
-	for (uint16_t i = 0; i < values_count; ++i)
-	{
-		ptrdiff_t* positions = (ptrdiff_t*)buffer_data(output, size);
-		positions[i] = buffer_size(output);
-#if defined(_WIN32)
-
-		if (values_lengths[i] &&
-			!text_encoding_UTF8_to_UTF16LE(values[i], values[i] + values_lengths[i], output))
-		{
-			return 0;
-		}
-
-		if (!buffer_push_back_uint16(output, 0))
-		{
-			return 0;
-		}
-
-#else
-
-		if (values_lengths[i] &&
-			!buffer_append(output, values[i], values_lengths[i]))
-		{
-			return 0;
-		}
-
-		if (!buffer_push_back(output, 0))
-		{
-			return 0;
-		}
-
-#endif
-	}
-
-	if (values_count)
-	{
-		const ptrdiff_t sz = buffer_size(output);
-
-		if (!buffer_append(output, NULL, ((ptrdiff_t)1 + values_count) * sizeof(type_of_element*)) ||
-			!buffer_resize(output, sz))
-		{
-			return 0;
-		}
-
-		const ptrdiff_t* positions = (const ptrdiff_t*)buffer_data(output, size);
-
-		for (uint16_t i = 0; i < values_count; ++i)
-		{
-			const type_of_element* data_at_position = (const type_of_element*)buffer_data(output, positions[i]);
-
-			if (!buffer_append(output, (const uint8_t*)&data_at_position, sizeof(type_of_element*)))
-			{
-				return 0;
-			}
-		}
-
-		*argv = (const type_of_element**)buffer_data(output, sz);
-	}
-	else
-	{
-		*argv = NULL;
-	}
-
-	return 1;
-}
-
-uint8_t value_to_system_path(const uint8_t* input, ptrdiff_t length, struct buffer* output)
-{
-#if defined(_WIN32)
-	const ptrdiff_t size = buffer_size(output);
-
-	if (!buffer_append(output, NULL, (ptrdiff_t)4 * length + INT8_MAX) ||
-		!buffer_resize(output, size))
-	{
-		return 0;
-	}
-
-#endif
-
-	if (!buffer_append(output, input, length) ||
-		!buffer_push_back(output, 0))
-	{
-		return 0;
-	}
-
-#if defined(_WIN32)
-
-	if (!file_system_path_to_pathW(buffer_data(output, size), output))
-	{
-		return 0;
-	}
-
-#endif
-	return 1;
-}
-
-uint8_t values_to_system_paths(
-	const uint8_t** values, const uint16_t* values_lengths,
-	ptrdiff_t* positions, uint8_t values_count, struct buffer* output)
-{
-	if (!values ||
-		!values_lengths ||
-		!positions ||
-		!output)
-	{
-		return 0;
-	}
-
-	for (uint8_t i = 0; i < values_count; ++i)
-	{
-		positions[i] = PTRDIFF_MAX;
-
-		if (!values_lengths[i])
-		{
-			continue;
-		}
-
-		positions[i] = buffer_size(output);
-
-		if (!value_to_system_path(values[i], values_lengths[i], output))
-		{
-			return 0;
-		}
-
-#if defined(_WIN32)
-		positions[i] += values_lengths[i];
-		++positions[i];
-#endif
-	}
-
-	return 1;
 }
 
 uint8_t net_host_get_hostfxr_path(
@@ -1439,7 +1284,7 @@ static const uint8_t* name_spaces[] =
 	(const uint8_t*)"file"
 };
 
-static const uint8_t* all_functions[][22] =
+static const uint8_t* all_functions[][25] =
 {
 	{ (const uint8_t*)"result-to-string", NULL },
 	{ (const uint8_t*)"get-hostfxr-path", NULL },
@@ -1470,8 +1315,11 @@ static const uint8_t* all_functions[][22] =
 	{
 		(const uint8_t*)"initialize",
 		(const uint8_t*)"set-additional-dependency-serialized",
-		(const uint8_t*)"set-configuration",
+		(const uint8_t*)"set-application-path",
+		(const uint8_t*)"set-config-keys",
+		(const uint8_t*)"set-config-values",
 		(const uint8_t*)"set-dependency-file",
+		(const uint8_t*)"set-dotnet-root",
 		(const uint8_t*)"set-file-bundle-header-offset",
 		(const uint8_t*)"set-framework-dependent",
 		(const uint8_t*)"set-framework-directories",
@@ -1482,8 +1330,8 @@ static const uint8_t* all_functions[][22] =
 		(const uint8_t*)"set-framework-requested-versions",
 		(const uint8_t*)"set-framework-version",
 		(const uint8_t*)"set-host-command",
-		(const uint8_t*)"set-host-information",
 		(const uint8_t*)"set-host-mode",
+		(const uint8_t*)"set-host-path",
 		(const uint8_t*)"set-patch-roll-forward",
 		(const uint8_t*)"set-paths-for-probing",
 		(const uint8_t*)"set-prerelease-roll-forward",
@@ -1504,6 +1352,73 @@ static const uint8_t* all_functions[][22] =
 		NULL
 	},
 	{ (const uint8_t*)"is-assembly", NULL },
+};
+
+enum ant4c_net_module_
+{
+	net_result_to_string_,
+	/**/
+	net_host_get_hostfxr_path_,
+	/**/
+	host_fxr_functions_,
+	host_fxr_initialize_,
+	host_fxr_is_function_exists_,
+	/**/
+	host_fxr_close_,
+	host_fxr_get_available_sdks_,
+	host_fxr_get_native_search_directories_,
+	host_fxr_get_runtime_delegate_,
+	host_fxr_get_runtime_properties_,
+	host_fxr_get_runtime_property_value_,
+	host_fxr_initialize_for_dotnet_command_line_,
+	host_fxr_initialize_for_runtime_config_,
+	host_fxr_main_,
+	host_fxr_main_bundle_startupinfo_,
+	host_fxr_main_startupinfo_,
+	host_fxr_resolve_sdk_,
+	host_fxr_resolve_sdk2_,
+	host_fxr_run_app_,
+	host_fxr_set_error_writer_,
+	host_fxr_set_runtime_property_value_,
+	/**/
+	host_policy_initialize_,
+	/**/
+	host_interface_initialize_,
+	host_interface_set_additional_dependency_serialized_,
+	host_interface_set_application_path_,
+	host_interface_set_config_keys_,
+	host_interface_set_config_values_,
+	host_interface_set_dependency_file_,
+	host_interface_set_dotnet_root_,
+	host_interface_set_file_bundle_header_offset_,
+	host_interface_set_framework_dependent_,
+	host_interface_set_framework_directories_,
+	host_interface_set_framework_directory_,
+	host_interface_set_framework_found_versions_,
+	host_interface_set_framework_name_,
+	host_interface_set_framework_names_,
+	host_interface_set_framework_requested_versions_,
+	host_interface_set_framework_version_,
+	host_interface_set_host_command_,
+	host_interface_set_host_mode_,
+	host_interface_set_host_path_,
+	host_interface_set_patch_roll_forward_,
+	host_interface_set_paths_for_probing_,
+	host_interface_set_prerelease_roll_forward_,
+	host_interface_set_target_framework_moniker_,
+	/**/
+	core_host_functions_,
+	core_host_is_function_exists_,
+	/**/
+	core_host_initialize_,
+	core_host_load_,
+	core_host_main_,
+	core_host_main_with_output_buffer_,
+	core_host_resolve_component_dependencies_,
+	core_host_set_error_writer_,
+	core_host_unload_,
+	/**/
+	file_is_assembly_
 };
 
 uint8_t file_is_assembly(
@@ -2005,6 +1920,29 @@ uint8_t evaluate_function(
 
 	switch (function_number)
 	{
+		case net_result_to_string_:
+		{
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			if (!buffer_append(&output_data, values[0], values_lengths[0]) ||
+				!buffer_push_back(&output_data, 0))
+			{
+				return 0;
+			}
+
+			const int32_t code = int_parse(buffer_data(&output_data, 0));
+
+			if (!buffer_resize(&output_data, 0) ||
+				!result_code_to_string(code, &output_data))
+			{
+				return 0;
+			}
+		}
+		break;
+
 		case net_host_get_hostfxr_path_:
 			if (!net_host_get_hostfxr_path(values, values_lengths, values_count, &output_data))
 			{
@@ -2078,29 +2016,6 @@ uint8_t evaluate_function(
 			}
 
 			break;
-
-		case net_result_to_string_:
-		{
-			if (1 != values_count)
-			{
-				return 0;
-			}
-
-			if (!buffer_append(&output_data, values[0], values_lengths[0]) ||
-				!buffer_push_back(&output_data, 0))
-			{
-				return 0;
-			}
-
-			const int32_t code = int_parse(buffer_data(&output_data, 0));
-
-			if (!buffer_resize(&output_data, 0) ||
-				!result_code_to_string(code, &output_data))
-			{
-				return 0;
-			}
-		}
-		break;
 
 		case host_fxr_close_:
 		{
@@ -2342,7 +2257,8 @@ uint8_t evaluate_function(
 
 		case host_fxr_set_runtime_property_value_:
 			if (!hostfxr_set_runtime_property_value(ptr_to_host_fxr_object,
-													values, values_lengths, values_count, &output_data))
+													values, values_lengths,
+													values_count, &output_data))
 			{
 				return 0;
 			}
@@ -2362,7 +2278,9 @@ uint8_t evaluate_function(
 			}
 
 			is_host_policy_object_initialized = host_policy_init(
-													values[0], values_lengths[0], &output_data, host_policy_object, sizeof(host_policy_object));
+													values[0], values_lengths[0],
+													&output_data, host_policy_object,
+													sizeof(host_policy_object));
 
 			if (!buffer_resize(&output_data, 0) ||
 				!bool_to_string(is_host_policy_object_initialized, &output_data))
@@ -2373,33 +2291,356 @@ uint8_t evaluate_function(
 			break;
 
 		case host_interface_initialize_:
-		{
 			if (1 != values_count)
 			{
 				return 0;
 			}
 
-			struct buffer argument;
+			values_count = host_interface_init(
+							   host_interface_get(), HOST_INTERFACE_SIZE,
+							   (size_t)uint64_parse(values[0], values[0] + values_lengths[0]));
 
-			SET_NULL_TO_BUFFER(argument);
-
-			if (!buffer_append(&argument, values[0], values_lengths[0]) ||
-				!buffer_append_buffer(&output_data, &argument, 1))
-			{
-				buffer_release(&argument);
-				return 0;
-			}
-
-			values_count = host_interface_exec_function((uint8_t)function_number, &output_data, values_count);
-			buffer_release(&argument);
-
-			if (!buffer_resize(&output_data, 0) ||
-				!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, &output_data))
 			{
 				return 0;
 			}
-		}
-		break;
+
+			break;
+
+		case host_interface_set_additional_dependency_serialized_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_additional_dependency_serialized(
+							   host_interface_get(), values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_application_path_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_application_path(
+							   host_interface_get(), values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_config_keys_:
+			values_count = host_interface_set_config_keys(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_config_values_:
+			values_count = host_interface_set_config_values(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_dependency_file_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_dependency_file(
+							   host_interface_get(), values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_dotnet_root_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_dotnet_root(
+							   host_interface_get(), values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_file_bundle_header_offset_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_file_bundle_header_offset(
+							   host_interface_get(),
+							   (size_t)uint64_parse(values[0], values[0] + values_lengths[0]));
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_dependent_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_framework_dependent(
+							   host_interface_get(),
+							   (size_t)uint64_parse(values[0], values[0] + values_lengths[0]));
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_directories_:
+			values_count = host_interface_set_framework_directories(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_directory_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_framework_directory(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_found_versions_:
+			values_count = host_interface_set_framework_found_versions(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_name_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_framework_name(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_names_:
+			values_count = host_interface_set_framework_names(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_requested_versions_:
+			values_count = host_interface_set_framework_requested_versions(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_framework_version_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_framework_version(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_host_command_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_host_command(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_host_mode_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_host_mode(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_host_path_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_host_path(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_patch_roll_forward_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_patch_roll_forward(
+							   host_interface_get(),
+							   (size_t)uint64_parse(values[0], values[0] + values_lengths[0]));
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_paths_for_probing_:
+			values_count = host_interface_set_paths_for_probing(
+							   host_interface_get(),
+							   values, values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_prerelease_roll_forward_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_prerelease_roll_forward(
+							   host_interface_get(),
+							   (size_t)uint64_parse(values[0], values[0] + values_lengths[0]));
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_interface_set_target_framework_moniker_:
+			if (1 != values_count)
+			{
+				return 0;
+			}
+
+			values_count = host_interface_set_target_framework_moniker(
+							   host_interface_get(),
+							   values[0], values_lengths[0]);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
 
 		case core_host_functions_:
 			if (1 < values_count)
@@ -2498,6 +2739,8 @@ uint8_t evaluate_function(
 
 void module_release()
 {
+	host_interface_release_buffers();
+
 	if (is_host_fxr_object_initialized)
 	{
 		if (error_writer_of_host_fx_resolver)

@@ -18,6 +18,8 @@ ant4c (YYYY.MM)
   * Fixed issue at the 'path_get_full_path' function,
     added possibility to deal with paths that contains '..':
     'C:\a..a\', '/tmp/a..a' for example.
+  * Function 'platform::get-name()' now return name of platform
+    not the name of operation system.
   * Allowed to build at Apple macOS environment.
   * WIN32: fixed using at 'echo' task for scenario when output stream
     redirected to the file by capability of operation system -

@@ -1,5 +1,7 @@
 
 add_library(net_gate
+  "${CMAKE_CURRENT_SOURCE_DIR}/arguments.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/arguments.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/host_fxr.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/host_fxr.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/host_interface.c"

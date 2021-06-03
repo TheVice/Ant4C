@@ -96,7 +96,7 @@ public:
 				<< path_to_module << std::endl
 				<< current_directory << std::endl
 				<< project_free(&the_project);
-#if 1
+		//
 		pugi::xml_document load_tasks;
 		auto node = load_tasks.append_child("loadtasks");
 		ASSERT_FALSE(node.empty()) << project_free(&the_project);
@@ -107,11 +107,6 @@ public:
 		std::ostringstream string_stream;
 		load_tasks.print(string_stream);
 		const auto code = string_stream.str();
-#else
-		std::string code = "<loadtasks module=\"";
-		code += path_to_module;
-		code += "\" />";
-#endif
 		const auto code_in_range(string_to_range(code));
 		//
 		ASSERT_TRUE(
@@ -139,7 +134,7 @@ const std::string TestNetModule::paths[2] =
 
 std::string TestNetModule::current_directory;
 
-TEST_F(TestNetModule, host_interface_exec_function)
+TEST_F(TestNetModule, functions)
 {
 	for (const auto& node : nodes)
 	{
