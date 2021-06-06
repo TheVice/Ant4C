@@ -1,32 +1,18 @@
 
-cmake_minimum_required(VERSION 2.8.12)
-
-#project(ant4c.regex)
-
-find_package(Boost COMPONENTS regex)
 add_library(ant4c.regex SHARED
-  "${CMAKE_SOURCE_DIR}/regex.cpp"
-  "${CMAKE_SOURCE_DIR}/regex.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/regex.adoc"
+  "${CMAKE_CURRENT_SOURCE_DIR}/regex.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/regex.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/regex.xml"
   "${CMAKE_SOURCE_DIR}/text_encoding.c"
-  "${CMAKE_SOURCE_DIR}/text_encoding.cpp")
-
-if(${CMAKE_VERSION} VERSION_GREATER "3.2.9")
-if(MSVC)
-  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:DEBUG>:/W4 /GS>)
-  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:RELEASE>:/W4 /GS>)
-else()
-  set_target_properties(ant4c.regex PROPERTIES CXX_STANDARD 11)
-  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:DEBUG>:-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-  target_compile_options(ant4c.regex PUBLIC $<$<CONFIG:RELEASE>:-O3 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unknown-pragmas>)
-endif()
-else()
-if(NOT MSVC)
-  set_target_properties(ant4c.regex PROPERTIES CXX_STANDARD 11)
-endif()
-endif()
+  "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
+  "${CMAKE_SOURCE_DIR}/text_encoding.h"
+)
 
 target_compile_definitions(ant4c.regex PUBLIC NO_BUFFER_UNIT)
 target_compile_definitions(ant4c.regex PUBLIC NO_COMMON_UNIT)
+
+find_package(Boost COMPONENTS regex)
 
 if(Boost_FOUND)
   target_include_directories(ant4c.regex SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
@@ -68,7 +54,7 @@ else()
 
     if(NOT MSVC)
       set_target_properties(boost_regex PROPERTIES CXX_STANDARD 11)
-      target_compile_options(boost_regex PRIVATE "-fPIC")
+      #target_compile_options(boost_regex PRIVATE "-fPIC")
     endif()
 
     target_link_libraries(ant4c.regex boost_regex)
@@ -77,11 +63,12 @@ else()
   endif()
 endif()
 
-if((NOT MSVC) AND (NOT MINGW))
-  #target_compile_options(ant4c.regex PRIVATE "-fPIE")
-  if(APPLE)
-    #set_target_properties(ant4c.regex PROPERTIES LINK_FLAGS "-pie")
-  else()
-    set_target_properties(ant4c.regex PROPERTIES LINK_FLAGS "-pie -Wl,-z,now")
-  endif()
+if(NOT MSVC)
+  set_property(TARGET ant4c.regex PROPERTY CXX_STANDARD 11)
 endif()
+
+target_compile_options(ant4c.regex PRIVATE
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+)

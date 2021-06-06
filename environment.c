@@ -14,6 +14,7 @@
 #include "text_encoding.h"
 #include "version.h"
 
+#include <stdio.h>
 #include <string.h>
 
 static uint8_t is_data_of_operating_system_filled = 0;
@@ -42,200 +43,6 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		return 0;
 	}
 
-#if defined(_WIN32_WINNT_VISTA) && defined(_WIN32_WINNT) && (_WIN32_WINNT_VISTA <= _WIN32_WINNT)
-	GUID folderID;
-
-	switch (folder)
-	{
-		case Desktop:
-		case DesktopDirectory:
-			folderID = FOLDERID_Desktop;
-			break;
-
-		case Programs:
-			folderID = FOLDERID_Programs;
-			break;
-
-		case Personal:
-		case MyDocuments:
-			folderID = FOLDERID_Documents;
-			break;
-
-		case Favorites:
-			folderID = FOLDERID_Favorites;
-			break;
-
-		case Startup:
-			folderID = FOLDERID_Startup;
-			break;
-
-		case Recent:
-			folderID = FOLDERID_Recent;
-			break;
-
-		case SendTo:
-			folderID = FOLDERID_SendTo;
-			break;
-
-		case StartMenu:
-			folderID = FOLDERID_StartMenu;
-			break;
-
-		case MyMusic:
-			folderID = FOLDERID_Music;
-			break;
-
-		case MyVideos:
-			folderID = FOLDERID_Videos;
-			break;
-
-		case MyComputer:
-			folderID = FOLDERID_ComputerFolder;
-			break;
-
-		case NetworkShortcuts:
-			folderID = FOLDERID_NetHood;
-			break;
-
-		case Fonts:
-			folderID = FOLDERID_Fonts;
-			break;
-
-		case Templates:
-			folderID = FOLDERID_Templates;
-			break;
-
-		case CommonStartMenu:
-			folderID = FOLDERID_CommonStartMenu;
-			break;
-
-		case CommonPrograms:
-			folderID = FOLDERID_CommonPrograms;
-			break;
-
-		case CommonStartup:
-			folderID = FOLDERID_CommonStartup;
-			break;
-
-		case CommonDesktopDirectory:
-			folderID = FOLDERID_PublicDesktop;
-			break;
-
-		case ApplicationData:
-			folderID = FOLDERID_RoamingAppData;
-			break;
-
-		case PrinterShortcuts:
-			folderID = FOLDERID_PrintHood;
-			break;
-
-		case LocalApplicationData:
-			folderID = FOLDERID_LocalAppData;
-			break;
-
-		case InternetCache:
-			folderID = FOLDERID_InternetCache;
-			break;
-
-		case Cookies:
-			folderID = FOLDERID_Cookies;
-			break;
-
-		case History:
-			folderID = FOLDERID_History;
-			break;
-
-		case CommonApplicationData:
-			folderID = FOLDERID_ProgramData;
-			break;
-
-		case Windows:
-			folderID = FOLDERID_Windows;
-			break;
-
-		case System:
-			folderID = FOLDERID_System;
-			break;
-
-		case ProgramFiles:
-			folderID = FOLDERID_ProgramFiles;
-			break;
-
-		case MyPictures:
-			folderID = FOLDERID_Pictures;
-			break;
-
-		case UserProfile:
-			folderID = FOLDERID_Profile;
-			break;
-
-		case SystemX86:
-			folderID = FOLDERID_SystemX86;
-			break;
-
-		case ProgramFilesX86:
-			folderID = FOLDERID_ProgramFilesX86;
-			break;
-
-		case CommonProgramFiles:
-			folderID = FOLDERID_ProgramFilesCommon;
-			break;
-
-		case CommonProgramFilesX86:
-			folderID = FOLDERID_ProgramFilesCommonX86;
-			break;
-
-		case CommonTemplates:
-			folderID = FOLDERID_CommonTemplates;
-			break;
-
-		case CommonDocuments:
-			folderID = FOLDERID_PublicDocuments;
-			break;
-
-		case CommonAdminTools:
-			folderID = FOLDERID_CommonAdminTools;
-			break;
-
-		case AdminTools:
-			folderID = FOLDERID_AdminTools;
-			break;
-
-		case CommonMusic:
-			folderID = FOLDERID_PublicMusic;
-			break;
-
-		case CommonPictures:
-			folderID = FOLDERID_PublicPictures;
-			break;
-
-		case CommonVideos:
-			folderID = FOLDERID_PublicVideos;
-			break;
-
-		case Resources:
-			folderID = FOLDERID_ResourceDir;
-			break;
-
-		case LocalizedResources:
-			folderID = FOLDERID_LocalizedResourcesDir;
-			break;
-
-		case CommonOemLinks:
-			folderID = FOLDERID_CommonOEMLinks;
-			break;
-
-		case CDBurning:
-			folderID = FOLDERID_CDBurning;
-			break;
-
-		default:
-			return 0;
-	}
-
-	typedef HRESULT(WINAPI * LPFN_SHGETKNOWNFOLDERPATH)(REFKNOWNFOLDERID, DWORD, HANDLE, PWSTR*);
-	LPFN_SHGETKNOWNFOLDERPATH fnSHGetKnownFolderPath = NULL;
-	/**/
 	const HMODULE shell32Module = LoadLibraryW(L"shell32.dll");
 
 	if (NULL == shell32Module)
@@ -243,6 +50,27 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		return 0;
 	}
 
+	wchar_t* startW = NULL;
+	wchar_t* finishW = NULL;
+#if defined(_WIN32_WINNT_VISTA) && defined(_WIN32_WINNT) && (_WIN32_WINNT_VISTA <= _WIN32_WINNT)
+	const GUID folderIDs[] =
+	{
+		FOLDERID_Desktop, FOLDERID_Programs, FOLDERID_Documents, FOLDERID_Documents,
+		FOLDERID_Favorites, FOLDERID_Startup, FOLDERID_Recent, FOLDERID_SendTo,
+		FOLDERID_StartMenu, FOLDERID_Music, FOLDERID_Videos, FOLDERID_Desktop,
+		FOLDERID_ComputerFolder, FOLDERID_NetHood, FOLDERID_Fonts, FOLDERID_Templates,
+		FOLDERID_CommonStartMenu, FOLDERID_CommonPrograms, FOLDERID_CommonStartup,
+		FOLDERID_PublicDesktop, FOLDERID_RoamingAppData, FOLDERID_PrintHood,
+		FOLDERID_LocalAppData, FOLDERID_InternetCache, FOLDERID_Cookies, FOLDERID_History,
+		FOLDERID_ProgramData, FOLDERID_Windows, FOLDERID_System, FOLDERID_ProgramFiles,
+		FOLDERID_Pictures, FOLDERID_Profile, FOLDERID_SystemX86, FOLDERID_ProgramFilesX86,
+		FOLDERID_ProgramFilesCommon, FOLDERID_ProgramFilesCommonX86, FOLDERID_CommonTemplates,
+		FOLDERID_PublicDocuments, FOLDERID_CommonAdminTools, FOLDERID_AdminTools, FOLDERID_PublicMusic,
+		FOLDERID_PublicPictures, FOLDERID_PublicVideos, FOLDERID_ResourceDir, FOLDERID_LocalizedResourcesDir,
+		FOLDERID_CommonOEMLinks, FOLDERID_CDBurning
+	};
+	typedef HRESULT(WINAPI * LPFN_SHGETKNOWNFOLDERPATH)(REFKNOWNFOLDERID, DWORD, HANDLE, PWSTR*);
+	LPFN_SHGETKNOWNFOLDERPATH fnSHGetKnownFolderPath = NULL;
 	fnSHGetKnownFolderPath = (LPFN_SHGETKNOWNFOLDERPATH)GetProcAddress(shell32Module, "SHGetKnownFolderPath");
 
 	if (NULL == fnSHGetKnownFolderPath)
@@ -250,224 +78,46 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		return 0;
 	}
 
-	wchar_t* pathW = NULL;
-
-	if (S_OK == fnSHGetKnownFolderPath(&folderID, KF_FLAG_DEFAULT, NULL, &pathW))
+	if (S_OK == fnSHGetKnownFolderPath(&folderIDs[folder], KF_FLAG_DEFAULT, NULL, &startW))
 	{
-		const size_t count = wcslen(pathW);
-		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(pathW, pathW + count, path);
-		CoTaskMemFree(pathW);
+		finishW = startW;
+
+		while (0 != *finishW)
+		{
+			++finishW;
+		}
+
+		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(startW, finishW, path);
+		CoTaskMemFree(startW);
 		return returned;
 	}
 
-	return 1;
-#else
-	int folderID = 0;
-
-	switch (folder)
+#endif
+#define CSIDL_UNKNOWN -1
+	static const int folderCSIDLs[] =
 	{
-		case Desktop:
-		case DesktopDirectory:
-			folderID = CSIDL_DESKTOP;
-			break;
+		CSIDL_DESKTOP, CSIDL_PROGRAMS, CSIDL_PERSONAL, CSIDL_PERSONAL,
+		CSIDL_FAVORITES, CSIDL_STARTUP, CSIDL_RECENT, CSIDL_SENDTO,
+		CSIDL_STARTMENU, CSIDL_MYMUSIC, CSIDL_MYVIDEO, CSIDL_DESKTOP,
+		CSIDL_UNKNOWN/*FOLDERID_ComputerFolder*/, CSIDL_NETHOOD, CSIDL_FONTS, CSIDL_TEMPLATES,
+		CSIDL_COMMON_STARTMENU, CSIDL_COMMON_PROGRAMS, CSIDL_COMMON_STARTUP,
+		CSIDL_COMMON_DESKTOPDIRECTORY, CSIDL_APPDATA, CSIDL_PRINTHOOD,
+		CSIDL_LOCAL_APPDATA, CSIDL_INTERNET_CACHE, CSIDL_COOKIES, CSIDL_HISTORY,
+		CSIDL_COMMON_APPDATA, CSIDL_WINDOWS, CSIDL_SYSTEM, CSIDL_PROGRAM_FILES,
+		CSIDL_MYPICTURES, CSIDL_PROFILE, CSIDL_SYSTEMX86, CSIDL_PROGRAM_FILESX86,
+		CSIDL_PROGRAM_FILES_COMMON, CSIDL_PROGRAM_FILES_COMMONX86, CSIDL_COMMON_TEMPLATES,
+		CSIDL_COMMON_DOCUMENTS, CSIDL_COMMON_ADMINTOOLS, CSIDL_ADMINTOOLS, CSIDL_COMMON_MUSIC,
+		CSIDL_COMMON_PICTURES, CSIDL_COMMON_VIDEO, CSIDL_RESOURCES, CSIDL_UNKNOWN/*FOLDERID_LocalizedResourcesDir*/,
+		CSIDL_UNKNOWN/*FOLDERID_CommonOEMLinks*/, CSIDL_CDBURN_AREA
+	};
 
-		case Programs:
-			folderID = CSIDL_PROGRAMS;
-			break;
-
-		case Personal:
-		case MyDocuments:
-			folderID = CSIDL_PERSONAL;
-			break;
-
-		case Favorites:
-			folderID = CSIDL_FAVORITES;
-			break;
-
-		case Startup:
-			folderID = CSIDL_STARTUP;
-			break;
-
-		case Recent:
-			folderID = CSIDL_RECENT;
-			break;
-
-		case SendTo:
-			folderID = CSIDL_SENDTO;
-			break;
-
-		case StartMenu:
-			folderID = CSIDL_STARTMENU;
-			break;
-
-		case MyMusic:
-			folderID = CSIDL_MYMUSIC;
-			break;
-
-		case MyVideos:
-			folderID = CSIDL_MYVIDEO;
-			break;
-
-		case MyComputer:
-			/*folderID = ;
-			break;*/
-			return 1;
-
-		case NetworkShortcuts:
-			folderID = CSIDL_NETHOOD;
-			break;
-
-		case Fonts:
-			folderID = CSIDL_FONTS;
-			break;
-
-		case Templates:
-			folderID = CSIDL_TEMPLATES;
-			break;
-
-		case CommonStartMenu:
-			folderID = CSIDL_COMMON_STARTMENU;
-			break;
-
-		case CommonPrograms:
-			folderID = CSIDL_COMMON_PROGRAMS;
-			break;
-
-		case CommonStartup:
-			folderID = CSIDL_COMMON_STARTUP;
-			break;
-
-		case CommonDesktopDirectory:
-			folderID = CSIDL_COMMON_DESKTOPDIRECTORY;
-			break;
-
-		case ApplicationData:
-			folderID = CSIDL_APPDATA;
-			break;
-
-		case PrinterShortcuts:
-			folderID = CSIDL_PRINTHOOD;
-			break;
-
-		case LocalApplicationData:
-			folderID = CSIDL_LOCAL_APPDATA;
-			break;
-
-		case InternetCache:
-			folderID = CSIDL_INTERNET_CACHE;
-			break;
-
-		case Cookies:
-			folderID = CSIDL_COOKIES;
-			break;
-
-		case History:
-			folderID = CSIDL_HISTORY;
-			break;
-
-		case CommonApplicationData:
-			folderID = CSIDL_COMMON_APPDATA;
-			break;
-
-		case Windows:
-			folderID = CSIDL_WINDOWS;
-			break;
-
-		case System:
-			folderID = CSIDL_SYSTEM;
-			break;
-
-		case ProgramFiles:
-			folderID = CSIDL_PROGRAM_FILES;
-			break;
-
-		case MyPictures:
-			folderID = CSIDL_MYPICTURES;
-			break;
-
-		case UserProfile:
-			folderID = CSIDL_PROFILE;
-			break;
-
-		case SystemX86:
-			folderID = CSIDL_SYSTEMX86;
-			break;
-
-		case ProgramFilesX86:
-			folderID = CSIDL_PROGRAM_FILESX86;
-			break;
-
-		case CommonProgramFiles:
-			folderID = CSIDL_PROGRAM_FILES_COMMON;
-			break;
-
-		case CommonProgramFilesX86:
-			folderID = CSIDL_PROGRAM_FILES_COMMONX86;
-			break;
-
-		case CommonTemplates:
-			folderID = CSIDL_COMMON_TEMPLATES;
-			break;
-
-		case CommonDocuments:
-			folderID = CSIDL_COMMON_DOCUMENTS;
-			break;
-
-		case CommonAdminTools:
-			folderID = CSIDL_COMMON_ADMINTOOLS;
-			break;
-
-		case AdminTools:
-			folderID = CSIDL_ADMINTOOLS;
-			break;
-
-		case CommonMusic:
-			folderID = CSIDL_COMMON_MUSIC;
-			break;
-
-		case CommonPictures:
-			folderID = CSIDL_COMMON_PICTURES;
-			break;
-
-		case CommonVideos:
-			folderID = CSIDL_COMMON_VIDEO;
-			break;
-
-		case Resources:
-			folderID = CSIDL_RESOURCES;
-			break;
-
-		case LocalizedResources:
-			/* %SystemRoot%\resources\0409
-			folderID = CSIDL_RESOURCES_LOCALIZED;
-			break;
-			NOTE: Vista approach, see above, return empty path. */
-			return 1;
-
-		case CommonOemLinks:
-			/* %ProgramData%\OEM Links
-			folderID = CSIDL_COMMON_OEM_LINKS;
-			break;
-			NOTE: Vista approach, see above, return empty path. */
-			return 1;
-
-		case CDBurning:
-			folderID = CSIDL_CDBURN_AREA;
-			break;
-
-		default:
-			return 0;
+	if (CSIDL_UNKNOWN == folderCSIDLs[folder])
+	{
+		return 1;
 	}
 
 	typedef HRESULT(WINAPI * LPFN_SHGETFOLDERPATHW)(HWND, int, HANDLE, DWORD, LPWSTR);
 	LPFN_SHGETFOLDERPATHW fnSHGetFolderPathW = NULL;
-	const HMODULE shell32Module = LoadLibraryW(L"shell32.dll");
-
-	if (NULL == shell32Module)
-	{
-		return 0;
-	}
-
 #if defined(__GNUC__) && 8 <= __GNUC__
 	fnSHGetFolderPathW = (LPFN_SHGETFOLDERPATHW)(void*)GetProcAddress(shell32Module, "SHGetFolderPathW");
 #else
@@ -481,28 +131,32 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 	const ptrdiff_t size = buffer_size(path);
 
-	if (!buffer_append(path, NULL, 6 * (MAX_PATH + 1) + sizeof(uint32_t)))
+	if (!buffer_append(path, NULL, 6 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	wchar_t* pathW = (wchar_t*)buffer_data(path,
-										   buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * MAX_PATH - sizeof(uint16_t));
+	startW = (wchar_t*)buffer_data(path,
+								   buffer_size(path) - sizeof(uint32_t) - sizeof(uint16_t) * FILENAME_MAX - sizeof(uint16_t));
 
-	if (S_OK != fnSHGetFolderPathW(NULL, folderID, NULL, SHGFP_TYPE_DEFAULT, pathW))
+	if (S_OK != fnSHGetFolderPathW(NULL, folderCSIDLs[folder], NULL, SHGFP_TYPE_DEFAULT, startW))
 	{
 		return 0;
 	}
 
-	const size_t count = wcslen(pathW);
+	finishW = startW;
+
+	while (0 != *finishW)
+	{
+		++finishW;
+	}
 
 	if (!buffer_resize(path, size))
 	{
 		return 0;
 	}
 
-	return text_encoding_UTF16LE_to_UTF8(pathW, pathW + count, path);
-#endif
+	return text_encoding_UTF16LE_to_UTF8(startW, finishW, path);
 }
 
 #else
@@ -811,9 +465,13 @@ const void* environment_get_operating_system()
 			(const uint8_t*)uname_data.sysname, (const uint8_t*)uname_data.release,
 			(const uint8_t*)uname_data.version, (const uint8_t*)uname_data.machine
 		};
-		/**/
+#if defined(__APPLE__) && defined(__MACH__)
+		const uint8_t platformID = macOS;
+#else
+		const uint8_t platformID = Unix;
+#endif
 		is_data_of_operating_system_filled = operating_system_init(
-				Unix, version, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
+				platformID, version, version_string, (ptrdiff_t)sizeof(operating_system), operating_system);
 
 		if (!is_data_of_operating_system_filled)
 		{

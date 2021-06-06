@@ -1,0 +1,1075 @@
+<?xml version="1.0"?>
+<!--
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2021 TheVice
+ *
+ -->
+<project name="ant4c.net.module">
+  <property name="pad_level" value="0" />
+  <property name="program_to_run" value="ant4c.net.module.clr.dll" overwrite="false" />
+  <property name="folder_with_program_to_run" value="${path::combine(project::get-base-directory(), path::combine('bin', 'Release'))}" overwrite="false" />
+
+  <target name="load_tasks">
+    <choose unless="${property::exists('path_to_module')}">
+      <when test="${platform::is-windows()}">
+        <trycatch>
+          <try>
+            <loadtasks module="ant4c.net.module.dll" />
+          </try>
+          <catch>
+            <loadtasks module="libant4c.net.module.dll" />
+          </catch>
+        </trycatch>
+      </when>
+
+      <when test="${platform::is-unix()}">
+        <trycatch>
+          <try>
+            <loadtasks module="libant4c.net.module.so" />
+          </try>
+          <catch>
+            <loadtasks module="libant4c.net.module.dylib" />
+          </catch>
+        </trycatch>
+      </when>
+    </choose>
+
+    <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
+  </target>
+
+  <!-- nethost::get-hostfxr-path -->
+  <target name="nethost_get-hostfxr-path">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <choose unless="${property::exists('net_host_folder')}">
+      <when test="${platform::is-windows()}">
+        <property
+          name="net_host_folder"
+          value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" />
+
+        <property
+          name="net_host_folder"
+          value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" />
+
+        <if test="${string::equal(bool::parse('false'), environment::is64bit-process())}">
+          <property
+            name="net_host_folder"
+            value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" />
+
+          <property
+            name="net_host_folder"
+            value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" />
+        </if>
+
+        <property name="nethost_file_name" value="nethost.dll" />
+      </when>
+
+      <when test="${platform::is-unix()}">
+        <property
+          name="net_host_folder"
+          value="/usr/share/dotnet/packs" />
+
+        <property
+          name="net_host_folder"
+          value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" />
+
+        <property name="nethost_file_name" value="libnethost.so" />
+      </when>
+    </choose>
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}net_host_folder -> ${net_host_folder}</echo>
+
+    <if test="${directory::exists(net_host_folder)}">
+      <property name="paths_to_nethost"
+                value="${directory::enumerate-file-system-entries(net_host_folder, 'file', 'true')}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(paths_to_nethost) -> ${string::empty(paths_to_nethost)}</echo>
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <foreach item="String" in="${paths_to_nethost}" property="path_to_nethost">
+        <property name="hostfxr_path" value="" />
+
+        <if test="${string::equal(nethost_file_name, string::to-lower(path::get-file-name(path_to_nethost)))}">
+          <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_nethost -> ${path_to_nethost}</echo>
+          <property name="hostfxr_path" value="${nethost::get-hostfxr-path(path_to_nethost)}" />
+          <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_path -> ${hostfxr_path}</echo>
+        </if>
+      </foreach>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::result-to-string -->
+  <target name="hostfxr_result-to-string">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="codes" value="-1 0 1 2 3" />
+    <property name="codes"
+      value="${codes} -2147024809 -2147450751 -2147450750" />
+    <property name="codes"
+      value="${codes} -2147450749 -2147450748 -2147450747" />
+    <property name="codes"
+      value="${codes} -2147450746 -2147450745 -2147450744" />
+    <property name="codes"
+      value="${codes} -2147450743 -2147450742 -2147450741" />
+    <property name="codes"
+      value="${codes} -2147450740 -2147450739 -2147450738" />
+    <property name="codes"
+      value="${codes} -2147450737 -2147450736 -2147450735" />
+    <property name="codes"
+      value="${codes} -2147450734 -2147450733 -2147450732" />
+    <property name="codes"
+      value="${codes} -2147450731 -2147450730 -2147450729" />
+    <property name="codes"
+      value="${codes} -2147450728 -2147450727 -2147450726" />
+    <property name="codes"
+      value="${codes} -2147450725 -2147450724 -2147450723" />
+    <property name="codes"
+      value="${codes} -2147450722 -2147450721 -2147450720" />
+    <property name="codes"
+      value="${codes} -2147450719 -2147450718 -2147450717" />
+    <property name="codes"
+      value="${codes} -2147450716 -2147450715 -2147450714" />
+
+    <foreach item="String" in="${codes}" delim=" " property="code">
+      <property name="result_in_string"
+        value="${net::result-to-string(code)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
+
+      <choose>
+        <when test="${string::equal('-1', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('3', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('-2147450746', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('-2147450737', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <when test="${string::equal('-2147450736', code)}">
+          <fail if="${string::contains(result_in_string, '(')}" />
+        </when>
+        <otherwise>
+          <fail unless="${string::contains(result_in_string, '(')}" />
+        </otherwise>
+      </choose>
+    </foreach>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::initialize -->
+  <target name="hostfxr_initialize">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail
+      unless="${property::exists('path_to_hostfxr')}"
+      message="Property 'path_to_hostfxr' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostfxr -> ${path_to_hostfxr}</echo>
+
+    <property
+      name="is_initialize"
+      value="${hostfxr::initialize(path_to_hostfxr)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_initialize -> ${is_initialize}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::functions -->
+  <target name="hostfxr_functions">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="host_functions" value="${hostfxr::functions()}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(host_functions) -> ${string::empty(host_functions)}</echo>
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <foreach item="String"
+      in="${host_functions}" delim=" " property="host_function">
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::is-function-exists -->
+  <target name="hostfxr_is-function-exists">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="functions" value="close" />
+    <property name="functions" value="${functions} get-available-sdks" />
+    <property name="functions" value="${functions} get-native-search-directories" />
+    <property name="functions" value="${functions} get-runtime-delegate" />
+    <property name="functions" value="${functions} get-runtime-properties" />
+    <property name="functions" value="${functions} get-runtime-property-value" />
+    <property name="functions" value="${functions} initialize-for-dotnet-command-line" />
+    <property name="functions" value="${functions} initialize-for-runtime-config" />
+    <property name="functions" value="${functions} main" />
+    <property name="functions" value="${functions} main-bundle-startupinfo" />
+    <property name="functions" value="${functions} main-startupinfo" />
+    <property name="functions" value="${functions} resolve-sdk" />
+    <property name="functions" value="${functions} resolve-sdk2" />
+    <property name="functions" value="${functions} run-app" />
+    <property name="functions" value="${functions} set-error-writer" />
+    <property name="functions" value="${functions} set-runtime-property-value" />
+
+    <foreach item="String" in="${functions}" delim=" " property="function">
+      <property name="is_function_exists" value="${hostfxr::is-function-exists(function)}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::is-function-exists(${function}) -> ${is_function_exists}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="get-host-fx-version-from-path">
+    <fail
+      unless="${property::exists('path_to_hostfxr')}"
+      message="Property 'path_to_hostfxr' required to run this ('${target::get-current-target()}') target." />
+    <property
+      name="host-fx-version"
+      value="${path::get-file-name(path::get-directory-name(path_to_hostfxr))}" />
+    <property
+      name="host-fx-version"
+      value="${version::parse(host-fx-version)}" />
+    <property
+      name="host-fx-version"
+      value="${version::get-major(host-fx-version)}.${version::get-minor(host-fx-version)}" />
+  </target>
+
+  <target name="build_assembly" depends="load_tasks,hostfxr_initialize">
+    <call target="get-host-fx-version-from-path" />
+    <property name="project" value="${path::combine(project::get-base-directory(), 'ant4c.net.module.csproj')}" overwrite="false" />
+
+    <if test="${version::less('2.0', host-fx-version)}">
+      <property
+        name="return_of_main"
+        value="${hostfxr::main('', 'build', project, '/p:TargetFramework=netcoreapp2.1', '/p:Configuration=Release', '/p:OutputType=Exe')}" />
+    </if>
+
+    <if test="${version::less('3.0', host-fx-version)}">
+      <property
+        name="return_of_main"
+        value="${hostfxr::main('', 'build', project, '/p:TargetFramework=netcoreapp3.1', '/p:Configuration=Release')}" />
+    </if>
+  </target>
+
+  <target name="get-path-to-assembly">
+    <fail
+      unless="${property::exists('program_to_run')}"
+      message="Property 'program_to_run' required to run this ('${target::get-current-target()}') target." />
+    <fail
+      unless="${property::exists('folder_with_program_to_run')}"
+      message="Property 'folder_with_program_to_run' required to run this ('${target::get-current-target()}') target." />
+
+    <call target="get-host-fx-version-from-path" />
+
+    <property
+      name="path_to_assembly"
+      value="netcoreapp${host-fx-version}" />
+
+    <property
+      name="path_to_assembly"
+      value="${path::combine(folder_with_program_to_run, path::combine(path_to_assembly, program_to_run))}" />
+  </target>
+
+  <!-- hostfxr::main -->
+  <target name="hostfxr_main">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}full path to program to run -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}executing program -> ${path_to_assembly}</echo>
+
+      <property
+        name="return_of_main"
+        value="${hostfxr::main('', path_to_assembly)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::main -> ${hostfxr::result-to-string(return_of_main)}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::get-native-search-directories -->
+  <target name="hostfxr_get-native-search-directories">
+    <choose>
+      <when test="${platform::is-windows()}">
+        <property name="path_delimiter" value=";" />
+      </when>
+      <when test="${platform::is-unix()}">
+        <property name="path_delimiter" value=":" />
+      </when>
+    </choose>
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <property
+        name="directories"
+        value="${hostfxr::get-native-search-directories('exec', path_to_assembly)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(hostfxr::get-native-search-directories) -> ${string::empty(directories)}</echo>
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_delimiter -> ${path_delimiter}</echo>
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <foreach item="String" in="${directories}" delim="${path_delimiter}" property="directory">
+        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}search-directory -> ${directory}</echo>
+      </foreach>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::main-startupinfo -->
+  <target name="hostfxr_main-startupinfo">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <property
+        name="return_of_main_startupinfo"
+        value="${hostfxr::main-startupinfo('', '', '', 'exec', path_to_assembly)}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}return_of_main_startupinfo -> ${hostfxr::result-to-string(return_of_main_startupinfo)}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::close -->
+  <target name="hostfxr_close">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail unless="${property::exists('is_context_initialized')}"
+          message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('context')}"
+          message="Property 'context' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized} context-> ${context}</echo>
+
+    <if test="${is_context_initialized}">
+      <property name="close" value="${hostfxr::close(context)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::close -> ${close} -> ${hostfxr::result-to-string(close)}</echo>
+
+      <property name="context" />
+    </if>
+
+    <if test="${string::equal(bool::parse('false'), is_context_initialized)}">
+      <property name="is_context_initialized"
+                value="${string::substring(context, string::index-of(context, ' '))}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized ->${is_context_initialized} -> ${hostfxr::result-to-string(is_context_initialized)}</echo>
+    </if>
+
+    <property name="is_context_initialized" value="False" />
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::initialize-for-dotnet-command-line -->
+  <target name="hostfxr_initialize-for-dotnet-command-line">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <property
+        name="context"
+        value="${hostfxr::initialize-for-dotnet-command-line('', '', path_to_assembly)}" />
+
+      <property
+        name="is_context_initialized"
+        value="${string::equal(bool::parse('false'), string::contains(context, ' '))}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::initialize-for-dotnet-command-line -> ${context} -> ${is_context_initialized}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::initialize-for-runtime-config -->
+  <target name="hostfxr_initialize-for-runtime-config">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <if test="${string::equal(bool::parse('false'), property::exists('path_to_json_config'))}">
+      <property name="tfm" value="netcoreapp3.1" />
+      <property name="framework_version" value="3.1.0" />
+
+      <property name="content" />
+
+      <property
+        name="content"
+        value="${content}{&#10;" />
+      <property
+        name="content"
+        value="${content}  &#x22;runtimeOptions&#x22;: {&#10;" />
+      <property
+        name="content"
+        value="${content}    &#x22;tfm&#x22;: &#x22;${tfm}&#x22;,&#10;" />
+      <property
+        name="content"
+        value="${content}    &#x22;rollForward&#x22;: &#x22;LatestMinor&#x22;,&#10;" />
+      <property
+        name="content"
+        value="${content}    &#x22;framework&#x22;: {&#10;" />
+      <property
+        name="content"
+        value="${content}      &#x22;name&#x22;: &#x22;Microsoft.NETCore.App&#x22;,&#10;" />
+      <property
+        name="content"
+        value="${content}      &#x22;version&#x22;: &#x22;${framework_version}&#x22;&#10;" />
+      <property
+        name="content"
+        value="${content}    }&#10;" />
+      <property
+        name="content"
+        value="${content}  }&#10;" />
+      <property
+        name="content"
+        value="${content}}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}content -> ${content}</echo>
+
+      <property
+        name="file_path"
+        value="${path::get-temp-file-name()}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file_path -> ${file_path}</echo>
+
+      <property name="file_path" value="${file_path}.json" />
+
+      <echo message="${content}" file="${file_path}" />
+    </if>
+
+    <if test="${property::exists('path_to_json_config')}">
+      <property name="file_path" value="${path_to_json_config}" />
+
+      <loadfile file="${file_path}" property="content" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}content -> ${content}</echo>
+    </if>
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file_path -> ${file_path}</echo>
+
+    <property name="context"
+              value="${hostfxr::initialize-for-runtime-config('', '', file_path)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::initialize-for-runtime-config('', '', ${file_path}) -> ${context}</echo>
+
+    <property name="is_context_initialized"
+              value="${string::equal(bool::parse('false'), string::contains(context, ' '))}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized}</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::run-app -->
+  <target name="hostfxr_run-app">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <property name="context"
+                value="${hostfxr::initialize-for-dotnet-command-line('', '', path_to_assembly, '1', '2', '3', '4', '5')}" />
+
+      <property name="is_context_initialized"
+                value="${string::equal(bool::parse('false'), string::contains(context, ' '))}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::initialize-for-dotnet-command-line -> ${context} -> ${is_context_initialized}</echo>
+
+      <if test="${is_context_initialized}">
+        <property name="run-app" value="${hostfxr::run-app(context)}" />
+        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::run-app -> ${run-app} -> ${hostfxr::result-to-string(run-app)}</echo>
+
+        <call target="hostfxr_close" />
+      </if>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::get-runtime-property-value -->
+  <target name="hostfxr_get-runtime-property-value">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail unless="${property::exists('is_context_initialized')}"
+          message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('context')}"
+          message="Property 'context' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('property_name')}"
+          message="Property 'property_name' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized} context -> ${context} property_name -> ${property_name}</echo>
+
+    <if test="${is_context_initialized}">
+      <property name="runtime_property_value" value="${hostfxr::get-runtime-property-value(context, property_name)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::get-runtime-property-value(${context}, ${property_name}) -> '${runtime_property_value}' -> ${hostfxr::result-to-string(string::trim(runtime_property_value))}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::set-runtime-property-value -->
+  <target name="hostfxr_set-runtime-property-value">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail unless="${property::exists('is_context_initialized')}"
+          message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('context')}"
+          message="Property 'context' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('property_name')}"
+          message="Property 'property_name' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized} context -> ${context} property_name -> ${property_name}</echo>
+    <echo level="Debug" if="${property::exists('property_value')}">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property_value -> ${property_value}</echo>
+
+    <if test="${is_context_initialized}">
+      <if test="${string::equal(bool::parse('false'), property::exists('property_value'))}">
+        <property name="return_of_set_runtime_property_value" value="${hostfxr::set-runtime-property-value(context, property_name)}" />
+        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value(${context}, ${property_name}) -> '${return_of_set_runtime_property_value}' -> ${hostfxr::result-to-string(return_of_set_runtime_property_value)}</echo>
+      </if>
+
+      <if test="${property::exists('property_value')}">
+        <property name="return_of_set_runtime_property_value" value="${hostfxr::set-runtime-property-value(context, property_name, property_value)}" />
+        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value(${context}, ${property_name}, ${property_value}) -> '${return_of_set_runtime_property_value}' -> ${hostfxr::result-to-string(return_of_set_runtime_property_value)}</echo>
+      </if>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::get-runtime-properties -->
+  <target name="hostfxr_get-runtime-properties">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail unless="${property::exists('is_context_initialized')}"
+          message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('context')}"
+          message="Property 'context' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized} context -> ${context}</echo>
+
+    <if test="${is_context_initialized}">
+      <property name="runtime_properties" value="${hostfxr::get-runtime-properties(context)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::get-runtime-properties -> ${runtime_properties} -> ${hostfxr::result-to-string(runtime_properties)}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::set-error-writer -->
+  <target name="hostfxr_set-error-writer">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail unless="${property::exists('path_to_file_for_error_writer')}"
+          message="Property 'path_to_file_for_error_writer' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_file_for_error_writer -> '${path_to_file_for_error_writer}'</echo>
+
+    <property name="error_writer" value="${hostfxr::set-error-writer(path_to_file_for_error_writer)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-error-writer(${path_to_file_for_error_writer}) -> '${error_writer}'</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::get-runtime-delegate -->
+  <target name="hostfxr_get-runtime-delegate">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail unless="${property::exists('is_context_initialized')}"
+          message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('context')}"
+          message="Property 'context' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('type_of_delegate')}"
+          message="Property 'type_of_delegate' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('assembly_path')}"
+          message="Property 'assembly_path' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('type_name')}"
+          message="Property 'type_name' required to run this ('${target::get-current-target()}') target." />
+    <fail unless="${property::exists('method_name')}"
+          message="Property 'method_name' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}context -> '${context}'</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}type_of_delegate -> '${type_of_delegate}'</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}assembly_path -> '${assembly_path}'</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}type_name -> '${type_name}'</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}method_name -> '${method_name}'</echo>
+    <echo level="Debug" if="${property::exists('delegate_type_name')}">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}delegate_type_name -> '${delegate_type_name}'</echo>
+
+    <if test="${is_context_initialized}">
+      <property name="runtime_delegate" if="${string::equal(bool::parse('false'), property::exists('delegate_type_name'))}" value="${hostfxr::get-runtime-delegate(context, type_of_delegate, assembly_path, type_name, method_name)}" />
+      <property name="runtime_delegate" if="${property::exists('delegate_type_name')}" value="${hostfxr::get-runtime-delegate(context, type_of_delegate, assembly_path, type_name, method_name, delegate_type_name)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}runtime_delegate -> '${runtime_delegate}' -> ${hostfxr::result-to-string(string::trim(runtime_delegate))}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostfxr::main-bundle-startupinfo -->
+  <target name="hostfxr_main-bundle-startupinfo">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}full path to program -> ${path_to_assembly}</echo>
+
+    <if test="${file::exists(path_to_assembly)}">
+      <property name="header_offset" overwrite="false" value="0" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
+
+      <property
+        name="return_of_main_startupinfo"
+        value="${hostfxr::main-bundle-startupinfo('', '', '', header_offset, 'exec', path_to_assembly)}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}return_of_main_startupinfo -> ${hostfxr::result-to-string(return_of_main_startupinfo)}</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostpolicy::initialize -->
+  <target name="hostpolicy_initialize">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <fail
+      unless="${property::exists('path_to_hostpolicy')}"
+      message="Property 'path_to_hostpolicy' required to run this ('${target::get-current-target()}') target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostpolicy -> ${path_to_hostpolicy}</echo>
+
+    <property
+      name="is_initialize"
+      value="${hostpolicy::initialize(path_to_hostpolicy)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_initialize -> ${is_initialize}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostpolicy::functions -->
+  <target name="hostpolicy_functions">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="host_policy_functions" value="${corehost::functions()}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(host_policy_functions) -> ${string::empty(host_policy_functions)}</echo>
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <foreach item="String"
+      in="${host_policy_functions}" delim=" " property="host_function">
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostpolicy::is-function-exists -->
+  <target name="hostpolicy_is-function-exists">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <property name="functions" value="initialize" />
+    <property name="functions" value="${functions} load" />
+    <property name="functions" value="${functions} main" />
+    <property name="functions" value="${functions} main-with-output-buffer" />
+    <property name="functions" value="${functions} resolve-component-dependencies" />
+    <property name="functions" value="${functions} set-error-writer" />
+    <property name="functions" value="${functions} unload" />
+
+    <foreach item="String" in="${functions}" delim=" " property="function">
+      <property name="is_function_exists" value="${corehost::is-function-exists(function)}" />
+
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::is-function-exists(${function}) -> ${is_function_exists}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- hostinterface::initialize -->
+  <target name="host_interface_initialize">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostinterface::initialize('123456') -> ${hostinterface::initialize('123456')}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- corehost::load -->
+  <target name="core_host_load">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostinterface::initialize('369365249') -> ${hostinterface::initialize('369365249')}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::load() -> ${corehost::load()}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::unload() -> ${corehost::unload()}</echo>
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <!-- file::is-assembly -->
+  <target name="file_is-assembly">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-path-to-assembly" />
+
+    <fail
+      unless="${property::exists('path_to_file')}"
+      message="Property 'path_to_file' required to run this ('${target::get-current-target()}') target." />
+
+    <if test="${hostfxr::is-function-exists('get-runtime-delegate')}">
+      <call target="hostfxr_initialize-for-runtime-config" />
+
+      <property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" />
+
+      <property name="assembly_path" value="${path_to_assembly}" />
+      <property name="type_name" value="Ant4C.Net.Module.Delegates, ${path::get-file-name-without-extension(path_to_assembly)}" />
+      <property name="method_name" value="FileUnit_IsAssembly" />
+      <property name="delegate_type_name" value="Ant4C.Net.Module.Delegates+FileUnit_IsAssemblyDelegate, ${path::get-file-name-without-extension(path_to_assembly)}" />
+
+      <call target="hostfxr_get-runtime-delegate" />
+      <call target="hostfxr_close" />
+
+      <property name="is_assembly" value="${file::is-assembly(path_to_file, runtime_delegate)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file::is-assembly(${path_to_file}, ${runtime_delegate}) -> '${is_assembly}'</echo>
+    </if>
+
+    <if test="${string::equal(bool::parse('false'), hostfxr::is-function-exists('get-runtime-delegate'))}">
+      <property name="is_assembly" value="${file::is-assembly(path_to_file, path_to_assembly)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file::is-assembly(${path_to_file}, ${path_to_assembly}) -> '${is_assembly}'</echo>
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="get_list_of_hosts_fx_resolvers">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <choose unless="${property::exists('fxr_folder')}">
+      <when test="${platform::is-windows()}">
+        <property name="fxr_folder"
+          value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" />
+
+        <property name="hostfxr_file_name" value="hostfxr.dll" />
+      </when>
+      <when test="${platform::is-unix()}">
+        <property name="fxr_folder"
+          value="/usr/share/dotnet/host/fxr" />
+
+        <property name="hostfxr_file_name" value="libhostfxr.so" />
+      </when>
+    </choose>
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}fxr_folder -> ${fxr_folder}</echo>
+
+    <fail unless="${directory::exists(fxr_folder)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Folder '${fxr_folder}' is not exists." />
+
+    <property name="paths_to_hostfxr"
+      value="${directory::enumerate-file-system-entries(fxr_folder, 'file', 'true')}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(paths_to_hostfxr) -> ${string::empty(paths_to_hostfxr)}</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="test_load_tasks" depends="load_tasks" />
+
+  <target name="test_nethost_get-hostfxr-path" depends="load_tasks,nethost_get-hostfxr-path" />
+  <target name="test_hostfxr_result-to-string" depends="load_tasks,hostfxr_result-to-string" />
+
+  <target name="test_hostfxr_initialize" depends="load_tasks,hostfxr_initialize" />
+
+  <target name="test_hostfxr_functions" depends="test_hostfxr_initialize,hostfxr_functions" />
+  <target name="test_hostfxr_is-function-exists" depends="test_hostfxr_initialize,hostfxr_is-function-exists" />
+
+  <target name="test_hostfxr_main" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('main')}">
+    <call unless="${hostfxr::is-function-exists('close')}" target="hostfxr_main" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_main -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_resolve-sdk" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('resolve-sdk')}">
+    <property name="resolve-sdk" value="${hostfxr::resolve-sdk('', '')}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}resolve-sdk -> ${resolve-sdk}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_resolve-sdk -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_resolve-sdk2" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('resolve-sdk2')}">
+    <property name="dis_allow_pre_release" value="1" />
+    <property name="resolve-sdk2" value="${hostfxr::resolve-sdk2('', '', dis_allow_pre_release)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}resolve-sdk2 -> ${resolve-sdk2}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_resolve-sdk2 -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_get-available-sdks" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('get-available-sdks')}">
+    <property name="available-sdks" value="${hostfxr::get-available-sdks()}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(available-sdks) -> ${string::empty(available-sdks)}</echo>
+
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <foreach item="String" in="${available-sdks}" property="available-sdk">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}available-sdk -> ${available-sdk}</echo>
+    </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_get-available-sdks -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_get-native-search-directories" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('get-native-search-directories')}">
+    <call target="hostfxr_get-native-search-directories" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_get-native-search-directories -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_main-startupinfo" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('main-startupinfo')}">
+    <call unless="${hostfxr::is-function-exists('close')}" target="hostfxr_main-startupinfo" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_main-startupinfo -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_initialize-for-dotnet-command-line" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
+    <call target="hostfxr_initialize-for-dotnet-command-line" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_initialize-for-dotnet-command-line -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_initialize-for-runtime-config" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
+    <call target="hostfxr_initialize-for-runtime-config" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_initialize-for-runtime-config -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_run-app" depends="test_hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('run-app')}">
+    <call target="hostfxr_run-app" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_run-app -> DONE</echo>
+    <call target="hostfxr_close" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_close -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_get-runtime-properties" depends="test_hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('get-runtime-properties')}">
+    <call target="hostfxr_get-runtime-properties" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_get-runtime-properties -> DONE</echo>
+    <call target="hostfxr_close" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_close -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_get-runtime-property-value" depends="test_hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('get-runtime-property-value')}">
+    <property name="property_name" value="PROBING_DIRECTORIES" overwrite="false" />
+
+    <call target="hostfxr_get-runtime-property-value" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_get-runtime-property-value -> DONE</echo>
+    <call target="hostfxr_close" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_close -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_set-runtime-property-value" depends="test_hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('set-runtime-property-value')}">
+    <property name="property_name" value="MY_PROPERTY" overwrite="false" />
+    <!--property name="property_value" value="VALUE_FOR_MY_PROPERTY" overwrite="false" /-->
+
+    <call target="hostfxr_set-runtime-property-value" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_set-runtime-property-value -> DONE</echo>
+    <call target="hostfxr_close" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_close -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_get-runtime-delegate" depends="test_hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('get-runtime-delegate')}">
+    <call target="hostfxr_get-runtime-delegate" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_get-runtime-delegate -> DONE</echo>
+  </target>
+
+  <target name="test_hostpolicy_initialize" depends="load_tasks,hostpolicy_initialize" />
+  <target name="test_hostpolicy_functions" depends="test_hostpolicy_initialize,hostpolicy_functions" />
+  <target name="test_hostpolicy_is-function-exists" depends="test_hostpolicy_initialize,hostpolicy_is-function-exists" />
+  <target name="test_host_interface_initialize" depends="load_tasks,host_interface_initialize" />
+  <target name="test_core_host_load" depends="test_hostpolicy_initialize,core_host_load" />
+
+  <target name="test_file_is-assembly" depends="test_hostfxr_initialize">
+    <if test="${string::equal(bool::parse('false'), property::exists('path_to_file'))}">
+      <call target="get-path-to-assembly" />
+      <property name="path_to_file" value="${path_to_assembly}" />
+    </if>
+
+    <call target="file_is-assembly" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file_is-assembly -> DONE</echo>
+  </target>
+
+  <target name="test_hostfxr_main-bundle-startupinfo" depends="test_hostfxr_initialize" if="${hostfxr::is-function-exists('main-bundle-startupinfo')}">
+    <call target="hostfxr_main-bundle-startupinfo" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_main-bundle-startupinfo -> DONE</echo>
+  </target>
+
+  <target name="depend_on_path_to_hostfxr">
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostfxr -> ${path_to_hostfxr}</echo>
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_initialize" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_initialize -> DONE</echo>
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_functions" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_functions -> DONE</echo>
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_is-function-exists" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_is-function-exists -> DONE</echo>
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_main" />
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_resolve-sdk" />
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_resolve-sdk2" />
+
+    <program unless="${platform::is-unix()}" buildfile="${project::get-buildfile-path()}" target="test_hostfxr_get-available-sdks" />
+
+    <program unless="${platform::is-unix()}" buildfile="${project::get-buildfile-path()}" target="test_hostfxr_get-native-search-directories" />
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_main-startupinfo" /><!-- unless="${platform::is-unix() && fx-version < 3.1}" -->
+
+    <!--program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_run-app" /-->
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_get-runtime-properties" />
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_get-runtime-property-value" />
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_set-runtime-property-value" />
+
+    <!--program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_main-bundle-startupinfo" /-->
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_file_is-assembly" /><!-- unless="${platform::is-unix() && fx-version < 3.1}" -->
+  </target>
+
+  <target name="main">
+    <program buildfile="${project::get-buildfile-path()}" target="test_load_tasks" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}load_tasks -> DONE</echo>
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_nethost_get-hostfxr-path" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}nethost_get-hostfxr-path -> DONE</echo>
+
+    <program buildfile="${project::get-buildfile-path()}" target="test_hostfxr_result-to-string" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr_result-to-string -> DONE</echo>
+
+    <if test="${property::exists('path_to_hostfxr')}">
+      <call target="depend_on_path_to_hostfxr" />
+    </if>
+
+    <if test="${string::equal(bool::parse('false'), property::exists('path_to_hostfxr'))}">
+      <call target="get_list_of_hosts_fx_resolvers" />
+
+      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+      <foreach item="String" in="${paths_to_hostfxr}" property="path_to_hostfxr">
+        <call if="${string::equal(hostfxr_file_name, string::to-lower(path::get-file-name(path_to_hostfxr)))}"
+          target="depend_on_path_to_hostfxr" />
+        <echo level="Debug" />
+      </foreach>
+
+      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    </if>
+  </target>
+
+  <target name="main_" depends="nethost_get-hostfxr-path,hostfxr_result-to-string">
+    <if test="${property::exists('path_to_hostfxr')}">
+      <echo level="Debug" />
+
+      <call target="hostfxr_initialize" />
+      <echo level="Debug" />
+
+      <call target="hostfxr_functions" />
+      <echo level="Debug" />
+
+      <call target="hostfxr_is-function-exists" />
+      <echo level="Debug" />
+
+      <if test="${hostfxr::is-function-exists('set-error-writer')}">
+        <property name="path_to_file_for_error_writer" value="${path::get-temp-file-name()}" overwrite="false" />
+        <call target="hostfxr_set-error-writer" />
+        <echo level="Debug" />
+      </if>
+
+      <if test="${property::exists('program_to_run')}">
+        <if test="${property::exists('folder_with_program_to_run')}">
+
+          <if test="${hostfxr::is-function-exists('main')}">
+            <call target="hostfxr_main" />
+            <echo level="Debug" />
+          </if>
+
+          <if test="${hostfxr::is-function-exists('get-native-search-directories')}">
+            <call target="hostfxr_get-native-search-directories" />
+            <echo level="Debug" />
+          </if>
+
+          <if test="${hostfxr::is-function-exists('main-startupinfo')}">
+            <call target="hostfxr_main-startupinfo" />
+            <echo level="Debug" />
+          </if>
+
+          <if test="${hostfxr::is-function-exists('close')}">
+            <if test="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
+              <call target="hostfxr_initialize-for-dotnet-command-line" />
+              <call target="hostfxr_close" />
+              <echo level="Debug" />
+
+              <if test="${hostfxr::is-function-exists('run-app')}">
+                <call target="hostfxr_run-app" />
+                <echo level="Debug" />
+              </if>
+            </if>
+
+            <if test="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
+              <call target="hostfxr_initialize-for-runtime-config" />
+              <call target="hostfxr_close" />
+              <echo level="Debug" />
+
+              <if test="${hostfxr::is-function-exists('get-runtime-properties')}">
+                <call target="hostfxr_initialize-for-runtime-config" />
+                <call target="hostfxr_get-runtime-properties" />
+                <call target="hostfxr_close" />
+                <echo level="Debug" />
+              </if>
+
+              <if test="${hostfxr::is-function-exists('get-runtime-property-value')}">
+                <if test="${property::exists('property_name')}">
+                  <call target="hostfxr_initialize-for-runtime-config" />
+                  <call target="hostfxr_get-runtime-property-value" />
+                  <call target="hostfxr_close" />
+                </if>
+
+                <if test="${hostfxr::is-function-exists('set-runtime-property-value')}">
+                  <if test="${property::exists('property_name_to_set')}">
+                    <property name="property_name" value="${property_name_to_set}" />
+
+                    <call target="hostfxr_initialize-for-runtime-config" />
+                    <call target="hostfxr_set-runtime-property-value" />
+                    <call target="hostfxr_get-runtime-property-value" />
+                    <call target="hostfxr_close" />
+                  </if>
+                </if>
+              </if>
+            </if>
+          </if>
+        </if>
+      </if>
+
+      <if test="${hostfxr::is-function-exists('set-error-writer')}">
+        <if test="${string::equal(bool::parse('false'), property::is-readonly('path_to_file_for_error_writer'))}">
+          <property name="path_to_file_for_error_writer" />
+          <call target="hostfxr_set-error-writer" />
+          <echo level="Debug" />
+        </if>
+      </if>
+    </if>
+  </target>
+</project>

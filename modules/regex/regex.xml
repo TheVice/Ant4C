@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<project name="ant4c.regex.xml">
+  <fail
+    if="${task::exists('regex')}"
+    message="${project::get-name()} - 'regex' task already exists. Terminating evaluation of script." />
+
+  <choose unless="${property::exists('path_to_module')}">
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.regex.so" failonerror="false" />
+      <loadtasks module="libant4c.regex.dylib" unless="${task::exists('regex')}" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <loadtasks module="ant4c.regex.dll" failonerror="false" />
+      <loadtasks module="libant4c.regex.dll" unless="${task::exists('regex')}" />
+    </when>
+  </choose>
+
+  <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
+
+  <fail
+    unless="${task::exists('regex')}"
+    message="${project::get-name()} - 'regex' task is not exists." />
+
+  <property name="pattern" value="(?'last_word'\w+)$" />
+  <regex input="This is a test on the regex module." pattern="${pattern}" failonerror="false" />
+  <fail if="${property::exists('last_word')}" message="Property last_word should not exists at this point." />
+
+  <regex input="This is a test on the regex module" pattern="${pattern}" />
+  <fail unless="${property::exists('last_word')}" message="Property last_word not exists." />
+  <fail unless="${string::equal('module', last_word)}" message="Value of property last_word '${last_word}' not equal to the 'module'." />
+
+  <property name="pattern" value="^(?'file_name'.*)\.(?'file_extension'\w+)$" />
+  <regex input="C:\Windows\System32\bash.exe" pattern="${pattern}" />
+  <fail unless="${string::equal('exe', file_extension)}" message="Value of property file_extension '${file_extension}' not equal to the 'exe'." />
+
+  <property name="pattern" value="^(?'path_to_file'.*(\\|/)|(/|\\))(?'name_of_file'.*)$" />
+  <regex input="file://A:/MyFolder/MySubFolder/AnotherSubFolder/my_file.txt" pattern="${pattern}" />
+  <fail unless="${string::equal('my_file.txt', name_of_file)}" message="Value of property name_of_file '${name_of_file}' not equal to the 'my_file.txt'." />
+</project>

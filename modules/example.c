@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 TheVice
  *
  */
 
-#include "example_of_the_module.h"
+#include "example.h"
 #include "buffer.h"
 
 static struct buffer output_data;

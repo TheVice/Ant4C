@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<project name="ant4c.dns.xml">
+  <property name="host_name"
+    value="${dns::get-host-name()}" failonerror="false" />
+  <fail
+    if="${property::exists('host_name')}"
+    message="Property 'host_name' should not be exists at this point.
+    Function 'get-host-name' from 'dns' namespace already exists.
+    Terminating evaluation of script." />
+
+  <choose unless="${property::exists('path_to_module')}">
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.dns.so" failonerror="false" />
+      <loadtasks module="libant4c.dns.dylib" failonerror="false" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <loadtasks module="ant4c.dns.dll" failonerror="false" />
+      <loadtasks module="libant4c.dns.dll" failonerror="false" />
+    </when>
+  </choose>
+
+  <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
+
+  <trycatch>
+    <try>
+      <property name="host_name" value="${dns::get-host-name()}" />
+    </try>
+    <catch>
+      <echo level="Error">${string::trim('
+        Unable to call function 'get-host-name' from 'dns' namespace.
+        Make sure that 'ant4c.dns' module was properly loaded.')}</echo>
+      <property name="host_name" />
+    </catch>
+  </trycatch>
+
+  <echo level="Verbose">host_name -> '${host_name}'</echo>
+</project>

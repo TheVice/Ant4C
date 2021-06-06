@@ -1,0 +1,53 @@
+
+= ant4c.dns help
+:toc:
+
+[[history]]
+== History
+
+* *v2020.09*
+
+== Installation
+Place module file - *.dll, *.so or *.dylib depend on your system, into directory with 'ant4c' executable or one of directory from PATH environment variable.
+
+== Module reference
+
+=== DNS unit
+
+.Function from file unit.
+|===
+.s| Script function .s| Description
+| <<dns-get-host-name,dns::get-host-name>> | Get name of DNS host.
+|===
+
+[[dns-get-host-name]]
+==== get-host-name
+
+*string* 'dns::get-host-name'()
+
+Return string with host name. If no host name was set or it empty - function will fail.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="ant4c.dns.xml">
+  <choose>
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.dns.so" failonerror="false" />
+      <loadtasks module="libant4c.dns.dylib" failonerror="false" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <loadtasks module="ant4c.dns.dll" failonerror="false" />
+      <loadtasks module="libant4c.dns.dll" failonerror="false" />
+    </when>
+  </choose>
+
+  <property name="host_name" value="${dns::get-host-name()}" />
+  <echo>host_name -> '${host_name}'</echo>
+</project>
+----
+
+== License
+
+Module available under terms of MIT License, internally it use Boost libraries - that available by https://github.com/boostorg/boost/blob/7dd85823c436b0a858c2f97f29b6a44beea71dfb/LICENSE_1_0.txt[Boost Software License].

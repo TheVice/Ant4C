@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -20,6 +20,23 @@
 #include "string_unit.h"
 #include "text_encoding.h"
 #include "xml.h"
+
+#include <stdio.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+
+static const uint8_t space_symbol = ' ';
+static const wchar_t zero_symbol_w = L'\0';
+
+#else
+#define _POSIXSOURCE 1
+
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
 
 static const uint8_t zero_symbol = '\0';
 
@@ -75,7 +92,8 @@ uint8_t exec_get_program_full_path(
 #if defined(_WIN32)
 	const ptrdiff_t size = buffer_size(path_to_the_program);
 
-	if (!file_system_append_pre_root(path_to_the_program))
+	if (FILENAME_MAX < size &&
+		!file_system_append_pre_root(path_to_the_program))
 	{
 		return 0;
 	}
@@ -93,11 +111,6 @@ uint8_t exec_get_program_full_path(
 }
 
 #if defined(_WIN32)
-
-#include <windows.h>
-
-static const uint8_t space_symbol = ' ';
-static const wchar_t zero_symbol_w = L'\0';
 
 uint8_t exec_win32_append_command_line(const struct range* command_line, struct buffer* output)
 {
@@ -504,14 +517,6 @@ uint8_t exec(
 }
 
 #else
-
-#define _POSIXSOURCE 1
-
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
 
 uint8_t exec_posix_no_redirect(
 	const char* program, char** cmd, char** env, const char* working_dir,

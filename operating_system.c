@@ -183,7 +183,7 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 		operating_system->platform = Unix;
 	}
 
-	/*TODO: os->Platform = MacOSX;*/
+	/*TODO: os->platform = macOS;*/
 
 	if (!version_parse(start, finish, operating_system->version))
 	{
@@ -248,21 +248,44 @@ uint8_t operating_system_is_windows_server(const void* os)
 	return ((const struct OperatingSystem*)os)->is_server;
 }
 
-const uint8_t* platform_get_name()
+const uint8_t* operating_system_get_platform_name(const void* os)
 {
-	const struct OperatingSystem* os = (const struct OperatingSystem*)environment_get_operating_system();
-
-	if (NULL == os)
+	static const uint8_t* IDs_str[] =
 	{
-		return NULL;
+		(const uint8_t*)"win32",
+		(const uint8_t*)"unix",
+		(const uint8_t*)"macos",
+		(const uint8_t*)"UNKNOWN_PLATFORM",
+	};
+	/**/
+	const uint8_t count = COUNT_OF(IDs_str) - 1;
+	const uint8_t platformID = operating_system_get_platform(os);
+
+	for (uint8_t i = 0; i < count; ++i)
+	{
+		if (platformID == i)
+		{
+			return IDs_str[i];
+		}
 	}
 
-	return os->description;
+	return IDs_str[count];
+}
+
+const uint8_t* platform_get_name()
+{
+	return operating_system_get_platform_name(environment_get_operating_system());
+}
+
+uint8_t platform_is_macos()
+{
+	return macOS == operating_system_get_platform(environment_get_operating_system());
 }
 
 uint8_t platform_is_unix()
 {
-	return Unix == operating_system_get_platform(environment_get_operating_system());
+	const uint8_t platformID = operating_system_get_platform(environment_get_operating_system());
+	return Unix == platformID || macOS == platformID;
 }
 
 uint8_t platform_is_windows()
@@ -330,21 +353,7 @@ uint8_t os_exec_function(uint8_t function, const struct buffer* arguments, uint8
 	switch (function)
 	{
 		case get_platform:
-		{
-			switch (operating_system_get_platform(&os))
-			{
-				case Win32:
-					return common_append_string_to_buffer((const uint8_t*)"Win32", output);
-
-				case Unix:
-					return common_append_string_to_buffer((const uint8_t*)"Unix", output);
-
-				/*TODO: case MacOSX:*/
-				default:
-					break;
-			}
-		}
-		break;
+			return common_append_string_to_buffer(operating_system_get_platform_name(&os), output);
 
 		case get_version:
 			return version_to_string(operating_system_get_version(&os), output);

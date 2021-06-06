@@ -1,0 +1,144 @@
+
+= ant4c.net.framework.module help
+:toc:
+
+[[history]]
+== History
+
+* *v2020.09*
+
+== Installation
+Place dll files into directory with 'ant4c' executable or one of directory from PATH environment variable. This module available only for Windows operation system.
+
+== Module reference
+
+=== File unit
+
+IMPORTANT: To access function from this namespace - program option *modulepriority* should be used at ant4c command arguments. Otherwise script with this function will fail according to not founded function from name space 'file'.
+
+.Function from file unit.
+|===
+.s| Script function .s| Description
+| <<file-is-assembly,file::is-assembly>> | Check if file at the given path is .NET Framework assembly. If file not exists function will fail.
+|===
+
+[[file-is-assembly]]
+==== is-assembly
+
+*bool* 'file::is-assembly'(*file*)
+
+If path point to the .NET Framework assembly file *true* will be returned.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <loadtasks module="ant4c.net.framework.module.dll" />
+
+  <property name="is-assembly" value="${file::is-assembly('ant4c.net.framework.module.dll')}" />
+  <echo>is-assembly -> ${is-assembly}</echo>
+
+  <property name="is-assembly" value="${file::is-assembly('ant4c.net.framework.module.clr.dll')}" />
+  <echo>is-assembly -> ${is-assembly}</echo>
+
+  <property name="is-assembly" value="${file::is-assembly('ant4c.net.framework.module.clr.dll_')}" failonerror="false" />
+</project>
+----
+
+----
+ant4c /f:sample.build -modulepriority
+----
+
+At first call of function path to non assembly file placed, second path to assembly and at the last to the non exists file placed.
+
+=== Framework unit
+
+.Functions from framework unit.
+|===
+.s| Script function .s| Description
+| <<framework-exists,exists>> | Determine if framework with specific version exists.
+| <<framework-get-clr-version,get-clr-version>> | Get version of common language runtime.
+| <<framework-get-framework-directory,get-framework-directory>> | Path to the directory with framework.
+| <<framework-get-frameworks,get-frameworks>> | Get major versions of installed frameworks.
+| <<framework-get-runtime-framework,get-runtime-framework>> | Get version of installed framework.
+|===
+
+[[framework-exists]]
+==== exists
+
+*bool* 'framework::exists'(*string*)
+
+Determine if specific version of runtime framework exists.
+
+===== Sample using
+
+----
+<property name="framework-exists" value="${framework::exists('net-4.0')}" />
+<property name="framework-exists" value="${framework::exists('v4.5')}" />
+<property name="framework-exists" value="${framework::exists('net-4.8')}" />
+----
+
+[[framework-get-clr-version]]
+==== get-clr-version
+
+*string* 'framework::get-clr-version'()
+
+Return version of common language runtime in form v4.0.xxxx, v2.0.xxxx and so on.
+
+[[framework-get-framework-directory]]
+==== get-framework-directory
+
+*directory* 'framework::get-framework-directory'() +
+*directory* 'framework::get-framework-directory'(*string*)
+
+Both versions of function return path to the framework directory of higher version of common language runtime. In case if v2.0 and v4.0 installed - path to v4.0 will be returned.
+
+NOTE: Second version of function used for compatibility purpose only. String argument will be ignored.
+
+[[framework-get-frameworks]]
+==== get-frameworks
+
+*string* 'framework::get-frameworks'() +
+*string* 'framework::get-frameworks'(*string*)
+
+Return comma separated versions of installed common language runtime.
+
+NOTE: Second version of function used for compatibility purpose only. String argument will be ignored.
+
+[[framework-get-runtime-framework]]
+==== get-runtime-framework
+
+*string* get-runtime-framework()
+
+Get version of runtime framework - v2.0, v3.0, v3.5, v4.0, v4.5 and so on.
+
+=== Metahost unit
+
+.Functions from metahost unit.
+|===
+.s| Script function .s| Description
+| <<metahost-get-clr-version-from-file,get-clr-version-from-file>> | Get version of common language runtime that set at the attribute of binary file.
+| <<metahost-runtime,runtime>> | Determine if requested runtime exists.
+|===
+
+[[metahost-get-clr-version-from-file]]
+==== get-clr-version-from-file
+
+*string* 'metahost::get-clr-version-from-file'(*file*)
+
+Return version of runtime that set at the attribute of binary file. If file non exists - function will fail. If file is not an assembly - empty string will be returned.
+
+[[metahost-runtime]]
+==== runtime
+
+*bool* 'metahost::runtime'(*string*)
+
+If requested version of runtime exists - *true* will be returned.
+
+===== Sample using
+
+----
+<echo>${metahost::runtime('v2.0.50727')}</echo>
+<echo>${metahost::runtime('v4.0.30319')}</echo>
+----

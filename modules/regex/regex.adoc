@@ -1,0 +1,75 @@
+
+= ant4c.regex help
+:toc:
+
+[[history]]
+== History
+
+* *v2020.09*
+
+== Installation
+Place module file - *.dll, *.so or *.dylib depend on your system, into directory with 'ant4c' executable or one of directory from PATH environment variable.
+[[task_reference]]
+
+== Tasks reference
+
+.List of tasks.
+|===
+.s| Task .s| Description
+| <<regex_task,regex>> | Fill project properties with value from input string according to regular expression.
+|===
+
+[[regex_task]]
+=== <regex>
+
+Set properties values based on evaluated regular expression.
+
+.Parameters of the 'regex' task.
+|===
+.s| Argument name .s| Type .s| Description .s| Mandatory
+| *input* .2+^.^| string | String where search required from regular expression data. .2+^.^| Yes
+| *pattern* | Regex expression that will apply to the 'input' string.
+|===
+
+==== Sample using
+
+----
+<?xml version="1.0"?>
+<project name="ant4c.regex.xml">
+  <choose>
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.regex.so" failonerror="false" />
+      <loadtasks module="libant4c.regex.dylib" unless="${task::exists('regex')}" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <loadtasks module="ant4c.regex.dll" failonerror="false" />
+      <loadtasks module="libant4c.regex.dll" unless="${task::exists('regex')}" />
+    </when>
+  </choose>
+
+  <property name="pattern" value="(?'last_word'\w+)$" />
+
+  <regex input="This is a test on the regex module." pattern="${pattern}" failonerror="false" />
+  <fail if="${property::exists('last_word')}" message="Property last_word should not exists at this point." />
+
+  <regex input="This is a test on the regex module" pattern="${pattern}" />
+  <echo>last_word -> '${last_word}'</echo>
+
+  <property name="pattern" value="^(?'file_name'.*)\.(?'file_extension'\w+)$" />
+  <regex input="C:\Windows\System32\bash.exe" pattern="${pattern}" />
+  <echo>file_name -> '${file_name}' file_extension -> '${file_extension}'</echo>
+
+  <property name="pattern" value="^(?'path_to_file'.*(\\|/)|(/|\\))(?'name_of_file'.*)$" />
+  <regex input="file://A:/MyFolder/MySubFolder/AnotherSubFolder/my_file.txt" pattern="${pattern}" />
+  <echo>path_to_file -> '${path_to_file}' name_of_file -> '${name_of_file}'</echo>
+</project>
+----
+
+* 'regex' task did not find anything because input string end with point \'.'.
+* Input string with out point \'.' at the end allow to capture last word with used pattern.
+* Used regular expression to get file name and extension.
+* Used regular expression to get path to file and it name.
+
+== License
+
+Module available under terms of MIT License, internally it use Boost libraries - that available by https://github.com/boostorg/boost/blob/7dd85823c436b0a858c2f97f29b6a44beea71dfb/LICENSE_1_0.txt[Boost Software License].
