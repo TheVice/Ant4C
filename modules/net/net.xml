@@ -717,6 +717,48 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
+  <target name="hostinterface">
+    <property name="hostinterface_initialize" value="${hostinterface::initialize('369365249')}" />
+
+    <property name="tmp" value="${hostinterface::set-target-framework-moniker('netcoreapp3.1')}" />
+
+    <property name="tmp" value="${hostinterface::set-framework-requested-versions('', '3.1.0')}" />
+    <property name="tmp" value="${hostinterface::set-framework-version('3.1.0')}" />
+    <property name="tmp" value="${hostinterface::set-framework-found-versions('', '3.1.0')}" />
+
+    <property name="tmp" value="${hostinterface::set-framework-name('Microsoft.NETCore.App')}" />
+    <property name="tmp" value="${hostinterface::set-framework-names('', 'Microsoft.NETCore.App')}" />
+
+    <property name="tmp" value="${hostinterface::set-framework-directory('C:\Program Files\dotnet\shared\Microsoft.NETCore.App\3.1.15')}" />
+    <property name="tmp" value="${hostinterface::set-framework-directories('', 'C:\Program Files\dotnet\shared\Microsoft.NETCore.App\3.1.15')}" />
+
+    <property name="tmp" value="${hostinterface::set-paths-for-probing(
+      path::combine(environment::get-folder-path('UserProfile'), '.nuget\packages'),
+      path::combine(environment::get-folder-path('UserProfile'), '.dotnet\NuGetFallbackFolder'),
+      path::combine(environment::get-folder-path('ProgramFiles'), 'dotnet\sdk\NuGetFallbackFolder'))}" />
+
+    <property name="tmp" value="${hostinterface::set-framework-dependent('1')}" />
+
+    <property name="tmp" value="${hostinterface::set-host-path('C:\Program Files\dotnet\dotnet.exe')}" />
+    <property name="tmp" value="${hostinterface::set-dotnet-root('C:\Program Files\dotnet')}" />
+    <property name="tmp" value="${hostinterface::set-application-path('C:\Program Files\dotnet\dotnet.dll')}" />
+
+    <property name="tmp" value="${hostinterface::set-host-mode('libhost')}" />
+
+    <!--
+    <property name="tmp" value="${hostinterface::set-config-keys('a', 'b', 'c', 'd', 'e')}" />
+    <property name="tmp" value="${hostinterface::set-config-values('123', '4567', '89', '0', '5')}" />
+
+    <property name="tmp" value="${hostinterface::set-additional-dependency-serialized('a/b/c')}" />
+    <property name="tmp" value="${hostinterface::set-dependency-file('C:\1\2\3\4\5\6\7\8\9\0')}" />
+    <property name="tmp" value="${hostinterface::set-file-bundle-header-offset('1')}" />
+    <property name="tmp" value="${hostinterface::set-host-command('--?')}" />
+
+    <property name="tmp" value="${hostinterface::set-patch-roll-forward('1')}" />
+    <property name="tmp" value="${hostinterface::set-prerelease-roll-forward('0')}" />
+    -->
+  </target>
+
   <!-- corehost::load -->
   <target name="core_host_load">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
@@ -724,6 +766,20 @@
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::load() -> ${corehost::load()}</echo>
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::unload() -> ${corehost::unload()}</echo>
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="corehost" depends="load_tasks,hostpolicy_initialize,hostinterface">
+    <property name="core_host_load" value="${corehost::load()}" />
+    <echo>core_host_load -> ${core_host_load}</echo>
+
+    <property name="core_host_main" value="${corehost::main()}" />
+    <echo>core_host_main -> ${core_host_main} (${net::result-to-string(core_host_main)})</echo>
+
+    <property name="core_host_main_with_output_buffer" value="${corehost::main-with-output-buffer()}" />
+    <echo>core_host_main_with_output_buffer -> ${core_host_main_with_output_buffer} (${net::result-to-string(core_host_main_with_output_buffer)})</echo>
+
+    <property name="core_host_unload" value="${corehost::unload()}" />
+    <echo>core_host_unload -> ${core_host_unload}</echo>
   </target>
 
   <!-- file::is-assembly -->

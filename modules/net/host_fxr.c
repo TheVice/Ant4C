@@ -61,9 +61,15 @@ uint8_t net_host_load(const type_of_element* path_to_net_host_library,
 		return 0;
 	}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4055)
+#endif
 	get_hostfxr_path_type get_hostfxr_path =
 		(get_hostfxr_path_type)shared_object_get_procedure_address(
 			net_host_object_, (const uint8_t*)"get_hostfxr_path");
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(default: 4055)
+#endif
 
 	if (!get_hostfxr_path)
 	{
@@ -238,6 +244,10 @@ uint8_t host_fx_resolver_load(
 
 		switch (i)
 		{
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4055)
+#endif
+
 			case hostfxr_close_:
 				ptr_to_host_fxr_object_->hostfxr_close =
 					(hostfxr_close_type)address;
@@ -317,6 +327,9 @@ uint8_t host_fx_resolver_load(
 				ptr_to_host_fxr_object_->hostfxr_set_runtime_property_value =
 					(hostfxr_set_runtime_property_value_type)address;
 				break;
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(default: 4055)
+#endif
 
 			default:
 				break;

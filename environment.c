@@ -53,6 +53,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 	wchar_t* startW = NULL;
 	wchar_t* finishW = NULL;
 #if defined(_WIN32_WINNT_VISTA) && defined(_WIN32_WINNT) && (_WIN32_WINNT_VISTA <= _WIN32_WINNT)
+#if defined(_MSC_VER) && (_MSC_VER >= 1910)
 	const GUID folderIDs[] =
 	{
 		FOLDERID_Desktop, FOLDERID_Programs, FOLDERID_Documents, FOLDERID_Documents,
@@ -69,6 +70,56 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		FOLDERID_PublicPictures, FOLDERID_PublicVideos, FOLDERID_ResourceDir, FOLDERID_LocalizedResourcesDir,
 		FOLDERID_CommonOEMLinks, FOLDERID_CDBurning
 	};
+#else
+	GUID folderIDs[47];
+	folderIDs[0] = FOLDERID_Desktop;
+	folderIDs[1] = FOLDERID_Programs;
+	folderIDs[2] = FOLDERID_Documents;
+	folderIDs[3] = FOLDERID_Documents;
+	folderIDs[4] = FOLDERID_Favorites;
+	folderIDs[5] = FOLDERID_Startup;
+	folderIDs[6] = FOLDERID_Recent;
+	folderIDs[7] = FOLDERID_SendTo;
+	folderIDs[8] = FOLDERID_StartMenu;
+	folderIDs[9] = FOLDERID_Music;
+	folderIDs[10] = FOLDERID_Videos;
+	folderIDs[11] = FOLDERID_Desktop;
+	folderIDs[12] = FOLDERID_ComputerFolder;
+	folderIDs[13] = FOLDERID_NetHood;
+	folderIDs[14] = FOLDERID_Fonts;
+	folderIDs[15] = FOLDERID_Templates;
+	folderIDs[16] = FOLDERID_CommonStartMenu;
+	folderIDs[17] = FOLDERID_CommonPrograms;
+	folderIDs[18] = FOLDERID_CommonStartup;
+	folderIDs[19] = FOLDERID_PublicDesktop;
+	folderIDs[20] = FOLDERID_RoamingAppData;
+	folderIDs[21] = FOLDERID_PrintHood;
+	folderIDs[22] = FOLDERID_LocalAppData;
+	folderIDs[23] = FOLDERID_InternetCache;
+	folderIDs[24] = FOLDERID_Cookies;
+	folderIDs[25] = FOLDERID_History;
+	folderIDs[26] = FOLDERID_ProgramData;
+	folderIDs[27] = FOLDERID_Windows;
+	folderIDs[28] = FOLDERID_System;
+	folderIDs[29] = FOLDERID_ProgramFiles;
+	folderIDs[30] = FOLDERID_Pictures;
+	folderIDs[31] = FOLDERID_Profile;
+	folderIDs[32] = FOLDERID_SystemX86;
+	folderIDs[33] = FOLDERID_ProgramFilesX86;
+	folderIDs[34] = FOLDERID_ProgramFilesCommon;
+	folderIDs[35] = FOLDERID_ProgramFilesCommonX86;
+	folderIDs[36] = FOLDERID_CommonTemplates;
+	folderIDs[37] = FOLDERID_PublicDocuments;
+	folderIDs[38] = FOLDERID_CommonAdminTools;
+	folderIDs[39] = FOLDERID_AdminTools;
+	folderIDs[40] = FOLDERID_PublicMusic;
+	folderIDs[41] = FOLDERID_PublicPictures;
+	folderIDs[42] = FOLDERID_PublicVideos;
+	folderIDs[43] = FOLDERID_ResourceDir;
+	folderIDs[44] = FOLDERID_LocalizedResourcesDir;
+	folderIDs[45] = FOLDERID_CommonOEMLinks;
+	folderIDs[46] = FOLDERID_CDBurning;
+#endif
 	typedef HRESULT(WINAPI * LPFN_SHGETKNOWNFOLDERPATH)(REFKNOWNFOLDERID, DWORD, HANDLE, PWSTR*);
 	LPFN_SHGETKNOWNFOLDERPATH fnSHGetKnownFolderPath = NULL;
 	fnSHGetKnownFolderPath = (LPFN_SHGETKNOWNFOLDERPATH)GetProcAddress(shell32Module, "SHGetKnownFolderPath");

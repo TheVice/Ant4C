@@ -8,6 +8,7 @@
 #include "net.h"
 
 #include "arguments.h"
+#include "error_writer.h"
 #include "host_fxr.h"
 #include "host_interface.h"
 #include "host_policy.h"
@@ -434,17 +435,24 @@ uint8_t hostfxr_get_native_search_directories(
 	type_of_element* out = (type_of_element*)buffer_data(output, 0);
 #endif
 	int32_t required_size = FILENAME_MAX;
+	code = host_fxr_get_native_search_directories(
+			   ptr_to_host_fxr_object, values_count, argv, out, FILENAME_MAX, &required_size);
 
-	if (HOST_FX_RESOLVER_NON_SUCCESS(code = host_fxr_get_native_search_directories(
-			ptr_to_host_fxr_object, values_count, argv, out, FILENAME_MAX, &required_size)))
+	if (HOST_FX_RESOLVER_NON_SUCCESS(code))
 	{
 		if ((int32_t)host_fxr_HostApiBufferTooSmall != code ||
 			required_size < FILENAME_MAX ||
-			!buffer_resize(output, required_size * sizeof(type_of_element)) ||
-			HOST_FX_RESOLVER_NON_SUCCESS(
-				host_fxr_get_native_search_directories(
-					ptr_to_host_fxr_object, values_count, argv,
-					(type_of_element*)buffer_data(output, 0), required_size, &required_size)))
+			!buffer_resize(output, required_size * sizeof(type_of_element)))
+		{
+			buffer_release(&arguments);
+			return 0;
+		}
+
+		code = host_fxr_get_native_search_directories(
+				   ptr_to_host_fxr_object, values_count, argv,
+				   (type_of_element*)buffer_data(output, 0), required_size, &required_size);
+
+		if (HOST_FX_RESOLVER_NON_SUCCESS(code))
 		{
 			buffer_release(&arguments);
 			return 0;
@@ -1505,8 +1513,22 @@ uint8_t file_is_assembly(
 				return 0;
 			}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+			const uint8_t* sub_values[6];
+			sub_values[0] = 0;
+			sub_values[1] = 0;
+			sub_values[2] = buffer_data(output, values_count);
+			sub_values[3] = 0;
+			sub_values[4] = 0;
+			sub_values[5] = 0;
+			/**/
+			uint16_t sub_values_lengths[6];
+			memset(sub_values_lengths, 0, sizeof(sub_values_lengths));
+			sub_values_lengths[2] = (uint16_t)(buffer_size(output) - values_count);
+#else
 			const uint8_t* sub_values[] = { NULL, NULL, buffer_data(output, values_count), NULL, NULL, NULL };
 			uint16_t sub_values_lengths[] = { 0, 0, (uint16_t)(buffer_size(output) - values_count), 0, 0, 0 };
+#endif
 
 			if (!buffer_resize(output, values_count))
 			{
@@ -1584,8 +1606,9 @@ uint8_t file_is_assembly(
 
 			the_delegate = pointer_parse(sub_values[0]);
 			buffer_release(&sub_output);
+			const int32_t code = host_fxr_close(ptr_to_host_fxr_object, context);
 
-			if (HOST_FX_RESOLVER_NON_SUCCESS(host_fxr_close(ptr_to_host_fxr_object, context)))
+			if (HOST_FX_RESOLVER_NON_SUCCESS(code))
 			{
 				return 0;
 			}
@@ -1620,7 +1643,12 @@ uint8_t file_is_assembly(
 			return 0;
 		}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(suppress: 4055)
 		const uint8_t is_assembly = ((custom_entry_point_fn)the_delegate)(custom_argument);
+#else
+		const uint8_t is_assembly = ((custom_entry_point_fn)the_delegate)(custom_argument);
+#endif
 
 		if (!buffer_resize(output, 0) ||
 			!bool_to_string(is_assembly, output))
@@ -1682,59 +1710,46 @@ uint8_t file_is_assembly(
 	return 1;
 }
 
-void* error_writer_of_host_fx_resolver = NULL;
+void* host_fx_resolver_error_file_writer = NULL;
+void* host_policy_error_file_writer = NULL;
 
 #if defined(_WIN32)
-static struct buffer content;
-static uint8_t is_content_initialized = 0;
+static struct buffer host_fx_resolver_error_writer_win32_content;
+static uint8_t is_host_fx_resolver_error_writer_win32_content_initialized = 0;
+
+static struct buffer host_policy_error_writer_win32_content;
+static uint8_t is_host_policy_error_writer_win32_content_initialized = 0;
 
 void host_fx_resolver_error_writer(const type_of_element* message)
 {
-	if (is_content_initialized)
-	{
-		if (!buffer_resize(&content, 0))
-		{
-			return;
-		}
-	}
-	else
-	{
-		SET_NULL_TO_BUFFER(content);
-		is_content_initialized = 1;
-	}
+	ERROR_WRITER_WIN32(
+		message,
+		host_fx_resolver_error_writer_win32_content,
+		is_host_fx_resolver_error_writer_win32_content_initialized,
+		host_fx_resolver_error_file_writer);
+}
 
-	if (error_writer_of_host_fx_resolver)
-	{
-		if (!text_encoding_UTF16LE_to_UTF8(message, message + wcslen(message), &content) ||
-			!buffer_push_back(&content, '\n'))
-		{
-			return;
-		}
-
-		if (!file_write_with_several_steps(&content, error_writer_of_host_fx_resolver))
-		{
-			return;
-		}
-
-		file_flush(error_writer_of_host_fx_resolver);
-	}
+void host_policy_error_writer(const type_of_element* message)
+{
+	ERROR_WRITER_WIN32(
+		message,
+		host_policy_error_writer_win32_content,
+		is_host_policy_error_writer_win32_content_initialized,
+		host_policy_error_file_writer);
 }
 #else
 void host_fx_resolver_error_writer(const type_of_element* message)
 {
-	if (error_writer_of_host_fx_resolver)
-	{
-		static const uint8_t n = '\n';
+	ERROR_WRITER_POSIX(
+		message,
+		host_fx_resolver_error_file_writer);
+}
 
-		if (!file_write(message, sizeof(type_of_element), common_count_bytes_until(message, 0),
-						error_writer_of_host_fx_resolver) ||
-			!file_write(&n, sizeof(type_of_element), 1, error_writer_of_host_fx_resolver))
-		{
-			return;
-		}
-
-		file_flush(error_writer_of_host_fx_resolver);
-	}
+void host_policy_error_writer(const type_of_element* message)
+{
+	ERROR_WRITER_POSIX(
+		message,
+		host_policy_error_file_writer);
 }
 #endif
 
@@ -2019,8 +2034,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_close_:
 		{
-			if (1 != values_count ||
-				!ptr_to_host_fxr_object)
+			if (1 != values_count)
 			{
 				return 0;
 			}
@@ -2120,11 +2134,6 @@ uint8_t evaluate_function(
 
 		case host_fxr_main_:
 		{
-			if (!ptr_to_host_fxr_object)
-			{
-				return 0;
-			}
-
 			const type_of_element** argv = NULL;
 
 			if (!values_to_arguments(values, values_lengths, values_count, &output_data, &argv))
@@ -2177,8 +2186,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_run_app_:
 		{
-			if (1 != values_count ||
-				!ptr_to_host_fxr_object)
+			if (1 != values_count)
 			{
 				return 0;
 			}
@@ -2201,24 +2209,13 @@ uint8_t evaluate_function(
 		break;
 
 		case host_fxr_set_error_writer_:
+		{
 			if (1 < values_count)
 			{
 				return 0;
 			}
 
-			ptr = NULL;
-
-			if (!values_count || !values_lengths[0])
-			{
-				ptr = (const void*)host_fxr_set_error_writer(ptr_to_host_fxr_object, NULL);
-			}
-
-			if (error_writer_of_host_fx_resolver && !file_close(error_writer_of_host_fx_resolver))
-			{
-				return 0;
-			}
-
-			error_writer_of_host_fx_resolver = NULL;
+			const type_of_element* path = NULL;
 
 			if (values_count && values_lengths[0])
 			{
@@ -2228,32 +2225,24 @@ uint8_t evaluate_function(
 				}
 
 #if defined(_WIN32)
-
-				if (!file_open_wchar_t(
-						(const wchar_t*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]),
-						L"ab", &error_writer_of_host_fx_resolver))
-				{
-					return 0;
-				}
-
+				path = (const wchar_t*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]);
 #else
-
-				if (!file_open(buffer_data(&output_data, 0), (const uint8_t*)"ab", &error_writer_of_host_fx_resolver))
-				{
-					return 0;
-				}
-
+				path = buffer_data(&output_data, 0);
 #endif
-				ptr = (const void*)host_fxr_set_error_writer(ptr_to_host_fxr_object, host_fx_resolver_error_writer);
 			}
+
+			ptr = (const uint8_t*)set_error_writer(
+					  ptr_to_host_fxr_object,
+					  host_fx_resolver_error_writer, host_fxr_set_error_writer,
+					  path, &host_fx_resolver_error_file_writer);
 
 			if (!buffer_resize(&output_data, 0) ||
 				!pointer_to_string(ptr, &output_data))
 			{
 				return 0;
 			}
-
-			break;
+		}
+		break;
 
 		case host_fxr_set_runtime_property_value_:
 			if (!hostfxr_set_runtime_property_value(ptr_to_host_fxr_object,
@@ -2697,17 +2686,85 @@ uint8_t evaluate_function(
 
 			break;
 
-		/*case core_host_main_:
-			break;
+		case core_host_main_:
+		{
+			const type_of_element** argv = NULL;
+
+			if (!values_to_arguments(values, values_lengths, values_count, &output_data, &argv))
+			{
+				return 0;
+			}
+
+			const int32_t code = core_host_main(ptr_to_host_policy_object, values_count, argv);
+
+			if (!buffer_resize(&output_data, 0) ||
+				!int_to_string(code, &output_data))
+			{
+				return 0;
+			}
+		}
+		break;
 
 		case core_host_main_with_output_buffer_:
-			break;
+		{
+			struct buffer arguments;
+			SET_NULL_TO_BUFFER(arguments);
+			const type_of_element** argv = NULL;
 
-		case core_host_resolve_component_dependencies_:
-			break;
+			if (!values_to_arguments(values, values_lengths, values_count, &arguments, &argv))
+			{
+				buffer_release(&arguments);
+				return 0;
+			}
+
+			if (!core_host_main_with_output_buffer(ptr_to_host_policy_object, values_count, argv, &output_data))
+			{
+				buffer_release(&arguments);
+				return 0;
+			}
+
+			buffer_release(&arguments);
+		}
+		break;
+
+		/*case core_host_resolve_component_dependencies_:
+			break;*/
 
 		case core_host_set_error_writer_:
-			break;*/
+		{
+			if (1 < values_count)
+			{
+				return 0;
+			}
+
+			const type_of_element* path = NULL;
+
+			if (values_count && values_lengths[0])
+			{
+				if (!value_to_system_path(values[0], values_lengths[0], &output_data))
+				{
+					return 0;
+				}
+
+#if defined(_WIN32)
+				path = (const wchar_t*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]);
+#else
+				path = buffer_data(&output_data, 0);
+#endif
+			}
+
+			ptr = (const uint8_t*)set_error_writer(
+					  ptr_to_host_policy_object,
+					  host_policy_error_writer, core_host_set_error_writer,
+					  path, &host_policy_error_file_writer);
+
+			if (!buffer_resize(&output_data, 0) ||
+				!pointer_to_string(ptr, &output_data))
+			{
+				return 0;
+			}
+		}
+		break;
 
 		case core_host_unload_:
 			if (values_count ||
@@ -2731,8 +2788,8 @@ uint8_t evaluate_function(
 			return 0;
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	* output = buffer_data(&output_data, 0);
+	* output_length = (uint16_t)buffer_size(&output_data);
 	/**/
 	return 1;
 }
@@ -2743,11 +2800,11 @@ void module_release()
 
 	if (is_host_fxr_object_initialized)
 	{
-		if (error_writer_of_host_fx_resolver)
+		if (host_fx_resolver_error_file_writer)
 		{
 			host_fxr_set_error_writer(host_fxr_object, NULL);
-			file_close(error_writer_of_host_fx_resolver);
-			error_writer_of_host_fx_resolver = NULL;
+			file_close(host_fx_resolver_error_file_writer);
+			host_fx_resolver_error_file_writer = NULL;
 		}
 
 		host_fx_resolver_unload(host_fxr_object);
@@ -2756,16 +2813,27 @@ void module_release()
 
 	if (is_host_policy_object_initialized)
 	{
-		/*TODO: error_writer*/
+		if (host_policy_error_file_writer)
+		{
+			core_host_set_error_writer(host_policy_object, NULL);
+			file_close(host_policy_error_file_writer);
+			host_policy_error_file_writer = NULL;
+		}
+
 		host_policy_unload(host_policy_object);
 		is_host_policy_object_initialized = 0;
 	}
 
 #if defined(_WIN32)
 
-	if (is_content_initialized)
+	if (is_host_fx_resolver_error_writer_win32_content_initialized)
 	{
-		buffer_release(&content);
+		buffer_release(&host_fx_resolver_error_writer_win32_content);
+	}
+
+	if (is_host_policy_error_writer_win32_content_initialized)
+	{
+		buffer_release(&host_policy_error_writer_win32_content);
 	}
 
 #endif

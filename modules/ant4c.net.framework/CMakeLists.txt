@@ -17,6 +17,15 @@ if(MSVC)
   target_include_directories(framework_gate PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
   target_compile_options(framework_gate PRIVATE /W4)
 
+  if(MSVC_VERSION VERSION_LESS 1910)
+    target_include_directories(framework_gate PUBLIC SYSTEM "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8/Include/um")
+    if(CMAKE_CL_64)
+      target_link_directories(framework_gate INTERFACE SYSTEM "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8/Lib/um/x64")
+    else()
+      target_link_directories(framework_gate INTERFACE SYSTEM "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8/Lib/um/x86")
+    endif()
+  endif()
+
   add_library(ant4c.net.framework.module SHARED
     "${CMAKE_CURRENT_SOURCE_DIR}/ant4c.net.framework.adoc"
     "${CMAKE_CURRENT_SOURCE_DIR}/ant4c.net.framework.c"

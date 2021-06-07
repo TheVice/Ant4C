@@ -645,7 +645,7 @@ If no environment set, program got same environment that ant4c have. +
 
 ----
 <exec program="${property::get-value('cmake')}"
-	  commandline="${property::get-value('cmake_arguments')}" />
+    commandline="${property::get-value('cmake_arguments')}" />
 ----
 
 [[fail_task]]
@@ -2805,7 +2805,9 @@ Return *true* if specified operation system from Windows Server family.
 
 *string* 'platform::get-name'()
 
-Get name of the platform..
+Get name of the platform.
+
+WARNING: version up to and including 2020.09 return string representation of operation system instead name of platform name.
 
 [[platform-is_unix]]
 ==== is-unix

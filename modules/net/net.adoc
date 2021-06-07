@@ -5,6 +5,11 @@
 [[history]]
 == History
 
+* *v2020.09.202106* +
+Added namespace 'net', 'hostpolicy', 'corehost' and 'hostinterface'.
+
+WARNING: Breaking change - function 'result-to-string' was moved from namespace 'hostfxr' to the 'net'.
+
 * *v2020.09*
 
 == Installation
@@ -23,6 +28,67 @@ Next structure describe his relationship to the *string* type.
 
 All rest types locate in same hierarchy positions like described at the documentation of Ant4C.
 
+=== Net unit
+
+.Functions from host fx resolver.
+|===
+.s| Script function .s| Description
+| <<net-result-to-string,result-to-string>> | Explain return code of functions.
+|===
+
+[[net-result-to-string]]
+==== result-to-string
+
+*string* 'net::result-to-string'(*int* code)
+
+Return string description of return code.
+
+===== Sample using
+
+----
+<?xml version="1.0"?>
+<project>
+  <choose>
+    <when test="${platform::is-windows()}">
+      <trycatch>
+        <try>
+          <loadtasks module="ant4c.net.module.dll" />
+        </try>
+        <catch>
+           <loadtasks module="libant4c.net.module.dll" />
+        </catch>
+      </trycatch>
+    </when>
+
+    <when test="${platform::is-unix()}">
+      <loadtasks module="libant4c.net.module.so" />
+    </when>
+  </choose>
+
+  <property name="codes" value="-1 0 1 3" />
+  <property name="codes"
+    value="${codes} -2147024808 -2147024809 -2147450714 -2147450713" />
+
+  <foreach item="String" in="${codes}" delim=" " property="code">
+    <property name="result_in_string"
+      value="${net::result-to-string(code)}" />
+    <echo>net::result-to-string(${code}) -> ${result_in_string}</echo>
+  </foreach>
+</project>
+----
+
+Output will be:
+----
+net::result-to-string(-1) -> 0xffffffff -1 255
+net::result-to-string(0) -> [host fx resolver]::Success (0x0 0 0)
+net::result-to-string(1) -> [host fx resolver]::Success_HostAlreadyInitialized (0x1 1 1)
+net::result-to-string(3) -> 0x3 3 3
+net::result-to-string(-2147024808) -> 0x80070058 -2147024808 88
+net::result-to-string(-2147024809) -> [win error]::E_INVALIDARG (0x80070057 -2147024809 87)
+net::result-to-string(-2147450714) -> [host fx resolver]::HostApiUnsupportedScenario (0x800080a6 -2147450714 166)
+net::result-to-string(-2147450713) -> 0x800080a7 -2147450713 167
+----
+
 === Host fx resolver unit
 
 .Functions from host fx resolver.
@@ -31,7 +97,6 @@ All rest types locate in same hierarchy positions like described at the document
 | <<hostfxr-functions,functions>> | Return list of functions available for the current version of host library.
 | <<hostfxr-initialize,initialize>> | Initialize unit functions.
 | <<hostfxr-is-function-exists,is-function-exists>> | Return *true* in case proposed function exists.
-| <<hostfxr-result-to-string,result-to-string>> | Explain return code of some functions from the unit.
 |===
 
 [[hostfxr-functions]]
@@ -240,61 +305,6 @@ new one's can not be check by this function. Function return *false* in that cas
 ----
 ant4c /f:sample.build -D:path_to_hostfxr="...hostfxr.dll"
 ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so"
-----
-
-[[hostfxr-result-to-string]]
-==== result-to-string
-
-*string* 'hostfxr::result-to-string'(*int* code)
-
-Return string description of error code.
-
-NOTE: This function can be used even if <<hostfxr-initialize,initialize>> function not called or if it returned *false*.
-
-===== Sample using
-
-----
-<?xml version="1.0"?>
-<project>
-  <choose>
-    <when test="${platform::is-windows()}">
-      <trycatch>
-        <try>
-          <loadtasks module="ant4c.net.module.dll" />
-        </try>
-        <catch>
-           <loadtasks module="libant4c.net.module.dll" />
-        </catch>
-      </trycatch>
-    </when>
-
-    <when test="${platform::is-unix()}">
-      <loadtasks module="libant4c.net.module.so" />
-    </when>
-  </choose>
-
-  <property name="codes" value="-1 0 1 3" />
-  <property name="codes"
-    value="${codes} -2147024808 -2147024809 -2147450714 -2147450713" />
-
-  <foreach item="String" in="${codes}" delim=" " property="code">
-    <property name="result_in_string"
-      value="${hostfxr::result-to-string(code)}" />
-    <echo>hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
-  </foreach>
-</project>
-----
-
-Output will be:
-----
-hostfxr::result-to-string(-1) -> 0xffffffff -1 255
-hostfxr::result-to-string(0) -> [host fx resolver]::Success (0x0 0 0)
-hostfxr::result-to-string(1) -> [host fx resolver]::Success_HostAlreadyInitialized (0x1 1 1)
-hostfxr::result-to-string(3) -> 0x3 3 3
-hostfxr::result-to-string(-2147024808) -> 0x80070058 -2147024808 88
-hostfxr::result-to-string(-2147024809) -> [win error]::E_INVALIDARG (0x80070057 -2147024809 87)
-hostfxr::result-to-string(-2147450714) -> [host fx resolver]::HostApiUnsupportedScenario (0x800080a6 -2147450714 166)
-hostfxr::result-to-string(-2147450713) -> 0x800080a7 -2147450713 167
 ----
 
 .Functions from host fx resolver, depend on version.
@@ -917,6 +927,187 @@ hostfxr_path -> '/usr/share/dotnet/host/fxr/3.1.13/libhostfxr.so'
 ----
 
 IMPORTANT: Not all versions of host fx resolver have accompanying nethost library.
+
+=== Host interface unit
+
+This unit prepare structure that will be used at the <<corehost-initialize,corehost::initialize>> function.
+
+.Functions from host interface unit.
+|===
+.s| Script function .s| Description
+| <<hostinterface-initialize,hostinterface::initialize>> | TODO
+| <<hostinterface-set-additional-dependency-serialized,hostinterface::set-additional-dependency-serialized>> | TODO
+| <<hostinterface-set-application-path,hostinterface::set-application-path>> | TODO
+| <<hostinterface-set-config-keys,hostinterface::set-config-keys>> | TODO
+| <<hostinterface-set-config-values,hostinterface::set-config-values>> | TODO
+| <<hostinterface-set-dependency-file,hostinterface::set-dependency-file>> | TODO
+| <<hostinterface-set-dotnet-root,hostinterface::set-dotnet-root>> | TODO
+| <<hostinterface-set-file-bundle-header-offset,hostinterface::set-file-bundle-header-offset>> | TODO
+| <<hostinterface-set-framework-dependent,hostinterface::set-framework-dependent>> | TODO
+| <<hostinterface-set-framework-directories,hostinterface::set-framework-directories>> | TODO
+| <<hostinterface-set-framework-directory,hostinterface::set-framework-directory>> | TODO
+| <<hostinterface-set-framework-found-versions,hostinterface::set-framework-found-versions>> | TODO
+| <<hostinterface-set-framework-name,hostinterface::set-framework-name>> | TODO
+| <<hostinterface-set-framework-names,hostinterface::set-framework-names>> | TODO
+| <<hostinterface-set-framework-requested-versions,hostinterface::set-framework-requested-versions>> | TODO
+| <<hostinterface-set-framework-version,hostinterface::set-framework-version>> | TODO
+| <<hostinterface-set-host-command,hostinterface::set-host-command>> | TODO
+| <<hostinterface-set-host-mode,hostinterface::set-host-mode>> | TODO
+| <<hostinterface-set-host-path,hostinterface::set-host-path>> | TODO
+| <<hostinterface-set-patch-roll-forward,hostinterface::set-patch-roll-forward>> | TODO
+| <<hostinterface-set-paths-for-probing,hostinterface::set-paths-for-probing>> | TODO
+| <<hostinterface-set-prerelease-roll-forward,hostinterface::set-prerelease-roll-forward>> | TODO
+| <<hostinterface-set-target-framework-moniker,hostinterface::set-target-framework-moniker>> | TODO
+|===
+
+[[hostinterface-initialize]]
+==== initialize
+TODO
+
+[[hostinterface-set-additional-dependency-serialized]]
+==== set-additional-dependency-serialized
+TODO
+
+[[hostinterface-set-application-path]]
+==== set-application-path
+TODO
+
+[[hostinterface-set-config-keys]]
+==== set-config-keys
+TODO
+
+[[hostinterface-set-config-values]]
+==== set-config-values
+TODO
+
+[[hostinterface-set-dependency-file]]
+==== set-dependency-file
+TODO
+
+[[hostinterface-set-dotnet-root]]
+==== set-dotnet-root
+TODO
+
+[[hostinterface-set-file-bundle-header-offset]]
+==== set-file-bundle-header-offset
+TODO
+
+[[hostinterface-set-framework-dependent]]
+==== set-framework-dependent
+TODO
+
+[[hostinterface-set-framework-directories]]
+==== set-framework-directories
+TODO
+
+[[hostinterface-set-framework-directory]]
+==== set-framework-directory
+TODO
+
+[[hostinterface-set-framework-found-versions]]
+==== set-framework-found-versions
+TODO
+
+[[hostinterface-set-framework-name]]
+==== set-framework-name
+TODO
+
+[[hostinterface-set-framework-names]]
+==== set-framework-names
+TODO
+
+[[hostinterface-set-framework-requested-versions]]
+==== set-framework-requested-versions
+TODO
+
+[[hostinterface-set-framework-version]]
+==== set-framework-version
+TODO
+
+[[hostinterface-set-host-command]]
+==== set-host-command
+TODO
+
+[[hostinterface-set-host-mode]]
+==== set-host-mode
+TODO
+
+[[hostinterface-set-host-path]]
+==== set-host-path
+TODO
+
+[[hostinterface-set-patch-roll-forward]]
+==== set-patch-roll-forward
+TODO
+
+[[hostinterface-set-paths-for-probing]]
+==== set-paths-for-probing
+TODO
+
+[[hostinterface-set-prerelease-roll-forward]]
+==== set-prerelease-roll-forward
+TODO
+
+[[hostinterface-set-target-framework-moniker]]
+==== set-target-framework-moniker
+TODO
+
+=== Core host unit
+
+.Functions from core host interface unit.
+|===
+.s| Script function .s| Description
+| <<corehost-functions,functions>> | TODO
+| <<corehost-is-function-exists,is-function-exists>> | TODO
+|===
+
+[[corehost-functions]]
+==== functions
+TODO
+
+[[corehost-is-function-exists]]
+==== is-function-exists
+TODO
+
+.Functions from core host interface unit, depend on version.
+|===
+.s| Script function .s| Host version .s| Description
+| <<corehost-load,load>> .3+^.^| 1.0+ | TODO
+| <<corehost-main,main>> | TODO
+| <<corehost-unload,unload>> | TODO
+| <<corehost-main-with-output-buffer,main-with-output-buffer>> ^.^| 2.1+ | TODO
+| <<corehost-initialize,initialize>> .3+^.^| 3.0+ | TODO
+| <<corehost-resolve-component-dependencies,resolve-component-dependencies>> | TODO
+| <<corehost-set-error-writer,set-error-writer>> | TODO
+|===
+
+[[corehost-load]]
+==== load
+TODO
+
+[[corehost-main]]
+==== main
+TODO
+
+[[corehost-unload]]
+==== unload
+TODO
+
+[[corehost-main-with-output-buffer]]
+==== main-with-output-buffer
+TODO
+
+[[corehost-initialize]]
+==== initialize
+TODO
+
+[[corehost-resolve-component-dependencies]]
+==== resolve-component-dependencies
+TODO
+
+[[corehost-set-error-writer]]
+==== set-error-writer
+TODO
 
 === File unit
 

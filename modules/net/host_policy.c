@@ -7,7 +7,9 @@
 
 #include "host_policy.h"
 
+#include "buffer.h"
 #include "common.h"
+#include "conversion.h"
 #include "shared_object.h"
 
 #include <string.h>
@@ -105,6 +107,10 @@ uint8_t host_policy_load(
 
 		switch (i)
 		{
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4055)
+#endif
+
 			case host_policy_corehost_initialize_:
 				ptr_to_host_policy_object_->corehost_initialize =
 					(corehost_initialize_type)address;
@@ -139,6 +145,9 @@ uint8_t host_policy_load(
 				ptr_to_host_policy_object_->corehost_unload =
 					(corehost_unload_type)address;
 				break;
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(default: 4055)
+#endif
 
 			default:
 				break;
@@ -284,8 +293,62 @@ int32_t core_host_main(
 	return ptr_to_host_policy_object_->corehost_main(argc, argv);
 }
 
-/*core_host_main_with_output_buffer()
-  core_host_resolve_component_dependencies()
+uint8_t core_host_main_with_output_buffer(
+	const void* ptr_to_host_policy_object,
+	const int32_t argc,
+	const type_of_element** argv,
+	struct buffer* output)
+{
+	if (!ptr_to_host_policy_object ||
+		!output)
+	{
+		return 0;
+	}
+
+	const struct host_policy* ptr_to_host_policy_object_ = (const struct host_policy*)ptr_to_host_policy_object;
+
+	if (!ptr_to_host_policy_object_->corehost_main_with_output_buffer)
+	{
+		return 0;
+	}
+
+	type_of_element* the_buffer = (type_of_element*)buffer_data(output, 0);
+	int32_t result;
+	int32_t required_size;
+
+	if (host_fxr_Success != (result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
+										  argc, argv, the_buffer, 0, &required_size)))
+	{
+		if ((int32_t)host_fxr_HostApiBufferTooSmall != result ||
+			required_size < 1 ||
+			!buffer_resize(output, required_size))
+		{
+			if (!buffer_resize(output, 0) ||
+				!buffer_push_back(output, ' ') ||
+				!int_to_string(result, output))
+			{
+				return 0;
+			}
+		}
+
+		the_buffer = (type_of_element*)buffer_data(output, 0);
+		result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
+					 argc, argv, the_buffer, required_size, &required_size);
+
+		if (HOST_FX_RESOLVER_NON_SUCCESS(result))
+		{
+			if (!buffer_push_back(output, ' ') ||
+				!int_to_string(result, output))
+			{
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+/*core_host_resolve_component_dependencies()
 
 typedef int32_t(*corehost_main_with_output_buffer_type)(
 	const int32_t argc, const type_of_element** argv,
