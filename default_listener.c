@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-#if defined(_WIN64) || defined(__amd64) || defined(__x86_64)
+#if (defined(_WIN64) || defined(__amd64) || defined(__x86_64)) && (!(defined(__APPLE__) && defined(__MACH__)))
 #include <inttypes.h>
 #define PTRDIFF_FORMAT_TYPE PRId64
 #else
