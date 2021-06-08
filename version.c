@@ -279,11 +279,11 @@ uint8_t version_exec_function(uint8_t function, const struct buffer* arguments, 
 
 	uint8_t versions[2 * VERSION_SIZE];
 
-	for (ptrdiff_t i = 0, count = 2; i < count; ++i)
+	for (uint8_t i = 0, count = 2; i < count; ++i)
 	{
-		uint8_t* version = versions + i * VERSION_SIZE;
+		uint8_t* version = versions + (ptrdiff_t)i * VERSION_SIZE;
 
-		if (arguments_count <= i)
+		if (arguments_count <= i || range_is_null_or_empty(&values[i]))
 		{
 			if (!version_init(version, VERSION_SIZE, 0, 0, 0, 0))
 			{

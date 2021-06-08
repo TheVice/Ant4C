@@ -5,11 +5,12 @@
  * Copyright (c) 2021 TheVice
  *
  -->
-<project name="ant4c.net.module">
+<project name="ant4c.net.module" default="net_result-to-string">
   <property name="pad_level" value="0" />
   <property name="program_to_run" value="ant4c.net.module.clr.dll" overwrite="false" />
   <property name="folder_with_program_to_run" value="${path::combine(project::get-base-directory(), path::combine('bin', 'Release'))}" overwrite="false" />
 
+  <!-- loadtasks -->
   <target name="load_tasks">
     <choose unless="${property::exists('path_to_module')}">
       <when test="${platform::is-windows()}">
@@ -103,8 +104,8 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
-  <!-- hostfxr::result-to-string -->
-  <target name="hostfxr_result-to-string">
+  <!-- net::result-to-string -->
+  <target name="net_result-to-string" depends="load_tasks">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
     <property name="codes" value="-1 0 1 2 3" />
@@ -138,7 +139,7 @@
     <foreach item="String" in="${codes}" delim=" " property="code">
       <property name="result_in_string"
         value="${net::result-to-string(code)}" />
-      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::result-to-string(${code}) -> ${result_in_string}</echo>
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}net::result-to-string(${code}) -> ${result_in_string}</echo>
 
       <choose>
         <when test="${string::equal('-1', code)}">
@@ -161,71 +162,168 @@
         </otherwise>
       </choose>
     </foreach>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="get-host_fx_resolver_file_name">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <choose unless="${property::exists('fxr_folder')}">
+      <when test="${platform::is-windows()}">
+        <property name="fxr_folder"
+                  value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" />
+      </when>
+
+      <when test="${platform::is-unix()}">
+        <property name="fxr_folder"
+                  value="/usr/share/dotnet/host/fxr" />
+      </when>
+    </choose>
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}fxr_folder -> '${fxr_folder}'</echo>
+
+    <fail unless="${directory::exists(fxr_folder)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Folder '${fxr_folder}' is not exists." />
+
+    <property name="paths_to_hostfxr"
+              value="${directory::enumerate-file-system-entries(fxr_folder, 'directory', 'false')}" />
+
+    <fail if="${string::empty(paths_to_hostfxr)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Property 'paths_to_hostfxr' is empty." />
+
+    <property name="host_version" />
+
+    <foreach item="String" in="${paths_to_hostfxr}" property="path_to_hostfxr">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostfxr -> '${path_to_hostfxr}'</echo>
+      <property name="current_host_version"
+                value="${path::get-file-name(path_to_hostfxr)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}current_host_version -> '${current_host_version}'</echo>
+
+    <property name="host_version"
+              if="${version::less(host_version, current_host_version)}"
+              value="${current_host_version}" />
+    </foreach>
+
+    <fail if="${string::empty(host_version)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Property 'host_version' is empty." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}selected_version -> '${host_version}'</echo>
+
+    <property name="fxr_folder" value="${path::combine(fxr_folder, host_version)}" />
+
+    <fail unless="${directory::exists(fxr_folder)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Folder '${fxr_folder}' is not exists." />
+
+    <property name="host_fx_resolver_file_name"
+              value="${path::combine(fxr_folder, 'hostfxr.dll')}" />
+    <property name="host_fx_resolver_file_name"
+              unless="${file::exists(host_fx_resolver_file_name)}"
+              value="${path::combine(fxr_folder, 'libhostfxr.so')}" />
+    <property name="host_fx_resolver_file_name"
+              unless="${file::exists(host_fx_resolver_file_name)}"
+              value="${path::combine(fxr_folder, 'libhostfxr.dylib')}" />
+
+    <fail unless="${file::exists(host_fx_resolver_file_name)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}File '${host_fx_resolver_file_name}' is not exists." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_fx_resolver_file_name -> '${host_fx_resolver_file_name}'</echo>
+
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
   <!-- hostfxr::initialize -->
-  <target name="hostfxr_initialize">
+  <target name="hostfxr_initialize" depends="load_tasks">
+    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+
+    <call target="get-host_fx_resolver_file_name"
+          if="${string::equal(bool::parse('false'), property::exists('host_fx_resolver_file_name'))}" />
+
+    <property name="is_initialized"
+              value="${hostfxr::initialize(host_fx_resolver_file_name)}" />
+
+    <fail unless="${is_initialized}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Call of hostfxr::initialize('${host_fx_resolver_file_name}') function was fail." />
+
+    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+  </target>
+
+  <target name="get-hostfxr_expected_functions">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
     <fail
-      unless="${property::exists('path_to_hostfxr')}"
-      message="Property 'path_to_hostfxr' required to run this ('${target::get-current-target()}') target." />
+      unless="${property::exists('host_version')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'path_to_hostfxr' required to run this target." />
 
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostfxr -> ${path_to_hostfxr}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_version -> '${host_version}'</echo>
 
-    <property
-      name="is_initialize"
-      value="${hostfxr::initialize(path_to_hostfxr)}" />
+    <property name="expected_functions" value="main resolve-sdk" />
 
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_initialize -> ${is_initialize}</echo>
+    <if test="${version::greater(host_version, '2.0')}">
+      <property name="expected_functions" value="${expected_functions} get-available-sdks" />
+      <property name="expected_functions" value="${expected_functions} get-native-search-directories" />
+      <property name="expected_functions" value="${expected_functions} main-startupinfo" />
+      <property name="expected_functions" value="${expected_functions} resolve-sdk2" />
+    </if>
+
+    <if test="${version::greater(host_version, '3.0')}">
+      <property name="expected_functions" value="${expected_functions} close" />
+      <property name="expected_functions" value="${expected_functions} get-runtime-delegate" />
+      <property name="expected_functions" value="${expected_functions} get-runtime-properties" />
+      <property name="expected_functions" value="${expected_functions} get-runtime-property-value" />
+      <property name="expected_functions" value="${expected_functions} initialize-for-dotnet-command-line" />
+      <property name="expected_functions" value="${expected_functions} initialize-for-runtime-config" />
+      <property name="expected_functions" value="${expected_functions} run-app" />
+      <property name="expected_functions" value="${expected_functions} set-error-writer" />
+      <property name="expected_functions" value="${expected_functions} set-runtime-property-value" />
+    </if>
+
+    <if test="${version::greater(host_version, '4.9')}">
+      <property name="expected_functions" value="${expected_functions} main-bundle-startupinfo" />
+    </if>
+
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
   <!-- hostfxr::functions -->
-  <target name="hostfxr_functions">
+  <target name="hostfxr_functions" depends="hostfxr_initialize">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
-    <property name="host_functions" value="${hostfxr::functions()}" />
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(host_functions) -> ${string::empty(host_functions)}</echo>
+    <property name="functions"
+              value="${hostfxr::functions()}" />
 
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <fail if="${string::empty(functions)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Value of property 'functions' is empty." />
 
-    <foreach item="String"
-      in="${host_functions}" delim=" " property="host_function">
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}functions -> '${functions}'</echo>
 
-      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
+    <property name="functions" value="${functions} " />
+
+    <property name="host_version" value="${path::get-file-name(path::get-directory-name(host_fx_resolver_file_name))}" />
+    <property name="host_version" value="${version::get-major(host_version)}.${version::get-minor(host_version)}" />
+
+    <call target="get-hostfxr_expected_functions" />
+
+    <foreach item="String" in="${expected_functions}" delim=" " property="expected_function">
+      <property name="expected_function_" value="${expected_function} " />
+
+      <fail unless="${string::contains(functions, expected_function_)}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Function ${expected_function} do not exists at functions (${functions}) list." />
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
   <!-- hostfxr::is-function-exists -->
-  <target name="hostfxr_is-function-exists">
+  <target name="hostfxr_is-function-exists" depends="hostfxr_initialize">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
-    <property name="functions" value="close" />
-    <property name="functions" value="${functions} get-available-sdks" />
-    <property name="functions" value="${functions} get-native-search-directories" />
-    <property name="functions" value="${functions} get-runtime-delegate" />
-    <property name="functions" value="${functions} get-runtime-properties" />
-    <property name="functions" value="${functions} get-runtime-property-value" />
-    <property name="functions" value="${functions} initialize-for-dotnet-command-line" />
-    <property name="functions" value="${functions} initialize-for-runtime-config" />
-    <property name="functions" value="${functions} main" />
-    <property name="functions" value="${functions} main-bundle-startupinfo" />
-    <property name="functions" value="${functions} main-startupinfo" />
-    <property name="functions" value="${functions} resolve-sdk" />
-    <property name="functions" value="${functions} resolve-sdk2" />
-    <property name="functions" value="${functions} run-app" />
-    <property name="functions" value="${functions} set-error-writer" />
-    <property name="functions" value="${functions} set-runtime-property-value" />
+    <call target="get-hostfxr_expected_functions" />
 
-    <foreach item="String" in="${functions}" delim=" " property="function">
-      <property name="is_function_exists" value="${hostfxr::is-function-exists(function)}" />
+    <foreach item="String" in="${expected_functions}" delim=" " property="expected_function">
 
-      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::is-function-exists(${function}) -> ${is_function_exists}</echo>
+      <fail unless="${hostfxr::is-function-exists(expected_function)}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Function ${expected_function} do not exists at host version ${host_version}." />
     </foreach>
 
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />

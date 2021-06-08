@@ -3981,22 +3981,18 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_build_file if="${platform::is-windows()}">
       <path_to_module>modules\net\ant4c.net.module.dll</path_to_module>
       <build_file>modules\net\net.xml</build_file>
-      <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
       <path_to_module>modules\net\libant4c.net.module.dll</path_to_module>
       <build_file>modules\net\net.xml</build_file>
-      <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
       <path_to_module>modules/net/libant4c.net.module.so</path_to_module>
       <build_file>modules/net/net.xml</build_file>
-      <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-unix()}">
       <path_to_module>modules/net/libant4c.net.module.dylib</path_to_module>
       <build_file>modules/net/net.xml</build_file>
-      <target>test_hostfxr_result-to-string</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${platform::is-windows()}">
       <path_to_module>modules\regex\ant4c.regex.dll</path_to_module>
@@ -6249,6 +6245,25 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
               message="output_of_function -> '${output_of_function}'." />
         </project>
         ]]></content>
+      <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property name="input"
+                  value="1 2.0 3.0.1" />
+        <property name="version" />
+
+        <foreach item="String" in="${input}" delim=" " property="current_version">
+          <property name="version"
+                    if="${version::less(version, current_version)}"
+                    value="${current_version}" />
+        </foreach>
+
+        <fail unless="${string::equal(version, '3.0.1')}"
+              message="version -> '${version}'." />
+      </project>
+      ]]></content>
       <return>1</return>
     </project_load_from_content>
     <project_load_from_build_file>

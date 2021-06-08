@@ -20,6 +20,8 @@ ant4c (YYYY.MM)
     'C:\a..a\', '/tmp/a..a' for example.
   * Function 'platform::get-name()' now return name of platform
     not the name of operation system.
+  * Function 'version_exec_function' from version unit allow to work with
+    empty arguments - they will be interpreted as zero versions.
   * Allowed to build at Apple macOS environment.
   * WIN32: fixed using at 'echo' task for scenario when output stream
     redirected to the file by capability of operation system -

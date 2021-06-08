@@ -1981,8 +1981,8 @@ uint8_t evaluate_function(
 
 			if (!get_exists_functions(
 					ptr_to_host_fxr_object,
-					name_spaces[1],
-					all_functions[1] + 4,
+					name_spaces[2],
+					all_functions[2] + 3,
 					values[0],
 					values_lengths[0],
 					host_fx_resolver_is_function_exists,
@@ -2023,7 +2023,7 @@ uint8_t evaluate_function(
 			}
 
 			if (!is_function_exists(
-					ptr_to_host_fxr_object, name_spaces[1],
+					ptr_to_host_fxr_object, name_spaces[2],
 					values[0], values_lengths[0],
 					host_fx_resolver_is_function_exists, &output_data))
 			{
@@ -2231,18 +2231,27 @@ uint8_t evaluate_function(
 #endif
 			}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4054)
 			ptr = (const uint8_t*)set_error_writer(
 					  ptr_to_host_fxr_object,
 					  host_fx_resolver_error_writer, host_fxr_set_error_writer,
 					  path, &host_fx_resolver_error_file_writer);
+#pragma warning(default: 4054)
+#else
+				ptr = (const uint8_t*)set_error_writer(
+						  ptr_to_host_fxr_object,
+						  host_fx_resolver_error_writer, host_fxr_set_error_writer,
+						  path, &host_fx_resolver_error_file_writer);
+#endif
 
-			if (!buffer_resize(&output_data, 0) ||
-				!pointer_to_string(ptr, &output_data))
-			{
-				return 0;
+				if (!buffer_resize(&output_data, 0) ||
+					!pointer_to_string(ptr, &output_data))
+				{
+					return 0;
+				}
 			}
-		}
-		break;
+			break;
 
 		case host_fxr_set_runtime_property_value_:
 			if (!hostfxr_set_runtime_property_value(ptr_to_host_fxr_object,
@@ -2753,18 +2762,27 @@ uint8_t evaluate_function(
 #endif
 			}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4054)
 			ptr = (const uint8_t*)set_error_writer(
 					  ptr_to_host_policy_object,
 					  host_policy_error_writer, core_host_set_error_writer,
 					  path, &host_policy_error_file_writer);
+#pragma warning(default: 4054)
+#else
+				ptr = (const uint8_t*)set_error_writer(
+						  ptr_to_host_policy_object,
+						  host_policy_error_writer, core_host_set_error_writer,
+						  path, &host_policy_error_file_writer);
+#endif
 
-			if (!buffer_resize(&output_data, 0) ||
-				!pointer_to_string(ptr, &output_data))
-			{
-				return 0;
+				if (!buffer_resize(&output_data, 0) ||
+					!pointer_to_string(ptr, &output_data))
+				{
+					return 0;
+				}
 			}
-		}
-		break;
+			break;
 
 		case core_host_unload_:
 			if (values_count ||
