@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __HOST_INTERFACE_H__
-#define __HOST_INTERFACE_H__
+#ifndef __MODULES_NET_HOST_INTERFACE_H__
+#define __MODULES_NET_HOST_INTERFACE_H__
 
 #include <stddef.h>
 #include <stdint.h>

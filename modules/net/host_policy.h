@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __HOST_POLICY_H__
-#define __HOST_POLICY_H__
+#ifndef __MODULES_NET_HOST_POLICY_H__
+#define __MODULES_NET_HOST_POLICY_H__
 
 #include "net.common.h"
 

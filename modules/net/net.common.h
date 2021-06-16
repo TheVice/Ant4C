@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __NET_COMMON_H__
-#define __NET_COMMON_H__
+#ifndef __MODULES_NET_COMMON_H__
+#define __MODULES_NET_COMMON_H__
 
 #include <stddef.h>
 
@@ -84,7 +84,6 @@ enum hostfxr_status_code
 };
 
 #define HOST_FX_RESOLVER_NON_SUCCESS(RESULT) ((RESULT) < host_fxr_Success || host_fxr_Success_DifferentRuntimeProperties < (RESULT))
-
 
 #define ERROR_WRITER_WIN32(MESSAGE, CONTENT, IS_CONTENT_INITIALIZED, ERROR_FILE_WRITER)				\
 	\

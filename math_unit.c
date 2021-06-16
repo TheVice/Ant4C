@@ -245,7 +245,8 @@ uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
 
 	for (uint8_t i = 0, count = COUNT_OF(values); i < count; ++i)
 	{
-		double_values[i] = arguments_count <= i ? 0.0 : double_parse(values[i].start);
+		double_values[i] =
+			(arguments_count <= i || NULL == values[i].start) ? 0.0 : double_parse(values[i].start);
 	}
 
 	switch (function)

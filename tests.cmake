@@ -100,3 +100,48 @@ add_custom_command(TARGET ant4c_tests POST_BUILD
 
 add_custom_command(TARGET ant4c_tests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
+
+if(DEFINED NET_MODULE_TESTS)
+add_executable(net.module_tests
+  "${CMAKE_SOURCE_DIR}/tests.cmake"
+  "${CMAKE_SOURCE_DIR}/gtest.cmake"
+  "${CMAKE_SOURCE_DIR}/pugixml.cmake"
+  "${CMAKE_SOURCE_DIR}/tests.xml"
+  "${CMAKE_SOURCE_DIR}/tests_base_xml.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
+  "${CMAKE_SOURCE_DIR}/tests_exec.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_exec.h"
+  "${CMAKE_SOURCE_DIR}/tests_net.module.cpp"
+  "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
+)
+
+target_compile_options(net.module_tests PRIVATE
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+)
+
+target_include_directories(net.module_tests
+  SYSTEM PRIVATE ${pugixml_Path}/src ${GTEST_INCLUDE_DIR})
+target_link_libraries(net.module_tests
+  ant4c
+  ${DL_LIB}
+  ${M_LIB}
+  ${GTEST_MAIN_LIBRARY}
+  pugixml
+)
+
+if(NOT MSVC)
+  set_property(TARGET net.module_tests PROPERTY CXX_STANDARD 11)
+endif()
+
+if(DEFINED PUGIXML_HEADER_ONLY)
+  target_compile_definitions(net.module_tests
+    PRIVATE -DPUGIXML_HEADER_ONLY=${PUGIXML_HEADER_ONLY}
+  )
+endif()
+
+add_dependencies(net.module_tests
+  ant4c.net.module
+)
+endif()

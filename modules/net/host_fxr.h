@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __HOST_FXR_H__
-#define __HOST_FXR_H__
+#ifndef __MODULES_NET_HOST_FXR_H__
+#define __MODULES_NET_HOST_FXR_H__
 
 #include "net.common.h"
 

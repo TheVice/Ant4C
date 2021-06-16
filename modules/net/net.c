@@ -1710,49 +1710,6 @@ uint8_t file_is_assembly(
 	return 1;
 }
 
-void* host_fx_resolver_error_file_writer = NULL;
-void* host_policy_error_file_writer = NULL;
-
-#if defined(_WIN32)
-static struct buffer host_fx_resolver_error_writer_win32_content;
-static uint8_t is_host_fx_resolver_error_writer_win32_content_initialized = 0;
-
-static struct buffer host_policy_error_writer_win32_content;
-static uint8_t is_host_policy_error_writer_win32_content_initialized = 0;
-
-void host_fx_resolver_error_writer(const type_of_element* message)
-{
-	ERROR_WRITER_WIN32(
-		message,
-		host_fx_resolver_error_writer_win32_content,
-		is_host_fx_resolver_error_writer_win32_content_initialized,
-		host_fx_resolver_error_file_writer);
-}
-
-void host_policy_error_writer(const type_of_element* message)
-{
-	ERROR_WRITER_WIN32(
-		message,
-		host_policy_error_writer_win32_content,
-		is_host_policy_error_writer_win32_content_initialized,
-		host_policy_error_file_writer);
-}
-#else
-void host_fx_resolver_error_writer(const type_of_element* message)
-{
-	ERROR_WRITER_POSIX(
-		message,
-		host_fx_resolver_error_file_writer);
-}
-
-void host_policy_error_writer(const type_of_element* message)
-{
-	ERROR_WRITER_POSIX(
-		message,
-		host_policy_error_file_writer);
-}
-#endif
-
 static struct buffer output_data;
 static uint8_t is_buffer_initialized = 0;
 
@@ -2236,13 +2193,13 @@ uint8_t evaluate_function(
 			ptr = (const uint8_t*)set_error_writer(
 					  ptr_to_host_fxr_object,
 					  host_fx_resolver_error_writer, host_fxr_set_error_writer,
-					  path, &host_fx_resolver_error_file_writer);
+					  path, 0);
 #pragma warning(default: 4054)
 #else
 				ptr = (const uint8_t*)set_error_writer(
 						  ptr_to_host_fxr_object,
 						  host_fx_resolver_error_writer, host_fxr_set_error_writer,
-						  path, &host_fx_resolver_error_file_writer);
+						  path, 0);
 #endif
 
 				if (!buffer_resize(&output_data, 0) ||
@@ -2767,13 +2724,13 @@ uint8_t evaluate_function(
 			ptr = (const uint8_t*)set_error_writer(
 					  ptr_to_host_policy_object,
 					  host_policy_error_writer, core_host_set_error_writer,
-					  path, &host_policy_error_file_writer);
+					  path, 1);
 #pragma warning(default: 4054)
 #else
 				ptr = (const uint8_t*)set_error_writer(
 						  ptr_to_host_policy_object,
 						  host_policy_error_writer, core_host_set_error_writer,
-						  path, &host_policy_error_file_writer);
+						  path, 1);
 #endif
 
 				if (!buffer_resize(&output_data, 0) ||
@@ -2806,8 +2763,8 @@ uint8_t evaluate_function(
 			return 0;
 	}
 
-	* output = buffer_data(&output_data, 0);
-	* output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_data(&output_data, 0);
+	*output_length = (uint16_t)buffer_size(&output_data);
 	/**/
 	return 1;
 }
@@ -2815,46 +2772,21 @@ uint8_t evaluate_function(
 void module_release()
 {
 	host_interface_release_buffers();
+	error_writer_release_buffers(
+		is_host_fxr_object_initialized ? host_fxr_object : NULL,
+		is_host_policy_object_initialized ? host_policy_object : NULL);
 
 	if (is_host_fxr_object_initialized)
 	{
-		if (host_fx_resolver_error_file_writer)
-		{
-			host_fxr_set_error_writer(host_fxr_object, NULL);
-			file_close(host_fx_resolver_error_file_writer);
-			host_fx_resolver_error_file_writer = NULL;
-		}
-
 		host_fx_resolver_unload(host_fxr_object);
 		is_host_fxr_object_initialized = 0;
 	}
 
 	if (is_host_policy_object_initialized)
 	{
-		if (host_policy_error_file_writer)
-		{
-			core_host_set_error_writer(host_policy_object, NULL);
-			file_close(host_policy_error_file_writer);
-			host_policy_error_file_writer = NULL;
-		}
-
 		host_policy_unload(host_policy_object);
 		is_host_policy_object_initialized = 0;
 	}
-
-#if defined(_WIN32)
-
-	if (is_host_fx_resolver_error_writer_win32_content_initialized)
-	{
-		buffer_release(&host_fx_resolver_error_writer_win32_content);
-	}
-
-	if (is_host_policy_error_writer_win32_content_initialized)
-	{
-		buffer_release(&host_policy_error_writer_win32_content);
-	}
-
-#endif
 
 	if (is_buffer_initialized)
 	{
