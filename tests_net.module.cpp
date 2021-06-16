@@ -195,7 +195,7 @@ TEST_F(TestNetModule, functions)
 		--node_count;
 	}
 }
-
+#if defined(NET_MODULE_TESTS)
 class TestNetModuleEx : public TestNetModule
 {
 	virtual void SetUp() override
@@ -290,3 +290,4 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 		--node_count;
 	}
 }
+#endif

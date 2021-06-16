@@ -115,6 +115,8 @@ add_executable(net.module_tests
   "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
 )
 
+target_compile_definitions(net.module_tests PRIVATE NET_MODULE_TESTS)
+
 target_compile_options(net.module_tests PRIVATE
   $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
   $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
