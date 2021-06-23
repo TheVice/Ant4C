@@ -382,7 +382,7 @@ uint8_t hostfxr_get_available_sdks(
 		}
 
 		ptr_to_host_fxr_object = buffer_data(output, sizeof(uint32_t));
-		exe_dir = (const wchar_t*)(buffer_data(output, 0) + size);
+		exe_dir = (const type_of_element*)(buffer_data(output, 0) + size);
 
 		if (!buffer_resize(output, 0) ||
 			!text_encoding_UTF16LE_to_UTF8(ptr_to_host_fxr_object, exe_dir, output))
@@ -1452,11 +1452,11 @@ uint8_t file_is_assembly(
 
 	static const uint8_t* ant4c_net_clr = (const uint8_t*)"ant4c.net.module.clr.dll";
 	/**/
-	const uint8_t* get_runtime_delegate = all_functions[1][7];
+	const uint8_t* get_runtime_delegate = all_functions[2][6];
 	const uint8_t get_runtime_delegate_length = (uint8_t)common_count_bytes_until(get_runtime_delegate, 0);
 
 	if (!is_function_exists(
-			ptr_to_host_fxr_object, name_spaces[1],
+			ptr_to_host_fxr_object, name_spaces[2],
 			get_runtime_delegate, get_runtime_delegate_length,
 			host_fx_resolver_is_function_exists, output))
 	{
@@ -1665,8 +1665,8 @@ uint8_t file_is_assembly(
 		argv[3] = L"is-assembly";
 #else
 		argv[0] = (const uint8_t*)"";
-		argv[2] = name_spaces[2];
-		argv[3] = all_functions[2][0];
+		argv[2] = (const uint8_t*)"file";
+		argv[3] = (const uint8_t*)"is-assembly";
 #endif
 
 		if (1 == values_count)
@@ -1678,7 +1678,7 @@ uint8_t file_is_assembly(
 
 #if defined(_WIN32)
 			argv[1] = L"ant4c.net.module.clr.dll";
-			argv[4] = (const wchar_t*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]);
+			argv[4] = (const type_of_element*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]);
 #else
 			argv[1] = ant4c_net_clr;
 			argv[4] = buffer_data(output, 0);
@@ -2182,7 +2182,7 @@ uint8_t evaluate_function(
 				}
 
 #if defined(_WIN32)
-				path = (const wchar_t*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]);
+				path = (const type_of_element*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]);
 #else
 				path = buffer_data(&output_data, 0);
 #endif
@@ -2713,7 +2713,7 @@ uint8_t evaluate_function(
 				}
 
 #if defined(_WIN32)
-				path = (const wchar_t*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]);
+				path = (const type_of_element*)buffer_data(&output_data, (ptrdiff_t)1 + values_lengths[0]);
 #else
 				path = buffer_data(&output_data, 0);
 #endif

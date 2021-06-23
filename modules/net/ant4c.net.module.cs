@@ -38,7 +38,7 @@ namespace Ant4C.Net.Module
             return true;
         }
     }
-#if NETSTANDARD2_1 || NETCOREAPP3_1
+#if NETSTANDARD2_1 || NETCOREAPP3_1 || NET5_0 || NET6_0
     public static class Delegates
     {
         [StructLayout(LayoutKind.Sequential)]

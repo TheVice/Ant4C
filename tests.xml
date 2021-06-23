@@ -4313,6 +4313,12 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_main_bundle_startupinfo')}">
       <target>hostfxr_main-bundle-startupinfo</target>
     </project_load_from_build_file>
+    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+      <target>nethost_get-hostfxr-path</target>
+    </project_load_from_build_file>
+    <project_load_from_build_file if="${environment::variable-exists('test_file_is_assembly')}">
+      <target>test_file_is-assembly</target>
+    </project_load_from_build_file>
   </TestNetModuleEx>
   <TestPath>
     <path_change_extension>

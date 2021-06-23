@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "file_system.h"
 #include "path.h"
 #include "project.h"
@@ -204,6 +205,7 @@ class TestNetModuleEx : public TestNetModule
 
 		if (!is_project_created)
 		{
+			common_set_module_priority(1);
 			ASSERT_TRUE(init_current_directory(&the_project)) << buffer_free(&the_project);
 			ASSERT_TRUE(buffer_resize(&the_project, 0)) << buffer_free(&the_project);
 			ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
