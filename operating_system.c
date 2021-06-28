@@ -39,8 +39,10 @@ struct OperatingSystem
 
 static const uint8_t* windows_label = (const uint8_t*)"Microsoft Windows NT";
 static const uint8_t* server_label = (const uint8_t*)"Server";
+static const uint8_t* darwin_label = (const uint8_t*)"Darwin Kernel";
 #define Win32NT_str_length	20
 #define Server_str_length	6
+#define Darwin_str_length	13
 
 #if !defined(_WIN32)
 uint8_t operating_system_init(uint8_t platformID, const uint8_t* version,
@@ -178,12 +180,14 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 										  start + Win32NT_str_length, finish, server_label,
 										  server_label + Server_str_length);
 	}
+	else if (string_contains(start, finish, darwin_label, darwin_label + Darwin_str_length))
+	{
+		operating_system->platform = macOS;
+	}
 	else
 	{
 		operating_system->platform = Unix;
 	}
-
-	/*TODO: os->platform = macOS;*/
 
 	if (!version_parse(start, finish, operating_system->version))
 	{

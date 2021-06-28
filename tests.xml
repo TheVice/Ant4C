@@ -612,6 +612,11 @@
       <version_string value_1="Linux " value_2="" value_3="" value_4="" />
       <version>4.0.0.0</version>
     </operating_system_init>
+    <operating_system_init>
+      <platformID>2</platformID>
+      <version_string value_1="Darwin Kernel " value_2="" value_3="" value_4="" />
+      <version>19.6.0</version>
+    </operating_system_init>
     <operating_system_parse>
       <input>Microsoft Windows NT 6.2.9200</input>
       <output platform="0" major="6" minor="2" build="9200" revision="0" />
@@ -619,6 +624,10 @@
     <operating_system_parse>
       <input>OpenBSD 6.5 GENERIC.MP#3 amd64</input>
       <output platform="1" major="6" minor="5" build="0" revision="0" />
+    </operating_system_parse>
+    <operating_system_parse>
+      <input>Darwin 19.6.0 Darwin Kernel Version 19.6.0: Thu May  6 00:48:39 PDT 2021; root:xnu-6153.141.33~1/RELEASE_X86_64 x86_64</input>
+      <output platform="2" major="19" minor="6" build="0" revision="0" />
     </operating_system_parse>
   </TestOperatingSystem>
   <TestExec allow_output_to_console="true">

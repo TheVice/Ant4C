@@ -26,7 +26,8 @@ struct version_
 uint8_t version_init(uint8_t* version, uint8_t size,
 					 uint32_t major, uint32_t minor, uint32_t build, uint32_t revision)
 {
-	if (size < sizeof(struct version_))
+	if (!version ||
+		size < sizeof(struct version_))
 	{
 		return 0;
 	}
@@ -104,30 +105,34 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, u
 	input_start = find_any_symbol_like_or_not_like_that(
 					  input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
 
-	for (; input_start < input_finish && i < 4; ++i, ++input_start, version += sizeof(uint32_t))
+	for (uint8_t count = VERSION_SIZE / sizeof(uint32_t);
+		 input_start < input_finish && i < count;
+		 ++i, ++input_start, version += sizeof(uint32_t))
 	{
 		if (input_finish == input_start ||
 			input_start + 1 == find_any_symbol_like_or_not_like_that(
 				input_start, input_start + 1, digits, COUNT_OF_DIGITS, 1, 1))
 		{
-			if (i == 0)
-			{
-				return 0;
-			}
-
 			break;
 		}
 
 		*((uint32_t*)version) = (uint32_t)int_parse(input_start);
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, &point, 1, 1, 1);
+		++input_start;
+		/**/
+		const uint8_t* start = input_start;
+		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, &point, 1, 1, 1);
+
+		for (; start < input_start; ++start)
+		{
+			if (' ' == *start)
+			{
+				i = count;
+				break;
+			}
+		}
 	}
 
-	if (i == 0)
-	{
-		return 0;
-	}
-
-	return 1;
+	return 0 < i;
 }
 
 uint8_t version_to_byte_array(const uint8_t* version, uint8_t* output)
