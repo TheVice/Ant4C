@@ -1,0 +1,132 @@
+name: modules_net_CMake
+
+on:
+  push:
+    branches:
+    - develop
+
+    paths:
+    - 'tests_net.module.cpp'
+    - 'tests.cmake'
+    - 'modules/net/*.c'
+    - 'modules/net/*.cs'
+    - 'modules/net/*.csproj'
+    - 'modules/net/*.h'
+    - 'modules/net/*.xml'
+    - 'modules/net/CMakeLists.txt'
+
+
+  pull_request:
+    branches:
+    - develop
+
+    paths:
+    - 'tests_net.module.cpp'
+    - 'tests.cmake'
+    - 'modules/net/*.c'
+    - 'modules/net/*.cs'
+    - 'modules/net/*.csproj'
+    - 'modules/net/*.h'
+    - 'modules/net/*.xml'
+    - 'modules/net/CMakeLists.txt'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Fetch prebuild of third-party libraries
+      run: git fetch origin ubuntu-latest
+
+    - name: Checkout third-party libraries
+      run: git checkout origin/ubuntu-latest -- .
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{ github.workspace }}/build-modules-net
+
+    - name: Create project files
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=Release -DGTEST_BINARY_PATH=${{ github.workspace }}/ubuntu-latest -DPUGIXML_BINARY_PATH=${{ github.workspace }}/ubuntu-latest -DNET_MODULE_TESTS=""
+
+    - name: Build project files
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target net.module_tests --parallel $(nproc)
+
+    # - name: Build project files (tests_exec_app)
+    #   working-directory: ${{ github.workspace }}/build-modules-net
+    #   run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target tests_exec_app --parallel $(nproc)
+
+    - name: Create script for container
+      run: |
+        echo > ${{ github.workspace }}/run.sh
+        echo "export TZ=Etc/UTC" >> ${{ github.workspace }}/run.sh
+        echo "ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime" >> ${{ github.workspace }}/run.sh
+        echo "echo Etc/UTC > /etc/timezone" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx*" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_=\"\"" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_initialize_for_dotnet_command_line" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_initialize_for_dotnet_command_line=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_initialize_for_dotnet_command_line" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_initialize_for_runtime_config" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_initialize_for_runtime_config=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_initialize_for_runtime_config" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_run_app" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_run_app=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_run_app" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_get_runtime_properties" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_get_runtime_properties=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_get_runtime_properties" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_get_runtime_property_value" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_get_runtime_property_value=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_get_runtime_property_value" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_set_runtime_property_value" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_set_runtime_property_value=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_set_runtime_property_value" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_get_runtime_delegate" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_get_runtime_delegate=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_get_runtime_delegate" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_set_error_writer" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_set_error_writer=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_set_error_writer" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_hostfxr_main_bundle_startupinfo" >> ${{ github.workspace }}/run.sh
+        echo "export test_hostfxr_main_bundle_startupinfo=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_hostfxr_main_bundle_startupinfo" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        echo "echo test_file_is_assembly" >> ${{ github.workspace }}/run.sh
+        echo "export test_file_is_assembly=\"\"" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "unset test_file_is_assembly" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+
+        # echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --tests_exec_app=/home/build-modules-net/tests_exec_app --gtest_filter=TestExec*" >> ${{ github.workspace }}/run.sh
+
+    - name: Run Docker (dotnet_sdk_2_1-focal)
+      run: docker run --name dotnet_sdk_2_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:2.1-focal sh +xe /home/run.sh
+
+    - name: Run Docker (dotnet_sdk_3_1-focal)
+      run: docker run --name dotnet_sdk_3_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:3.1-focal sh +xe /home/run.sh
+
+    - name: Run Docker (dotnet_sdk_5_0-focal)
+      run: docker run --name dotnet_sdk_5_0-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:5.0-focal sh +xe /home/run.sh
