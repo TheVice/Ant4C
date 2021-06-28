@@ -44,7 +44,8 @@
   </target>
 
   <target name="should_we_skip">
-    <property name="skip" value="${bool::parse('false')}" />
+    <property name="skip" value="${platform::is-unix()}" overwrite="false" />
+    <!--property name="skip" value="${bool::parse('false')}" />
 
     <if test="${platform::is-unix()}">
       <if test="${environment::variable-exists('HOSTNAME')}">
@@ -74,7 +75,7 @@
         </if>
 
       </if>
-    </if>
+    </if-->
   </target>
 
   <!-- nethost::get-hostfxr-path -->
@@ -853,11 +854,19 @@
               value="${hostfxr::initialize-for-runtime-config('', '', file_path)}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::initialize-for-runtime-config('', '', ${file_path}) -> ${context}</echo>
 
+    <property name="index"
+              value="${string::index-of(context, ' ')}" />
+
+    <if test="${math::less('0', index)}">
+      <property name="index"
+        value="${net::result-to-string(string::trim(string::substring(context, index)))}" />
+    </if>
+
     <property name="is_context_initialized"
               value="${string::equal(bool::parse('false'), string::contains(context, ' '))}" />
 
     <fail unless="${is_context_initialized}"
-          message=">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}context should be initialized, instead ${context} ${net::result-to-string(context)}." />
+          message=">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}context should be initialized, instead ${context} ${index}." />
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}${context} -> ${is_context_initialized}</echo>
 
@@ -878,11 +887,19 @@
       <property name="context"
                 value="${hostfxr::initialize-for-dotnet-command-line('', '', path_to_assembly, '1', '2', '3', '4', '5')}" />
 
+      <property name="index"
+                value="${string::index-of(context, ' ')}" />
+
+      <if test="${math::less('0', index)}">
+        <property name="index"
+          value="${net::result-to-string(string::trim(string::substring(context, index)))}" />
+      </if>
+
       <property name="is_context_initialized"
                 value="${string::equal(bool::parse('false'), string::contains(context, ' '))}" />
 
       <fail unless="${is_context_initialized}"
-            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}context should be initialized, instead ${context} ${net::result-to-string(context)}." />
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}context should be initialized, instead ${context} ${index}." />
 
       <property name="run-app" value="${hostfxr::run-app(context)}" />
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}${run-app} -> ${net::result-to-string(run-app)}</echo>
@@ -1233,7 +1250,7 @@
   <target name="test_hostfxr_initialize-for-dotnet-command-line" depends="hostfxr_initialize-for-dotnet-command-line,hostfxr_close" />
   <target name="test_hostfxr_initialize-for-runtime-config" depends="hostfxr_initialize-for-runtime-config,hostfxr_close" />
 
-  <target name="test_hostfxr_get-runtime-properties" depends="hostfxr_initialize-for-dotnet-command-line">
+  <target name="test_hostfxr_get-runtime-properties" depends="hostfxr_initialize-for-dotnet-command-line" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
     <call target="hostfxr_get-runtime-properties" />
     <call target="hostfxr_close" />
 
@@ -1246,7 +1263,7 @@
     <echo level="Info">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}${runtime_properties}</echo>
   </target>
 
-  <target name="test_hostfxr_get-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line">
+  <target name="test_hostfxr_get-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
     <property name="property_name" value="JIT_PATH" />
@@ -1287,7 +1304,7 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" /-->
   </target>
 
-  <target name="test_hostfxr_set-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line">
+  <target name="test_hostfxr_set-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
     <property name="property_name" value="MY_PROPERTY" overwrite="false" />
@@ -1305,7 +1322,7 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
-  <target name="test_hostfxr_get-runtime-delegate" depends="hostfxr_initialize-for-runtime-config">
+  <target name="test_hostfxr_get-runtime-delegate" depends="hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
     <call target="get-host_version" />
@@ -1325,7 +1342,7 @@
     <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
   </target>
 
-  <target name="test_hostfxr_set-error-writer" depends="hostfxr_initialize">
+  <target name="test_hostfxr_set-error-writer" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('set-error-writer')}">
     <property name="pad_level" value="${math::addition(pad_level, 1)}" />
 
     <property name="path_to_file_for_error_writer" value="${path::get-temp-file-name()}" />

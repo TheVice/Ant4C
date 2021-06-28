@@ -199,6 +199,14 @@ TEST_F(TestNetModule, functions)
 #if defined(NET_MODULE_TESTS)
 class TestNetModuleEx : public TestNetModule
 {
+protected:
+	static std::string path_to_build_file;
+
+	TestNetModuleEx() : TestNetModule()
+	{
+		predefine_arguments.insert(std::make_pair("--build_file=", &path_to_build_file));
+	}
+
 	virtual void SetUp() override
 	{
 		TestsBaseXml::SetUp();
@@ -226,17 +234,10 @@ class TestNetModuleEx : public TestNetModule
 	}
 };
 
+std::string TestNetModuleEx::path_to_build_file;
+
 TEST_F(TestNetModuleEx, project_load_from_build_file)
 {
-	const auto path_to_source(get_path_to_directory_with_source(&verbose));
-	ASSERT_TRUE(verbose);
-	verbose = 0;
-#if defined(_WIN32)
-	const auto path = path_to_source + "modules\\net\\net.xml";
-#else
-	const auto path = path_to_source + "modules/net/net.xml";
-#endif
-	const auto path_to_build_file(string_to_range(path));
 	const auto current_directory_in_range(string_to_range(current_directory));
 	//
 	static const auto property_name = reinterpret_cast<const uint8_t*>("path_to_module");
@@ -247,6 +248,7 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 		std::cout << "[ RUN      ]" << std::endl;
 		/*const std::string path(node.node().attribute("path").as_string());
 		const auto path_to_build_file(string_to_range(path));*/
+		const auto path_to_build_file_in_range(string_to_range(path_to_build_file));
 		const std::string target_name(node.node().select_node("target").node().child_value());
 		const auto target_name_in_range(string_to_range(target_name));
 		//
@@ -261,29 +263,29 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 						0, 0, 1,
 						verbose))
 				<< path_to_module << std::endl
-				<< path << std::endl
+				<< path_to_build_file << std::endl
 				<< current_directory << std::endl
 				<< target_name << std::endl;
 		//
 		ASSERT_TRUE(project_load_from_build_file(
-						&path_to_build_file, &current_directory_in_range,
+						&path_to_build_file_in_range, &current_directory_in_range,
 						Default, &the_project, 0, verbose))
 				<< path_to_module << std::endl
-				<< path << std::endl
+				<< path_to_build_file << std::endl
 				<< current_directory << std::endl;
 
 		if (range_is_null_or_empty(&target_name_in_range))
 		{
 			ASSERT_TRUE(project_evaluate_default_target(&the_project, verbose))
 					<< path_to_module << std::endl
-					<< path << std::endl
+					<< path_to_build_file << std::endl
 					<< current_directory << std::endl;
 		}
 		else
 		{
 			ASSERT_TRUE(target_evaluate_by_name(&the_project, &target_name_in_range, verbose))
 					<< path_to_module << std::endl
-					<< path << std::endl
+					<< path_to_build_file << std::endl
 					<< current_directory << std::endl
 					<< target_name << std::endl;
 		}
