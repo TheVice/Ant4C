@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
-#include "tests_base_xml.h"
+#include "tests_argument_parser.h"
 
 extern "C" {
 #include "argument_parser.h"
@@ -26,9 +26,42 @@ extern "C" {
 #include <utility>
 #include <algorithm>
 
-class TestArgumentParser : public TestsBaseXml
+uint8_t TestArgumentParser::get_properties(buffer* properties, uint8_t verbose)
 {
-};
+	static std::string empty("");
+
+	if (!properties)
+	{
+		return 0;
+	}
+
+	auto args = ::testing::internal::GetArgvs();
+	const auto argc = static_cast<int>(args.size());
+	std::vector<char*> argv(argc);
+
+	for (auto i = 0; i < argc; ++i)
+	{
+		argv[i] = args[i].empty() ? &empty[0] : &(args[i][0]);
+	}
+
+	buffer arguments;
+	SET_NULL_TO_BUFFER(arguments);
+
+	if (!argument_parser_char(0, argc, argv.data(), &arguments, verbose))
+	{
+		property_release(&arguments);
+		return 0;
+	}
+
+	if (!argument_parser_get_properties(&arguments, properties, verbose))
+	{
+		property_release(&arguments);
+		return 0;
+	}
+
+	property_release(&arguments);
+	return 1;
+}
 
 uint8_t string_to_command_arguments(const std::string& input, buffer* output, int* argc, char*** argv)
 {
@@ -41,12 +74,12 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 
 	if (input.empty())
 	{
-		(*argc) = 0;
-		(*argv) = NULL;
+		*argc = 0;
+		*argv = NULL;
 		return 1;
 	}
 
-	range input_in_range = string_to_range(input);
+	auto input_in_range = string_to_range(input);
 
 	if (!string_trim(&input_in_range))
 	{
@@ -54,8 +87,8 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 	}
 
 	return argument_from_char(
-			   (const char*)input_in_range.start,
-			   (const char*)input_in_range.finish,
+			   reinterpret_cast<const char*>(input_in_range.start),
+			   reinterpret_cast<const char*>(input_in_range.finish),
 			   output, argc, argv);
 }
 #if defined(_WIN32)
@@ -70,8 +103,8 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 
 	if (input.empty())
 	{
-		(*argc) = 0;
-		(*argv) = NULL;
+		*argc = 0;
+		*argv = NULL;
 		return 1;
 	}
 
@@ -82,15 +115,15 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 		return 0;
 	}
 
-	const ptrdiff_t size = (uint8_t*)argvA - buffer_data(output, 0);
+	const ptrdiff_t size = reinterpret_cast<uint8_t*>(argvA) - buffer_data(output, 0);
 
 	if (!buffer_append(output, NULL, 4 * (size + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(output, 0);
-	const uint8_t* finish = buffer_data(output, size);
+	const auto* start = buffer_data(output, 0);
+	const auto* finish = buffer_data(output, size);
 
 	if (!buffer_resize(output, size))
 	{
@@ -102,7 +135,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 		return 0;
 	}
 
-	const ptrdiff_t new_size = buffer_size(output);
+	const auto new_size = buffer_size(output);
 
 	if (!buffer_append(output, NULL, (ptrdiff_t)1 + (*argc) * sizeof(wchar_t*)) ||
 		!buffer_resize(output, new_size))
@@ -112,13 +145,13 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 
 	int i = 0;
 	static const wchar_t zero_symbol = L'\0';
-	const wchar_t* startW = (const wchar_t*)buffer_data(output, size);
-	const wchar_t* finishW = (const wchar_t*)(buffer_data(output, 0) + new_size);
+	const auto* startW = reinterpret_cast<const wchar_t*>(buffer_data(output, size));
+	const auto* finishW = reinterpret_cast<const wchar_t*>(buffer_data(output, 0) + new_size);
 
 	while ((startW = find_any_symbol_like_or_not_like_that_wchar_t(startW, finishW, &zero_symbol, 1, 0,
 					 1)) < finishW && i < (*argc))
 	{
-		if (!buffer_append(output, (const uint8_t*)&startW, sizeof(const wchar_t*)))
+		if (!buffer_append(output, reinterpret_cast<const uint8_t*>(&startW), sizeof(const wchar_t*)))
 		{
 			return 0;
 		}
@@ -129,12 +162,12 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 
 	startW = NULL;
 
-	if (!buffer_append(output, (const uint8_t*)&startW, sizeof(const wchar_t*)))
+	if (!buffer_append(output, reinterpret_cast<const uint8_t*>(&startW), sizeof(const wchar_t*)))
 	{
 		return 0;
 	}
 
-	(*argv) = (wchar_t**)(buffer_data(output, 0) + new_size);
+	*argv = reinterpret_cast<wchar_t**>(buffer_data(output, 0) + new_size);
 	return 1;
 }
 #endif
@@ -293,7 +326,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 		/**/																														\
 		void* the_property = NULL;																									\
 		ASSERT_TRUE(property_exists(&argument_value,																				\
-									(const uint8_t*)name.data(),																	\
+									reinterpret_cast<const uint8_t*>(name.data()),													\
 									(uint8_t)name.size(), &the_property)) <<														\
 											(INPUT) << std::endl <<																	\
 											properties_free(&argument_value) <<														\
@@ -437,31 +470,31 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 
 static const std::map<std::string, std::uint16_t> encodings =
 {
-	std::make_pair("ASCII", (std::uint16_t)ASCII),
-	std::make_pair("UTF8", (std::uint16_t)UTF8),
-	std::make_pair("UTF16BE", (std::uint16_t)UTF16BE),
-	std::make_pair("UTF16LE", (std::uint16_t)UTF16LE),
-	std::make_pair("UTF32BE", (std::uint16_t)UTF32BE),
-	std::make_pair("UTF32LE", (std::uint16_t)UTF32LE),
-	std::make_pair("BigEndianUnicode", (std::uint16_t)BigEndianUnicode),
-	std::make_pair("Unicode", (std::uint16_t)Unicode),
-	std::make_pair("UTF32", (std::uint16_t)UTF32),
-	std::make_pair("Default", (std::uint16_t)Default),
-	std::make_pair("Windows_1250", (std::uint16_t)Windows_1250),
-	std::make_pair("Windows_1251", (std::uint16_t)Windows_1251),
-	std::make_pair("Windows_1252", (std::uint16_t)Windows_1252),
-	std::make_pair("Windows_1253", (std::uint16_t)Windows_1253),
-	std::make_pair("Windows_1254", (std::uint16_t)Windows_1254),
-	std::make_pair("Windows_1255", (std::uint16_t)Windows_1255),
-	std::make_pair("Windows_1256", (std::uint16_t)Windows_1256),
-	std::make_pair("Windows_1257", (std::uint16_t)Windows_1257),
-	std::make_pair("Windows_1258", (std::uint16_t)Windows_1258),
-	std::make_pair("ISO_8859_1", (std::uint16_t)ISO_8859_1),
-	std::make_pair("ISO_8859_2", (std::uint16_t)ISO_8859_2),
-	std::make_pair("ISO_8859_7", (std::uint16_t)ISO_8859_7),
-	std::make_pair("ISO_8859_9", (std::uint16_t)ISO_8859_9),
-	std::make_pair("ISO_8859_11", (std::uint16_t)ISO_8859_11),
-	std::make_pair("ISO_8859_13", (std::uint16_t)ISO_8859_13)
+	std::make_pair("ASCII", static_cast<std::uint16_t>(ASCII)),
+	std::make_pair("UTF8", static_cast<std::uint16_t>(UTF8)),
+	std::make_pair("UTF16BE", static_cast<std::uint16_t>(UTF16BE)),
+	std::make_pair("UTF16LE", static_cast<std::uint16_t>(UTF16LE)),
+	std::make_pair("UTF32BE", static_cast<std::uint16_t>(UTF32BE)),
+	std::make_pair("UTF32LE", static_cast<std::uint16_t>(UTF32LE)),
+	std::make_pair("BigEndianUnicode", static_cast<std::uint16_t>(BigEndianUnicode)),
+	std::make_pair("Unicode", static_cast<std::uint16_t>(Unicode)),
+	std::make_pair("UTF32", static_cast<std::uint16_t>(UTF32)),
+	std::make_pair("Default", static_cast<std::uint16_t>(Default)),
+	std::make_pair("Windows_1250", static_cast<std::uint16_t>(Windows_1250)),
+	std::make_pair("Windows_1251", static_cast<std::uint16_t>(Windows_1251)),
+	std::make_pair("Windows_1252", static_cast<std::uint16_t>(Windows_1252)),
+	std::make_pair("Windows_1253", static_cast<std::uint16_t>(Windows_1253)),
+	std::make_pair("Windows_1254", static_cast<std::uint16_t>(Windows_1254)),
+	std::make_pair("Windows_1255", static_cast<std::uint16_t>(Windows_1255)),
+	std::make_pair("Windows_1256", static_cast<std::uint16_t>(Windows_1256)),
+	std::make_pair("Windows_1257", static_cast<std::uint16_t>(Windows_1257)),
+	std::make_pair("Windows_1258", static_cast<std::uint16_t>(Windows_1258)),
+	std::make_pair("ISO_8859_1", static_cast<std::uint16_t>(ISO_8859_1)),
+	std::make_pair("ISO_8859_2", static_cast<std::uint16_t>(ISO_8859_2)),
+	std::make_pair("ISO_8859_7", static_cast<std::uint16_t>(ISO_8859_7)),
+	std::make_pair("ISO_8859_9", static_cast<std::uint16_t>(ISO_8859_9)),
+	std::make_pair("ISO_8859_11", static_cast<std::uint16_t>(ISO_8859_11)),
+	std::make_pair("ISO_8859_13", static_cast<std::uint16_t>(ISO_8859_13))
 };
 
 TEST_F(TestArgumentParser, argument_parser_at_all)
@@ -479,26 +512,36 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 	{
 		const auto input(get_data_from_nodes(node, "input"));
 		//
-		const auto expected_build_files = node.node().select_nodes("build_file");
-		const auto expected_debug = (uint8_t)INT_PARSE(node.node().select_node("debug").node().child_value());
-		const auto expected_help = (uint8_t)INT_PARSE(node.node().select_node("help").node().child_value());
-		const auto expected_indent = (uint8_t)INT_PARSE(node.node().select_node("indent").node().child_value());
-		const auto expected_no_logo = (uint8_t)INT_PARSE(node.node().select_node("no_logo").node().child_value());
-		const auto expected_pause = (uint8_t)INT_PARSE(node.node().select_node("pause").node().child_value());
+		const auto expected_build_files =
+			node.node().select_nodes("build_file");
+		const auto expected_debug =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("debug").node().child_value()));
+		const auto expected_help =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("help").node().child_value()));
+		const auto expected_indent =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("indent").node().child_value()));
+		const auto expected_no_logo =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("no_logo").node().child_value()));
+		const auto expected_pause =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("pause").node().child_value()));
 		const auto expected_project_help =
-			(uint8_t)INT_PARSE(node.node().select_node("project_help").node().child_value());
-		const auto expected_quiet = (uint8_t)INT_PARSE(node.node().select_node("quiet").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
-		const auto expected_verbose = (uint8_t)INT_PARSE(node.node().select_node("verbose").node().child_value());
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("project_help").node().child_value()));
+		const auto expected_quiet =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("quiet").node().child_value()));
+		const auto expected_return =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("return").node().child_value()));
+		const auto expected_verbose =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("verbose").node().child_value()));
 		const auto expected_properties = node.node().select_nodes("properties/property");
 		const auto expected_targets = node.node().select_nodes("target");
 		const std::string expected_log_file(node.node().select_node("log_file").node().child_value());
 		const std::string expected_encoding_str(node.node().select_node("encoding").node().child_value());
-		const auto expected_encoding = encodings.count(expected_encoding_str) ? encodings.at(expected_encoding_str) :
-									   (expected_encoding_str.empty() ? UTF8 : FILE_ENCODING_UNKNOWN);
+		const auto expected_encoding =
+			encodings.count(expected_encoding_str) ?
+			encodings.at(expected_encoding_str) : (expected_encoding_str.empty() ? UTF8 : FILE_ENCODING_UNKNOWN);
 		const std::string expected_listener(node.node().select_node("listener").node().child_value());
-		const auto expected_module_priority = (uint8_t)INT_PARSE(
-				node.node().select_node("module_priority").node().child_value());
+		const auto expected_module_priority =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("module_priority").node().child_value()));
 
 		for (uint8_t step = 0; step < 2; ++step)
 		{
@@ -545,9 +588,10 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 		ASSERT_TRUE(buffer_resize(&command_arguments, 0)) << buffer_free(&command_arguments);
 		//
 		const auto arguments = node.node().select_nodes("input");
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return =
+			static_cast<uint8_t>(INT_PARSE(node.node().select_node("return").node().child_value()));
 		std::string expected_output(node.node().select_node("output").node().child_value());
-		size_t pos = 0;
+		size_t pos;
 
 		while (std::string::npos != (pos = expected_output.find("0x0")))
 		{

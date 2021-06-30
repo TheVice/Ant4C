@@ -6,6 +6,7 @@
  */
 
 #include "tests_base_xml.h"
+#include "tests_argument_parser.h"
 
 extern "C" {
 #include "buffer.h"
@@ -13,6 +14,7 @@ extern "C" {
 #include "file_system.h"
 #include "path.h"
 #include "project.h"
+#include "property.h"
 #include "target.h"
 #include "text_encoding.h"
 };
@@ -196,13 +198,39 @@ TEST_F(TestNetModule, functions)
 		--node_count;
 	}
 }
+
 #if defined(NET_MODULE_TESTS)
-class TestNetModuleEx : public TestNetModule
+
+class GlobalPropertiesHolder
+{
+protected:
+	buffer global_properties;
+
+	GlobalPropertiesHolder() : global_properties()
+	{
+		SET_NULL_TO_BUFFER(global_properties);
+	}
+
+	void SetUp()
+	{
+		if (!buffer_size(&global_properties))
+		{
+			ASSERT_TRUE(TestArgumentParser::get_properties(&global_properties, 0)) << properties_free(&global_properties);
+		}
+	}
+
+	~GlobalPropertiesHolder()
+	{
+		property_release(&global_properties);
+	}
+};
+
+class TestNetModuleEx : public TestNetModule, public GlobalPropertiesHolder
 {
 protected:
 	static std::string path_to_build_file;
 
-	TestNetModuleEx() : TestNetModule()
+	TestNetModuleEx() : TestNetModule(), GlobalPropertiesHolder()
 	{
 		predefine_arguments.insert(std::make_pair("--build_file=", &path_to_build_file));
 	}
@@ -210,6 +238,7 @@ protected:
 	virtual void SetUp() override
 	{
 		TestsBaseXml::SetUp();
+		GlobalPropertiesHolder::SetUp();
 
 		if (!is_project_created)
 		{
@@ -267,6 +296,12 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 				<< current_directory << std::endl
 				<< target_name << std::endl;
 		//
+		ASSERT_TRUE(property_add_at_project(&the_project, &global_properties, verbose))
+				<< path_to_module << std::endl
+				<< path_to_build_file << std::endl
+				<< current_directory << std::endl
+				<< target_name << std::endl;
+		//
 		ASSERT_TRUE(project_load_from_build_file(
 						&path_to_build_file_in_range, &current_directory_in_range,
 						Default, &the_project, 0, verbose))
@@ -294,4 +329,5 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 		--node_count;
 	}
 }
+
 #endif
