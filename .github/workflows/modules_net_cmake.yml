@@ -15,7 +15,6 @@ on:
     - 'modules/net/*.xml'
     - 'modules/net/CMakeLists.txt'
 
-
   pull_request:
     branches:
     - develop
@@ -32,33 +31,125 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+        - os: macos-latest
+
+        - os: ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Fetch prebuild of third-party libraries
-      run: git fetch origin ubuntu-latest
+      run: git fetch origin ${{ matrix.os }}
 
     - name: Checkout third-party libraries
-      run: git checkout origin/ubuntu-latest -- .
+      run: git checkout origin/${{ matrix.os }} -- .
 
-    - name: Create Build Environment
+    - name: Create Build Environment (Unix like)
+      if: ${{ 'Windows' != runner.os }}
       run: cmake -E make_directory ${{ github.workspace }}/build-modules-net
 
-    - name: Create project files
+    - name: Create project files (Unix like)
+      if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=Release -DGTEST_BINARY_PATH=${{ github.workspace }}/ubuntu-latest -DPUGIXML_BINARY_PATH=${{ github.workspace }}/ubuntu-latest -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE="Release" -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DNET_MODULE_TESTS=""
 
-    - name: Build project files
+    - name: Build project files (Unix like)
+      if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target net.module_tests --parallel $(nproc)
+      run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target net.module_tests
 
-    # - name: Build project files (tests_exec_app)
-    #   working-directory: ${{ github.workspace }}/build-modules-net
-    #   run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target tests_exec_app --parallel $(nproc)
+    - name: Run Tests (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
 
-    - name: Create script for container
+    - name: Run Test 'test_hostfxr_initialize_for_dotnet_command_line' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_initialize_for_dotnet_command_line=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_initialize_for_runtime_config' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_initialize_for_runtime_config=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_run_app' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_run_app=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_get_runtime_properties' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_get_runtime_properties=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_get_runtime_property_value' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_get_runtime_property_value=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_set_runtime_property_value' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_set_runtime_property_value=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_get_runtime_delegate' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_get_runtime_delegate=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_set_error_writer' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_set_error_writer=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_hostfxr_main_bundle_startupinfo' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_hostfxr_main_bundle_startupinfo=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Run Test 'test_file_is_assembly' (macOS)
+      if: ${{ 'macOS' == runner.os }}
+      working-directory: ${{ github.workspace }}/build-modules-net
+      run: |
+        export test_hostfxr_=""
+        export test_file_is_assembly=""
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+
+    - name: Create script for container (Linux)
+      if: ${{ 'Linux' == runner.os }}
       run: |
         echo > ${{ github.workspace }}/run.sh
         echo "export TZ=Etc/UTC" >> ${{ github.workspace }}/run.sh
@@ -120,13 +211,24 @@ jobs:
         echo "unset test_file_is_assembly" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
 
-        # echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --tests_exec_app=/home/build-modules-net/tests_exec_app --gtest_filter=TestExec*" >> ${{ github.workspace }}/run.sh
-
     - name: Run Docker (dotnet_sdk_2_1-focal)
+      if: ${{ 'Linux' == runner.os }}
       run: docker run --name dotnet_sdk_2_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:2.1-focal sh +xe /home/run.sh
 
     - name: Run Docker (dotnet_sdk_3_1-focal)
+      if: ${{ 'Linux' == runner.os }}
       run: docker run --name dotnet_sdk_3_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:3.1-focal sh +xe /home/run.sh
 
     - name: Run Docker (dotnet_sdk_5_0-focal)
+      if: ${{ 'Linux' == runner.os }}
       run: docker run --name dotnet_sdk_5_0-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:5.0-focal sh +xe /home/run.sh
+
+    - name: Upload binaries
+      if: ${{ 'Windows' != runner.os }}
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        name: ${{ matrix.os }}
+        path: |
+          ${{ github.workspace }}/build-modules-net
+          ${{ github.workspace }}/modules/net/bin
+        retention-days: 1
