@@ -55,8 +55,7 @@ uint8_t TestArgumentParser::get_properties(buffer* properties, uint8_t verbose)
 
 	if (!argument_parser_get_properties(&arguments, properties, verbose))
 	{
-		property_release(&arguments);
-		return 0;
+		property_release(properties);
 	}
 
 	property_release(&arguments);
