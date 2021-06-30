@@ -44,7 +44,7 @@
   </target>
 
   <target name="should_we_skip">
-    <property name="skip" value="true" if="${platform::is-unix()}" unless="${platform::is-macos()}" overwrite="false" />
+    <property name="skip" value="true" if="${platform::is-unix()}" overwrite="false" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}skip -> '${skip}'</echo>
     <!--property name="skip" value="${bool::parse('false')}" />
 
