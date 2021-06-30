@@ -5,8 +5,8 @@ ant4c (YYYY.MM)
     range of data while calculating hash sum of first one.
   * Clang: added workaround code that prevents optimization that cause
     distortion of the function that calculate 'Keccak' and 'SHA3' sums.
-    Previous releases for FreeBSD and OpenBSD systems was build by Clang
-    compiler.
+    Previous releases for FreeBSD and OpenBSD systems,
+    that was build by Clang compiler, calculate that sums incorrect.
   * Added 'operating-system::is-windows-server' and
     'platform::is-windows-server' functions.
   * Added new line after target name while print project help for
@@ -23,6 +23,7 @@ ant4c (YYYY.MM)
   * Function 'version_exec_function' from version unit allow to work with
     empty arguments - they will be interpreted as zero versions.
   * Allowed to build at Apple macOS environment.
+  * Added 'platform::is-macos' function.
   * WIN32: fixed using at 'echo' task for scenario when output stream
     redirected to the file by capability of operation system -
     for example: 'ant4c.exe > 1.txt'.

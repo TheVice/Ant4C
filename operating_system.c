@@ -319,6 +319,7 @@ static const uint8_t* os_function_str[] =
 	(const uint8_t*)"get-version",
 	(const uint8_t*)"to-string",
 	(const uint8_t*)"get-name",
+	(const uint8_t*)"is-macos",
 	(const uint8_t*)"is-unix",
 	(const uint8_t*)"is-windows",
 	(const uint8_t*)"is-windows-server"
@@ -326,8 +327,8 @@ static const uint8_t* os_function_str[] =
 
 enum os_function
 {
-	get_platform, get_version, to_string,
-	get_name, is_unix, is_windows, is_windows_server,
+	get_platform, get_version, to_string, get_name,
+	is_macos, is_unix, is_windows, is_windows_server,
 	UNKNOWN_OS_FUNCTION
 };
 
@@ -388,6 +389,9 @@ uint8_t platform_exec_function(uint8_t function, const struct buffer* arguments,
 	{
 		case get_name:
 			return common_append_string_to_buffer(platform_get_name(), output);
+
+		case is_macos:
+			return bool_to_string(platform_is_macos(), output);
 
 		case is_unix:
 			return bool_to_string(platform_is_unix(), output);

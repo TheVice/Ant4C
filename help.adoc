@@ -2760,6 +2760,7 @@ Get integer part from double digital value.
 | <<operating_system-to_string,operating-system::to-string>> | Get string representation of the the operation system.
 | <<operating_system-is_windows_server,operating-system::is-windows-server>> | Check is specified operation system Windows Server.
 | <<platform-get_name,platform::get-name>> | Get name of current platform.
+| <<platform-is_macos,platform::is-macos>> | Check is current platform macOS.
 | <<platform-is_unix,platform::is-unix>> | Check is current platform UNIX like.
 | <<platform-is_windows,platform::is-windows>> | Check is current platform Windows.
 | <<platform-is_windows_server,platform::is-windows-server>> | Check is current platform Windows Server.
@@ -2809,26 +2810,35 @@ Get name of the platform.
 
 WARNING: version up to and including 2020.09 return string representation of operation system instead name of platform name.
 
+[[platform-is_macos]]
+==== is-macos
+
+*bool* 'platform::is-macos'()
+
+Return *true* if current platform is macOS.
+
 [[platform-is_unix]]
 ==== is-unix
 
 *bool* 'platform::is-unix'()
 
-Return *true* if current platform UNIX like.
+Return *true* if current platform is UNIX like.
+
+NOTE: macOS is UNIX like OS, so this function return *true* if platform is first one.
 
 [[platform-is_windows]]
 ==== is-windows
 
 *bool* 'platform::is-windows'()
 
-Return *true* if current platform from Windows family.
+Return *true* if current platform is from Windows family.
 
 [[platform-is_windows_server]]
 ==== is-windows-server
 
 *bool* 'platform::is-windows-server'()
 
-Return *true* if current platform from Windows Server family.
+Return *true* if current platform is from Windows Server family.
 
 === Path unit
 

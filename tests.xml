@@ -2281,6 +2281,21 @@
       <code>${property::is-readonly('My_property')}</code>
       <return>0</return>
     </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-windows()}">
+      <code>${string::equal(platform::is-macos(), platform::is-windows())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code if="${platform::is-macos()}">
+      <code>${string::equal(platform::is-macos(), platform::is-windows())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
+    <interpreter_evaluate_code>
+      <code>${string::empty(platform::is-macos())}</code>
+      <output>False</output>
+      <return>1</return>
+    </interpreter_evaluate_code>
     <interpreter_evaluate_code>
       <code>${string::equal(platform::is-unix(), platform::is-windows())}</code>
       <output>False</output>

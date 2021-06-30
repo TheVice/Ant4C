@@ -44,7 +44,8 @@
   </target>
 
   <target name="should_we_skip">
-    <property name="skip" value="${platform::is-unix()}" overwrite="false" />
+    <property name="skip" value="true" if="${platform::is-unix()}" unless="${platform::is-macos()}" overwrite="false" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}skip -> '${skip}'</echo>
     <!--property name="skip" value="${bool::parse('false')}" />
 
     <if test="${platform::is-unix()}">
@@ -144,14 +145,14 @@
 
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}selected_version -> '${nethost_version}'</echo>
 
-      <property name="net_host_folder" value="${path::combine(net_host_folder, nethost_version)}" />
-      <property name="net_host_folder" value="${path::combine(net_host_folder, sub_folder)}" />
+      <property name="nethost_version" value="${path::combine(net_host_folder, nethost_version)}" />
+      <property name="nethost_version" value="${path::combine(nethost_version, sub_folder)}" />
 
-      <fail unless="${directory::exists(net_host_folder)}"
-            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}folder '${net_host_folder}' is not exists." />
+      <fail unless="${directory::exists(nethost_version)}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}folder '${nethost_version}' is not exists." />
 
       <property name="nethost_version"
-                value="${path::combine(net_host_folder, nethost_file_name)}" />
+                value="${path::combine(nethost_version, nethost_file_name)}" />
 
       <fail unless="${file::exists(nethost_version)}"
             message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file '${nethost_version}' is not exists." />
@@ -256,6 +257,7 @@
 
     <fail if="${string::empty(paths_to_hostfxr)}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'paths_to_hostfxr' is empty." />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}paths_to_hostfxr -> '${paths_to_hostfxr}'</echo>
 
     <property name="host_version" />
 
@@ -275,20 +277,20 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}selected_version -> '${host_version}'</echo>
 
-    <property name="fxr_folder" value="${path::combine(fxr_folder, host_version)}" />
+    <property name="fxr_folder_with_version" value="${path::combine(fxr_folder, host_version)}" />
     <property name="host_version" value="${version::get-major(host_version)}.${version::get-minor(host_version)}" />
 
-    <fail unless="${directory::exists(fxr_folder)}"
-          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}folder '${fxr_folder}' is not exists." />
+    <fail unless="${directory::exists(fxr_folder_with_version)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}folder '${fxr_folder_with_version}' is not exists." />
 
     <property name="host_fx_resolver_file_name"
-              value="${path::combine(fxr_folder, 'hostfxr.dll')}" />
+              value="${path::combine(fxr_folder_with_version, 'hostfxr.dll')}" />
     <property name="host_fx_resolver_file_name"
               unless="${file::exists(host_fx_resolver_file_name)}"
-              value="${path::combine(fxr_folder, 'libhostfxr.so')}" />
+              value="${path::combine(fxr_folder_with_version, 'libhostfxr.so')}" />
     <property name="host_fx_resolver_file_name"
               unless="${file::exists(host_fx_resolver_file_name)}"
-              value="${path::combine(fxr_folder, 'libhostfxr.dylib')}" />
+              value="${path::combine(fxr_folder_with_version, 'libhostfxr.dylib')}" />
 
     <fail unless="${file::exists(host_fx_resolver_file_name)}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file '${host_fx_resolver_file_name}' is not exists." />
