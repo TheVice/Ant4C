@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.12)
 
-project("sample")
+project("tests")
+
+find_package(GTest)
+set(GTEST_MAIN_LIBRARY GTest::GTest)
 
 add_executable(
   tests
@@ -34,4 +37,5 @@ endif()
 target_link_libraries(
   tests
   ${DL_LIB}
+  ${GTEST_MAIN_LIBRARY}
 )

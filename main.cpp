@@ -9,6 +9,8 @@ extern "C" {
 #include "host_fxr.h"
 };
 
+#include <gtest/gtest.h>
+
 #include <string>
 
 #include <cstdlib>
@@ -41,11 +43,13 @@ std::string create_json_config(const char* tfm, const char* framework_version)
 }
 
 #if defined(_MSC_VER)
-int wmain(int argc, wchar_t** argv)
+GTEST_API_ int wmain(int argc, wchar_t** argv)
 #else
-int main(int argc, char** argv)
+GTEST_API_ int main(int argc, char** argv)
 #endif
 {
+	testing::InitGoogleTest(&argc, argv);
+
 	if (argc < 2)
 	{
 		std::cout << "No input data." << std::endl;
