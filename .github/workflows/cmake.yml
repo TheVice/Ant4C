@@ -1,0 +1,49 @@
+name: CMake
+
+on:
+  push:
+    branches:
+    - <TODO>
+
+  pull_request:
+    branches:
+    - <TODO>
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          BUILD_TYPE: Release
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install gtest
+      run: sudo apt-get install libgtest-dev
+
+    - name: Make directory
+      run: cmake -E make_directory ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+
+    - name: Configure
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }}
+
+    - name: Build
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: cmake --build . --config ${{ matrix.BUILD_TYPE }}
+
+    - name: Run
+      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      run: ./tests /usr/share/dotnet/host/fxr/5.0.7/libhostfxr.so
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.BUILD_TYPE }}
+        path: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+        retention-days: 1
