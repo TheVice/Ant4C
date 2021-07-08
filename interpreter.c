@@ -350,6 +350,18 @@ uint8_t interpreter_get_value_for_argument(
 
 			if (-1 == index_1 || index_1 != index_2)
 			{
+				if (-1 == index_1)
+				{
+					const ptrdiff_t size = range_size(argument_area);
+
+					if (!string_un_quote(argument_area) ||
+						size == range_size(argument_area))
+					{
+						buffer_release(&value);
+						return 0;
+					}
+				}
+
 				if (!buffer_resize(&value, 0) ||
 					!string_un_quote(argument_area) ||
 					!buffer_append_data_from_range(&value, argument_area))

@@ -43,81 +43,62 @@
     <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
   </target>
 
-  <target name="should_we_skip">
-    <property name="skip" value="true" if="${platform::is-unix()}" overwrite="false" />
+  <target name="should_we_skip" unless="${target::has-executed('should_we_skip')}">
+    <property name="skip" value="${platform::is-unix()}" overwrite="false" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}skip -> '${skip}'</echo>
-    <!--property name="skip" value="${bool::parse('false')}" />
-
-    <if test="${platform::is-unix()}">
-      <if test="${environment::variable-exists('HOSTNAME')}">
-
-        <property name="HOSTNAME"
-                  value="${environment::get-variable('HOSTNAME')}"
-                  overwrite="false" />
-
-        <if test="${string::equal('4f3dbb2a32e9', HOSTNAME)}">
-          <if test="${environment::variable-exists('DOTNET_SDK_VERSION')}">
-            <if test="${version::greater('3.1', environment::get-variable('DOTNET_SDK_VERSION'))}">
-              <property name="skip" value="${bool::parse('true')}" />
-            </if>
-          </if>
-        </if>
-
-        <if test="${string::equal('a2a9d6d7486c', HOSTNAME)}">
-          <property name="skip" value="${bool::parse('true')}" />
-        </if>
-
-        <if test="${string::equal('863627017a70', HOSTNAME)}">
-          <if test="${environment::variable-exists('DOTNET_SDK_VERSION')}">
-            <if test="${version::greater('6.0', environment::get-variable('DOTNET_SDK_VERSION'))}">
-              <property name="skip" value="${bool::parse('true')}" />
-            </if>
-          </if>
-        </if>
-
-      </if>
-    </if-->
   </target>
 
   <!-- nethost::get-hostfxr-path -->
   <target name="nethost_get-hostfxr-path" depends="load_tasks">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
-    <choose unless="${property::exists('net_host_folder')}">
+    <choose>
       <when test="${platform::is-windows()}">
-        <property
-          name="net_host_folder"
-          value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" />
-
-        <property
-          name="net_host_folder"
-          value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" />
-
-        <if test="${string::equal(bool::parse('false'), environment::is64bit-process())}">
+        <if test="${string::equal(bool::parse('false'), property::exists('net_host_folder'))}">
           <property
             name="net_host_folder"
-            value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" />
+            value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" />
 
           <property
             name="net_host_folder"
-            value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" />
+            value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" />
+
+          <if test="${string::equal(bool::parse('false'), environment::is64bit-process())}">
+            <property
+              name="net_host_folder"
+              value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" />
+
+            <property
+              name="net_host_folder"
+              value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" />
+          </if>
         </if>
 
-        <property name="sub_folder" value="runtimes\win-x64\native" />
-        <property name="nethost_file_name" value="nethost.dll" />
+        <property name="sub_folder"
+                  value="runtimes\win-x64\native"
+                  overwrite="false" />
+        <property name="nethost_file_name"
+                  value="nethost.dll"
+                  overwrite="false" />
       </when>
 
       <when test="${platform::is-unix()}">
-        <property
-          name="net_host_folder"
-          value="/usr/share/dotnet/packs" />
+        <if test="${string::equal(bool::parse('false'), property::exists('net_host_folder'))}">
+          <property
+            name="net_host_folder"
+            value="/usr/share/dotnet/packs" />
 
-        <property
-          name="net_host_folder"
-          value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" />
+          <property
+            name="net_host_folder"
+            value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" />
+        </if>
 
-        <property name="sub_folder" value="runtimes/linux-x64/native" />
-        <property name="nethost_file_name" value="libnethost.so" />
+        <property name="sub_folder"
+                  value="runtimes/linux-x64/native"
+                  overwrite="false" />
+        <property name="nethost_file_name"
+                  value="libnethost.so"
+                  overwrite="false" />
       </when>
     </choose>
 
@@ -167,12 +148,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_hostfxr -> '${path_to_hostfxr}'</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- net::result-to-string -->
   <target name="net_result-to-string" depends="load_tasks">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="codes" value="-1 0 1 2 3" />
     <property name="codes"
@@ -229,11 +210,11 @@
       </choose>
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="get-host_fx_resolver_file_name">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <choose unless="${property::exists('fxr_folder')}">
       <when test="${platform::is-windows()}">
@@ -297,12 +278,12 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_fx_resolver_file_name -> '${host_fx_resolver_file_name}'</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::initialize -->
   <target name="hostfxr_initialize" depends="load_tasks">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-host_fx_resolver_file_name"
           if="${string::equal(bool::parse('false'), property::exists('host_fx_resolver_file_name'))}" />
@@ -313,11 +294,11 @@
     <fail unless="${is_initialized}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}call of hostfxr::initialize('${host_fx_resolver_file_name}') function was fail." />
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="get-hostfxr_expected_functions">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${property::exists('host_version')}"
@@ -350,7 +331,7 @@
       <property name="expected_functions" value="${expected_functions} main-bundle-startupinfo" />
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="get-host_version">
@@ -378,7 +359,7 @@
 
   <!-- hostfxr::functions -->
   <target name="hostfxr_functions" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="functions"
               value="${hostfxr::functions()}" />
@@ -403,12 +384,12 @@
             message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Function ${expected_function} do not exists at functions (${functions}) list." />
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::is-function-exists -->
   <target name="hostfxr_is-function-exists" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-hostfxr_expected_functions" />
 
@@ -418,7 +399,7 @@
             message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Function ${expected_function} do not exists at host version ${host_version}." />
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="build-assembly" depends="hostfxr_initialize">
@@ -510,7 +491,7 @@
 
   <!-- hostfxr::main -->
   <target name="hostfxr_main" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="program" value="dotnet" />
     <property name="program" if="${platform::is-windows()}" value="${program}.exe" />
@@ -527,12 +508,12 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::main -> ${net::result-to-string(return_of_main)}</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::resolve-sdk -->
   <target name="hostfxr_resolve-sdk" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${hostfxr::is-function-exists('resolve-sdk')}"
@@ -554,12 +535,12 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}resolve-sdk -> ${resolve-sdk}</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::get-available-sdks -->
   <target name="hostfxr_get-available-sdks" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${hostfxr::is-function-exists('get-available-sdks')}"
@@ -578,7 +559,7 @@
       <fail if="${string::empty(available-sdks)}"
             message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'available-sdks' should not be empty." />
 
-      <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+      <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
       <foreach item="String" in="${available-sdks}" property="available-sdk">
         <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}available-sdk -> ${available-sdk}</echo>
@@ -587,15 +568,15 @@
               message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path to sdk folder should be rooted, instead it '${available-sdk}' ${net::result-to-string(available-sdks)}" />
       </foreach>
 
-      <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+      <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::get-native-search-directories -->
   <target name="hostfxr_get-native-search-directories" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${hostfxr::is-function-exists('get-native-search-directories')}"
@@ -627,7 +608,7 @@
         <fail if="${string::empty(directories)}"
               message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}properties 'directories' should not be empty." />
 
-        <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+        <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
         <foreach item="String" in="${directories}" delim="${path_delimiter}" property="directory">
           <fail unless="${path::is-path-rooted(directory)}"
@@ -636,7 +617,7 @@
           <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}search-directory -> ${directory}</echo>
         </foreach>
 
-        <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+        <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
       </if>
     </if>
 
@@ -644,12 +625,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}there is no assembly to run at function 'get-native-search-directories'.</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::main-startupinfo -->
   <target name="hostfxr_main-startupinfo" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${hostfxr::is-function-exists('main-startupinfo')}"
@@ -673,12 +654,12 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}return_of_main_startupinfo -> ${net::result-to-string(return_of_main_startupinfo)}</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::resolve-sdk2 -->
   <target name="hostfxr_resolve-sdk2" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${hostfxr::is-function-exists('resolve-sdk2')}"
@@ -715,12 +696,12 @@
       </foreach>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::close -->
   <target name="hostfxr_close" if="${hostfxr::is-function-exists('close')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail unless="${property::exists('is_context_initialized')}"
           message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
@@ -744,12 +725,12 @@
 
     <property name="is_context_initialized" value="False" />
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::initialize-for-dotnet-command-line -->
   <target name="hostfxr_initialize-for-dotnet-command-line" depends="build-assembly" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-host_version" />
     <call target="get-path-to-assembly" />
@@ -779,12 +760,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}${context}</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::initialize-for-runtime-config -->
   <target name="hostfxr_initialize-for-runtime-config" depends="build-assembly" if="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-host_version" />
     <call target="get-path-to-assembly" />
@@ -872,12 +853,12 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}${context} -> ${is_context_initialized}</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::run-app -->
   <target name="hostfxr_run-app" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('run-app')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="build-sample-assembly" />
     <call target="get-host_version" />
@@ -909,12 +890,12 @@
       <call target="hostfxr_close" />
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::get-runtime-property-value -->
   <target name="hostfxr_get-runtime-property-value" if="${hostfxr::is-function-exists('get-runtime-property-value')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail unless="${property::exists('is_context_initialized')}"
           message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
@@ -930,12 +911,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::get-runtime-property-value(${context}, ${property_name}) -> '${runtime_property_value}' -> ${net::result-to-string(string::trim(runtime_property_value))}</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::set-runtime-property-value -->
   <target name="hostfxr_set-runtime-property-value" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('set-runtime-property-value')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail unless="${property::exists('is_context_initialized')}"
           message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
@@ -964,12 +945,12 @@
             message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value(${context}, ${property_name}, ${property_value}) -> '${return_of_set_runtime_property_value}' -> ${net::result-to-string(return_of_set_runtime_property_value)}" />
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::get-runtime-properties -->
   <target name="hostfxr_get-runtime-properties" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('get-runtime-properties')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail unless="${property::exists('is_context_initialized')}"
           message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
@@ -983,12 +964,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::get-runtime-properties -> ${runtime_properties} -> ${net::result-to-string(runtime_properties)}</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::set-error-writer -->
   <target name="hostfxr_set-error-writer" if="${hostfxr::is-function-exists('set-error-writer')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail unless="${property::exists('path_to_file_for_error_writer')}"
           message="Property 'path_to_file_for_error_writer' required to run this ('${target::get-current-target()}') target." />
@@ -998,12 +979,12 @@
     <property name="error_writer" value="${hostfxr::set-error-writer(path_to_file_for_error_writer)}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-error-writer(${path_to_file_for_error_writer}) -> '${error_writer}'</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::get-runtime-delegate -->
   <target name="hostfxr_get-runtime-delegate" if="${hostfxr::is-function-exists('get-runtime-delegate')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail unless="${property::exists('is_context_initialized')}"
           message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
@@ -1036,12 +1017,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}runtime_delegate -> '${runtime_delegate}'</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostfxr::main-bundle-startupinfo -->
   <target name="hostfxr_main-bundle-startupinfo" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('main-bundle-startupinfo')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="build-sample-assembly" />
     <call target="get-host_version" />
@@ -1075,12 +1056,12 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}return_of_main_startupinfo -> ${net::result-to-string(return_of_main_startupinfo)}</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostpolicy::initialize -->
   <target name="hostpolicy_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${property::exists('path_to_hostpolicy')}"
@@ -1093,17 +1074,17 @@
       value="${hostpolicy::initialize(path_to_hostpolicy)}" />
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_initialize -> ${is_initialize}</echo>
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostpolicy::functions -->
   <target name="hostpolicy_functions">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="host_policy_functions" value="${corehost::functions()}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(host_policy_functions) -> ${string::empty(host_policy_functions)}</echo>
 
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <foreach item="String"
       in="${host_policy_functions}" delim=" " property="host_function">
@@ -1111,13 +1092,13 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostpolicy::is-function-exists -->
   <target name="hostpolicy_is-function-exists">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="functions" value="initialize" />
     <property name="functions" value="${functions} load" />
@@ -1133,14 +1114,14 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::is-function-exists(${function}) -> ${is_function_exists}</echo>
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- hostinterface::initialize -->
   <target name="host_interface_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostinterface::initialize('123456') -> ${hostinterface::initialize('123456')}</echo>
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="hostinterface">
@@ -1187,11 +1168,11 @@
 
   <!-- corehost::load -->
   <target name="core_host_load">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostinterface::initialize('369365249') -> ${hostinterface::initialize('369365249')}</echo>
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::load() -> ${corehost::load()}</echo>
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::unload() -> ${corehost::unload()}</echo>
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="corehost" depends="load_tasks,hostpolicy_initialize,hostinterface">
@@ -1210,7 +1191,7 @@
 
   <!-- file::is-assembly -->
   <target name="file_is-assembly" depends="hostfxr_initialize">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <fail
       unless="${property::exists('path_to_file')}"
@@ -1246,7 +1227,7 @@
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file::is-assembly(${path_to_file}, ${path_to_assembly}) -> '${is_assembly}'</echo>
     </if>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="test_hostfxr_initialize-for-dotnet-command-line" depends="hostfxr_initialize-for-dotnet-command-line,hostfxr_close" />
@@ -1266,7 +1247,7 @@
   </target>
 
   <target name="test_hostfxr_get-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="property_name" value="JIT_PATH" />
     <property name="property_name" value="APP_CONTEXT_BASE_DIRECTORY"
@@ -1283,31 +1264,11 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}runtime_property_value -> ${runtime_property_value}</echo>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
-    <!-- PROBING_DIRECTORIES
-    <choose>
-      <when test="${platform::is-windows()}">
-        <property name="path_delimiter" value=";" />
-      </when>
-      <when test="${platform::is-unix()}">
-        <property name="path_delimiter" value=":" />
-      </when>
-    </choose>
-
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
-
-    <foreach item="String" in="${runtime_property_value}" delim="${path_delimiter}" property="directory">
-      <fail unless="${path::is-path-rooted(directory)}"
-        message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path to folder should be rooted, instead it '${directory}'." />
-
-      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}search-directory -> ${directory}</echo>
-    </foreach>
-
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" /-->
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="test_hostfxr_set-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="property_name" value="MY_PROPERTY" overwrite="false" />
     <!--property name="property_value" value="VALUE_FOR_MY_PROPERTY" overwrite="false" /-->
@@ -1321,11 +1282,11 @@
 
     <call target="hostfxr_close" />
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="test_hostfxr_get-runtime-delegate" depends="hostfxr_initialize-for-runtime-config" if="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-host_version" />
     <call target="get-path-to-assembly" />
@@ -1341,11 +1302,11 @@
 
     <call target="hostfxr_close" />
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="test_hostfxr_set-error-writer" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('set-error-writer')}">
-    <property name="pad_level" value="${math::addition(pad_level, 1)}" />
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <property name="path_to_file_for_error_writer" value="${path::get-temp-file-name()}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_file_for_error_writer -> '${path_to_file_for_error_writer}'.</echo>
@@ -1394,7 +1355,7 @@
     <fail if="${string::equal('0', path_to_file_for_error_writer)}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}length of file '${path_to_assembly}' should not be '0'." />
 
-    <property name="pad_level" value="${math::subtraction(pad_level, 1)}" />
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <target name="test_file_is-assembly" depends="hostfxr_initialize">

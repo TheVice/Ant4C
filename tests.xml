@@ -1913,7 +1913,7 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>${math::less(string::get-length(environment::get-machine-name()), 255)}</code>
+      <code>${math::less(string::get-length(environment::get-machine-name()), '255')}</code>
       <output>True</output>
       <return>1</return>
     </interpreter_evaluate_code>
@@ -2095,13 +2095,13 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>pad-left('Abc', ' ', '4') -> ${string::pad-left('Abc', 4, ' ')}</code>
-      <output>pad-left('Abc', ' ', '4') ->  Abc</output>
+      <code>pad-left('Abc', '4', ' ') -> ${string::pad-left('Abc', '4', ' ')}</code>
+      <output>pad-left('Abc', '4', ' ') ->  Abc</output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
-      <code>pad-right('Abc', ' ', '4') -> ${string::pad-right('Abc', 4, ' ')}</code>
-      <output>pad-right('Abc', ' ', '4') -> Abc </output>
+      <code>pad-right('Abc', '4', ' ') -> ${string::pad-right('Abc', '4', ' ')}</code>
+      <output>pad-right('Abc', '4', ' ') -> Abc </output>
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code>
@@ -4718,7 +4718,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
 
         <property name="n" value="${environment::newline()}" />
         <property name="n"
-                  value="${string::substring(n, math::subtraction(string::get-length(n), 1)), 1)}" />
+                  value="${string::substring(n, math::subtraction(string::get-length(n), '1')), '1')}" />
 
         <property name="input" />
 
@@ -4754,11 +4754,11 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
           <property name="a" value="${string::substring(line, '0', string::index-of(line, ','))}" />
           <property name="b" value="${string::substring(line, string::index-of(line, ','))}" />
 
-          <property name="b" value="${string::substring(b, 1)}" />
+          <property name="b" value="${string::substring(b, '1')}" />
           <property name="b" value="${string::substring(b, '0', string::index-of(b, ','))}" />
 
           <property name="c" value="${string::substring(line, string::last-index-of(line, ','))}" />
-          <property name="c" value="${string::substring(c, 1)}" />
+          <property name="c" value="${string::substring(c, '1')}" />
 
           <property name="line" />
           <property name="line" value="The quadratic polynomial ${a}x^2 + ${b}x + ${c} = 0" />
@@ -6357,6 +6357,18 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       </project>
       ]]></content>
       <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content>
+        <![CDATA[
+      <project>
+        <property name="a" value="A:\" />
+        <property name="c" value="${path::combine(a, b)}" />
+      </project>
+      ]]>
+      </content>
+      <return>0</return>
+      <target_return>1</target_return>
     </project_load_from_content>
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />
