@@ -8,6 +8,24 @@
 <project name="ant4c.net.module" default="net_result-to-string">
   <property name="pad_level" value="0" />
 
+  <choose unless="${property::exists('fxr_folder')}">
+    <when test="${platform::is-windows()}">
+      <property name="fxr_folder"
+                value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" />
+    </when>
+
+    <when test="${platform::is-unix()}">
+      <property name="fxr_folder"
+                value="/usr/share/dotnet/host/fxr" />
+    </when>
+  </choose>
+
+  <if test="${string::equal(bool::parse('false'), property::exists('program'))}">
+    <property name="program" value="${path::get-directory-name(path::get-directory-name(fxr_folder))}" />
+    <property name="program" if="${platform::is-unix()}" value="${path::combine(program, 'dotnet')}" />
+    <property name="program" if="${platform::is-windows()}" value="${path::combine(program, 'dotnet.exe')}" />
+  </if>
+
   <property name="project_file"
             value="ant4c.net.module.csproj" overwrite="false" />
   <property name="folder_with_program_to_run"
@@ -216,18 +234,6 @@
   <target name="get-host_fx_resolver_file_name">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
-    <choose unless="${property::exists('fxr_folder')}">
-      <when test="${platform::is-windows()}">
-        <property name="fxr_folder"
-                  value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" />
-      </when>
-
-      <when test="${platform::is-unix()}">
-        <property name="fxr_folder"
-                  value="/usr/share/dotnet/host/fxr" />
-      </when>
-    </choose>
-
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}fxr_folder -> '${fxr_folder}'</echo>
 
     <fail unless="${directory::exists(fxr_folder)}"
@@ -423,9 +429,6 @@
       name="return_of_main"
       value="${hostfxr::main('', 'build', project, host_version, '/p:Configuration=Release', ${Exe})}" /-->
 
-    <property name="program" value="dotnet" />
-    <property name="program" if="${platform::is-windows()}" value="${program}.exe" />
-
     <exec
       program="${program}"
       commandline="build ${project} ${host_version} /p:Configuration=Release ${Exe}" />
@@ -479,9 +482,6 @@
       name="return_of_main"
       value="${hostfxr::main('', 'build', file, host_version, '/p:Configuration=Release')}" /-->
 
-    <property name="program" value="dotnet" />
-    <property name="program" if="${platform::is-windows()}" value="${program}.exe" />
-
     <exec
       program="${program}"
       commandline="build ${file} ${host_version} /p:Configuration=Release" />
@@ -492,9 +492,6 @@
   <!-- hostfxr::main -->
   <target name="hostfxr_main" depends="hostfxr_initialize">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
-
-    <property name="program" value="dotnet" />
-    <property name="program" if="${platform::is-windows()}" value="${program}.exe" />
 
     <property
       name="return_of_main"

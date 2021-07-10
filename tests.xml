@@ -4295,19 +4295,19 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
       <target>hostfxr_main</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file if="${environment::variable-exists('hostfxr_resolve_sdk')}">
       <target>hostfxr_resolve-sdk</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file if="${environment::variable-exists('hostfxr_get_available_sdks')}">
       <target>hostfxr_get-available-sdks</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file if="${environment::variable-exists('hostfxr_get_native_search_directories')}">
       <target>hostfxr_get-native-search-directories</target>
     </project_load_from_build_file>
     <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
       <target>hostfxr_main-startupinfo</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file if="${environment::variable-exists('hostfxr_resolve_sdk2')}">
       <target>hostfxr_resolve-sdk2</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_initialize_for_dotnet_command_line')}">
