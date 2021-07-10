@@ -23,12 +23,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Setup .NET Core SDK
-      if: ${{ 'macOS' == runner.os || 'Windows' == runner.os }}
-      uses: actions/setup-dotnet@v1.8.1
-      with:
+    # - name: Setup .NET Core SDK
+      # if: ${{ 'macOS' == runner.os || 'Windows' == runner.os }}
+      # uses: actions/setup-dotnet@v1.8.1
+      # with:
         # Optional SDK version to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x
-        dotnet-version: ${{ matrix.host_version }}
+        # dotnet-version: ${{ matrix.host_version }}
         # Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword
         # source-url: # optional
         # Optional OWNER for using packages from GitHub Package Registry organizations/users other than the current repository's owner. Only used if a GPR URL is also provided in source-url
@@ -69,7 +69,7 @@ jobs:
     - name: Run Tests (macOS)
       if: ${{ 'macOS' == runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+      run: ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="$DOTNET_ROOT/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="$DOTNET_ROOT/host/fxr" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'hostfxr_resolve_sdk' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -77,7 +77,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export hostfxr_resolve_sdk=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="/System/Volumes/Data/Users/runner/.dotnet/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="/System/Volumes/Data/Users/runner/.dotnet/host/fxr" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:net_host_folder="$DOTNET_ROOT/packs/Microsoft.NETCore.App.Host.osx-x64" -D:sub_folder="runtimes/osx-x64/native" -D:nethost_file_name="libnethost.dylib" -D:fxr_folder="$DOTNET_ROOT/host/fxr" --gtest_filter=TestNetModuleEx*
 
     # - name: Run 'hostfxr_get_available_sdks' (macOS)
     #   if: ${{ 'macOS' == runner.os }}
