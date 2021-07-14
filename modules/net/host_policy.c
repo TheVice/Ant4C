@@ -11,6 +11,9 @@
 #include "common.h"
 #include "conversion.h"
 #include "shared_object.h"
+#if defined(_WIN32)
+#include "text_encoding.h"
+#endif
 
 #include <string.h>
 
@@ -26,7 +29,7 @@ typedef int32_t(calling_convention* corehost_main_type)(
 	const int32_t argc, const type_of_element** argv);
 typedef int32_t(calling_convention* corehost_main_with_output_buffer_type)(
 	const int32_t argc, const type_of_element** argv,
-	type_of_element* the_buffer,
+	type_of_element* out,
 	int32_t buffer_size, int32_t* required_buffer_size);
 typedef int32_t(
 	calling_convention* corehost_resolve_component_dependencies_type)(
@@ -312,16 +315,15 @@ uint8_t core_host_main_with_output_buffer(
 		return 0;
 	}
 
-	type_of_element* the_buffer = (type_of_element*)buffer_data(output, 0);
-	int32_t result;
-	int32_t required_size;
+	type_of_element* out = (type_of_element*)buffer_data(output, 0);
+	int32_t required_size = 0;
+	int32_t result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
+						 argc, argv, out, 0, &required_size);
 
-	if (host_fxr_Success != (result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
-										  argc, argv, the_buffer, 0, &required_size)))
+	if (IS_HOST_FAILED(result))
 	{
 		if ((int32_t)host_fxr_HostApiBufferTooSmall != result ||
-			required_size < 1 ||
-			!buffer_resize(output, required_size))
+			required_size < 1)
 		{
 			if (!buffer_resize(output, 0) ||
 				!buffer_push_back(output, ' ') ||
@@ -329,13 +331,39 @@ uint8_t core_host_main_with_output_buffer(
 			{
 				return 0;
 			}
+
+			return 1;
 		}
 
-		the_buffer = (type_of_element*)buffer_data(output, 0);
-		result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
-					 argc, argv, the_buffer, required_size, &required_size);
+#if defined(_WIN32)
 
-		if (HOST_FX_RESOLVER_NON_SUCCESS(result))
+		if (!buffer_resize(output, sizeof(uint32_t) + required_size * sizeof(type_of_element)))
+#else
+		if (!buffer_resize(output, required_size * sizeof(type_of_element)))
+#endif
+		{
+			return 0;
+		}
+
+#if defined(_WIN32)
+		out = (type_of_element*)buffer_data(output, sizeof(uint32_t));
+#else
+		out = (type_of_element*)buffer_data(output, 0);
+#endif
+		result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
+					 argc, argv, out, required_size, &required_size);
+#if defined(_WIN32)
+		const type_of_element* finish = (type_of_element*)(buffer_data(output, 0) + buffer_size(output));
+
+		if (!buffer_resize(output, 0) ||
+			!text_encoding_UTF16LE_to_UTF8(out, finish, output))
+		{
+			return 0;
+		}
+
+#endif
+
+		if (IS_HOST_FAILED(result))
 		{
 			if (!buffer_push_back(output, ' ') ||
 				!int_to_string(result, output))
@@ -348,15 +376,29 @@ uint8_t core_host_main_with_output_buffer(
 	return 1;
 }
 
-/*core_host_resolve_component_dependencies()
-
-typedef int32_t(*corehost_main_with_output_buffer_type)(
-	const int32_t argc, const type_of_element** argv,
-	type_of_element* the_buffer,
-	int32_t buffer_size, int32_t* required_buffer_size);
-typedef int32_t(*corehost_resolve_component_dependencies_type)(
+int32_t core_host_resolve_component_dependencies(
+	const void* ptr_to_host_policy_object,
 	const type_of_element* component_main_assembly_path,
-	corehost_resolve_component_dependencies_result_type result);*/
+	corehost_resolve_component_dependencies_result_type core_host_resolve_component_dependencies_callback)
+{
+	if (!ptr_to_host_policy_object ||
+		!component_main_assembly_path ||
+		!core_host_resolve_component_dependencies_callback)
+	{
+		return -1;
+	}
+
+	const struct host_policy* ptr_to_host_policy_object_ =
+		(const struct host_policy*)ptr_to_host_policy_object;
+
+	if (!ptr_to_host_policy_object_->corehost_resolve_component_dependencies)
+	{
+		return -1;
+	}
+
+	return ptr_to_host_policy_object_->corehost_resolve_component_dependencies(
+			   component_main_assembly_path, core_host_resolve_component_dependencies_callback);
+}
 
 error_writer_type core_host_set_error_writer(
 	const void* ptr_to_host_policy_object, error_writer_type writer)

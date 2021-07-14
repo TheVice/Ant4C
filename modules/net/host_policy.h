@@ -77,7 +77,10 @@ uint8_t core_host_main_with_output_buffer(
 	const int32_t argc,
 	const type_of_element** argv,
 	struct buffer* output);
-/*...*/
+int32_t core_host_resolve_component_dependencies(
+	const void* ptr_to_host_policy_object,
+	const type_of_element* component_main_assembly_path,
+	corehost_resolve_component_dependencies_result_type core_host_resolve_component_dependencies_callback);
 error_writer_type core_host_set_error_writer(
 	const void* ptr_to_host_policy_object, error_writer_type writer);
 int32_t core_host_unload(const void* ptr_to_host_policy_object);

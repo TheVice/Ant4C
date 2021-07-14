@@ -9,7 +9,9 @@
 
 #include "buffer.h"
 #include "file_system.h"
+#if defined(_WIN32)
 #include "text_encoding.h"
+#endif
 
 uint8_t values_to_arguments(
 	const uint8_t** values, const uint16_t* values_lengths,

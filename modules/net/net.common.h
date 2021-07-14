@@ -83,52 +83,6 @@ enum hostfxr_status_code
 	host_fxr_HostApiUnsupportedScenario
 };
 
-#define HOST_FX_RESOLVER_NON_SUCCESS(RESULT) ((RESULT) < host_fxr_Success || host_fxr_Success_DifferentRuntimeProperties < (RESULT))
-
-#define ERROR_WRITER_WIN32(MESSAGE, CONTENT, IS_CONTENT_INITIALIZED, ERROR_FILE_WRITER)				\
-	\
-	if (IS_CONTENT_INITIALIZED)																		\
-	{																								\
-		if (!buffer_resize(&(CONTENT), 0))															\
-		{																							\
-			return;																					\
-		}																							\
-	}																								\
-	else																							\
-	{																								\
-		SET_NULL_TO_BUFFER(CONTENT);																\
-		(IS_CONTENT_INITIALIZED) = 1;																\
-	}																								\
-	\
-	if (ERROR_FILE_WRITER)																			\
-	{																								\
-		if (!text_encoding_UTF16LE_to_UTF8((MESSAGE), (MESSAGE) + wcslen(MESSAGE), &(CONTENT)) ||	\
-			!buffer_push_back(&(CONTENT), '\n'))													\
-		{																							\
-			return;																					\
-		}																							\
-		\
-		if (!file_write_with_several_steps(&(CONTENT), (ERROR_FILE_WRITER)))						\
-		{																							\
-			return;																					\
-		}																							\
-		\
-		file_flush(ERROR_FILE_WRITER);																\
-	}
-
-#define ERROR_WRITER_POSIX(MESSAGE, ERROR_FILE_WRITER)											\
-	if (ERROR_FILE_WRITER)																		\
-	{																							\
-		static const uint8_t n = '\n';															\
-		\
-		if (!file_write(MESSAGE, sizeof(type_of_element), common_count_bytes_until(MESSAGE, 0),	\
-						ERROR_FILE_WRITER) ||													\
-			!file_write(&n, sizeof(type_of_element), 1, ERROR_FILE_WRITER))						\
-		{																						\
-			return;																				\
-		}																						\
-		\
-		file_flush(ERROR_FILE_WRITER);															\
-	}
+#define IS_HOST_FAILED(RESULT) ((RESULT) < (int32_t)host_fxr_Success || (int32_t)host_fxr_Success_DifferentRuntimeProperties < (RESULT))
 
 #endif

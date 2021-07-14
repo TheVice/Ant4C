@@ -13,7 +13,9 @@
 #include "common.h"
 #include "conversion.h"
 #include "range.h"
+#if defined(_WIN32)
 #include "text_encoding.h"
+#endif
 
 #include <string.h>
 
@@ -161,8 +163,8 @@ uint8_t host_interface_init(
 
 	return 1;
 }
-
-#define HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER_WIN(THE_INTERFACE, VALUE, LENGTH, MEMBER, THE_BUFFER)	\
+#if defined(_WIN32)
+#define HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(THE_INTERFACE, VALUE, LENGTH, MEMBER, THE_BUFFER)		\
 	host_interface_init_buffers();																		\
 	\
 	if (!THE_INTERFACE ||																				\
@@ -176,7 +178,7 @@ uint8_t host_interface_init(
 	\
 	THE_INTERFACE_->MEMBER = empty;																		\
 	if (!text_encoding_UTF8_to_UTF16LE(VALUE, VALUE + LENGTH, THE_BUFFER) ||							\
-		!buffer_push_back(THE_BUFFER, 0))																\
+		!buffer_push_back_uint16(THE_BUFFER, 0))														\
 	{																									\
 		return 0;																						\
 	}																									\
@@ -197,15 +199,14 @@ uint8_t host_interface_init(
 	struct host_interface_type* THE_INTERFACE_ = (struct host_interface_type*)THE_INTERFACE;			\
 	\
 	THE_INTERFACE_->MEMBER = empty;																		\
-	if (!value_to_system_path(VALUE, LENGTH, THE_BUFFER) ||												\
-		!buffer_push_back(THE_BUFFER, 0))																\
+	if (!value_to_system_path(VALUE, LENGTH, THE_BUFFER))												\
 	{																									\
 		return 0;																						\
 	}																									\
 	\
-	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, LENGTH);					\
+	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, LENGTH + 1);				\
 	return 1;
-
+#else
 #define HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(THE_INTERFACE, VALUE, LENGTH, MEMBER, THE_BUFFER)		\
 	host_interface_init_buffers();																		\
 	\
@@ -227,7 +228,7 @@ uint8_t host_interface_init(
 	\
 	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, 0);						\
 	return 1;
-
+#endif
 #define HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(THE_INTERFACE, VALUES, LENGTHS, COUNT, MEMBER, THE_BUFFER)	\
 	host_interface_init_buffers();																					\
 	\
@@ -281,21 +282,12 @@ uint8_t host_interface_set_additional_dependency_serialized(
 	const uint8_t* additional_dependency_serialized,
 	uint16_t additional_dependency_serialized_length)
 {
-#if defined(_WIN32)
-	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER_WIN(
-		host_interface,
-		additional_dependency_serialized,
-		additional_dependency_serialized_length,
-		additional_dependency_serialized,
-		&b_additional_dependency_serialized_);
-#else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		additional_dependency_serialized,
 		additional_dependency_serialized_length,
 		additional_dependency_serialized,
 		&b_additional_dependency_serialized_);
-#endif
 }
 
 uint8_t host_interface_set_application_path(
@@ -304,7 +296,7 @@ uint8_t host_interface_set_application_path(
 	uint16_t application_path_length)
 {
 #if defined(_WIN32)
-	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER_WIN(
+	HOST_INTERFACE_SET_SYSTEM_PATH_TO_MEMBER_WIN(
 		host_interface,
 		application_path,
 		application_path_length,

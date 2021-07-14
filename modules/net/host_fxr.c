@@ -89,16 +89,24 @@ uint8_t net_host_load(const type_of_element* path_to_net_host_library,
 
 	int32_t result = 0;
 	size_t required_size = FILENAME_MAX;
+	type_of_element* out = (type_of_element*)buffer_data(path_to_host_fxr, size);
+	result = get_hostfxr_path(out, &required_size, parameters);
 
-	if (host_fxr_Success != (result = get_hostfxr_path((type_of_element*)buffer_data(
-										  path_to_host_fxr, size), &required_size, parameters)))
+	if (IS_HOST_FAILED(result))
 	{
 		if ((int32_t)host_fxr_HostApiBufferTooSmall != result ||
 			required_size < FILENAME_MAX ||
 			!buffer_resize(path_to_host_fxr, size) ||
-			!buffer_append(path_to_host_fxr, NULL, required_size * sizeof(type_of_element)) ||
-			host_fxr_Success != (get_hostfxr_path((type_of_element*)buffer_data(
-									 path_to_host_fxr, size), &required_size, parameters)))
+			!buffer_append(path_to_host_fxr, NULL, required_size * sizeof(type_of_element)))
+		{
+			shared_object_unload(net_host_object_);
+			return 0;
+		}
+
+		out = (type_of_element*)buffer_data(path_to_host_fxr, size);
+		result = get_hostfxr_path(out, &required_size, parameters);
+
+		if (IS_HOST_FAILED(result))
 		{
 			shared_object_unload(net_host_object_);
 			return 0;

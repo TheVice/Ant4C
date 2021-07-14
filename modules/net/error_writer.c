@@ -12,7 +12,9 @@
 #include "buffer.h"
 #include "common.h"
 #include "file_system.h"
+#if defined(_WIN32)
 #include "text_encoding.h"
+#endif
 
 #if defined(_WIN32)
 extern uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** output);
@@ -100,6 +102,37 @@ static uint8_t is_host_fx_resolver_error_writer_win32_content_initialized = 0;
 static struct buffer host_policy_error_writer_win32_content;
 static uint8_t is_host_policy_error_writer_win32_content_initialized = 0;
 
+#define ERROR_WRITER_WIN32(MESSAGE, CONTENT, IS_CONTENT_INITIALIZED, ERROR_FILE_WRITER)				\
+	\
+	if (IS_CONTENT_INITIALIZED)																		\
+	{																								\
+		if (!buffer_resize(&(CONTENT), 0))															\
+		{																							\
+			return;																					\
+		}																							\
+	}																								\
+	else																							\
+	{																								\
+		SET_NULL_TO_BUFFER(CONTENT);																\
+		(IS_CONTENT_INITIALIZED) = 1;																\
+	}																								\
+	\
+	if (ERROR_FILE_WRITER)																			\
+	{																								\
+		if (!text_encoding_UTF16LE_to_UTF8((MESSAGE), (MESSAGE) + wcslen(MESSAGE), &(CONTENT)) ||	\
+			!buffer_push_back(&(CONTENT), '\n'))													\
+		{																							\
+			return;																					\
+		}																							\
+		\
+		if (!file_write_with_several_steps(&(CONTENT), (ERROR_FILE_WRITER)))						\
+		{																							\
+			return;																					\
+		}																							\
+		\
+		file_flush(ERROR_FILE_WRITER);																\
+	}
+
 void host_fx_resolver_error_writer(const type_of_element* message)
 {
 	ERROR_WRITER_WIN32(
@@ -117,7 +150,24 @@ void host_policy_error_writer(const type_of_element* message)
 		is_host_policy_error_writer_win32_content_initialized,
 		host_policy_error_file_writer);
 }
+
 #else
+
+#define ERROR_WRITER_POSIX(MESSAGE, ERROR_FILE_WRITER)											\
+	if (ERROR_FILE_WRITER)																		\
+	{																							\
+		static const uint8_t n = '\n';															\
+		\
+		if (!file_write(MESSAGE, sizeof(type_of_element), common_count_bytes_until(MESSAGE, 0),	\
+						ERROR_FILE_WRITER) ||													\
+			!file_write(&n, sizeof(type_of_element), 1, ERROR_FILE_WRITER))						\
+		{																						\
+			return;																				\
+		}																						\
+		\
+		file_flush(ERROR_FILE_WRITER);															\
+	}
+
 void host_fx_resolver_error_writer(const type_of_element* message)
 {
 	ERROR_WRITER_POSIX(
@@ -131,6 +181,7 @@ void host_policy_error_writer(const type_of_element* message)
 		message,
 		host_policy_error_file_writer);
 }
+
 #endif
 
 void error_writer_release_buffers(void* host_fxr_object, void* host_policy_object)
