@@ -13,7 +13,16 @@ build_with_MSVC:
 
     [string[]]$cmakes = @()
     $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
-    $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+
+    if (0 -gt $cmakes.Count)
+    {
+      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+    }
+    else
+    {
+      $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles}" -Recurse
+      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+    }
 
     $build_directory = Join-Path -ChildPath "build-${env:TargetPlatform}" -Path "${env:CI_PROJECT_DIR}"
     $arguments = "-E make_directory {0}" -f $build_directory
@@ -91,7 +100,16 @@ build_with_MinGW:
 
     [string[]]$cmakes = @()
     $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
-    $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+
+    if (0 -gt $cmakes.Count)
+    {
+      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+    }
+    else
+    {
+      $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles}" -Recurse
+      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+    }
 
     [string[]]$mingw_makes = @()
     $mingw_makes += Get-ChildItem -File -Include mingw32-make.exe -Path $env:ProgramFiles\*\bin\*.* -Recurse

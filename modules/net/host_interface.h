@@ -11,8 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
-
 #define HOST_INTERFACE_SIZE UINT8_MAX
 
 void host_interface_release_buffers();

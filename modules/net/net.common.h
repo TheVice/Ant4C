@@ -85,4 +85,22 @@ enum hostfxr_status_code
 
 #define IS_HOST_FAILED(RESULT) ((RESULT) < (int32_t)host_fxr_Success || (int32_t)host_fxr_Success_DifferentRuntimeProperties < (RESULT))
 
+#define SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(STRUCTURE, INITIALIZE_REQUEST, VALUES, LENGTHS, COUNT, MEMBER, THE_BUFFER)	\
+	\
+	if (!INITIALIZE_REQUEST ||																								\
+		!VALUES ||																											\
+		!LENGTHS ||																											\
+		!buffer_resize(THE_BUFFER, 0))																						\
+	{																														\
+		return 0;																											\
+	}																														\
+	\
+	struct STRUCTURE* INITIALIZE_REQUEST_ = (struct STRUCTURE*)INITIALIZE_REQUEST;											\
+	INITIALIZE_REQUEST_->MEMBER.arguments = NULL;																			\
+	INITIALIZE_REQUEST_->MEMBER.length = COUNT;																				\
+	return values_to_arguments(																								\
+			VALUES, LENGTHS,																								\
+			COUNT, THE_BUFFER,																								\
+			&INITIALIZE_REQUEST_->MEMBER.arguments);
+
 #endif

@@ -22,7 +22,7 @@ extern void* shared_object_load_wchar_t(const wchar_t* path);
 #endif
 
 typedef int32_t(calling_convention* corehost_initialize_type)(
-	const struct initialize_request_type* init_request,
+	const void* init_request,
 	int32_t options, struct context_contract_type* context_contract);
 typedef int32_t(calling_convention* corehost_load_type)(void* host_interface);
 typedef int32_t(calling_convention* corehost_main_type)(
@@ -235,12 +235,11 @@ uint8_t core_host_is_function_exists(
 
 int32_t core_host_initialize(
 	const void* ptr_to_host_policy_object,
-	const struct initialize_request_type* init_request,
+	const void* init_request,
 	int32_t options,
 	struct context_contract_type* context_contract)
 {
 	if (!ptr_to_host_policy_object ||
-		!init_request ||
 		!context_contract)
 	{
 		return -1;

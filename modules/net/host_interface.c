@@ -229,24 +229,6 @@ uint8_t host_interface_init(
 	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, 0);						\
 	return 1;
 #endif
-#define HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(THE_INTERFACE, VALUES, LENGTHS, COUNT, MEMBER, THE_BUFFER)	\
-	host_interface_init_buffers();																					\
-	\
-	if (!THE_INTERFACE ||																							\
-		!VALUES ||																									\
-		!LENGTHS ||																									\
-		!buffer_resize(THE_BUFFER, 0))																				\
-	{																												\
-		return 0;																									\
-	}																												\
-	\
-	struct host_interface_type* THE_INTERFACE_ = (struct host_interface_type*)THE_INTERFACE;						\
-	THE_INTERFACE_->MEMBER.arguments = NULL;																		\
-	THE_INTERFACE_->MEMBER.length = COUNT;																			\
-	return values_to_arguments(																						\
-			VALUES, LENGTHS,																						\
-			COUNT, THE_BUFFER,																						\
-			&THE_INTERFACE_->MEMBER.arguments);
 
 #define HOST_INTERFACE_SET_SIZE_T_MEMBER(THE_INTERFACE, VALUE, MEMBER)							\
 	if (!THE_INTERFACE)																			\
@@ -317,7 +299,9 @@ uint8_t host_interface_set_config_keys(
 	const uint8_t** keys, const uint16_t* keys_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		keys,
 		keys_lengths,
@@ -331,7 +315,9 @@ uint8_t host_interface_set_config_values(
 	const uint8_t** values, const uint16_t* values_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		values,
 		values_lengths,
@@ -441,7 +427,9 @@ uint8_t host_interface_set_framework_found_versions(
 	const uint8_t** versions, const uint16_t* versions_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		versions,
 		versions_lengths,
@@ -466,7 +454,9 @@ uint8_t host_interface_set_framework_names(
 	const uint8_t** names, const uint16_t* names_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		names,
 		names_lengths,
@@ -480,7 +470,9 @@ uint8_t host_interface_set_framework_requested_versions(
 	const uint8_t** versions, const uint16_t* versions_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		versions,
 		versions_lengths,
@@ -607,7 +599,7 @@ uint8_t host_interface_set_target_framework_moniker(
 		&b_target_framework_moniker_);
 }
 
-static uint8_t g_host_interface[UINT8_MAX];
+static uint8_t g_host_interface[HOST_INTERFACE_SIZE];
 
 void* host_interface_get()
 {

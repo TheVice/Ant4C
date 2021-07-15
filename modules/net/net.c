@@ -8,10 +8,12 @@
 #include "net.h"
 
 #include "arguments.h"
+#include "core_host_initialize_request.h"
 #include "error_writer.h"
 #include "host_fxr.h"
 #include "host_interface.h"
 #include "host_policy.h"
+#include "net.common.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -117,10 +119,9 @@ uint8_t net_host_get_hostfxr_path(
 #endif
 	const uint8_t* start = buffer_data(output, 0);
 	const uint8_t* finish = start + buffer_size(output);
-	static const uint8_t zero_symbol = '\0';
 	/**/
-	const uint8_t* new_finish = find_any_symbol_like_or_not_like_that(finish, start, &zero_symbol, 1, 0, -1);
-	new_finish = find_any_symbol_like_or_not_like_that(new_finish, finish, &zero_symbol, 1, 1, 1);
+	const uint8_t* new_finish = find_any_symbol_like_or_not_like_that(finish, start, double_zero, 1, 0, -1);
+	new_finish = find_any_symbol_like_or_not_like_that(new_finish, finish, double_zero, 1, 1, 1);
 	/**/
 	return buffer_resize(output, new_finish - start);
 }
@@ -369,8 +370,8 @@ uint8_t hostfxr_get_available_sdks(
 #endif
 	}
 
-	const int32_t result = host_fxr_get_available_sdks(ptr_to_host_fxr_object, exe_dir,
-						   host_fx_resolver_available_sdks);
+	const int32_t result = host_fxr_get_available_sdks(
+							   ptr_to_host_fxr_object, exe_dir, host_fx_resolver_available_sdks);
 	buffer_release(&exe_dir_);
 
 	if (IS_HOST_FAILED(result))
@@ -1305,79 +1306,9 @@ static const uint8_t* name_spaces[] =
 	(const uint8_t*)"hostpolicy",
 	(const uint8_t*)"hostinterface",
 	(const uint8_t*)"corehost",
+	(const uint8_t*)"corehost-initialize-request",
 	(const uint8_t*)"file"
 };
-#if STRING_OPTIMIZATION /*NOTE: gcc optimization arround dyblication of 'initialize' value.*/
-static const uint8_t* all_functions[][25] =
-{
-	{ (const uint8_t*)"result-to-string", NULL },
-	{ (const uint8_t*)"get-hostfxr-path", NULL },
-	{
-		(const uint8_t*)"functions",
-		(const uint8_t*)"initialize",
-		(const uint8_t*)"is-function-exists",
-		/**/
-		(const uint8_t*)"close",
-		(const uint8_t*)"get-available-sdks",
-		(const uint8_t*)"get-native-search-directories",
-		(const uint8_t*)"get-runtime-delegate",
-		(const uint8_t*)"get-runtime-properties",
-		(const uint8_t*)"get-runtime-property-value",
-		(const uint8_t*)"initialize-for-dotnet-command-line",
-		(const uint8_t*)"initialize-for-runtime-config",
-		(const uint8_t*)"main",
-		(const uint8_t*)"main-bundle-startupinfo",
-		(const uint8_t*)"main-startupinfo",
-		(const uint8_t*)"resolve-sdk",
-		(const uint8_t*)"resolve-sdk2",
-		(const uint8_t*)"run-app",
-		(const uint8_t*)"set-error-writer",
-		(const uint8_t*)"set-runtime-property-value",
-		NULL
-	},
-	{ (const uint8_t*)"initialize", NULL },
-	{
-		(const uint8_t*)"initialize",
-		(const uint8_t*)"set-additional-dependency-serialized",
-		(const uint8_t*)"set-application-path",
-		(const uint8_t*)"set-config-keys",
-		(const uint8_t*)"set-config-values",
-		(const uint8_t*)"set-dependency-file",
-		(const uint8_t*)"set-dotnet-root",
-		(const uint8_t*)"set-file-bundle-header-offset",
-		(const uint8_t*)"set-framework-dependent",
-		(const uint8_t*)"set-framework-directories",
-		(const uint8_t*)"set-framework-directory",
-		(const uint8_t*)"set-framework-found-versions",
-		(const uint8_t*)"set-framework-name",
-		(const uint8_t*)"set-framework-names",
-		(const uint8_t*)"set-framework-requested-versions",
-		(const uint8_t*)"set-framework-version",
-		(const uint8_t*)"set-host-command",
-		(const uint8_t*)"set-host-mode",
-		(const uint8_t*)"set-host-path",
-		(const uint8_t*)"set-patch-roll-forward",
-		(const uint8_t*)"set-paths-for-probing",
-		(const uint8_t*)"set-prerelease-roll-forward",
-		(const uint8_t*)"set-target-framework-moniker",
-		NULL
-	},
-	{
-		(const uint8_t*)"functions",
-		(const uint8_t*)"is-function-exists",
-		/**/
-		(const uint8_t*)"initialize",
-		(const uint8_t*)"load",
-		(const uint8_t*)"main",
-		(const uint8_t*)"main-with-output-buffer",
-		(const uint8_t*)"resolve-component-dependencies",
-		(const uint8_t*)"set-error-writer",
-		(const uint8_t*)"unload",
-		NULL
-	},
-	{ (const uint8_t*)"is-assembly", NULL },
-};
-#endif
 
 static const uint8_t* all_functions =
 	(const uint8_t*)"result-to-string\0" \
@@ -1440,10 +1371,14 @@ static const uint8_t* all_functions =
 	"set-error-writer\0" \
 	"unload\0" \
 	"\0" \
+	"initialize\0" \
+	"set-config-keys\0" \
+	"set-config-values\0" \
+	"\0" \
 	"is-assembly\0" \
 	"\0";
 
-#define COUNT_OF_ALL_FUNCTIONS 1060
+#define COUNT_OF_ALL_FUNCTIONS 1106
 
 const uint8_t* all_functions_get_string_at(uint8_t x, uint8_t y)
 {
@@ -1560,6 +1495,10 @@ enum ant4c_net_module_
 	core_host_resolve_component_dependencies_,
 	core_host_set_error_writer_,
 	core_host_unload_,
+	/**/
+	corehost_initialize_request_initialize_,
+	corehost_initialize_request_set_config_keys_,
+	corehost_initialize_request_set_config_values_,
 	/**/
 	file_is_assembly_
 };
@@ -2986,6 +2925,46 @@ uint8_t evaluate_function(
 
 			break;
 
+		case corehost_initialize_request_initialize_:
+			if (values_count)
+			{
+				return 0;
+			}
+
+			values_count = core_host_initialize_request_init(
+							   core_host_initialize_request_get(), CORE_HOST_INITIALIZE_REQUEST_SIZE);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case corehost_initialize_request_set_config_keys_:
+			values_count = core_host_initialize_request_set_config_keys(
+							   core_host_initialize_request_get(), values,
+							   values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
+		case corehost_initialize_request_set_config_values_:
+			values_count = core_host_initialize_request_set_config_values(
+							   core_host_initialize_request_get(), values,
+							   values_lengths, values_count);
+
+			if (!bool_to_string(values_count, &output_data))
+			{
+				return 0;
+			}
+
+			break;
+
 		case file_is_assembly_:
 			if (!file_is_assembly(ptr_to_host_fxr_object,
 								  values, values_lengths, values_count, &output_data))
@@ -3008,6 +2987,7 @@ uint8_t evaluate_function(
 void module_release()
 {
 	host_interface_release_buffers();
+	core_host_initialize_request_release_buffers();
 	error_writer_release_buffers(
 		is_host_fxr_object_initialized ? host_fxr_object : NULL,
 		is_host_policy_object_initialized ? host_policy_object : NULL);

@@ -15,13 +15,6 @@
 
 struct buffer;
 
-struct initialize_request_type
-{
-	size_t version;
-	struct string_arguments_type config_keys;
-	struct string_arguments_type config_values;
-};
-
 struct context_contract_type
 {
 	size_t version;
@@ -62,7 +55,7 @@ uint8_t core_host_is_function_exists(
 
 int32_t core_host_initialize(
 	const void* ptr_to_host_policy_object,
-	const struct initialize_request_type* init_request,
+	const void* init_request,
 	int32_t options,
 	struct context_contract_type* context_contract);
 int32_t core_host_load(

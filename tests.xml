@@ -4279,6 +4279,11 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
                 path::combine(environment::get-folder-path('ProgramFiles'), 'dotnet\sdk\NuGetFallbackFolder'))}</code>
       <code>${hostinterface::set-prerelease-roll-forward('0')}</code>
       <code>${hostinterface::set-target-framework-moniker('netcoreapp3.1')}</code>
+      <code>${corehost-initialize-request::initialize()}</code>
+      <code>${corehost-initialize-request::set-config-keys()}</code>
+      <code>${corehost-initialize-request::set-config-values()}</code>
+      <code>${corehost-initialize-request::set-config-keys('a', 'bc', 'def')}</code>
+      <code>${corehost-initialize-request::set-config-values('1', '23', '456')}</code>
     </functions>
   </TestNetModule>
   <TestNetModuleEx>
