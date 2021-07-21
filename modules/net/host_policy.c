@@ -23,7 +23,7 @@ extern void* shared_object_load_wchar_t(const wchar_t* path);
 
 typedef int32_t(calling_convention* corehost_initialize_type)(
 	const void* init_request,
-	int32_t options, struct context_contract_type* context_contract);
+	int32_t options, void* context_contract);
 typedef int32_t(calling_convention* corehost_load_type)(void* host_interface);
 typedef int32_t(calling_convention* corehost_main_type)(
 	const int32_t argc, const type_of_element** argv);
@@ -237,7 +237,7 @@ int32_t core_host_initialize(
 	const void* ptr_to_host_policy_object,
 	const void* init_request,
 	int32_t options,
-	struct context_contract_type* context_contract)
+	void* context_contract)
 {
 	if (!ptr_to_host_policy_object ||
 		!context_contract)
@@ -321,7 +321,7 @@ uint8_t core_host_main_with_output_buffer(
 
 	if (IS_HOST_FAILED(result))
 	{
-		if ((int32_t)host_fxr_HostApiBufferTooSmall != result ||
+		if ((int32_t)net_HostApiBufferTooSmall != result ||
 			required_size < 1)
 		{
 			if (!buffer_resize(output, 0) ||

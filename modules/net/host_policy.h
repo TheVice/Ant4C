@@ -15,28 +15,6 @@
 
 struct buffer;
 
-struct context_contract_type
-{
-	size_t version;
-	int32_t(*get_property_value)(
-		const type_of_element* key,
-		const type_of_element** value);
-	int32_t(*set_property_value)(
-		const type_of_element* key,
-		const type_of_element* value);
-	int32_t(*get_properties)(
-		size_t* count,
-		const type_of_element** keys,
-		const type_of_element** values);
-	int32_t(*load_runtime)();
-	int32_t(*run_app)(
-		const int32_t argc,
-		const type_of_element** argv);
-	int32_t(*get_runtime_delegate)(
-		uint32_t core_clr_delegate_type,
-		void** the_delegate);
-};
-
 typedef void(*corehost_resolve_component_dependencies_result_type)(
 	const type_of_element* assembly_paths,
 	const type_of_element* native_search_paths,
@@ -57,7 +35,7 @@ int32_t core_host_initialize(
 	const void* ptr_to_host_policy_object,
 	const void* init_request,
 	int32_t options,
-	struct context_contract_type* context_contract);
+	void* context_contract);
 int32_t core_host_load(
 	const void* ptr_to_host_policy_object,
 	void* host_interface);

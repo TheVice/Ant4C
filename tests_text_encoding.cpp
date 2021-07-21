@@ -19,6 +19,7 @@ extern "C" {
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <ostream>
 
 class TestTextEncoding : public TestsBaseXml
@@ -258,12 +259,12 @@ void string_hex_parse(const char* input, T& output)
 	const typename T::value_type max = std::numeric_limits<typename T::value_type>::max();
 	//
 	const auto size = output.size();
-	output.reserve(size + strlen(input));
+	output.reserve(size + std::strlen(input));
 
-	while (NULL != (input = strstr(input, "0x")))
+	while (NULL != (input = std::strstr(input, "0x")))
 	{
 		char* pos = NULL;
-		const auto value = strtol(input, &pos, 16);
+		const auto value = std::strtol(input, &pos, 16);
 		input += pos - input;
 
 		if (value < 0 || max < value)
@@ -271,7 +272,7 @@ void string_hex_parse(const char* input, T& output)
 			break;
 		}
 
-		output.push_back((typename T::value_type)value);
+		output.push_back(static_cast<typename T::value_type>(value));
 	}
 }
 

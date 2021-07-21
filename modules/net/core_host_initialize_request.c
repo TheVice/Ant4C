@@ -53,9 +53,7 @@ uint8_t core_host_initialize_request_init(
 		return 0;
 	}
 
-	size = sizeof(struct initialize_request_type);
 	memset(initialize_request, 0, sizeof(struct initialize_request_type));
-	/**/
 	return 1;
 }
 

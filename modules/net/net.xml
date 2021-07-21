@@ -8,41 +8,78 @@
 <project name="ant4c.net.module" default="net_result-to-string">
   <property name="pad_level" value="0" />
 
-  <choose unless="${property::exists('fxr_folder')}">
-    <when test="${platform::is-windows()}">
-      <property name="fxr_folder"
-                value="${environment::get-folder-path('ProgramFiles')}\dotnet\host\fxr" />
-    </when>
-
+  <choose unless="${property::exists('DOTNET_ROOT')}">
     <when test="${platform::is-unix()}">
-      <property name="fxr_folder"
-                value="/usr/share/dotnet/host/fxr" />
+      <property name="DOTNET_ROOT" value="/usr/share/dotnet" />
     </when>
-  </choose>
 
-  <choose unless="${property::exists('net_core_app')}">
     <when test="${platform::is-windows()}">
-      <property name="net_core_app"
-                value="${environment::get-folder-path('ProgramFiles')}\dotnet\shared\Microsoft.NETCore.App" />
-    </when>
-
-    <when test="${platform::is-unix()}">
-      <property name="net_core_app"
-                value="/usr/share/dotnet/shared/Microsoft.NETCore.App" />
+      <property name="DOTNET_ROOT" value="${environment::get-folder-path('ProgramFiles')}\dotnet" />
     </when>
   </choose>
 
   <if test="${string::equal(bool::parse('false'), property::exists('program'))}">
-    <property name="program" value="${path::get-directory-name(path::get-directory-name(fxr_folder))}" />
-    <property name="program" if="${platform::is-unix()}" value="${path::combine(program, 'dotnet')}" />
-    <property name="program" if="${platform::is-windows()}" value="${path::combine(program, 'dotnet.exe')}" />
+    <property name="program" if="${platform::is-unix()}" value="${path::combine(DOTNET_ROOT, 'dotnet')}" />
+    <property name="program" if="${platform::is-windows()}" value="${path::combine(DOTNET_ROOT, 'dotnet.exe')}" />
   </if>
 
-  <property name="project_file"
-            value="ant4c.net.module.csproj" overwrite="false" />
+  <if test="${string::equal(bool::parse('false'), property::exists('fxr_folder'))}">
+    <property name="fxr_folder" value="${path::combine(DOTNET_ROOT, 'host')}" />
+    <property name="fxr_folder" value="${path::combine(fxr_folder, 'fxr')}" />
+  </if>
+
+  <if test="${string::equal(bool::parse('false'), property::exists('net_core_app'))}">
+    <property name="net_core_app" value="${path::combine(DOTNET_ROOT, 'shared')}" />
+    <property name="net_core_app" value="${path::combine(net_core_app, 'Microsoft.NETCore.App')}" />
+  </if>
+
+  <if test="${string::equal(bool::parse('false'), property::exists('net_host_folder'))}">
+    <property name="net_host_folder" value="${path::combine(DOTNET_ROOT, 'packs')}" />
+
+    <choose>
+      <when test="${platform::is-macos()}">
+        <property name="net_host_folder"
+                  value="${path::combine(net_host_folder, 'Microsoft.NETCore.App.Host.osx-x64')}" />
+      </when>
+      <when test="${platform::is-unix()}">
+        <property name="net_host_folder"
+                  value="${path::combine(net_host_folder, 'Microsoft.NETCore.App.Host.linux-x64')}" />
+      </when>
+      <when test="${platform::is-windows()}">
+        <property name="net_host_folder"
+                  value="${path::combine(net_host_folder, 'Microsoft.NETCore.App.Host.win-x64')}" />
+      </when>
+    </choose>
+  </if>
+
+  <choose>
+    <when test="${platform::is-macos()}">
+      <property name="sub_folder" value="runtimes/osx-x64/native" overwrite="false" />
+      <property name="nethost_file_name" value="libnethost.dylib" overwrite="false" />
+    </when>
+    <when test="${platform::is-unix()}">
+      <property name="sub_folder" value="runtimes/linux-x64/native" overwrite="false" />
+      <property name="nethost_file_name" value="libnethost.so" overwrite="false" />
+    </when>
+    <when test="${platform::is-windows()}">
+      <property name="sub_folder" value="runtimes\win-x64\native" overwrite="false" />
+      <property name="nethost_file_name" value="nethost.dll" overwrite="false" />
+    </when>
+  </choose>
+
+  <property name="project_file" value="ant4c.net.module.csproj" overwrite="false" />
   <property name="folder_with_program_to_run"
             value="${path::combine(project::get-base-directory(), path::combine('bin', 'Release'))}"
             overwrite="false" />
+
+  <choose unless="${property::exists('path_delimiter')}">
+    <when test="${platform::is-windows()}">
+      <property name="path_delimiter" value=";" />
+    </when>
+    <when test="${platform::is-unix()}">
+      <property name="path_delimiter" value=":" />
+    </when>
+  </choose>
 
   <!-- loadtasks -->
   <target name="load_tasks">
@@ -81,56 +118,6 @@
   <!-- nethost::get-hostfxr-path -->
   <target name="nethost_get-hostfxr-path" depends="load_tasks">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
-
-    <choose>
-      <when test="${platform::is-windows()}">
-        <if test="${string::equal(bool::parse('false'), property::exists('net_host_folder'))}">
-          <property
-            name="net_host_folder"
-            value="${environment::get-folder-path('ProgramFiles')}\dotnet\packs" />
-
-          <property
-            name="net_host_folder"
-            value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x64" />
-
-          <if test="${string::equal(bool::parse('false'), environment::is64bit-process())}">
-            <property
-              name="net_host_folder"
-              value="${path::combine(path::get-path-root(net_host_folder), '\Program Files\dotnet\packs')}" />
-
-            <property
-              name="net_host_folder"
-              value="${net_host_folder}\Microsoft.NETCore.App.Host.win-x86" />
-          </if>
-        </if>
-
-        <property name="sub_folder"
-                  value="runtimes\win-x64\native"
-                  overwrite="false" />
-        <property name="nethost_file_name"
-                  value="nethost.dll"
-                  overwrite="false" />
-      </when>
-
-      <when test="${platform::is-unix()}">
-        <if test="${string::equal(bool::parse('false'), property::exists('net_host_folder'))}">
-          <property
-            name="net_host_folder"
-            value="/usr/share/dotnet/packs" />
-
-          <property
-            name="net_host_folder"
-            value="${net_host_folder}/Microsoft.NETCore.App.Host.linux-x64" />
-        </if>
-
-        <property name="sub_folder"
-                  value="runtimes/linux-x64/native"
-                  overwrite="false" />
-        <property name="nethost_file_name"
-                  value="libnethost.so"
-                  overwrite="false" />
-      </when>
-    </choose>
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}net_host_folder -> ${net_host_folder}</echo>
 
@@ -587,15 +574,6 @@
     <fail
       unless="${hostfxr::is-function-exists('get-native-search-directories')}"
       message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}current version of host do not have function 'get-native-search-directories'." />
-
-    <choose>
-      <when test="${platform::is-windows()}">
-        <property name="path_delimiter" value=";" />
-      </when>
-      <when test="${platform::is-unix()}">
-        <property name="path_delimiter" value=":" />
-      </when>
-    </choose>
 
     <call target="build-sample-assembly" />
     <call target="get-path-to-assembly" />
@@ -1135,22 +1113,56 @@
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
+  <target name="get-host_core_expected_functions">
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+
+    <fail
+      unless="${property::exists('host_version')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'host_version' required to run this target." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_version -> '${host_version}'</echo>
+
+    <property name="expected_functions" value="load main unload" />
+
+    <if test="${version::greater(host_version, '2.0')}">
+      <property name="expected_functions" value="${expected_functions} main-with-output-buffer" />
+    </if>
+
+    <if test="${version::greater(host_version, '3.0')}">
+      <property name="expected_functions" value="${expected_functions} resolve-component-dependencies" />
+      <property name="expected_functions" value="${expected_functions} set-error-writer" />
+      <property name="expected_functions" value="${expected_functions} initialize" />
+    </if>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+  </target>
+
   <!-- hostpolicy::functions -->
   <target name="hostpolicy_functions" depends="hostpolicy_initialize">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
-    <property name="host_policy_functions" value="${corehost::functions()}" />
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}string::empty(host_policy_functions) -> ${string::empty(host_policy_functions)}</echo>
+    <property name="functions"
+              value="${corehost::functions()}" />
 
-    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+    <fail if="${string::empty(functions)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Value of property 'functions' is empty." />
 
-    <foreach item="String"
-      in="${host_policy_functions}" delim=" " property="host_function">
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}functions -> '${functions}'</echo>
 
-      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_function -> ${host_function}</echo>
+    <call target="get-host_core_expected_functions" />
+
+    <fail unless="${string::equal(string::get-length(functions), string::get-length(expected_functions))}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}length of property 'expected_functions' value should be equal to the length of 'functions' value. '${functions}' '${expected_functions}'" />
+
+    <property name="functions" value="${functions} " />
+
+    <foreach item="String" in="${expected_functions}" delim=" " property="expected_function">
+      <property name="expected_function_" value="${expected_function} " />
+
+      <fail unless="${string::contains(functions, expected_function_)}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Function ${expected_function} do not exists at functions (${functions}) list." />
     </foreach>
 
-    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
@@ -1158,18 +1170,12 @@
   <target name="hostpolicy_is-function-exists" depends="hostpolicy_initialize">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
-    <property name="functions" value="initialize" />
-    <property name="functions" value="${functions} load" />
-    <property name="functions" value="${functions} main" />
-    <property name="functions" value="${functions} main-with-output-buffer" />
-    <property name="functions" value="${functions} resolve-component-dependencies" />
-    <property name="functions" value="${functions} set-error-writer" />
-    <property name="functions" value="${functions} unload" />
+    <call target="get-host_core_expected_functions" />
 
-    <foreach item="String" in="${functions}" delim=" " property="function">
-      <property name="is_function_exists" value="${corehost::is-function-exists(function)}" />
+    <foreach item="String" in="${expected_functions}" delim=" " property="expected_function">
 
-      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::is-function-exists(${function}) -> ${is_function_exists}</echo>
+      <fail unless="${corehost::is-function-exists(expected_function)}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Function ${expected_function} do not exists at host version ${host_version}." />
     </foreach>
 
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
@@ -1288,6 +1294,7 @@
   <!-- corehost::main -->
   <target name="core_host_main" depends="hostpolicy_initialize">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+    <if test="${version::greater(host_version, '3.0')}">
 
     <call target="build-sample-assembly" />
     <call target="get-path-to-assembly" />
@@ -1298,15 +1305,25 @@
     <call target="core_host_load" />
 
     <property name="return_of_main" value="${corehost::main('1', '2', '3')}" />
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}return_of_main -> '${return_of_main}' ${net::result-to-string(return_of_main)}</echo>
+
+    <property name="NON_SUCCESS" value="${math::less(return_of_main, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(return_of_main, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::main should return success result, instead returned ${return_of_main} ${net::result-to-string(return_of_main)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::main -> ${net::result-to-string(return_of_main)}</echo>
 
     <call target="core_host_unload" />
+
+    </if>
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- corehost::main-with-output-buffer -->
-  <target name="core_host_main_with_output_buffer" depends="hostpolicy_initialize">
+  <target name="core_host_main_with_output_buffer" depends="hostpolicy_initialize" if="${corehost::is-function-exists('main-with-output-buffer')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+    <if test="${version::greater(host_version, '3.0')}">
 
     <call target="build-sample-assembly" />
     <call target="get-path-to-assembly" />
@@ -1319,14 +1336,28 @@
     <call target="core_host_load" />
 
     <property name="return_of_main" value="${corehost::main-with-output-buffer('1', '2', '3')}" />
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}return_of_main -> '${return_of_main}' ${net::result-to-string(return_of_main)}</echo>
+
+    <fail if="${string::empty(return_of_main)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Value of property 'return_of_main' is empty." />
+
+    <property name="return_of_main_code" value="${string::trim(return_of_main)}" />
+
+    <property name="NON_SUCCESS" value="${math::less(return_of_main_code, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(return_of_main_code, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::main-with-output-buffer should return success result, instead returned ${return_of_main_code} ${net::result-to-string(return_of_main_code)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::main-with-output-buffer -> ${return_of_main} -> ${net::result-to-string(return_of_main_code)}</echo>
 
     <call target="core_host_unload" />
+
+    </if>
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
   <!-- corehost::resolve-component-dependencies -->
-  <target name="core_host_resolve-component-dependencies" depends="hostpolicy_initialize">
+  <target name="core_host_resolve-component-dependencies" depends="hostpolicy_initialize" if="${corehost::is-function-exists('resolve-component-dependencies')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="build-sample-assembly" />
@@ -1338,7 +1369,17 @@
     <call target="core_host_load" />
 
     <property name="dependencies" value="${corehost::resolve-component-dependencies(path_to_assembly)}" />
+
+    <fail if="${string::empty(dependencies)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}Value of property 'dependencies' is empty." />
+
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}dependencies -> '${dependencies}' ${net::result-to-string(dependencies)}</echo>
+
+    <foreach item="String" in="${dependencies}" delim="${path_delimiter}" property="dependency" trim="Both">
+      <fail unless="${path::is-path-rooted(dependency)}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path to folder should be rooted, instead it '${dependency}' (${net::result-to-string(string::trim(dependencies))})." />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}dependency -> '${dependency}'</echo>
+    </foreach>
 
     <call target="core_host_unload" />
 
@@ -1346,7 +1387,7 @@
   </target>
 
   <!-- corehost::set-error-writer -->
-  <target name="core_host_set-error-writer" depends="hostpolicy_initialize">
+  <target name="core_host_set-error-writer" depends="hostpolicy_initialize" if="${corehost::is-function-exists('set-error-writer')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="build-sample-assembly" />
@@ -1370,7 +1411,58 @@
     <call target="core_host_unload" />
 
     <loadfile file="${path_to_file_for_error_writer}" property="error_writer" />
+
+    <fail if="${string::empty(error_writer)}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}content of file '${path_to_file_for_error_writer}' should not be empty." />
+
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}error_writer -> ${error_writer}</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+  </target>
+
+  <!-- corehost::initialize -->
+  <target name="core_host_initialize" depends="hostpolicy_initialize" if="${corehost::is-function-exists('initialize')}">
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+
+    <call target="build-sample-assembly" />
+    <call target="get-path-to-assembly" />
+
+    <property name="application_path" value="${path_to_assembly}" />
+    <call target="host_interface_initialize" />
+
+    <property name="host_version" value="${host_version}.0" />
+    <property name="is_initialized" value="${hostinterface::set-framework-version(host_version)}" />
+    <property name="is_initialized" value="${hostinterface::set-framework-found-versions('', host_version)}" />
+    <property name="is_initialized" value="${hostinterface::set-framework-requested-versions('', host_version)}" />
+
+    <property name="host_version" value="${string::substring(host_version, '0', math::subtraction(string::get-length(host_version), '2'))}" />
+    <property name="moniker" value="netcoreapp${host_version}" />
+    <property name="is_initialized" value="${hostinterface::set-target-framework-moniker(moniker)}" />
+
+    <property name="is_initialized" value="${corehost-context-contract::initialize()}" />
+    <!--property name="is_initialized" value="${corehost-initialize-request::initialize()}" /-->
+
+    <call target="core_host_load" />
+
+    <property name="is_initialized" value="${corehost::initialize('none', '')}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost::initialize should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <property name="property_name" value="RUNTIME_IDENTIFIER" />
+    <property name="property_value" value="${corehost-context-contract::get-property-value(property_name)}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property_value -> '${property_value}' ${net::result-to-string(string::trim(property_value))}</echo>
+
+    <!--property name="is_initialized" value="${corehost-context-contract::set-property-value()}" />
+    <property name="is_initialized" value="${corehost-context-contract::get-properties()}" />
+    <property name="is_initialized" value="${corehost-context-contract::load-runtime()}" />
+    <property name="is_initialized" value="${corehost-context-contract::run-app()}" />
+    <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->
+
+    <call target="core_host_unload" />
 
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>

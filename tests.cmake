@@ -114,6 +114,7 @@ add_executable(net.module_tests
   "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
   "${CMAKE_SOURCE_DIR}/tests_net.module.cpp"
   "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
+  "${CMAKE_SOURCE_DIR}/modules/net/net.xml"
 )
 
 target_compile_definitions(net.module_tests PRIVATE NET_MODULE_TESTS)

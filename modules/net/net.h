@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _ANT4C_NET_MODULE_H_
-#define _ANT4C_NET_MODULE_H_
+#ifndef __ANT4C_NET_MODULE_H__
+#define __ANT4C_NET_MODULE_H__
 
 #include <stddef.h>
 #include <stdint.h>

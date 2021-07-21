@@ -5,10 +5,11 @@
  *
  */
 
-#ifndef __MODULES_NET_COMMON_H__
-#define __MODULES_NET_COMMON_H__
+#ifndef __MODULES_NET_NET_COMMON_H__
+#define __MODULES_NET_NET_COMMON_H__
 
 #include <stddef.h>
+#include <stdint.h>
 
 #if defined(_WIN32)
 #include <wchar.h>
@@ -20,17 +21,27 @@
 #define type_of_element wchar_t
 #define calling_convention __cdecl
 #define delegate_calling_convention __stdcall
-#define host_fxr_PATH_DELIMITER ';'
-#define host_fxr_PATH_DELIMITER_wchar_t L';'
+#define net_PATH_DELIMITER ';'
+#define net_PATH_DELIMITER_wchar_t L';'
 #else
 #define type_of_element uint8_t
 #define calling_convention
 #define delegate_calling_convention
-#define host_fxr_PATH_DELIMITER ':'
+#define net_PATH_DELIMITER ':'
 #endif
+
+struct buffer;
 
 typedef void(calling_convention* error_writer_type)(
 	const type_of_element* message);
+
+typedef uint8_t(*is_function_exists_type)(
+	const void* ptr_to_object,
+	const uint8_t* function_name,
+	uint8_t function_name_length);
+
+typedef uint8_t(*loader_type)(
+	const type_of_element* path_to_library, void* ptr_to_object, ptrdiff_t size);
 
 struct string_arguments_type
 {
@@ -38,52 +49,52 @@ struct string_arguments_type
 	const type_of_element** arguments;
 };
 
-enum hostfxr_status_code
+enum net_status_code
 {
-	host_fxr_Success,
-	host_fxr_Success_HostAlreadyInitialized,
-	host_fxr_Success_DifferentRuntimeProperties,
+	net_Success,
+	net_Success_HostAlreadyInitialized,
+	net_Success_DifferentRuntimeProperties,
 	/**/
 	win_error_E_INVALIDARG = 0x80070057,
 	/**/
-	host_fxr_InvalidArgFailure = 0x80008081,
-	host_fxr_CoreHostLibLoadFailure,
-	host_fxr_CoreHostLibMissingFailure,
-	host_fxr_CoreHostEntryPointFailure,
-	host_fxr_CoreHostCurHostFindFailure,
-	host_fxr_CoreClrResolveFailure = 0x80008087,
-	host_fxr_CoreClrBindFailure,
-	host_fxr_CoreClrInitFailure,
-	host_fxr_CoreClrExeFailure,
-	host_fxr_ResolverInitFailure,
-	host_fxr_ResolverResolveFailure,
-	host_fxr_LibHostCurExeFindFailure,
-	host_fxr_LibHostInitFailure,
-	host_fxr_LibHostSdkFindFailure = 0x80008091,
-	host_fxr_LibHostInvalidArgs,
-	host_fxr_InvalidConfigFile,
-	host_fxr_AppArgNotRunnable,
-	host_fxr_AppHostExeNotBoundFailure,
-	host_fxr_FrameworkMissingFailure,
-	host_fxr_HostApiFailed,
-	host_fxr_HostApiBufferTooSmall,
-	host_fxr_LibHostUnknownCommand,
-	host_fxr_LibHostAppRootFindFailure,
-	host_fxr_SdkResolverResolveFailure,
-	host_fxr_FrameworkCompatFailure,
-	host_fxr_FrameworkCompatRetry,
-	host_fxr_AppHostExeNotBundle,
-	host_fxr_BundleExtractionFailure,
-	host_fxr_BundleExtractionIOError,
-	host_fxr_LibHostDuplicateProperty,
-	host_fxr_HostApiUnsupportedVersion,
-	host_fxr_HostInvalidState,
-	host_fxr_HostPropertyNotFound,
-	host_fxr_CoreHostIncompatibleConfig,
-	host_fxr_HostApiUnsupportedScenario
+	net_InvalidArgFailure = 0x80008081,
+	net_CoreHostLibLoadFailure,
+	net_CoreHostLibMissingFailure,
+	net_CoreHostEntryPointFailure,
+	net_CoreHostCurHostFindFailure,
+	net_CoreClrResolveFailure = 0x80008087,
+	net_CoreClrBindFailure,
+	net_CoreClrInitFailure,
+	net_CoreClrExeFailure,
+	net_ResolverInitFailure,
+	net_ResolverResolveFailure,
+	net_LibHostCurExeFindFailure,
+	net_LibHostInitFailure,
+	net_LibHostSdkFindFailure = 0x80008091,
+	net_LibHostInvalidArgs,
+	net_InvalidConfigFile,
+	net_AppArgNotRunnable,
+	net_AppHostExeNotBoundFailure,
+	net_FrameworkMissingFailure,
+	net_HostApiFailed,
+	net_HostApiBufferTooSmall,
+	net_LibHostUnknownCommand,
+	net_LibHostAppRootFindFailure,
+	net_SdkResolverResolveFailure,
+	net_FrameworkCompatFailure,
+	net_FrameworkCompatRetry,
+	net_AppHostExeNotBundle,
+	net_BundleExtractionFailure,
+	net_BundleExtractionIOError,
+	net_LibHostDuplicateProperty,
+	net_HostApiUnsupportedVersion,
+	net_HostInvalidState,
+	net_HostPropertyNotFound,
+	net_CoreHostIncompatibleConfig,
+	net_HostApiUnsupportedScenario
 };
 
-#define IS_HOST_FAILED(RESULT) ((RESULT) < (int32_t)host_fxr_Success || (int32_t)host_fxr_Success_DifferentRuntimeProperties < (RESULT))
+#define IS_HOST_FAILED(RESULT) ((RESULT) < (int32_t)net_Success || (int32_t)net_Success_DifferentRuntimeProperties < (RESULT))
 
 #define SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(STRUCTURE, INITIALIZE_REQUEST, VALUES, LENGTHS, COUNT, MEMBER, THE_BUFFER)	\
 	\
@@ -102,5 +113,41 @@ enum hostfxr_status_code
 			VALUES, LENGTHS,																								\
 			COUNT, THE_BUFFER,																								\
 			&INITIALIZE_REQUEST_->MEMBER.arguments);
+
+const void* string_to_pointer(
+	const uint8_t* input,
+	uint8_t length,
+	struct buffer* tmp);
+
+uint8_t convert_function_name(
+	const uint8_t* name_space,
+	const uint8_t* function_name_start,
+	const uint8_t* function_name_finish,
+	struct buffer* output);
+
+uint8_t get_exists_functions(
+	const void* ptr_to_object,
+	const uint8_t* name_space,
+	const uint8_t* functions,
+	const uint8_t* delimiter,
+	uint16_t delimiter_length,
+	const is_function_exists_type is_function_exists,
+	struct buffer* output);
+
+uint8_t load_library(
+	const uint8_t* path_to_library,
+	uint16_t path_to_library_length,
+	struct buffer* tmp,
+	void* ptr_to_object,
+	ptrdiff_t size,
+	const loader_type loader);
+
+uint8_t is_function_exists(
+	const void* ptr_to_object,
+	const uint8_t* name_space,
+	const uint8_t* function_name,
+	uint16_t function_name_length,
+	const is_function_exists_type is_exists,
+	struct buffer* output);
 
 #endif
