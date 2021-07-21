@@ -27,9 +27,10 @@ TEST_F(TestInterpreter, interpreter_disassemble_function)
 		const std::string expected_name_space(node.node().select_node("name_space").node().child_value());
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_arguments_area(node.node().select_node("arguments_area").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const range function_in_range = string_to_range(input);
+		const auto function_in_range = string_to_range(input);
 		//
 		range name_space;
 		name_space.start = name_space.finish = NULL;
@@ -38,8 +39,8 @@ TEST_F(TestInterpreter, interpreter_disassemble_function)
 		range arguments_area;
 		arguments_area.start = arguments_area.finish = NULL;
 		//
-		const uint8_t returned = interpreter_disassemble_function(
-									 &function_in_range, &name_space, &name, &arguments_area);
+		const auto returned = interpreter_disassemble_function(
+								  &function_in_range, &name_space, &name, &arguments_area);
 		ASSERT_EQ(expected_return, returned);
 		//
 		const std::string returned_name_space(range_to_string(name_space));
@@ -61,17 +62,19 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 	for (const auto& node : nodes)
 	{
 		const std::string arguments(node.node().select_node("arguments").node().child_value());
-		pugi::xpath_node_set expected_outputs = node.node().select_nodes("output");
-		const uint8_t expected_return = (uint8_t)INT_PARSE(
-											node.node().select_node("return").node().child_value());
+		auto expected_outputs = node.node().select_nodes("output");
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const range arguments_in_range = string_to_range(arguments);
+		const auto arguments_in_range = string_to_range(arguments);
 		ASSERT_TRUE(buffer_resize_and_free_inner_buffers(&output)) << buffer_free_with_inner_buffers(&output);
 		//
-		const uint8_t returned = interpreter_get_values_for_arguments(NULL, NULL, &arguments_in_range, &output,
-								 verbose);
-		ASSERT_EQ(expected_return, returned) << buffer_free_with_inner_buffers(&output) << std::endl
-											 << arguments;
+		uint8_t values_count;
+		ASSERT_TRUE(interpreter_get_values_for_arguments(
+						NULL, NULL, &arguments_in_range,
+						&output, &values_count, verbose)) << arguments;
+		ASSERT_EQ(expected_return, values_count) << buffer_free_with_inner_buffers(&output) << std::endl
+				<< arguments;
 		ptrdiff_t i = 0;
 		buffer* current_output = NULL;
 
@@ -83,7 +86,7 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 			ASSERT_NE(nullptr, current_output) << buffer_free_with_inner_buffers(&output) << std::endl
 											   << arguments;
 			//
-			const std::string str_current_output(buffer_to_string(current_output));
+			const auto str_current_output(buffer_to_string(current_output));
 			ASSERT_EQ(str_expected_output, str_current_output) << buffer_free_with_inner_buffers(&output) << std::endl
 					<< arguments;
 		}
@@ -105,17 +108,17 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 	for (const auto& node : nodes)
 	{
 		const std::string code(get_data_from_nodes(node, "code"));
-		const std::string expected_output(get_data_from_nodes(node, ("output")));
-		const uint8_t expected_return = (uint8_t)INT_PARSE(
-											node.node().select_node("return").node().child_value());
+		const auto expected_output(get_data_from_nodes(node, ("output")));
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const range code_in_range = string_to_range(code);
+		const auto code_in_range = string_to_range(code);
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const uint8_t returned = interpreter_evaluate_code(NULL, NULL, &code_in_range, &output, verbose);
+		const auto returned = interpreter_evaluate_code(NULL, NULL, &code_in_range, &output, verbose);
 		ASSERT_EQ(expected_return, returned) << "'" << code << "'" << std::endl << buffer_free(&output);
 		//
-		const std::string current_output(buffer_to_string(&output));
+		const auto current_output(buffer_to_string(&output));
 		ASSERT_EQ(expected_output, current_output) << "'" << code << "'" << std::endl << buffer_free(&output);
 		//
 		--node_count;
@@ -139,7 +142,8 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		//
 		const std::string task_name(doc.first_child().name());
 		//
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		buffer the_project;
 		SET_NULL_TO_BUFFER(the_project);

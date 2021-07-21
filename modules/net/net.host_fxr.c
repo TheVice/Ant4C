@@ -1158,7 +1158,7 @@ uint8_t hostfxr_set_runtime_property_value(
 	}
 
 	const type_of_element* name = (const type_of_element*)buffer_data(output, 0);
-	const type_of_element* value = (const type_of_element*)buffer_data(output, index);
+	const type_of_element* value = 3 == values_count ? (const type_of_element*)buffer_data(output, index) : NULL;
 	/**/
 	const int32_t result = host_fxr_set_runtime_property_value(ptr_to_host_fxr_object, context, name, value);
 

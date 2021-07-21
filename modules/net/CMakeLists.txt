@@ -46,7 +46,7 @@ add_library(ant4c.net.module SHARED
   "${CMAKE_CURRENT_SOURCE_DIR}/net.h"
 )
 
-target_link_libraries(ant4c.net.module ant4c net_gate)
+target_link_libraries(ant4c.net.module net_gate ant4c)
 
 if(NOT MSVC)
   set_property(TARGET ant4c.net.module PROPERTY C_STANDARD 11)

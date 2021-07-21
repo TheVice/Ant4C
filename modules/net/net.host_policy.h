@@ -21,10 +21,15 @@ uint8_t host_policy_init(
 	ptrdiff_t size);
 
 uint8_t core_host_context_contract_get_property_value__(
-	const uint8_t* property_name, uint16_t property_name_length,
+	const void* context_contract,
+	const uint8_t* property_name, uint16_t property_name_length, struct buffer* output);
+uint8_t core_host_context_contract_set_property_value__(
+	const void* ptr_to_host_policy_object, void* context_contract,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 	struct buffer* output);
 uint8_t core_host_initialize__(
 	const void* ptr_to_host_policy_object,
+	const void* init_request, void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 	struct buffer* output);
 uint8_t core_host_main__(

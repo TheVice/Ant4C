@@ -1456,8 +1456,34 @@
     <property name="property_value" value="${corehost-context-contract::get-property-value(property_name)}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property_value -> '${property_value}' ${net::result-to-string(string::trim(property_value))}</echo>
 
-    <!--property name="is_initialized" value="${corehost-context-contract::set-property-value()}" />
-    <property name="is_initialized" value="${corehost-context-contract::get-properties()}" />
+    <property name="property_name_for_set" value="MY_PROPERTY" overwrite="false" />
+    <property name="property_value_for_set" value="VALUE_FOR_MY_PROPERTY" overwrite="false" />
+
+    <property name="is_initialized" value="${corehost-context-contract::set-property-value(property_name_for_set, property_value_for_set)}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::set-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <property name="is_initialized" value="${corehost-context-contract::set-property-value(property_name_for_set, '')}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::set-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <property name="is_initialized" value="${corehost-context-contract::set-property-value(property_name_for_set)}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::set-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <!--property name="is_initialized" value="${corehost-context-contract::get-properties()}" />
     <property name="is_initialized" value="${corehost-context-contract::load-runtime()}" />
     <property name="is_initialized" value="${corehost-context-contract::run-app()}" />
     <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->

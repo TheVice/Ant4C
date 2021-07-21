@@ -8,7 +8,6 @@
 #include "net.host_policy.h"
 #include "arguments.h"
 #include "core_host_context_contract.h"
-#include "core_host_initialize_request.h"
 #include "error_writer.h"
 #include "host_interface.h"
 #include "host_policy.h"
@@ -88,6 +87,7 @@ int32_t core_host_initialize_get_options(const uint8_t* value_start, const uint8
 }
 
 uint8_t core_host_context_contract_get_property_value__(
+	const void* context_contract,
 	const uint8_t* property_name, uint16_t property_name_length, struct buffer* output)
 {
 #if defined(_WIN32)
@@ -110,7 +110,7 @@ uint8_t core_host_context_contract_get_property_value__(
 	const type_of_element* key = (const type_of_element*)buffer_data(output, 0);
 	const type_of_element* value = NULL;
 	const int32_t result = core_host_context_contract_get_property_value(
-							   core_host_context_contract_get(), key, &value);
+							   context_contract, key, &value);
 
 	if (!buffer_resize(output, 0))
 	{
@@ -142,8 +142,75 @@ uint8_t core_host_context_contract_get_property_value__(
 	return 1;
 }
 
+uint8_t core_host_context_contract_set_property_value__(
+	const void* ptr_to_host_policy_object, void* context_contract,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_policy_object ||
+		!context_contract ||
+		!values ||
+		!values_lengths ||
+		values_count < 1 || 2 < values_count ||
+		!output)
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+
+	if (!text_encoding_UTF8_to_UTF16LE(values[0], values[0] + values_lengths[0], output) ||
+		!buffer_push_back_uint16(output, 0))
+#else
+	if (!buffer_append(output, values[0], values_lengths[0]) ||
+		!buffer_push_back(output, 0))
+#endif
+	{
+		return 0;
+	}
+
+	const ptrdiff_t index = buffer_size(output);
+
+	if (2 == values_count && values_lengths[1])
+	{
+#if defined(_WIN32)
+
+		if (!text_encoding_UTF8_to_UTF16LE(values[1], values[1] + values_lengths[1], output))
+#else
+		if (!buffer_append(output, values[1], values_lengths[1]))
+#endif
+		{
+			return 0;
+		}
+	}
+
+#if defined(_WIN32)
+
+	if (!buffer_push_back_uint16(output, 0))
+#else
+	if (!buffer_push_back(output, 0))
+#endif
+	{
+		return 0;
+	}
+
+	const type_of_element* name = (const type_of_element*)buffer_data(output, 0);
+	const type_of_element* value = 2 == values_count ? (const type_of_element*)buffer_data(output, index) : NULL;
+	/**/
+	const int32_t result = core_host_context_contract_set_property_value(context_contract, name, value);
+
+	if (!buffer_resize(output, 0) ||
+		!int_to_string(result, output))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 uint8_t core_host_initialize__(
 	const void* ptr_to_host_policy_object,
+	const void* init_request, void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 	struct buffer* output)
 {
@@ -171,10 +238,8 @@ uint8_t core_host_initialize__(
 	}
 
 	options = core_host_initialize(
-				  ptr_to_host_policy_object,
-				  1 < values_count ? NULL : core_host_initialize_request_get(),
-				  options,
-				  core_host_context_contract_get());
+				  ptr_to_host_policy_object, init_request,
+				  options, context_contract);
 	/**/
 	return int_to_string(options, output);
 }

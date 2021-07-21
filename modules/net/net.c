@@ -1052,6 +1052,8 @@ uint8_t evaluate_function(
 			if (2 < values_count ||
 				!core_host_initialize__(
 					ptr_to_host_policy_object,
+					1 < values_count ? NULL : core_host_initialize_request_get(),
+					core_host_context_contract_get(),
 					values, values_lengths, values_count,
 					&output_data))
 			{
@@ -1146,6 +1148,7 @@ uint8_t evaluate_function(
 		case core_host_context_contract_get_property_value_:
 			if (1 != values_count ||
 				!core_host_context_contract_get_property_value__(
+					core_host_context_contract_get(),
 					values[0], values_lengths[0], &output_data))
 			{
 				return 0;
@@ -1153,9 +1156,16 @@ uint8_t evaluate_function(
 
 			break;
 
-		/*case core_host_context_contract_set_property_value_:
+		case core_host_context_contract_set_property_value_:
+			if (!core_host_context_contract_set_property_value__(
+					ptr_to_host_policy_object, core_host_context_contract_get(),
+					values, values_lengths, values_count, &output_data))
+			{
+				return 0;
+			}
+
 			break;
-		case core_host_context_contract_get_properties_:
+		/*case core_host_context_contract_get_properties_:
 			break;
 		case core_host_context_contract_load_runtime_:
 			break;
