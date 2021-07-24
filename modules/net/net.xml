@@ -896,40 +896,6 @@
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
-  <!-- hostfxr::set-runtime-property-value -->
-  <target name="hostfxr_set-runtime-property-value" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('set-runtime-property-value')}">
-    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
-
-    <fail unless="${property::exists('is_context_initialized')}"
-          message="Property 'is_context_initialized' required to run this ('${target::get-current-target()}') target." />
-    <fail unless="${property::exists('context')}"
-          message="Property 'context' required to run this ('${target::get-current-target()}') target." />
-    <fail unless="${property::exists('property_name')}"
-          message="Property 'property_name' required to run this ('${target::get-current-target()}') target." />
-
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_context_initialized -> ${is_context_initialized} context -> ${context} property_name -> ${property_name}</echo>
-    <echo level="Debug" if="${property::exists('property_value')}">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property_value -> ${property_value}</echo>
-
-    <if test="${is_context_initialized}">
-      <if test="${string::equal(bool::parse('false'), property::exists('property_value'))}">
-        <property name="return_of_set_runtime_property_value" value="${hostfxr::set-runtime-property-value(context, property_name)}" />
-        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value(${context}, ${property_name}) -> '${return_of_set_runtime_property_value}' -> ${net::result-to-string(return_of_set_runtime_property_value)}</echo>
-      </if>
-
-      <if test="${property::exists('property_value')}">
-        <property name="return_of_set_runtime_property_value" value="${hostfxr::set-runtime-property-value(context, property_name, property_value)}" />
-        <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value(${context}, ${property_name}, ${property_value}) -> '${return_of_set_runtime_property_value}' -> ${net::result-to-string(return_of_set_runtime_property_value)}</echo>
-      </if>
-
-      <property name="property_value" unless="${property::exists('property_value')}" />
-
-      <fail unless="${string::equal('0', return_of_set_runtime_property_value)}"
-            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value(${context}, ${property_name}, ${property_value}) -> '${return_of_set_runtime_property_value}' -> ${net::result-to-string(return_of_set_runtime_property_value)}" />
-    </if>
-
-    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
-  </target>
-
   <!-- hostfxr::get-runtime-properties -->
   <target name="hostfxr_get-runtime-properties" depends="hostfxr_initialize" if="${hostfxr::is-function-exists('get-runtime-properties')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
@@ -1492,8 +1458,15 @@
 
     <echo level="Info">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}get-properties -> ${is_initialized}</echo>
 
-    <!--property name="is_initialized" value="${corehost-context-contract::load-runtime()}" />
-    <property name="is_initialized" value="${corehost-context-contract::run-app()}" />
+    <property name="is_initialized" value="${corehost-context-contract::load-runtime()}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::load-runtime should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <!--property name="is_initialized" value="${corehost-context-contract::run-app()}" />
     <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->
 
     <call target="core_host_unload" />
@@ -1579,18 +1552,36 @@
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
+  <!-- hostfxr::set-runtime-property-value -->
   <target name="test_hostfxr_set-runtime-property-value" depends="hostfxr_initialize-for-dotnet-command-line" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
-    <property name="property_name" value="MY_PROPERTY" overwrite="false" />
-    <!--property name="property_value" value="VALUE_FOR_MY_PROPERTY" overwrite="false" /-->
+    <property name="property_name_for_set" value="MY_PROPERTY" overwrite="false" />
+    <property name="property_value_for_set" value="VALUE_FOR_MY_PROPERTY" overwrite="false" />
 
-    <call target="hostfxr_set-runtime-property-value" />
+    <property name="return_of_set_runtime_property_value" value="${hostfxr::set-runtime-property-value(context, property_name_for_set, property_value_for_set)}" />
 
-    <call target="hostfxr_get-runtime-property-value" />
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
 
-    <fail unless="${string::empty(runtime_property_value)}"
-          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'runtime_property_value' should be empty, instead it '${runtime_property_value}'." />
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <property name="is_initialized" value="${hostfxr::set-runtime-property-value(context, property_name_for_set, '')}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <property name="is_initialized" value="${hostfxr::set-runtime-property-value(context, property_name_for_set)}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::set-runtime-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
 
     <call target="hostfxr_close" />
 

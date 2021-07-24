@@ -330,6 +330,18 @@ uint8_t core_host_context_contract_get_properties__(const void* context_contract
 	return buffer_resize(output, 0) && int_to_string(result, output);
 }
 
+uint8_t core_host_context_contract_load_runtime__(
+	void* context_contract, struct buffer* output)
+{
+	if (!context_contract ||
+		!output)
+	{
+		return 0;
+	}
+
+	return int_to_string(core_host_context_contract_load_runtime(context_contract), output);
+}
+
 uint8_t core_host_initialize__(
 	const void* ptr_to_host_policy_object,
 	const void* init_request, void* context_contract,

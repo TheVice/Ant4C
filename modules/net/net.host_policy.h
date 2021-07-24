@@ -31,6 +31,8 @@ uint8_t core_host_context_contract_set_property_value__(
 	uint8_t values_count, struct buffer* output);
 uint8_t core_host_context_contract_get_properties__(
 	const void* context_contract, struct buffer* output);
+uint8_t core_host_context_contract_load_runtime__(
+	void* context_contract, struct buffer* output);
 uint8_t core_host_initialize__(
 	const void* ptr_to_host_policy_object,
 	const void* init_request,
