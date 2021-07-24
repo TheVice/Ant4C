@@ -14,14 +14,22 @@ build_with_MSVC:
     [string[]]$cmakes = @()
     $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
 
-    if (0 -gt $cmakes.Count)
+    if (0 -lt $cmakes.Count)
     {
       $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
     }
     else
     {
       $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles}" -Recurse
-      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+
+      if (0 -lt $cmakes.Count)
+      {
+        $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+      }
+      else
+      {
+        throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find cmake in any of the '${env:ProgramFiles(x86)}' and '${env:ProgramFiles}' subfolders.")
+      }
     }
 
     $build_directory = Join-Path -ChildPath "build-${env:TargetPlatform}" -Path "${env:CI_PROJECT_DIR}"
@@ -101,14 +109,22 @@ build_with_MinGW:
     [string[]]$cmakes = @()
     $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
 
-    if (0 -gt $cmakes.Count)
+    if (0 -lt $cmakes.Count)
     {
       $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
     }
     else
     {
       $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles}" -Recurse
-      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+
+      if (0 -lt $cmakes.Count)
+      {
+        $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+      }
+      else
+      {
+        throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find cmake in any of the '${env:ProgramFiles(x86)}' and '${env:ProgramFiles}' subfolders.")
+      }
     }
 
     [string[]]$mingw_makes = @()

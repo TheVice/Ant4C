@@ -1220,8 +1220,7 @@
           value="${hostinterface::set-paths-for-probing(
       path::combine(environment::get-folder-path('UserProfile'), '.nuget/packages'),
       path::combine(environment::get-folder-path('UserProfile'), '.dotnet/NuGetFallbackFolder'),
-      path::combine(path::get-directory-name(program), 'dotnet/sdk/NuGetFallbackFolder'),
-      path::combine(environment::get-folder-path('ProgramFiles'), 'dotnet/sdk/NuGetFallbackFolder'))}" />
+      path::combine(path::get-directory-name(program), 'dotnet/sdk/NuGetFallbackFolder'))}" />
 
     <property name="is_initialized" value="${hostinterface::set-framework-dependent('1')}" />
 
@@ -1483,8 +1482,17 @@
     <fail if="${NON_SUCCESS}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::set-property-value should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
 
-    <!--property name="is_initialized" value="${corehost-context-contract::get-properties()}" />
-    <property name="is_initialized" value="${corehost-context-contract::load-runtime()}" />
+    <property name="is_initialized" value="${corehost-context-contract::get-properties()}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-properties should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <echo level="Info">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}get-properties -> ${is_initialized}</echo>
+
+    <!--property name="is_initialized" value="${corehost-context-contract::load-runtime()}" />
     <property name="is_initialized" value="${corehost-context-contract::run-app()}" />
     <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->
 

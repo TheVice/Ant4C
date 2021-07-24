@@ -4251,7 +4251,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </math_round>
   </TestMathUnit>
   <TestNetModule>
-    <functions>
+    <functions if="${platform::is-windows()}">
       <code>${hostinterface::initialize('123456')}</code>
       <code>${hostinterface::set-additional-dependency-serialized('a/b/c')}</code>
       <code>${hostinterface::set-application-path('C:\dotnet.exe')}</code>
@@ -4277,6 +4277,41 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
                 path::combine(environment::get-folder-path('UserProfile'), '.nuget\packages'),
                 path::combine(environment::get-folder-path('UserProfile'), '.dotnet\NuGetFallbackFolder'),
                 path::combine(environment::get-folder-path('ProgramFiles'), 'dotnet\sdk\NuGetFallbackFolder'))}</code>
+      <code>${hostinterface::set-prerelease-roll-forward('0')}</code>
+      <code>${hostinterface::set-target-framework-moniker('netcoreapp3.1')}</code>
+      <code>${corehost-initialize-request::initialize()}</code>
+      <code>${corehost-initialize-request::set-config-keys()}</code>
+      <code>${corehost-initialize-request::set-config-values()}</code>
+      <code>${corehost-initialize-request::set-config-keys('a', 'bc', 'def')}</code>
+      <code>${corehost-initialize-request::set-config-values('1', '23', '456')}</code>
+    </functions>
+    <functions if="${platform::is-unix()}">
+      <code>${hostinterface::initialize('123456')}</code>
+      <code>${hostinterface::set-additional-dependency-serialized('a/b/c')}</code>
+      <code>${hostinterface::set-application-path('/program.dll')}</code>
+      <code>${hostinterface::set-config-keys('a', 'b', 'c', 'd', 'e')}</code>
+      <code>${hostinterface::set-config-values('123', '4567', '89', '0', '5')}</code>
+      <code>${hostinterface::set-dependency-file('/1/2/3/4/5/6/7/8/9/0')}</code>
+      <code>${hostinterface::set-dotnet-root('/bin')}</code>
+      <code>${hostinterface::set-file-bundle-header-offset('1')}</code>
+      <code>${hostinterface::set-framework-dependent('1')}</code>
+      <code>${hostinterface::set-framework-directories('/a', '/b', '/c')}</code>
+      <code>${hostinterface::set-framework-directory('/a/b/c')}</code>
+      <code>${hostinterface::set-framework-found-versions('', '3.1.0')}</code>
+      <code>${hostinterface::set-framework-name('Microsoft.NETCore.App')}</code>
+      <code>${hostinterface::set-framework-names('', 'Microsoft.NETCore.App')}</code>
+      <code>${hostinterface::set-framework-requested-versions('', '3.1.0')}</code>
+      <code>${hostinterface::set-framework-version('3.1.0')}</code>
+      <code>${hostinterface::set-host-command('--?')}</code>
+      <code>${hostinterface::set-host-mode('10')}</code>
+      <code>${hostinterface::set-host-mode('libhost')}</code>
+      <code>${hostinterface::set-host-path('/bin/dotnet')}</code>
+      <code>${hostinterface::set-patch-roll-forward('1')}</code>
+      <code>
+        ${hostinterface::set-paths-for-probing(
+        path::combine(environment::get-folder-path('UserProfile'), '.nuget/packages'),
+        path::combine(environment::get-folder-path('UserProfile'), '.dotnet/NuGetFallbackFolder'))}
+      </code>
       <code>${hostinterface::set-prerelease-roll-forward('0')}</code>
       <code>${hostinterface::set-target-framework-moniker('netcoreapp3.1')}</code>
       <code>${corehost-initialize-request::initialize()}</code>

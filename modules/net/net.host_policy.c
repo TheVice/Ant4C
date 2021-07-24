@@ -25,6 +25,8 @@
 #include <wchar.h>
 #endif
 
+#include <string.h>
+
 uint8_t host_policy_init(
 	const uint8_t* path_to_core_host,
 	uint16_t path_to_core_host_length,
@@ -143,7 +145,7 @@ uint8_t core_host_context_contract_get_property_value__(
 }
 
 uint8_t core_host_context_contract_set_property_value__(
-	const void* ptr_to_host_policy_object, void* context_contract,
+	const void* ptr_to_host_policy_object, const void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 	struct buffer* output)
 {
@@ -206,6 +208,126 @@ uint8_t core_host_context_contract_set_property_value__(
 	}
 
 	return 1;
+}
+
+uint8_t core_host_context_contract_get_properties__(const void* context_contract, struct buffer* output)
+{
+	if (!context_contract || !output)
+	{
+		return 0;
+	}
+
+	size_t count = 0;
+	const type_of_element** properties_keys = NULL;
+	const type_of_element** properties_values = NULL;
+	/**/
+	int32_t result = core_host_context_contract_get_properties(
+						 context_contract, &count, properties_keys, properties_values);
+
+	if ((int32_t)net_HostApiBufferTooSmall == result)
+	{
+		if (!buffer_resize(output, 2 * count * sizeof(type_of_element*)))
+		{
+			return 0;
+		}
+
+		memset(buffer_data(output, 0), 0, buffer_size(output));
+		/**/
+		properties_keys = (const type_of_element**)buffer_data(output, 0);
+		properties_values = (const type_of_element**)buffer_data(output, count * sizeof(type_of_element*));
+		/**/
+		result = core_host_context_contract_get_properties(
+					 context_contract, &count, properties_keys, properties_values);
+	}
+
+	if (IS_HOST_FAILED(result))
+	{
+		return int_to_string(result, output);
+	}
+
+	const ptrdiff_t size = buffer_size(output);
+
+	if (count && size < INT16_MAX)
+	{
+		if (!buffer_append(output, NULL, INT16_MAX) ||
+			!buffer_resize(output, size))
+		{
+			return 0;
+		}
+	}
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		properties_keys = (const type_of_element**)buffer_data(output, 0);
+		properties_values = (const type_of_element**)buffer_data(output, count * sizeof(type_of_element*));
+		/**/
+		const type_of_element* key_ = properties_keys[i];
+		const type_of_element* value_ = properties_values[i];
+#if defined(_WIN32)
+
+		if (!buffer_push_back(output, '\'') ||
+			!text_encoding_UTF16LE_to_UTF8(key_, key_ + wcslen(key_), output) ||
+			!buffer_push_back(output, '\'') ||
+			!common_append_string_to_buffer((const uint8_t*)" = ", output) ||
+			!buffer_push_back(output, '\''))
+		{
+			return 0;
+		}
+
+		if (value_)
+		{
+			key_ = value_ + wcslen(value_);
+
+			if (value_ < key_ &&
+				!text_encoding_UTF16LE_to_UTF8(value_, key_, output))
+			{
+				return 0;
+			}
+		}
+
+#else
+
+		if (!buffer_push_back(output, '\'') ||
+			!buffer_append(output, key_, common_count_bytes_until(key_, 0)) ||
+			!buffer_push_back(output, '\'') ||
+			!common_append_string_to_buffer((const uint8_t*)" = ", output) ||
+			!buffer_push_back(output, '\''))
+		{
+			return 0;
+		}
+
+		if (value_)
+		{
+			if (!buffer_append(output, value_, common_count_bytes_until(value_, 0)))
+			{
+				return 0;
+			}
+		}
+
+#endif
+
+		if (!buffer_push_back(output, '\'') ||
+			!buffer_push_back(output, '\n'))
+		{
+			return 0;
+		}
+	}
+
+	if (0 < size && size < buffer_size(output))
+	{
+		const ptrdiff_t new_size = buffer_size(output) - size;
+		const uint8_t* src = buffer_data(output, size);
+		uint8_t* dst = buffer_data(output, 0);
+		/**/
+		MEM_CPY(dst, src, new_size);
+		/**/
+		dst = buffer_data(output, new_size);
+		memset(dst, 0, size);
+		/**/
+		return buffer_resize(output, new_size);
+	}
+
+	return buffer_resize(output, 0) && int_to_string(result, output);
 }
 
 uint8_t core_host_initialize__(

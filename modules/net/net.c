@@ -1165,9 +1165,17 @@ uint8_t evaluate_function(
 			}
 
 			break;
-		/*case core_host_context_contract_get_properties_:
+
+		case core_host_context_contract_get_properties_:
+			if (values_count ||
+				!core_host_context_contract_get_properties__(
+					core_host_context_contract_get(), &output_data))
+			{
+				return 0;
+			}
+
 			break;
-		case core_host_context_contract_load_runtime_:
+		/*case core_host_context_contract_load_runtime_:
 			break;
 		case core_host_context_contract_run_app_:
 			break;
