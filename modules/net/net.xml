@@ -1466,8 +1466,15 @@
     <fail if="${NON_SUCCESS}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::load-runtime should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
 
-    <!--property name="is_initialized" value="${corehost-context-contract::run-app()}" />
-    <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->
+    <property name="is_initialized" value="${corehost-context-contract::run-app('1', '2', '3', 'a', 'b', 'c')}" />
+
+    <property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+    <property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+    <fail if="${NON_SUCCESS}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::run-app should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+    <!--property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->
 
     <call target="core_host_unload" />
 

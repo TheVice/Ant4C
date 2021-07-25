@@ -331,7 +331,7 @@ uint8_t core_host_context_contract_get_properties__(const void* context_contract
 }
 
 uint8_t core_host_context_contract_load_runtime__(
-	void* context_contract, struct buffer* output)
+	const void* context_contract, struct buffer* output)
 {
 	if (!context_contract ||
 		!output)
@@ -340,6 +340,37 @@ uint8_t core_host_context_contract_load_runtime__(
 	}
 
 	return int_to_string(core_host_context_contract_load_runtime(context_contract), output);
+}
+
+uint8_t core_host_context_contract_run_app__(
+	const void* context_contract,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!context_contract ||
+		!values ||
+		!values_lengths ||
+		!output)
+	{
+		return 0;
+	}
+
+	const type_of_element** argv = NULL;
+
+	if (!values_to_arguments(values, values_lengths, values_count, output, &argv))
+	{
+		return 0;
+	}
+
+	const int32_t result = core_host_context_contract_run_app(context_contract, values_count, argv);
+
+	if (!buffer_resize(output, 0) ||
+		!int_to_string(result, output))
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 uint8_t core_host_initialize__(

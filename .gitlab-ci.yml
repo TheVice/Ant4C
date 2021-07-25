@@ -229,6 +229,10 @@ build_with_MinGW:
       Get-ChildItem -Path "$build_directory" -Recurse
     }
 
+  artifacts:
+    paths:
+      - "$CI_PROJECT_DIR\\build-MinGW-$BUILD_TYPE"
+
 build_on_unix_like:
 
   tags:
