@@ -12,6 +12,7 @@
 #include "host_interface.h"
 #include "host_policy.h"
 #include "net.common.h"
+#include "net_delegate.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -371,6 +372,43 @@ uint8_t core_host_context_contract_run_app__(
 	}
 
 	return 1;
+}
+
+uint8_t core_host_context_contract_get_runtime_delegate__(
+	void* context_contract, const uint8_t* delegate_type,
+	uint16_t delegate_type_length, struct buffer* output)
+{
+	int32_t type_of_delegate = common_string_to_enum(
+								   delegate_type, delegate_type + delegate_type_length,
+								   net_delegate_types_str, NET_DELEGATE_MAX_VALUE);
+
+	if (NET_DELEGATE_MAX_VALUE == type_of_delegate)
+	{
+		if (!buffer_append(output, delegate_type, delegate_type_length) ||
+			!buffer_push_back(output, 0))
+		{
+			return 0;
+		}
+
+		type_of_delegate = int_parse(buffer_data(output, 0));
+
+		if (!buffer_resize(output, 0))
+		{
+			return 0;
+		}
+	}
+
+	void* the_delegate;
+	const int32_t result =
+		core_host_context_contract_get_runtime_delegate(
+			context_contract, type_of_delegate, &the_delegate);
+
+	if (IS_HOST_FAILED(result))
+	{
+		return buffer_push_back(output, ' ') && int_to_string(result, output);
+	}
+
+	return pointer_to_string(the_delegate, output);
 }
 
 uint8_t core_host_initialize__(

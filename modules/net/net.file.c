@@ -10,6 +10,7 @@
 #include "net.common.h"
 #include "host_fxr.h"
 #include "net.host_fxr.h"
+#include "net_delegate.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -160,7 +161,7 @@ uint8_t file_is_assembly(
 			}
 
 			sub_values[0] = buffer_data(output, 0);
-			sub_values[1] = (const uint8_t*)"host_fxr_hdt_load_assembly_and_get_function_pointer";
+			sub_values[1] = net_delegate_types_str[net_hdt_load_assembly_and_get_function_pointer];
 			sub_values[2] = ant4c_net_clr;
 			sub_values[3] = (const uint8_t*)"Ant4C.Net.Module.Delegates, ant4c.net.module.clr";
 			sub_values[4] = (const uint8_t*)"FileUnit_IsAssembly";

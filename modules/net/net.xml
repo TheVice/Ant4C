@@ -1388,6 +1388,7 @@
   <!-- corehost::initialize -->
   <target name="core_host_initialize" depends="hostpolicy_initialize" if="${corehost::is-function-exists('initialize')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+    <property name="the_host_version" value="${host_version}" />
 
     <call target="build-sample-assembly" />
     <call target="get-path-to-assembly" />
@@ -1474,7 +1475,41 @@
     <fail if="${NON_SUCCESS}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::run-app should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
 
-    <!--property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate()}" /-->
+    <call target="should_we_skip" />
+
+    <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_activation')}" />
+    <fail unless="${string::starts-with(is_initialized, ' ')}"
+          message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_com_activation' argument return ${is_initialized}." />
+
+    <if test="${string::equal(bool::parse('false'), skip))}">
+      <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_load_in_memory_assembly')}" />
+      <fail if="${string::starts-with(is_initialized, ' ')}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_load_in_memory_assembly' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+
+      <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_winrt_activation')}" />
+      <fail if="${string::starts-with(is_initialized, ' ')}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_winrt_activation' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+    </if>
+
+    <if test="${version::greater(the_host_version, '3.1')}">
+      <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_register')}" />
+      <fail unless="${string::starts-with(is_initialized, ' ')}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_com_register' argument return ${is_initialized}." />
+    </if>
+
+    <if test="${string::equal(bool::parse('false'), skip))}">
+      <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_unregister')}" />
+      <fail if="${string::starts-with(is_initialized, ' ')}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_com_unregister' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+
+      <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_load_assembly_and_get_function_pointer')}" />
+      <fail if="${string::starts-with(is_initialized, ' ')}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_load_assembly_and_get_function_pointer' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+
+      <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_get_function_pointer')}" />
+      <fail if="${string::starts-with(is_initialized, ' ')}"
+            message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_get_function_pointer' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+    </if>
 
     <call target="core_host_unload" />
 
@@ -1492,7 +1527,7 @@
     <if test="${hostfxr::is-function-exists('get-runtime-delegate')}">
       <call target="hostfxr_initialize-for-runtime-config" />
 
-      <property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" />
+      <property name="type_of_delegate" value="net_hdt_load_assembly_and_get_function_pointer" />
 
       <property name="assembly_path" value="${path_to_assembly}" />
       <property name="type_name" value="Ant4C.Net.Module.Delegates, ${path::get-file-name-without-extension(path_to_assembly)}" />
@@ -1601,7 +1636,7 @@
     <call target="get-host_version" />
     <call target="get-path-to-assembly" />
 
-    <property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" />
+    <property name="type_of_delegate" value="net_hdt_load_assembly_and_get_function_pointer" />
 
     <property name="assembly_path" value="${path_to_assembly}" />
     <property name="type_name" value="Ant4C.Net.Module.Delegates, ${path::get-file-name-without-extension(path_to_assembly)}" />

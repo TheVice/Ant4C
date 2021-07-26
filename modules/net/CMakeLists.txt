@@ -24,6 +24,7 @@ add_library(net_gate
   "${CMAKE_CURRENT_SOURCE_DIR}/net.host_fxr.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.host_policy.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.host_policy.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/net_delegate.h"
 )
 
 target_include_directories(net_gate PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})

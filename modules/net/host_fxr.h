@@ -41,17 +41,6 @@ enum hostfxr_resolve_sdk2_result_keys
 	host_fxr_global_json_path
 };
 
-enum hostfxr_delegate_types
-{
-	host_fxr_hdt_com_activation,
-	host_fxr_hdt_load_in_memory_assembly,
-	host_fxr_hdt_winrt_activation,
-	host_fxr_hdt_com_register,
-	host_fxr_hdt_com_unregister,
-	host_fxr_hdt_load_assembly_and_get_function_pointer,
-	host_fxr_hdt_get_function_pointer
-};
-
 typedef void(calling_convention* hostfxr_get_available_sdks_result_type)(
 	int32_t count, const type_of_element** directories);
 typedef int32_t(delegate_calling_convention* hostfxr_delegate_function_type)(

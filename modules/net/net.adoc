@@ -519,13 +519,13 @@ Get pointer to the delegate of function from the assembly. In case of error func
 
 .Types of delegate.
 |===
-| host_fxr_hdt_com_activation
-| host_fxr_hdt_load_in_memory_assembly
-| host_fxr_hdt_winrt_activation
-| host_fxr_hdt_com_register
-| host_fxr_hdt_com_unregister
-| host_fxr_hdt_load_assembly_and_get_function_pointer
-| host_fxr_hdt_get_function_pointer
+| net_hdt_com_activation
+| net_hdt_load_in_memory_assembly
+| net_hdt_winrt_activation
+| net_hdt_com_register
+| net_hdt_com_unregister
+| net_hdt_load_assembly_and_get_function_pointer
+| net_hdt_get_function_pointer
 |===
 
 Alternative direct int values of types can be used in function call.
@@ -555,7 +555,7 @@ WARNING: It is caller response to put valid input data that interpret as pointer
 
 <target name="file_is-assembly">
 
-  <property name="type_of_delegate" value="host_fxr_hdt_load_assembly_and_get_function_pointer" />
+  <property name="type_of_delegate" value="net_hdt_load_assembly_and_get_function_pointer" />
 
   <property name="assembly_path" value="ant4c.net.module.clr.dll" />
   <property name="type_name" value="Ant4C.Net.Module.Delegates, ant4c.net.module.clr" />

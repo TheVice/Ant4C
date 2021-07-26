@@ -10,6 +10,7 @@
 #include "error_writer.h"
 #include "host_fxr.h"
 #include "net.common.h"
+#include "net_delegate.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -285,17 +286,6 @@ uint8_t hostfxr_get_runtime_delegate(
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 	struct buffer* output)
 {
-	static const uint8_t* types_of_delegate[] =
-	{
-		(const uint8_t*)"host_fxr_hdt_com_activation",
-		(const uint8_t*)"host_fxr_hdt_load_in_memory_assembly",
-		(const uint8_t*)"host_fxr_hdt_winrt_activation",
-		(const uint8_t*)"host_fxr_hdt_com_register",
-		(const uint8_t*)"host_fxr_hdt_com_unregister",
-		(const uint8_t*)"host_fxr_hdt_load_assembly_and_get_function_pointer",
-		(const uint8_t*)"host_fxr_hdt_get_function_pointer"
-	};
-
 	if (!ptr_to_host_fxr_object ||
 		!values ||
 		!values_lengths ||
@@ -305,8 +295,6 @@ uint8_t hostfxr_get_runtime_delegate(
 		return 0;
 	}
 
-	static const uint8_t host_fxr_hdt_max_value = host_fxr_hdt_get_function_pointer + 1;
-	/**/
 	const void* context = string_to_pointer(
 							  values[0], (uint8_t)values_lengths[0], output);
 
@@ -318,9 +306,9 @@ uint8_t hostfxr_get_runtime_delegate(
 
 	int32_t type_of_delegate = common_string_to_enum(
 								   values[1], values[1] + values_lengths[1],
-								   types_of_delegate, host_fxr_hdt_max_value);
+								   net_delegate_types_str, NET_DELEGATE_MAX_VALUE);
 
-	if (host_fxr_hdt_max_value == type_of_delegate)
+	if (NET_DELEGATE_MAX_VALUE == type_of_delegate)
 	{
 		if (!buffer_append(output, values[1], values_lengths[1]) ||
 			!buffer_push_back(output, 0))

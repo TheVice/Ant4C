@@ -37,6 +37,9 @@ uint8_t core_host_context_contract_run_app__(
 	const void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths,
 	uint8_t values_count, struct buffer* output);
+uint8_t core_host_context_contract_get_runtime_delegate__(
+	void* context_contract, const uint8_t* delegate_type,
+	uint16_t delegate_type_length, struct buffer* output);
 uint8_t core_host_initialize__(
 	const void* ptr_to_host_policy_object,
 	const void* init_request,
