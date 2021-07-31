@@ -1,38 +1,126 @@
+= ant4c.net.module(1)
+The Vice
+v2020.09.202107
+:doctype: manpage
+:manmanual: ANT4C.NET.MODULE
+:mansource: ANT4C.NET.MODULE
+:man-linkstyle: pass:[blue R < >]
 
-= ant4c.net.module help
-:toc:
+== Name
+
+ant4c.net.module - module for Ant4C program that allow to work with hosting layers of .NET - "host FXR" and "host policy", from xml script code.
 
 [[history]]
 == History
 
-* *v2020.09.202106* +
-Added namespace 'net', 'hostpolicy', 'corehost' and 'hostinterface'.
+* *v2020.09.202107* +
+** Added name spaces:
+*** 'corehost'
+*** 'corehost-context-contract'
+*** 'corehost-initialize-request'
+*** 'hostinterface'
+*** 'hostpolicy'
+*** 'net'
+** With functions:
+*** '<<corehost-functions,corehost::functions()>>'
+*** '<<corehost-is-function-exists,corehost::is-function-exists()>>'
+*** '<<corehost-initialize,corehost::initialize()>>'
+*** '<<corehost-load,corehost::load()>>'
+*** '<<corehost-main,corehost::main()>>'
+*** '<<corehost-main-with-output-buffer,corehost::main-with-output-buffer()>>'
+*** '<<corehost-resolve-component-dependencies,corehost::resolve-component-dependencies()>>'
+*** '<<corehost-set-error-writer,corehost::set-error-writer()>>'
+*** '<<corehost-unload,corehost::unload()>>'
+*** '<<corehost-context-contract-initialize,corehost-context-contract::initialize()>>'
+*** '<<corehost-context-contract-get-property-value,corehost-context-contract::get-property-value()>>'
+*** '<<corehost-context-contract-set-property-value,corehost-context-contract::set-property-value()>>'
+*** '<<corehost-context-contract-get-properties,corehost-context-contract::get-properties()>>'
+*** '<<corehost-context-contract-load-runtime,corehost-context-contract::load-runtime()>>'
+*** '<<corehost-context-contract-run-app,corehost-context-contract::run-app()>>'
+*** '<<corehost-context-contract-get-runtime-delegate,corehost-context-contract::get-runtime-delegate()>>'
+*** '<<corehost-initialize-request-initialize,corehost-initialize-request::initialize()>>'
+*** '<<corehost-initialize-request-set-config-keys,corehost-initialize-request::set-config-keys()>>'
+*** '<<corehost-initialize-request-set-config-values,corehost-initialize-request::set-config-values()>>'
+*** '<<hostinterface-initialize,hostinterface::initialize()>>'
+*** '<<hostinterface-set-additional-dependency-serialized,hostinterface::set-additional-dependency-serialized()>>'
+*** '<<hostinterface-set-application-path,hostinterface::set-application-path()>>'
+*** '<<hostinterface-set-config-keys,hostinterface::set-config-keys()>>'
+*** '<<hostinterface-set-config-values,hostinterface::set-config-values()>>'
+*** '<<hostinterface-set-dependency-file,hostinterface::set-dependency-file()>>'
+*** '<<hostinterface-set-dotnet-root,hostinterface::set-dotnet-root()>>'
+*** '<<hostinterface-set-file-bundle-header-offset,hostinterface::set-file-bundle-header-offset()>>'
+*** '<<hostinterface-set-framework-dependent,hostinterface::set-framework-dependent()>>'
+*** '<<hostinterface-set-framework-directories,hostinterface::set-framework-directories()>>'
+*** '<<hostinterface-set-framework-directory,hostinterface::set-framework-directory()>>'
+*** '<<hostinterface-set-framework-found-versions,hostinterface::set-framework-found-versions()>>'
+*** '<<hostinterface-set-framework-name,hostinterface::set-framework-name()>>'
+*** '<<hostinterface-set-framework-names,hostinterface::set-framework-names()>>'
+*** '<<hostinterface-set-framework-requested-versions,hostinterface::set-framework-requested-versions()>>'
+*** '<<hostinterface-set-framework-version,hostinterface::set-framework-version()>>'
+*** '<<hostinterface-set-host-command,hostinterface::set-host-command()>>'
+*** '<<hostinterface-set-host-mode,hostinterface::set-host-mode()>>'
+*** '<<hostinterface-set-host-path,hostinterface::set-host-path()>>'
+*** '<<hostinterface-set-patch-roll-forward,hostinterface::set-patch-roll-forward()>>'
+*** '<<hostinterface-set-paths-for-probing,hostinterface::set-paths-for-probing()>>'
+*** '<<hostinterface-set-prerelease-roll-forward,hostinterface::set-prerelease-roll-forward()>>'
+*** '<<hostinterface-set-target-framework-moniker,hostinterface::set-target-framework-moniker()>>'
+*** '<<hostpolicy-initialize,hostpolicy::initialize()>>'
+*** '<<net-result-to-string,net::result-to-string()>>'
 
-WARNING: Breaking change - function 'result-to-string' was moved from namespace 'hostfxr' to the 'net'.
+WARNING: Breaking changes - function 'result-to-string' was move from name space 'hostfxr' to the 'net', changed prefix at the type of delegate from 'host_fxr_*' to the 'net_*'.
 
 * *v2020.09*
+** Module contains name spaces:
+*** 'file'
+*** 'hostfxr'
+*** 'nethost'
+** With functions:
+*** '<<file-is-assembly,file::is-assembly()>>'
+*** '<<hostfxr-close,hostfxr::close()>>'
+*** '<<hostfxr-functions,hostfxr::functions()>>'
+*** '<<hostfxr-get-available-sdks,hostfxr::get-available-sdks()>>'
+*** '<<hostfxr-get-native-search-directories,hostfxr::get-native-search-directories()>>'
+*** '<<hostfxr-get-runtime-delegate,hostfxr::get-runtime-delegate()>>'
+*** '<<hostfxr-get-runtime-properties,hostfxr::get-runtime-properties()>>'
+*** '<<hostfxr-get-runtime-property-value,hostfxr::get-runtime-property-value()>>'
+*** '<<hostfxr-initialize,hostfxr::initialize()>>'
+*** '<<hostfxr-initialize-for-dotnet-command-line,hostfxr::initialize-for-dotnet-command-line()>>'
+*** '<<hostfxr-initialize-for-runtime-config,hostfxr::initialize-for-runtime-config()>>'
+*** '<<hostfxr-is-function-exists,hostfxr::is-function-exists()>>'
+*** '<<hostfxr-main,hostfxr::main()>>'
+*** '<<hostfxr-main-bundle-startupinfo,hostfxr::main-bundle-startupinfo()>>'
+*** '<<hostfxr-main-startupinfo,hostfxr::main-startupinfo()>>'
+*** '<<hostfxr-resolve-sdk,hostfxr::resolve-sdk()>>'
+*** '<<hostfxr-resolve-sdk2,hostfxr::resolve-sdk2()>>'
+*** 'hostfxr::result-to-string()'
+*** '<<hostfxr-run-app,hostfxr::run-app()>>'
+*** '<<hostfxr-set-error-writer,hostfxr::set-error-writer()>>'
+*** '<<hostfxr-set-runtime-property-value,hostfxr::set-runtime-property-value()>>'
+*** '<<nethost-get-hostfxr-path,nethost::get-hostfxr-path()>>'
 
 == Installation
-Place dll/so file in the folder known for ant4c application or use direct path to the binary file from the script. +
+Place dll/so/dylib file in the folder known for ant4c application or use direct path to the binary file from the script. +
 Use ant4c version that support modules.
 
 == Module reference
 
 === Types structure
 
-In this document used type *pointer*. +
-Next structure describe his relationship to the *string* type.
+In this document used types *pointer* and *size_t*. +
+Next structure describe they relationship with *string* type.
 
 * string
 ** pointer
+** size_t
 
-All rest types locate in same hierarchy positions like described at the documentation of Ant4C.
+All rest of types locate in same hierarchy positions like described at the documentation of Ant4C.
 
 === Net unit
 
-.Functions from host fx resolver.
+.Functions from net unit.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<net-result-to-string,result-to-string>> | Explain return code of functions.
 |===
 
@@ -80,20 +168,21 @@ Return string description of return code.
 Output will be:
 ----
 net::result-to-string(-1) -> 0xffffffff -1 255
-net::result-to-string(0) -> [host fx resolver]::Success (0x0 0 0)
-net::result-to-string(1) -> [host fx resolver]::Success_HostAlreadyInitialized (0x1 1 1)
+net::result-to-string(0) -> [net]::Success (0x0 0 0)
+net::result-to-string(1) -> [net]::Success_HostAlreadyInitialized (0x1 1 1)
 net::result-to-string(3) -> 0x3 3 3
 net::result-to-string(-2147024808) -> 0x80070058 -2147024808 88
 net::result-to-string(-2147024809) -> [win error]::E_INVALIDARG (0x80070057 -2147024809 87)
-net::result-to-string(-2147450714) -> [host fx resolver]::HostApiUnsupportedScenario (0x800080a6 -2147450714 166)
+net::result-to-string(-2147450714) -> [net]::HostApiUnsupportedScenario (0x800080a6 -2147450714 166)
 net::result-to-string(-2147450713) -> 0x800080a7 -2147450713 167
 ----
 
-=== Host fx resolver unit
+=== Functions for access host via FXR layer.
 
 .Functions from host fx resolver.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<hostfxr-functions,functions>> | Return list of functions available for the current version of host library.
 | <<hostfxr-initialize,initialize>> | Initialize unit functions.
 | <<hostfxr-is-function-exists,is-function-exists>> | Return *true* in case proposed function exists.
@@ -309,13 +398,14 @@ ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so"
 
 .Functions from host fx resolver, depend on version.
 |===
-.s| Script function .s| Host version .s| Description
+| Script function | Host version | Description
+
 | <<hostfxr-main,main>> ^| 1.0+ | API access to the dotnet tool.
-| <<hostfxr-resolve-sdk,resolve-sdk>> ^| 2.0+ | Get path to the sdk. If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred to use.
-| <<hostfxr-get-available-sdks,get-available-sdks>> .4+^.^| 2.1+ | Get available sdks at current environment.
+| <<hostfxr-resolve-sdk,resolve-sdk>> ^| 2.0+ | Get path to the SDK. If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred to use.
+| <<hostfxr-get-available-sdks,get-available-sdks>> .4+^.^| 2.1+ | Get available SDKs at current environment.
 | <<hostfxr-get-native-search-directories,get-native-search-directories>> | Get list of directories that will be used while resolving dependency for assembly.
 | <<hostfxr-main-startupinfo,main-startupinfo>> | API access to the dotnet tool. Addition parameter can be put.
-| <<hostfxr-resolve-sdk2,resolve-sdk2>> | Get path to the sdk.
+| <<hostfxr-resolve-sdk2,resolve-sdk2>> | Get path to the SDK.
 | <<hostfxr-close,close>> .9+^.^| 3.0+ | Close early opened context.
 | <<hostfxr-get-runtime-delegate,get-runtime-delegate>> | Get pointer to the delegate of function from the assembly.
 | <<hostfxr-get-runtime-properties,get-runtime-properties>> | Get properties of runtime.
@@ -397,11 +487,11 @@ NOTE: In above example value of first parameter is empty string.
 
 *directory* 'hostfxr::resolve-sdk'(*directory* executable_directory, *directory* working_directory)
 
-Return path to the sdk directory. +
+Return path to the SDK directory. +
 Description of host fx parameters can be found in the documentation of resolver. +
 If path can not be located, return code in the string is returned.
 
-NOTE: Some environment may inform in standard output that sdk not installed if this function called.
+NOTE: Some environment may inform in standard output that SDK not installed if this function called.
 NOTE: If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred to use.
 
 ===== Sample using
@@ -421,7 +511,7 @@ NOTE: If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred
 *directory*[] hostfxr::get-available-sdks() +
 *directory*[] hostfxr::get-available-sdks(*directory* executable_directory)
 
-Return paths to directories with installed sdks.
+Return paths to directories with installed SDKs.
 
 ===== Sample using
 
@@ -480,7 +570,7 @@ Description of host fx parameters can be found in the documentation of resolver.
 
 *string*[] 'hostfxr::resolve-sdk2'(*directory* executable_directory, *directory* working_directory, *int* key)
 
-Get paths to the directories with sdks. +
+Get paths to the directories with SDKs. +
 Function return list of strings, each one have key and path to the directory delimiter with space (' ') symbol.
 
 ----
@@ -756,7 +846,7 @@ WARNING: It is caller response to put valid input data that interpret as pointer
 *pointer* 'hostfxr::set-error-writer'(*file* path_to_file_for_error_writer)
 
 Set error writer of resolver. +
-First version will unset error writer. +
+First version of function will unset error writer. +
 If path is empty - that call also unset error writer. +
 Function return pointer to the current error writer - pointer to the function used for that purpose. +
 If no writer set early - null pointer will be returned.
@@ -819,11 +909,723 @@ WARNING: It is caller response to put valid input data that interpret as pointer
 This function can do same things that accompanying with host fx resolver dotnet tool can. +
 Description of host fx parameters can be found in the documentation of resolver.
 
+=== Functions for access host via host policy layer.
+
+There are several names that allow to work with host via host policy API layer.
+
+==== Host policy unit
+
+Function from this unit fill list of functions to the corehost name space.
+
+[[hostpolicy-initialize]]
+===== initialize
+
+*bool* 'hostpolicy::initialize'(*file* path_to_host_policy)
+
+If function return *true* - functions will be added to the corehost name space.
+
+====== Sample using
+
+----
+<fail
+  unless="${property::exists('DOTNET_ROOT')}"
+  message="Property 'DOTNET_ROOT' required to run this sample." />
+
+<property name="net_core_app_with_version"
+  value="${path::combine(DOTNET_ROOT, 'shared')}" />
+<property name="net_core_app_with_version"
+  value="${path::combine(net_core_app_with_version, 'Microsoft.NETCore.App')}" />
+<property name="net_core_app_with_version"
+  value="${path::combine(net_core_app_with_version, '5.0.8')}" />
+
+<property name="host_policy_file_name"
+  value="${path::combine(net_core_app_with_version, 'hostpolicy.dll')}" />
+<property name="host_policy_file_name"
+  unless="${file::exists(host_policy_file_name)}"
+  value="${path::combine(net_core_app_with_version, 'libhostpolicy.so')}" />
+<property name="host_policy_file_name"
+  unless="${file::exists(host_policy_file_name)}"
+  value="${path::combine(net_core_app_with_version, 'libhostpolicy.dylib')}" />
+
+<fail unless="${file::exists(host_policy_file_name)}"
+  message="File '${host_policy_file_name}' is not exists." />
+
+<fail unless="${hostpolicy::initialize(host_policy_file_name)}"
+  message="Function 'hostpolicy::initialize' is failed." />
+----
+
+==== Core host unit
+
+.Functions from core host interface unit.
+|===
+| Script function | Description
+
+| <<corehost-functions,functions>> | Return list of functions available for the current version of host library.
+| <<corehost-is-function-exists,is-function-exists>> | Return *true* in case proposed function exists.
+|===
+
+[[corehost-functions]]
+===== functions
+
+*string* 'corehost::functions'() +
+*string* 'corehost::functions'(*string* delimiter)
+
+Return list of functions that can be used at current version of host policy. +
+If parameter pass - value of first one will be placed between functions. +
+If no parameter pass - space symbol will be used as delimiter for names of functions.
+
+WARNING: Function <<hostpolicy-initialize,hostpolicy::initialize()>> should be call before attempt to use this one.
+
+NOTE: This function have no forward compatibility. +
+If host policy publish with new functions, that not described at this help, +
+new one's will not be in the return of this function.
+
+[[corehost-is-function-exists]]
+===== is-function-exists
+
+*bool* 'corehost::is-function-exists'(*string* function_name)
+
+Return *true* if name of input function available at the current version of host policy.
+
+WARNING: Function <<hostpolicy-initialize,hostpolicy::initialize()>>  should be call before attempt to use this one.
+
+NOTE: This function have no forward compatibility. +
+If host policy publish with new functions, that not described at this help, +
+new one's can not be check by this function. Function return *false* in that case.
+
+.Functions from core host interface unit, depend on version.
+|===
+| Script function | Host version | Description
+
+| <<corehost-load,load>> .3+^.^| 1.0+ | Initialize the host policy by store information that was early set by functions from <<hostinterface,host interface>> name space.
+| <<corehost-main,main>> | Run application.
+| <<corehost-unload,unload>> | Uninitialize the host policy.
+| <<corehost-main-with-output-buffer,main-with-output-buffer>> ^.^| 2.1+ | Run application and return it output.
+| <<corehost-initialize,initialize>> .3+^.^| 3.0+ | Initialize the host policy via request and options and return context contract.
+| <<corehost-resolve-component-dependencies,resolve-component-dependencies>> | Resolve dependencies for specific component.
+| <<corehost-set-error-writer,set-error-writer>> | Set error writer of host policy.
+|===
+
+[[corehost-load]]
+===== load
+
+*int* 'corehost::load'()
+
+This function save information that was set early by function from <<hostinterface,host interface>> name space. +
+Second call, if <<corehost-unload,unload>> was not called, will ignored data from <<hostinterface,host interface>> functions.
+
+[[corehost-main]]
+===== main
+
+*int* 'corehost::main'(*string*[] arguments)
+
+After loading is complete application that was set at the '<<hostinterface-set-application-path,hostinterface::set-application-path()>>' function can be start with specific argument(s). +
+Function return exit code of application or error code of functional that attempt to start application.
+
+[[corehost-unload]]
+===== unload
+
+*int* 'corehost::unload'()
+
+Unload the host policy. After this call it is able to set new data via <<hostinterface,host interface>> functions that will be read by <<corehost-load,'load'>> function.
+
+[[corehost-main-with-output-buffer]]
+===== main-with-output-buffer
+
+*string* 'corehost::main-with-output-buffer'(*string*[] arguments)
+
+Indentical to the <<corehost-main,'main'>> function, but output will be returned on success. +
+If function is failed - error code after space symbol will be at the output.
+
+====== Sample using
+
+----
+<property name="return_of_main" value="${corehost::main-with-output-buffer('1', '2', '3')}" />
+
+<fail if="${string::empty(return_of_main)}"
+  message="Value of property 'return_of_main' is empty." />
+
+<property name="return_of_main_code" value="${string::trim(return_of_main)}" />
+
+<property name="NON_SUCCESS" value="${math::less(return_of_main_code, '0')}" />
+<property name="NON_SUCCESS" value="${math::greater(return_of_main_code, '2')}" unless="${NON_SUCCESS}" />
+
+<fail if="${NON_SUCCESS}"
+  message="corehost::main-with-output-buffer should return success result, instead returned ${return_of_main_code} ${net::result-to-string(return_of_main_code)}" />
+----
+
+[[corehost-initialize]]
+===== initialize
+
+*int* 'corehost::initialize'(*string* options) +
+*int* 'corehost::initialize'(*int* options) +
+*int* 'corehost::initialize'(*string* options, *string* not_used) +
+*int* 'corehost::initialize'(*int* options, *string* not_used)
+
+Initialize the host policy via request and options.
+
+In order to use this function - <<corehost-context-contract-initialize,corehost-context-contract::initialize()>> should be call before.
+Third and fourth version should be used for first call of function. +
+Before call function second time - function <<corehost-initialize-request-initialize,initialize>> from <<corehost-initialize-request, corehost-initialize-request>> name space should be call,
+and first and second versions used for that purpose. +
+
+.Options.
+|===
+| none
+| wait_for_initialized
+| get_contract
+| context_contract_version_set
+|===
+
+If option can not be recognized - value will be interpreted as *int* type and second or fourth versions will be used.
+
+If function return success code - other functions from <<corehost-context-contract,corehost-context-contract>> name space can be used.
+
+====== Sample using
+
+----
+<property name="is_initialized" value="${corehost-context-contract::initialize()}" />
+<property name="is_initialized" value="${corehost::initialize('none', '')}" />
+
+<property name="NON_SUCCESS" value="${math::less(is_initialized, '0')}" />
+<property name="NON_SUCCESS" value="${math::greater(is_initialized, '2')}" unless="${NON_SUCCESS}" />
+
+<fail if="${NON_SUCCESS}"
+      message="corehost::initialize should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
+
+<property name="property_name" value="RUNTIME_IDENTIFIER" />
+<property name="property_value" value="${corehost-context-contract::get-property-value(property_name)}" />
+<echo>property_value -> '${property_value}' ${net::result-to-string(string::trim(property_value))}</echo>
+----
+
+[[corehost-resolve-component-dependencies]]
+===== resolve-component-dependencies
+
+*string* 'corehost::resolve-component-dependencies'(*path* assembly)
+
+Resolve dependencies for specific component.
+
+====== Sample using
+
+----
+<choose>
+  <when test="${platform::is-unix()}">
+    <property name="path_delimiter" value=":" />
+  </when>
+  <when test="${platform::is-windows()}">
+    <property name="path_delimiter" value=";" />
+  </when>
+</choose>
+
+<property name="dependencies" value="${corehost::resolve-component-dependencies(path_to_assembly)}" />
+<echo>dependencies -> '${dependencies}' ${net::result-to-string(dependencies)}</echo>
+
+<foreach item="String" in="${dependencies}" delim="${path_delimiter}" property="dependency" trim="Both">
+  <fail unless="${path::is-path-rooted(dependency)}"
+        message="Path should be rooted, instead it '${dependency}' (${net::result-to-string(string::trim(dependencies))})." />
+  <echo>dependency -> '${dependency}'</echo>
+</foreach>
+----
+
+[[corehost-set-error-writer]]
+===== set-error-writer
+
+*pointer* 'corehost::set-error-writer'() +
+*pointer* 'corehost::set-error-writer'(*file* path_to_file_for_error_writer)
+
+Set error writer of host policy. +
+First version of function will unset error writer. +
+If path is empty - that call also unset error writer. +
+Function return pointer to the current error writer - pointer to the function used for that purpose. +
+If no writer set early - null pointer will be returned.
+
+Set error writer of host policy.
+
+[[hostinterface]]
+==== Host interface unit
+
+Functions from this name space set data that will be used by <<corehost-load, 'corehost::load'()>> function. +
+Some of data will not be used by host according to it version or/and if version pass to the <<hostinterface-initialize,initialize>> function is less than recommended.
+
+.Functions from host interface unit.
+|===
+| Script function | Description
+
+| <<hostinterface-initialize,initialize>> | Set values of data to the defaults. This function should be called at least once.
+| <<hostinterface-set-additional-dependency-serialized,set-additional-dependency-serialized>> | Set addition dependency serialized.
+| <<hostinterface-set-application-path,set-application-path>> | Set path to the application.
+| <<hostinterface-set-config-keys,set-config-keys>> | Set keys of configuration. Count should be equal to the count of values.
+| <<hostinterface-set-config-values,set-config-values>> | Set values of configuration. Count should be equal to the count of keys.
+| <<hostinterface-set-dependency-file,set-dependency-file>> | Set dependency file.
+| <<hostinterface-set-dotnet-root,set-dotnet-root>> | Set dotnet root directory.
+| <<hostinterface-set-file-bundle-header-offset,set-file-bundle-header-offset>> | Set offset of header.
+| <<hostinterface-set-framework-dependent,set-framework-dependent>> | Set depend on framework.
+| <<hostinterface-set-framework-directories,set-framework-directories>> | Set framework directories.
+| <<hostinterface-set-framework-directory,set-framework-directory>> | Set framework directory.
+| <<hostinterface-set-framework-found-versions,set-framework-found-versions>> | Set found versions.
+| <<hostinterface-set-framework-name,set-framework-name>> | Set framework name.
+| <<hostinterface-set-framework-names,set-framework-names>> | Set framework names.
+| <<hostinterface-set-framework-requested-versions,set-framework-requested-versions>> | Set requsted framework versions.
+| <<hostinterface-set-framework-version,set-framework-version>> | Set framework version.
+| <<hostinterface-set-host-command,set-host-command>> | Set host command.
+| <<hostinterface-set-host-mode,set-host-mode>> | Set host mode.
+| <<hostinterface-set-host-path,set-host-path>> | Set path to host program.
+| <<hostinterface-set-patch-roll-forward,set-patch-roll-forward>> | Set patch roll forward.
+| <<hostinterface-set-paths-for-probing,set-paths-for-probing>> | Set probing paths.
+| <<hostinterface-set-prerelease-roll-forward,set-prerelease-roll-forward>> | Set pre release roll forward.
+| <<hostinterface-set-target-framework-moniker,set-target-framework-moniker>> | Set target framework moniker.
+|===
+
+[[hostinterface-initialize]]
+===== initialize
+
+*bool* 'hostinterface::initialize'(*size_t* version_high)
+
+Set values of data to the defaults. At the argument - high part of version for the internal structure, it depend on host version, at the moment when this documentation was write value '369365249' should be used. Lover part of version will set at the internally.
+
+[[hostinterface-set-additional-dependency-serialized]]
+===== set-additional-dependency-serialized
+
+*bool* 'hostinterface::set-additional-dependency-serialized'(*string* dependency)
+
+Set addition dependency serialized. See host documentation for addition notes.
+
+[[hostinterface-set-application-path]]
+===== set-application-path
+
+*bool* 'hostinterface::set-application-path'(*path* application)
+
+Set path to the application.
+
+[[hostinterface-set-config-keys]]
+===== set-config-keys
+
+*bool* 'hostinterface::set-config-keys'(*string[]* keys)
+
+Set keys of configuration. Count should be equal to the count of values.
+
+[[hostinterface-set-config-values]]
+===== set-config-values
+
+*bool* 'hostinterface::set-config-values'(*string[]* keys)
+
+Set values of configuration. Count should be equal to the count of keys.
+
+====== Sample using
+
+----
+<property name="is_set"
+  value="${hostinterface::set-config-keys('a', 'b', 'c', 'd', 'e')}" />
+<property name="is_set"
+  value="${hostinterface::set-config-values('123', '4567', '89', '0', '5')}" />
+----
+
+[[hostinterface-set-dependency-file]]
+===== set-dependency-file
+
+*bool* 'hostinterface::set-dependency-file'(*path* dependency)
+
+Set dependency file. See host documentation for addition notes.
+
+[[hostinterface-set-dotnet-root]]
+===== set-dotnet-root
+
+*bool* 'hostinterface::set-dotnet-root'(*path* dotnet_root)
+
+Set dotnet root directory.
+
+[[hostinterface-set-file-bundle-header-offset]]
+===== set-file-bundle-header-offset
+
+*bool* 'hostinterface::set-file-bundle-header-offset'(*size_t* offset)
+
+Set offset of header. See host documentation for addition notes.
+
+[[hostinterface-set-framework-dependent]]
+===== set-framework-dependent
+
+*bool* 'hostinterface::set-framework-dependent'(*size_t* is_depend)
+
+Set depend on framework.
+
+[[hostinterface-set-framework-directories]]
+===== set-framework-directories
+
+*bool* 'hostinterface::set-framework-directories'(*path[]* framework_directories)
+
+Set framework directories.
+
+NOTE: It is important to call both functions - 'set-framework-directories' and 'set-framework-directory' in order to be compatibility with wide list of host versions. +
+Second argument of 'set-framework-directories' should be equal to the argument of 'set-framework-directory' and first be empty *string*.
+
+[[hostinterface-set-framework-directory]]
+===== set-framework-directory
+
+*bool* 'hostinterface::set-framework-directory'(*path* framework_directory)
+
+Set framework directory.
+
+NOTE: It is important to call both functions - 'set-framework-directories' and 'set-framework-directory' in order to be compatibility with wide list of host versions. +
+Second argument of 'set-framework-directories' should be equal to the argument of 'set-framework-directory' and first be empty *string*.
+
+====== Sample using
+
+----
+<fail
+  unless="${property::exists('DOTNET_ROOT')}"
+  message="Property 'DOTNET_ROOT' required to run this sample." />
+
+<property
+  name="framework_directory"
+  value="${path::combine(DOTNET_ROOT, 'shared')}" />
+<property
+  name="framework_directory"
+  value="${path::combine(framework_directory, 'Microsoft.NETCore.App')}" />
+<property
+  name="framework_directory"
+  value="${path::combine(framework_directory, '5.0.8')}" />
+
+<property
+  name="is_initialized"
+  value="${hostinterface::initialize('369365249')}" />
+
+<property
+  name="is_initialized"
+  value="${hostinterface::set-framework-directory(framework_directory)}" />
+<property
+  name="is_initialized"
+  value="${hostinterface::set-framework-directories('', framework_directory)}" />
+----
+
+[[hostinterface-set-framework-found-versions]]
+===== set-framework-found-versions
+
+*bool* 'hostinterface::set-framework-found-versions'(*string*[] versions)
+
+Set found versions.
+
+NOTE: For compatibility reason first argument should be empty.
+
+====== Sample using
+
+----
+<property
+  name="is_set"
+  value="${hostinterface::set-framework-found-versions('', '5.0.0')}" />
+----
+
+[[hostinterface-set-framework-name]]
+===== set-framework-name
+
+*bool* 'hostinterface::set-framework-name'(*string* name)
+
+Set framework name.
+
+NOTE: It is important to call both functions - 'set-framework-names' and 'set-framework-name' in order to be compatibility with wide list of host versions. +
+Second argument of 'set-framework-names' should be equal to the argument of 'set-framework-name' and first be empty *string*.
+
+[[hostinterface-set-framework-names]]
+===== set-framework-names
+
+*bool* 'hostinterface::set-framework-names'(*string*[] names)
+
+Set framework names.
+
+NOTE: It is important to call both functions - 'set-framework-names' and 'set-framework-name' in order to be compatibility with wide list of host versions. +
+Second argument of 'set-framework-names' should be equal to the argument of 'set-framework-name' and first be empty *string*.
+
+====== Sample using
+
+----
+<property name="is_set"
+  value="${hostinterface::set-framework-name('Microsoft.NETCore.App')}" />
+<property name="is_set"
+  value="${hostinterface::set-framework-names('', 'Microsoft.NETCore.App')}" />
+----
+
+[[hostinterface-set-framework-requested-versions]]
+===== set-framework-requested-versions
+
+*bool* 'hostinterface::set-framework-requested-versions'(*string*[] versions)
+
+Set requsted framework versions.
+
+NOTE: For compatibility reason first argument should be empty.
+
+====== Sample using
+
+----
+<property
+  name="is_set"
+  value="${hostinterface::set-framework-requested-versions('', '5.0.0')}" />
+----
+
+[[hostinterface-set-framework-version]]
+===== set-framework-version
+
+*bool* 'hostinterface::set-framework-version'(*string* version)
+
+Set framework version.
+
+[[hostinterface-set-host-command]]
+===== set-host-command
+
+*bool* 'hostinterface::set-host-command'(*string* command)
+
+Set host command.
+
+====== Sample using
+
+----
+<property
+  name="host_command" value="get-native-search-directories" />
+<property
+  name="is_set" if="${property::exists('host_command')}"
+  value="${hostinterface::set-host-command(host_command)}" />
+----
+
+[[hostinterface-set-host-mode]]
+===== set-host-mode
+
+*bool* 'hostinterface::set-host-mode'(*string* mode) +
+*bool* 'hostinterface::set-host-mode'(*size_t* mode)
+
+Set host mode.
+
+First version of function can use one of the following values.
+
+.Modes.
+|===
+| invalid
+| muxer
+| apphost
+| split_fx
+| libhost
+|===
+
+If mode can not be recognized - second version of function will be use and value will be interpreted as *size_t* type.
+
+====== Sample using
+
+----
+<property
+  name="is_set" value="${hostinterface::set-host-mode('libhost')}" />
+----
+
+[[hostinterface-set-host-path]]
+===== set-host-path
+
+*bool* 'hostinterface::set-host-path'(*path* host)
+
+Set path to host program.
+
+====== Sample using
+
+----
+<fail
+  unless="${property::exists('DOTNET_ROOT')}"
+  message="Property 'DOTNET_ROOT' required to run this sample." />
+
+<property
+  name="program" if="${platform::is-unix()}"
+  value="${path::combine(DOTNET_ROOT, 'dotnet')}" />
+<property
+  name="program" if="${platform::is-windows()}"
+  value="${path::combine(DOTNET_ROOT, 'dotnet.exe')}" />
+<property
+  name="is_initialized"
+  value="${hostinterface::set-host-path(program)}" />
+----
+
+[[hostinterface-set-patch-roll-forward]]
+===== set-patch-roll-forward
+
+*bool* 'hostinterface::set-patch-roll-forward'(*size_t* patch_roll_forward)
+
+Set patch roll forward. +
+By default, after function <<hostinterface-initialize,hostinterface::initialize>> return *true*, this value is set to the '1'.
+
+[[hostinterface-set-paths-for-probing]]
+===== set-paths-for-probing
+
+*bool* 'hostinterface::set-paths-for-probing'(*path*[] paths)
+
+Set probing paths.
+
+====== Sample using
+
+----
+<property name="is_initialized" if="${platform::is-windows()}"
+  value="${hostinterface::set-paths-for-probing(
+    path::combine(environment::get-folder-path('UserProfile'), '.nuget\packages'),
+    path::combine(environment::get-folder-path('UserProfile'), '.dotnet\NuGetFallbackFolder'),
+    path::combine(environment::get-folder-path('ProgramFiles'), 'dotnet\sdk\NuGetFallbackFolder'))}" />
+<property name="is_initialized" unless="${platform::is-windows()}"
+  value="${hostinterface::set-paths-for-probing(
+    path::combine(environment::get-folder-path('UserProfile'), '.nuget/packages'),
+    path::combine(environment::get-folder-path('UserProfile'), '.dotnet/NuGetFallbackFolder'))}" />
+----
+
+[[hostinterface-set-prerelease-roll-forward]]
+===== set-prerelease-roll-forward
+
+*bool* 'hostinterface::set-prerelease-roll-forward'(*size_t* roll_forward)
+
+Set pre release roll forward.
+
+[[hostinterface-set-target-framework-moniker]]
+===== set-target-framework-moniker
+
+*bool* 'hostinterface::set-target-framework-moniker'(*string* moniker)
+
+Set target framework moniker.
+
+====== Sample using
+
+----
+<property
+  name="moniker"
+  value="netcoreapp5.0" />
+<property
+  name="is_initialized"
+  value="${hostinterface::set-target-framework-moniker(moniker)}" />
+----
+
+[[corehost-initialize-request]]
+==== Core host initialize request unit
+
+.Functions from core host initialize request unit.
+|===
+| Script function | Description
+
+| <<corehost-initialize-request-initialize,initialize>> | TODO
+| <<corehost-initialize-request-set-config-keys,set-config-keys>> | TODO
+| <<corehost-initialize-request-set-config-values,set-config-values>> | TODO
+|===
+
+[[corehost-initialize-request-initialize]]
+===== initialize
+
+TODO
+
+[[corehost-initialize-request-set-config-keys]]
+===== set-config-keys
+
+TODO
+
+[[corehost-initialize-request-set-config-values]]
+===== set-config-values
+
+TODO
+
+[[corehost-context-contract]]
+==== Core host context contract unit
+
+.Functions from core host context contract unit.
+|===
+| Script function | Description
+
+| <<corehost-context-contract-initialize,initialize>> | TODO
+| <<corehost-context-contract-get-property-value,get-property-value>> | TODO
+| <<corehost-context-contract-set-property-value,set-property-value>> | TODO
+| <<corehost-context-contract-get-properties,get-properties>> | TODO
+| <<corehost-context-contract-load-runtime,load-runtime>> | TODO
+| <<corehost-context-contract-run-app,run-app>> | TODO
+| <<corehost-context-contract-get-runtime-delegate,get-runtime-delegate>> | TODO
+|===
+
+[[corehost-context-contract-initialize]]
+===== initialize
+
+TODO
+
+[[corehost-context-contract-get-property-value]]
+===== get-property-value
+
+TODO
+
+[[corehost-context-contract-set-property-value]]
+===== set-property-value
+
+TODO
+
+[[corehost-context-contract-get-properties]]
+===== get-properties
+
+TODO
+
+[[corehost-context-contract-load-runtime]]
+===== load-runtime
+
+TODO
+
+[[corehost-context-contract-run-app]]
+===== run-app
+
+TODO
+
+[[corehost-context-contract-get-runtime-delegate]]
+===== get-runtime-delegate
+
+TODO
+
+=== File unit
+
+IMPORTANT: To access function from this name space - program option *modulepriority* should be used at ant4c command arguments. Otherwise script with this function will fail according to not founded function from name space 'file'.
+
+.Function from file unit.
+|===
+| Script function | Description
+
+| <<file-is-assembly,file::is-assembly>> | Check if file at the given path is .NET assembly. If file not exists function will fail.
+|===
+
+[[file-is-assembly]]
+==== is-assembly
+
+*bool* file::is-assembly(*file* path_to_assembly) +
+*bool* file::is-assembly(*file* path_to_assembly, *pointer* the_delegate) (only for hosts that have 'get-runtime-delegate' function) +
+*bool* file::is-assembly(*file* path_to_assembly, *file* path_to_assembly_with_main_function) (only for hosts that do not have 'get-runtime-delegate' function)
+
+If path point to the .NET assembly file *true* will be returned. +
+If no delegate provided function will generate own based on configuration file that assumed that .NET Core 3.1 is installed (for example see configuration for <<hostfxr-initialize-for-runtime-config,initialize-for-runtime-config>> function). +
+If host less than 3.1 version it will call main function of CLR side 'ant4c.net.module' library instead. +
+Function <<hostfxr-get-runtime-delegate,get-runtime-delegate>> can be used to obtain 'the_delegate'.
+
+WARNING: It is caller response to put valid input data that interpret as pointer to delegate of function.
+
+===== Sample using
+
+----
+<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.dll')}" />
+<echo>is-assembly -> ${is-assembly}</echo>
+
+<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll')}" />
+<echo>is-assembly -> ${is-assembly}</echo>
+
+<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_')}" failonerror="false" />
+
+<if test="${string::equal('False', hostfxr::is-function-exists('get-runtime-delegate'))}">
+  <property name="is_assembly"
+            value="${file::is-assembly('ant4c.net.module.clr.dll', 'ant4c.net.module.clr.dll')}" />
+
+  <echo>is_assembly -> '${is_assembly}'</echo>
+</if>
+
+----
+
+----
+ant4c /f:sample.build -modulepriority
+----
+
+At first call of function path to non assembly file placed, second path to assembly, third to the non exists file placed and last one call at host without 'get-runtime-delegate' support.
+
 === Net host unit
 
 .Function from net host unit.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<nethost-get-hostfxr-path,nethost::get-hostfxr-path>> | Get path to host fx resolver file.
 |===
 
@@ -928,233 +1730,11 @@ hostfxr_path -> '/usr/share/dotnet/host/fxr/3.1.13/libhostfxr.so'
 
 IMPORTANT: Not all versions of host fx resolver have accompanying nethost library.
 
-=== Host interface unit
+== Resources
 
-This unit prepare structure that will be used at the <<corehost-initialize,corehost::initialize>> function.
+*Project web site:* https://github.com/TheVice/Ant4C
 
-.Functions from host interface unit.
-|===
-.s| Script function .s| Description
-| <<hostinterface-initialize,hostinterface::initialize>> | TODO
-| <<hostinterface-set-additional-dependency-serialized,hostinterface::set-additional-dependency-serialized>> | TODO
-| <<hostinterface-set-application-path,hostinterface::set-application-path>> | TODO
-| <<hostinterface-set-config-keys,hostinterface::set-config-keys>> | TODO
-| <<hostinterface-set-config-values,hostinterface::set-config-values>> | TODO
-| <<hostinterface-set-dependency-file,hostinterface::set-dependency-file>> | TODO
-| <<hostinterface-set-dotnet-root,hostinterface::set-dotnet-root>> | TODO
-| <<hostinterface-set-file-bundle-header-offset,hostinterface::set-file-bundle-header-offset>> | TODO
-| <<hostinterface-set-framework-dependent,hostinterface::set-framework-dependent>> | TODO
-| <<hostinterface-set-framework-directories,hostinterface::set-framework-directories>> | TODO
-| <<hostinterface-set-framework-directory,hostinterface::set-framework-directory>> | TODO
-| <<hostinterface-set-framework-found-versions,hostinterface::set-framework-found-versions>> | TODO
-| <<hostinterface-set-framework-name,hostinterface::set-framework-name>> | TODO
-| <<hostinterface-set-framework-names,hostinterface::set-framework-names>> | TODO
-| <<hostinterface-set-framework-requested-versions,hostinterface::set-framework-requested-versions>> | TODO
-| <<hostinterface-set-framework-version,hostinterface::set-framework-version>> | TODO
-| <<hostinterface-set-host-command,hostinterface::set-host-command>> | TODO
-| <<hostinterface-set-host-mode,hostinterface::set-host-mode>> | TODO
-| <<hostinterface-set-host-path,hostinterface::set-host-path>> | TODO
-| <<hostinterface-set-patch-roll-forward,hostinterface::set-patch-roll-forward>> | TODO
-| <<hostinterface-set-paths-for-probing,hostinterface::set-paths-for-probing>> | TODO
-| <<hostinterface-set-prerelease-roll-forward,hostinterface::set-prerelease-roll-forward>> | TODO
-| <<hostinterface-set-target-framework-moniker,hostinterface::set-target-framework-moniker>> | TODO
-|===
+== Copying
 
-[[hostinterface-initialize]]
-==== initialize
-TODO
-
-[[hostinterface-set-additional-dependency-serialized]]
-==== set-additional-dependency-serialized
-TODO
-
-[[hostinterface-set-application-path]]
-==== set-application-path
-TODO
-
-[[hostinterface-set-config-keys]]
-==== set-config-keys
-TODO
-
-[[hostinterface-set-config-values]]
-==== set-config-values
-TODO
-
-[[hostinterface-set-dependency-file]]
-==== set-dependency-file
-TODO
-
-[[hostinterface-set-dotnet-root]]
-==== set-dotnet-root
-TODO
-
-[[hostinterface-set-file-bundle-header-offset]]
-==== set-file-bundle-header-offset
-TODO
-
-[[hostinterface-set-framework-dependent]]
-==== set-framework-dependent
-TODO
-
-[[hostinterface-set-framework-directories]]
-==== set-framework-directories
-TODO
-
-[[hostinterface-set-framework-directory]]
-==== set-framework-directory
-TODO
-
-[[hostinterface-set-framework-found-versions]]
-==== set-framework-found-versions
-TODO
-
-[[hostinterface-set-framework-name]]
-==== set-framework-name
-TODO
-
-[[hostinterface-set-framework-names]]
-==== set-framework-names
-TODO
-
-[[hostinterface-set-framework-requested-versions]]
-==== set-framework-requested-versions
-TODO
-
-[[hostinterface-set-framework-version]]
-==== set-framework-version
-TODO
-
-[[hostinterface-set-host-command]]
-==== set-host-command
-TODO
-
-[[hostinterface-set-host-mode]]
-==== set-host-mode
-TODO
-
-[[hostinterface-set-host-path]]
-==== set-host-path
-TODO
-
-[[hostinterface-set-patch-roll-forward]]
-==== set-patch-roll-forward
-TODO
-
-[[hostinterface-set-paths-for-probing]]
-==== set-paths-for-probing
-TODO
-
-[[hostinterface-set-prerelease-roll-forward]]
-==== set-prerelease-roll-forward
-TODO
-
-[[hostinterface-set-target-framework-moniker]]
-==== set-target-framework-moniker
-TODO
-
-=== Core host unit
-
-.Functions from core host interface unit.
-|===
-.s| Script function .s| Description
-| <<corehost-functions,functions>> | TODO
-| <<corehost-is-function-exists,is-function-exists>> | TODO
-|===
-
-[[corehost-functions]]
-==== functions
-TODO
-
-[[corehost-is-function-exists]]
-==== is-function-exists
-TODO
-
-.Functions from core host interface unit, depend on version.
-|===
-.s| Script function .s| Host version .s| Description
-| <<corehost-load,load>> .3+^.^| 1.0+ | TODO
-| <<corehost-main,main>> | TODO
-| <<corehost-unload,unload>> | TODO
-| <<corehost-main-with-output-buffer,main-with-output-buffer>> ^.^| 2.1+ | TODO
-| <<corehost-initialize,initialize>> .3+^.^| 3.0+ | TODO
-| <<corehost-resolve-component-dependencies,resolve-component-dependencies>> | TODO
-| <<corehost-set-error-writer,set-error-writer>> | TODO
-|===
-
-[[corehost-load]]
-==== load
-TODO
-
-[[corehost-main]]
-==== main
-TODO
-
-[[corehost-unload]]
-==== unload
-TODO
-
-[[corehost-main-with-output-buffer]]
-==== main-with-output-buffer
-TODO
-
-[[corehost-initialize]]
-==== initialize
-TODO
-
-[[corehost-resolve-component-dependencies]]
-==== resolve-component-dependencies
-TODO
-
-[[corehost-set-error-writer]]
-==== set-error-writer
-TODO
-
-=== File unit
-
-IMPORTANT: To access function from this namespace - program option *modulepriority* should be used at ant4c command arguments. Otherwise script with this function will fail according to not founded function from name space 'file'.
-
-.Function from file unit.
-|===
-.s| Script function .s| Description
-| <<file-is-assembly,file::is-assembly>> | Check if file at the given path is .NET assembly. If file not exists function will fail.
-|===
-
-[[file-is-assembly]]
-==== is-assembly
-
-*bool* file::is-assembly(*file* path_to_assembly) +
-*bool* file::is-assembly(*file* path_to_assembly, *pointer* the_delegate) (only for hosts that have 'get-runtime-delegate' function) +
-*bool* file::is-assembly(*file* path_to_assembly, *file* path_to_assembly_with_main_function) (only for hosts that do not have 'get-runtime-delegate' function)
-
-If path point to the .NET assembly file *true* will be returned. +
-If no delegate provided function will generate own based on configuration file that assumed that .NET Core 3.1 is installed (for example see config for <<hostfxr-initialize-for-runtime-config,initialize-for-runtime-config>> function). +
-If host less than 3.1 version it will call main function of CLR side 'ant4c.net.module' library instead. +
-Function <<hostfxr-get-runtime-delegate,get-runtime-delegate>> can be used to obtain 'the_delegate'.
-
-WARNING: It is caller response to put valid input data that interpret as pointer to delegate of function.
-
-===== Sample using
-
-----
-<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.dll')}" />
-<echo>is-assembly -> ${is-assembly}</echo>
-
-<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll')}" />
-<echo>is-assembly -> ${is-assembly}</echo>
-
-<property name="is-assembly" value="${file::is-assembly('ant4c.net.module.clr.dll_')}" failonerror="false" />
-
-<if test="${string::equal('False', hostfxr::is-function-exists('get-runtime-delegate'))}">
-  <property name="is_assembly"
-            value="${file::is-assembly('ant4c.net.module.clr.dll', 'ant4c.net.module.clr.dll')}" />
-
-  <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}is_assembly -> '${is_assembly}'</echo>
-</if>
-
-----
-
-----
-ant4c /f:sample.build -modulepriority
-----
-
-At first call of function path to non assembly file placed, second path to assembly, third to the non exists file placed and last one call at host without 'get-runtime-delegate' support.
+Copyright (C) 2021 {author}. +
+Free use of this software is granted under the terms of the MIT License.

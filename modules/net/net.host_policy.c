@@ -85,6 +85,10 @@ int32_t core_host_initialize_get_options(const uint8_t* value_start, const uint8
 	{
 		options = -1;
 	}
+	else if (3 == options)
+	{
+		options = context_contract_version_set;
+	}
 
 	return options;
 }
