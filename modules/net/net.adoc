@@ -8,7 +8,7 @@ v2020.09.202107
 
 == Name
 
-ant4c.net.module - module for Ant4C program that allow to work with hosting layers of .NET - "host FXR" and "host policy", from xml script code.
+ant4c.net.module - module for Ant4C program that allow to work with hosting layers of .NET - "host FXR" and "host policy", from XML script code.
 
 [[history]]
 == History
@@ -22,50 +22,50 @@ ant4c.net.module - module for Ant4C program that allow to work with hosting laye
 *** 'hostpolicy'
 *** 'net'
 ** With functions:
-*** '<<corehost-functions,corehost::functions()>>'
-*** '<<corehost-is-function-exists,corehost::is-function-exists()>>'
-*** '<<corehost-initialize,corehost::initialize()>>'
-*** '<<corehost-load,corehost::load()>>'
-*** '<<corehost-main,corehost::main()>>'
-*** '<<corehost-main-with-output-buffer,corehost::main-with-output-buffer()>>'
-*** '<<corehost-resolve-component-dependencies,corehost::resolve-component-dependencies()>>'
-*** '<<corehost-set-error-writer,corehost::set-error-writer()>>'
-*** '<<corehost-unload,corehost::unload()>>'
-*** '<<corehost-context-contract-initialize,corehost-context-contract::initialize()>>'
-*** '<<corehost-context-contract-get-property-value,corehost-context-contract::get-property-value()>>'
-*** '<<corehost-context-contract-set-property-value,corehost-context-contract::set-property-value()>>'
-*** '<<corehost-context-contract-get-properties,corehost-context-contract::get-properties()>>'
-*** '<<corehost-context-contract-load-runtime,corehost-context-contract::load-runtime()>>'
-*** '<<corehost-context-contract-run-app,corehost-context-contract::run-app()>>'
-*** '<<corehost-context-contract-get-runtime-delegate,corehost-context-contract::get-runtime-delegate()>>'
-*** '<<corehost-initialize-request-initialize,corehost-initialize-request::initialize()>>'
-*** '<<corehost-initialize-request-set-config-keys,corehost-initialize-request::set-config-keys()>>'
-*** '<<corehost-initialize-request-set-config-values,corehost-initialize-request::set-config-values()>>'
-*** '<<hostinterface-initialize,hostinterface::initialize()>>'
-*** '<<hostinterface-set-additional-dependency-serialized,hostinterface::set-additional-dependency-serialized()>>'
-*** '<<hostinterface-set-application-path,hostinterface::set-application-path()>>'
-*** '<<hostinterface-set-config-keys,hostinterface::set-config-keys()>>'
-*** '<<hostinterface-set-config-values,hostinterface::set-config-values()>>'
-*** '<<hostinterface-set-dependency-file,hostinterface::set-dependency-file()>>'
-*** '<<hostinterface-set-dotnet-root,hostinterface::set-dotnet-root()>>'
-*** '<<hostinterface-set-file-bundle-header-offset,hostinterface::set-file-bundle-header-offset()>>'
-*** '<<hostinterface-set-framework-dependent,hostinterface::set-framework-dependent()>>'
-*** '<<hostinterface-set-framework-directories,hostinterface::set-framework-directories()>>'
-*** '<<hostinterface-set-framework-directory,hostinterface::set-framework-directory()>>'
-*** '<<hostinterface-set-framework-found-versions,hostinterface::set-framework-found-versions()>>'
-*** '<<hostinterface-set-framework-name,hostinterface::set-framework-name()>>'
-*** '<<hostinterface-set-framework-names,hostinterface::set-framework-names()>>'
-*** '<<hostinterface-set-framework-requested-versions,hostinterface::set-framework-requested-versions()>>'
-*** '<<hostinterface-set-framework-version,hostinterface::set-framework-version()>>'
-*** '<<hostinterface-set-host-command,hostinterface::set-host-command()>>'
-*** '<<hostinterface-set-host-mode,hostinterface::set-host-mode()>>'
-*** '<<hostinterface-set-host-path,hostinterface::set-host-path()>>'
-*** '<<hostinterface-set-patch-roll-forward,hostinterface::set-patch-roll-forward()>>'
-*** '<<hostinterface-set-paths-for-probing,hostinterface::set-paths-for-probing()>>'
-*** '<<hostinterface-set-prerelease-roll-forward,hostinterface::set-prerelease-roll-forward()>>'
-*** '<<hostinterface-set-target-framework-moniker,hostinterface::set-target-framework-moniker()>>'
-*** '<<hostpolicy-initialize,hostpolicy::initialize()>>'
-*** '<<net-result-to-string,net::result-to-string()>>'
+*** '<<corehost-functions,corehost::functions>>'
+*** '<<corehost-is-function-exists,corehost::is-function-exists>>'
+*** '<<corehost-initialize,corehost::initialize>>'
+*** '<<corehost-load,corehost::load>>'
+*** '<<corehost-main,corehost::main>>'
+*** '<<corehost-main-with-output-buffer,corehost::main-with-output-buffer>>'
+*** '<<corehost-resolve-component-dependencies,corehost::resolve-component-dependencies>>'
+*** '<<corehost-set-error-writer,corehost::set-error-writer>>'
+*** '<<corehost-unload,corehost::unload>>'
+*** '<<corehost-context-contract-initialize,corehost-context-contract::initialize>>'
+*** '<<corehost-context-contract-get-property-value,corehost-context-contract::get-property-value>>'
+*** '<<corehost-context-contract-set-property-value,corehost-context-contract::set-property-value>>'
+*** '<<corehost-context-contract-get-properties,corehost-context-contract::get-properties>>'
+*** '<<corehost-context-contract-load-runtime,corehost-context-contract::load-runtime>>'
+*** '<<corehost-context-contract-run-app,corehost-context-contract::run-app>>'
+*** '<<corehost-context-contract-get-runtime-delegate,corehost-context-contract::get-runtime-delegate>>'
+*** '<<corehost-initialize-request-initialize,corehost-initialize-request::initialize>>'
+*** '<<corehost-initialize-request-set-config-keys,corehost-initialize-request::set-config-keys>>'
+*** '<<corehost-initialize-request-set-config-values,corehost-initialize-request::set-config-values>>'
+*** '<<hostinterface-initialize,hostinterface::initialize>>'
+*** '<<hostinterface-set-additional-dependency-serialized,hostinterface::set-additional-dependency-serialized>>'
+*** '<<hostinterface-set-application-path,hostinterface::set-application-path>>'
+*** '<<hostinterface-set-config-keys,hostinterface::set-config-keys>>'
+*** '<<hostinterface-set-config-values,hostinterface::set-config-values>>'
+*** '<<hostinterface-set-dependency-file,hostinterface::set-dependency-file>>'
+*** '<<hostinterface-set-dotnet-root,hostinterface::set-dotnet-root>>'
+*** '<<hostinterface-set-file-bundle-header-offset,hostinterface::set-file-bundle-header-offset>>'
+*** '<<hostinterface-set-framework-dependent,hostinterface::set-framework-dependent>>'
+*** '<<hostinterface-set-framework-directories,hostinterface::set-framework-directories>>'
+*** '<<hostinterface-set-framework-directory,hostinterface::set-framework-directory>>'
+*** '<<hostinterface-set-framework-found-versions,hostinterface::set-framework-found-versions>>'
+*** '<<hostinterface-set-framework-name,hostinterface::set-framework-name>>'
+*** '<<hostinterface-set-framework-names,hostinterface::set-framework-names>>'
+*** '<<hostinterface-set-framework-requested-versions,hostinterface::set-framework-requested-versions>>'
+*** '<<hostinterface-set-framework-version,hostinterface::set-framework-version>>'
+*** '<<hostinterface-set-host-command,hostinterface::set-host-command>>'
+*** '<<hostinterface-set-host-mode,hostinterface::set-host-mode>>'
+*** '<<hostinterface-set-host-path,hostinterface::set-host-path>>'
+*** '<<hostinterface-set-patch-roll-forward,hostinterface::set-patch-roll-forward>>'
+*** '<<hostinterface-set-paths-for-probing,hostinterface::set-paths-for-probing>>'
+*** '<<hostinterface-set-prerelease-roll-forward,hostinterface::set-prerelease-roll-forward>>'
+*** '<<hostinterface-set-target-framework-moniker,hostinterface::set-target-framework-moniker>>'
+*** '<<hostpolicy-initialize,hostpolicy::initialize>>'
+*** '<<net-result-to-string,net::result-to-string>>'
 
 WARNING: Breaking changes - function 'result-to-string' was move from name space 'hostfxr' to the 'net', changed prefix at the type of delegate from 'host_fxr_*' to the 'net_*'.
 
@@ -75,28 +75,28 @@ WARNING: Breaking changes - function 'result-to-string' was move from name space
 *** 'hostfxr'
 *** 'nethost'
 ** With functions:
-*** '<<file-is-assembly,file::is-assembly()>>'
-*** '<<hostfxr-close,hostfxr::close()>>'
-*** '<<hostfxr-functions,hostfxr::functions()>>'
-*** '<<hostfxr-get-available-sdks,hostfxr::get-available-sdks()>>'
-*** '<<hostfxr-get-native-search-directories,hostfxr::get-native-search-directories()>>'
-*** '<<hostfxr-get-runtime-delegate,hostfxr::get-runtime-delegate()>>'
-*** '<<hostfxr-get-runtime-properties,hostfxr::get-runtime-properties()>>'
-*** '<<hostfxr-get-runtime-property-value,hostfxr::get-runtime-property-value()>>'
-*** '<<hostfxr-initialize,hostfxr::initialize()>>'
-*** '<<hostfxr-initialize-for-dotnet-command-line,hostfxr::initialize-for-dotnet-command-line()>>'
-*** '<<hostfxr-initialize-for-runtime-config,hostfxr::initialize-for-runtime-config()>>'
-*** '<<hostfxr-is-function-exists,hostfxr::is-function-exists()>>'
-*** '<<hostfxr-main,hostfxr::main()>>'
-*** '<<hostfxr-main-bundle-startupinfo,hostfxr::main-bundle-startupinfo()>>'
-*** '<<hostfxr-main-startupinfo,hostfxr::main-startupinfo()>>'
-*** '<<hostfxr-resolve-sdk,hostfxr::resolve-sdk()>>'
-*** '<<hostfxr-resolve-sdk2,hostfxr::resolve-sdk2()>>'
-*** 'hostfxr::result-to-string()'
-*** '<<hostfxr-run-app,hostfxr::run-app()>>'
-*** '<<hostfxr-set-error-writer,hostfxr::set-error-writer()>>'
-*** '<<hostfxr-set-runtime-property-value,hostfxr::set-runtime-property-value()>>'
-*** '<<nethost-get-hostfxr-path,nethost::get-hostfxr-path()>>'
+*** '<<file-is-assembly,file::is-assembly>>'
+*** '<<hostfxr-close,hostfxr::close>>'
+*** '<<hostfxr-functions,hostfxr::functions>>'
+*** '<<hostfxr-get-available-sdks,hostfxr::get-available-sdks>>'
+*** '<<hostfxr-get-native-search-directories,hostfxr::get-native-search-directories>>'
+*** '<<hostfxr-get-runtime-delegate,hostfxr::get-runtime-delegate>>'
+*** '<<hostfxr-get-runtime-properties,hostfxr::get-runtime-properties>>'
+*** '<<hostfxr-get-runtime-property-value,hostfxr::get-runtime-property-value>>'
+*** '<<hostfxr-initialize,hostfxr::initialize>>'
+*** '<<hostfxr-initialize-for-dotnet-command-line,hostfxr::initialize-for-dotnet-command-line>>'
+*** '<<hostfxr-initialize-for-runtime-config,hostfxr::initialize-for-runtime-config>>'
+*** '<<hostfxr-is-function-exists,hostfxr::is-function-exists>>'
+*** '<<hostfxr-main,hostfxr::main>>'
+*** '<<hostfxr-main-bundle-startupinfo,hostfxr::main-bundle-startupinfo>>'
+*** '<<hostfxr-main-startupinfo,hostfxr::main-startupinfo>>'
+*** '<<hostfxr-resolve-sdk,hostfxr::resolve-sdk>>'
+*** '<<hostfxr-resolve-sdk2,hostfxr::resolve-sdk2>>'
+*** 'hostfxr::result-to-string'
+*** '<<hostfxr-run-app,hostfxr::run-app>>'
+*** '<<hostfxr-set-error-writer,hostfxr::set-error-writer>>'
+*** '<<hostfxr-set-runtime-property-value,hostfxr::set-runtime-property-value>>'
+*** '<<nethost-get-hostfxr-path,nethost::get-hostfxr-path>>'
 
 == Installation
 Place dll/so/dylib file in the folder known for ant4c application or use direct path to the binary file from the script. +
@@ -603,7 +603,9 @@ WARNING: It is caller response to put valid input data that interpret as pointer
 ==== get-runtime-delegate
 
 *pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *string* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name) +
-*pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *string* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name, *string* delegate_type_name)
+*pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *int* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name) +
+*pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *string* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name, *string* delegate_type_name) +
+*pointer* 'hostfxr::get-runtime-delegate'(*pointer* context, *int* type_of_delegate, *file* assembly_path, *string* type_name, *string* method_name, *string* delegate_type_name)
 
 Get pointer to the delegate of function from the assembly. In case of error function return zero start string with return code.
 
@@ -974,7 +976,7 @@ Return list of functions that can be used at current version of host policy. +
 If parameter pass - value of first one will be placed between functions. +
 If no parameter pass - space symbol will be used as delimiter for names of functions.
 
-WARNING: Function <<hostpolicy-initialize,hostpolicy::initialize()>> should be call before attempt to use this one.
+WARNING: Function <<hostpolicy-initialize,hostpolicy::initialize>> should be call before attempt to use this one.
 
 NOTE: This function have no forward compatibility. +
 If host policy publish with new functions, that not described at this help, +
@@ -987,7 +989,7 @@ new one's will not be in the return of this function.
 
 Return *true* if name of input function available at the current version of host policy.
 
-WARNING: Function <<hostpolicy-initialize,hostpolicy::initialize()>>  should be call before attempt to use this one.
+WARNING: Function <<hostpolicy-initialize,hostpolicy::initialize>> should be call before attempt to use this one.
 
 NOTE: This function have no forward compatibility. +
 If host policy publish with new functions, that not described at this help, +
@@ -1019,7 +1021,7 @@ Second call, if <<corehost-unload,unload>> was not called, will ignored data fro
 
 *int* 'corehost::main'(*string*[] arguments)
 
-After loading is complete application that was set at the '<<hostinterface-set-application-path,hostinterface::set-application-path()>>' function can be start with specific argument(s). +
+After loading is complete application that was set at the '<<hostinterface-set-application-path,hostinterface::set-application-path>>' function can be start with specific argument(s). +
 Function return exit code of application or error code of functional that attempt to start application.
 
 [[corehost-unload]]
@@ -1064,9 +1066,9 @@ If function is failed - error code after space symbol will be at the output.
 
 Initialize the host policy via request and options.
 
-In order to use this function - <<corehost-context-contract-initialize,corehost-context-contract::initialize()>> should be call before.
+In order to use this function - <<corehost-context-contract-initialize,corehost-context-contract::initialize>> should be call before.
 Third and fourth version should be used for first call of function. +
-Before call function second time - function <<corehost-initialize-request-initialize,initialize>> from <<corehost-initialize-request, corehost-initialize-request>> name space should be call,
+Before call function second time - function <<corehost-initialize-request-initialize,corehost-initialize-request::initialize>> should be call,
 and first and second versions used for that purpose. +
 
 .Options.
@@ -1144,7 +1146,7 @@ Set error writer of host policy.
 [[hostinterface]]
 ==== Host interface unit
 
-Functions from this name space set data that will be used by <<corehost-load, 'corehost::load'()>> function. +
+Functions from this name space set data that will be used by <<corehost-load, 'corehost::load'>> function. +
 Some of data will not be used by host according to it version or/and if version pass to the <<hostinterface-initialize,initialize>> function is less than recommended.
 
 .Functions from host interface unit.
@@ -1207,7 +1209,7 @@ Set keys of configuration. Count should be equal to the count of values.
 [[hostinterface-set-config-values]]
 ===== set-config-values
 
-*bool* 'hostinterface::set-config-values'(*string[]* keys)
+*bool* 'hostinterface::set-config-values'(*string[]* values)
 
 Set values of configuration. Count should be equal to the count of keys.
 
@@ -1494,80 +1496,184 @@ Set target framework moniker.
 [[corehost-initialize-request]]
 ==== Core host initialize request unit
 
+Functions from this name space should be used only if function <<corehost-initialize,corehost::initialize>> planned to call second time.
+
 .Functions from core host initialize request unit.
 |===
 | Script function | Description
 
-| <<corehost-initialize-request-initialize,initialize>> | TODO
-| <<corehost-initialize-request-set-config-keys,set-config-keys>> | TODO
-| <<corehost-initialize-request-set-config-values,set-config-values>> | TODO
+| <<corehost-initialize-request-initialize,initialize>> | Reset request to default state. This function should be called at least once.
+| <<corehost-initialize-request-set-config-keys,set-config-keys>> | Set keys of configuration. Count should be equal to the count of values.
+| <<corehost-initialize-request-set-config-values,set-config-values>> | Set values of configuration. Count should be equal to the count of keys.
 |===
 
 [[corehost-initialize-request-initialize]]
 ===== initialize
 
-TODO
+*bool* 'corehost-initialize-request::initialize'()
+
+Reset request to default state. This function should be called at least once.
 
 [[corehost-initialize-request-set-config-keys]]
 ===== set-config-keys
 
-TODO
+*bool* 'corehost-initialize-request::set-config-keys'(*string[]* keys)
+
+Set keys of configuration. Count should be equal to the count of values.
 
 [[corehost-initialize-request-set-config-values]]
 ===== set-config-values
 
-TODO
+*bool* 'corehost-initialize-request::set-config-values'(*string[]* values)
+
+Set values of configuration. Count should be equal to the count of keys.
 
 [[corehost-context-contract]]
 ==== Core host context contract unit
+
+Functions from this name space, except 'initialize', should be used only after <<corehost-initialize,corehost::initialize>> function return success code. +
+Function 'initialize' should be call before attempt to call <<corehost-initialize,corehost::initialize>> function.
+
+Most of functions have equals at the <<hostfxr-functions, hostfxr>> name space.
 
 .Functions from core host context contract unit.
 |===
 | Script function | Description
 
-| <<corehost-context-contract-initialize,initialize>> | TODO
-| <<corehost-context-contract-get-property-value,get-property-value>> | TODO
-| <<corehost-context-contract-set-property-value,set-property-value>> | TODO
-| <<corehost-context-contract-get-properties,get-properties>> | TODO
-| <<corehost-context-contract-load-runtime,load-runtime>> | TODO
-| <<corehost-context-contract-run-app,run-app>> | TODO
-| <<corehost-context-contract-get-runtime-delegate,get-runtime-delegate>> | TODO
+| <<corehost-context-contract-initialize,initialize>> | Reset context contract to the default state.
+| <<corehost-context-contract-get-property-value,get-property-value>> | Get value of property from context contract.
+| <<corehost-context-contract-set-property-value,set-property-value>> | Set value of property from context contract.
+| <<corehost-context-contract-get-properties,get-properties>> | Get properties of context contract.
+| <<corehost-context-contract-load-runtime,load-runtime>> | Load runtime of context contract.
+| <<corehost-context-contract-run-app,run-app>> | Run application that associated with context contract.
+| <<corehost-context-contract-get-runtime-delegate,get-runtime-delegate>> | Get runtime delegate from context contract.
 |===
 
 [[corehost-context-contract-initialize]]
 ===== initialize
 
-TODO
+*bool* 'corehost-context-contract::initialize'()
+
+Reset context contract to the default state. +
+This function should be call before <<corehost-initialize,corehost::initialize>> function.
 
 [[corehost-context-contract-get-property-value]]
 ===== get-property-value
 
-TODO
+*string* 'corehost-context-contract::get-property-value'(*string* name)
+
+Get value of requested by name property. +
+If function failed - returned string with zero termination symbol and error code after.
+
+NOTE: See also <<hostfxr-get-runtime-property-value,hostfxr::get-runtime-property-value>>.
+
+====== Sample using
+
+----
+<property
+  name="property_name" value="RUNTIME_IDENTIFIER" />
+<property
+  name="property_value"
+  value="${corehost-context-contract::get-property-value(property_name)}" />
+<echo>property_value -> '${property_value}' ${net::result-to-string(string::trim(property_value))}</echo>
+----
 
 [[corehost-context-contract-set-property-value]]
 ===== set-property-value
 
-TODO
+*int* 'corehost-context-contract::set-property-value'(*string* name) +
+*int* 'corehost-context-contract::set-property-value'(*string* name, *string* value)
+
+Set value of property. +
+First version will remove property. +
+Return result code.
+
+NOTE: See also <<hostfxr-set-runtime-property-value,hostfxr::set-runtime-property-value>>.
 
 [[corehost-context-contract-get-properties]]
 ===== get-properties
 
-TODO
+*int* 'corehost-context-contract::get-properties'()
+
+Get properties of context contract. +
+In case properties can not be get - return code will be returned. +
+Checking is equal ('=') symbol exists in the return can detect is properties with values returned or just return code.
+
+NOTE: See also <<hostfxr-get-runtime-properties,hostfxr::get-runtime-properties>>.
 
 [[corehost-context-contract-load-runtime]]
 ===== load-runtime
 
-TODO
+*int* 'corehost-context-contract::load-runtime'()
+
+Load runtime of context contract. +
+Return result code.
 
 [[corehost-context-contract-run-app]]
 ===== run-app
 
-TODO
+*int* 'corehost-context-contract::run-app'(*string[]* arguments)
+
+Run application that associated with context contract. +
+Return exit code of application or result code of functional that attempt to run application.
+
+NOTE: See also <<hostfxr-run-app,hostfxr::run-app>>.
 
 [[corehost-context-contract-get-runtime-delegate]]
 ===== get-runtime-delegate
 
-TODO
+*pointer* 'corehost-context-contract::get-runtime-delegate'(*string* type_of_delegate) +
+*pointer* 'corehost-context-contract::get-runtime-delegate'(*int* type_of_delegate)
+
+Get runtime delegate from context contract. +
+Return pointer to delegate or space symbol with result code in case call was not success.
+
+WARNING: Most <<hostfxr-get-runtime-delegate,delegates>> available only for Windows version of host and will made segment fault on other versions.
+
+NOTE: Available only for compatibility. +
+This function should not be used from XML script code because no other functions from this module do not use what it return at current moment. +
+See also <<hostfxr-get-runtime-delegate,hostfxr::get-runtime-delegate>>.
+
+====== Sample using
+
+----
+<property name="the_host_version" value="5.0" />
+<property name="skip" value="${platform::is-unix()}" overwrite="false" />
+
+<property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_activation')}" />
+<fail unless="${string::starts-with(is_initialized, ' ')}"
+      message="corehost-context-contract::get-runtime-delegate with 'net_hdt_com_activation' argument return ${is_initialized}." />
+
+<if test="${string::equal(bool::parse('false'), skip))}">
+  <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_load_in_memory_assembly')}" />
+  <fail if="${string::starts-with(is_initialized, ' ')}"
+        message="corehost-context-contract::get-runtime-delegate with 'net_hdt_load_in_memory_assembly' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+
+  <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_winrt_activation')}" />
+  <fail if="${string::starts-with(is_initialized, ' ')}"
+        message="corehost-context-contract::get-runtime-delegate with 'net_hdt_winrt_activation' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+</if>
+
+<if test="${version::greater(the_host_version, '3.1')}">
+  <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_register')}" />
+  <fail unless="${string::starts-with(is_initialized, ' ')}"
+        message="corehost-context-contract::get-runtime-delegate with 'net_hdt_com_register' argument return ${is_initialized}." />
+</if>
+
+<if test="${string::equal(bool::parse('false'), skip))}">
+  <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_unregister')}" />
+  <fail if="${string::starts-with(is_initialized, ' ')}"
+        message="corehost-context-contract::get-runtime-delegate with 'net_hdt_com_unregister' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+
+  <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_load_assembly_and_get_function_pointer')}" />
+  <fail if="${string::starts-with(is_initialized, ' ')}"
+        message="corehost-context-contract::get-runtime-delegate with 'net_hdt_load_assembly_and_get_function_pointer' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+
+  <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_get_function_pointer')}" />
+  <fail if="${string::starts-with(is_initialized, ' ')}"
+        message="corehost-context-contract::get-runtime-delegate with 'net_hdt_get_function_pointer' argument return ${is_initialized} (${net::result-to-string(string::trim(is_initialized))})." />
+</if>
+----
 
 === File unit
 

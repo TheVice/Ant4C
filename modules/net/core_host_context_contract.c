@@ -60,7 +60,7 @@ int32_t core_host_context_contract_get_property_value(
 
 	if (!context_contract_->get_property_value)
 	{
-		return 1;
+		return -1;
 	}
 
 	return context_contract_->get_property_value(key, value);
@@ -80,7 +80,7 @@ int32_t core_host_context_contract_set_property_value(
 
 	if (!context_contract_->set_property_value)
 	{
-		return 1;
+		return -1;
 	}
 
 	return context_contract_->set_property_value(key, value);
@@ -101,7 +101,7 @@ int32_t core_host_context_contract_get_properties(
 
 	if (!context_contract_->get_properties)
 	{
-		return 1;
+		return -1;
 	}
 
 	return context_contract_->get_properties(count, keys, values);
@@ -119,7 +119,7 @@ int32_t core_host_context_contract_load_runtime(
 
 	if (!context_contract_->load_runtime)
 	{
-		return 1;
+		return -1;
 	}
 
 	return context_contract_->load_runtime();
@@ -139,7 +139,7 @@ int32_t core_host_context_contract_run_app(
 
 	if (!context_contract_->run_app)
 	{
-		return 1;
+		return -1;
 	}
 
 	return context_contract_->run_app(argc, argv);
@@ -159,7 +159,7 @@ int32_t core_host_context_contract_get_runtime_delegate(
 
 	if (!context_contract_->get_runtime_delegate)
 	{
-		return 1;
+		return -1;
 	}
 
 	return context_contract_->get_runtime_delegate(core_clr_delegate_type, the_delegate);
