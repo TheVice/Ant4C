@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -197,6 +197,9 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 		return 0;
 	}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4055)
+#endif
 	the_module.enum_tasks = (enumerate_tasks)shared_object_get_procedure_address(the_module.object,
 							functions_names[0]);
 	the_module.enum_name_spaces = (enumerate_name_spaces)shared_object_get_procedure_address(the_module.object,
@@ -212,6 +215,9 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 									functions_names[EVALUATE_FUNCTION_POSITION - ENUMERATE_TASKS_POSITION]);
 	the_module._module_release = (module_release)shared_object_get_procedure_address(the_module.object,
 								 functions_names[MODULE_RELEASE_POSITION - ENUMERATE_TASKS_POSITION]);
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(default: 4055)
+#endif
 
 	if (the_module.enum_tasks)
 	{

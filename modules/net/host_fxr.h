@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __HOST_FXR_H__
-#define __HOST_FXR_H__
+#ifndef __MODULES_NET_HOST_FX_RESOLVER_H__
+#define __MODULES_NET_HOST_FX_RESOLVER_H__
 
 #include "net.common.h"
 
@@ -39,64 +39,6 @@ enum hostfxr_resolve_sdk2_result_keys
 {
 	host_fxr_resolved_sdk_dir,
 	host_fxr_global_json_path
-};
-
-enum hostfxr_status_code
-{
-	host_fxr_Success,
-	host_fxr_Success_HostAlreadyInitialized,
-	host_fxr_Success_DifferentRuntimeProperties,
-	/**/
-	win_error_E_INVALIDARG = 0x80070057,
-	/**/
-	host_fxr_InvalidArgFailure = 0x80008081,
-	host_fxr_CoreHostLibLoadFailure,
-	host_fxr_CoreHostLibMissingFailure,
-	host_fxr_CoreHostEntryPointFailure,
-	host_fxr_CoreHostCurHostFindFailure,
-	host_fxr_CoreClrResolveFailure = 0x80008087,
-	host_fxr_CoreClrBindFailure,
-	host_fxr_CoreClrInitFailure,
-	host_fxr_CoreClrExeFailure,
-	host_fxr_ResolverInitFailure,
-	host_fxr_ResolverResolveFailure,
-	host_fxr_LibHostCurExeFindFailure,
-	host_fxr_LibHostInitFailure,
-	host_fxr_LibHostSdkFindFailure = 0x80008091,
-	host_fxr_LibHostInvalidArgs,
-	host_fxr_InvalidConfigFile,
-	host_fxr_AppArgNotRunnable,
-	host_fxr_AppHostExeNotBoundFailure,
-	host_fxr_FrameworkMissingFailure,
-	host_fxr_HostApiFailed,
-	host_fxr_HostApiBufferTooSmall,
-	host_fxr_LibHostUnknownCommand,
-	host_fxr_LibHostAppRootFindFailure,
-	host_fxr_SdkResolverResolveFailure,
-	host_fxr_FrameworkCompatFailure,
-	host_fxr_FrameworkCompatRetry,
-	host_fxr_AppHostExeNotBundle,
-	host_fxr_BundleExtractionFailure,
-	host_fxr_BundleExtractionIOError,
-	host_fxr_LibHostDuplicateProperty,
-	host_fxr_HostApiUnsupportedVersion,
-	host_fxr_HostInvalidState,
-	host_fxr_HostPropertyNotFound,
-	host_fxr_CoreHostIncompatibleConfig,
-	host_fxr_HostApiUnsupportedScenario
-};
-
-#define HOST_FX_RESOLVER_NON_SUCCESS(RESULT) ((RESULT) < host_fxr_Success || host_fxr_Success_DifferentRuntimeProperties < (RESULT))
-
-enum hostfxr_delegate_types
-{
-	host_fxr_hdt_com_activation,
-	host_fxr_hdt_load_in_memory_assembly,
-	host_fxr_hdt_winrt_activation,
-	host_fxr_hdt_com_register,
-	host_fxr_hdt_com_unregister,
-	host_fxr_hdt_load_assembly_and_get_function_pointer,
-	host_fxr_hdt_get_function_pointer
 };
 
 typedef void(calling_convention* hostfxr_get_available_sdks_result_type)(

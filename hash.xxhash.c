@@ -47,6 +47,28 @@ static const uint32_t PRIME32_5 = 0x165667B1U;
 		(ACCUMULATORS)[3] = (SEED) - PRIME32_1;												\
 	}
 
+#define XXH32_INIT_ACCUMULATORS_ZERO(ACCUMULATORS, SEED, IS_CHUNK_ONE)						\
+	if (!(ACCUMULATORS))																	\
+	{																						\
+		return 0;																			\
+	}																						\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME32_1 + PRIME32_2;									\
+		(ACCUMULATORS)[1] = (SEED) + PRIME32_2;												\
+		(ACCUMULATORS)[2] = (SEED);															\
+		(ACCUMULATORS)[3] = (SEED) - PRIME32_1;												\
+	}
+
+#define XXH32_INIT_ACCUMULATORS_ONE(ACCUMULATORS, SEED, IS_CHUNK_ONE)						\
+	if (!(ACCUMULATORS))																	\
+	{																						\
+		return 0;																			\
+	}																						\
+	\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME32_5;												\
+	}																						\
+
 #define XXH32_CORE_CHUNKS(START, FINISH, ACCUMULATORS)										\
 	while (16 <= (FINISH) - (START))\
 	{\
@@ -157,6 +179,16 @@ uint8_t hash_algorithm_XXH32_core(
 	uint32_t* accumulators,	uint8_t* is_accumulators_initialized,
 	uint32_t seed)
 {
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+	XXHASH_CORE(
+		start, finish,
+		queue, queue_size, max_queue_size,
+		accumulators, is_accumulators_initialized,
+		seed,
+		uint32_t,
+		XXH32_INIT_ACCUMULATORS_ZERO,
+		XXH32_CORE_CHUNKS);
+#else
 	XXHASH_CORE(
 		start, finish,
 		queue, queue_size, max_queue_size,
@@ -165,6 +197,7 @@ uint8_t hash_algorithm_XXH32_core(
 		uint32_t,
 		XXH32_INIT_ACCUMULATORS,
 		XXH32_CORE_CHUNKS);
+#endif
 }
 
 #define XXHASH_FINAL(QUEUE_START, QUEUE_FINISH,														\
@@ -201,6 +234,16 @@ uint8_t hash_algorithm_XXH32_final(
 	uint32_t* accumulators, uint8_t is_accumulators_initialized,
 	uint32_t seed, uint32_t* output)
 {
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+	XXHASH_FINAL(
+		queue_start, queue_finish,
+		accumulators, is_accumulators_initialized,
+		seed, output,
+		XXH32_INIT_ACCUMULATORS_ONE,
+		XXH32_CORE_CHUNKS,
+		XXH32_CORE_CHUNKS_POST,
+		XXH32_FINAL);
+#else
 	XXHASH_FINAL(
 		queue_start, queue_finish,
 		accumulators, is_accumulators_initialized,
@@ -208,7 +251,8 @@ uint8_t hash_algorithm_XXH32_final(
 		XXH32_INIT_ACCUMULATORS,
 		XXH32_CORE_CHUNKS,
 		XXH32_CORE_CHUNKS_POST,
-		XXH32_FINAL)
+		XXH32_FINAL);
+#endif
 }
 
 uint8_t hash_algorithm_XXH32(
@@ -279,6 +323,29 @@ static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
 		(ACCUMULATORS)[1] = (SEED) + PRIME64_2;												\
 		(ACCUMULATORS)[2] = (SEED);															\
 		(ACCUMULATORS)[3] = (SEED) - PRIME64_1;												\
+	}
+
+#define XXH64_INIT_ACCUMULATORS_ZERO(ACCUMULATORS, SEED, IS_CHUNK_ONE)						\
+	if (!(ACCUMULATORS))																	\
+	{																						\
+		return 0;																			\
+	}																						\
+	\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME64_1 + PRIME64_2;									\
+		(ACCUMULATORS)[1] = (SEED) + PRIME64_2;												\
+		(ACCUMULATORS)[2] = (SEED);															\
+		(ACCUMULATORS)[3] = (SEED) - PRIME64_1;												\
+	}
+
+#define XXH64_INIT_ACCUMULATORS_ONE(ACCUMULATORS, SEED, IS_CHUNK_ONE)						\
+	if (!(ACCUMULATORS))																	\
+	{																						\
+		return 0;																			\
+	}																						\
+	\
+	{																						\
+		(ACCUMULATORS)[0] = (SEED) + PRIME64_5;												\
 	}
 
 #define XXH64_CORE_CHUNKS(START, FINISH, ACCUMULATORS)										\
@@ -360,6 +427,16 @@ uint8_t hash_algorithm_XXH64_core(
 	uint64_t* accumulators, uint8_t* is_accumulators_initialized,
 	uint64_t seed)
 {
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+	XXHASH_CORE(
+		start, finish,
+		queue, queue_size, max_queue_size,
+		accumulators, is_accumulators_initialized,
+		seed,
+		uint64_t,
+		XXH64_INIT_ACCUMULATORS_ZERO,
+		XXH64_CORE_CHUNKS);
+#else
 	XXHASH_CORE(
 		start, finish,
 		queue, queue_size, max_queue_size,
@@ -368,6 +445,7 @@ uint8_t hash_algorithm_XXH64_core(
 		uint64_t,
 		XXH64_INIT_ACCUMULATORS,
 		XXH64_CORE_CHUNKS);
+#endif
 }
 
 uint8_t hash_algorithm_XXH64_final(
@@ -375,6 +453,16 @@ uint8_t hash_algorithm_XXH64_final(
 	uint64_t* accumulators, uint8_t is_accumulators_initialized,
 	uint64_t seed, uint64_t* output)
 {
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+	XXHASH_FINAL(
+		queue_start, queue_finish,
+		accumulators, is_accumulators_initialized,
+		seed, output,
+		XXH64_INIT_ACCUMULATORS_ONE,
+		XXH64_CORE_CHUNKS,
+		XXH64_CORE_CHUNKS_POST,
+		XXH64_FINAL);
+#else
 	XXHASH_FINAL(
 		queue_start, queue_finish,
 		accumulators, is_accumulators_initialized,
@@ -382,7 +470,8 @@ uint8_t hash_algorithm_XXH64_final(
 		XXH64_INIT_ACCUMULATORS,
 		XXH64_CORE_CHUNKS,
 		XXH64_CORE_CHUNKS_POST,
-		XXH64_FINAL)
+		XXH64_FINAL);
+#endif
 }
 
 uint8_t hash_algorithm_XXH64(

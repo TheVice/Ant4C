@@ -39,8 +39,10 @@ struct OperatingSystem
 
 static const uint8_t* windows_label = (const uint8_t*)"Microsoft Windows NT";
 static const uint8_t* server_label = (const uint8_t*)"Server";
+static const uint8_t* darwin_label = (const uint8_t*)"Darwin Kernel";
 #define Win32NT_str_length	20
 #define Server_str_length	6
+#define Darwin_str_length	13
 
 #if !defined(_WIN32)
 uint8_t operating_system_init(uint8_t platformID, const uint8_t* version,
@@ -178,12 +180,14 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 										  start + Win32NT_str_length, finish, server_label,
 										  server_label + Server_str_length);
 	}
+	else if (string_contains(start, finish, darwin_label, darwin_label + Darwin_str_length))
+	{
+		operating_system->platform = macOS;
+	}
 	else
 	{
 		operating_system->platform = Unix;
 	}
-
-	/*TODO: os->platform = macOS;*/
 
 	if (!version_parse(start, finish, operating_system->version))
 	{
@@ -315,6 +319,7 @@ static const uint8_t* os_function_str[] =
 	(const uint8_t*)"get-version",
 	(const uint8_t*)"to-string",
 	(const uint8_t*)"get-name",
+	(const uint8_t*)"is-macos",
 	(const uint8_t*)"is-unix",
 	(const uint8_t*)"is-windows",
 	(const uint8_t*)"is-windows-server"
@@ -322,8 +327,8 @@ static const uint8_t* os_function_str[] =
 
 enum os_function
 {
-	get_platform, get_version, to_string,
-	get_name, is_unix, is_windows, is_windows_server,
+	get_platform, get_version, to_string, get_name,
+	is_macos, is_unix, is_windows, is_windows_server,
 	UNKNOWN_OS_FUNCTION
 };
 
@@ -384,6 +389,9 @@ uint8_t platform_exec_function(uint8_t function, const struct buffer* arguments,
 	{
 		case get_name:
 			return common_append_string_to_buffer(platform_get_name(), output);
+
+		case is_macos:
+			return bool_to_string(platform_is_macos(), output);
 
 		case is_unix:
 			return bool_to_string(platform_is_unix(), output);

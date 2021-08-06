@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2020 TheVice
  *
  */
 
@@ -350,6 +350,18 @@ uint8_t interpreter_get_value_for_argument(
 
 			if (-1 == index_1 || index_1 != index_2)
 			{
+				if (-1 == index_1)
+				{
+					const ptrdiff_t size = range_size(argument_area);
+
+					if (!string_un_quote(argument_area) ||
+						size == range_size(argument_area))
+					{
+						buffer_release(&value);
+						return 0;
+					}
+				}
+
 				if (!buffer_resize(&value, 0) ||
 					!string_un_quote(argument_area) ||
 					!buffer_append_data_from_range(&value, argument_area))
@@ -367,11 +379,19 @@ uint8_t interpreter_get_value_for_argument(
 
 uint8_t interpreter_get_values_for_arguments(
 	const void* the_project, const void* the_target,
-	const struct range* arguments_area, struct buffer* values, uint8_t verbose)
+	const struct range* arguments_area,
+	struct buffer* values, uint8_t* values_count, uint8_t verbose)
 {
-	if (range_is_null_or_empty(arguments_area) || NULL == values)
+	if (NULL == values ||
+		NULL == values_count)
 	{
 		return 0;
+	}
+
+	if (range_is_null_or_empty(arguments_area))
+	{
+		*values_count = 0;
+		return 1;
 	}
 
 	uint8_t count = 0;
@@ -431,13 +451,20 @@ uint8_t interpreter_get_values_for_arguments(
 		++argument_area.finish;
 	}
 
+	if (range_is_null_or_empty(&argument_area))
+	{
+		*values_count = count;
+		return 1;
+	}
+
 	if (!interpreter_get_value_for_argument(the_project, the_target, &argument_area, values, verbose))
 	{
 		return 0;
 	}
 
 	++count;
-	return count;
+	*values_count = count;
+	return 1;
 }
 
 uint8_t interpreter_evaluate_function(const void* the_project, const void* the_target,
@@ -456,9 +483,16 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 		return 0;
 	}
 
-	uint8_t values_count = interpreter_get_values_for_arguments(
-							   the_project, the_target, &arguments_area, &values, verbose);
-	/**/
+	uint8_t values_count;
+
+	if (!interpreter_get_values_for_arguments(
+			the_project, the_target, &arguments_area,
+			&values, &values_count, verbose))
+	{
+		buffer_release_with_inner_buffers(&values);
+		return 0;
+	}
+
 	void* the_module = NULL;
 	const uint8_t* func = NULL;
 

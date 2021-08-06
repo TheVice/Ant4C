@@ -1,7 +1,7 @@
 ﻿/*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -212,6 +212,10 @@ uint8_t load_listener(const uint8_t* listener, void** object)
 
 		switch (i)
 		{
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(disable: 4055)
+#endif
+
 			case 0:
 				listener_set_on_project_started(
 					(void (*)(const uint8_t* source, const uint8_t* the_project))address);
@@ -246,6 +250,9 @@ uint8_t load_listener(const uint8_t* listener, void** object)
 							  const uint8_t* the_project, const uint8_t* the_target,
 							  const uint8_t* the_task, uint8_t result))address);
 				break;
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#pragma warning(default: 4055)
+#endif
 
 			default:
 				break;

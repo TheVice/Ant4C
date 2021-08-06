@@ -5,42 +5,15 @@
  *
  */
 
-#ifndef __HOST_POLICY_H__
-#define __HOST_POLICY_H__
+#ifndef __MODULES_NET_HOST_POLICY_H__
+#define __MODULES_NET_HOST_POLICY_H__
 
 #include "net.common.h"
 
 #include <stddef.h>
 #include <stdint.h>
 
-struct initialize_request_type
-{
-	size_t version;
-	struct string_arguments_type config_keys;
-	struct string_arguments_type config_values;
-};
-
-struct context_contract_type
-{
-	size_t version;
-	int32_t(*get_property_value)(
-		const type_of_element* key,
-		const type_of_element** value);
-	int32_t(*set_property_value)(
-		const type_of_element* key,
-		const type_of_element* value);
-	int32_t(*get_properties)(
-		size_t* count,
-		const type_of_element** keys,
-		const type_of_element** values);
-	int32_t(*load_runtime)();
-	int32_t(*run_app)(
-		const int32_t argc,
-		const type_of_element** argv);
-	int32_t(*get_runtime_delegate)(
-		uint32_t core_clr_delegate_type,
-		void** the_delegate);
-};
+struct buffer;
 
 typedef void(*corehost_resolve_component_dependencies_result_type)(
 	const type_of_element* assembly_paths,
@@ -60,9 +33,9 @@ uint8_t core_host_is_function_exists(
 
 int32_t core_host_initialize(
 	const void* ptr_to_host_policy_object,
-	const struct initialize_request_type* init_request,
+	const void* init_request,
 	int32_t options,
-	struct context_contract_type* context_contract);
+	void* context_contract);
 int32_t core_host_load(
 	const void* ptr_to_host_policy_object,
 	void* host_interface);
@@ -70,7 +43,15 @@ int32_t core_host_main(
 	const void* ptr_to_host_policy_object,
 	const int32_t argc,
 	const type_of_element** argv);
-/*...*/
+uint8_t core_host_main_with_output_buffer(
+	const void* ptr_to_host_policy_object,
+	const int32_t argc,
+	const type_of_element** argv,
+	struct buffer* output);
+int32_t core_host_resolve_component_dependencies(
+	const void* ptr_to_host_policy_object,
+	const type_of_element* component_main_assembly_path,
+	corehost_resolve_component_dependencies_result_type core_host_resolve_component_dependencies_callback);
 error_writer_type core_host_set_error_writer(
 	const void* ptr_to_host_policy_object, error_writer_type writer);
 int32_t core_host_unload(const void* ptr_to_host_policy_object);

@@ -653,8 +653,26 @@ uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finis
 	}
 
 #if defined(_WIN32)
+	const ptrdiff_t size = path_finish - path_start;
 
-	if (1 < path_finish - path_start)
+	if (2 < size)
+	{
+		struct range path;
+		path.start = path_start;
+		path.finish = path_finish;
+
+		if (!file_system_get_position_after_pre_root(&path))
+		{
+			return 0;
+		}
+
+		if (path_start < path.start)
+		{
+			return path_is_path_rooted(path.start, path_finish);
+		}
+	}
+
+	if (1 < size)
 	{
 		return ':' == (path_start)[1];
 	}

@@ -13,7 +13,9 @@
 #include "common.h"
 #include "conversion.h"
 #include "range.h"
+#if defined(_WIN32)
 #include "text_encoding.h"
+#endif
 
 #include <string.h>
 
@@ -161,8 +163,8 @@ uint8_t host_interface_init(
 
 	return 1;
 }
-
-#define HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER_WIN(THE_INTERFACE, VALUE, LENGTH, MEMBER, THE_BUFFER)	\
+#if defined(_WIN32)
+#define HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(THE_INTERFACE, VALUE, LENGTH, MEMBER, THE_BUFFER)		\
 	host_interface_init_buffers();																		\
 	\
 	if (!THE_INTERFACE ||																				\
@@ -176,7 +178,7 @@ uint8_t host_interface_init(
 	\
 	THE_INTERFACE_->MEMBER = empty;																		\
 	if (!text_encoding_UTF8_to_UTF16LE(VALUE, VALUE + LENGTH, THE_BUFFER) ||							\
-		!buffer_push_back(THE_BUFFER, 0))																\
+		!buffer_push_back_uint16(THE_BUFFER, 0))														\
 	{																									\
 		return 0;																						\
 	}																									\
@@ -197,15 +199,14 @@ uint8_t host_interface_init(
 	struct host_interface_type* THE_INTERFACE_ = (struct host_interface_type*)THE_INTERFACE;			\
 	\
 	THE_INTERFACE_->MEMBER = empty;																		\
-	if (!value_to_system_path(VALUE, LENGTH, THE_BUFFER) ||												\
-		!buffer_push_back(THE_BUFFER, 0))																\
+	if (!value_to_system_path(VALUE, LENGTH, THE_BUFFER))												\
 	{																									\
 		return 0;																						\
 	}																									\
 	\
-	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, LENGTH);					\
+	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, LENGTH + 1);				\
 	return 1;
-
+#else
 #define HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(THE_INTERFACE, VALUE, LENGTH, MEMBER, THE_BUFFER)		\
 	host_interface_init_buffers();																		\
 	\
@@ -227,25 +228,7 @@ uint8_t host_interface_init(
 	\
 	THE_INTERFACE_->MEMBER = (const type_of_element*)buffer_data(THE_BUFFER, 0);						\
 	return 1;
-
-#define HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(THE_INTERFACE, VALUES, LENGTHS, COUNT, MEMBER, THE_BUFFER)	\
-	host_interface_init_buffers();																					\
-	\
-	if (!THE_INTERFACE ||																							\
-		!VALUES ||																									\
-		!LENGTHS ||																									\
-		!buffer_resize(THE_BUFFER, 0))																				\
-	{																												\
-		return 0;																									\
-	}																												\
-	\
-	struct host_interface_type* THE_INTERFACE_ = (struct host_interface_type*)THE_INTERFACE;						\
-	THE_INTERFACE_->MEMBER.arguments = NULL;																		\
-	THE_INTERFACE_->MEMBER.length = COUNT;																			\
-	return values_to_arguments(																						\
-			VALUES, LENGTHS,																						\
-			COUNT, THE_BUFFER,																						\
-			&THE_INTERFACE_->MEMBER.arguments);
+#endif
 
 #define HOST_INTERFACE_SET_SIZE_T_MEMBER(THE_INTERFACE, VALUE, MEMBER)							\
 	if (!THE_INTERFACE)																			\
@@ -281,21 +264,12 @@ uint8_t host_interface_set_additional_dependency_serialized(
 	const uint8_t* additional_dependency_serialized,
 	uint16_t additional_dependency_serialized_length)
 {
-#if defined(_WIN32)
-	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER_WIN(
-		host_interface,
-		additional_dependency_serialized,
-		additional_dependency_serialized_length,
-		additional_dependency_serialized,
-		&b_additional_dependency_serialized_);
-#else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		additional_dependency_serialized,
 		additional_dependency_serialized_length,
 		additional_dependency_serialized,
 		&b_additional_dependency_serialized_);
-#endif
 }
 
 uint8_t host_interface_set_application_path(
@@ -304,7 +278,7 @@ uint8_t host_interface_set_application_path(
 	uint16_t application_path_length)
 {
 #if defined(_WIN32)
-	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER_WIN(
+	HOST_INTERFACE_SET_SYSTEM_PATH_TO_MEMBER_WIN(
 		host_interface,
 		application_path,
 		application_path_length,
@@ -325,7 +299,9 @@ uint8_t host_interface_set_config_keys(
 	const uint8_t** keys, const uint16_t* keys_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		keys,
 		keys_lengths,
@@ -339,7 +315,9 @@ uint8_t host_interface_set_config_values(
 	const uint8_t** values, const uint16_t* values_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		values,
 		values_lengths,
@@ -449,7 +427,9 @@ uint8_t host_interface_set_framework_found_versions(
 	const uint8_t** versions, const uint16_t* versions_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		versions,
 		versions_lengths,
@@ -474,7 +454,9 @@ uint8_t host_interface_set_framework_names(
 	const uint8_t** names, const uint16_t* names_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		names,
 		names_lengths,
@@ -488,7 +470,9 @@ uint8_t host_interface_set_framework_requested_versions(
 	const uint8_t** versions, const uint16_t* versions_lengths,
 	uint8_t count)
 {
-	HOST_INTERFACE_SET_STRING_ARGUMENTS_TYPE_MEMBER(
+	host_interface_init_buffers();
+	SET_DATA_FOR_STRING_MEMBER_OF_STRUCTURE(
+		host_interface_type,
 		host_interface,
 		versions,
 		versions_lengths,
@@ -615,7 +599,7 @@ uint8_t host_interface_set_target_framework_moniker(
 		&b_target_framework_moniker_);
 }
 
-static uint8_t g_host_interface[UINT8_MAX];
+static uint8_t g_host_interface[HOST_INTERFACE_SIZE];
 
 void* host_interface_get()
 {

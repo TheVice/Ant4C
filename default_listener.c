@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -9,7 +9,9 @@
 
 #include <stdio.h>
 
-#if defined(_WIN32) && (defined(__MINGW32__) || defined(__MINGW64__))
+#if ((defined(__APPLE__) && defined(__MACH__))) || defined(__OpenBSD__)
+#define PTRDIFF_FORMAT_TYPE "td"
+#elif (defined(_WIN64) || defined(__amd64) || defined(__x86_64))
 #include <inttypes.h>
 #define PTRDIFF_FORMAT_TYPE PRId64
 #else

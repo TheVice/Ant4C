@@ -13,32 +13,79 @@ build_with_MSVC:
 
     [string[]]$cmakes = @()
     $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
-    $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+
+    if (0 -lt $cmakes.Count)
+    {
+      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+    }
+    else
+    {
+      $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles}" -Recurse
+
+      if (0 -lt $cmakes.Count)
+      {
+        $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+      }
+      else
+      {
+        throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find cmake in any of the '${env:ProgramFiles(x86)}' and '${env:ProgramFiles}' subfolders.")
+      }
+    }
 
     $build_directory = Join-Path -ChildPath "build-${env:TargetPlatform}" -Path "${env:CI_PROJECT_DIR}"
     $arguments = "-E make_directory {0}" -f $build_directory
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     cd "$build_directory"
 
     $arguments = "{0} -A {1} -DGTEST_BINARY_PATH={0}/windows-latest/{1} -DPUGIXML_BINARY_PATH={0}/windows-latest/{1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $arguments = "--build . --config Debug --parallel $env:NUMBER_OF_PROCESSORS"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $arguments = "--build . --config Release --parallel $env:NUMBER_OF_PROCESSORS"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $build_directory_Debug = Join-Path -ChildPath "Debug" -Path "$build_directory"
 
     $ant4c_Debug = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_Debug"
-    Start-Process -FilePath "$ant4c_Debug" -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$ant4c_Debug" -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $build_directory_Release = Join-Path -ChildPath "Release" -Path "$build_directory"
 
     $ant4c_Release = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_Release"
-    Start-Process -FilePath "$ant4c_Release" -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$ant4c_Release" -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
 
@@ -48,7 +95,12 @@ build_with_MSVC:
     {
       $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_Debug"
       $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
-      Start-Process -FilePath "$ant4c_tests_Debug" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+      $process = Start-Process -FilePath "$ant4c_tests_Debug" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
     }
     else
     {
@@ -63,7 +115,12 @@ build_with_MSVC:
     {
       $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_Release"
       $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
-      Start-Process -FilePath "$ant4c_tests_Release" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+      $process = Start-Process -FilePath "$ant4c_tests_Release" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
     }
     else
     {
@@ -91,7 +148,24 @@ build_with_MinGW:
 
     [string[]]$cmakes = @()
     $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles(x86)}" -Recurse
-    $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+
+    if (0 -lt $cmakes.Count)
+    {
+      $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles(x86)}"
+    }
+    else
+    {
+      $cmakes += Get-ChildItem -File -Filter cmake.exe -Name -Path "${env:ProgramFiles}" -Recurse
+
+      if (0 -lt $cmakes.Count)
+      {
+        $cmake = Join-Path -ChildPath $cmakes[0] -Path "${env:ProgramFiles}"
+      }
+      else
+      {
+        throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find cmake in any of the '${env:ProgramFiles(x86)}' and '${env:ProgramFiles}' subfolders.")
+      }
+    }
 
     [string[]]$mingw_makes = @()
     $mingw_makes += Get-ChildItem -File -Include mingw32-make.exe -Path $env:ProgramFiles\*\bin\*.* -Recurse
@@ -101,18 +175,38 @@ build_with_MinGW:
 
     $build_directory = Join-Path -ChildPath "build-MinGW-${env:BUILD_TYPE}" -Path "${env:CI_PROJECT_DIR}"
     $arguments = "-E make_directory {0}" -f $build_directory
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     cd "$build_directory"
 
     $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DGTEST_BINARY_PATH={0}/windows-latest/x64 -DPUGIXML_BINARY_PATH={0}/windows-latest/x64" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $arguments = "--build . --config ${env:BUILD_TYPE} --parallel $env:NUMBER_OF_PROCESSORS"
-    Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $ant4c = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory"
-    Start-Process -FilePath "$ant4c" -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath "$ant4c" -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
 
     $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
     $ant4c_tests = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory"
@@ -121,7 +215,12 @@ build_with_MinGW:
     {
       $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path $build_directory
       $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
-      Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+      $process = Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+    if ($process.ExitCode -ne 0)
+    {
+      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+    }
     }
     else
     {
@@ -129,6 +228,10 @@ build_with_MinGW:
       Write-Warning -Message $message
       Get-ChildItem -Path "$build_directory" -Recurse
     }
+
+  artifacts:
+    paths:
+      - "$CI_PROJECT_DIR\\build-MinGW-$BUILD_TYPE"
 
 build_on_unix_like:
 

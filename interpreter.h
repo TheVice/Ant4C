@@ -19,8 +19,9 @@ uint8_t interpreter_disassemble_function(const struct range* function,
 uint8_t interpreter_actualize_property_value(const void* the_project, const void* the_target,
 		uint8_t property_function_id, const void* the_property,
 		ptrdiff_t size, struct buffer* output, uint8_t verbose);
-uint8_t interpreter_get_values_for_arguments(const void* the_project, const void* the_target,
-		const struct range* arguments_area, struct buffer* values, uint8_t verbose);
+uint8_t interpreter_get_values_for_arguments(
+	const void* the_project, const void* the_target,
+	const struct range* arguments_area, struct buffer* values, uint8_t* values_count, uint8_t verbose);
 uint8_t interpreter_evaluate_function(const void* the_project, const void* the_target,
 									  const struct range* function, struct buffer* output, uint8_t verbose);
 uint8_t interpreter_evaluate_code(const void* the_project, const void* the_target,
