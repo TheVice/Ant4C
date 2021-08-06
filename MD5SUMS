@@ -26,6 +26,7 @@ e48b65d5086d1e3ef9c4f73524254555  ant4c-2020.09-1.x86_64.rpm
 cd6f7389d91aaadb4d0f2219ea090024  ant4c.dns.zip
 e7490634d2aec451d7600ceab14505ed  ant4c.net.framework.module.2020.9.0.nupkg
 74a05a60c97ae69a806763f0c839d4b5  ant4c.net.module.2020.9.0.nupkg
+d2aae8be6744bbb35f59fa3952b1cd2a  ant4c.net.module.2020.9.202107.nupkg
 bf03f07cd71a15c7037d53bef0b315b8  ant4c.regex.zip
 b19fd0d5a9c337078be53fba1f9ae049  ant4c.dns_and_ant4c.regex_modules_alpine.zip
 f348a06db974da4b15f741206f429df8  ant4c.dns_and_ant4c.regex_modules_rpm_based.zip
@@ -34,4 +35,6 @@ f348a06db974da4b15f741206f429df8  ant4c.dns_and_ant4c.regex_modules_rpm_based.zi
 935aca6f8a2bef6cafc7e1698b375948  libant4c-2020.09_openbsd.tar.bz2
 a1b12d39acee4d6d00201f30f27329c5  libant4c-2020.09_ubuntu.tar.bz
 f902c73c71a9608a9bfd0e5506932b88  libant4c.2020.9.0.nupkg
+b76b86a8e25ad52ce1f948813efb459b  libant4c.2020.9.202107.nupkg
+9ac5277abafe773e69f2c6fa7999e5d7  libant4c.2020.9.202107.3.nupkg
 6bf095416fa4e56b455122680a073bdc  libant4c-2020.09_rpm_based.tar.bz
