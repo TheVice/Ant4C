@@ -22,7 +22,7 @@ uint8_t double_to_string(double input, struct buffer* output);
 int32_t int_parse(const uint8_t* input_start, const uint8_t* input_finish);
 uint8_t int_to_string(int32_t input, struct buffer* output);
 
-long long_parse(const uint8_t* value);
+long long_parse(const uint8_t* input_start, const uint8_t* input_finish);
 uint8_t long_to_string(long input, struct buffer* output);
 
 int64_t int64_parse(const uint8_t* input_start, const uint8_t* input_finish);

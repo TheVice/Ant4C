@@ -13,6 +13,7 @@
 #include "range.h"
 
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
@@ -120,16 +121,23 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 	return (TYPE)(is_minus ? ((TYPE)-1) * output : output);
 
 #define TO_STRING(INPUT, OUTPUT)				\
-	int64_t input_ = (INPUT);					\
+	uint64_t input_;							\
 	\
-	if (input_ < 0)								\
+	if ((INPUT) < 0)							\
 	{											\
-		input_ *= -1;							\
-		\
 		if (!buffer_push_back((OUTPUT), minus))	\
 		{										\
 			return 0;							\
 		}										\
+		\
+		(INPUT) += 1;							\
+		(INPUT) *= -1;							\
+		input_ = (INPUT);						\
+		++input_;								\
+	}											\
+	else										\
+	{											\
+		input_ = (INPUT);						\
 	}											\
 	\
 	return uint64_to_string(input_, (OUTPUT));
@@ -158,9 +166,9 @@ uint8_t int_to_string(int32_t input, struct buffer* output)
 	TO_STRING(input, output);
 }
 
-long long_parse(const uint8_t* value)
+long long_parse(const uint8_t* input_start, const uint8_t* input_finish)
 {
-	return atol((const char*)value);
+	PARSE(input_start, input_finish, LONG_MAX, LONG_MIN, long);
 }
 
 uint8_t long_to_string(long input, struct buffer* output)

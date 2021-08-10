@@ -106,7 +106,7 @@ uint8_t conversion_exec_function(
 #if !defined(_WIN32)
 			else if (3 == name_space)
 			{
-				return long_to_string(long_parse(argument.start), output);
+				return long_to_string(long_parse(argument.start, argument.finish), output);
 			}
 
 #endif

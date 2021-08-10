@@ -166,10 +166,11 @@ TEST(TestConversion_, long_parse)
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
+		const uint8_t* finish = input[i] + common_count_bytes_until(input[i], 0);
 #if !defined(_WIN32)
-		ASSERT_EQ(expected_output[i], long_parse(input[i]));
+		ASSERT_EQ(expected_output[i], long_parse(input[i], finish));
 #endif
-		ASSERT_EQ(expected_output[i], int64_parse(input[i], input[i] + common_count_bytes_until(input[i], 0)));
+		ASSERT_EQ(expected_output[i], int64_parse(input[i], finish));
 	}
 }
 
