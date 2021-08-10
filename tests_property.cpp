@@ -137,6 +137,9 @@ TEST(TestProperty_, property_set_by_pointer)
 	buffer property_value;
 	SET_NULL_TO_BUFFER(property_value);
 	//
+	const uint8_t* start;
+	const uint8_t* finish;
+	//
 	ASSERT_TRUE(property_set_by_name(
 					&properties, property_name, property_name_length,
 					reinterpret_cast<const uint8_t*>(&properties), 0,
@@ -161,8 +164,8 @@ TEST(TestProperty_, property_set_by_pointer)
 		ASSERT_TRUE(buffer_size(&property_value)) <<
 				properties_free(&properties) << buffer_free(&property_value);
 		//
-		const uint8_t* start = buffer_data(&property_value, 0);
-		const uint8_t* finish = start + buffer_size(&property_value);
+		start = buffer_data(&property_value, 0);
+		finish = start + buffer_size(&property_value);
 		//
 		ASSERT_EQ(int64_value, int64_parse(start, finish)) <<
 				properties_free(&properties) << buffer_free(&property_value);
@@ -181,9 +184,11 @@ TEST(TestProperty_, property_set_by_pointer)
 				properties_free(&properties) << buffer_free(&property_value);
 		ASSERT_TRUE(buffer_size(&property_value)) <<
 				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
-				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_EQ(int32_value, int_parse(buffer_data(&property_value, 0))) <<
+		//
+		start = buffer_data(&property_value, 0);
+		finish = start + buffer_size(&property_value);
+		//
+		ASSERT_EQ(int32_value, int_parse(start, finish)) <<
 				properties_free(&properties) << buffer_free(&property_value);
 	}
 
@@ -200,9 +205,11 @@ TEST(TestProperty_, property_set_by_pointer)
 				properties_free(&properties) << buffer_free(&property_value);
 		ASSERT_TRUE(buffer_size(&property_value)) <<
 				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
-				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_EQ(int16_value, int_parse(buffer_data(&property_value, 0))) <<
+		//
+		start = buffer_data(&property_value, 0);
+		finish = start + buffer_size(&property_value);
+		//
+		ASSERT_EQ(int16_value, int_parse(start, finish)) <<
 				properties_free(&properties) << buffer_free(&property_value);
 	}
 
@@ -219,9 +226,11 @@ TEST(TestProperty_, property_set_by_pointer)
 				properties_free(&properties) << buffer_free(&property_value);
 		ASSERT_TRUE(buffer_size(&property_value)) <<
 				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
-				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_EQ(int8_value, int_parse(buffer_data(&property_value, 0))) <<
+		//
+		start = buffer_data(&property_value, 0);
+		finish = start + buffer_size(&property_value);
+		//
+		ASSERT_EQ(int8_value, int_parse(start, finish)) <<
 				properties_free(&properties) << buffer_free(&property_value);
 	}
 

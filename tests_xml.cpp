@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "range.h"
 #include "xml.h"

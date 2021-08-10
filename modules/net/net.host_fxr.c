@@ -310,18 +310,7 @@ uint8_t hostfxr_get_runtime_delegate(
 
 	if (NET_DELEGATE_MAX_VALUE == type_of_delegate)
 	{
-		if (!buffer_append(output, values[1], values_lengths[1]) ||
-			!buffer_push_back(output, 0))
-		{
-			return 0;
-		}
-
-		type_of_delegate = int_parse(buffer_data(output, 0));
-
-		if (!buffer_resize(output, 0))
-		{
-			return 0;
-		}
+		type_of_delegate = int_parse(values[1], values[1] + values_lengths[1]);
 	}
 
 	hostfxr_delegate_function_type the_delegate_function_type = NULL;
@@ -944,23 +933,9 @@ uint8_t hostfxr_resolve_sdk2(
 		return 0;
 	}
 
-	if (!buffer_append(output, values[2], values_lengths[2]) ||
-		!buffer_push_back(output, 0))
-	{
-		return 0;
-	}
-
-	int32_t flags = int_parse(buffer_data(output, 0));
-
-	if (!buffer_resize(output, 0))
-	{
-		return 0;
-	}
-
+	int32_t flags = int_parse(values[2], values[2] + values_lengths[2]);
 	struct buffer arguments;
-
 	SET_NULL_TO_BUFFER(arguments);
-
 	const type_of_element** argv = NULL;
 
 	if (!values_to_arguments(values, values_lengths, values_count - 1, &arguments, &argv))

@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "range.h"
 #include "text_encoding.h"

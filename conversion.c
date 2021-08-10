@@ -71,28 +71,68 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 	return 0;
 }
 
-#define DIGIT_TO_STRING_COMMON(EXPECTED_SIZE, OUTPUT)					\
-	if (NULL == (OUTPUT))												\
-	{																	\
-		return 0;														\
-	}																	\
+#define DIGIT_TO_STRING_COMMON(EXPECTED_SIZE, OUTPUT)			\
+	if (NULL == (OUTPUT))										\
+	{															\
+		return 0;												\
+	}															\
 	\
-	const ptrdiff_t size = buffer_size(OUTPUT);							\
+	const ptrdiff_t size = buffer_size(OUTPUT);					\
 	\
-	if (!buffer_append_char((OUTPUT), NULL, (EXPECTED_SIZE)))			\
-	{																	\
-		return 0;														\
-	}																	\
+	if (!buffer_append_char((OUTPUT), NULL, (EXPECTED_SIZE)))	\
+	{															\
+		return 0;												\
+	}															\
 	\
 	char* ptr = (char*)buffer_data((OUTPUT), size);
 
-#define DIGIT_TO_STRING(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)				\
-	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))						\
+#define DIGIT_TO_STRING(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)	\
+	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))			\
 	return buffer_resize((OUTPUT), size + sprintf(ptr, (FORMAT), (VALUE)));
 
 #define DIGIT_TO_STRING_STDC_SEC_API(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)	\
 	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))						\
 	return buffer_resize((OUTPUT), size + sprintf_s(ptr, (EXPECTED_SIZE), (FORMAT), (VALUE)));
+
+#define PARSE(START, FINISH, MAX_VALUE, MIN_VALUE, TYPE)			\
+	const uint64_t output = uint64_parse((START), (FINISH));		\
+	\
+	if (!output)													\
+	{																\
+		return 0;													\
+	}																\
+	\
+	(FINISH) = find_any_symbol_like_or_not_like_that(				\
+			   (START), (FINISH), digits, count_of_digits, 1, 1);	\
+	(START) = find_any_symbol_like_or_not_like_that(				\
+			  (START), (FINISH), &minus, 1, 1, 1);					\
+	const uint8_t is_minus = minus == *(START);						\
+	\
+	if ((MAX_VALUE) < output)										\
+	{																\
+		return is_minus ? (MIN_VALUE) : (MAX_VALUE);				\
+	}																\
+	else if (is_minus && ((MAX_VALUE) - 1) < output)				\
+	{																\
+		return (MIN_VALUE);											\
+	}																\
+	\
+	return (TYPE)(is_minus ? ((TYPE)-1) * output : output);
+
+#define TO_STRING(INPUT, OUTPUT)				\
+	int64_t input_ = (INPUT);					\
+	\
+	if (input_ < 0)								\
+	{											\
+		input_ *= -1;							\
+		\
+		if (!buffer_push_back((OUTPUT), minus))	\
+		{										\
+			return 0;							\
+		}										\
+	}											\
+	\
+	return uint64_to_string(input_, (OUTPUT));
 
 double double_parse(const uint8_t* value)
 {
@@ -108,18 +148,14 @@ uint8_t double_to_string(double input, struct buffer* output)
 #endif
 }
 
-int32_t int_parse(const uint8_t* value)
+int32_t int_parse(const uint8_t* input_start, const uint8_t* input_finish)
 {
-	return atoi((const char*)value);
+	PARSE(input_start, input_finish, INT32_MAX, INT32_MIN, int32_t);
 }
 
 uint8_t int_to_string(int32_t input, struct buffer* output)
 {
-#if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(input, 12, "%i", output);
-#else
-	DIGIT_TO_STRING(input, 12, "%i", output);
-#endif
+	TO_STRING(input, output);
 }
 
 long long_parse(const uint8_t* value)
@@ -129,52 +165,17 @@ long long_parse(const uint8_t* value)
 
 uint8_t long_to_string(long input, struct buffer* output)
 {
-#if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(input, 24, "%ld", output);
-#else
-	DIGIT_TO_STRING(input, 24, "%ld", output);
-#endif
+	TO_STRING(input, output);
 }
 
 int64_t int64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 {
-	const uint64_t output = uint64_parse(input_start, input_finish);
-
-	if (!output)
-	{
-		return 0;
-	}
-
-	input_finish = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits, 1,
-				   1);
-	input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, &minus, 1, 1, 1);
-	const uint8_t is_minus = minus == *input_start;
-
-	if (INT64_MAX < output)
-	{
-		return is_minus ? INT64_MIN : INT64_MAX;
-	}
-	else if (is_minus && (INT64_MAX - 1) < output)
-	{
-		return INT64_MIN;
-	}
-
-	return is_minus ? ((int64_t) -1) * output : output;
+	PARSE(input_start, input_finish, INT64_MAX, INT64_MIN, int64_t);
 }
 
 uint8_t int64_to_string(int64_t input, struct buffer* output)
 {
-	if (input < 0)
-	{
-		input *= -1;
-
-		if (!buffer_push_back(output, minus))
-		{
-			return 0;
-		}
-	}
-
-	return uint64_to_string(input, output);
+	TO_STRING(input, output);
 }
 
 uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
@@ -186,7 +187,20 @@ uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 
 	input_start = find_any_symbol_like_or_not_like_that(
 					  input_start, input_finish,
+					  digits, count_of_digits, 1, 1);
+	const uint8_t* start = input_start;
+	input_start = find_any_symbol_like_or_not_like_that(
+					  input_start, input_finish,
 					  digits + 1, count_of_digits - 1, 1, 1);
+	start = find_any_symbol_like_or_not_like_that(
+				start, input_start,
+				digits, count_of_digits, 0, 1);
+
+	if (start != input_start)
+	{
+		return 0;
+	}
+
 	input_finish = find_any_symbol_like_or_not_like_that(
 					   input_start, input_finish,
 					   digits, count_of_digits, 0, 1);

@@ -19,7 +19,7 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output);
 double double_parse(const uint8_t* value);
 uint8_t double_to_string(double input, struct buffer* output);
 
-int32_t int_parse(const uint8_t* value);
+int32_t int_parse(const uint8_t* input_start, const uint8_t* input_finish);
 uint8_t int_to_string(int32_t input, struct buffer* output);
 
 long long_parse(const uint8_t* value);

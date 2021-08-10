@@ -116,7 +116,7 @@ uint8_t version_parse(const uint8_t* input_start, const uint8_t* input_finish, u
 			break;
 		}
 
-		*((uint32_t*)version) = (uint32_t)int_parse(input_start);
+		*((uint32_t*)version) = (uint32_t)int64_parse(input_start, input_finish);
 		++input_start;
 		/**/
 		const uint8_t* start = input_start;

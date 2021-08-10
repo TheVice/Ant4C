@@ -127,7 +127,7 @@ TEST(TestConversion_, int_parse)
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		ASSERT_EQ(expected_output[i], int_parse(input[i]));
+		ASSERT_EQ(expected_output[i], int_parse(input[i], input[i] + common_count_bytes_until(input[i], 0)));
 	}
 }
 
@@ -210,12 +210,19 @@ TEST(TestConversion_, uint64_parse)
 		reinterpret_cast<const uint8_t*>("  18446744073709551616  "),
 		reinterpret_cast<const uint8_t*>("00000000000000000018446744073709551614   "),
 		reinterpret_cast<const uint8_t*>("100000000000000000000"),
+		reinterpret_cast<const uint8_t*>("0 21")
 	};
 	//
 	const uint64_t expected_output[] =
 	{
-		0, 1, INT64_MAX, UINT64_MAX,
-		UINT64_MAX, UINT64_MAX - 1, UINT64_MAX
+		0,
+		1,
+		INT64_MAX,
+		UINT64_MAX,
+		UINT64_MAX,
+		UINT64_MAX - 1,
+		UINT64_MAX,
+		0
 	};
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
@@ -226,7 +233,7 @@ TEST(TestConversion_, uint64_parse)
 		//
 		const auto returned = uint64_parse(input_in_range.start, input_in_range.finish);
 		//
-		ASSERT_EQ(expected_output[i], returned) << input[i];
+		ASSERT_EQ(expected_output[i], returned) << input[i] << std::endl << static_cast<int>(i);
 	}
 }
 

@@ -66,12 +66,4 @@ double timespan_get_total_hours(int64_t input);
 int64_t timespan_get_total_milliseconds(int64_t input);
 double timespan_get_total_minutes(int64_t input);
 
-uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output);
-
-uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output);
-
 #endif

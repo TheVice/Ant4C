@@ -21,7 +21,7 @@ extern "C" {
 #include <cstdint>
 
 #define DOUBLE_PARSE(A) double_parse(reinterpret_cast<const uint8_t*>(A))
-#define INT_PARSE(A) int_parse(reinterpret_cast<const uint8_t*>(A))
+#define INT_PARSE(A) int_parse(reinterpret_cast<const uint8_t*>(A), reinterpret_cast<const uint8_t*>(A) + common_count_bytes_until(reinterpret_cast<const uint8_t*>(A), 0))
 
 struct buffer;
 

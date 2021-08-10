@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "buffer.h"
+#include "common.h"
 #include "conversion.h"
 #include "date_time.h"
 #include "range.h"

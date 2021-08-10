@@ -6,6 +6,7 @@
  */
 
 #include "conversion.h"
+
 #include "common.h"
 #include "range.h"
 
@@ -99,7 +100,7 @@ uint8_t conversion_exec_function(
 			}
 			else if (2 == name_space)
 			{
-				return int_to_string(int_parse(argument.start), output);
+				return int_to_string(int_parse(argument.start, argument.finish), output);
 			}
 
 #if !defined(_WIN32)

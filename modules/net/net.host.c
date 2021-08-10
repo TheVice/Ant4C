@@ -20,16 +20,9 @@
 uint8_t net_result_to_string(
 	const uint8_t* result, uint16_t result_length, struct buffer* output)
 {
-	if (!buffer_append(output, result, result_length) ||
-		!buffer_push_back(output, 0))
-	{
-		return 0;
-	}
+	const int32_t result_ = int_parse(result, result + result_length);
 
-	const int32_t result_ = int_parse(buffer_data(output, 0));
-
-	if (!buffer_resize(output, 0) ||
-		!result_code_to_string(result_, output))
+	if (!result_code_to_string(result_, output))
 	{
 		return 0;
 	}
