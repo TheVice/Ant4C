@@ -230,6 +230,35 @@ TEST(TestConversion_, uint64_parse)
 	}
 }
 
+TEST(TestConversion_, uint64_to_string)
+{
+	const uint64_t input[] =
+	{
+		0, INT8_MAX, UINT8_MAX, INT16_MAX, UINT16_MAX,
+		INT32_MAX, UINT32_MAX, INT64_MAX, UINT64_MAX,
+		UINT64_MAX - 1, UINT64_MAX - 2, UINT64_MAX - 3, UINT64_MAX - 4
+	};
+	//
+	const char* expected_output[] =
+	{
+		"0", "127", "255", "32767", "65535",
+		"2147483647", "4294967295", "9223372036854775807", "18446744073709551615",
+		"18446744073709551614", "18446744073709551613", "18446744073709551612", "18446744073709551611"
+	};
+	//
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+
+	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
+	{
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(uint64_to_string(input[i], &output)) << buffer_free(&output);
+		ASSERT_STREQ(expected_output[i], buffer_to_string(&output).c_str()) << buffer_free(&output);
+	}
+
+	buffer_release(&output);
+}
+
 TEST(TestConversion_, pointer_to_string_and_parse)
 {
 	buffer value;

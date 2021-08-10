@@ -145,8 +145,13 @@ uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
 
 uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 {
-	static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-	static const uint8_t count_of_digits = COUNT_OF(digits);
+	if (range_in_parts_is_null_or_empty(value_start, value_finish))
+	{
+		return 0;
+	}
+
+	static const uint8_t* digits = (const uint8_t*)"0123456789";
+	static const uint8_t count_of_digits = 10;
 	/**/
 	value_start = find_any_symbol_like_or_not_like_that(
 					  value_start, value_finish,
@@ -159,74 +164,202 @@ uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 	{
 		return 0;
 	}
-
-	uint64_t result = 0;
-	uint64_t multi = 10000000000000000000u;
-	const uint8_t size = (uint8_t)(value_finish - value_start);
-
-	if (20 < size)
+	else if (20 < value_finish - value_start)
 	{
 		return UINT64_MAX;
 	}
-	else if (20 == size)
-	{
-		uint8_t value = *value_start;
 
-		if ('1' != value)
+	uint64_t multi = 1;
+	uint64_t result = 0;
+
+	do
+	{
+		--value_finish;
+		const uint64_t previous_result = result;
+
+		for (uint8_t i = 0; i < count_of_digits; ++i)
+		{
+			if (digits[i] == *value_finish)
+			{
+				result += multi * i;
+				break;
+			}
+		}
+
+		if (result < previous_result)
 		{
 			return UINT64_MAX;
 		}
 
-		do
-		{
-			value = *value_start;
-
-			for (uint8_t i = 0; i < count_of_digits; ++i)
-			{
-				if (digits[i] == value)
-				{
-					const uint64_t prev_result = result;
-					result += multi * i;
-					value = result < prev_result;
-
-					if (value)
-					{
-						return UINT64_MAX;
-					}
-
-					break;
-				}
-			}
-
-			multi /= 10;
-			++value_start;
-		}
-		while (value_start != value_finish);
+		multi *= 10;
 	}
-	else
+	while (value_start != value_finish);
+
+	return result;
+}
+
+void plus_(uint8_t a, uint8_t b, uint8_t* c)
+{
+	a -= '0';
+	b -= '0';
+	c[1] -= '0';
+	c[1] += a + b;
+
+	if (9 < c[1])
 	{
-		multi = 1;
+		c[1] -= 10;
+		c[0] = '1';
+	}
 
-		do
+	c[1] += '0';
+}
+
+const uint8_t* plus(
+	const uint8_t* a_start, const uint8_t* a_finish,
+	const uint8_t* b_start, const uint8_t* b_finish)
+{
+	static uint8_t result[21];
+	memset(result, '0', sizeof(result));
+	uint8_t* c = result + 19;
+
+	while (result < c)
+	{
+		uint8_t a;
+		uint8_t b;
+
+		if (a_start < a_finish)
 		{
-			--value_finish;
-			const uint8_t value = *value_finish;
-
-			for (uint8_t i = 0; i < count_of_digits; ++i)
-			{
-				if (digits[i] == value)
-				{
-					result += multi * i;
-					break;
-				}
-			}
-
-			multi *= 10;
+			a_finish--;
+			a = *a_finish;
 		}
-		while (value_start != value_finish);
+		else
+		{
+			a = '0';
+		}
+
+		if (b_start < b_finish)
+		{
+			b_finish--;
+			b = *b_finish;
+		}
+		else
+		{
+			b = '0';
+		}
+
+		if (a_start == a_finish &&
+			b_start == b_finish &&
+			'0' == a && '0' == b)
+		{
+			break;
+		}
+
+		plus_(a, b, c);
+		--c;
 	}
 
 	return result;
+}
+
+uint8_t uint64_to_string(uint64_t int_value, struct buffer* output_string)
+{
+	static const uint8_t* str_bytes[] =
+	{
+		(const uint8_t*)"1",
+		(const uint8_t*)"2",
+		(const uint8_t*)"4",
+		(const uint8_t*)"8",
+		(const uint8_t*)"16",
+		(const uint8_t*)"32",
+		(const uint8_t*)"64",
+		(const uint8_t*)"128",
+		(const uint8_t*)"256",
+		(const uint8_t*)"512",
+		(const uint8_t*)"1024",
+		(const uint8_t*)"2048",
+		(const uint8_t*)"4096",
+		(const uint8_t*)"8192",
+		(const uint8_t*)"16384",
+		(const uint8_t*)"32768",
+		(const uint8_t*)"65536",
+		(const uint8_t*)"131072",
+		(const uint8_t*)"262144",
+		(const uint8_t*)"524288",
+		(const uint8_t*)"1048576",
+		(const uint8_t*)"2097152",
+		(const uint8_t*)"4194304",
+		(const uint8_t*)"8388608",
+		(const uint8_t*)"16777216",
+		(const uint8_t*)"33554432",
+		(const uint8_t*)"67108864",
+		(const uint8_t*)"134217728",
+		(const uint8_t*)"268435456",
+		(const uint8_t*)"536870912",
+		(const uint8_t*)"1073741824",
+		(const uint8_t*)"2147483648",
+		(const uint8_t*)"4294967296",
+		(const uint8_t*)"8589934592",
+		(const uint8_t*)"17179869184",
+		(const uint8_t*)"34359738368",
+		(const uint8_t*)"68719476736",
+		(const uint8_t*)"137438953472",
+		(const uint8_t*)"274877906944",
+		(const uint8_t*)"549755813888",
+		(const uint8_t*)"1099511627776",
+		(const uint8_t*)"2199023255552",
+		(const uint8_t*)"4398046511104",
+		(const uint8_t*)"8796093022208",
+		(const uint8_t*)"17592186044416",
+		(const uint8_t*)"35184372088832",
+		(const uint8_t*)"70368744177664",
+		(const uint8_t*)"140737488355328",
+		(const uint8_t*)"281474976710656",
+		(const uint8_t*)"562949953421312",
+		(const uint8_t*)"1125899906842624",
+		(const uint8_t*)"2251799813685248",
+		(const uint8_t*)"4503599627370496",
+		(const uint8_t*)"9007199254740992",
+		(const uint8_t*)"18014398509481984",
+		(const uint8_t*)"36028797018963968",
+		(const uint8_t*)"72057594037927936",
+		(const uint8_t*)"144115188075855872",
+		(const uint8_t*)"288230376151711744",
+		(const uint8_t*)"576460752303423488",
+		(const uint8_t*)"1152921504606846976",
+		(const uint8_t*)"2305843009213693952",
+		(const uint8_t*)"4611686018427387904",
+		(const uint8_t*)"9223372036854775808",
+	};
+	/**/
+	uint8_t i = 0;
+	static uint8_t result[21];
+	const uint8_t* ptr_to_result = NULL;
+	memset(result, '0', sizeof(result));
+	static uint8_t* result_finish = result + 21;
+
+	while (0 < int_value)
+	{
+		const uint8_t the_byte = int_value & 0x1;
+		int_value = int_value >> 1;
+
+		if (!the_byte)
+		{
+			++i;
+			continue;
+		}
+
+		ptr_to_result = plus(result, result_finish, str_bytes[i],
+							 str_bytes[i] + common_count_bytes_until(str_bytes[i], 0));
+		memcpy(result, ptr_to_result, sizeof(result));
+		/**/
+		++i;
+	}
+
+	static const uint8_t zero = '0';
+	ptr_to_result = find_any_symbol_like_or_not_like_that(result, result_finish, &zero, 1, 0, 1);
+	i = (uint8_t)(result_finish - ptr_to_result);
+	/**/
+	return i ? buffer_append(output_string, ptr_to_result, i) : buffer_push_back(output_string, zero);
 }
 
 void* pointer_parse(const uint8_t* value)

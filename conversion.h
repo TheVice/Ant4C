@@ -29,6 +29,7 @@ int64_t int64_parse(const uint8_t* value);
 uint8_t int64_to_string(int64_t int_value, struct buffer* output_string);
 
 uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish);
+uint8_t uint64_to_string(uint64_t int_value, struct buffer* output_string);
 
 void* pointer_parse(const uint8_t* value);
 uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string);
