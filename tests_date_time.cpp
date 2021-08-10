@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 TheVice
+ * Copyright (c) 2019, 2021 TheVice
  *
  */
 
@@ -30,31 +30,41 @@ TEST_F(TestDateTime, datetime_format_to_string)
 	{
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const uint32_t year = INT_PARSE(node.node().select_node("year").node().child_value());
-		const uint8_t month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
-		const uint8_t day = (uint8_t)INT_PARSE(node.node().select_node("day").node().child_value());
-		const uint8_t hour = (uint8_t)INT_PARSE(node.node().select_node("hour").node().child_value());
-		const uint8_t minute = (uint8_t)INT_PARSE(node.node().select_node("minute").node().child_value());
-		const uint8_t second = (uint8_t)INT_PARSE(node.node().select_node("second").node().child_value());
+		const auto year = INT_PARSE(node.node().select_node("year").node().child_value());
+		const auto month = static_cast<uint8_t>(INT_PARSE(node.node().select_node("month").node().child_value()));
+		const auto day = static_cast<uint8_t>(INT_PARSE(node.node().select_node("day").node().child_value()));
+		const auto hour = static_cast<uint8_t>(INT_PARSE(node.node().select_node("hour").node().child_value()));
+		const auto minute = static_cast<uint8_t>(INT_PARSE(node.node().select_node("minute").node().child_value()));
+		const auto second = static_cast<uint8_t>(INT_PARSE(node.node().select_node("second").node().child_value()));
 		//
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		const std::string format(node.node().select_node("format").node().child_value());
 #if (defined(_MSC_VER) && (1900 < _MSC_VER) || !defined(_WIN32))
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 #else
 		const std::string expected_output(node.node().select_node("mingw_output").node().child_value());
 #endif
+		const auto date_time = datetime_encode(year, month, day, hour, minute, second);
 		//
-		const int64_t date_time = datetime_encode(year, month, day, hour, minute, second);
-		//
-		const uint8_t returned = datetime_format_to_string(date_time, (const uint8_t*)format.c_str(), &output);
-		ASSERT_EQ(expected_return, returned) << year << " " << (int)month << " " << (int)day << " " <<
-											 (int)hour << " " << (int)minute << " " << (int)second << std::endl <<
+		const auto returned = datetime_format_to_string(
+								  date_time, reinterpret_cast<const uint8_t*>(format.c_str()), &output);
+		ASSERT_EQ(expected_return, returned) <<
+											 year << " " <<
+											 static_cast<int>(month) << " " <<
+											 static_cast<int>(day) << " " <<
+											 static_cast<int>(hour) << " " <<
+											 static_cast<int>(minute) << " " <<
+											 static_cast<int>(second) << std::endl <<
 											 format << std::endl << buffer_free(&output);
 		//
 		ASSERT_EQ(expected_output, buffer_to_string(&output)) <<
-				year << " " << (int)month << " " << (int)day << " " <<
-				(int)hour << " " << (int)minute << " " << (int)second << std::endl <<
+				year << " " <<
+				static_cast<int>(month) << " " <<
+				static_cast<int>(day) << " " <<
+				static_cast<int>(hour) << " " <<
+				static_cast<int>(minute) << " " <<
+				static_cast<int>(second) << std::endl <<
 				format << std::endl << buffer_free(&output);
 		//
 		--node_count;
@@ -68,16 +78,17 @@ TEST_F(TestDateTime, datetime_parse)
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const uint32_t year = INT_PARSE(node.node().select_node("year").node().child_value());
-		const uint8_t month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
-		const uint8_t day = (uint8_t)INT_PARSE(node.node().select_node("day").node().child_value());
-		const uint8_t hour = (uint8_t)INT_PARSE(node.node().select_node("hour").node().child_value());
-		const uint8_t minute = (uint8_t)INT_PARSE(node.node().select_node("minute").node().child_value());
-		const uint8_t second = (uint8_t)INT_PARSE(node.node().select_node("second").node().child_value());
+		const auto year = static_cast<uint32_t>(INT_PARSE(node.node().select_node("year").node().child_value()));
+		const auto month = static_cast<uint8_t>(INT_PARSE(node.node().select_node("month").node().child_value()));
+		const auto day = static_cast<uint8_t>(INT_PARSE(node.node().select_node("day").node().child_value()));
+		const auto hour = static_cast<uint8_t>(INT_PARSE(node.node().select_node("hour").node().child_value()));
+		const auto minute = static_cast<uint8_t>(INT_PARSE(node.node().select_node("minute").node().child_value()));
+		const auto second = static_cast<uint8_t>(INT_PARSE(node.node().select_node("second").node().child_value()));
 		//
-		const range input_in_range = string_to_range(input);
+		const auto input_in_range = string_to_range(input);
 		//
 		uint32_t returned_year = 0;
 		uint8_t returned_month = 0;
@@ -86,9 +97,9 @@ TEST_F(TestDateTime, datetime_parse)
 		uint8_t returned_minute = 60;
 		uint8_t returned_second = 60;
 		//
-		const uint8_t returned = datetime_parse(input_in_range.start, input_in_range.finish,
-												&returned_year, &returned_month, &returned_day,
-												&returned_hour, &returned_minute, &returned_second);
+		const auto returned = datetime_parse(input_in_range.start, input_in_range.finish,
+											 &returned_year, &returned_month, &returned_day,
+											 &returned_hour, &returned_minute, &returned_second);
 		ASSERT_EQ(expected_return, returned) << input;
 
 		if (!returned)
@@ -118,23 +129,29 @@ TEST_F(TestDateTime, datetime_to_string)
 	{
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const uint32_t year = INT_PARSE(node.node().select_node("year").node().child_value());
-		const uint8_t month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
-		const uint8_t day = (uint8_t)INT_PARSE(node.node().select_node("day").node().child_value());
-		const uint8_t hour = (uint8_t)INT_PARSE(node.node().select_node("hour").node().child_value());
-		const uint8_t minute = (uint8_t)INT_PARSE(node.node().select_node("minute").node().child_value());
-		const uint8_t second = (uint8_t)INT_PARSE(node.node().select_node("second").node().child_value());
+		const auto year = INT_PARSE(node.node().select_node("year").node().child_value());
+		const auto month = static_cast<uint8_t>(INT_PARSE(node.node().select_node("month").node().child_value()));
+		const auto day = static_cast<uint8_t>(INT_PARSE(node.node().select_node("day").node().child_value()));
+		const auto hour = static_cast<uint8_t>(INT_PARSE(node.node().select_node("hour").node().child_value()));
+		const auto minute = static_cast<uint8_t>(INT_PARSE(node.node().select_node("minute").node().child_value()));
+		const auto second = static_cast<uint8_t>(INT_PARSE(node.node().select_node("second").node().child_value()));
 		//
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 		//
 		ASSERT_TRUE(datetime_to_string(year, month, day, hour, minute, second, &output)) <<
-				year << " " << (int)month << " " << (int)day << " " <<
-				(int)hour << " " << (int)minute << " " << (int)second
-				<< std::endl << buffer_free(&output);
+				year << " " <<
+				static_cast<int>(month) << " " <<
+				static_cast<int>(day) << " " <<
+				static_cast<int>(hour) << " " <<
+				static_cast<int>(minute) << " " <<
+				static_cast<int>(second) << std::endl << buffer_free(&output);
 		ASSERT_EQ(expected_output, buffer_to_string(&output)) <<
-				year << " " << (int)month << " " << (int)day << " " <<
-				(int)hour << " " << (int)minute << " " << (int)second
-				<< std::endl << buffer_free(&output);
+				year << " " <<
+				static_cast<int>(month) << " " <<
+				static_cast<int>(day) << " " <<
+				static_cast<int>(hour) << " " <<
+				static_cast<int>(minute) << " " <<
+				static_cast<int>(second) << std::endl << buffer_free(&output);
 		//
 		--node_count;
 	}
@@ -146,9 +163,9 @@ TEST_F(TestDateTime, datetime_get_day)
 {
 	for (const auto& node : nodes)
 	{
-		const uint8_t input = (uint8_t)INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto input = static_cast<uint8_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
 		//
-		const int64_t day = datetime_encode(2019, 1, input, 0, 0, 0);
+		const auto day = datetime_encode(2019, 1, input, 0, 0, 0);
 		ASSERT_EQ(input, datetime_get_day(day));
 		//
 		--node_count;
@@ -159,16 +176,20 @@ TEST_F(TestDateTime, datetime_get_day_of_week)
 {
 	for (const auto& node : nodes)
 	{
-		const uint32_t year = INT_PARSE(node.node().select_node("year").node().child_value());
-		const uint8_t month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
-		const uint8_t day = (uint8_t)INT_PARSE(node.node().select_node("day").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto year = INT_PARSE(node.node().select_node("year").node().child_value());
+		const auto month = static_cast<uint8_t>(INT_PARSE(node.node().select_node("month").node().child_value()));
+		const auto day = static_cast<uint8_t>(INT_PARSE(node.node().select_node("day").node().child_value()));
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const int64_t input = datetime_encode(year, month, day, 0, 0, 0);
+		const auto input = datetime_encode(year, month, day, 0, 0, 0);
 		//
-		const uint8_t returned = datetime_get_day_of_week(input);
+		const auto returned = datetime_get_day_of_week(input);
 		//
-		ASSERT_EQ(expected_return, returned) << year << " " << (int)month << " " << (int)day;
+		ASSERT_EQ(expected_return, returned) <<
+											 year << " " <<
+											 static_cast<int>(month) << " " <<
+											 static_cast<int>(day);
 		//
 		--node_count;
 	}
@@ -178,9 +199,10 @@ TEST_F(TestDateTime, datetime_get_days_in_month)
 {
 	for (const auto& node : nodes)
 	{
-		const uint32_t year = INT_PARSE(node.node().select_node("year").node().child_value());
-		const uint8_t month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto year = INT_PARSE(node.node().select_node("year").node().child_value());
+		const auto month = static_cast<uint8_t>(INT_PARSE(node.node().select_node("month").node().child_value()));
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		ASSERT_EQ(expected_return, datetime_get_days_in_month(year, month)) << year << " " << (int)month;
 		//
@@ -192,9 +214,9 @@ TEST_F(TestDateTime, datetime_get_hour)
 {
 	for (const auto& node : nodes)
 	{
-		const uint8_t input = (uint8_t)INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto input = static_cast<uint8_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
 		//
-		const int64_t hour = datetime_encode(2019, 1, 1, input, 0, 0);
+		const auto hour = datetime_encode(2019, 1, 1, input, 0, 0);
 		ASSERT_EQ(input, datetime_get_hour(hour));
 		//
 		--node_count;
@@ -205,9 +227,9 @@ TEST_F(TestDateTime, datetime_get_minute)
 {
 	for (const auto& node : nodes)
 	{
-		const uint8_t input = (uint8_t)INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto input = static_cast<uint8_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
 		//
-		const int64_t minute = datetime_encode(2019, 1, 1, 0, input, 0);
+		const auto minute = datetime_encode(2019, 1, 1, 0, input, 0);
 		ASSERT_EQ(input, datetime_get_minute(minute));
 		//
 		--node_count;
@@ -218,9 +240,9 @@ TEST_F(TestDateTime, datetime_get_month)
 {
 	for (const auto& node : nodes)
 	{
-		const uint8_t input = (uint8_t)INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto input = static_cast<uint8_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
 		//
-		const int64_t month = datetime_encode(2019, input, 1, 0, 0, 0);
+		const auto month = datetime_encode(2019, input, 1, 0, 0, 0);
 		ASSERT_EQ(input, datetime_get_month(month));
 		//
 		--node_count;
@@ -231,9 +253,9 @@ TEST_F(TestDateTime, datetime_get_second)
 {
 	for (const auto& node : nodes)
 	{
-		const uint8_t input = (uint8_t)INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto input = static_cast<uint8_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
 		//
-		const int64_t second = datetime_encode(2019, 1, 1, 0, 0, input);
+		const auto second = datetime_encode(2019, 1, 1, 0, 0, input);
 		ASSERT_EQ(input, datetime_get_second(second));
 		//
 		--node_count;
@@ -244,9 +266,9 @@ TEST_F(TestDateTime, datetime_get_year)
 {
 	for (const auto& node : nodes)
 	{
-		const uint32_t input = INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto input = static_cast<uint32_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
 		//
-		const int64_t year = datetime_encode(input, 1, 1, 0, 0, 0);
+		const auto year = datetime_encode(input, 1, 1, 0, 0, 0);
 		ASSERT_EQ(input, datetime_get_year(year));
 		//
 		--node_count;
@@ -257,11 +279,11 @@ TEST_F(TestDateTime, datetime_is_leap_year)
 {
 	for (const auto& node : nodes)
 	{
-		const uint32_t input = INT_PARSE(node.node().select_node("input").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(
-											node.node().select_node("return").node().child_value());
+		const auto input = INT_PARSE(node.node().select_node("input").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const uint8_t returned = datetime_is_leap_year(input);
+		const auto returned = datetime_is_leap_year(input);
 		ASSERT_EQ(expected_return, returned) << input;
 		//
 		--node_count;
@@ -270,7 +292,7 @@ TEST_F(TestDateTime, datetime_is_leap_year)
 
 TEST(TestDateTime_, datetime_now)
 {
-	const int64_t now = datetime_now();
+	const auto now = datetime_now();
 	ASSERT_LT(0, now);
 	//
 	uint32_t returned_year = 0;
@@ -285,29 +307,42 @@ TEST(TestDateTime_, datetime_now)
 								&returned_hour, &returned_minute, &returned_second,
 								&returned_year_day));
 	//
-	const int64_t returned_now = datetime_encode(returned_year, returned_month, returned_day, returned_hour,
-								 returned_minute, returned_second);
+	const auto returned_now = datetime_encode(returned_year, returned_month, returned_day, returned_hour,
+							  returned_minute, returned_second);
 	//
 	ASSERT_EQ(now, returned_now) <<
-								 returned_year << " " << (int)returned_month << " " << (int)returned_day << " " <<
-								 (int)returned_hour << " " << (int)returned_minute << " " << (int)returned_second;
+								 returned_year << " " <<
+								 static_cast<int>(returned_month) << " " <<
+								 static_cast<int>(returned_day) << " " <<
+								 static_cast<int>(returned_hour) << " " <<
+								 static_cast<int>(returned_minute) << " " <<
+								 static_cast<int>(returned_second);
 }
 
 TEST_F(TestDateTime, datetime_decode)
 {
 	for (const auto& node : nodes)
 	{
-		const int64_t input = int64_parse((const uint8_t*)node.node().select_node("input").node().child_value());
-		const uint8_t expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const std::string input_str(node.node().select_node("input").node().child_value());
+		const auto input_in_range(string_to_range(input_str));
+		const auto input = int64_parse(input_in_range.start, input_in_range.finish);
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const uint32_t expected_year = INT_PARSE(node.node().select_node("year").node().child_value());
-		const uint8_t expected_month = (uint8_t)INT_PARSE(node.node().select_node("month").node().child_value());
-		const uint8_t expected_day = (uint8_t)INT_PARSE(node.node().select_node("day").node().child_value());
-		const uint8_t expected_hour = (uint8_t)INT_PARSE(node.node().select_node("hour").node().child_value());
-		const uint8_t expected_minute = (uint8_t)INT_PARSE(node.node().select_node("minute").node().child_value());
-		const uint8_t expected_second = (uint8_t)INT_PARSE(node.node().select_node("second").node().child_value());
-		const uint16_t expected_year_day = (uint16_t)INT_PARSE(
-											   node.node().select_node("year_day").node().child_value());
+		const auto expected_year = static_cast<uint32_t>(INT_PARSE(
+									   node.node().select_node("year").node().child_value()));
+		const auto expected_month = static_cast<uint8_t>(INT_PARSE(
+										node.node().select_node("month").node().child_value()));
+		const auto expected_day = static_cast<uint8_t>(INT_PARSE(
+									  node.node().select_node("day").node().child_value()));
+		const auto expected_hour = static_cast<uint8_t>(INT_PARSE(
+									   node.node().select_node("hour").node().child_value()));
+		const auto expected_minute = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("minute").node().child_value()));
+		const auto expected_second = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("second").node().child_value()));
+		const auto expected_year_day = static_cast<uint16_t>(INT_PARSE(
+										   node.node().select_node("year_day").node().child_value()));
 		//
 		uint32_t returned_year = 0;
 		uint8_t returned_month = 0;
@@ -317,9 +352,9 @@ TEST_F(TestDateTime, datetime_decode)
 		uint8_t returned_second = 0;
 		uint16_t returned_year_day = 0;
 		//
-		const uint8_t returned = datetime_decode(input, &returned_year, &returned_month, &returned_day,
-								 &returned_hour, &returned_minute, &returned_second,
-								 &returned_year_day);
+		const auto returned = datetime_decode(input, &returned_year, &returned_month, &returned_day,
+											  &returned_hour, &returned_minute, &returned_second,
+											  &returned_year_day);
 		ASSERT_EQ(expected_return, returned) << input;
 		//
 		ASSERT_EQ(expected_year, returned_year) << input;

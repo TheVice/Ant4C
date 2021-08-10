@@ -93,6 +93,7 @@ set(
   "${CMAKE_SOURCE_DIR}/if_task.c"
   "${CMAKE_SOURCE_DIR}/if_task.h"
   "${CMAKE_SOURCE_DIR}/interpreter.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.conversion.c"
   "${CMAKE_SOURCE_DIR}/interpreter.h"
   "${CMAKE_SOURCE_DIR}/listener.c"
   "${CMAKE_SOURCE_DIR}/listener.h"

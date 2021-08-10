@@ -911,6 +911,10 @@ WARNING: It is caller response to put valid input data that interpret as pointer
 This function can do same things that accompanying with host fx resolver dotnet tool can. +
 Description of host fx parameters can be found in the documentation of resolver.
 
+WARNING: There is a known issue at the parsing of 'header_offset' argument. +
+If put non empty string - parse result of value is undefined. +
+Affected for *v2020.09** versions.
+
 === Functions for access host via host policy layer.
 
 There are several names that allow to work with host via host policy API layer.

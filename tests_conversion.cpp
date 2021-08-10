@@ -169,7 +169,7 @@ TEST(TestConversion_, long_parse)
 #if !defined(_WIN32)
 		ASSERT_EQ(expected_output[i], long_parse(input[i]));
 #endif
-		ASSERT_EQ(expected_output[i], int64_parse(input[i]));
+		ASSERT_EQ(expected_output[i], int64_parse(input[i], input[i] + common_count_bytes_until(input[i], 0)));
 	}
 }
 

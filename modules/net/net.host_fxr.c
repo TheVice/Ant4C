@@ -736,18 +736,7 @@ uint8_t hostfxr_main_bundle_startupinfo(
 		return 0;
 	}
 
-	int64_t bundle_header_offset = 0;
-
-	if (0 < values_lengths[3])
-	{
-		if (!buffer_append(output, values[3], values_lengths[3]))
-		{
-			return 0;
-		}
-
-		bundle_header_offset = int64_parse(buffer_data(output, 0));
-	}
-
+	const int64_t bundle_header_offset = int64_parse(values[3], values[3] + values_lengths[3]);
 	ptrdiff_t positions[3];
 
 	if (!buffer_resize(output, 0) ||

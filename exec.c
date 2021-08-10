@@ -1019,24 +1019,19 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	if (buffer_size(time_out_in_a_buffer))
 	{
-		if (!buffer_push_back(time_out_in_a_buffer, zero_symbol))
+		const uint8_t* start = buffer_data(time_out_in_a_buffer, 0);
+		const uint8_t* finish = start + buffer_size(time_out_in_a_buffer);
+		time_out = uint64_parse(start, finish);
+
+		if (1000 < time_out)
 		{
-			return 0;
-		}
+			time_out = (uint64_t)date_time_millisecond_to_second(time_out);
 
-		int64_t data = int64_parse(buffer_data(time_out_in_a_buffer, 0));
-
-		if (1000 < data)
-		{
-			data = date_time_millisecond_to_second(data);
-
-			if (data < 5)
+			if (time_out < 5)
 			{
-				data = 5;
+				time_out = 5;
 			}
 		}
-
-		time_out = (uint64_t)data;
 	}
 
 	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);

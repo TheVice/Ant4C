@@ -3198,12 +3198,9 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 	else if (buffer_size(millis_in_buffer))
 	{
-		if (!buffer_push_back(millis_in_buffer, 0))
-		{
-			return 0;
-		}
-
-		seconds = int64_parse(buffer_data(millis_in_buffer, 0));
+		const uint8_t* start = buffer_data(millis_in_buffer, 0);
+		const uint8_t* finish = start + buffer_size(millis_in_buffer);
+		seconds = int64_parse(start, finish);
 		seconds = date_time_millisecond_to_second(seconds);
 	}
 	else

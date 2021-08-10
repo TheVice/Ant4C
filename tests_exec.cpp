@@ -365,6 +365,9 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		ASSERT_TRUE(program_str.empty()) << buffer_free(&temp_file_name) << project_free(&the_project);
 		//
 		uint8_t returned = 0;
+		//
+		const uint8_t* start;
+		const uint8_t* finish;
 
 		if (allow_output_to_console)
 		{
@@ -406,18 +409,22 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 				if (buffer_size(&temp_file_name))
 				{
-					ASSERT_TRUE(buffer_push_back(&temp_file_name, 0))
-							<< buffer_free(&temp_file_name) << project_free(&the_project);
+					start = buffer_data(&temp_file_name, 0);
+					finish = start + buffer_size(&temp_file_name);
+				}
+				else
+				{
+					start = finish = nullptr;
 				}
 
 				if (result_property == *std::get<1>(the_property))
 				{
-					ASSERT_EQ(result_property_value, int64_parse(buffer_data(&temp_file_name, 0)))
+					ASSERT_EQ(result_property_value, int64_parse(start, finish))
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 				else if (buffer_size(&temp_file_name))
 				{
-					ASSERT_NE(0, int64_parse(buffer_data(&temp_file_name, 0)))
+					ASSERT_NE(0, int64_parse(start, finish))
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 			}
@@ -514,18 +521,22 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 				if (buffer_size(&temp_file_name))
 				{
-					ASSERT_TRUE(buffer_push_back(&temp_file_name, 0))
-							<< buffer_free(&temp_file_name) << project_free(&the_project);
+					start = buffer_data(&temp_file_name, 0);
+					finish = start + buffer_size(&temp_file_name);
+				}
+				else
+				{
+					start = finish = nullptr;
 				}
 
 				if (result_property == *std::get<1>(the_property))
 				{
-					ASSERT_EQ(result_property_value, int64_parse(buffer_data(&temp_file_name, 0)))
+					ASSERT_EQ(result_property_value, int64_parse(start, finish))
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 				else if (buffer_size(&temp_file_name))
 				{
-					ASSERT_NE(0, int64_parse(buffer_data(&temp_file_name, 0)))
+					ASSERT_NE(0, int64_parse(start, finish))
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 			}
@@ -662,8 +673,8 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_EQ(environment_variables_str.empty(), environments.empty())
 					<< buffer_free(&temp_file_name) << project_free(&the_project);
 			const uint8_t* previous = environment_variables.start;
-			const uint8_t* start = environment_variables.start;
-			const uint8_t* finish = environment_variables.finish;
+			start = environment_variables.start;
+			finish = environment_variables.finish;
 
 			for (const auto& environment : environments)
 			{

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -49,7 +49,7 @@ uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* d
 #if !defined(_WIN32)
 long datetime_get_bias();
 #endif
-int64_t date_time_millisecond_to_second(int64_t millisecond);
+int64_t date_time_millisecond_to_second(uint64_t millisecond);
 
 int64_t timespan_from_days(double input);
 int64_t timespan_from_hours(double input);

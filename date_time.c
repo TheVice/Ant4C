@@ -619,7 +619,7 @@ long datetime_get_bias()
 	return (long)(mktime(tm_u) - mktime(tm_)) / 60 - (tm_u->tm_isdst ? 0 : 60);
 }
 #endif
-int64_t date_time_millisecond_to_second(int64_t millisecond)
+int64_t date_time_millisecond_to_second(uint64_t millisecond)
 {
 	return math_truncate(math_ceiling((double)millisecond / 1000));
 }
@@ -767,7 +767,7 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 	{
 		case format_to_string:
 			return 2 == arguments_count &&
-				   datetime_format_to_string(int64_parse(values[0].start), values[1].start, output);
+				   datetime_format_to_string(int64_parse(values[0].start, values[0].finish), values[1].start, output);
 
 		case parse:
 		case to_string:
@@ -789,13 +789,16 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 		}
 
 		case get_day:
-			return 1 == arguments_count && int_to_string(datetime_get_day(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_day(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_day_of_week:
-			return 1 == arguments_count && int_to_string(datetime_get_day_of_week(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_day_of_week(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_day_of_year:
-			return 1 == arguments_count && int_to_string(datetime_get_day_of_year(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_day_of_year(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_days_in_month:
 			return 2 == arguments_count &&
@@ -803,27 +806,32 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 								 output);
 
 		case get_hour:
-			return 1 == arguments_count && int_to_string(datetime_get_hour(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_hour(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_millisecond:
 			/*TODO:*/
 			break;
 
 		case get_minute:
-			return 1 == arguments_count && int_to_string(datetime_get_minute(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_minute(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_month:
-			return 1 == arguments_count && int_to_string(datetime_get_month(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_month(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_second:
-			return 1 == arguments_count && int_to_string(datetime_get_second(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_second(int64_parse(values[0].start, values[0].finish)), output);
 
 		case get_ticks:
 			/*TODO:*/
 			break;
 
 		case get_year:
-			return 1 == arguments_count && int_to_string(datetime_get_year(int64_parse(values[0].start)), output);
+			return 1 == arguments_count &&
+				   int_to_string(datetime_get_year(int64_parse(values[0].start, values[0].finish)), output);
 
 		case is_leap_year:
 			return 1 == arguments_count && bool_to_string(datetime_is_leap_year(int_parse(values[0].start)), output);
@@ -950,44 +958,44 @@ uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments,
 			return int64_to_string(timespan_from_minutes(double_parse(argument.start)), output);
 
 		case ts_from_seconds_:
-			return int64_to_string(int64_parse(argument.start), output);
+			return int64_to_string(int64_parse(argument.start, argument.finish), output);
 
 		case ts_from_ticks_:
-			return int64_to_string(timespan_from_ticks(int64_parse(argument.start)), output);
+			return int64_to_string(timespan_from_ticks(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_days_:
-			return int_to_string(timespan_get_days(int64_parse(argument.start)), output);
+			return int_to_string(timespan_get_days(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_hours_:
-			return int_to_string(timespan_get_hours(int64_parse(argument.start)), output);
+			return int_to_string(timespan_get_hours(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_milliseconds_:
 			/*TODO:*/
 			break;
 
 		case ts_get_minutes_:
-			return int_to_string(timespan_get_minutes(int64_parse(argument.start)), output);
+			return int_to_string(timespan_get_minutes(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_parse_:
 		case ts_to_string_:
 		case ts_get_seconds_:
 		case ts_get_total_seconds_:
-			return int64_to_string(int64_parse(argument.start), output);
+			return int64_to_string(int64_parse(argument.start, argument.finish), output);
 
 		case ts_get_ticks_:
-			return int64_to_string(timespan_get_ticks(int64_parse(argument.start)), output);
+			return int64_to_string(timespan_get_ticks(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_total_days_:
-			return double_to_string(timespan_get_total_days(int64_parse(argument.start)), output);
+			return double_to_string(timespan_get_total_days(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_total_hours_:
-			return double_to_string(timespan_get_total_hours(int64_parse(argument.start)), output);
+			return double_to_string(timespan_get_total_hours(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_total_milliseconds_:
-			return int64_to_string(timespan_get_total_milliseconds(int64_parse(argument.start)), output);
+			return int64_to_string(timespan_get_total_milliseconds(int64_parse(argument.start, argument.finish)), output);
 
 		case ts_get_total_minutes_:
-			return double_to_string(timespan_get_total_minutes(int64_parse(argument.start)), output);
+			return double_to_string(timespan_get_total_minutes(int64_parse(argument.start, argument.finish)), output);
 
 		case UNKNOWN_TIMESPAN_FUNCTION:
 		default:

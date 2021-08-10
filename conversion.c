@@ -17,48 +17,55 @@
 #include <string.h>
 #include <inttypes.h>
 
+static const uint8_t* digits = (const uint8_t*)"0123456789";
+static const uint8_t count_of_digits = 10;
+
+static const uint8_t minus = '-';
+static const uint8_t zero = '0';
+
 static const char* False = "False";
 static const char* True = "True";
 
 #define FALSE_LENGTH 5
 #define TRUE_LENGTH  4
 
-uint8_t bool_parse(const uint8_t* input, ptrdiff_t input_length, uint8_t* bool_value)
+uint8_t bool_parse(const uint8_t* input, ptrdiff_t length, uint8_t* output)
 {
-	if (NULL == input ||
-		0 == input_length ||
-		NULL == bool_value)
+	if (!input ||
+		length < TRUE_LENGTH ||
+		FALSE_LENGTH < length ||
+		!output)
 	{
 		return 0;
 	}
 
-	if (FALSE_LENGTH == input_length &&
-		(0 == memcmp(False, input, input_length) ||
-		 0 == memcmp("false", input, input_length)))
+	if (FALSE_LENGTH == length &&
+		(0 == memcmp(False, input, length) ||
+		 0 == memcmp("false", input, length)))
 	{
-		*bool_value = 0;
+		*output = 0;
 		return 1;
 	}
-	else if (TRUE_LENGTH == input_length &&
-			 (0 == memcmp(True, input, input_length) ||
-			  0 == memcmp("true", input, input_length)))
+	else if (TRUE_LENGTH == length &&
+			 (0 == memcmp(True, input, length) ||
+			  0 == memcmp("true", input, length)))
 	{
-		*bool_value = 1;
+		*output = 1;
 		return 1;
 	}
 
 	return 0;
 }
 
-uint8_t bool_to_string(uint8_t bool_value, struct buffer* output_string)
+uint8_t bool_to_string(uint8_t input, struct buffer* output)
 {
-	if (0 == bool_value)
+	if (!input)
 	{
-		return buffer_append_char(output_string, False, FALSE_LENGTH);
+		return buffer_append_char(output, False, FALSE_LENGTH);
 	}
-	else if (1 == bool_value)
+	else if (1 == input)
 	{
-		return buffer_append_char(output_string, True, TRUE_LENGTH);
+		return buffer_append_char(output, True, TRUE_LENGTH);
 	}
 
 	return 0;
@@ -92,12 +99,12 @@ double double_parse(const uint8_t* value)
 	return atof((const char*)value);
 }
 
-uint8_t double_to_string(double double_value, struct buffer* output_string)
+uint8_t double_to_string(double input, struct buffer* output)
 {
 #if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(double_value, 386, "%.16lf", output_string);
+	DIGIT_TO_STRING_STDC_SEC_API(input, 386, "%.16lf", output);
 #else
-	DIGIT_TO_STRING(double_value, 386, "%.16lf", output_string);
+	DIGIT_TO_STRING(input, 386, "%.16lf", output);
 #endif
 }
 
@@ -106,12 +113,12 @@ int32_t int_parse(const uint8_t* value)
 	return atoi((const char*)value);
 }
 
-uint8_t int_to_string(int32_t int_value, struct buffer* output_string)
+uint8_t int_to_string(int32_t input, struct buffer* output)
 {
 #if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(int_value, 12, "%i", output_string);
+	DIGIT_TO_STRING_STDC_SEC_API(input, 12, "%i", output);
 #else
-	DIGIT_TO_STRING(int_value, 12, "%i", output_string);
+	DIGIT_TO_STRING(input, 12, "%i", output);
 #endif
 }
 
@@ -120,51 +127,75 @@ long long_parse(const uint8_t* value)
 	return atol((const char*)value);
 }
 
-uint8_t long_to_string(long long_value, struct buffer* output_string)
+uint8_t long_to_string(long input, struct buffer* output)
 {
 #if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(long_value, 24, "%ld", output_string);
+	DIGIT_TO_STRING_STDC_SEC_API(input, 24, "%ld", output);
 #else
-	DIGIT_TO_STRING(long_value, 24, "%ld", output_string);
+	DIGIT_TO_STRING(input, 24, "%ld", output);
 #endif
 }
 
-int64_t int64_parse(const uint8_t* value)
+int64_t int64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 {
-	return atoll((const char*)value);
-}
+	const uint64_t output = uint64_parse(input_start, input_finish);
 
-uint8_t int64_to_string(int64_t int_value, struct buffer* output_string)
-{
-#if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(int_value, 24, "%"PRId64, output_string);
-#else
-	DIGIT_TO_STRING(int_value, 24, "%"PRId64, output_string);
-#endif
-}
-
-uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
-{
-	if (range_in_parts_is_null_or_empty(value_start, value_finish))
+	if (!output)
 	{
 		return 0;
 	}
 
-	static const uint8_t* digits = (const uint8_t*)"0123456789";
-	static const uint8_t count_of_digits = 10;
-	/**/
-	value_start = find_any_symbol_like_or_not_like_that(
-					  value_start, value_finish,
+	input_finish = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits, 1,
+				   1);
+	input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, &minus, 1, 1, 1);
+	const uint8_t is_minus = minus == *input_start;
+
+	if (INT64_MAX < output)
+	{
+		return is_minus ? INT64_MIN : INT64_MAX;
+	}
+	else if (is_minus && (INT64_MAX - 1) < output)
+	{
+		return INT64_MIN;
+	}
+
+	return is_minus ? ((int64_t) -1) * output : output;
+}
+
+uint8_t int64_to_string(int64_t input, struct buffer* output)
+{
+	if (input < 0)
+	{
+		input *= -1;
+
+		if (!buffer_push_back(output, minus))
+		{
+			return 0;
+		}
+	}
+
+	return uint64_to_string(input, output);
+}
+
+uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
+{
+	if (range_in_parts_is_null_or_empty(input_start, input_finish))
+	{
+		return 0;
+	}
+
+	input_start = find_any_symbol_like_or_not_like_that(
+					  input_start, input_finish,
 					  digits + 1, count_of_digits - 1, 1, 1);
-	value_finish = find_any_symbol_like_or_not_like_that(
-					   value_start, value_finish,
+	input_finish = find_any_symbol_like_or_not_like_that(
+					   input_start, input_finish,
 					   digits, count_of_digits, 0, 1);
 
-	if (value_finish == value_start)
+	if (input_finish == input_start)
 	{
 		return 0;
 	}
-	else if (20 < value_finish - value_start)
+	else if (20 < input_finish - input_start)
 	{
 		return UINT64_MAX;
 	}
@@ -174,12 +205,12 @@ uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 
 	do
 	{
-		--value_finish;
+		--input_finish;
 		const uint64_t previous_result = result;
 
 		for (uint8_t i = 0; i < count_of_digits; ++i)
 		{
-			if (digits[i] == *value_finish)
+			if (digits[i] == *input_finish)
 			{
 				result += multi * i;
 				break;
@@ -193,16 +224,16 @@ uint64_t uint64_parse(const uint8_t* value_start, const uint8_t* value_finish)
 
 		multi *= 10;
 	}
-	while (value_start != value_finish);
+	while (input_start != input_finish);
 
 	return result;
 }
 
 void plus_(uint8_t a, uint8_t b, uint8_t* c)
 {
-	a -= '0';
-	b -= '0';
-	c[1] -= '0';
+	a -= zero;
+	b -= zero;
+	c[1] -= zero;
 	c[1] += a + b;
 
 	if (9 < c[1])
@@ -211,7 +242,7 @@ void plus_(uint8_t a, uint8_t b, uint8_t* c)
 		c[0] = '1';
 	}
 
-	c[1] += '0';
+	c[1] += zero;
 }
 
 const uint8_t* plus(
@@ -219,7 +250,7 @@ const uint8_t* plus(
 	const uint8_t* b_start, const uint8_t* b_finish)
 {
 	static uint8_t result[21];
-	memset(result, '0', sizeof(result));
+	memset(result, zero, sizeof(result));
 	uint8_t* c = result + 19;
 
 	while (result < c)
@@ -234,7 +265,7 @@ const uint8_t* plus(
 		}
 		else
 		{
-			a = '0';
+			a = zero;
 		}
 
 		if (b_start < b_finish)
@@ -244,12 +275,12 @@ const uint8_t* plus(
 		}
 		else
 		{
-			b = '0';
+			b = zero;
 		}
 
 		if (a_start == a_finish &&
 			b_start == b_finish &&
-			'0' == a && '0' == b)
+			zero == a && zero == b)
 		{
 			break;
 		}
@@ -261,7 +292,7 @@ const uint8_t* plus(
 	return result;
 }
 
-uint8_t uint64_to_string(uint64_t int_value, struct buffer* output_string)
+uint8_t uint64_to_string(uint64_t input, struct buffer* output)
 {
 	static const uint8_t* str_bytes[] =
 	{
@@ -333,14 +364,14 @@ uint8_t uint64_to_string(uint64_t int_value, struct buffer* output_string)
 	/**/
 	uint8_t i = 0;
 	static uint8_t result[21];
-	const uint8_t* ptr_to_result = NULL;
-	memset(result, '0', sizeof(result));
+	const uint8_t* ptr_to_result;
+	memset(result, zero, sizeof(result));
 	static uint8_t* result_finish = result + 21;
 
-	while (0 < int_value)
+	while (0 < input)
 	{
-		const uint8_t the_byte = int_value & 0x1;
-		int_value = int_value >> 1;
+		const uint8_t the_byte = input & 0x1;
+		input = input >> 1;
 
 		if (!the_byte)
 		{
@@ -355,11 +386,10 @@ uint8_t uint64_to_string(uint64_t int_value, struct buffer* output_string)
 		++i;
 	}
 
-	static const uint8_t zero = '0';
 	ptr_to_result = find_any_symbol_like_or_not_like_that(result, result_finish, &zero, 1, 0, 1);
 	i = (uint8_t)(result_finish - ptr_to_result);
 	/**/
-	return i ? buffer_append(output_string, ptr_to_result, i) : buffer_push_back(output_string, zero);
+	return i ? buffer_append(output, ptr_to_result, i) : buffer_push_back(output, zero);
 }
 
 void* pointer_parse(const uint8_t* value)
@@ -373,135 +403,11 @@ void* pointer_parse(const uint8_t* value)
 	return (void*)(ptrdiff_t)strtoll((const char*)value, &ch, 16);
 }
 
-uint8_t pointer_to_string(const void* pointer_value, struct buffer* output_string)
+uint8_t pointer_to_string(const void* input, struct buffer* output)
 {
 #if __STDC_LIB_EXT1__
-	DIGIT_TO_STRING_STDC_SEC_API(pointer_value, 32, "%p", output_string);
+	DIGIT_TO_STRING_STDC_SEC_API(input, 32, "%p", output);
 #else
-	DIGIT_TO_STRING(pointer_value, 32, "%p", output_string);
+	DIGIT_TO_STRING(input, 32, "%p", output);
 #endif
-}
-
-static const uint8_t* conversion_str[] =
-{
-	(const uint8_t*)"parse",
-	(const uint8_t*)"to-string"
-};
-
-enum conversion_function
-{
-	parse, to_string,
-	UNKNOWN_CONVERSION
-};
-
-uint8_t conversion_get_function(const uint8_t* name_start, const uint8_t* name_finish)
-{
-	return common_string_to_enum(name_start, name_finish, conversion_str, UNKNOWN_CONVERSION);
-}
-
-uint8_t bool_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						   struct buffer* output)
-{
-	if (UNKNOWN_CONVERSION <= function || NULL == arguments || 1 != arguments_count || NULL == output)
-	{
-		return 0;
-	}
-
-	struct range argument;
-
-	if (!common_get_arguments(arguments, arguments_count, &argument, 0))
-	{
-		return 0;
-	}
-
-	switch (function)
-	{
-		case parse:
-		case to_string:
-		{
-			uint8_t bool_value = 0;
-
-			if (!bool_parse(argument.start, range_size(&argument), &bool_value))
-			{
-				break;
-			}
-
-			return bool_to_string(bool_value, output);
-		}
-
-		case UNKNOWN_CONVERSION:
-		default:
-			break;
-	}
-
-	return 0;
-}
-
-uint8_t conversion_exec_function(uint8_t name_space, uint8_t function,
-								 const struct buffer* arguments, uint8_t arguments_count, struct buffer* output)
-{
-	if (UNKNOWN_CONVERSION <= function || NULL == arguments || 1 != arguments_count || NULL == output)
-	{
-		return 0;
-	}
-
-	struct range argument;
-
-	if (!common_get_arguments(arguments, arguments_count, &argument, 1))
-	{
-		return 0;
-	}
-
-	switch (function)
-	{
-		case parse:
-		case to_string:
-			if (1 == name_space)
-			{
-				return double_to_string(double_parse(argument.start), output);
-			}
-			else if (2 == name_space)
-			{
-				return int_to_string(int_parse(argument.start), output);
-			}
-
-#if !defined(_WIN32)
-			else if (3 == name_space)
-			{
-				return long_to_string(long_parse(argument.start), output);
-			}
-
-#endif
-			return int64_to_string(int64_parse(argument.start), output);
-
-		case UNKNOWN_CONVERSION:
-		default:
-			break;
-	}
-
-	return 0;
-}
-
-uint8_t double_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							 struct buffer* output)
-{
-	return conversion_exec_function(1, function, arguments, arguments_count, output);
-}
-
-uint8_t int_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						  struct buffer* output)
-{
-	return conversion_exec_function(2, function, arguments, arguments_count, output);
-}
-
-uint8_t long_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						   struct buffer* output)
-{
-	return conversion_exec_function(3, function, arguments, arguments_count, output);
-}
-
-uint8_t int64_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							struct buffer* output)
-{
-	return conversion_exec_function(4, function, arguments, arguments_count, output);
 }

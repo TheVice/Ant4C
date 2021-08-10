@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -160,9 +160,11 @@ TEST(TestProperty_, property_set_by_pointer)
 				properties_free(&properties) << buffer_free(&property_value);
 		ASSERT_TRUE(buffer_size(&property_value)) <<
 				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_TRUE(buffer_push_back(&property_value, 0)) <<
-				properties_free(&properties) << buffer_free(&property_value);
-		ASSERT_EQ(int64_value, int64_parse(buffer_data(&property_value, 0))) <<
+		//
+		const uint8_t* start = buffer_data(&property_value, 0);
+		const uint8_t* finish = start + buffer_size(&property_value);
+		//
+		ASSERT_EQ(int64_value, int64_parse(start, finish)) <<
 				properties_free(&properties) << buffer_free(&property_value);
 	}
 
