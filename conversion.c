@@ -251,8 +251,15 @@ uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	return result;
 }
 
-void plus_(uint8_t a, uint8_t b, uint8_t* c)
+void conversion_addition_single_digit(uint8_t a, uint8_t b, uint8_t* c)
 {
+	if (a < '0' || '9' < a ||
+		b < '0' || '9' < b ||
+		!c)
+	{
+		return;
+	}
+
 	a -= zero;
 	b -= zero;
 	c[1] -= zero;
@@ -267,13 +274,19 @@ void plus_(uint8_t a, uint8_t b, uint8_t* c)
 	c[1] += zero;
 }
 
-const uint8_t* plus(
+void conversion_addition(
 	const uint8_t* a_start, const uint8_t* a_finish,
-	const uint8_t* b_start, const uint8_t* b_finish)
+	const uint8_t* b_start, const uint8_t* b_finish,
+	uint8_t* result, uint8_t result_size)
 {
-	static uint8_t result[21];
-	memset(result, zero, sizeof(result));
-	uint8_t* c = result + 19;
+	if (!result ||
+		result_size < 2)
+	{
+		return;
+	}
+
+	memset(result, zero, result_size);
+	uint8_t* c = result + (result_size - 2);
 
 	while (result < c)
 	{
@@ -307,15 +320,18 @@ const uint8_t* plus(
 			break;
 		}
 
-		plus_(a, b, c);
+		conversion_addition_single_digit(a, b, c);
 		--c;
 	}
-
-	return result;
 }
 
-uint8_t uint64_to_string(uint64_t input, struct buffer* output)
+const uint8_t* uint64_to_string_to_byte_array(uint64_t input, uint8_t* a, uint8_t* b, uint8_t size)
 {
+	if (!a || !b || !size)
+	{
+		return NULL;
+	}
+
 	static const uint8_t* str_bytes[] =
 	{
 		(const uint8_t*)"1",
@@ -385,10 +401,10 @@ uint8_t uint64_to_string(uint64_t input, struct buffer* output)
 	};
 	/**/
 	uint8_t i = 0;
-	static uint8_t result[21];
-	const uint8_t* ptr_to_result;
-	memset(result, zero, sizeof(result));
-	static uint8_t* result_finish = result + 21;
+	const uint8_t* result_start = a;
+	const uint8_t* result_finish = b;
+	uint8_t* out = b;
+	memset(a, zero, size);
 
 	while (0 < input)
 	{
@@ -401,17 +417,58 @@ uint8_t uint64_to_string(uint64_t input, struct buffer* output)
 			continue;
 		}
 
-		ptr_to_result = plus(result, result_finish, str_bytes[i],
-							 str_bytes[i] + common_count_bytes_until(str_bytes[i], 0));
-		memcpy(result, ptr_to_result, sizeof(result));
-		/**/
+		conversion_addition(
+			result_start, result_finish,
+			str_bytes[i], str_bytes[i] + common_count_bytes_until(str_bytes[i], 0),
+			out, size);
+
+		if (a == result_start)
+		{
+			result_start = b;
+			out = a;
+		}
+		else
+		{
+			result_start = a;
+			out = b;
+		}
+
+		result_finish = result_start + size;
 		++i;
 	}
 
-	ptr_to_result = find_any_symbol_like_or_not_like_that(result, result_finish, &zero, 1, 0, 1);
-	i = (uint8_t)(result_finish - ptr_to_result);
+	return result_start;
+}
+
+uint8_t uint64_to_string(uint64_t input, struct buffer* output)
+{
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 42))
+	{
+		return 0;
+	}
+
+	uint8_t* a = buffer_data(output, size);
+	uint8_t* b = a + 21;
 	/**/
-	return i ? buffer_append(output, ptr_to_result, i) : buffer_push_back(output, zero);
+	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, 21);
+	const uint8_t* result_finish = result_start + 21;
+	result_start = find_any_symbol_like_or_not_like_that(result_start, result_finish, &zero, 1, 0, 1);
+	/**/
+	const uint8_t length = (uint8_t)(result_finish - result_start);
+
+	if (!buffer_resize(output, size))
+	{
+		return 0;
+	}
+
+	if (length)
+	{
+		MEM_CPY(a, result_start, length);
+	}
+
+	return length ? buffer_append(output, NULL, length) : buffer_push_back(output, zero);
 }
 
 void* pointer_parse(const uint8_t* value)

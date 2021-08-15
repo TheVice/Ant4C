@@ -38,6 +38,7 @@ add_executable(ant4c_tests
   "${CMAKE_SOURCE_DIR}/tests_property.cpp"
   "${CMAKE_SOURCE_DIR}/tests_string_unit.cpp"
   "${CMAKE_SOURCE_DIR}/tests_text_encoding.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_version.cpp"
   "${CMAKE_SOURCE_DIR}/tests_xml.cpp"
   "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
 )

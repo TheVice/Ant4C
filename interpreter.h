@@ -48,6 +48,13 @@ uint8_t sleep_unit_get_attributes_and_arguments_for_task(
 	uint8_t* task_attributes_count, struct buffer* task_arguments);
 uint8_t sleep_unit_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
 
+/*version*/
+uint8_t version_get_function(
+	const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t version_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output);
+
 uint8_t interpreter_disassemble_function(
 	const struct range* function, struct range* name_space,
 	struct range* name, struct range* arguments_area);

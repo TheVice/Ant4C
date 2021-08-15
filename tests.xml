@@ -10255,7 +10255,63 @@ Approximate round trip times in milli-seconds:
       <expected_size>2</expected_size>
       <output>65023</output>
     </text_encoding_encode_UTF16>
-</TestTextEncoding>
+  </TestTextEncoding>
+  <TestVersion>
+    <version_init>
+      <output>0.0.0.0</output>
+    </version_init>
+    <version_init>
+      <major>1</major>
+      <minor>2</minor>
+      <build>3</build>
+      <revision>4</revision>
+      <output>1.2.3.4</output>
+    </version_init>
+    <version_init>
+      <major>4294967295</major>
+      <minor>4294967295</minor>
+      <build>4294967295</build>
+      <revision>4294967295</revision>
+      <output>4294967295.4294967295.4294967295.4294967295</output>
+    </version_init>
+    <version_parse>
+      <input>0.0.0.0</input>
+    </version_parse>
+    <version_parse>
+      <input>1.2.3.4</input>
+      <major>1</major>
+      <minor>2</minor>
+      <build>3</build>
+      <revision>4</revision>
+    </version_parse>
+    <version_parse>
+      <input>4294967295.4294967295.4294967295.4294967295</input>
+      <major>4294967295</major>
+      <minor>4294967295</minor>
+      <build>4294967295</build>
+      <revision>4294967295</revision>
+    </version_parse>
+    <version_less>
+      <version_a>0</version_a>
+      <version_b>0</version_b>
+      <output>0</output>
+    </version_less>
+    <version_less>
+      <version_a>1</version_a>
+      <version_b>2</version_b>
+      <output>1</output>
+    </version_less>
+    <version_greater>
+      <version_a>0</version_a>
+      <version_b>0</version_b>
+      <output>0</output>
+    </version_greater>
+    <version_greater>
+      <version_a>2</version_a>
+      <version_b>1</version_b>
+      <output>1</output>
+    </version_greater>
+  </TestVersion>
   <TestXml>
     <xml_get_tag_finish_pos>
       <input></input>
