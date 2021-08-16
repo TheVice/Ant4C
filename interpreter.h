@@ -35,12 +35,23 @@ uint8_t int64_exec_function(
 
 /*date_time*/
 uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output);
+uint8_t datetime_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output);
 
 uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output);
+uint8_t timespan_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output);
+
+/*operating_system*/
+uint8_t os_get_function(const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t os_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output);
+uint8_t platform_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output);
 
 /*sleep_unit*/
 uint8_t sleep_unit_get_attributes_and_arguments_for_task(

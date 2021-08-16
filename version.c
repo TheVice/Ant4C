@@ -5,8 +5,6 @@
  *
  */
 
-#include "stdc_secure_api.h"
-
 #include "version.h"
 #include "buffer.h"
 #include "common.h"

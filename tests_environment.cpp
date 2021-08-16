@@ -319,15 +319,9 @@ TEST_F(TestEnvironment, environment_variable_exists)
 	}
 }
 
-#if defined(_WIN32)
-#define OS_SIZE UINT8_MAX
-#else
-#define OS_SIZE sizeof(struct utsname) + INT8_MAX
-#endif
-
 TEST_F(TestOperatingSystem, operating_system_init)
 {
-	uint8_t os[OS_SIZE];
+	uint8_t os[OPERATING_SYSTEM_SIZE];
 
 	for (const auto& node : nodes)
 	{
@@ -371,9 +365,9 @@ TEST_F(TestOperatingSystem, operating_system_init)
 		}
 
 #if !defined(_WIN32)
-		ASSERT_TRUE(operating_system_init(platformID, ptr_version, version_string, OS_SIZE, os));
+		ASSERT_TRUE(operating_system_init(platformID, ptr_version, version_string, OPERATING_SYSTEM_SIZE, os));
 #else
-		ASSERT_TRUE(operating_system_init(platformID, is_server, ptr_version, OS_SIZE, os));
+		ASSERT_TRUE(operating_system_init(platformID, is_server, ptr_version, OPERATING_SYSTEM_SIZE, os));
 #endif
 		ASSERT_EQ(platformID, operating_system_get_platform(os));
 #if defined(_WIN32)
@@ -414,7 +408,7 @@ TEST_F(TestOperatingSystem, operating_system_init)
 
 TEST_F(TestOperatingSystem, operating_system_parse)
 {
-	uint8_t os[OS_SIZE];
+	uint8_t os[OPERATING_SYSTEM_SIZE];
 
 	for (const auto& node : nodes)
 	{
@@ -429,7 +423,8 @@ TEST_F(TestOperatingSystem, operating_system_parse)
 		const auto expected_revision = output_node.attribute("revision").as_uint();
 		//
 		const auto input_in_range(string_to_range(input));
-		ASSERT_TRUE(operating_system_parse(input_in_range.start, input_in_range.finish, OS_SIZE, os)) << input;
+		ASSERT_TRUE(operating_system_parse(
+						input_in_range.start, input_in_range.finish, OPERATING_SYSTEM_SIZE, os)) << input;
 		//
 		ASSERT_EQ(expected_platform, operating_system_get_platform(os)) << input;
 		ASSERT_EQ(expected_is_server, operating_system_is_windows_server(os)) << input;
