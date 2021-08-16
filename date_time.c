@@ -15,7 +15,6 @@
 #include "range.h"
 
 #include <time.h>
-#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -49,9 +48,6 @@
 static const int32_t seconds_per_day = 86400;
 static const int16_t seconds_per_hour = 3600;
 static const int8_t seconds_per_minute = 60;
-
-static const uint8_t digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-#define COUNT_OF_DIGITS COUNT_OF(digits)
 
 #define WEEK_DAY(A)	\
 	((A) < 6) ? ((A) + 1) : 0;
@@ -175,9 +171,11 @@ uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct b
 		return 0;
 	}
 
+	char* output_ = (char*)buffer_data(output, size);
 	tm_.tm_year -= 1900;
 	tm_.tm_mon -= 1;
-	const ptrdiff_t new_size = strftime((char*)buffer_data(output, size), INT8_MAX, (const char*)format, &tm_);
+	/**/
+	const ptrdiff_t new_size = strftime(output_, INT8_MAX, (const char*)format, &tm_);
 
 	if (!new_size)
 	{
@@ -191,6 +189,9 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 					   uint32_t* year, uint8_t* month, uint8_t* day,
 					   uint8_t* hour, uint8_t* minute, uint8_t* second)
 {
+	static const uint8_t* digits = (const uint8_t*)"0123456789";
+	static const uint8_t count_of_digits = 10;
+
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		!year || !month || !day ||
 		!hour || !minute || !second)
@@ -209,7 +210,7 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 
 	while (input_start != input_finish && step < 6)
 	{
-		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, COUNT_OF_DIGITS, 1, 1);
+		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits, 1, 1);
 
 		if (input_start == input_finish)
 		{
@@ -228,8 +229,8 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 		}
 
 		++step;
-		input_start = find_any_symbol_like_or_not_like_that(input_start + 1, input_finish, digits, COUNT_OF_DIGITS, 0,
-					  1);
+		input_start = find_any_symbol_like_or_not_like_that(
+						  input_start + 1, input_finish, digits, count_of_digits, 0, 1);
 	}
 
 	return (0 < *day && *day < 32 && 1 < *month && *month < 31 && *hour < 24 && *minute < 60 && *second < 60);
@@ -266,32 +267,68 @@ uint8_t datetime_parse_buffer(struct buffer* input_output)
 	return buffer_resize(input_output, size + sizeof(int64_t));
 }
 
-uint8_t datetime_to_char_array(const struct tm* tm_, char* output)
+uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 {
-	if (! tm_ || !output)
+	if (!inputs || !output)
 	{
 		return 0;
 	}
 
-	uint8_t length = 0;
-#if __STDC_LIB_EXT1__
-	length += (uint8_t)sprintf_s(output + length, 75 - length, 9 < tm_->tm_mday ? "%i." : "0%i.", tm_->tm_mday);
-	length += (uint8_t)sprintf_s(output + length, 75 - length, 9 < tm_->tm_mon ? "%i." : "0%i.", tm_->tm_mon);
-	length += (uint8_t)sprintf_s(output + length, 75 - length, "%i ", tm_->tm_year);
-	/**/
-	length += (uint8_t)sprintf_s(output + length, 75 - length, "%i:", tm_->tm_hour);
-	length += (uint8_t)sprintf_s(output + length, 75 - length, 9 < tm_->tm_min ? "%i:" : "0%i:", tm_->tm_min);
-	length += (uint8_t)sprintf_s(output + length, 75 - length, 9 < tm_->tm_sec ? "%i" : "0%i", tm_->tm_sec);
-#else
-	length += (uint8_t)sprintf(output + length, 9 < tm_->tm_mday ? "%i." : "0%i.", tm_->tm_mday);
-	length += (uint8_t)sprintf(output + length, 9 < tm_->tm_mon ? "%i." : "0%i.", tm_->tm_mon);
-	length += (uint8_t)sprintf(output + length, "%i ", tm_->tm_year);
-	/**/
-	length += (uint8_t)sprintf(output + length, "%i:", tm_->tm_hour);
-	length += (uint8_t)sprintf(output + length, 9 < tm_->tm_min ? "%i:" : "0%i:", tm_->tm_min);
-	length += (uint8_t)sprintf(output + length, 9 < tm_->tm_sec ? "%i" : "0%i", tm_->tm_sec);
-#endif
-	return length;
+	uint8_t* ptr = output;
+
+	for (uint8_t i = 0; i < 6; ++i)
+	{
+		static const uint8_t zero = '0';
+
+		if (i < 2 || 3 < i)
+		{
+			if (inputs[i] < 10)
+			{
+				*ptr = zero;
+				++ptr;
+			}
+		}
+
+		uint8_t* a = ptr;
+		uint8_t* b = ptr + 21;
+		/**/
+		const uint8_t* c = uint64_to_string_to_byte_array(inputs[i], a, b, 21);
+		const uint8_t* d = c + 21;
+		/**/
+		c = find_any_symbol_like_or_not_like_that(c, d, &zero, 1, 0, 1);
+		/**/
+		const uint8_t length = (uint8_t)(d - c);
+
+		if (length)
+		{
+			MEM_CPY(a, c, length);
+		}
+		else
+		{
+			*a = zero;
+			++a;
+		}
+
+		if (i < 2)
+		{
+			*a = '.';
+			++a;
+		}
+		else if (2 == i)
+		{
+			*a = ' ';
+			++a;
+		}
+		else if (2 < i && 5 != i)
+		{
+			*a = ':';
+			++a;
+		}
+
+		ptr = a;
+	}
+
+	return (uint8_t)(ptr - output);
 }
 
 uint8_t datetime_to_string(uint32_t year, uint8_t month, uint8_t day,
@@ -310,28 +347,14 @@ uint8_t datetime_to_string(uint32_t year, uint8_t month, uint8_t day,
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 75))
+	if (!buffer_append(output, NULL, INT8_MAX))
 	{
 		return 0;
 	}
 
-	struct tm tm_;
-
-	tm_.tm_year = year;
-
-	tm_.tm_mon = month;
-
-	tm_.tm_mday = day;
-
-	tm_.tm_hour = hour;
-
-	tm_.tm_min = minute;
-
-	tm_.tm_sec = second;
-
-	char* ptr = (char*)buffer_data(output, size);
-
-	return buffer_resize(output, size + datetime_to_char_array(&tm_, ptr));
+	int inputs[] = { day, month, year, hour, minute, second };
+	uint8_t* output_ = buffer_data(output, size);
+	return buffer_resize(output, size + datetime_to_char_array(inputs, output_));
 }
 
 uint8_t datetime_get_day(int64_t input)

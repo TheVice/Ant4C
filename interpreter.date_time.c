@@ -11,29 +11,6 @@
 #include "conversion.h"
 #include "range.h"
 
-static const uint8_t* datetime_function_str[] =
-{
-	(const uint8_t*)"format-to-string",
-	(const uint8_t*)"parse",
-	(const uint8_t*)"to-string",
-	(const uint8_t*)"get-day",
-	(const uint8_t*)"get-day-of-week",
-	(const uint8_t*)"get-day-of-year",
-	(const uint8_t*)"get-days-in-month",
-	(const uint8_t*)"get-hour",
-	(const uint8_t*)"get-millisecond",
-	(const uint8_t*)"get-minute",
-	(const uint8_t*)"get-month",
-	(const uint8_t*)"get-second",
-	(const uint8_t*)"get-ticks",
-	(const uint8_t*)"get-year",
-	(const uint8_t*)"is-leap-year",
-	(const uint8_t*)"ticks",
-	(const uint8_t*)"now-utc",
-	(const uint8_t*)"now",
-	(const uint8_t*)"from-input"
-};
-
 enum datetime_function
 {
 	format_to_string, parse, to_string, get_day, get_day_of_week,
@@ -45,6 +22,29 @@ enum datetime_function
 
 uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
+	static const uint8_t* datetime_function_str[] =
+	{
+		(const uint8_t*)"format-to-string",
+		(const uint8_t*)"parse",
+		(const uint8_t*)"to-string",
+		(const uint8_t*)"get-day",
+		(const uint8_t*)"get-day-of-week",
+		(const uint8_t*)"get-day-of-year",
+		(const uint8_t*)"get-days-in-month",
+		(const uint8_t*)"get-hour",
+		(const uint8_t*)"get-millisecond",
+		(const uint8_t*)"get-minute",
+		(const uint8_t*)"get-month",
+		(const uint8_t*)"get-second",
+		(const uint8_t*)"get-ticks",
+		(const uint8_t*)"get-year",
+		(const uint8_t*)"is-leap-year",
+		(const uint8_t*)"ticks",
+		(const uint8_t*)"now-utc",
+		(const uint8_t*)"now",
+		(const uint8_t*)"from-input"
+	};
+	/**/
 	return common_string_to_enum(name_start, name_finish, datetime_function_str, UNKNOWN_DATETIME_FUNCTION);
 }
 
@@ -58,7 +58,8 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 
 	struct range values[2];
 
-	if (arguments_count && !common_get_arguments(arguments, arguments_count, values, 0))
+	if (arguments_count &&
+		!common_get_arguments(arguments, arguments_count, values, format_to_string == function))
 	{
 		return 0;
 	}
@@ -192,29 +193,6 @@ uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments,
 	return 0;
 }
 
-static const uint8_t* timespan_function_str[] =
-{
-	(const uint8_t*)"parse",
-	(const uint8_t*)"to-string",
-	(const uint8_t*)"from-days",
-	(const uint8_t*)"from-hours",
-	(const uint8_t*)"from-milliseconds",
-	(const uint8_t*)"from-minutes",
-	(const uint8_t*)"from-seconds",
-	(const uint8_t*)"from-ticks",
-	(const uint8_t*)"get-days",
-	(const uint8_t*)"get-hours",
-	(const uint8_t*)"get-milliseconds",
-	(const uint8_t*)"get-minutes",
-	(const uint8_t*)"get-seconds",
-	(const uint8_t*)"get-ticks",
-	(const uint8_t*)"get-total-days",
-	(const uint8_t*)"get-total-hours",
-	(const uint8_t*)"get-total-milliseconds",
-	(const uint8_t*)"get-total-minutes",
-	(const uint8_t*)"get-total-seconds"
-};
-
 enum timespan_function
 {
 	ts_parse_, ts_to_string_, ts_from_days_, ts_from_hours_,
@@ -228,6 +206,29 @@ enum timespan_function
 
 uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 {
+	static const uint8_t* timespan_function_str[] =
+	{
+		(const uint8_t*)"parse",
+		(const uint8_t*)"to-string",
+		(const uint8_t*)"from-days",
+		(const uint8_t*)"from-hours",
+		(const uint8_t*)"from-milliseconds",
+		(const uint8_t*)"from-minutes",
+		(const uint8_t*)"from-seconds",
+		(const uint8_t*)"from-ticks",
+		(const uint8_t*)"get-days",
+		(const uint8_t*)"get-hours",
+		(const uint8_t*)"get-milliseconds",
+		(const uint8_t*)"get-minutes",
+		(const uint8_t*)"get-seconds",
+		(const uint8_t*)"get-ticks",
+		(const uint8_t*)"get-total-days",
+		(const uint8_t*)"get-total-hours",
+		(const uint8_t*)"get-total-milliseconds",
+		(const uint8_t*)"get-total-minutes",
+		(const uint8_t*)"get-total-seconds"
+	};
+	/**/
 	return common_string_to_enum(name_start, name_finish, timespan_function_str, UNKNOWN_TIMESPAN_FUNCTION);
 }
 
