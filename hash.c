@@ -14,8 +14,6 @@
 #include "file_system.h"
 #include "range.h"
 
-#include <stdio.h>
-#include <stddef.h>
 #include <string.h>
 
 uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
@@ -64,6 +62,33 @@ uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
 	return 1;
 }
 
+uint8_t hash_algorithm_single_digit_to_hex(uint8_t input)
+{
+	if (9 < input)
+	{
+		input += 'a' - 10;
+	}
+	else
+	{
+		input += '0';
+	}
+
+	return input;
+}
+
+uint8_t hash_algorithm_digit_to_hex(uint8_t input, struct buffer* output)
+{
+	const uint8_t rest = input % 16;
+
+	if (0 == input - rest)
+	{
+		return buffer_push_back(output, hash_algorithm_single_digit_to_hex(rest));
+	}
+
+	return hash_algorithm_digit_to_hex((input - rest) / 16, output) &&
+		   buffer_push_back(output, hash_algorithm_single_digit_to_hex(rest));
+}
+
 uint8_t hash_algorithm_bytes_to_string(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
@@ -80,29 +105,31 @@ uint8_t hash_algorithm_bytes_to_string(
 		return 1;
 	}
 
-	ptrdiff_t size = buffer_size(output);
+	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 2 * (finish - start) + 2))
+	if (!buffer_append(output, NULL, 2 * (finish - start) + 2) ||
+		!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t max_size = buffer_size(output) - 3;
-	char* ptr = (char*)buffer_data(output, size);
-
-	while (start < finish && size < max_size)
+	for (; start < finish; ++start)
 	{
-#if __STDC_LIB_EXT1__
-		const int32_t sz = sprintf_s(ptr, 3, (*start) < 16 ? "0%x" : "%x", *start);
-#else
-		const int32_t sz = sprintf(ptr, (*start) < 16 ? "0%x" : "%x", *start);
-#endif
-		ptr += sz;
-		size += sz;
-		++start;
+		if ((*start) < 16)
+		{
+			if (!buffer_push_back(output, '0'))
+			{
+				return 0;
+			}
+		}
+
+		if (!hash_algorithm_digit_to_hex(*start, output))
+		{
+			return 0;
+		}
 	}
 
-	return buffer_resize(output, size);
+	return 1;
 }
 
 static const uint8_t* crc32_parameters_str[] =
