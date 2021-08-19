@@ -10364,6 +10364,15 @@ Approximate round trip times in milli-seconds:
       <return>1</return>
       <output><![CDATA[tag><tag /><tag comment="Hello! Look -> here."></tag><tag /></tag]]></output>
     </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<project></project><!-- A -->]]></input>
+      <return>1</return>
+      <output><![CDATA[project></project]]></output>
+    </xml_get_sub_nodes_elements>
+    <xml_get_sub_nodes_elements>
+      <input><![CDATA[<project><property name="property" <value="A" /><echo>property -> ${property}</echo></project>]]></input>
+      <return>0</return>
+    </xml_get_sub_nodes_elements>
     <xml_get_tag_name>
       <input></input>
       <output></output>
@@ -10418,6 +10427,11 @@ Approximate round trip times in milli-seconds:
     </xml_get_attribute_value>
     <xml_get_attribute_value>
       <input><![CDATA[<property name="checksum" value="${file::get-checksum(file, 'crc32')} />]]></input>
+      <attribute>value</attribute>
+      <return>0</return>
+    </xml_get_attribute_value>
+    <xml_get_attribute_value>
+      <input><![CDATA[<project><property name="property" <value="A" /><echo>property -> ${property}</echo></project>]]></input>
       <attribute>value</attribute>
       <return>0</return>
     </xml_get_attribute_value>

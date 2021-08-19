@@ -36,4 +36,6 @@ uint8_t uint64_to_string(uint64_t input, struct buffer* output);
 void* pointer_parse(const uint8_t* value);
 uint8_t pointer_to_string(const void* input, struct buffer* output);
 
+uint8_t int_to_hex(uint8_t input, struct buffer* output);
+
 #endif

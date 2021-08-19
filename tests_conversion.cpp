@@ -71,7 +71,7 @@ TEST_F(TestConversion, bool_to_string)
 
 TEST(TestConversion_, double_parse)
 {
-	const uint8_t* input[] =
+	static const uint8_t* input[] =
 	{
 		reinterpret_cast<const uint8_t*>("-1"),
 		reinterpret_cast<const uint8_t*>("0"),
@@ -83,7 +83,7 @@ TEST(TestConversion_, double_parse)
 		reinterpret_cast<const uint8_t*>("2.7182818284590451")
 	};
 	//
-	const double expected_output[] = { -1, 0, 1, DBL_MIN, 1.6976931348623157e+308, -1.6976931348623157e+308, 3.1415926535897931, 2.7182818284590451 };
+	static const double expected_output[] = { -1, 0, 1, DBL_MIN, 1.6976931348623157e+308, -1.6976931348623157e+308, 3.1415926535897931, 2.7182818284590451 };
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
@@ -96,17 +96,19 @@ TEST(TestConversion_, double_parse)
 
 TEST(TestConversion_, double_to_string)
 {
-	const double input[] = { -1, 0, 1, DBL_MIN, DBL_MAX, -DBL_MAX,
-							 3.1415926535897931, 2.7182818284590451
-						   };
+	static const double input[] = { -1, 0, 1, DBL_MIN, DBL_MAX, -DBL_MAX, 3.1415926535897931, 2.7182818284590451 };
+	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(double_to_string(input[i], &output)) << buffer_free(&output);
-		ASSERT_LT(0, buffer_size(&output)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(&output, 0)) << input[i] << std::endl <<
+											   buffer_free(&output);
+		ASSERT_TRUE(double_to_string(input[i], &output)) << input[i] << std::endl <<
+				buffer_free(&output);
+		ASSERT_LT(0, buffer_size(&output)) << input[i] << std::endl <<
+										   buffer_free(&output);
 	}
 
 	buffer_release(&output);
@@ -114,7 +116,7 @@ TEST(TestConversion_, double_to_string)
 
 TEST(TestConversion_, int_parse)
 {
-	const uint8_t* input[] =
+	static const uint8_t* input[] =
 	{
 		reinterpret_cast<const uint8_t*>("-1"),
 		reinterpret_cast<const uint8_t*>("0"),
@@ -123,7 +125,7 @@ TEST(TestConversion_, int_parse)
 		reinterpret_cast<const uint8_t*>("-2147483648")
 	};
 	//
-	const int32_t expected_output[] = { -1, 0, 1, INT32_MAX, INT32_MIN };
+	static const int32_t expected_output[] = { -1, 0, 1, INT32_MAX, INT32_MIN };
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
@@ -133,8 +135,9 @@ TEST(TestConversion_, int_parse)
 
 TEST(TestConversion_, int_to_string)
 {
-	const int32_t input[] = { -1, 0, 1, INT32_MAX, INT32_MIN };
-	const char* expected_output[] = { "-1", "0", "1", "2147483647", "-2147483648" };
+	static const int32_t input[] = { -1, 0, 1, INT32_MAX, INT32_MIN };
+	static const char* expected_output[] = { "-1", "0", "1", "2147483647", "-2147483648" };
+	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
@@ -150,7 +153,7 @@ TEST(TestConversion_, int_to_string)
 
 TEST(TestConversion_, long_parse)
 {
-	const uint8_t* input[] =
+	static const uint8_t* input[] =
 	{
 		reinterpret_cast<const uint8_t*>("-1"),
 		reinterpret_cast<const uint8_t*>("0"),
@@ -159,9 +162,9 @@ TEST(TestConversion_, long_parse)
 		reinterpret_cast<const uint8_t*>("-9223372036854775808L")
 	};
 #if !defined(_WIN32)
-	const long expected_output[] = { -1, 0, 1, LONG_MAX, LONG_MIN };
+	static const long expected_output[] = { -1, 0, 1, LONG_MAX, LONG_MIN };
 #else
-	const int64_t expected_output[] = { -1, 0, 1, INT64_MAX, INT64_MIN };
+	static const int64_t expected_output[] = { -1, 0, 1, INT64_MAX, INT64_MIN };
 #endif
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
@@ -177,11 +180,12 @@ TEST(TestConversion_, long_parse)
 TEST(TestConversion_, long_to_string)
 {
 #if !defined(_WIN32)
-	const long input[] = { -1, 0, 1, LONG_MAX, LONG_MIN };
+	static const long input[] = { -1, 0, 1, LONG_MAX, LONG_MIN };
 #else
-	const int64_t input[] = { -1, 0, 1, INT64_MAX, INT64_MIN };
+	static const int64_t input[] = { -1, 0, 1, INT64_MAX, INT64_MIN };
 #endif
-	const char* expected_output[] = { "-1", "0", "1", "9223372036854775807", "-9223372036854775808" };
+	static const char* expected_output[] = { "-1", "0", "1", "9223372036854775807", "-9223372036854775808" };
+	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
@@ -202,7 +206,7 @@ TEST(TestConversion_, long_to_string)
 
 TEST(TestConversion_, uint64_parse)
 {
-	const uint8_t* input[] =
+	static const uint8_t* input[] =
 	{
 		reinterpret_cast<const uint8_t*>("0"),
 		reinterpret_cast<const uint8_t*>(" 1"),
@@ -214,7 +218,7 @@ TEST(TestConversion_, uint64_parse)
 		reinterpret_cast<const uint8_t*>("0 21")
 	};
 	//
-	const uint64_t expected_output[] =
+	static const uint64_t expected_output[] =
 	{
 		0,
 		1,
@@ -240,14 +244,14 @@ TEST(TestConversion_, uint64_parse)
 
 TEST(TestConversion_, uint64_to_string)
 {
-	const uint64_t input[] =
+	static const uint64_t input[] =
 	{
 		0, INT8_MAX, UINT8_MAX, INT16_MAX, UINT16_MAX,
 		INT32_MAX, UINT32_MAX, INT64_MAX, UINT64_MAX,
 		UINT64_MAX - 1, UINT64_MAX - 2, UINT64_MAX - 3, UINT64_MAX - 4
 	};
 	//
-	const char* expected_output[] =
+	static const char* expected_output[] =
 	{
 		"0", "127", "255", "32767", "65535",
 		"2147483647", "4294967295", "9223372036854775807", "18446744073709551615",
@@ -272,8 +276,9 @@ TEST(TestConversion_, pointer_to_string_and_parse)
 	buffer value;
 	SET_NULL_TO_BUFFER(value);
 	//
-	auto pointer_to_buffer = &value;
+	const auto pointer_to_buffer = &value;
 	ASSERT_TRUE(pointer_to_string(pointer_to_buffer, pointer_to_buffer)) << buffer_free(pointer_to_buffer);
+	ASSERT_TRUE(buffer_push_back(pointer_to_buffer, 0)) << buffer_free(pointer_to_buffer);
 	//
 	const auto returned_pointer = pointer_parse(buffer_data(pointer_to_buffer, 0));
 	const auto returned_pointer_to_buffer = reinterpret_cast<const buffer*>(returned_pointer);

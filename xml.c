@@ -112,6 +112,10 @@ const uint8_t* xml_get_tag_finish_pos(const uint8_t* start, const uint8_t* finis
 				break;
 			}
 		}
+		else if (characters[LESS_POSITION] == *start)
+		{
+			return NULL;
+		}
 
 		++start;
 	}
@@ -147,6 +151,11 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 		}
 
 		const uint8_t* tag_finish_pos = xml_get_tag_finish_pos(start, finish);
+
+		if (!tag_finish_pos)
+		{
+			return 0;
+		}
 
 		if (question_mark == (*start))
 		{

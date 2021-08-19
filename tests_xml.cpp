@@ -32,7 +32,16 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 		//
-		const auto input_in_range = string_to_range(input);
+		auto input_in_range = string_to_range(input);
+
+		if (!range_is_null_or_empty(&input_in_range))
+		{
+			static const uint8_t less = '<';
+			input_in_range.start = find_any_symbol_like_or_not_like_that(
+									   input_in_range.start, input_in_range.finish, &less, 1, 1, 1);
+			++input_in_range.start;
+		}
+
 		const auto finish = xml_get_tag_finish_pos(input_in_range.start, input_in_range.finish);
 		//
 		ASSERT_LE(finish, input_in_range.finish) << input;
@@ -86,7 +95,7 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 
 			for (const auto& position : positions)
 			{
-				sub_node.finish = (const uint8_t*)sub_nodes.data();
+				sub_node.finish = reinterpret_cast<const uint8_t*>(sub_nodes.data());
 				sub_node.finish += position;
 				//
 				ASSERT_TRUE(buffer_append_range(&sub_nodes_names, &sub_node, 1)) <<
@@ -138,24 +147,31 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 					buffer_free_with_inner_buffers(&expected_elements);
 		}
 
-		const uint16_t expected_return = (uint16_t)INT_PARSE(
-											 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint16_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
-		const range input_in_range = string_to_range(input);
+		const auto input_in_range = string_to_range(input);
 		//
 		ASSERT_TRUE(buffer_resize(&elements, 0)) <<
 				buffer_free(&elements) <<
 				buffer_free(&sub_nodes_names) <<
 				buffer_free_with_inner_buffers(&expected_elements);
 		//
-		const uint16_t returned = xml_get_sub_nodes_elements(
-									  input_in_range.start, input_in_range.finish, &sub_nodes_names, &elements);
+		const auto returned = xml_get_sub_nodes_elements(
+								  input_in_range.start, input_in_range.finish, &sub_nodes_names, &elements);
 		//
 		ASSERT_EQ(expected_return, returned) <<
+											 input << std::endl <<
 											 buffer_free(&elements) <<
 											 buffer_free(&sub_nodes_names) <<
 											 buffer_free_with_inner_buffers(&expected_elements);
-		//
+
+		if (!expected_return)
+		{
+			--node_count;
+			continue;
+		}
+
 		i = 0;
 		range* element = NULL;
 		buffer* expected_element = NULL;
@@ -194,12 +210,11 @@ TEST_F(TestXml, xml_get_tag_name)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		auto input_in_range = string_to_range(input);
-		input_in_range.start = input.empty() ? NULL : input_in_range.start +
-							   1; //"NOTE: '+ 1' provided for skip '<' symbol."
+		input_in_range.start = input.empty() ? NULL : input_in_range.start + 1;
 		//
 		range name;
 		name.start = name.finish = NULL;
@@ -224,21 +239,23 @@ TEST_F(TestXml, xml_get_attribute_value)
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string attribute(node.node().select_node("attribute").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		ASSERT_TRUE(buffer_resize(&value, 0)) << buffer_free(&value);
 		//
 		const auto input_in_range = string_to_range(input);
 		const auto returned = xml_get_attribute_value(input_in_range.start, input_in_range.finish,
-							  attribute.empty() ? NULL : (const uint8_t*)attribute.data(), attribute.size(), &value);
+							  attribute.empty() ?
+							  NULL : reinterpret_cast<const uint8_t*>(attribute.data()), attribute.size(), &value);
 		//
 		ASSERT_EQ(expected_return, returned)
 				<< "input - '" << input << "'" << std::endl
 				<< "attribute - '" << attribute << "'" << std::endl
 				<< buffer_free(&value);
 		ASSERT_EQ(returned, xml_get_attribute_value(input_in_range.start, input_in_range.finish,
-				  attribute.empty() ? NULL : (const uint8_t*)attribute.data(), attribute.size(), NULL))
+				  attribute.empty() ?
+				  NULL : reinterpret_cast<const uint8_t*>(attribute.data()), attribute.size(), NULL))
 				<< "input - '" << input << "'" << std::endl
 				<< "attribute - '" << attribute << "'" << std::endl
 				<< buffer_free(&value);
@@ -263,7 +280,8 @@ TEST_F(TestXml, xml_get_element_value)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		const auto element = string_to_range(input);
 		//
 		ASSERT_TRUE(buffer_resize(&value, 0)) << buffer_free(&value);

@@ -79,7 +79,7 @@ uint8_t sleep_unit_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 				break;
 
 			case SECONDS_POSITION:
-				milliseconds += argument_value;
+				milliseconds += 1000 * argument_value;
 				break;
 
 			default:

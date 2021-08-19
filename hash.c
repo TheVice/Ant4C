@@ -62,33 +62,6 @@ uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
 	return 1;
 }
 
-uint8_t hash_algorithm_single_digit_to_hex(uint8_t input)
-{
-	if (9 < input)
-	{
-		input += 'a' - 10;
-	}
-	else
-	{
-		input += '0';
-	}
-
-	return input;
-}
-
-uint8_t hash_algorithm_digit_to_hex(uint8_t input, struct buffer* output)
-{
-	const uint8_t rest = input % 16;
-
-	if (0 == input - rest)
-	{
-		return buffer_push_back(output, hash_algorithm_single_digit_to_hex(rest));
-	}
-
-	return hash_algorithm_digit_to_hex((input - rest) / 16, output) &&
-		   buffer_push_back(output, hash_algorithm_single_digit_to_hex(rest));
-}
-
 uint8_t hash_algorithm_bytes_to_string(
 	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
@@ -123,7 +96,7 @@ uint8_t hash_algorithm_bytes_to_string(
 			}
 		}
 
-		if (!hash_algorithm_digit_to_hex(*start, output))
+		if (!int_to_hex(*start, output))
 		{
 			return 0;
 		}

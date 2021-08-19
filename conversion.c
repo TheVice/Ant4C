@@ -24,8 +24,8 @@ static const uint8_t count_of_digits = 10;
 static const uint8_t minus = '-';
 static const uint8_t zero = '0';
 
-static const char* False = "False";
-static const char* True = "True";
+static const uint8_t* False = (const uint8_t*)"False";
+static const uint8_t* True = (const uint8_t*)"True";
 
 #define FALSE_LENGTH 5
 #define TRUE_LENGTH  4
@@ -62,11 +62,11 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 {
 	if (!input)
 	{
-		return buffer_append_char(output, False, FALSE_LENGTH);
+		return buffer_append(output, False, FALSE_LENGTH);
 	}
 	else if (1 == input)
 	{
-		return buffer_append_char(output, True, TRUE_LENGTH);
+		return buffer_append(output, True, TRUE_LENGTH);
 	}
 
 	return 0;
@@ -118,7 +118,7 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 		return (MIN_VALUE);											\
 	}																\
 	\
-	return (TYPE)(is_minus ? ((TYPE)-1) * output : output);
+	return is_minus ? -1 * (TYPE)output : (TYPE)output;
 
 #define TO_STRING(INPUT, OUTPUT)				\
 	uint64_t input_;							\
@@ -489,4 +489,31 @@ uint8_t pointer_to_string(const void* input, struct buffer* output)
 #else
 	DIGIT_TO_STRING(input, 32, "%p", output);
 #endif
+}
+
+uint8_t single_int_to_hex(uint8_t input)
+{
+	if (9 < input)
+	{
+		input += 'a' - 10;
+	}
+	else
+	{
+		input += '0';
+	}
+
+	return input;
+}
+
+uint8_t int_to_hex(uint8_t input, struct buffer* output)
+{
+	const uint8_t rest = input % 16;
+
+	if (0 == input - rest)
+	{
+		return buffer_push_back(output, single_int_to_hex(rest));
+	}
+
+	return int_to_hex((input - rest) / 16, output) &&
+		   buffer_push_back(output, single_int_to_hex(rest));
 }
