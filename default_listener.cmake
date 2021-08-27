@@ -6,7 +6,10 @@ add_library(default_listener SHARED
 )
 
 if(NOT MSVC)
-  set_property(TARGET default_listener PROPERTY C_STANDARD 11)
+  target_compile_features(default_listener
+    PRIVATE
+    c_std_11
+  )
 endif()
 
 target_compile_options(default_listener PRIVATE

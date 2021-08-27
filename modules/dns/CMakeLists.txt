@@ -119,7 +119,10 @@ if(CMAKE_HOST_WIN32 AND (NOT (DEFINED _WIN32_WINNT)))
 endif()
 
 if(NOT MSVC)
-  set_property(TARGET ant4c.dns PROPERTY CXX_STANDARD 11)
+  target_compile_features(ant4c.dns
+    PRIVATE
+    cxx_std_11
+  )
 endif()
 
 target_compile_options(ant4c.dns PRIVATE

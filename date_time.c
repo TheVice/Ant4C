@@ -352,7 +352,17 @@ uint8_t datetime_to_string(uint32_t year, uint8_t month, uint8_t day,
 		return 0;
 	}
 
+#if defined(_MSC_VER) && (_MSC_VER < 1920)
+	int inputs[6];
+	inputs[0] = day;
+	inputs[1] = month;
+	inputs[2] = year;
+	inputs[3] = hour;
+	inputs[4] = minute;
+	inputs[5] = second;
+#else
 	int inputs[] = { day, month, year, hour, minute, second };
+#endif
 	uint8_t* output_ = buffer_data(output, size);
 	return buffer_resize(output, size + datetime_to_char_array(inputs, output_));
 }

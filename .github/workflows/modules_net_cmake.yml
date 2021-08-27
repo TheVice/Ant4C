@@ -70,17 +70,17 @@ jobs:
     - name: Create project files (Unix like)
       if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE="Release" -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}/${{ matrix.os }} -DNET_MODULE_TESTS=""
 
     - name: Create project files (Windows)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
-      run: cmake ${{ github.workspace }} -A ${{ env.TargetPlatform }} -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ env.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ env.TargetPlatform }} -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -A ${{ env.TargetPlatform }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }} -DNET_MODULE_TESTS=""
 
     - name: Create project files (Windows, MinGW)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
-      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ env.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ env.TargetPlatform }} -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }} -DNET_MODULE_TESTS=""
 
     - name: Build project files (Unix like)
       if: ${{ 'Windows' != runner.os }}

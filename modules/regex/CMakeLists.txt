@@ -64,7 +64,10 @@ else()
 endif()
 
 if(NOT MSVC)
-  set_property(TARGET ant4c.regex PROPERTY CXX_STANDARD 11)
+  target_compile_features(ant4c.regex
+    PRIVATE
+    cxx_std_11
+  )
 endif()
 
 target_compile_options(ant4c.regex PRIVATE

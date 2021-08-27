@@ -1,46 +1,68 @@
 
-if(DEFINED PUGIXML_BINARY_PATH)
-  if(MSVC OR MINGW)
-  string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../../pugixml)
-  else()
-  string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_BINARY_PATH}/../pugixml)
-  find_library(full_path_pugixml pugixml ${PUGIXML_BINARY_PATH})
-  endif()
-  add_library(pugixml STATIC IMPORTED)
+if(DEFINED LIBRARY_BINARY_DIR)
+  add_library(pugixml INTERFACE)
 
-  include_directories(${pugixml_Path}/src)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.19)
+    file(REAL_PATH "${LIBRARY_BINARY_DIR}/../pugixml/src" pugixml_Path)
+  else()
+    set(pugixml_Path "${LIBRARY_BINARY_DIR}/../pugixml/src")
+  endif()
+
+  if(NOT IS_DIRECTORY "${pugixml_Path}")
+    message(FATAL_ERROR "pugixml_Path '${pugixml_Path}' is not a directory.")
+  endif()
+
+  target_include_directories(
+    pugixml SYSTEM INTERFACE
+    "${pugixml_Path}"
+  )
 
   if(MSVC)
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_DEBUG "${PUGIXML_BINARY_PATH}/Debug/pugixml.lib")
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELEASE "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
-
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${PUGIXML_BINARY_PATH}/Release/pugixml.lib")
+    target_link_libraries(
+      pugixml
+      INTERFACE
+      debug "${LIBRARY_BINARY_DIR}/${CMAKE_VS_PLATFORM_NAME}/Debug/pugixml.lib"
+    )
+    target_link_libraries(
+      pugixml
+      INTERFACE
+      optimized "${LIBRARY_BINARY_DIR}/${CMAKE_VS_PLATFORM_NAME}/Release/pugixml.lib"
+    )
   elseif(MINGW)
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_DEBUG "${PUGIXML_BINARY_PATH}/MinGW-W64-Debug/libpugixml.a")
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELEASE "${PUGIXML_BINARY_PATH}/MinGW-W64-Release/libpugixml.a")
-
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${PUGIXML_BINARY_PATH}/MinGW-W64-Release/libpugixml.a")
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${PUGIXML_BINARY_PATH}/MinGW-W64-Release/libpugixml.a")
+    target_link_libraries(
+      pugixml
+      INTERFACE
+      debug "${LIBRARY_BINARY_DIR}/x64/MinGW-W64-Debug/libpugixml.a"
+    )
+    target_link_libraries(
+      pugixml
+      INTERFACE
+      optimized "${LIBRARY_BINARY_DIR}/x64/MinGW-W64-Release/libpugixml.a"
+    )
   else()
-  set_target_properties(pugixml PROPERTIES IMPORTED_LOCATION ${full_path_pugixml})
+    find_library(
+      pugixml_full_path
+      NAMES pugixml
+      PATHS ${LIBRARY_BINARY_DIR}
+    )
+    target_link_libraries(pugixml INTERFACE ${pugixml_full_path})
   endif()
 else()
-set(pugixml_FOUND 0)
+set(pugixml_FOUND False)
 
 if((DEFINED ENV{pugixml_issues_390}) OR (DEFINED pugixml_issues_390))# https://github.com/zeux/pugixml/issues/390
 else()
   find_package(pugixml)
 endif()
 
-if(1 EQUAL ${pugixml_FOUND})
+if(${pugixml_FOUND})
 else()
   message(STATUS "Search pugixml via defined PUGIXML_PATH if such exists.")
 
   if(DEFINED ENV{PUGIXML_PATH})
-    string(REPLACE "\\" "/" pugixml_Path $ENV{PUGIXML_PATH})
+    file(TO_CMAKE_PATH "$ENV{PUGIXML_PATH}" pugixml_Path)
   elseif(DEFINED PUGIXML_PATH)
-    string(REPLACE "\\" "/" pugixml_Path ${PUGIXML_PATH})
+    file(TO_CMAKE_PATH "${PUGIXML_PATH}" pugixml_Path)
   else()
     message(FATAL_ERROR "PUGIXML_PATH not set.")
   endif()
@@ -54,7 +76,10 @@ else()
   endif()
 
   if(NOT MSVC)
-    set_property(TARGET pugixml PROPERTY CXX_STANDARD 11)
+    target_compile_features(pugixml
+      PRIVATE
+      cxx_std_11
+    )
   endif()
 
   message(STATUS "pugixml was found.")

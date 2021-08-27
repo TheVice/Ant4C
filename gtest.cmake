@@ -1,51 +1,70 @@
 
-if(DEFINED GTEST_BINARY_PATH)
-  if(MSVC OR MINGW)
-  string(REPLACE "\\" "/" gtest_Path ${GTEST_BINARY_PATH}/../../googletest)
-  else()
-  string(REPLACE "\\" "/" gtest_Path ${GTEST_BINARY_PATH}/../googletest)
-  endif()
-
-  set(GTEST_INCLUDE_DIR ${gtest_Path}/include)
-  set(GTEST_INCLUDE_DIRS ${gtest_Path} ${GTEST_INCLUDE_DIR})
-
+if(DEFINED LIBRARY_BINARY_DIR)
   set(GTEST_MAIN_LIBRARY gtest)
-  if(NOT MSVC)
-  find_library(GTest ${GTEST_MAIN_LIBRARY} ${GTEST_BINARY_PATH})
+  add_library(${GTEST_MAIN_LIBRARY} INTERFACE)
+
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.19)
+    file(REAL_PATH "${LIBRARY_BINARY_DIR}/../googletest/include" gtest_Path)
+  else()
+    set(gtest_Path "${LIBRARY_BINARY_DIR}/../googletest/include")
   endif()
 
-  add_library(${GTEST_MAIN_LIBRARY} STATIC IMPORTED)
+  if(NOT IS_DIRECTORY "${gtest_Path}")
+    message(FATAL_ERROR "gtest_Path '${gtest_Path}' is not a directory.")
+  endif()
 
-  include_directories(${GTEST_INCLUDE_DIRS})
+  target_include_directories(
+    ${GTEST_MAIN_LIBRARY} SYSTEM INTERFACE
+    "${gtest_Path}"
+  )
 
   if(MSVC)
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_DEBUG "${GTEST_BINARY_PATH}/Debug/gtest.lib")
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_RELEASE "${GTEST_BINARY_PATH}/Release/gtest.lib")
-
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${GTEST_BINARY_PATH}/Release/gtest.lib")
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${GTEST_BINARY_PATH}/Release/gtest.lib")
+    target_link_libraries(
+      ${GTEST_MAIN_LIBRARY}
+      INTERFACE
+      debug "${LIBRARY_BINARY_DIR}/${CMAKE_VS_PLATFORM_NAME}/Debug/gtest.lib"
+    )
+    target_link_libraries(
+      ${GTEST_MAIN_LIBRARY}
+      INTERFACE
+      optimized "${LIBRARY_BINARY_DIR}/${CMAKE_VS_PLATFORM_NAME}/Release/gtest.lib"
+    )
   elseif(MINGW)
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_DEBUG "${GTEST_BINARY_PATH}/MinGW-W64-Debug/libgtest.a")
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_RELEASE "${GTEST_BINARY_PATH}/MinGW-W64-Release/libgtest.a")
-
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${GTEST_BINARY_PATH}/MinGW-W64-Release/libgtest.a")
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${GTEST_BINARY_PATH}/MinGW-W64-Release/libgtest.a")
+    target_link_libraries(
+      ${GTEST_MAIN_LIBRARY}
+      INTERFACE
+      debug "${LIBRARY_BINARY_DIR}/x64/MinGW-W64-Debug/libgtest.a"
+    )
+    target_link_libraries(
+      ${GTEST_MAIN_LIBRARY}
+      INTERFACE
+      optimized "${LIBRARY_BINARY_DIR}/x64/MinGW-W64-Release/libgtest.a"
+    )
   else()
-  set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES IMPORTED_LOCATION ${GTest})
+    find_library(
+      GTest
+      NAMES ${GTEST_MAIN_LIBRARY}
+      PATHS ${LIBRARY_BINARY_DIR}
+    )
+    target_link_libraries(${GTEST_MAIN_LIBRARY} INTERFACE ${GTest})
   endif()
 else()
 set(GTest_FOUND False)
 find_package(GTest)
 
 if(${GTest_FOUND})
-  set(GTEST_MAIN_LIBRARY GTest::GTest)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+    set(GTEST_MAIN_LIBRARY GTest::gtest)
+  else()
+    set(GTEST_MAIN_LIBRARY GTest::GTest)
+  endif()
 else()
   message(STATUS "Search GTest via defined GTEST_PATH if such exists.")
 
   if(DEFINED ENV{GTEST_PATH})
-    string(REPLACE "\\" "/" gtest_Path $ENV{GTEST_PATH})
+    file(TO_CMAKE_PATH "$ENV{GTEST_PATH}" gtest_Path)
   elseif(DEFINED GTEST_PATH)
-    string(REPLACE "\\" "/" gtest_Path ${GTEST_PATH})
+    file(TO_CMAKE_PATH "${GTEST_PATH}" gtest_Path)
   else()
     message(FATAL_ERROR "GTEST_PATH not set.")
   endif()
@@ -75,7 +94,10 @@ else()
   target_compile_definitions(${GTEST_MAIN_LIBRARY} PRIVATE GTEST_HAS_PTHREAD=0)
 
   if(NOT MSVC)
-    set_property(TARGET ${GTEST_MAIN_LIBRARY} PROPERTY CXX_STANDARD 11)
+    target_compile_features(${GTEST_MAIN_LIBRARY}
+      PRIVATE
+      cxx_std_11
+    )
   endif()
 
   message(STATUS "GTest was found.")

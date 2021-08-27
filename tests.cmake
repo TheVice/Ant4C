@@ -67,8 +67,14 @@ target_link_libraries(ant4c_tests
 )
 
 if(NOT MSVC)
-  set_property(TARGET tests_exec_app PROPERTY C_STANDARD 11)
-  set_property(TARGET ant4c_tests PROPERTY CXX_STANDARD 11)
+  target_compile_features(tests_exec_app
+    PRIVATE
+    c_std_11
+  )
+  target_compile_features(ant4c_tests
+    PRIVATE
+    cxx_std_11
+  )
 endif()
 
 if(DEFINED PUGIXML_HEADER_ONLY)
@@ -137,7 +143,10 @@ target_link_libraries(net.module_tests
 )
 
 if(NOT MSVC)
-  set_property(TARGET net.module_tests PROPERTY CXX_STANDARD 11)
+  target_compile_features(net.module_tests
+    PRIVATE
+    cxx_std_11
+  )
 endif()
 
 if(DEFINED PUGIXML_HEADER_ONLY)

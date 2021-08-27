@@ -43,7 +43,7 @@ build_with_MSVC:
 
     cd "$build_directory"
 
-    $arguments = "{0} -A {1} -DGTEST_BINARY_PATH={0}/windows-latest/{1} -DPUGIXML_BINARY_PATH={0}/windows-latest/{1}" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
+    $arguments = "{0} -A {1} -DLIBRARY_BINARY_DIR={0}/windows-latest" -f ${env:CI_PROJECT_DIR}, "${env:TargetPlatform}"
     $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     if ($process.ExitCode -ne 0)
@@ -184,7 +184,7 @@ build_with_MinGW:
 
     cd "$build_directory"
 
-    $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DGTEST_BINARY_PATH={0}/windows-latest/x64 -DPUGIXML_BINARY_PATH={0}/windows-latest/x64" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
+    $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DLIBRARY_BINARY_DIR={0}/windows-latest" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
     $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     if ($process.ExitCode -ne 0)
@@ -249,7 +249,7 @@ build_on_unix_like:
     - cmake -E make_directory $CI_PROJECT_DIR/build-$BUILD_TYPE
     - cd $CI_PROJECT_DIR/build-$BUILD_TYPE
 
-    - cmake $CI_PROJECT_DIR -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DGTEST_BINARY_PATH=$CI_PROJECT_DIR/ubuntu-latest -DPUGIXML_BINARY_PATH=$CI_PROJECT_DIR/ubuntu-latest
+    - cmake $CI_PROJECT_DIR -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DLIBRARY_BINARY_DIR=$CI_PROJECT_DIR/ubuntu-latest
     - cmake --build . --config $BUILD_TYPE
 
     - if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c; fi

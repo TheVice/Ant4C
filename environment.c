@@ -53,7 +53,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 	wchar_t* startW = NULL;
 	wchar_t* finishW = NULL;
 #if defined(_WIN32_WINNT_VISTA) && defined(_WIN32_WINNT) && (_WIN32_WINNT_VISTA <= _WIN32_WINNT)
-#if defined(_MSC_VER) && (_MSC_VER >= 1910)
+#if defined(_MSC_VER) && (_MSC_VER >= 1920)
 	const GUID folderIDs[] =
 	{
 		FOLDERID_Desktop, FOLDERID_Programs, FOLDERID_Documents, FOLDERID_Documents,

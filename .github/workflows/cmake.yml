@@ -111,25 +111,25 @@ jobs:
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       # run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
-      run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+      run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
 
     - name: Create project files (Unix like)
       if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
       # run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_PATH="/tmp/googletest/googletest-release-1.8.1" -DPUGIXML_PATH="/tmp/pugixml/pugixml-1.9"
-      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}/${{ matrix.os }}
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}/${{ matrix.os }}
 
     - name: Create project files (MinGW Debug)
       if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
       # run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
-      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
 
     - name: Create project files (MinGW Release)
       if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
       # run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
-      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DGTEST_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }} -DPUGIXML_BINARY_PATH=${{ github.workspace }}\${{ matrix.os }}\${{ matrix.TargetPlatform }}
+      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
 
     - name: Build (Unix like)
       if: ${{ 'Windows' != runner.os }}

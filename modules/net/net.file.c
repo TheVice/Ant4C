@@ -102,7 +102,7 @@ uint8_t file_is_assembly(
 				return 0;
 			}
 
-#if defined(_MSC_VER) && (_MSC_VER < 1910)
+#if defined(_MSC_VER) && (_MSC_VER < 1920)
 			const uint8_t* sub_values[6];
 			sub_values[0] = NULL;
 			sub_values[1] = NULL;

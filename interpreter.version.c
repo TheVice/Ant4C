@@ -49,8 +49,7 @@ uint8_t version_exec_function(
 
 	struct range values[2];
 
-	if (arguments_count &&
-		!common_get_arguments(arguments, arguments_count, values, 0))
+	if (!common_get_arguments(arguments, arguments_count, values, 0))
 	{
 		return 0;
 	}

@@ -6,7 +6,31 @@ endif()
 
 project("Ant4C")
 
-if(CMAKE_VERSION VERSION_LESS "3.0")
+if(CMAKE_VERSION VERSION_LESS 3.1)
+  function(target_compile_features one two three)
+    string(FIND ${ARGV2} c_ position)
+
+    if(0 EQUAL position)
+      set(STANDARD C_STANDARD)
+    endif()
+
+    string(FIND ${ARGV2} cxx_ position)
+
+    if(0 EQUAL position)
+      set(STANDARD CXX_STANDARD)
+    endif()
+
+    string(FIND ${ARGV2} _ position REVERSE)
+    math(EXPR position "${position} + 1")
+    string(SUBSTRING ${ARGV2} ${position} -1 STANDARD_VERSION)
+
+    set_property(TARGET ${ARGV0} PROPERTY ${STANDARD} ${STANDARD_VERSION})
+    # set_property(TARGET ${ARGV0} PROPERTY C_STANDARD 11)
+    # set_property(TARGET ${ARGV0} PROPERTY CXX_STANDARD 11)
+  endfunction()
+endif()
+
+if(CMAKE_VERSION VERSION_LESS 3.0)
 if(DEFINED ENV{CFLAGS})
   list(APPEND CMAKE_C_FLAGS $ENV{CFLAGS})
 endif()
@@ -38,6 +62,10 @@ endif()
 if(DEFINED LDFLAGS)
   list(APPEND LINK_FLAGS ${LDFLAGS})
 endif()
+
+string(REPLACE ";" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+string(REPLACE ";" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE ";" "" LINK_FLAGS "${LINK_FLAGS}")
 endif()
 
 if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
@@ -143,7 +171,10 @@ set(
 add_library(ant4c STATIC ${ANT4C_SOURCES})
 
 if(NOT MSVC)
-  set_property(TARGET ant4c PROPERTY C_STANDARD 11)
+  target_compile_features(ant4c
+    PRIVATE
+    c_std_11
+  )
 endif()
 
 target_compile_options(ant4c PRIVATE
@@ -155,19 +186,27 @@ target_compile_options(ant4c PRIVATE
 # ant4c_shared
 
 add_library(ant4c_shared SHARED ${ANT4C_SOURCES})
+
 set_property(TARGET ant4c_shared APPEND PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/ant4c_shared")
 set_property(TARGET ant4c_shared APPEND PROPERTY LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/ant4c_shared")
 set_property(TARGET ant4c_shared APPEND PROPERTY OUTPUT_NAME ant4c)
 
 if(NOT MSVC)
-  set_property(TARGET ant4c_shared PROPERTY C_STANDARD 11)
-  target_link_libraries(ant4c_shared ${DL_LIB} ${M_LIB})
+  target_compile_features(ant4c_shared
+    PRIVATE
+    c_std_11
+  )
 endif()
 
 target_compile_options(ant4c_shared PRIVATE
   $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
   $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
+)
+
+target_link_libraries(ant4c_shared
+  ${DL_LIB}
+  ${M_LIB}
 )
 
 # ant4c_app
@@ -183,13 +222,19 @@ add_executable(
   "${CMAKE_SOURCE_DIR}/main.c"
 )
 
-target_link_libraries(ant4c_app ant4c
-  ${DL_LIB} ${M_LIB}
+target_link_libraries(ant4c_app
+  ant4c
+  ${DL_LIB}
+  ${M_LIB}
 )
+
 set_property(TARGET ant4c_app APPEND PROPERTY OUTPUT_NAME ant4c)
 
 if(NOT MSVC)
-  set_property(TARGET ant4c_app PROPERTY C_STANDARD 11)
+  target_compile_features(ant4c_app
+    PRIVATE
+    c_std_11
+  )
 endif()
 
 target_compile_options(ant4c_app PRIVATE
@@ -216,6 +261,7 @@ if(DEFINED USE_BOOST)
 endif()
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/modules/net")
+
 include("${CMAKE_SOURCE_DIR}/modules/example.cmake")
 
 # Listener
