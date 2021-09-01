@@ -30,10 +30,12 @@ add_library(net_gate
 target_include_directories(net_gate PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(net_gate
     PRIVATE
     c_std_11
   )
+  endif()
 endif()
 
 target_compile_options(net_gate PRIVATE
@@ -53,10 +55,12 @@ add_library(ant4c.net.module SHARED
 target_link_libraries(ant4c.net.module net_gate ant4c)
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c.net.module
     PRIVATE
     c_std_11
   )
+  endif()
 endif()
 
 target_compile_options(ant4c.net.module PRIVATE

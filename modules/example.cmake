@@ -8,10 +8,12 @@ target_link_libraries(example_of_the_module ant4c)
 target_include_directories(example_of_the_module PUBLIC ${CMAKE_SOURCE_DIR})
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(example_of_the_module
     PRIVATE
     c_std_11
   )
+  endif()
 endif()
 
 target_compile_options(example_of_the_module PRIVATE

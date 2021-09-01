@@ -3,7 +3,7 @@ if(DEFINED LIBRARY_BINARY_DIR)
   set(GTEST_MAIN_LIBRARY gtest)
   add_library(${GTEST_MAIN_LIBRARY} INTERFACE)
 
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.19)
+  if(CMAKE_VERSION VERSION_EQUAL 3.19 OR CMAKE_VERSION VERSION_GREATER 3.19)
     file(REAL_PATH "${LIBRARY_BINARY_DIR}/../googletest/include" gtest_Path)
   else()
     set(gtest_Path "${LIBRARY_BINARY_DIR}/../googletest/include")
@@ -53,7 +53,7 @@ set(GTest_FOUND False)
 find_package(GTest)
 
 if(${GTest_FOUND})
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+  if(CMAKE_VERSION VERSION_EQUAL 3.20 OR CMAKE_VERSION VERSION_GREATER 3.20)
     set(GTEST_MAIN_LIBRARY GTest::gtest)
   else()
     set(GTEST_MAIN_LIBRARY GTest::GTest)
@@ -94,10 +94,14 @@ else()
   target_compile_definitions(${GTEST_MAIN_LIBRARY} PRIVATE GTEST_HAS_PTHREAD=0)
 
   if(NOT MSVC)
+    if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
     target_compile_features(${GTEST_MAIN_LIBRARY}
       PRIVATE
       cxx_std_11
     )
+    else()
+    set_property(TARGET ${GTEST_MAIN_LIBRARY} PROPERTY CXX_STANDARD 11)
+    endif()
   endif()
 
   message(STATUS "GTest was found.")

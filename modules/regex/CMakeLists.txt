@@ -64,10 +64,14 @@ else()
 endif()
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
   target_compile_features(ant4c.regex
     PRIVATE
     cxx_std_11
   )
+  else()
+  set_property(TARGET ant4c.regex PROPERTY CXX_STANDARD 11)
+  endif()
 endif()
 
 target_compile_options(ant4c.regex PRIVATE

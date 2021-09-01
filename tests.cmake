@@ -67,14 +67,20 @@ target_link_libraries(ant4c_tests
 )
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(tests_exec_app
     PRIVATE
     c_std_11
   )
+  endif()
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
   target_compile_features(ant4c_tests
     PRIVATE
     cxx_std_11
   )
+  else()
+  set_property(TARGET ant4c_tests PROPERTY CXX_STANDARD 11)
+  endif()
 endif()
 
 if(DEFINED PUGIXML_HEADER_ONLY)
@@ -143,10 +149,14 @@ target_link_libraries(net.module_tests
 )
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
   target_compile_features(net.module_tests
     PRIVATE
     cxx_std_11
   )
+  else()
+  set_property(TARGET net.module_tests PROPERTY CXX_STANDARD 11)
+  endif()
 endif()
 
 if(DEFINED PUGIXML_HEADER_ONLY)

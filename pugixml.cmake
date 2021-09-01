@@ -2,7 +2,7 @@
 if(DEFINED LIBRARY_BINARY_DIR)
   add_library(pugixml INTERFACE)
 
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.19)
+  if(CMAKE_VERSION VERSION_EQUAL 3.19 OR CMAKE_VERSION VERSION_GREATER 3.19)
     file(REAL_PATH "${LIBRARY_BINARY_DIR}/../pugixml/src" pugixml_Path)
   else()
     set(pugixml_Path "${LIBRARY_BINARY_DIR}/../pugixml/src")
@@ -45,7 +45,7 @@ if(DEFINED LIBRARY_BINARY_DIR)
       NAMES pugixml
       PATHS ${LIBRARY_BINARY_DIR}
     )
-    target_link_libraries(pugixml INTERFACE ${pugixml_full_path})
+    target_link_libraries(pugixml INTERFACE "${pugixml_full_path}")
   endif()
 else()
 set(pugixml_FOUND False)
@@ -73,13 +73,6 @@ else()
     add_subdirectory(${pugixml_Path}/scripts ${CMAKE_BINARY_DIR}/pugixml)
   else()
     message(FATAL_ERROR "Could not find pugixml library at ${pugixml_Path}, please check it at https://github.com/zeus/pugixml/releases")
-  endif()
-
-  if(NOT MSVC)
-    target_compile_features(pugixml
-      PRIVATE
-      cxx_std_11
-    )
   endif()
 
   message(STATUS "pugixml was found.")

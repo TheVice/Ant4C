@@ -119,10 +119,14 @@ if(CMAKE_HOST_WIN32 AND (NOT (DEFINED _WIN32_WINNT)))
 endif()
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
   target_compile_features(ant4c.dns
     PRIVATE
     cxx_std_11
   )
+  else()
+  set_property(TARGET ant4c.dns PROPERTY CXX_STANDARD 11)
+  endif()
 endif()
 
 target_compile_options(ant4c.dns PRIVATE

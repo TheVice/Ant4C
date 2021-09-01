@@ -5,6 +5,10 @@
  *
  */
 
+#if !defined(_WIN32)
+#include "stdc_secure_api.h"
+#endif
+
 #include "environment.h"
 #include "buffer.h"
 #include "common.h"
@@ -379,7 +383,11 @@ uint8_t environment_get_machine_name(struct buffer* name)
 		return 0;
 	}
 
+#if __STDC_LIB_EXT1__
+	return (size < buffer_size(name)) && buffer_resize(name, size + strlen_s(host_name, UINT8_MAX));
+#else
 	return (size < buffer_size(name)) && buffer_resize(name, size + strlen(host_name));
+#endif
 }
 #endif
 #if defined(_WIN32)
@@ -504,9 +512,14 @@ const void* environment_get_operating_system()
 			return NULL;
 		}
 
-		if (!version_parse((const uint8_t*)uname_data.version,
-						   (const uint8_t*)uname_data.version + strlen(uname_data.version),
-						   version))
+		const uint8_t* version_start = (const uint8_t*)uname_data.version;
+#if __STDC_LIB_EXT1__
+		const uint8_t* version_finish = version_start + strlen_s(uname_data.version, sizeof(uname_data.version));
+#else
+		const uint8_t* version_finish = version_start + strlen(uname_data.version);
+#endif
+
+		if (!version_parse(version_start, version_finish, version))
 		{
 			return NULL;
 		}
@@ -514,7 +527,7 @@ const void* environment_get_operating_system()
 		const uint8_t* version_string[] =
 		{
 			(const uint8_t*)uname_data.sysname, (const uint8_t*)uname_data.release,
-			(const uint8_t*)uname_data.version, (const uint8_t*)uname_data.machine
+			version_start, (const uint8_t*)uname_data.machine
 		};
 #if defined(__APPLE__) && defined(__MACH__)
 		const uint8_t platformID = macOS;

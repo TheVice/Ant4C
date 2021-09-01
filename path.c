@@ -822,7 +822,12 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 			continue;
 		}
 
+#if __STDC_LIB_EXT1__
+
+		if (!buffer_resize(path, size + strlen_s(ptr, length)))
+#else
 		if (!buffer_resize(path, size + strlen(ptr)))
+#endif
 		{
 			return 0;
 		}

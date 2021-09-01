@@ -25,8 +25,6 @@ if(CMAKE_VERSION VERSION_LESS 3.1)
     string(SUBSTRING ${ARGV2} ${position} -1 STANDARD_VERSION)
 
     set_property(TARGET ${ARGV0} PROPERTY ${STANDARD} ${STANDARD_VERSION})
-    # set_property(TARGET ${ARGV0} PROPERTY C_STANDARD 11)
-    # set_property(TARGET ${ARGV0} PROPERTY CXX_STANDARD 11)
   endfunction()
 endif()
 
@@ -171,10 +169,12 @@ set(
 add_library(ant4c STATIC ${ANT4C_SOURCES})
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c
     PRIVATE
     c_std_11
   )
+  endif()
 endif()
 
 target_compile_options(ant4c PRIVATE
@@ -192,10 +192,12 @@ set_property(TARGET ant4c_shared APPEND PROPERTY LIBRARY_OUTPUT_DIRECTORY "${CMA
 set_property(TARGET ant4c_shared APPEND PROPERTY OUTPUT_NAME ant4c)
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c_shared
     PRIVATE
     c_std_11
   )
+  endif()
 endif()
 
 target_compile_options(ant4c_shared PRIVATE
@@ -231,10 +233,12 @@ target_link_libraries(ant4c_app
 set_property(TARGET ant4c_app APPEND PROPERTY OUTPUT_NAME ant4c)
 
 if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c_app
     PRIVATE
     c_std_11
   )
+  endif()
 endif()
 
 target_compile_options(ant4c_app PRIVATE
