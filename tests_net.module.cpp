@@ -199,8 +199,6 @@ TEST_F(TestNetModule, functions)
 	}
 }
 
-#if defined(NET_MODULE_TESTS)
-
 class GlobalPropertiesHolder
 {
 protected:
@@ -239,6 +237,17 @@ protected:
 	{
 		TestsBaseXml::SetUp();
 		GlobalPropertiesHolder::SetUp();
+
+		if (path_to_build_file.empty())
+		{
+			auto result = parse_input_arguments();
+			assert(result);
+			ASSERT_TRUE(result);
+			//
+			result = path_to_build_file.empty();
+			assert(!result);
+			ASSERT_FALSE(result);
+		}
 
 		if (!is_project_created)
 		{
@@ -329,5 +338,3 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 		--node_count;
 	}
 }
-
-#endif

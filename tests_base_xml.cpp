@@ -51,7 +51,7 @@ GTEST_API_ int main(int argc, char** argv)
 }
 #if defined(_MSC_VER)
 
-extern std::string wchar_t_to_char(const std::wstring& input);
+extern std::string wchar_t_to_char(const wchar_t* input_start, const wchar_t* input_finish);
 
 GTEST_API_ int wmain(int argc, wchar_t** argv)
 {
@@ -63,7 +63,14 @@ GTEST_API_ int wmain(int argc, wchar_t** argv)
 
 	for (int i = 0; i < argc; ++i)
 	{
-		arguments += wchar_t_to_char(argv[i]);
+		const auto* finish = argv[i];
+
+		while (0 != *finish)
+		{
+			++finish;
+		}
+
+		arguments += wchar_t_to_char(argv[i], finish);
 		arguments.push_back(0);
 	}
 
@@ -79,7 +86,7 @@ GTEST_API_ int wmain(int argc, wchar_t** argv)
 		const auto finish = reinterpret_cast<const uint8_t*>(argvA);
 		//
 		int i = 0;
-		const uint8_t* pos = start;
+		const auto* pos = start;
 		static const uint8_t zero = 0;
 
 		do

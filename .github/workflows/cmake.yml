@@ -161,12 +161,12 @@ jobs:
       working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
       run: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c
 
-    - name: Run main application Debug
+    - name: Run main application (Debug)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c.exe
 
-    - name: Run main application Release
+    - name: Run main application (Release)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c.exe
@@ -181,7 +181,7 @@ jobs:
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
       run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c.exe
 
-    - name: Run tests Debug
+    - name: Run tests (Debug)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       run: |
@@ -195,7 +195,7 @@ jobs:
           Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\" -Recurse
         }
 
-    - name: Run tests Release
+    - name: Run tests (Release)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
       run: |
@@ -206,6 +206,34 @@ jobs:
         else
         {
           Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe")
+          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\" -Recurse
+        }
+
+    - name: Run tests_ant4c.net.framework.module (Debug)
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_ant4c.net.framework.module.exe")
+        {
+          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_ant4c.net.framework.module.exe
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_ant4c.net.framework.module.exe")
+          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\" -Recurse
+        }
+
+    - name: Run tests_ant4c.net.framework.module (Release)
+      if: ${{ 'Windows' == runner.os }}
+      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+      run: |
+        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_ant4c.net.framework.module.exe")
+        {
+          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_ant4c.net.framework.module.exe
+        }
+        else
+        {
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_ant4c.net.framework.module.exe")
           Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\" -Recurse
         }
 

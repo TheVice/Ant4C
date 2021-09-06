@@ -1,4 +1,3 @@
-
 if(DEFINED LIBRARY_BINARY_DIR)
   add_library(pugixml INTERFACE)
 
@@ -43,38 +42,45 @@ if(DEFINED LIBRARY_BINARY_DIR)
     find_library(
       pugixml_full_path
       NAMES pugixml
-      PATHS ${LIBRARY_BINARY_DIR}
+      PATHS "${LIBRARY_BINARY_DIR}"
     )
     target_link_libraries(pugixml INTERFACE "${pugixml_full_path}")
   endif()
+  add_library(Pugixml::pugixml ALIAS pugixml)
 else()
-set(pugixml_FOUND False)
+  set(pugixml_FOUND False)
 
-if((DEFINED ENV{pugixml_issues_390}) OR (DEFINED pugixml_issues_390))# https://github.com/zeux/pugixml/issues/390
-else()
-  find_package(pugixml)
-endif()
-
-if(${pugixml_FOUND})
-else()
-  message(STATUS "Search pugixml via defined PUGIXML_PATH if such exists.")
-
-  if(DEFINED ENV{PUGIXML_PATH})
-    file(TO_CMAKE_PATH "$ENV{PUGIXML_PATH}" pugixml_Path)
-  elseif(DEFINED PUGIXML_PATH)
-    file(TO_CMAKE_PATH "${PUGIXML_PATH}" pugixml_Path)
+  if((DEFINED ENV{pugixml_issues_390}) OR (DEFINED pugixml_issues_390))# https://github.com/zeux/pugixml/issues/390
   else()
-    message(FATAL_ERROR "PUGIXML_PATH not set.")
+    find_package(pugixml)
   endif()
 
-  if(EXISTS ${pugixml_Path}/CMakeLists.txt)
-    add_subdirectory(${pugixml_Path} ${CMAKE_BINARY_DIR}/pugixml)
-  elseif(EXISTS ${pugixml_Path}/scripts/CMakeLists.txt)
-    add_subdirectory(${pugixml_Path}/scripts ${CMAKE_BINARY_DIR}/pugixml)
+  if(${pugixml_FOUND})
+    #add_library(Pugixml::pugixml ALIAS pugixml)
+    add_library(pugixml_interface INTERFACE)
+    target_link_libraries(pugixml_interface INTERFACE pugixml)
+    add_library(Pugixml::pugixml ALIAS pugixml_interface)
   else()
-    message(FATAL_ERROR "Could not find pugixml library at ${pugixml_Path}, please check it at https://github.com/zeus/pugixml/releases")
-  endif()
+    message(STATUS "Search pugixml via defined PUGIXML_PATH if such exists.")
 
-  message(STATUS "pugixml was found.")
-endif()
+    if(DEFINED ENV{PUGIXML_PATH})
+      file(TO_CMAKE_PATH "$ENV{PUGIXML_PATH}" pugixml_Path)
+    elseif(DEFINED PUGIXML_PATH)
+      file(TO_CMAKE_PATH "${PUGIXML_PATH}" pugixml_Path)
+    else()
+      message(FATAL_ERROR "PUGIXML_PATH not set.")
+    endif()
+
+    if(EXISTS ${pugixml_Path}/CMakeLists.txt)
+      add_subdirectory(${pugixml_Path} ${CMAKE_BINARY_DIR}/pugixml)
+    elseif(EXISTS ${pugixml_Path}/scripts/CMakeLists.txt)
+      add_subdirectory(${pugixml_Path}/scripts ${CMAKE_BINARY_DIR}/pugixml)
+    else()
+      message(FATAL_ERROR "Could not find pugixml library at ${pugixml_Path}, please check it at https://github.com/zeus/pugixml/releases")
+    endif()
+
+    target_include_directories(pugixml SYSTEM INTERFACE ${pugixml_Path}/src)
+    add_library(Pugixml::pugixml ALIAS pugixml)
+    message(STATUS "pugixml was found.")
+  endif()
 endif()

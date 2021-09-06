@@ -3,7 +3,7 @@ add_library(example_of_the_module SHARED
   "${CMAKE_SOURCE_DIR}/modules/example.cmake"
   "${CMAKE_SOURCE_DIR}/modules/example.c"
   "${CMAKE_SOURCE_DIR}/modules/example.h")
-target_link_libraries(example_of_the_module ant4c)
+target_link_libraries(example_of_the_module Ant4C::ant4c)
 
 target_include_directories(example_of_the_module PUBLIC ${CMAKE_SOURCE_DIR})
 

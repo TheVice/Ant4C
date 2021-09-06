@@ -23,14 +23,13 @@ find_cmake:
       }
       else
       {
-        throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find cmake in any of the '${env:ProgramFiles(x86)}' and '${env:ProgramFiles}' subfolders.")
+        $arguments = "Could not find cmake in any of the '${env:ProgramFiles(x86)}' and '${env:ProgramFiles}' subfolders."
+        throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList $arguments)
       }
     }
 
     Out-File -FilePath .\cmake.env -InputObject $cmake -NoNewline -Force
     }
-
-  stage: .pre
 
   cache:
     key: windows-build-cache
@@ -39,14 +38,14 @@ find_cmake:
 
 build_with_MSVC:
 
+  needs: [ find_cmake ]
+
   tags:
     - windows
 
   parallel:
     matrix:
       - TargetPlatform: [x64, Win32]
-
-  stage: build
 
   script: |
     if (-not(Test-Path -Path .\cmake.env))
@@ -71,7 +70,7 @@ build_with_MSVC:
 
     if ($LastExitCode -ne 0)
     {
-      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $LastExitCode
+      $arguments = "CMake exit code is not equal to the '0' when it create folder. Instead it - {0}." -f $LastExitCode
       throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
     }
 
@@ -80,7 +79,7 @@ build_with_MSVC:
 
     if ($LastExitCode -ne 0)
     {
-      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $LastExitCode
+      $arguments = "CMake exit code is not equal to the '0' when it create project. Instead it - {0}." -f $LastExitCode
       throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
     }
 
@@ -92,22 +91,23 @@ build_with_MSVC:
 
       if ($LastExitCode -ne 0)
       {
-        $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $LastExitCode
+        $arguments = "CMake exit code is not equal to the '0' when build the project. Instead it - {0}." -f $LastExitCode
         throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
       }
 
-      $build_directory_with_build_type = Join-Path -ChildPath $build_type -Path "$build_directory"
+      $build_directory_with_build_type = Join-Path -ChildPath $build_type -Path $build_directory
 
       if (Test-Path -Path $build_directory_with_build_type)
       {
-        Write-Output -InputObject "$target_platform $build_type"
+        Write-Output -InputObject "Build type: $build_type"
         $ant4c = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_with_build_type"
 
         & $ant4c
 
         if ($LastExitCode -ne 0)
         {
-          throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $LastExitCode.")
+          $arguments = "Exit code of 'Ant4C' is not equal to the '0'. Instead it - {0}." -f $LastExitCode
+          throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
         }
 
         $ant4c = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory_with_build_type"
@@ -119,14 +119,34 @@ build_with_MSVC:
 
           if ($LastExitCode -ne 0)
           {
-            throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $LastExitCode.")
+            $arguments = "{1} returned {0} when '0' expected." -f $LastExitCode, "tests_exec_app.exe"
+            throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
           }
         }
         else
         {
           $message = "File '{0}' not exists. Tests will not run." -f $ant4c
           Write-Warning -Message $message
-          Get-ChildItem -Path "$build_directory" -Recurse
+          Get-ChildItem -Path $build_directory -Recurse
+        }
+
+        $ant4c = Join-Path -ChildPath "tests_ant4c.net.framework.module.exe" -Path "$build_directory_with_build_type"
+
+        if (Test-Path -Path "$ant4c")
+        {
+          & $ant4c
+
+          if ($LastExitCode -ne 0)
+          {
+            $arguments = "{1} returned {0} when '0' expected." -f $LastExitCode, "tests_ant4c.net.framework.module.exe"
+            throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+          }
+        }
+        else
+        {
+          $message = "File '{0}' not exists. Tests will not run." -f $ant4c
+          Write-Warning -Message $message
+          Get-ChildItem -Path $build_directory -Recurse
         }
       }
       else
@@ -147,14 +167,14 @@ build_with_MSVC:
 
 build_with_MinGW:
 
+  needs: [ find_cmake ]
+
   tags:
     - windows
 
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-
-  stage: build
 
   script: |
     if (-not(Test-Path -Path .\cmake.env))
@@ -184,7 +204,8 @@ build_with_MinGW:
 
     if ($process.ExitCode -ne 0)
     {
-      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
+      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
     }
 
     cd "$build_directory"
@@ -194,7 +215,8 @@ build_with_MinGW:
 
     if ($process.ExitCode -ne 0)
     {
-      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
+      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
     }
 
     $arguments = "--build . --config ${env:BUILD_TYPE} --parallel $env:NUMBER_OF_PROCESSORS"
@@ -202,19 +224,21 @@ build_with_MinGW:
 
     if ($process.ExitCode -ne 0)
     {
-      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
+      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
     }
 
-    $ant4c = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory"
+    $ant4c = Join-Path -ChildPath "ant4c.exe" -Path $build_directory
     $process = Start-Process -FilePath "$ant4c" -NoNewWindow -Wait -PassThru
 
     if ($process.ExitCode -ne 0)
     {
-      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
+      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
+      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
     }
 
     $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
-    $ant4c_tests = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory"
+    $ant4c_tests = Join-Path -ChildPath "ant4c_tests.exe" -Path $build_directory
 
     if (Test-Path -Path "$ant4c_tests")
     {
@@ -222,16 +246,17 @@ build_with_MinGW:
       $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
       $process = Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
-    if ($process.ExitCode -ne 0)
-    {
-      throw (New-Object -TypeName System.Exception -ArgumentList "Exit code is not equal to the '0' instead it - $process.ExitCode.")
-    }
+      if ($process.ExitCode -ne 0)
+      {
+        $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+      }
     }
     else
     {
       $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
       Write-Warning -Message $message
-      Get-ChildItem -Path "$build_directory" -Recurse
+      Get-ChildItem -Path $build_directory -Recurse
     }
 
   artifacts:
@@ -251,8 +276,6 @@ build_on_unix_like:
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-
-  stage: build
 
   script: |
     cmake -E make_directory $CI_PROJECT_DIR/build-$BUILD_TYPE

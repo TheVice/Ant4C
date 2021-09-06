@@ -70,37 +70,37 @@ jobs:
     - name: Create project files (Unix like)
       if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}/${{ matrix.os }} -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}/${{ matrix.os }}
 
     - name: Create project files (Windows)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
-      run: cmake ${{ github.workspace }} -A ${{ env.TargetPlatform }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }} -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -A ${{ env.TargetPlatform }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
 
     - name: Create project files (Windows, MinGW)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
-      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }} -DNET_MODULE_TESTS=""
+      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
 
     - name: Build project files (Unix like)
       if: ${{ 'Windows' != runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target net.module_tests
+      run: cmake --build ${{ github.workspace }}/build-modules-net --config Release --target tests_net.module
 
     - name: Build project files (Windows)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
-      run: cmake --build ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }} --config Release --target net.module_tests --parallel $env:NUMBER_OF_PROCESSORS
+      run: cmake --build ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }} --config Release --target tests_net.module --parallel $env:NUMBER_OF_PROCESSORS
 
     - name: Build project files (Windows)
       if: ${{ 'Windows' == runner.os }}
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
-      run: cmake --build ${{ github.workspace }}\build-modules-net-MinGW --config Release --target net.module_tests --parallel $env:NUMBER_OF_PROCESSORS
+      run: cmake --build ${{ github.workspace }}\build-modules-net-MinGW --config Release --target tests_net.module --parallel $env:NUMBER_OF_PROCESSORS
 
     - name: Run Tests (macOS)
       if: ${{ 'macOS' == runner.os }}
       working-directory: ${{ github.workspace }}/build-modules-net
-      run: ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+      run: ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run 'hostfxr_resolve_sdk' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -108,7 +108,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export hostfxr_resolve_sdk=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run 'hostfxr_get_available_sdks' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -116,7 +116,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export hostfxr_get_available_sdks=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run 'hostfxr_get_native_search_directories' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -124,7 +124,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export hostfxr_get_native_search_directories=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run 'hostfxr_resolve_sdk2' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -132,7 +132,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export hostfxr_resolve_sdk2=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_initialize_for_dotnet_command_line' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -140,7 +140,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_initialize_for_dotnet_command_line=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_initialize_for_runtime_config' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -148,7 +148,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_initialize_for_runtime_config=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_run_app' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -156,7 +156,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_run_app=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_get_runtime_properties' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -164,7 +164,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_get_runtime_properties=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_get_runtime_property_value' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -172,7 +172,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_get_runtime_property_value=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_set_runtime_property_value' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -180,7 +180,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_set_runtime_property_value=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_get_runtime_delegate' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -188,7 +188,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_get_runtime_delegate=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_set_error_writer' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -196,7 +196,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_set_error_writer=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_hostfxr_main_bundle_startupinfo' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -204,7 +204,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_hostfxr_main_bundle_startupinfo=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'test_file_is_assembly' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -212,7 +212,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export test_file_is_assembly=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'core_host_main' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -220,7 +220,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export core_host_main=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'core_host_main_with_output_buffer' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -228,7 +228,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export core_host_main_with_output_buffer=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Run Test 'core_host_initialize' (macOS)
       if: ${{ 'macOS' == runner.os }}
@@ -236,7 +236,7 @@ jobs:
       run: |
         export test_hostfxr_=""
         export core_host_initialize=""
-        ${{ github.workspace }}/build-modules-net/net.module_tests --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleEx*
 
     - name: Create script for container (Linux)
       if: ${{ 'Linux' == runner.os }}
@@ -246,99 +246,99 @@ jobs:
         echo "ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime" >> ${{ github.workspace }}/run.sh
         echo "echo Etc/UTC > /etc/timezone" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx*" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx*" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_=\"\"" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo hostfxr_resolve_sdk" >> ${{ github.workspace }}/run.sh
         echo "export hostfxr_resolve_sdk=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset hostfxr_resolve_sdk" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo hostfxr_get_available_sdks" >> ${{ github.workspace }}/run.sh
         echo "export hostfxr_get_available_sdks=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset hostfxr_get_available_sdks" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo hostfxr_get_native_search_directories" >> ${{ github.workspace }}/run.sh
         echo "export hostfxr_get_native_search_directories=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset hostfxr_get_native_search_directories" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo hostfxr_resolve_sdk2" >> ${{ github.workspace }}/run.sh
         echo "export hostfxr_resolve_sdk2=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset hostfxr_resolve_sdk2" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_initialize_for_dotnet_command_line" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_initialize_for_dotnet_command_line=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_initialize_for_dotnet_command_line" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_initialize_for_runtime_config" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_initialize_for_runtime_config=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_initialize_for_runtime_config" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_run_app" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_run_app=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_run_app" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_get_runtime_properties" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_get_runtime_properties=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_get_runtime_properties" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_get_runtime_property_value" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_get_runtime_property_value=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_get_runtime_property_value" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_set_runtime_property_value" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_set_runtime_property_value=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_set_runtime_property_value" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_get_runtime_delegate" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_get_runtime_delegate=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_get_runtime_delegate" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_set_error_writer" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_set_error_writer=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_set_error_writer" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_hostfxr_main_bundle_startupinfo" >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_main_bundle_startupinfo=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_hostfxr_main_bundle_startupinfo" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo test_file_is_assembly" >> ${{ github.workspace }}/run.sh
         echo "export test_file_is_assembly=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset test_file_is_assembly" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo core_host_main" >> ${{ github.workspace }}/run.sh
         echo "export core_host_main=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset core_host_main" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo core_host_main_with_output_buffer" >> ${{ github.workspace }}/run.sh
         echo "export core_host_main_with_output_buffer=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset core_host_main_with_output_buffer" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "echo core_host_initialize" >> ${{ github.workspace }}/run.sh
         echo "export core_host_initialize=\"\"" >> ${{ github.workspace }}/run.sh
-        echo "cd /home/build-modules-net/; /home/build-modules-net/net.module_tests --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleEx.project_load_from_build_file" >> ${{ github.workspace }}/run.sh
         echo "unset core_host_initialize" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
 
-    - name: Run Docker (dotnet_sdk_2_1-focal)
-      if: ${{ 'Linux' == runner.os }}
-      run: docker run --name dotnet_sdk_2_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:2.1-focal sh +xe /home/run.sh
+    # - name: Run Docker (dotnet_sdk_2_1-focal)
+    #   if: ${{ 'Linux' == runner.os }}
+    #   run: docker run --name dotnet_sdk_2_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:2.1-focal sh +xe /home/run.sh
 
     - name: Run Docker (dotnet_sdk_3_1-focal)
       if: ${{ 'Linux' == runner.os }}
@@ -378,8 +378,8 @@ jobs:
     strategy:
       matrix:
         include:
-        - os: windows-latest
-          host_version: 2.1
+        # - os: windows-latest
+        #   host_version: 2.1
 
         - os: windows-latest
           host_version: 3.1
@@ -390,7 +390,7 @@ jobs:
     - name: Setup .NET Core SDK
       uses: actions/setup-dotnet@v1.8.1
       with:
-        # Optional SDK version to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x
+        # Optional SDK version to use. If not provided, will install global.json version when available. Examples: 3.1, 3.1.x
         dotnet-version: ${{ matrix.host_version }}
         # Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword
         # source-url: # optional
@@ -407,7 +407,7 @@ jobs:
 
     - name: Run Tests (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
-      run: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+      run: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_initialize_for_dotnet_command_line' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -415,7 +415,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_initialize_for_dotnet_command_line="1"
         Write-Host("test_hostfxr_initialize_for_dotnet_command_line")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_initialize_for_runtime_config' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -423,7 +423,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_initialize_for_runtime_config="1"
         Write-Host("test_hostfxr_initialize_for_runtime_config")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_run_app' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -431,7 +431,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_run_app="1"
         Write-Host("test_hostfxr_run_app")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_get_runtime_properties' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -439,7 +439,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_get_runtime_properties="1"
         Write-Host("test_hostfxr_get_runtime_properties")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_get_runtime_property_value' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -447,7 +447,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_get_runtime_property_value="1"
         Write-Host("test_hostfxr_get_runtime_property_value")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_set_runtime_property_value' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -455,7 +455,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_set_runtime_property_value="1"
         Write-Host("test_hostfxr_set_runtime_property_value")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_get_runtime_delegate' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -463,7 +463,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_get_runtime_delegate="1"
         Write-Host("test_hostfxr_get_runtime_delegate")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_set_error_writer' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -471,7 +471,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_set_error_writer="1"
         Write-Host("test_hostfxr_set_error_writer")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_main_bundle_startupinfo' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -479,16 +479,15 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_main_bundle_startupinfo="1"
         Write-Host("test_hostfxr_main_bundle_startupinfo")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_file_is_assembly' (Windows)
-      if: ${{ '2.1' != matrix.host_version }}
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
       run: |
         $env:test_hostfxr_="1"
         $env:test_file_is_assembly="1"
         Write-Host("test_file_is_assembly")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'core_host_main' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -496,7 +495,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:core_host_main="1"
         Write-Host("core_host_main")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'core_host_main_with_output_buffer' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -504,7 +503,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:core_host_main_with_output_buffer="1"
         Write-Host("core_host_main_with_output_buffer")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'core_host_initialize' (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
@@ -512,11 +511,11 @@ jobs:
         $env:test_hostfxr_="1"
         $env:core_host_initialize="1"
         Write-Host("core_host_initialize")
-        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run Tests (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
-      run: ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+      run: ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_initialize_for_dotnet_command_line' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -524,7 +523,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_initialize_for_dotnet_command_line="1"
         Write-Host("test_hostfxr_initialize_for_dotnet_command_line")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_initialize_for_runtime_config' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -532,7 +531,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_initialize_for_runtime_config="1"
         Write-Host("test_hostfxr_initialize_for_runtime_config")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_run_app' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -540,7 +539,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_run_app="1"
         Write-Host("test_hostfxr_run_app")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_get_runtime_properties' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -548,7 +547,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_get_runtime_properties="1"
         Write-Host("test_hostfxr_get_runtime_properties")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_get_runtime_property_value' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -556,7 +555,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_get_runtime_property_value="1"
         Write-Host("test_hostfxr_get_runtime_property_value")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_set_runtime_property_value' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -564,7 +563,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_set_runtime_property_value="1"
         Write-Host("test_hostfxr_set_runtime_property_value")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_get_runtime_delegate' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -572,7 +571,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_get_runtime_delegate="1"
         Write-Host("test_hostfxr_get_runtime_delegate")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_set_error_writer' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -580,7 +579,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_set_error_writer="1"
         Write-Host("test_hostfxr_set_error_writer")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_hostfxr_main_bundle_startupinfo' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -588,16 +587,15 @@ jobs:
         $env:test_hostfxr_="1"
         $env:test_hostfxr_main_bundle_startupinfo="1"
         Write-Host("test_hostfxr_main_bundle_startupinfo")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'test_file_is_assembly' (Windows, MinGW)
-      if: ${{ '2.1' != matrix.host_version }}
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
       run: |
         $env:test_hostfxr_="1"
         $env:test_file_is_assembly="1"
         Write-Host("test_file_is_assembly")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'core_host_main' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -605,7 +603,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:core_host_main="1"
         Write-Host("core_host_main")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'core_host_main_with_output_buffer' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -613,7 +611,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:core_host_main_with_output_buffer="1"
         Write-Host("core_host_main_with_output_buffer")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Run 'core_host_initialize' (Windows, MinGW)
       working-directory: ${{ github.workspace }}\build-modules-net-MinGW
@@ -621,7 +619,7 @@ jobs:
         $env:test_hostfxr_="1"
         $env:core_host_initialize="1"
         Write-Host("core_host_initialize")
-        ${{ github.workspace }}\build-modules-net-MinGW\net.module_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
+        ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleEx*
 
     - name: Upload binaries
       uses: actions/upload-artifact@v2.2.3
