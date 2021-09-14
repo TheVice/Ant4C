@@ -73,6 +73,8 @@ enum SpecialFolder
 	CDBurning
 };
 
+#define ENVIRONMENT_UNKNOWN_SPECIAL_FOLDER (CDBurning + 1)
+
 uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* path);
 uint8_t environment_get_machine_name(struct buffer* name);
 const void* environment_get_operating_system();
@@ -84,9 +86,5 @@ uint8_t environment_variable_exists(const uint8_t* variable_name_start, const ui
 uint8_t environment_is64bit_process();
 uint8_t environment_is64bit_operating_system();
 uint16_t environment_processor_count();
-
-uint8_t environment_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t environment_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-								  struct buffer* output);
 
 #endif

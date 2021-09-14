@@ -302,10 +302,20 @@ TEST(TestEnvironment_, environment_is64bit)
 	ASSERT_LT(is64bit_operating_system, 2);
 }
 
+TEST(TestEnvironment_, environment_processor_count)
+{
+	ASSERT_LT(0, environment_processor_count());
+}
+
 TEST_F(TestEnvironment, environment_variable_exists)
 {
+	buffer variable;
+	SET_NULL_TO_BUFFER(variable);
+
 	for (const auto& node : nodes)
 	{
+		ASSERT_TRUE(buffer_resize(&variable, 0))
+				<< buffer_free(&variable);
 		const auto variable_name = reinterpret_cast<const uint8_t*>(
 									   node.node().select_node("variable_name").node().child_value());
 		const auto variable_name_length = static_cast<uint8_t>(
@@ -313,10 +323,17 @@ TEST_F(TestEnvironment, environment_variable_exists)
 		const auto expected_return = static_cast<uint8_t>(
 										 INT_PARSE(node.node().select_node("return").node().child_value()));
 		const auto returned = environment_variable_exists(variable_name, variable_name + variable_name_length);
-		ASSERT_EQ(expected_return, returned) << "'" << variable_name << "'" << std::endl;
+		ASSERT_EQ(expected_return, returned)
+				<< "'" << variable_name << "'" << std::endl << buffer_free(&variable);
+		//
+		ASSERT_EQ(expected_return, environment_get_variable(
+					  variable_name, variable_name + variable_name_length, &variable))
+				<< "'" << variable_name << "'" << std::endl << buffer_free(&variable);
 		//
 		--node_count;
 	}
+
+	buffer_release(&variable);
 }
 
 TEST_F(TestOperatingSystem, operating_system_init)

@@ -158,8 +158,13 @@ TEST(TestConversion_, long_parse)
 		reinterpret_cast<const uint8_t*>("-1"),
 		reinterpret_cast<const uint8_t*>("0"),
 		reinterpret_cast<const uint8_t*>("1"),
+#if defined(__ANDROID__)
+		reinterpret_cast<const uint8_t*>("2147483647"),
+		reinterpret_cast<const uint8_t*>("-2147483648")
+#else
 		reinterpret_cast<const uint8_t*>("9223372036854775807L"),
 		reinterpret_cast<const uint8_t*>("-9223372036854775808L")
+#endif
 	};
 #if !defined(_WIN32)
 	static const long expected_output[] = { -1, 0, 1, LONG_MAX, LONG_MIN };
@@ -184,7 +189,17 @@ TEST(TestConversion_, long_to_string)
 #else
 	static const int64_t input[] = { -1, 0, 1, INT64_MAX, INT64_MIN };
 #endif
-	static const char* expected_output[] = { "-1", "0", "1", "9223372036854775807", "-9223372036854775808" };
+	static const char* expected_output[] =
+	{
+		"-1",
+		"0",
+		"1",
+#if defined(__ANDROID__)
+		"2147483647", "-2147483648",
+#else
+		"9223372036854775807", "-9223372036854775808"
+#endif
+	};
 	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);

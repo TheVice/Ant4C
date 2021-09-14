@@ -24,8 +24,11 @@ extern "C" {
 class TestLoadTasks : public TestExec
 {
 };
-
+#if defined(__ANDROID__)
+TEST_F(TestLoadTasks, DISABLED_project_load_from_build_file)
+#else
 TEST_F(TestLoadTasks, project_load_from_build_file)
+#endif
 {
 	const auto path_to_source(get_path_to_directory_with_source(&verbose));
 	ASSERT_TRUE(verbose);

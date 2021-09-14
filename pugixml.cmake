@@ -1,3 +1,4 @@
+
 if(DEFINED LIBRARY_BINARY_DIR)
   add_library(pugixml INTERFACE)
 

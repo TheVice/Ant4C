@@ -290,13 +290,16 @@ TEST(TestPath_, path_get_temp_path)
 	SET_NULL_TO_BUFFER(temp_path);
 	//
 	ASSERT_TRUE(path_get_temp_path(&temp_path)) << buffer_free(&temp_path);
-	const std::string temp_in_string(buffer_to_string(&temp_path));
-	const range temp_in_range = string_to_range(temp_in_string);
+	const auto size = buffer_size(&temp_path);
+	ASSERT_TRUE(path_get_temp_path(&temp_path)) << buffer_free(&temp_path);
+	//
+	const std::string temp_in_string(buffer_char_data(&temp_path, 0), size);
+	const auto temp_in_range = string_to_range(temp_in_string);
+	//
 	buffer_release(&temp_path);
 	//
-	ASSERT_TRUE(path_is_path_rooted(temp_in_range.start, temp_in_range.finish));
-	ASSERT_FALSE(string_ends_with(temp_in_range.start, temp_in_range.finish, &PATH_DELIMITER,
-								  &PATH_DELIMITER + 1));
+	ASSERT_TRUE(path_is_path_rooted(temp_in_range.start, temp_in_range.finish)) << temp_in_string;
+	ASSERT_NE(PATH_DELIMITER, *(temp_in_range.finish - 1)) << temp_in_string;
 	//
 	ASSERT_FALSE(path_get_temp_path(NULL));
 }

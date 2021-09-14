@@ -1311,7 +1311,9 @@ uint8_t text_encoding_UTF8_to_UTF16BE(const uint8_t* data_start, const uint8_t* 
 
 	uint32_t* decoded_UTF8 = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	if (!buffer_resize(output, size))
+	if ((data_start <= (uint8_t*)decoded_UTF8 &&
+		 (uint8_t*)decoded_UTF8 < data_finish) ||
+		!buffer_resize(output, size))
 	{
 		return 0;
 	}
@@ -1356,7 +1358,9 @@ uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* 
 
 	uint32_t* decoded_UTF8 = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	if (!buffer_resize(output, size))
+	if ((data_start <= (uint8_t*)decoded_UTF8 &&
+		 (uint8_t*)decoded_UTF8 < data_finish) ||
+		!buffer_resize(output, size))
 	{
 		return 0;
 	}
@@ -1399,9 +1403,11 @@ uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t
 		return 0;
 	}
 
-	uint32_t* decoded_UTF16LE = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+	uint32_t* decoded_UTF16BE = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	if (!buffer_resize(output, size))
+	if ((data_start <= (uint16_t*)decoded_UTF16BE &&
+		 (uint16_t*)decoded_UTF16BE < data_finish) ||
+		!buffer_resize(output, size))
 	{
 		return 0;
 	}
@@ -1414,8 +1420,8 @@ uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t
 		}
 
 		uint8_t* out = buffer_data(output, size);
-		data_start += text_encoding_decode_UTF16BE_single(data_start, data_finish, decoded_UTF16LE);
-		size += text_encoding_encode_UTF8_single(*decoded_UTF16LE, out);
+		data_start += text_encoding_decode_UTF16BE_single(data_start, data_finish, decoded_UTF16BE);
+		size += text_encoding_encode_UTF8_single(*decoded_UTF16BE, out);
 
 		if (!buffer_resize(output, size))
 		{
@@ -1446,7 +1452,9 @@ uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t
 
 	uint32_t* decoded_UTF16LE = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
 
-	if (!buffer_resize(output, size))
+	if ((data_start <= (uint16_t*)decoded_UTF16LE &&
+		 (uint16_t*)decoded_UTF16LE < data_finish) ||
+		!buffer_resize(output, size))
 	{
 		return 0;
 	}

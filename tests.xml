@@ -889,8 +889,12 @@
       <input>C:\Windows\regedit.exe</input>
       <return>0</return>
     </directory_exists>
-    <directory_exists if="${platform::is-unix()}">
+    <directory_exists if="${platform::is-unix()}" unless="${environment::variable-exists('ANDROID_ROOT')}">
       <input>/home</input>
+      <return>1</return>
+    </directory_exists>
+    <directory_exists if="${environment::variable-exists('ANDROID_ROOT')}">
+      <input>/system</input>
       <return>1</return>
     </directory_exists>
     <directory_exists if="${platform::is-unix()}">
@@ -929,8 +933,12 @@
       <input>/home!</input>
       <return>0</return>
     </file_exists>
-    <file_exists if="${platform::is-unix()}">
+    <file_exists if="${platform::is-unix()}" unless="${environment::variable-exists('ANDROID_ROOT')}">
       <input>/bin/ls</input>
+      <return>1</return>
+    </file_exists>
+    <file_exists if="${environment::variable-exists('ANDROID_ROOT')}">
+      <input>/init.rc</input>
       <return>1</return>
     </file_exists>
     <file_exists if="${platform::is-unix()}">
@@ -958,6 +966,21 @@
 ]]></input>
       <output>3</output>
     </file_read_lines>
+    <file_get_attributes if="${platform::is-windows()}">
+      <input>C:\Windows\notepad.exe</input>
+    </file_get_attributes>
+    <file_get_attributes if="${platform::is-windows()}">
+      <input>C:\Windows\regedit.exe</input>
+    </file_get_attributes>
+    <file_get_attributes if="${platform::is-unix()}">
+      <input>/bin/uname</input>
+    </file_get_attributes>
+    <file_get_attributes if="${platform::is-unix()}">
+      <input>/sbin/halt</input>
+    </file_get_attributes>
+    <file_get_attributes if="${platform::is-unix()}">
+      <input>/init.rc</input>
+    </file_get_attributes>
   </TestFileSystem>
   <TestHashAlgorithm>
     <BLAKE2>
@@ -3558,12 +3581,12 @@
       <output>0 == 0</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
+    <interpreter_evaluate_code unless="${environment::variable-exists('ANDROID_ROOT')}">
       <code>${long::to-string('9223372036854775807')} == ${int64::to-string('9223372036854775807')}</code>
       <output>9223372036854775807 == 9223372036854775807</output>
       <return>1</return>
     </interpreter_evaluate_code>
-    <interpreter_evaluate_code>
+    <interpreter_evaluate_code unless="${environment::variable-exists('ANDROID_ROOT')}">
       <code>${long::to-string('-9223372036854775808')} == ${int64::to-string('-9223372036854775808')}</code>
       <output>-9223372036854775808 == -9223372036854775808</output>
       <return>1</return>

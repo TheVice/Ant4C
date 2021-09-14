@@ -14,6 +14,7 @@ extern "C" {
 #include "conversion.h"
 #include "date_time.h"
 #include "exec.h"
+#include "file_system.h"
 #include "interpreter.h"
 #include "path.h"
 #include "project.h"
@@ -321,6 +322,13 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 	for (const auto& node : nodes)
 	{
 		load_input_data(node);
+
+		if (!range_is_null_or_empty(&working_dir) &&
+			!directory_exists(working_dir.start))
+		{
+			--node_count;
+			continue;
+		}
 
 		for (auto& the_property : input_properties)
 		{

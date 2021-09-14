@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -54,13 +54,5 @@ const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void
 uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path);
 uint8_t cygpath_get_unix_path(uint8_t* path_start, uint8_t* path_finish);
 uint8_t cygpath_get_windows_path(uint8_t* path_start, uint8_t* path_finish);
-
-uint8_t path_get_id_of_get_full_path_function();
-uint8_t path_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t path_exec_function(const void* project,
-						   uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						   struct buffer* output);
-uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							  struct buffer* output);
 
 #endif

@@ -296,12 +296,12 @@ TEST(TestFileSystem_, directory_get_time_attributes)
 		}
 
 		test_was_run = 1;
-		ASSERT_TRUE(directory_get_creation_time(path));
-		ASSERT_TRUE(directory_get_creation_time_utc(path));
-		ASSERT_TRUE(directory_get_last_access_time(path));
-		ASSERT_TRUE(directory_get_last_access_time_utc(path));
-		ASSERT_TRUE(directory_get_last_write_time(path));
-		ASSERT_TRUE(directory_get_last_write_time_utc(path));
+		ASSERT_LE(0, directory_get_creation_time(path));
+		ASSERT_LE(0, directory_get_creation_time_utc(path));
+		ASSERT_LE(0, directory_get_last_access_time(path));
+		ASSERT_LE(0, directory_get_last_access_time_utc(path));
+		ASSERT_LE(0, directory_get_last_write_time(path));
+		ASSERT_LE(0, directory_get_last_write_time_utc(path));
 	}
 
 	EXPECT_TRUE(test_was_run) << "[Warning]: No directories from inputs exists at your environment.";
@@ -582,42 +582,30 @@ TEST_F(TestFileSystem, file_read_lines)
 	buffer_release(&tmp);
 }
 
-TEST(TestFileSystem_, file_get_attributes)
+TEST_F(TestFileSystem, file_get_attributes)
 {
-	const std::string inputs[] =
+	for (const auto& node : nodes)
 	{
-#if defined(_WIN32)
-		"C:\\Windows\\notepad.exe",
-		"C:\\Windows\\regedit.exe"
-#else
-		"/bin/uname",
-		"/sbin/halt"
-#endif
-	};
-	//
-	uint8_t test_was_run = 0;
-
-	for (auto& input : inputs)
-	{
-		const uint8_t* path = (const uint8_t*)input.c_str();
+		const std::string input(node.node().select_node("input").node().child_value());
+		const auto path = reinterpret_cast<const uint8_t*>(input.c_str());
 
 		if (!file_exists(path))
 		{
 			continue;
 		}
 
-		test_was_run = 1;
-		ASSERT_TRUE(file_get_creation_time(path));
-		ASSERT_TRUE(file_get_creation_time_utc(path));
-		ASSERT_TRUE(file_get_last_access_time(path));
-		ASSERT_TRUE(file_get_last_access_time_utc(path));
-		ASSERT_TRUE(file_get_last_write_time(path));
-		ASSERT_TRUE(file_get_last_write_time_utc(path));
+		ASSERT_LE(0, file_get_creation_time(path)) << input;
+		ASSERT_LE(0, file_get_creation_time_utc(path)) << input;
+		ASSERT_LE(0, file_get_last_access_time(path)) << input;
+		ASSERT_LE(0, file_get_last_access_time_utc(path)) << input;
+		ASSERT_LE(0, file_get_last_write_time(path)) << input;
+		ASSERT_LE(0, file_get_last_write_time_utc(path)) << input;
 		//
-		ASSERT_LT(0, file_get_length(path));
+		ASSERT_LT(0, file_get_length(path)) << input;
+		//
+		node_count = 0;
+		break;
 	}
-
-	EXPECT_TRUE(test_was_run) << "[Warning]: No files from inputs exists at your environment.";
 }
 
 TEST(TestFileSystem_, file_move)
