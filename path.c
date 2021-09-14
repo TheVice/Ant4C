@@ -620,8 +620,13 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 		return 0;
 	}
 
-	struct range directory;
+#else
+	static const uint8_t* tmp_dir = (const uint8_t*)"TMPDIR";
 
+	if (environment_get_variable(tmp_dir, tmp_dir + 6, temp_path))
+	{
+#endif
+	struct range directory;
 	BUFFER_TO_RANGE(directory, temp_path);
 
 	if (!path_get_directory_name(directory.start + size, directory.finish, &directory))
@@ -630,28 +635,23 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	}
 
 	return buffer_resize(temp_path, size + range_size(&directory));
-#else
-	static const uint8_t* tmp_dir = (const uint8_t*)"TMPDIR";
+#if !defined(_WIN32)
+}
 
-	if (environment_get_variable(tmp_dir, tmp_dir + 6, temp_path))
-	{
-		return 1;
-	}
-
-	if (!buffer_resize(temp_path, size))
-	{
-		return 0;
-	}
+if (!buffer_resize(temp_path, size))
+{
+	return 0;
+}
 
 #if defined(__ANDROID__)
-	static const uint8_t* temp_path_ = (const uint8_t*)"/data/local/tmp";
+static const uint8_t* temp_path_ = (const uint8_t*)"/data/local/tmp";
 #define TEMP_PATH_SIZE 15
 #else
-	static const uint8_t* temp_path_ = (const uint8_t*)"/tmp";
+static const uint8_t* temp_path_ = (const uint8_t*)"/tmp";
 #define TEMP_PATH_SIZE 4
 #endif
-	return directory_exists(temp_path_) &&
-		   buffer_append(temp_path, temp_path_, TEMP_PATH_SIZE);
+return directory_exists(temp_path_) &&
+	   buffer_append(temp_path, temp_path_, TEMP_PATH_SIZE);
 #endif
 }
 
