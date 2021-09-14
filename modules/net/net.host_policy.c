@@ -388,18 +388,7 @@ uint8_t core_host_context_contract_get_runtime_delegate__(
 
 	if (NET_DELEGATE_MAX_VALUE == type_of_delegate)
 	{
-		if (!buffer_append(output, delegate_type, delegate_type_length) ||
-			!buffer_push_back(output, 0))
-		{
-			return 0;
-		}
-
-		type_of_delegate = int_parse(buffer_data(output, 0));
-
-		if (!buffer_resize(output, 0))
-		{
-			return 0;
-		}
+		type_of_delegate = int_parse(delegate_type, delegate_type + delegate_type_length);
 	}
 
 	void* the_delegate;
@@ -429,18 +418,7 @@ uint8_t core_host_initialize__(
 
 		if (-1 == options)
 		{
-			if (!buffer_append(output, values[0], values_lengths[0]) ||
-				!buffer_push_back(output, 0))
-			{
-				return 0;
-			}
-
-			options = int_parse(buffer_data(output, 0));
-
-			if (!buffer_resize(output, 0))
-			{
-				return 0;
-			}
+			options = int_parse(values[0], values[0] + values_lengths[0]);
 		}
 	}
 

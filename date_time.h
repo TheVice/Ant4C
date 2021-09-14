@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -49,7 +49,7 @@ uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* d
 #if !defined(_WIN32)
 long datetime_get_bias();
 #endif
-int64_t date_time_millisecond_to_second(int64_t millisecond);
+int64_t date_time_millisecond_to_second(uint64_t millisecond);
 
 int64_t timespan_from_days(double input);
 int64_t timespan_from_hours(double input);
@@ -65,13 +65,5 @@ double timespan_get_total_days(int64_t input);
 double timespan_get_total_hours(int64_t input);
 int64_t timespan_get_total_milliseconds(int64_t input);
 double timespan_get_total_minutes(int64_t input);
-
-uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output);
-
-uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output);
 
 #endif

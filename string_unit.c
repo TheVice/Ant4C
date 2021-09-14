@@ -1011,7 +1011,7 @@ uint8_t string_exec_function(uint8_t function,
 		case pad_right:
 			return (3 == arguments_count) &&
 				   string_pad(values[0].start, values[0].finish, values[2].start, values[2].finish,
-							  (ptrdiff_t)int64_parse(values[1].start), output, function);
+							  (ptrdiff_t)int64_parse(values[1].start, values[1].finish), output, function);
 
 		case replace:
 			return (3 == arguments_count) && string_replace(
@@ -1045,12 +1045,12 @@ uint8_t string_exec_function(uint8_t function,
 				return 1;
 			}
 
-			const ptrdiff_t index = (ptrdiff_t)int64_parse(values[1].start);
+			const ptrdiff_t index = (ptrdiff_t)int64_parse(values[1].start, values[1].finish);
 			ptrdiff_t length = -1;
 
 			if (3 == arguments_count)
 			{
-				length = (ptrdiff_t)int64_parse(values[2].start);
+				length = (ptrdiff_t)int64_parse(values[2].start, values[2].finish);
 
 				if (length < 0)
 				{

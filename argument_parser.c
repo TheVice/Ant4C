@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -831,7 +831,7 @@ uint8_t argument_parser_get_indent(const struct buffer* arguments, struct buffer
 
 	if (result)
 	{
-		return (uint8_t)math_abs(long_parse(result->start));
+		return (uint8_t)math_abs(int_parse(result->start, result->finish));
 	}
 
 	return 0;

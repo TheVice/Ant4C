@@ -8,6 +8,7 @@
 #include "stdc_secure_api.h"
 
 #include "host_fxr.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "shared_object.h"
@@ -476,9 +477,9 @@ uint8_t int_to_hex_and_byte_representation(int32_t code, struct buffer* output)
 
 	char* ptr = (char*)buffer_data(output, size);
 #if __STDC_LIB_EXT1__
-	code = sprintf_s(ptr, 32, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
+	code = sprintf_s(ptr, 32, "0x%x %i %i", code, code, code & 0xFF);
 #else
-	code = sprintf(ptr, "0x%x %i %i", (int)code, (int)code, (int)(code & 0xFF));
+	code = sprintf(ptr, "0x%x %i %i", code, code, code & 0xFF);
 #endif
 	return buffer_resize(output, size + code);
 }

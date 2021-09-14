@@ -30,7 +30,12 @@ add_library(net_gate
 target_include_directories(net_gate PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
 
 if(NOT MSVC)
-  set_property(TARGET net_gate PROPERTY C_STANDARD 11)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
+  target_compile_features(net_gate
+    PRIVATE
+    c_std_11
+  )
+  endif()
 endif()
 
 target_compile_options(net_gate PRIVATE
@@ -47,10 +52,15 @@ add_library(ant4c.net.module SHARED
   "${CMAKE_CURRENT_SOURCE_DIR}/net.h"
 )
 
-target_link_libraries(ant4c.net.module net_gate ant4c)
+target_link_libraries(ant4c.net.module net_gate Ant4C::ant4c)
 
 if(NOT MSVC)
-  set_property(TARGET ant4c.net.module PROPERTY C_STANDARD 11)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
+  target_compile_features(ant4c.net.module
+    PRIVATE
+    c_std_11
+  )
+  endif()
 endif()
 
 target_compile_options(ant4c.net.module PRIVATE
@@ -58,3 +68,7 @@ target_compile_options(ant4c.net.module PRIVATE
   $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
+
+target_link_libraries(net_gate INTERFACE Ant4C::ant4c)
+add_library(Ant4C::net_gate ALIAS net_gate)
+add_library(Ant4C::ant4c.net.module ALIAS ant4c.net.module)

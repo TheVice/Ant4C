@@ -37,6 +37,10 @@ if(MSVC)
     "${CMAKE_CURRENT_SOURCE_DIR}/VersionDetector.cs"
   )
 
-  target_link_libraries(ant4c.net.framework.module ant4c framework_gate)
+  target_link_libraries(ant4c.net.framework.module Ant4C::ant4c framework_gate)
   target_compile_options(ant4c.net.framework.module PRIVATE /W4 /WX)
+
+  target_link_libraries(framework_gate INTERFACE Ant4C::ant4c)
+  add_library(Ant4C::framework_gate ALIAS framework_gate)
+  add_library(Ant4C::ant4c.net.framework.module ALIAS ant4c.net.framework.module)
 endif()

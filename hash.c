@@ -14,8 +14,6 @@
 #include "file_system.h"
 #include "range.h"
 
-#include <stdio.h>
-#include <stddef.h>
 #include <string.h>
 
 uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
@@ -80,29 +78,31 @@ uint8_t hash_algorithm_bytes_to_string(
 		return 1;
 	}
 
-	ptrdiff_t size = buffer_size(output);
+	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 2 * (finish - start) + 2))
+	if (!buffer_append(output, NULL, 2 * (finish - start) + 2) ||
+		!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t max_size = buffer_size(output) - 3;
-	char* ptr = (char*)buffer_data(output, size);
-
-	while (start < finish && size < max_size)
+	for (; start < finish; ++start)
 	{
-#if __STDC_LIB_EXT1__
-		const int32_t sz = sprintf_s(ptr, 3, (*start) < 16 ? "0%x" : "%x", *start);
-#else
-		const int32_t sz = sprintf(ptr, (*start) < 16 ? "0%x" : "%x", *start);
-#endif
-		ptr += sz;
-		size += sz;
-		++start;
+		if ((*start) < 16)
+		{
+			if (!buffer_push_back(output, '0'))
+			{
+				return 0;
+			}
+		}
+
+		if (!int_to_hex(*start, output))
+		{
+			return 0;
+		}
 	}
 
-	return buffer_resize(output, size);
+	return 1;
 }
 
 static const uint8_t* crc32_parameters_str[] =
@@ -158,9 +158,7 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 
 	struct range values[2];
 
-	if (!common_get_arguments(arguments, arguments_count, values,
-							  crc32 != function &&
-							  bytes_to_string != function))
+	if (!common_get_arguments(arguments, arguments_count, values, 0))
 	{
 		return 0;
 	}
@@ -171,7 +169,7 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 		crc32 != function &&
 		bytes_to_string != function)
 	{
-		hash_length = (uint16_t)int_parse(values[1].start);
+		hash_length = (uint16_t)int_parse(values[1].start, values[1].finish);
 	}
 
 	if (NULL == values[0].start)
@@ -313,7 +311,8 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 		else if (xxh32 != algorithm &&
 				 xxh64 != algorithm)
 		{
-			hash_length = (uint16_t)int_parse(algorithm_parameter->start);
+			hash_length = (uint16_t)int_parse(
+							  algorithm_parameter->start, algorithm_parameter->finish);
 
 			if (hash_length < 8 || 1024 < hash_length)
 			{

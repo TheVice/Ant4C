@@ -6,7 +6,12 @@ add_library(default_listener SHARED
 )
 
 if(NOT MSVC)
-  set_property(TARGET default_listener PROPERTY C_STANDARD 11)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
+  target_compile_features(default_listener
+    PRIVATE
+    c_std_11
+  )
+  endif()
 endif()
 
 target_compile_options(default_listener PRIVATE
