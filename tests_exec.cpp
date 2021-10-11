@@ -581,8 +581,11 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 		ASSERT_EQ(command_line_str.empty(), 1 == arguments.size())
 				<< buffer_free(&temp_file_name) << project_free(&the_project);
 		ASSERT_TRUE(buffer_resize(&temp_file_name, 0)) << buffer_free(&temp_file_name) << project_free(&the_project);
+		uint8_t is_path_rooted;
+		ASSERT_TRUE(path_is_path_rooted(program.start, program.finish,
+										&is_path_rooted)) << buffer_free(&temp_file_name) << project_free(&the_project);
 
-		if (!base_dir_str.empty() && !path_is_path_rooted(program.start, program.finish))
+		if (!base_dir_str.empty() && !is_path_rooted)
 		{
 			ASSERT_TRUE(path_combine(base_dir.start, base_dir.finish,
 									 program.start, program.finish, &temp_file_name))
@@ -726,7 +729,11 @@ TEST_F(TestExec, exec_get_program_full_path)
 				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		//
 		const auto program_in_the_range = string_to_range(program_str);
-		const auto is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
+		uint8_t is_path_rooted = 0;
+		ASSERT_NE(range_is_null_or_empty(&program_in_the_range),
+				  path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish, &is_path_rooted))
+				<< program_str << std::endl
+				<< buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		//
 		const auto returned = exec_get_program_full_path(nullptr, nullptr,
 							  &path_to_the_program, is_path_rooted, &base_dir, &tmp, verbose);

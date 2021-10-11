@@ -41,7 +41,8 @@ uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish
 uint8_t path_get_temp_file_name(struct buffer* temp_file_name);
 uint8_t path_get_temp_path(struct buffer* temp_path);
 uint8_t path_has_extension(const uint8_t* path_start, const uint8_t* path_finish);
-uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finish);
+uint8_t path_is_path_rooted(
+	const uint8_t* path_start, const uint8_t* path_finish, uint8_t* is_path_rooted);
 uint8_t path_glob(const uint8_t* path_start, const uint8_t* path_finish,
 				  const uint8_t* wild_card_start, const uint8_t* wild_card_finish);
 

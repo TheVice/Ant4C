@@ -20,7 +20,8 @@ struct range;
 
 #if defined(_WIN32)
 uint8_t file_system_append_pre_root(struct buffer* path);
-uint8_t file_system_get_position_after_pre_root(struct range* path);
+uint8_t file_system_get_position_after_pre_root(
+	const uint8_t** path_start, const uint8_t* path_finish);
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path);
 uint8_t file_system_path_in_range_to_pathW(
 	const uint8_t* path_start, const uint8_t* path_finish, struct buffer* pathW);
@@ -121,7 +122,8 @@ uint8_t file_write_all(const uint8_t* path, const struct buffer* content);
 uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, void* stream);
 uint8_t file_write_with_several_steps(const struct buffer* content, void* stream);
 
-uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full_path);
+uint8_t file_get_full_path(
+	const uint8_t* partial_path_start, const uint8_t* partial_path_finish, struct buffer* full_path);
 
 uint8_t dir_get_id_of_get_current_directory_function();
 uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish);

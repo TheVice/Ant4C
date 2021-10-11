@@ -51,7 +51,9 @@
 #endif
 
 static const uint8_t point = '.';
-#if !defined(_WIN32)
+#if defined(_WIN32)
+static const uint8_t colon_mark = ':';
+#else
 static const uint8_t tilde = '~';
 #endif
 static const uint8_t* upper_level = (const uint8_t*)"..";
@@ -301,7 +303,7 @@ uint8_t path_is_start_valid(const uint8_t* start, const uint8_t* finish)
 #if defined(_WIN32)
 
 	if (2 < length &&
-		':' == start[1] &&
+		colon_mark == start[1] &&
 		string_starts_with(start + 3, finish, upper_level, upper_level + 2) &&
 		(4 == length ||
 		 (4 < length &&
@@ -351,8 +353,14 @@ uint8_t path_get_full_path(const uint8_t* root_start, const uint8_t* root_finish
 	}
 
 #endif
+	uint8_t is_path_rooted;
 
-	if (!path_is_path_rooted(path_start, path_finish))
+	if (!path_is_path_rooted(path_start, path_finish, &is_path_rooted))
+	{
+		return 0;
+	}
+
+	if (!is_path_rooted)
 	{
 		if (!string_replace(root_start, root_finish,
 #if defined(_WIN32)
@@ -428,7 +436,7 @@ uint8_t path_get_path_root(const uint8_t* path_start, const uint8_t* path_finish
 #if defined(_WIN32)
 	const ptrdiff_t path_length = path_finish - path_start;
 
-	if (1 < path_length && ':' == path_start[1])
+	if (1 < path_length && colon_mark == path_start[1])
 	{
 		if (2 < path_length &&
 			(PATH_DELIMITER == path_start[2] ||
@@ -521,7 +529,14 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 		length = ptr - temp_file_path;
 	}
 
-	if (path_is_path_rooted(temp_file_path, temp_file_path + length))
+	uint8_t is_path_rooted;
+
+	if (!path_is_path_rooted(temp_file_path, temp_file_path + length, &is_path_rooted))
+	{
+		return 0;
+	}
+
+	if (is_path_rooted)
 	{
 		if (!buffer_resize(temp_file_name, size + length) ||
 			!buffer_push_back(temp_file_name, 0))
@@ -667,40 +682,43 @@ uint8_t path_has_extension(const uint8_t* path_start, const uint8_t* path_finish
 	return path_get_extension(path_start, path_finish, &ext);
 }
 
-uint8_t path_is_path_rooted(const uint8_t* path_start, const uint8_t* path_finish)
+uint8_t path_is_path_rooted(
+	const uint8_t* path_start, const uint8_t* path_finish, uint8_t* is_path_rooted)
 {
-	if (range_in_parts_is_null_or_empty(path_start, path_finish))
+	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
+		!is_path_rooted)
 	{
 		return 0;
 	}
 
 #if defined(_WIN32)
-	const ptrdiff_t size = path_finish - path_start;
+	ptrdiff_t size = path_finish - path_start;
 
 	if (2 < size)
 	{
-		struct range path;
-		path.start = path_start;
-		path.finish = path_finish;
+		size = file_system_get_position_after_pre_root(&path_start, path_finish);
 
-		if (!file_system_get_position_after_pre_root(&path))
+		if (!size)
 		{
 			return 0;
 		}
-
-		if (path_start < path.start)
+		else if (2 == size)
 		{
-			return path_is_path_rooted(path.start, path_finish);
+			return path_is_path_rooted(path_start, path_finish, is_path_rooted);
 		}
+
+		size = 2;
 	}
 
 	if (1 < size)
 	{
-		return ':' == (path_start)[1];
+		*is_path_rooted = colon_mark == (path_start)[1];
+		return 1;
 	}
 
 #endif
-	return (path_posix_delimiter == path_start[0] || PATH_DELIMITER == path_start[0]);
+	*is_path_rooted = (path_posix_delimiter == path_start[0] || PATH_DELIMITER == path_start[0]);
+	return 1;
 }
 
 uint8_t path_glob(const uint8_t* path_start, const uint8_t* path_finish,
@@ -992,32 +1010,39 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void* the_target,
 		struct buffer* input, struct buffer* tmp, uint8_t verbose)
 {
-	struct range path;
-	BUFFER_TO_RANGE(path, input);
+	const uint8_t* path_start = buffer_data(input, 0);
+	const uint8_t* path_finish = path_start + buffer_size(input);
+	uint8_t is_path_rooted;
 
-	if (!path_is_path_rooted(path.start, path.finish))
+	if (!path_is_path_rooted(path_start, path_finish, &is_path_rooted))
+	{
+		return 0;
+	}
+
+	if (!is_path_rooted)
 	{
 		if (!project_get_current_directory(the_project, the_target, tmp, 0, verbose))
 		{
 			return NULL;
 		}
 
-		if (!path_combine_in_place(tmp, 0, path.start, path.finish) ||
+		if (!path_combine_in_place(tmp, 0, path_start, path_finish) ||
 			!buffer_push_back(tmp, 0))
 		{
 			return NULL;
 		}
 
-		path.start = buffer_data(tmp, 0);
+		path_start = buffer_data(tmp, 0);
 
-		if (file_exists(path.start))
+		if (file_exists(path_start))
 		{
-			path.finish = NULL;
+			path_finish = NULL;
 		}
 
-		if (NULL != path.finish)
+		if (NULL != path_finish)
 		{
-			BUFFER_TO_RANGE(path, input);
+			path_start = buffer_data(input, 0);
+			path_finish = path_start + buffer_size(input);
 
 			if (!buffer_resize(tmp, 0))
 			{
@@ -1029,49 +1054,50 @@ const uint8_t* path_try_to_get_absolute_path(const void* the_project, const void
 				return NULL;
 			}
 
-			if (!path_combine_in_place(tmp, 0, path.start, path.finish) ||
+			if (!path_combine_in_place(tmp, 0, path_start, path_finish) ||
 				!buffer_push_back(tmp, 0))
 			{
 				return NULL;
 			}
 
-			path.start = buffer_data(tmp, 0);
+			path_start = buffer_data(tmp, 0);
 
-			if (file_exists(path.start))
+			if (file_exists(path_start))
 			{
-				path.finish = NULL;
+				path_finish = NULL;
 			}
 		}
 
-		if (NULL != path.finish)
+		if (NULL != path_finish)
 		{
-			BUFFER_TO_RANGE(path, input);
+			path_start = buffer_data(input, 0);
+			path_finish = path_start + buffer_size(input);
 
 			if (!buffer_resize(tmp, 0))
 			{
 				return NULL;
 			}
 
-			if (file_get_full_path(&path, tmp))
+			if (file_get_full_path(path_start, path_finish, tmp))
 			{
-				path.start = buffer_data(tmp, 0);
-				path.finish = NULL;
+				path_start = buffer_data(tmp, 0);
+				path_finish = NULL;
 			}
 		}
 
-		if (NULL != path.finish)
+		if (NULL != path_finish)
 		{
 			if (!buffer_push_back(input, 0))
 			{
 				return NULL;
 			}
 
-			path.start = buffer_data(input, 0);
-			path.finish = NULL;
+			path_start = buffer_data(input, 0);
+			path_finish = NULL;
 		}
 	}
 
-	return path.start;
+	return path_start;
 }
 
 uint8_t cygpath_get_dos_path(const uint8_t* path_start, const uint8_t* path_finish, struct buffer* path)

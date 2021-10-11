@@ -277,8 +277,16 @@ TEST(TestPath_, path_get_temp_file_name)
 				temp_file_name_range.start << std::endl << ch << std::endl;
 	}
 
-	ASSERT_TRUE(path_is_path_rooted(temp_file_name_range.start,
-									temp_file_name_range.finish)) << buffer_free(&temp_file_name);
+	uint8_t is_path_rooted;
+	//
+	ASSERT_TRUE(
+		path_is_path_rooted(
+			temp_file_name_range.start,
+			temp_file_name_range.finish,
+			&is_path_rooted)) << buffer_free(&temp_file_name);
+	//
+	ASSERT_TRUE(is_path_rooted) << buffer_free(&temp_file_name);
+	//
 	buffer_release(&temp_file_name);
 	//
 	ASSERT_FALSE(path_get_temp_file_name(NULL));
@@ -298,7 +306,11 @@ TEST(TestPath_, path_get_temp_path)
 	//
 	buffer_release(&temp_path);
 	//
-	ASSERT_TRUE(path_is_path_rooted(temp_in_range.start, temp_in_range.finish)) << temp_in_string;
+	uint8_t is_path_rooted;
+	//
+	ASSERT_TRUE(path_is_path_rooted(temp_in_range.start, temp_in_range.finish,
+									&is_path_rooted)) << temp_in_string;
+	ASSERT_TRUE(is_path_rooted) << temp_in_string;
 	ASSERT_NE(PATH_DELIMITER, *(temp_in_range.finish - 1)) << temp_in_string;
 	//
 	ASSERT_FALSE(path_get_temp_path(NULL));
@@ -344,15 +356,17 @@ TEST(TestPath_, path_is_path_rooted)
 		(const uint8_t*)"\\",
 		(const uint8_t*)"/",
 		(const uint8_t*)"/tmp",
-		(const uint8_t*)"\tmp"
+		(const uint8_t*)"\\tmp"
 	};
 	const uint8_t expect_return[] = { 0, 1, 1, 0 };
 #endif
 
-	for (uint8_t i = 0, count = sizeof(input) / sizeof(*input); i < count; ++i)
+	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		const uint8_t returned = path_is_path_rooted(input[i], input[i] + common_count_bytes_until(input[i], 0));
-		ASSERT_EQ(expect_return[i], returned);
+		uint8_t is_path_rooted;
+		//
+		ASSERT_TRUE(path_is_path_rooted(input[i], input[i] + common_count_bytes_until(input[i], 0), &is_path_rooted));
+		ASSERT_EQ(expect_return[i], is_path_rooted);
 	}
 }
 
@@ -390,7 +404,11 @@ TEST(TestPath_, path_get_directory_for_current_process)
 	SET_NULL_TO_BUFFER(output);
 	ASSERT_TRUE(path_get_directory_for_current_process(&output)) << buffer_free(&output);
 	const auto path_in_range = buffer_to_range(&output);
-	ASSERT_TRUE(path_is_path_rooted(path_in_range.start, path_in_range.finish)) << buffer_free(&output);
+	uint8_t is_path_rooted;
+	//
+	ASSERT_TRUE(path_is_path_rooted(path_in_range.start, path_in_range.finish,
+									&is_path_rooted)) << buffer_free(&output);
+	ASSERT_TRUE(is_path_rooted) << buffer_free(&output);
 	buffer_release(&output);
 }
 
@@ -401,7 +419,11 @@ TEST(TestPath_, path_get_directory_for_current_image)
 #if !defined(__OpenBSD__)
 	ASSERT_TRUE(path_get_directory_for_current_image(&output)) << buffer_free(&output);
 	const auto path_in_range = buffer_to_range(&output);
-	ASSERT_TRUE(path_is_path_rooted(path_in_range.start, path_in_range.finish)) << buffer_free(&output);
+	uint8_t is_path_rooted;
+	//
+	ASSERT_TRUE(path_is_path_rooted(path_in_range.start, path_in_range.finish,
+									&is_path_rooted)) << buffer_free(&output);
+	ASSERT_TRUE(is_path_rooted) << buffer_free(&output);
 #else
 	ASSERT_FALSE(path_get_directory_for_current_image(&output)) << buffer_free(&output);
 #endif

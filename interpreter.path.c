@@ -143,7 +143,8 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 		case path_is_path_rooted_function:
 			return 1 == arguments_count &&
-				   bool_to_string(path_is_path_rooted(values[0].start, values[0].finish), output);
+				   path_is_path_rooted(values[0].start, values[0].finish, &arguments_count) &&
+				   bool_to_string(arguments_count, output);
 
 		case path_get_full_path_function:
 		case UNKNOWN_PATH_FUNCTION:

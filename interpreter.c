@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -40,7 +40,7 @@
 
 static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
-static const uint8_t function_call_finish = '}';
+static const uint8_t call_of_expression_finish = '}';
 static const uint8_t apos = '\'';
 
 static const uint8_t arguments_delimiter = ',';
@@ -51,8 +51,8 @@ static const uint8_t space_and_tab[] = { ' ', '\t' };
 static const uint8_t name_space_border[] = { ':', ':' };
 #define NAME_SPACE_BORDER_LENGTH COUNT_OF(name_space_border)
 
-static const uint8_t function_call_start[] = { '$', '{' };
-#define FUNCTION_CALL_START_LENGTH COUNT_OF(function_call_start)
+static const uint8_t call_of_expression_start[] = { '$', '{' };
+#define CALL_OF_EXPRESSION_START_LENGTH COUNT_OF(call_of_expression_start)
 
 static const uint8_t* interpreter_string_enumeration_unit[] =
 {
@@ -775,8 +775,8 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 
 	while (-1 != (index = string_index_of(function.start,
 										  code->finish,
-										  function_call_start,
-										  function_call_start + FUNCTION_CALL_START_LENGTH)))
+										  call_of_expression_start,
+										  call_of_expression_start + CALL_OF_EXPRESSION_START_LENGTH)))
 	{
 		if (!buffer_resize(&return_of_function, 0))
 		{
@@ -800,7 +800,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 				continue;
 			}
 
-			if (function_call_finish == (*function.finish))
+			if (call_of_expression_finish == (*function.finish))
 			{
 				break;
 			}
@@ -808,7 +808,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 			++function.finish;
 		}
 
-		if (function.finish == code->finish && function_call_finish != *function.finish)
+		if (function.finish == code->finish && call_of_expression_finish != *function.finish)
 		{
 			buffer_release(&return_of_function);
 			return 0;
@@ -820,7 +820,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 			return 0;
 		}
 
-		function.start += 2;
+		function.start += CALL_OF_EXPRESSION_START_LENGTH;
 		void* the_property = NULL;
 
 		if (project_property_exists(the_project, function.start, (uint8_t)range_size(&function), &the_property,

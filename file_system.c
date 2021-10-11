@@ -144,13 +144,18 @@ uint8_t file_system_append_pre_root(struct buffer* path)
 		return 0;
 	}
 
-	struct range path_in_the_range;
+	const uint8_t* path_start = buffer_data(path, 0);
+	const uint8_t* path_finish = path_start + buffer_size(path);
+	uint8_t is_path_rooted;
 
-	BUFFER_TO_RANGE(path_in_the_range, path);
-
-	if (path_is_path_rooted(path_in_the_range.start, path_in_the_range.finish))
+	if (!path_is_path_rooted(path_start, path_finish, &is_path_rooted))
 	{
-		if (!string_starts_with(path_in_the_range.start, path_in_the_range.finish,
+		return 0;
+	}
+
+	if (is_path_rooted)
+	{
+		if (!string_starts_with(path_start, path_finish,
 								pre_root_path, pre_root_path + pre_root_path_length) &&
 			!_buffer_append_pre(path, pre_root_path, pre_root_path_length))
 		{
@@ -161,29 +166,41 @@ uint8_t file_system_append_pre_root(struct buffer* path)
 	return 1;
 }
 
-uint8_t file_system_get_position_after_pre_root(struct range* path)
+uint8_t file_system_get_position_after_pre_root(
+	const uint8_t** path_start, const uint8_t* path_finish)
 {
-	if (range_is_null_or_empty(path))
+	if (!path_start ||
+		range_in_parts_is_null_or_empty(*path_start, path_finish))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t index = string_index_of(path->start, path->finish,
-											pre_root_path, pre_root_path + pre_root_path_length);
-	path->start += (-1 == index ? 0 : index + pre_root_path_length);
+	const uint8_t* pos = *path_start;
+
+	while (pre_root_path_length < path_finish - pos)
+	{
+		if (0 == memcmp(pos, pre_root_path, pre_root_path_length))
+		{
+			*path_start = pos + pre_root_path_length;
+			return 2;
+		}
+
+		++pos;
+	}
+
 	return 1;
 }
 
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path)
 {
-	if (NULL != path && NULL != (*path))
+	if (NULL != path && NULL != *path)
 	{
-		const wchar_t* ptr = wcsstr((*path), pre_root_path_wchar_t);
+		const wchar_t* ptr = wcsstr(*path, pre_root_path_wchar_t);
 
 		if (NULL != ptr)
 		{
 			ptr += pre_root_path_length;
-			(*path) = ptr;
+			*path = ptr;
 		}
 	}
 }
@@ -380,7 +397,14 @@ uint8_t file_system_path_in_range_to_pathW(
 		return 0;
 	}
 
-	if (path_is_path_rooted(path_start, path_finish) &&
+	uint8_t is_path_rooted;
+
+	if (!path_is_path_rooted(path_start, path_finish, &is_path_rooted))
+	{
+		return 0;
+	}
+
+	if (is_path_rooted &&
 		!string_starts_with(path_start, path_finish, pre_root_path, pre_root_path + pre_root_path_length) &&
 		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
 	{
@@ -2375,7 +2399,12 @@ uint8_t file_replace_with_same_length(
 		while (-1 != (index = (long)string_index_of(sub_content, content + readed, to_be_replaced,
 							  to_be_replaced_finish)))
 		{
-			sub_content += index;
+			while (0 < index && NULL != sub_content)
+			{
+				sub_content = string_enumerate(sub_content, content + readed, NULL);
+				--index;
+			}
+
 			index = (long)((sub_content - content) - readed);
 
 			if (!file_seek(stream, index, SEEK_CUR))
@@ -2524,19 +2553,24 @@ uint8_t file_replace(const uint8_t* path,
 	return file_close(stream);
 }
 
-uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full_path)
+uint8_t file_get_full_path(
+	const uint8_t* partial_path_start, const uint8_t* partial_path_finish, struct buffer* full_path)
 {
-	if (range_is_null_or_empty(partial_path) ||
+	uint8_t is_path_rooted;
+
+	if (range_in_parts_is_null_or_empty(partial_path_start, partial_path_finish) ||
+		!path_is_path_rooted(partial_path_start, partial_path_finish, &is_path_rooted) ||
 		NULL == full_path)
 	{
 		return 0;
 	}
 
 	const ptrdiff_t size = buffer_size(full_path);
+	const ptrdiff_t size_of_partial_path = partial_path_finish - partial_path_start;
 
-	if (path_is_path_rooted(partial_path->start, partial_path->finish))
+	if (is_path_rooted)
 	{
-		return buffer_append_data_from_range(full_path, partial_path) &&
+		return buffer_append(full_path, partial_path_start, size_of_partial_path) &&
 			   buffer_push_back(full_path, 0) &&
 			   file_exists(buffer_data(full_path, size));
 	}
@@ -2552,7 +2586,7 @@ uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full
 	{
 		BUFFER_TO_RANGE(start_of_path, &variable);
 
-		if (!buffer_resize(full_path, range_size(&start_of_path) + range_size(partial_path)))
+		if (!buffer_resize(full_path, range_size(&start_of_path) + size_of_partial_path))
 		{
 			buffer_release(&variable);
 			return 0;
@@ -2575,7 +2609,7 @@ uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full
 				return 0;
 			}
 
-			if (!path_combine_in_place(full_path, size, partial_path->start, partial_path->finish) ||
+			if (!path_combine_in_place(full_path, size, partial_path_start, partial_path_finish) ||
 				!buffer_push_back(full_path, 0))
 			{
 				buffer_release(&variable);
@@ -2628,7 +2662,7 @@ uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full
 				return 0;
 			}
 
-			if (!path_combine_in_place(full_path, size, partial_path->start, partial_path->finish) ||
+			if (!path_combine_in_place(full_path, size, partial_path_start, partial_path_finish) ||
 				!buffer_push_back(full_path, 0))
 			{
 				buffer_release(&variable);
