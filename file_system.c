@@ -1933,22 +1933,25 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 
 	ptrdiff_t size = 0;
 	ptrdiff_t readed = 0;
+	const uint8_t* start;
 	uint16_t count_of_lines = 1;
 	static const uint8_t n = '\n';
 	uint8_t* ptr = buffer_data(output, 0);
 
 	while (0 < (readed = (ptrdiff_t)file_read(ptr, sizeof(uint8_t), 4096, stream)))
 	{
-		size += (ptrdiff_t)readed;
+		size += readed;
 		path = ptr + readed;
+		start = ptr;
 
-		while (-1 != (readed = string_index_of(ptr, path, &n, &n + 1)))
+		do
 		{
-			ptr += readed + 1;
-			++count_of_lines;
+			if (n == *start)
+			{
+				++count_of_lines;
+			}
 		}
-
-		ptr = buffer_data(output, 0);
+		while (path != (start = string_enumerate(start, path, NULL)));
 	}
 
 	if (!size)
@@ -1998,20 +2001,37 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 
 	count_of_lines = 0;
 	struct range* range_of_line = NULL;
+	start = ptr;
+	const uint8_t* finish = start;
 
-	while (-1 != (size = string_index_of(ptr, path, &n, &n + 1)) &&
-		   NULL != (range_of_line = buffer_range_data(output, count_of_lines++)))
+	do
 	{
-		range_of_line->start = ptr;
-		ptr += size;
-		range_of_line->finish = ptr;
-		++ptr;
-	}
+		if (n == *start)
+		{
+			range_of_line = buffer_range_data(output, count_of_lines++);
 
-	if (ptr < path)
+			if (!range_of_line)
+			{
+				break;
+			}
+
+			range_of_line->start = finish;
+			range_of_line->finish = start;
+			finish = range_of_line->finish + 1;
+		}
+	}
+	while (path != (start = string_enumerate(start, path, NULL)));
+
+	if (finish < path)
 	{
 		range_of_line = buffer_range_data(output, count_of_lines++);
-		range_of_line->start = ptr;
+
+		if (!range_of_line)
+		{
+			return 0;
+		}
+
+		range_of_line->start = finish;
 		range_of_line->finish = path;
 	}
 	else
@@ -2389,23 +2409,21 @@ uint8_t file_replace_with_same_length(
 	const uint8_t* to_be_replaced, const uint8_t* by_replacement, ptrdiff_t length)
 {
 	ptrdiff_t readed = 0;
-	const uint8_t* to_be_replaced_finish = to_be_replaced + length;
 
 	while (0 < (readed = file_read(content, sizeof(uint8_t), size, stream)))
 	{
-		long index;
-		const uint8_t* sub_content = content;
+		const uint8_t* start = content;
+		const uint8_t* finish = content + readed;
 
-		while (-1 != (index = (long)string_index_of(sub_content, content + readed, to_be_replaced,
-							  to_be_replaced_finish)))
+		while (NULL != start && length <= finish - start)
 		{
-			while (0 < index && NULL != sub_content)
+			if (memcmp(start, to_be_replaced, length))
 			{
-				sub_content = string_enumerate(sub_content, content + readed, NULL);
-				--index;
+				start = string_enumerate(start, finish, NULL);
+				continue;
 			}
 
-			index = (long)((sub_content - content) - readed);
+			long index = (long)((start - content) - readed);
 
 			if (!file_seek(stream, index, SEEK_CUR))
 			{
@@ -2417,14 +2435,14 @@ uint8_t file_replace_with_same_length(
 				return 0;
 			}
 
-			index = (long)(readed - (sub_content - content) - length);
+			index = (long)(readed - (start - content) - length);
 
 			if (!file_seek(stream, index, SEEK_CUR))
 			{
 				return 0;
 			}
 
-			sub_content += length;
+			start += length;
 		}
 
 		if (readed < size)
@@ -2434,9 +2452,7 @@ uint8_t file_replace_with_same_length(
 
 		if (length < size)
 		{
-			index = (long)(-length);
-
-			if (!file_seek(stream, index, SEEK_CUR))
+			if (!file_seek(stream, (long)(-length), SEEK_CUR))
 			{
 				return 0;
 			}

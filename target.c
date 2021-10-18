@@ -206,11 +206,13 @@ uint8_t target_new(void* the_project,
 		ptrdiff_t index = 0;
 		uint16_t depends_count = 1;
 		const uint8_t* depend_name = depends;
+		const uint8_t* depends_finish = depends + depends_length;
 
-		while (-1 != (index = string_index_of(depend_name, depends + depends_length,
-											  &depends_delimiter, &depends_delimiter + 1)))
+		while (depends_finish !=
+			   (depend_name = find_any_symbol_like_or_not_like_that(
+								  depend_name, depends_finish, &depends_delimiter, 1, 1, 1)))
 		{
-			depend_name += index + 1;
+			++depend_name;
 			++depends_count;
 		}
 

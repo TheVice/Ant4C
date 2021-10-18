@@ -796,8 +796,6 @@ uint8_t exec(
 
 		work_dir_path.finish = buffer_data(&application, 0) + buffer_size(&application);
 
-		uint8_t is_path_rooted;
-
 		if (!path_is_path_rooted(work_dir_path.start, work_dir_path.finish, &is_path_rooted))
 		{
 			buffer_release(&application);

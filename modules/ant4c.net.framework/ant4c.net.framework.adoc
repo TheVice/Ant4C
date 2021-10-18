@@ -1,6 +1,14 @@
+= ant4c.net.framework.module(1)
+The Vice
+v2020.09
+:doctype: manpage
+:manmanual: ANT4C.NET.FRAMEWORK.MODULE
+:mansource: ANT4C.NET.FRAMEWORK.MODULE
+:man-linkstyle: pass:[blue R < >]
 
-= ant4c.net.framework.module help
-:toc:
+== Name
+
+ant4c.net.framework.module - module for Ant4C program that allow to work with .NET Framework from XML script code.
 
 [[history]]
 == History
@@ -18,7 +26,8 @@ IMPORTANT: To access function from this namespace - program option *modulepriori
 
 .Function from file unit.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<file-is-assembly,file::is-assembly>> | Check if file at the given path is .NET Framework assembly. If file not exists function will fail.
 |===
 
@@ -56,7 +65,8 @@ At first call of function path to non assembly file placed, second path to assem
 
 .Functions from framework unit.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<framework-exists,exists>> | Determine if framework with specific version exists.
 | <<framework-get-clr-version,get-clr-version>> | Get version of common language runtime.
 | <<framework-get-framework-directory,get-framework-directory>> | Path to the directory with framework.
@@ -117,7 +127,8 @@ Get version of runtime framework - v2.0, v3.0, v3.5, v4.0, v4.5 and so on.
 
 .Functions from metahost unit.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<metahost-get-clr-version-from-file,get-clr-version-from-file>> | Get version of common language runtime that set at the attribute of binary file.
 | <<metahost-runtime,runtime>> | Determine if requested runtime exists.
 |===

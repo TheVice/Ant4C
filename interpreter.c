@@ -38,6 +38,8 @@
 #include "version.h"
 #include "xml.h"
 
+#include <string.h>
+
 static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
 static const uint8_t call_of_expression_finish = '}';
@@ -129,19 +131,23 @@ uint8_t interpreter_disassemble_function(
 		return 0;
 	}
 
-	ptrdiff_t index = 0;
+	name_space->start = function->start;
 
-	if (-1 == (index = string_index_of(function->start,
-									   function->finish,
-									   name_space_border,
-									   name_space_border + NAME_SPACE_BORDER_LENGTH)))
+	for (name_space->finish = function->start;
+		 name_space->finish + NAME_SPACE_BORDER_LENGTH < function->finish;
+		 ++(name_space->finish))
+	{
+		if (0 == memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
+		{
+			break;
+		}
+	}
+
+	if (*name_space_border != *name_space->finish)
 	{
 		return 0;
 	}
 
-	name_space->start = function->start;
-	name_space->finish = function->start + index;
-	/**/
 	name->start = name_space->finish + NAME_SPACE_BORDER_LENGTH;
 	name->finish = find_any_symbol_like_or_not_like_that(
 					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
@@ -183,6 +189,13 @@ uint8_t interpreter_get_function_from_argument(
 		++argument_area->finish;
 		ch = *argument_area->finish;
 
+		if (apos == ch)
+		{
+			argument_area->finish =
+				find_any_symbol_like_or_not_like_that(argument_area->finish + 1, finish, &apos, 1, 1, 1);
+			continue;
+		}
+
 		if (finish_of_function_arguments_area == ch)
 		{
 			if (0 == depth)
@@ -212,18 +225,25 @@ uint8_t interpreter_evaluate_argument_area(
 	const void* the_project, const void* the_target,
 	const struct range* argument_area, struct buffer* output, uint8_t verbose)
 {
-	ptrdiff_t index = (apos == *(argument_area->start) && apos == *(argument_area->finish - 1));
 	const uint8_t* pos = argument_area->start;
 
-	if (!index)
+	if (apos != *(argument_area->start) || apos != *(argument_area->finish - 1))
 	{
-		while (-1 != (index = string_index_of(
-								  pos, argument_area->finish,
-								  name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH)))
+		const uint8_t* pos_with_index = pos;
+
+		while (pos_with_index + NAME_SPACE_BORDER_LENGTH <= argument_area->finish)
 		{
+			if (memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
+			{
+				++pos_with_index;
+				continue;
+			}
+
 			struct range function;
-			function.start = find_any_symbol_like_or_not_like_that(pos + index, pos,
+
+			function.start = find_any_symbol_like_or_not_like_that(pos_with_index, pos,
 							 space_and_tab, SPACE_AND_TAB_LENGTH, 1, -1);
+
 			function.finish = argument_area->finish;
 
 			if (!string_trim(&function) ||
@@ -235,6 +255,7 @@ uint8_t interpreter_evaluate_argument_area(
 			}
 
 			pos = function.finish;
+			pos_with_index = pos;
 		}
 	}
 
@@ -765,26 +786,28 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 		return 0;
 	}
 
-	const ptrdiff_t code_length = range_size(code);
 	struct buffer return_of_function;
+
 	SET_NULL_TO_BUFFER(return_of_function);
-	ptrdiff_t index = 0;
-	struct range function;
-	function.start = code->start;
+
 	const uint8_t* previous_pos = code->start;
 
-	while (-1 != (index = string_index_of(function.start,
-										  code->finish,
-										  call_of_expression_start,
-										  call_of_expression_start + CALL_OF_EXPRESSION_START_LENGTH)))
+	struct range function;
+
+	for (function.start = code->start; function.start + CALL_OF_EXPRESSION_START_LENGTH <= code->finish;)
 	{
+		if (memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
+		{
+			++function.start;
+			continue;
+		}
+
 		if (!buffer_resize(&return_of_function, 0))
 		{
 			buffer_release(&return_of_function);
 			return 0;
 		}
 
-		function.start += index;
 		function.finish = function.start;
 
 		while (function.finish < code->finish)
@@ -860,7 +883,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 	}
 
 	buffer_release(&return_of_function);
-	return buffer_append(output, previous_pos, code_length - (previous_pos - code->start));
+	return buffer_append(output, previous_pos, range_size(code) - (previous_pos - code->start));
 }
 
 uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(

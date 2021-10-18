@@ -6443,16 +6443,69 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <return>1</return>
     </project_load_from_content>
     <project_load_from_content>
-      <content>
-        <![CDATA[
+      <content><![CDATA[
       <project>
         <property name="a" value="A:\" />
         <property name="c" value="${path::combine(a, b)}" />
       </project>
-      ]]>
-      </content>
+      ]]></content>
       <return>0</return>
       <target_return>1</target_return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property name="result_in_string" value="::" />
+        <fail unless="${string::contains(result_in_string, '::')}" />
+        <echo>${result_in_string}</echo>
+      </project>
+      ]]></content>
+      <return>1</return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property name="is_task_exists" value="${task::exists('sysinfo')}" />
+        <property name="input" value="one two( three)" />
+        <property name="output" value="" />
+
+        <foreach item="String" in="${input}" delim=" " property="i">
+          <property
+            unless="${is_task_exists}"
+            name="is-context-initialize"
+            value="${string::equal('False', string::contains(i, ')'))}" />
+          <property
+            if="${is_task_exists}"
+            name="is-context-initialize"
+            value="${bool::parse('False') == string::contains(i, ')')}" />
+          <property
+            name="output"
+            value="${output}i -> ${i} ${string::contains(i, ')')} ${string::contains(i, '(')} ${is-context-initialize} " />
+        </foreach>
+
+        <property
+          name="expected_output"
+          value="i -> one False False True i -> two( False True True i -> three) True False False " />
+        <property
+          name="message"
+          dynamic="true"
+          value="Output should be equal to the '${expected_output}'. Instead it equal to the '${output}'." />
+
+        <choose>
+          <when test="${is_task_exists}">
+            <fail
+              if="${expected_output != output}"
+              message="${message}" />
+          </when>
+          <otherwise>
+            <fail
+              unless="${string::equal(expected_output, output)}"
+              message="${message}" />
+          </otherwise>
+        </choose>
+      </project>
+      ]]></content>
+      <return>1</return>
     </project_load_from_content>
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />

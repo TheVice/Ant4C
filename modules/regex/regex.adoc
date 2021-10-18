@@ -1,6 +1,14 @@
+= ant4c.regex(1)
+The Vice
+v2020.09
+:doctype: manpage
+:manmanual: ANT4C.REGEX
+:mansource: ANT4C.REGEX
+:man-linkstyle: pass:[blue R < >]
 
-= ant4c.regex help
-:toc:
+== Name
+
+ant4c.regex - module for Ant4C program that add regex task.
 
 [[history]]
 == History
@@ -9,13 +17,14 @@
 
 == Installation
 Place module file - *.dll, *.so or *.dylib depend on your system, into directory with 'ant4c' executable or one of directory from PATH environment variable.
-[[task_reference]]
 
+[[task_reference]]
 == Tasks reference
 
 .List of tasks.
 |===
-.s| Task .s| Description
+| Task | Description
+
 | <<regex_task,regex>> | Fill project properties with value from input string according to regular expression.
 |===
 
@@ -26,7 +35,8 @@ Set properties values based on evaluated regular expression.
 
 .Parameters of the 'regex' task.
 |===
-.s| Argument name .s| Type .s| Description .s| Mandatory
+| Argument name | Type | Description | Mandatory
+
 | *input* .2+^.^| string | String where search required from regular expression data. .2+^.^| Yes
 | *pattern* | Regex expression that will apply to the 'input' string.
 |===

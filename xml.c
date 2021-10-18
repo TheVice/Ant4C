@@ -13,6 +13,7 @@
 #include "text_encoding.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 static const uint8_t tag_close = '/';
 
@@ -67,14 +68,26 @@ uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
 		if (string_starts_with(start_, finish, tag_start, tag_start + tag_start_length))
 		{
 			start_ += tag_start_length;
-			const ptrdiff_t index = string_index_of(start_, finish, tag_finish, tag_finish + comment_finish_length);
+			uint8_t found = 0;
 
-			if (-1 == index)
+			while (NULL != start_ && comment_finish_length <= finish - start_)
+			{
+				if (memcmp(start_, tag_finish, comment_finish_length))
+				{
+					start_ = string_enumerate(start_, finish, NULL);
+					continue;
+				}
+
+				found = 1;
+				break;
+			}
+
+			if (!found)
 			{
 				return 0;
 			}
 
-			start_ += index + comment_finish_length;
+			start_ += comment_finish_length;
 
 			if (finish == (start_ = find_any_symbol_like_or_not_like_that(start_, finish,
 									&(characters[LESS_POSITION]), 1, 1, 1)))
@@ -516,19 +529,38 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 
 	if (string_contains(start, finish, cdata_start, cdata_start + cdata_start_length))
 	{
-		ptrdiff_t index = 0;
+		const uint8_t* start_with_index = start;
 
-		while (-1 != (index = string_index_of(start, finish, cdata_start, cdata_start + cdata_start_length)))
+		while (NULL != start_with_index && cdata_start_length <= finish - start_with_index)
 		{
-			if (index && !xml_read_ampersand_based_data(start, start + index, value))
+			if (memcmp(start_with_index, cdata_start, cdata_start_length))
+			{
+				start_with_index = string_enumerate(start_with_index, finish, NULL);
+				continue;
+			}
+
+			if (start < start_with_index && !xml_read_ampersand_based_data(start, start_with_index, value))
 			{
 				return 0;
 			}
 
-			start += index + cdata_start_length;
-			index = string_index_of(start, finish, cdata_finish, cdata_finish + cdata_finish_length);
+			start_with_index += cdata_start_length;
+			start = start_with_index;
+			uint8_t found = 0;
 
-			if (-1 == index)
+			while (NULL != start_with_index && cdata_finish_length <= finish - start_with_index)
+			{
+				if (memcmp(start_with_index, cdata_finish, cdata_finish_length))
+				{
+					start_with_index = string_enumerate(start_with_index, finish, NULL);
+					continue;
+				}
+
+				found = 1;
+				break;
+			}
+
+			if (!found)
 			{
 				if (start < finish)
 				{
@@ -543,12 +575,13 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 				break;
 			}
 
-			if (!buffer_append(value, start, index))
+			if (!buffer_append(value, start, start_with_index - start))
 			{
 				return 0;
 			}
 
-			start += index + cdata_finish_length;
+			start_with_index += cdata_finish_length;
+			start = start_with_index;
 		}
 
 		if (start < finish)

@@ -81,6 +81,18 @@ uint8_t sleep_unit_get_attributes_and_arguments_for_task(
 uint8_t sleep_unit_evaluate_task(
 	struct buffer* task_arguments, uint8_t verbose);
 
+/*string_unit*/
+uint8_t string_get_id_of_to_lower_function_();
+uint8_t string_get_id_of_to_upper_function_();
+uint8_t string_get_id_of_trim_function();
+uint8_t string_get_id_of_trim_end_function();
+uint8_t string_get_id_of_trim_start_function();
+uint8_t string_get_function(
+	const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t string_exec_function(
+	uint8_t function, const struct buffer* arguments,
+	uint8_t arguments_count, struct buffer* output);
+
 /*version*/
 uint8_t version_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);

@@ -90,6 +90,7 @@ set(
   "${CMAKE_SOURCE_DIR}/interpreter.operating_system.c"
   "${CMAKE_SOURCE_DIR}/interpreter.path.c"
   "${CMAKE_SOURCE_DIR}/interpreter.sleep_unit.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.string_unit.c"
   "${CMAKE_SOURCE_DIR}/interpreter.version.c"
   "${CMAKE_SOURCE_DIR}/listener.c"
   "${CMAKE_SOURCE_DIR}/load_file.c"

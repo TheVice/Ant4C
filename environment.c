@@ -426,8 +426,8 @@ uint8_t environment_get_windows_version(void* version)
 	}
 
 #else
-	static uint8_t majors[] = { 10, 6, 6, 6, 6 };
-	static uint8_t minors[] = { 0, 3, 2, 1, 0 };
+	static const uint8_t majors[] = { 10, 6, 6, 6, 6 };
+	static const uint8_t minors[] = { 0, 3, 2, 1, 0 };
 	DWORDLONG const dwlConditionMask = VerSetConditionMask(
 										   VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL),
 										   VER_MINORVERSION, VER_GREATER_EQUAL);
