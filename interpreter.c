@@ -20,6 +20,7 @@
 #include "for_each.h"
 #include "hash.h"
 #include "if_task.h"
+#include "interpreter.string_unit.h"
 #include "listener.h"
 #include "load_file.h"
 #include "load_tasks.h"
@@ -132,15 +133,17 @@ uint8_t interpreter_disassemble_function(
 	}
 
 	name_space->start = function->start;
+	name_space->finish = function->start;
 
-	for (name_space->finish = function->start;
-		 name_space->finish + NAME_SPACE_BORDER_LENGTH < function->finish;
-		 ++(name_space->finish))
+	while (name_space->finish + NAME_SPACE_BORDER_LENGTH <= function->finish)
 	{
-		if (0 == memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
+		if (memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
 		{
-			break;
+			name_space->finish = string_enumerate(name_space->finish, function->finish, NULL);
+			continue;
 		}
+
+		break;
 	}
 
 	if (*name_space_border != *name_space->finish)
@@ -157,7 +160,7 @@ uint8_t interpreter_disassemble_function(
 		return 0;
 	}
 
-	arguments_area->start = name->finish + 1;
+	arguments_area->start = string_enumerate(name->finish, function->finish, NULL);
 	arguments_area->finish = find_any_symbol_like_or_not_like_that(
 								 function->finish, arguments_area->start, &finish_of_function_arguments_area, 1, 1, -1);
 	/**/
@@ -235,7 +238,7 @@ uint8_t interpreter_evaluate_argument_area(
 		{
 			if (memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
 			{
-				++pos_with_index;
+				pos_with_index = string_enumerate(pos_with_index, argument_area->finish, NULL);
 				continue;
 			}
 
@@ -332,7 +335,8 @@ uint8_t interpreter_get_value_for_argument(
 		return 0;
 	}
 
-	if (!interpreter_evaluate_argument_area(the_project, the_target, argument_area, &value, verbose))
+	if (!interpreter_evaluate_argument_area(
+			the_project, the_target, argument_area, &value, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -342,8 +346,10 @@ uint8_t interpreter_get_value_for_argument(
 	{
 		void* the_property = NULL;
 
-		if (project_property_exists(the_project, argument_area->start, (uint8_t)range_size(argument_area),
-									&the_property, verbose))
+		if (project_property_exists(
+				the_project,
+				argument_area->start, (uint8_t)range_size(argument_area),
+				&the_property, verbose))
 		{
 			if (!property_get_by_pointer(the_property, &value))
 			{
@@ -352,7 +358,8 @@ uint8_t interpreter_get_value_for_argument(
 			}
 
 			if (!interpreter_actualize_property_value(
-					the_project, the_target, property_get_id_of_get_value_function(),
+					the_project, the_target,
+					property_get_id_of_get_value_function(),
 					the_property, 0, &value, verbose))
 			{
 				buffer_release(&value);
@@ -361,6 +368,7 @@ uint8_t interpreter_get_value_for_argument(
 		}
 		else
 		{
+#if 1
 			const ptrdiff_t index_1 = string_index_of(
 										  argument_area->start, argument_area->finish, name_space_border,
 										  name_space_border + NAME_SPACE_BORDER_LENGTH);
@@ -371,26 +379,57 @@ uint8_t interpreter_get_value_for_argument(
 
 			if (-1 == index_1 || index_1 != index_2)
 			{
+				const ptrdiff_t size = range_size(argument_area);
+
+				if (!string_un_quote(argument_area))
+				{
+					buffer_release(&value);
+					return 0;
+				}
+
 				if (-1 == index_1)
 				{
-					const ptrdiff_t size = range_size(argument_area);
-
-					if (!string_un_quote(argument_area) ||
-						size == range_size(argument_area))
+					if (size == range_size(argument_area))
 					{
 						buffer_release(&value);
 						return 0;
 					}
 				}
 
-				if (!buffer_resize(&value, 0) ||
-					!string_un_quote(argument_area) ||
-					!buffer_append_data_from_range(&value, argument_area))
+				if (!buffer_append_data_from_range(&value, argument_area))
 				{
 					buffer_release(&value);
 					return 0;
 				}
 			}
+
+#else
+			const ptrdiff_t size = range_size(argument_area);
+
+			if (!string_un_quote(argument_area))
+			{
+				buffer_release(&value);
+				return 0;
+			}
+
+			if (!string_contains(
+					argument_area->start, argument_area->finish,
+					name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH))
+			{
+				if (size == range_size(argument_area))
+				{
+					buffer_release(&value);
+					return 0;
+				}
+
+				if (!buffer_append_data_from_range(&value, argument_area))
+				{
+					buffer_release(&value);
+					return 0;
+				}
+			}
+
+#endif
 		}
 	}
 
@@ -798,7 +837,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 	{
 		if (memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
 		{
-			++function.start;
+			function.start = string_enumerate(function.start, code->finish, NULL);
 			continue;
 		}
 
@@ -810,9 +849,9 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 
 		function.finish = function.start;
 
-		while (function.finish < code->finish)
+		while (NULL != function.finish && function.finish < code->finish)
 		{
-			if (apos == (*function.finish))
+			if (apos == *function.finish)
 			{
 				function.finish = find_any_symbol_like_or_not_like_that(
 									  function.finish + 1, code->finish,
@@ -823,15 +862,16 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 				continue;
 			}
 
-			if (call_of_expression_finish == (*function.finish))
+			if (call_of_expression_finish == *function.finish)
 			{
 				break;
 			}
 
-			++function.finish;
+			function.finish = string_enumerate(function.finish, code->finish, NULL);
 		}
 
-		if (function.finish == code->finish && call_of_expression_finish != *function.finish)
+		if (NULL == function.finish ||
+			(function.finish == code->finish && call_of_expression_finish != *function.finish))
 		{
 			buffer_release(&return_of_function);
 			return 0;
@@ -846,8 +886,9 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 		function.start += CALL_OF_EXPRESSION_START_LENGTH;
 		void* the_property = NULL;
 
-		if (project_property_exists(the_project, function.start, (uint8_t)range_size(&function), &the_property,
-									verbose))
+		if (project_property_exists(
+				the_project, function.start,
+				(uint8_t)range_size(&function), &the_property, verbose))
 		{
 			if (!property_get_by_pointer(the_property, &return_of_function))
 			{
@@ -992,7 +1033,7 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 		return 0;
 	}
 
-	const uint8_t count_of_attributes = (0 == (*task_verbose) ? 2 : 1);
+	const uint8_t count_of_attributes = (0 == *task_verbose ? 2 : 1);
 
 	if (!common_get_attributes_and_arguments_for_task(
 			NULL, NULL, count_of_attributes,
@@ -1142,20 +1183,20 @@ uint8_t interpreter_get_environments(
 	}
 
 	count = 0;
-	struct range name;
 	struct range* env_ptr = NULL;
 
 	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
 	{
 		static const uint8_t* env_name = (const uint8_t*)"environment";
+		const uint8_t* tag_name_finish = env_ptr->finish;
 
-		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
+		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
 		{
 			buffer_release(&elements);
 			return 0;
 		}
 
-		if (string_equal(name.start, name.finish, env_name, env_name + 11))
+		if (string_equal(env_ptr->start, tag_name_finish, env_name, env_name + 11))
 		{
 			break;
 		}
@@ -1167,7 +1208,7 @@ uint8_t interpreter_get_environments(
 		return 1;
 	}
 
-	name = *env_ptr;
+	struct range name = *env_ptr;
 
 	if (!buffer_resize(&elements, 0))
 	{
@@ -1195,15 +1236,17 @@ uint8_t interpreter_get_environments(
 		static const uint8_t* var_name = (const uint8_t*)"variable";
 		static const uint8_t* name_str = (const uint8_t*)"name";
 		static const uint8_t* value_str = (const uint8_t*)"value";
+		/**/
+		const uint8_t* tag_name_finish = env_ptr->finish;
 
-		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
+		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
 		{
 			buffer_release(&attribute_value);
 			buffer_release(&elements);
 			return 0;
 		}
 
-		if (!string_equal(name.start, name.finish, var_name, var_name + 8))
+		if (!string_equal(env_ptr->start, tag_name_finish, var_name, var_name + 8))
 		{
 			continue;
 		}
@@ -1424,7 +1467,7 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 
 	if (dynamic)
 	{
-		dynamic = (*task_attributes_count) - 1;
+		dynamic = *task_attributes_count - 1;
 
 		if (!interpreter_get_arguments_from_xml_tag_record(
 				the_project, the_target, attributes_start, attributes_finish,
@@ -2099,7 +2142,9 @@ uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 	while (NULL != (element = buffer_range_data(elements, i++)))
 	{
 		struct range tag_name;
-		returned = xml_get_tag_name(element->start, element->finish, &tag_name);
+		tag_name.start = element->start;
+		tag_name.finish = element->finish;
+		returned = xml_get_tag_name(element->start, &(tag_name.finish));
 
 		if (!returned)
 		{

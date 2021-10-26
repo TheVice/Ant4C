@@ -8,7 +8,7 @@
 #include "string_unit.h"
 #include "buffer.h"
 #include "common.h"
-#include "interpreter.h"
+#include "interpreter.string_unit.h"
 #include "range.h"
 #include "text_encoding.h"
 
@@ -17,9 +17,30 @@
 
 static const uint8_t* quote_symbols = (const uint8_t*)"\"'";
 
-ptrdiff_t string_index_of_value(const uint8_t* input_start, const uint8_t* input_finish,
-								const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
+ptrdiff_t string_cmp_(
+	const uint8_t* input_1_start, const uint8_t* input_1_finish,
+	const uint8_t* input_2_start, const uint8_t* input_2_finish)
 {
+	uint32_t input_1_char_set, input_2_char_set;
+
+	while (NULL != (input_1_start = string_enumerate(input_1_start, input_1_finish, &input_1_char_set)) &&
+		   NULL != (input_2_start = string_enumerate(input_2_start, input_2_finish, &input_2_char_set)))
+	{
+		if (input_1_char_set != input_2_char_set)
+		{
+			return input_1_char_set < input_2_char_set ? -1 : 1;
+		}
+	}
+
+	return NULL == input_2_start ? 0 : (input_1_start < input_2_start ? -1 : 1);
+}
+
+ptrdiff_t string_index_of_value(
+	const uint8_t* input_start, const uint8_t* input_finish,
+	const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
+{
+#if 1
+
 	if (NULL == input_start || NULL == input_finish ||
 		input_finish < input_start ||
 		NULL == value_start || NULL == value_finish ||
@@ -37,7 +58,7 @@ ptrdiff_t string_index_of_value(const uint8_t* input_start, const uint8_t* input
 		return -1;
 	}
 
-	if (input_length == 0 && input_length == value_length)
+	if (0 == input_length && input_length == value_length)
 	{
 		return 0;
 	}
@@ -49,31 +70,95 @@ ptrdiff_t string_index_of_value(const uint8_t* input_start, const uint8_t* input
 			return 0;
 		}
 
-		return ((0 == memcmp(input_start, value_start, input_length)) ? 0 : -1);
+		return 0 == memcmp(input_start, value_start, input_length) ? 0 : -1;
 	}
+
+	ptrdiff_t i = 0;
 
 	if (0 < step)
 	{
-		for (ptrdiff_t i = 0, count = 1 + input_length - value_length; i < count; ++i)
+		step = 0;
+
+		while (NULL != input_start && value_length <= input_finish - input_start)
 		{
-			if (0 == memcmp(&input_start[i], value_start, value_length))
+			if (memcmp(input_start, value_start, value_length))
 			{
-				return string_get_length(input_start, input_start + i);
+				input_start = string_enumerate(input_start, input_finish, NULL);
+				++i;
+				continue;
 			}
+
+			step = 1;
+			break;
 		}
-	}
-	else
-	{
-		for (ptrdiff_t i = input_length - value_length; i > -1; --i)
-		{
-			if (0 == memcmp(&input_start[i], value_start, value_length))
-			{
-				return string_get_length(input_start, input_start + i);
-			}
-		}
+
+		return step ? i : -1;
 	}
 
-	return -1;
+	ptrdiff_t result = -1;
+
+	while (NULL != input_start && value_length <= input_finish - input_start)
+	{
+		if (0 == memcmp(input_start, value_start, value_length))
+		{
+			result = i;
+		}
+
+		input_start = string_enumerate(input_start, input_finish, NULL);
+		++i;
+	}
+
+	return result;
+#else
+
+	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
+		range_in_parts_is_null_or_empty(value_start, value_finish) ||
+		(-1 != step && 1 != step))
+	{
+		if (input_start == input_finish &&
+			value_start == value_finish)
+		{
+			return 0;
+		}
+
+		return -1;
+	}
+
+	uint32_t input_char_set, value_char_set;
+
+	if (NULL == (value_start = string_enumerate(value_start, value_finish, &value_char_set)))
+	{
+		return 0;
+	}
+
+	const uint8_t value_empty = range_in_parts_is_null_or_empty(value_start, value_finish);
+	ptrdiff_t index = -1, i = 0;
+
+	while (NULL != (input_start = string_enumerate(input_start, input_finish, &input_char_set)))
+	{
+		if (value_char_set == input_char_set)
+		{
+			if (!value_empty &&
+				!range_in_parts_is_null_or_empty(input_start, input_finish) &&
+				string_cmp_(input_start, input_finish, value_start, value_finish))
+			{
+				++i;
+				continue;
+			}
+
+			index = i;
+
+			if (0 < step)
+			{
+				break;
+			}
+		}
+
+		++i;
+	}
+
+	return index;
+#endif
 }
 
 uint8_t string_contains(const uint8_t* input_start, const uint8_t* input_finish,
@@ -120,6 +205,77 @@ const uint8_t* string_enumerate(const uint8_t* input_start, const uint8_t* input
 	return offset ? input_start + offset : NULL;
 }
 
+#define LIKE_OR_NOT()																		\
+	step = 0;																				\
+	that_pos = that_start;																	\
+	\
+	while (NULL != (that_pos = string_enumerate(that_pos, that_finish, &that_char_set)))	\
+	{																						\
+		step = (input_char_set == that_char_set);											\
+		\
+		if (step)																			\
+		{																					\
+			break;																			\
+		}																					\
+	}
+
+const uint8_t* string_find_any_symbol_like_or_not_like_that(
+	const uint8_t* start, const uint8_t* finish,
+	const uint8_t* that_start, const uint8_t* that_finish,
+	uint8_t like, int8_t step)
+{
+	if (NULL == start || NULL == finish ||
+		range_in_parts_is_null_or_empty(that_start, that_finish) ||
+		(0 != like && 1 != like) ||
+		(-1 != step && 1 != step) ||
+		((0 < step) ? (finish < start) : (finish > start)))
+	{
+		return finish;
+	}
+
+	uint32_t input_char_set, that_char_set;
+	const uint8_t* input_pos;
+	const uint8_t* that_pos;
+
+	if (0 < step)
+	{
+		input_pos = start;
+
+		while (NULL != (input_pos = string_enumerate(input_pos, finish, &input_char_set)))
+		{
+			LIKE_OR_NOT();
+
+			if (like == step)
+			{
+				return start;
+			}
+
+			start = input_pos;
+		}
+	}
+	else
+	{
+		const uint8_t* result = finish;
+		input_pos = finish;
+
+		while (NULL != (input_pos = string_enumerate(input_pos, start, &input_char_set)))
+		{
+			LIKE_OR_NOT();
+
+			if (like == step)
+			{
+				result = finish;
+			}
+
+			finish = input_pos;
+		}
+
+		start = result;
+	}
+
+	return start;
+}
+
 ptrdiff_t string_get_length(const uint8_t* input_start, const uint8_t* input_finish)
 {
 	if (input_start == input_finish)
@@ -157,23 +313,29 @@ ptrdiff_t string_last_index_of(const uint8_t* input_start, const uint8_t* input_
 ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
 							  const uint8_t* value_start, const uint8_t* value_finish)
 {
-	ptrdiff_t index = -1;
-	const uint8_t* pos;
-
-	while (NULL != (pos = string_enumerate(value_start, value_finish, NULL)))
+	if (range_in_parts_is_null_or_empty(value_start, value_finish))
 	{
-		const ptrdiff_t i = string_index_of_value(input_start, input_finish, value_start, pos, 1);
-		value_start = pos;
+		return -1;
+	}
 
-		if (-1 == i)
+	ptrdiff_t index = -1, i = 0;
+	uint32_t input_char_set, value_char_set;
+
+	while (NULL != (input_start = string_enumerate(input_start, input_finish, &input_char_set)))
+	{
+		const uint8_t* value_pos = value_start;
+
+		while (NULL != (value_pos = string_enumerate(value_pos, value_finish, &value_char_set)))
 		{
-			continue;
+			if (input_char_set == value_char_set)
+			{
+				index = i;
+				input_start = NULL;
+				break;
+			}
 		}
 
-		if (-1 == index || i < index)
-		{
-			index = i;
-		}
+		++i;
 	}
 
 	return index;
@@ -182,23 +344,28 @@ ptrdiff_t string_index_of_any(const uint8_t* input_start, const uint8_t* input_f
 ptrdiff_t string_last_index_of_any(const uint8_t* input_start, const uint8_t* input_finish,
 								   const uint8_t* value_start, const uint8_t* value_finish)
 {
-	ptrdiff_t index = -1;
-	const uint8_t* pos;
-
-	while (NULL != (pos = string_enumerate(value_start, value_finish, NULL)))
+	if (range_in_parts_is_null_or_empty(value_start, value_finish))
 	{
-		const ptrdiff_t i = string_index_of_value(input_start, input_finish, value_start, pos, -1);
-		value_start = pos;
+		return -1;
+	}
 
-		if (-1 == i)
+	ptrdiff_t index = -1, i = 0;
+	uint32_t input_char_set, value_char_set;
+
+	while (NULL != (input_start = string_enumerate(input_start, input_finish, &input_char_set)))
+	{
+		const uint8_t* value_pos = value_start;
+
+		while (NULL != (value_pos = string_enumerate(value_pos, value_finish, &value_char_set)))
 		{
-			continue;
+			if (input_char_set == value_char_set)
+			{
+				index = i;
+				break;
+			}
 		}
 
-		if (-1 == index || index < i)
-		{
-			index = i;
-		}
+		++i;
 	}
 
 	return index;
@@ -324,28 +491,27 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 											by_replacement_finish < by_replacement_start) ? -1 : (by_replacement_finish - by_replacement_start);
 	const uint8_t* start = input_start;
 
-	while (to_be_replaced_length <= input_finish - input_start)
+	while (NULL != input_start && to_be_replaced_length <= input_finish - input_start)
 	{
-		if (0 == memcmp(input_start, to_be_replaced_start, to_be_replaced_length))
+		if (memcmp(input_start, to_be_replaced_start, to_be_replaced_length))
 		{
-			if (!buffer_append(output, start, input_start - start))
-			{
-				return 0;
-			}
-
-			if (-1 != by_replacement_length &&
-				!buffer_append(output, by_replacement_start, by_replacement_length))
-			{
-				return 0;
-			}
-
-			input_start += to_be_replaced_length;
-			start = input_start;
+			input_start = string_enumerate(input_start, input_finish, NULL);
+			continue;
 		}
-		else
+
+		if (!buffer_append(output, start, input_start - start))
 		{
-			++input_start;
+			return 0;
 		}
+
+		if (-1 != by_replacement_length &&
+			!buffer_append(output, by_replacement_start, by_replacement_length))
+		{
+			return 0;
+		}
+
+		input_start += to_be_replaced_length;
+		start = input_start;
 	}
 
 	return buffer_append(output, start, input_finish - start);
@@ -354,7 +520,26 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_finish,
 						   const uint8_t* value_start, const uint8_t* value_finish)
 {
-	return 0 == string_index_of_value(input_start, input_finish, value_start, value_finish, 1);
+	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
+		range_in_parts_is_null_or_empty(value_start, value_finish))
+	{
+		if (input_start == input_finish &&
+			value_start == value_finish)
+		{
+			return 1;
+		}
+
+		return 0;
+	}
+
+	const ptrdiff_t length = value_finish - value_start;
+
+	if (input_finish - input_start < length)
+	{
+		return 0;
+	}
+
+	return 0 == memcmp(input_start, value_start, length);
 }
 
 uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish,
@@ -862,14 +1047,18 @@ uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
 		return 0;
 	}
 
-	if (range_in_parts_is_null_or_empty(input_start, input_finish))
+	if (!buffer_push_back(output, quote_symbols[0]))
 	{
-		return buffer_push_back(output, quote_symbols[0]) && buffer_push_back(output, quote_symbols[0]);
+		return 0;
 	}
 
-	return buffer_push_back(output, quote_symbols[0]) &&
-		   buffer_append(output, input_start, input_finish - input_start) &&
-		   buffer_push_back(output, quote_symbols[0]);
+	if (!range_in_parts_is_null_or_empty(input_start, input_finish) &&
+		!buffer_append(output, input_start, input_finish - input_start))
+	{
+		return 0;
+	}
+
+	return buffer_push_back(output, quote_symbols[0]);
 }
 
 uint8_t string_un_quote(struct range* input_output)
@@ -917,14 +1106,4 @@ uint8_t string_equal(const uint8_t* input_1_start, const uint8_t* input_1_finish
 	}
 
 	return 0 == memcmp(input_1_start, input_2_start, input_1_finish - input_1_start);
-}
-
-uint8_t string_get_id_of_to_lower_function()
-{
-	return string_get_id_of_to_lower_function_();
-}
-
-uint8_t string_get_id_of_to_upper_function()
-{
-	return string_get_id_of_to_upper_function_();
 }

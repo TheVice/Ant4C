@@ -6457,7 +6457,6 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <project>
         <property name="result_in_string" value="::" />
         <fail unless="${string::contains(result_in_string, '::')}" />
-        <echo>${result_in_string}</echo>
       </project>
       ]]></content>
       <return>1</return>
@@ -7020,6 +7019,103 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </property_task>
   </TestProperty>
   <TestStringUnit>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input></input>
+      <that></that>
+      <like></like>
+      <step></step>
+      <output></output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>bf</that>
+      <like>1</like>
+      <step>1</step>
+      <output>bc</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>db</that>
+      <like>1</like>
+      <step>1</step>
+      <output>bc</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abcabc</input>
+      <that>bf</that>
+      <like>1</like>
+      <step>-1</step>
+      <output>bc</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abcabc</input>
+      <that>db</that>
+      <like>1</like>
+      <step>-1</step>
+      <output>bc</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>abc</that>
+      <like>0</like>
+      <step>1</step>
+      <output></output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>ab</that>
+      <like>0</like>
+      <step>1</step>
+      <output>c</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>abc</that>
+      <like>0</like>
+      <step>-1</step>
+      <output>abc</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>ab</that>
+      <like>0</like>
+      <step>1</step>
+      <output>c</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>abc</that>
+      <like>0</like>
+      <step>-1</step>
+      <output>abc</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input>abc</input>
+      <that>ab</that>
+      <like>0</like>
+      <step>-1</step>
+      <output>c</output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input><![CDATA[<tag>]]></input>
+      <that>/</that>
+      <like>0</like>
+      <step>-1</step>
+      <output><![CDATA[>]]></output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <find_any_symbol_like_or_not_like_that_UTF8>
+      <input><![CDATA[<tag>]]></input>
+      <that>/</that>
+      <like>0</like>
+      <step>1</step>
+      <output><![CDATA[<tag>]]></output>
+    </find_any_symbol_like_or_not_like_that_UTF8>
+    <string_ends_with input="" value="" return="true" />
+    <string_ends_with input="" value="A" return="false" />
+    <string_ends_with input=" " value=" " return="true" />
+    <string_ends_with input="AB" value="CD" return="false" />
+    <string_ends_with input="ABCD" value="AB" return="false" />
+    <string_ends_with input="ABCDAF" value="AF" return="true" />
     <string_get_length>
       <input></input>
       <return></return>
@@ -7068,15 +7164,15 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
       <return>14</return>
     </string_get_length>
-    <string_index_of_value>
+    <TODO><string_index_of_value>
       <input></input>
       <value></value>
       <step>1</step>
-      <return>-1</return>
-    </string_index_of_value>
+      <return>0</return>
+    </string_index_of_value></TODO>
     <string_index_of_value>
       <input>""</input>
-      <value>""</value>
+      <value>"</value>
       <step>1</step>
       <return>0</return>
     </string_index_of_value>
@@ -7086,17 +7182,17 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <step>1</step>
       <return>2</return>
     </string_index_of_value>
-    <string_index_of_value>
+    <TODO><string_index_of_value>
       <input></input>
       <value></value>
       <step>-1</step>
-      <return>-1</return>
-    </string_index_of_value>
+      <return>0</return>
+    </string_index_of_value></TODO>
     <string_index_of_value>
       <input>""</input>
-      <value>""</value>
+      <value>"</value>
       <step>-1</step>
-      <return>0</return>
+      <return>1</return>
     </string_index_of_value>
     <string_index_of_value>
       <input>123</input>
@@ -7149,6 +7245,16 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <value>&#x29;&#xa1ed;&#xa1e9;</value>
       <return>10</return>
     </string_index_of_any>
+    <string_index_of_any>
+      <input>abc</input>
+      <value>abc</value>
+      <return>0</return>
+    </string_index_of_any>
+    <string_index_of_any>
+      <input>abc</input>
+      <value>zxc</value>
+      <return>2</return>
+    </string_index_of_any>
     <string_last_index_of_any>
       <input>&#x627;&#x644;&#x639;&#x631;&#x628;&#x64a;&#x629;</input>
       <value>&#x629;&#x64a;&#x628;</value>
@@ -7163,6 +7269,16 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
       <value>&#xa1e9;&#xa1ed;&#x29;</value>
       <return>13</return>
+    </string_last_index_of_any>
+    <string_last_index_of_any>
+      <input>abc</input>
+      <value>abc</value>
+      <return>2</return>
+    </string_last_index_of_any>
+    <string_last_index_of_any>
+      <input>abc</input>
+      <value>zxc</value>
+      <return>2</return>
     </string_last_index_of_any>
     <string_pad>
       <input></input>
@@ -7322,7 +7438,7 @@ Approximate round trip times in milli-seconds:
       </output>
       <return>1</return>
     </string_replace>
-    <string_starts_with input="" value="" return="false" />
+    <string_starts_with input="" value="" return="true" />
     <string_starts_with input="" value="A" return="false" />
     <string_starts_with input=" " value=" " return="true" />
     <string_starts_with input="AB" value="CD" return="false" />

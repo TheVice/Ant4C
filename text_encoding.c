@@ -650,8 +650,8 @@ uint8_t text_encoding_is_valid_octet_(uint8_t input)
 	return 0x9F < input && input < 0xC0;
 }
 
-uint8_t text_encoding_decode_UTF8_single(const uint8_t* input_start, const uint8_t* input_finish,
-		uint32_t* output)
+uint8_t text_encoding_decode_UTF8_single(
+	const uint8_t* input_start, const uint8_t* input_finish, uint32_t* output)
 {
 	if (NULL == input_start ||
 		NULL == input_finish ||

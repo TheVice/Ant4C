@@ -12,6 +12,7 @@
 #include "common.h"
 #include "conversion.h"
 #include "file_system.h"
+#include "interpreter.string_unit.h"
 #include "load_file.h"
 #include "project.h"
 #include "range.h"
@@ -171,7 +172,7 @@ uint8_t property_exists(const struct buffer* properties, const uint8_t* name, ui
 		{
 			if (the_property)
 			{
-				(*the_property) = prop;
+				*the_property = prop;
 			}
 
 			return 1;
@@ -603,8 +604,8 @@ uint8_t property_exec_function(const void* the_project, uint8_t function, const 
 	void* non_const_prop = NULL;
 	const uint8_t is_exists = project_property_exists(the_project,
 							  argument.start, (uint8_t)range_size(&argument), &non_const_prop, verbose);
-	(*the_property) = is_exists ? non_const_prop : NULL;
-	const struct property* prop = (const struct property*)(*the_property);
+	*the_property = is_exists ? non_const_prop : NULL;
+	const struct property* prop = (const struct property*)*the_property;
 
 	if (function != property_exists_function && !is_exists)
 	{

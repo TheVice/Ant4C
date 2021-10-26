@@ -177,15 +177,16 @@ uint8_t file_system_get_position_after_pre_root(
 
 	const uint8_t* pos = *path_start;
 
-	while (pre_root_path_length < path_finish - pos)
+	while (NULL != pos && pre_root_path_length <= path_finish - pos)
 	{
-		if (0 == memcmp(pos, pre_root_path, pre_root_path_length))
+		if (memcmp(pos, pre_root_path, pre_root_path_length))
 		{
-			*path_start = pos + pre_root_path_length;
-			return 2;
+			pos = string_enumerate(pos, path_finish, NULL);
+			continue;
 		}
 
-		++pos;
+		*path_start = pos + pre_root_path_length;
+		return 2;
 	}
 
 	return 1;
@@ -597,7 +598,7 @@ uint8_t directory_create(const uint8_t* path)
 			continue;
 		}
 
-		(*pos) = L'\0';
+		*pos = L'\0';
 
 		if (!directory_exists_wchar_t(path_start))
 		{
@@ -608,7 +609,7 @@ uint8_t directory_create(const uint8_t* path)
 			}
 		}
 
-		(*pos) = L'\\';
+		*pos = L'\\';
 	}
 
 	const uint8_t returned = directory_create_wchar_t(path_start);
@@ -1036,7 +1037,7 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 	{
 		if (NULL != the_property)
 		{
-			(*the_property) = NULL;
+			*the_property = NULL;
 		}
 
 		return path_get_directory_for_current_process(output);
@@ -1606,8 +1607,8 @@ uint8_t file_get_attributes_wchar_t(const wchar_t* path, unsigned long* attribut
 		return 0;
 	}
 
-	(*attributes) = GetFileAttributesW(path);
-	return INVALID_FILE_ATTRIBUTES != (*attributes);
+	*attributes = GetFileAttributesW(path);
+	return INVALID_FILE_ATTRIBUTES != *attributes;
 }
 #endif
 uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes)
@@ -1632,7 +1633,7 @@ uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes)
 	buffer_release(&pathW);
 	return returned;
 #else
-	(*attributes) = 0;
+	*attributes = 0;
 	return 0;
 #endif
 }
@@ -1737,10 +1738,10 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 	}
 
 #if __STDC_LIB_EXT1__
-	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != (*output));
+	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != *output);
 #else
-	(*output) = (void*)_wfopen(path, mode);
-	return (NULL != (*output));
+	*output = (void*)_wfopen(path, mode);
+	return NULL != *output;
 #endif
 }
 #endif
@@ -1833,10 +1834,10 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	return returned;
 #else
 #if __STDC_LIB_EXT1__
-	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != (*output));
+	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != *output);
 #else
-	(*output) = (void*)fopen((const char*)path, (const char*)mode);
-	return (NULL != (*output));
+	*output = (void*)fopen((const char*)path, (const char*)mode);
+	return NULL != *output;
 #endif
 #endif
 }

@@ -12,6 +12,7 @@ extern "C" {
 #include "common.h"
 #include "conversion.h"
 #include "range.h"
+#include "string_unit.h"
 #include "xml.h"
 };
 
@@ -37,8 +38,8 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 		if (!range_is_null_or_empty(&input_in_range))
 		{
 			static const uint8_t less = '<';
-			input_in_range.start = find_any_symbol_like_or_not_like_that(
-									   input_in_range.start, input_in_range.finish, &less, 1, 1, 1);
+			input_in_range.start = find_any_symbol_like_or_not_like_that_UTF8(
+									   input_in_range.start, input_in_range.finish, &less, &less + 1, 1, 1);
 			++input_in_range.start;
 		}
 
@@ -46,13 +47,13 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 		//
 		ASSERT_LE(finish, input_in_range.finish) << input;
 
-		if (NULL == finish)
+		if (nullptr == finish)
 		{
 			ASSERT_TRUE(expected_output.empty()) << input;
 		}
 		else
 		{
-			const std::string output(range_to_string(finish, input_in_range.finish));
+			const auto output(range_to_string(finish, input_in_range.finish));
 			ASSERT_EQ(expected_output, output) << input;
 		}
 
@@ -117,7 +118,7 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 		{
 			i = buffer_size(&expected_elements);
 			//
-			ASSERT_TRUE(buffer_append_buffer(&expected_elements, NULL, 1)) <<
+			ASSERT_TRUE(buffer_append_buffer(&expected_elements, nullptr, 1)) <<
 					buffer_free(&elements) <<
 					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
@@ -173,10 +174,10 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 		}
 
 		i = 0;
-		range* element = NULL;
-		buffer* expected_element = NULL;
+		range* element = nullptr;
+		buffer* expected_element = nullptr;
 
-		while (NULL != (expected_element = buffer_buffer_data(&expected_elements, i)))
+		while (nullptr != (expected_element = buffer_buffer_data(&expected_elements, i)))
 		{
 			element = buffer_range_data(&elements, i);
 			ASSERT_NE(nullptr, element) <<
@@ -214,15 +215,19 @@ TEST_F(TestXml, xml_get_tag_name)
 										 node.node().select_node("return").node().child_value()));
 		//
 		auto input_in_range = string_to_range(input);
-		input_in_range.start = input.empty() ? NULL : input_in_range.start + 1;
-		//
-		range name;
-		name.start = name.finish = NULL;
-		const auto returned = xml_get_tag_name(input_in_range.start, input_in_range.finish, &name);
-		//
+
+		if (!input.empty())
+		{
+			static const uint8_t less = '<';
+			input_in_range.start = find_any_symbol_like_or_not_like_that_UTF8(
+									   input_in_range.start, input_in_range.finish, &less, &less + 1, 0, 1);
+		}
+
+		const auto returned = xml_get_tag_name(input_in_range.start, &input_in_range.finish);
 		ASSERT_EQ(expected_return, returned) << "'" << input << "'" << std::endl;
-		ASSERT_EQ(returned, !range_is_null_or_empty(&name)) << "'" << input << "'" << std::endl;
-		const std::string output(range_to_string(name));
+		ASSERT_EQ(returned, !range_in_parts_is_null_or_empty(input_in_range.start, input_in_range.finish))
+				<< "'" << input << "'" << std::endl;
+		const auto output(range_to_string(input_in_range));
 		ASSERT_EQ(expected_output, output) << "'" << input << "'" << std::endl;
 		//
 		--node_count;
@@ -247,7 +252,7 @@ TEST_F(TestXml, xml_get_attribute_value)
 		const auto input_in_range = string_to_range(input);
 		const auto returned = xml_get_attribute_value(input_in_range.start, input_in_range.finish,
 							  attribute.empty() ?
-							  NULL : reinterpret_cast<const uint8_t*>(attribute.data()), attribute.size(), &value);
+							  nullptr : reinterpret_cast<const uint8_t*>(attribute.data()), attribute.size(), &value);
 		//
 		ASSERT_EQ(expected_return, returned)
 				<< "input - '" << input << "'" << std::endl
@@ -255,11 +260,11 @@ TEST_F(TestXml, xml_get_attribute_value)
 				<< buffer_free(&value);
 		ASSERT_EQ(returned, xml_get_attribute_value(input_in_range.start, input_in_range.finish,
 				  attribute.empty() ?
-				  NULL : reinterpret_cast<const uint8_t*>(attribute.data()), attribute.size(), NULL))
+				  nullptr : reinterpret_cast<const uint8_t*>(attribute.data()), attribute.size(), nullptr))
 				<< "input - '" << input << "'" << std::endl
 				<< "attribute - '" << attribute << "'" << std::endl
 				<< buffer_free(&value);
-		const std::string output(buffer_to_string(&value));
+		const auto output(buffer_to_string(&value));
 		ASSERT_EQ(expected_output, output)
 				<< "input - '" << input << "'" << std::endl
 				<< "attribute - '" << attribute << "'" << std::endl
@@ -288,7 +293,7 @@ TEST_F(TestXml, xml_get_element_value)
 		const auto returned = xml_get_element_value(element.start, element.finish, &value);
 		//
 		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&value);
-		const std::string output(buffer_to_string(&value));
+		const auto output(buffer_to_string(&value));
 		ASSERT_EQ(expected_output, output) << input << std::endl << buffer_free(&value);
 		//
 		--node_count;
@@ -321,7 +326,7 @@ TEST(TestXml_, xml_get_element_value)
 	const auto returned = xml_get_element_value(element.start, element.finish, &value);
 	//
 	ASSERT_TRUE(returned) << input << std::endl << buffer_free(&value);
-	const std::string output(buffer_to_string(&value));
+	const auto output(buffer_to_string(&value));
 	ASSERT_EQ(expected_output, output) << input << std::endl << buffer_free(&value);
 	//
 	buffer_release(&value);

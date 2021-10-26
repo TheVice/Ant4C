@@ -21,12 +21,12 @@ enum string_function
 	UNKNOWN_STRING_FUNCTION
 };
 
-uint8_t string_get_id_of_to_lower_function_()
+uint8_t string_get_id_of_to_lower_function()
 {
 	return to_lower;
 }
 
-uint8_t string_get_id_of_to_upper_function_()
+uint8_t string_get_id_of_to_upper_function()
 {
 	return to_upper;
 }

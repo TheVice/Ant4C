@@ -29,15 +29,139 @@ class TestStringUnit : public TestsBaseXml
 {
 };
 
-/*string_contains
-string_ends_with*/
+/*string_contains*/
+TEST_F(TestStringUnit, string_ends_with)
+{
+	for (const auto& node : nodes)
+	{
+		ASSERT_FALSE(node.node().attribute("input").empty());
+		ASSERT_FALSE(node.node().attribute("value").empty());
+		ASSERT_FALSE(node.node().attribute("return").empty());
+		//
+		const std::string input(node.node().attribute("input").value());
+		const std::string value(node.node().attribute("value").value());
+		const uint8_t expected_return =
+			node.node().attribute("return").as_bool();
+		//
+		const auto input_in_range(string_to_range(input));
+		const auto value_in_range(string_to_range(value));
+		//
+		const auto returned_value = string_ends_with(
+										input_in_range.start, input_in_range.finish,
+										value_in_range.start, value_in_range.finish);
+		ASSERT_EQ(expected_return, returned_value)
+				<< input << " " << value << std::endl;
+		//
+		--node_count;
+	}
+}
+/*string_enumerate*/
+TEST_F(TestStringUnit, string_equal)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input_1(node.node().select_node("input_1").node().child_value());
+		const std::string input_2(node.node().select_node("input_2").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
+		//
+		auto input_1_in_range(string_to_range(input_1));
+		auto input_2_in_range(string_to_range(input_2));
+		//
+		null_range_to_empty(input_1_in_range);
+		null_range_to_empty(input_2_in_range);
+		//
+		const auto returned = string_equal(input_1_in_range.start, input_1_in_range.finish,
+										   input_2_in_range.start, input_2_in_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned) << input_1 << std::endl << input_2;
+		//
+		--node_count;
+	}
+}
+#undef find_any_symbol_like_or_not_like_that_UTF8
+TEST_F(TestStringUnit, find_any_symbol_like_or_not_like_that_UTF8)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input(
+			node.node().select_node("input").node().child_value());
+		auto input_in_range(string_to_range(input));
+#if INPUT_MOD
+		const uint8_t* input_finish = nullptr;
+
+		if (!input.empty())
+		{
+			const auto* finish = input_in_range.start;
+
+			while (1 != string_get_length(finish, input_in_range.finish))
+			{
+				finish = string_enumerate(finish, input_in_range.finish, NULL);
+			}
+
+			input_finish = input_in_range.finish;
+			input_in_range.finish = finish;
+		}
+
+#endif
+		const std::string that(
+			node.node().select_node("that").node().child_value());
+		const auto that_in_range(string_to_range(that));
+		const auto like =
+			static_cast<uint8_t>(
+				INT_PARSE(node.node().select_node("like").node().child_value()));
+		const auto step =
+			static_cast<int8_t>(
+				INT_PARSE(node.node().select_node("step").node().child_value()));
+		const std::string expected_output(
+			node.node().select_node("output").node().child_value());
+		//
+#if A
+		const auto returned_ = find_any_symbol_like_or_not_like_that(
+								   0 < step ? input_in_range.start : input_in_range.finish,
+								   0 < step ? input_in_range.finish : input_in_range.start,
+								   that_in_range.start, range_size(&that_in_range),
+								   like, step);
+#else
+		const auto returned_ = string_find_any_symbol_like_or_not_like_that(
+								   0 < step ? input_in_range.start : input_in_range.finish,
+								   0 < step ? input_in_range.finish : input_in_range.start,
+								   that_in_range.start, that_in_range.finish,
+								   like, step);
+#endif
+#if INPUT_MOD
+
+		if (!input.empty())
+		{
+			input_in_range.finish = input_finish;
+		}
+
+#endif
+		ASSERT_LE(returned_, input_in_range.finish) <<
+				input << std::endl << that << std::endl <<
+				like << std::endl << step;
+		//
+		const std::string returned(
+			reinterpret_cast<const char*>(returned_),
+			reinterpret_cast<const char*>(input_in_range.finish));
+		//
+		ASSERT_EQ(expected_output, returned)
+				<< input << std::endl
+				<< that << std::endl
+				<< static_cast<int>(like) << std::endl
+				<< static_cast<int>(step);
+		//
+		--node_count;
+	}
+}
+
 TEST_F(TestStringUnit, string_get_length)
 {
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto expected_return = (ptrdiff_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<ptrdiff_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		const auto input_in_range(string_to_range(input));
 		const auto returned = string_get_length(input_in_range.start, input_in_range.finish);
@@ -47,42 +171,15 @@ TEST_F(TestStringUnit, string_get_length)
 		--node_count;
 	}
 }
-
-TEST_F(TestStringUnit, string_index_of_value)
-{
-	for (const auto& node : nodes)
-	{
-		const std::string input(node.node().select_node("input").node().child_value());
-		const std::string value(node.node().select_node("value").node().child_value());
-		const auto step = (int8_t)INT_PARSE(node.node().select_node("step").node().child_value());
-		const auto expected_return = (ptrdiff_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
-		//
-		const auto input_in_range(string_to_range(input));
-		const auto value_in_range(string_to_range(value));
-		//
-		const auto returned = 0 < step ?
-							  string_index_of(input_in_range.start, input_in_range.finish, value_in_range.start, value_in_range.finish) :
-							  string_last_index_of(input_in_range.start, input_in_range.finish, value_in_range.start,
-									  value_in_range.finish);
-		//
-		ASSERT_EQ(expected_return, returned)
-				<< "'" << input << "'" << std::endl
-				<< "'" << value << "'" << std::endl
-				<< "'" << (int)step << "'" << std::endl;
-		//
-		--node_count;
-	}
-}
-
+/*string_index_of*/
 TEST_F(TestStringUnit, string_index_of_any)
 {
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string value(node.node().select_node("value").node().child_value());
-		const auto expected_return = (ptrdiff_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<ptrdiff_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		const auto input_in_range(string_to_range(input));
 		const auto value_in_range(string_to_range(value));
@@ -99,14 +196,41 @@ TEST_F(TestStringUnit, string_index_of_any)
 	}
 }
 
+TEST_F(TestStringUnit, string_index_of_value)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().select_node("input").node().child_value());
+		const std::string value(node.node().select_node("value").node().child_value());
+		const auto step = static_cast<int8_t>(INT_PARSE(node.node().select_node("step").node().child_value()));
+		const auto expected_return = static_cast<ptrdiff_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
+		//
+		const auto input_in_range(string_to_range(input));
+		const auto value_in_range(string_to_range(value));
+		//
+		const auto returned = 0 < step ?
+							  string_index_of(input_in_range.start, input_in_range.finish, value_in_range.start, value_in_range.finish) :
+							  string_last_index_of(input_in_range.start, input_in_range.finish, value_in_range.start,
+									  value_in_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned)
+				<< "'" << input << "'" << std::endl
+				<< "'" << value << "'" << std::endl
+				<< "'" << static_cast<int>(step) << "'" << std::endl;
+		//
+		--node_count;
+	}
+}
+/*string_last_index_of*/
 TEST_F(TestStringUnit, string_last_index_of_any)
 {
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string value(node.node().select_node("value").node().child_value());
-		const auto expected_return = (ptrdiff_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<ptrdiff_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		const auto input_in_range(string_to_range(input));
 		const auto value_in_range(string_to_range(value));
@@ -134,11 +258,12 @@ TEST_F(TestStringUnit, string_pad)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string value(node.node().select_node("value").node().child_value());
-		const auto result_length = (ptrdiff_t)INT_PARSE(node.node().select_node("length").node().child_value());
+		const auto result_length = static_cast<ptrdiff_t>(INT_PARSE(
+									   node.node().select_node("length").node().child_value()));
 		const uint8_t side = (right == std::string(
 								  node.node().select_node("side").node().child_value()));
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 		//
 		const auto input_in_range(string_to_range(input));
@@ -163,13 +288,39 @@ TEST_F(TestStringUnit, string_pad)
 		ASSERT_EQ(expected_return, returned)
 				<< input << std::endl << value << std::endl
 				<< result_length << std::endl
-				<< "side -> " << (int)side << std::endl
+				<< "side -> " << static_cast<int>(side) << std::endl
 				<< buffer_free(&output);
 		ASSERT_EQ(expected_output, buffer_to_string(&output))
 				<< input << std::endl << value << std::endl
 				<< result_length << std::endl
-				<< "side -> " << (int)side << std::endl
+				<< "side -> " << static_cast<int>(side) << std::endl
 				<< buffer_free(&output);
+		//
+		--node_count;
+	}
+
+	buffer_release(&output);
+}
+
+TEST_F(TestStringUnit, string_quote)
+{
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+
+	for (const auto& node : nodes)
+	{
+		const std::string input(node.node().select_node("input").node().child_value());
+		const std::string expected_output(node.node().select_node("output").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
+		//
+		const auto input_in_range(string_to_range(input));
+		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		//
+		const auto returned = string_quote(input_in_range.start, input_in_range.finish, &output);
+		//
+		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&output);
+		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
 		//
 		--node_count;
 	}
@@ -188,8 +339,8 @@ TEST_F(TestStringUnit, string_replace)
 		const std::string to_be_replaced(node.node().select_node("to_be_replaced").node().child_value());
 		const std::string by_replacement(node.node().select_node("by_replacement").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		const auto input_in_range(string_to_range(input));
 		const auto to_be_replaced_in_range(string_to_range(to_be_replaced));
@@ -242,15 +393,17 @@ TEST_F(TestStringUnit, string_starts_with)
 		//
 		const std::string input(node.node().attribute("input").value());
 		const std::string value(node.node().attribute("value").value());
-		const uint8_t expected_return = node.node().attribute("return").as_bool();
+		const uint8_t expected_return =
+			node.node().attribute("return").as_bool();
 		//
 		const auto input_in_range(string_to_range(input));
 		const auto value_in_range(string_to_range(value));
 		//
-		const uint8_t returned_value = string_starts_with(
-										   input_in_range.start, input_in_range.finish,
-										   value_in_range.start, value_in_range.finish);
-		ASSERT_EQ(expected_return, returned_value) << input << " " << value << std::endl;
+		const auto returned_value = string_starts_with(
+										input_in_range.start, input_in_range.finish,
+										value_in_range.start, value_in_range.finish);
+		ASSERT_EQ(expected_return, returned_value)
+				<< input << " " << value << std::endl;
 		//
 		--node_count;
 	}
@@ -268,8 +421,8 @@ TEST_F(TestStringUnit, string_transform_to_case)
 		const std::string input(node.node().select_node("input").node().child_value());
 		const uint8_t required_case = (lower == std::string(
 										   node.node().select_node("letter_case").node().child_value()));
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 		//
 		const auto input_in_range(string_to_range(input));
@@ -290,11 +443,11 @@ TEST_F(TestStringUnit, string_transform_to_case)
 
 		ASSERT_EQ(expected_return, returned)
 				<< input << std::endl
-				<< "letter case -> " << (int)required_case << std::endl
+				<< "letter case -> " << static_cast<int>(required_case) << std::endl
 				<< buffer_free(&output);
 		ASSERT_EQ(expected_output, buffer_to_string(&output))
 				<< input << std::endl
-				<< "letter case -> " << (int)required_case << std::endl
+				<< "letter case -> " << static_cast<int>(required_case) << std::endl
 				<< buffer_free(&output);
 		//
 		--node_count;
@@ -314,9 +467,9 @@ TEST_F(TestStringUnit, char_to_case)
 	{
 		const auto input_node = node.node();
 		//
-		const uint32_t input = input_node.attribute("input").as_uint();
-		const uint32_t expected_upper = input_node.attribute("upper").as_uint();
-		const uint32_t expected_lower = input_node.attribute("lower").as_uint();
+		const auto input = input_node.attribute("input").as_uint();
+		const auto expected_upper = input_node.attribute("upper").as_uint();
+		const auto expected_lower = input_node.attribute("lower").as_uint();
 		//
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		ASSERT_TRUE(text_encoding_encode_UTF8(&input, &input + 1, &output)) << buffer_free(&output);
@@ -343,10 +496,10 @@ TEST_F(TestStringUnit, char_to_case)
 			ASSERT_TRUE(text_encoding_decode_UTF8(
 							output_in_range.start, output_in_range.finish, &output)) << buffer_free(&output);
 			const auto output_size = buffer_size(&output) - size - range_size(&output_in_range);
-			ASSERT_EQ((ptrdiff_t)sizeof(uint32_t), output_size) << buffer_free(&output);
+			ASSERT_EQ(static_cast<ptrdiff_t>(sizeof(uint32_t)), output_size) << buffer_free(&output);
 			//
-			const uint32_t returned_output = *((const uint32_t*)buffer_data(&output,
-											   size + range_size(&output_in_range)));
+			const auto returned_output = *(reinterpret_cast<const uint32_t*>(buffer_data(
+											   &output, size + range_size(&output_in_range))));
 			ASSERT_EQ(i ? expected_upper : expected_lower, returned_output)
 					<< (i ? "upper" : "lower") << std::endl
 					<< input << std::endl << buffer_free(&output);
@@ -370,10 +523,11 @@ TEST_F(TestStringUnit, string_trim)
 		const std::string mode(node.node().select_node("mode").node().child_value());
 		const auto input_length = INT_PARSE(node.node().select_node("input_length").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		range input_in_range;
-		input_in_range.start = (const uint8_t*)input;
+		input_in_range.start = reinterpret_cast<const uint8_t*>(input);
 		input_in_range.finish = input_in_range.start + input_length;
 		uint8_t returned = 0;
 
@@ -398,38 +552,14 @@ TEST_F(TestStringUnit, string_trim)
 	}
 }
 
-TEST_F(TestStringUnit, string_quote)
-{
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-
-	for (const auto& node : nodes)
-	{
-		const std::string input(node.node().select_node("input").node().child_value());
-		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
-		//
-		const auto input_in_range(string_to_range(input));
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		//
-		const auto returned = string_quote(input_in_range.start, input_in_range.finish, &output);
-		//
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
-		//
-		--node_count;
-	}
-
-	buffer_release(&output);
-}
-
 TEST_F(TestStringUnit, string_un_quote)
 {
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
+										 node.node().select_node("return").node().child_value()));
 		//
 		auto input_in_range(string_to_range(input));
 		null_range_to_empty(input_in_range);
@@ -437,29 +567,6 @@ TEST_F(TestStringUnit, string_un_quote)
 		//
 		ASSERT_EQ(expected_return, returned) << input;
 		ASSERT_EQ(expected_output, range_to_string(input_in_range)) << input;
-		//
-		--node_count;
-	}
-}
-
-TEST_F(TestStringUnit, string_equal)
-{
-	for (const auto& node : nodes)
-	{
-		const std::string input_1(node.node().select_node("input_1").node().child_value());
-		const std::string input_2(node.node().select_node("input_2").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
-		//
-		auto input_1_in_range(string_to_range(input_1));
-		auto input_2_in_range(string_to_range(input_2));
-		//
-		null_range_to_empty(input_1_in_range);
-		null_range_to_empty(input_2_in_range);
-		//
-		const auto returned = string_equal(input_1_in_range.start, input_1_in_range.finish,
-										   input_2_in_range.start, input_2_in_range.finish);
-		//
-		ASSERT_EQ(expected_return, returned) << input_1 << std::endl << input_2;
 		//
 		--node_count;
 	}

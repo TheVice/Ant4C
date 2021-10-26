@@ -129,6 +129,7 @@ set(ANT4C_HEADERS
   "${CMAKE_SOURCE_DIR}/hash.h"
   "${CMAKE_SOURCE_DIR}/if_task.h"
   "${CMAKE_SOURCE_DIR}/interpreter.h"
+  "${CMAKE_SOURCE_DIR}/interpreter.string_unit.h"
   "${CMAKE_SOURCE_DIR}/listener.h"
   "${CMAKE_SOURCE_DIR}/load_file.h"
   "${CMAKE_SOURCE_DIR}/load_tasks.h"

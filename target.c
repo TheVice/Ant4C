@@ -305,7 +305,7 @@ uint8_t target_get(const struct buffer* targets, const uint8_t* name,
 		{
 			if (NULL != the_target)
 			{
-				(*the_target) = the_real_target;
+				*the_target = the_real_target;
 			}
 
 			return 1;
@@ -422,7 +422,7 @@ uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
 
 	while (NULL != (ptr = (const void**)buffer_data(stack, index)))
 	{
-		if (the_target == (*ptr))
+		if (the_target == *ptr)
 		{
 			return 1;
 		}

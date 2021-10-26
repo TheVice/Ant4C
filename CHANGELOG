@@ -25,6 +25,11 @@ ant4c (YYYY.MM)
   * Fixed issue with using non exists property as argument - name of this
     property was used, that actually wrong.
     Instead program now stop interpret script in that case.
+  * Fixed issue with detecting of arguments area border when used special
+    symbol in the argument quote.
+    For example: ${string::equal('False', string::contains(i, ')'))}.
+  * Fixed issue at the 'string_last_index_of_any' function: first of symbols
+    from 'any' list will not be compared with symbols from input string.
   * Allowed to build at Apple macOS environment.
   * Added 'platform::is-macos' function.
   * WIN32: fixed using at 'echo' task for scenario when output stream
