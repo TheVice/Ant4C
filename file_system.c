@@ -5,6 +5,15 @@
  *
  */
 
+/*#if !defined(_WIN32)
+#if defined(__linux)
+#define _POSIX_SOURCE 1
+#define _DEFAULT_SOURCE 1
+#else
+#define _BSD_SOURCE 1
+#endif
+#endif*/
+
 #include "stdc_secure_api.h"
 
 #include "file_system.h"
@@ -27,7 +36,6 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
-#define _POSIXSOURCE 1
 
 #include <utime.h>
 #include <dirent.h>
@@ -144,13 +152,18 @@ uint8_t file_system_append_pre_root(struct buffer* path)
 		return 0;
 	}
 
-	struct range path_in_the_range;
+	const uint8_t* path_start = buffer_data(path, 0);
+	const uint8_t* path_finish = path_start + buffer_size(path);
+	uint8_t is_path_rooted;
 
-	BUFFER_TO_RANGE(path_in_the_range, path);
-
-	if (path_is_path_rooted(path_in_the_range.start, path_in_the_range.finish))
+	if (!path_is_path_rooted(path_start, path_finish, &is_path_rooted))
 	{
-		if (!string_starts_with(path_in_the_range.start, path_in_the_range.finish,
+		return 0;
+	}
+
+	if (is_path_rooted)
+	{
+		if (!string_starts_with(path_start, path_finish,
 								pre_root_path, pre_root_path + pre_root_path_length) &&
 			!_buffer_append_pre(path, pre_root_path, pre_root_path_length))
 		{
@@ -161,29 +174,42 @@ uint8_t file_system_append_pre_root(struct buffer* path)
 	return 1;
 }
 
-uint8_t file_system_get_position_after_pre_root(struct range* path)
+uint8_t file_system_get_position_after_pre_root(
+	const uint8_t** path_start, const uint8_t* path_finish)
 {
-	if (range_is_null_or_empty(path))
+	if (!path_start ||
+		range_in_parts_is_null_or_empty(*path_start, path_finish))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t index = string_index_of(path->start, path->finish,
-											pre_root_path, pre_root_path + pre_root_path_length);
-	path->start += (-1 == index ? 0 : index + pre_root_path_length);
+	const uint8_t* pos = *path_start;
+
+	while (NULL != pos && pre_root_path_length <= path_finish - pos)
+	{
+		if (memcmp(pos, pre_root_path, pre_root_path_length))
+		{
+			pos = string_enumerate(pos, path_finish, NULL);
+			continue;
+		}
+
+		*path_start = pos + pre_root_path_length;
+		return 2;
+	}
+
 	return 1;
 }
 
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path)
 {
-	if (NULL != path && NULL != (*path))
+	if (NULL != path && NULL != *path)
 	{
-		const wchar_t* ptr = wcsstr((*path), pre_root_path_wchar_t);
+		const wchar_t* ptr = wcsstr(*path, pre_root_path_wchar_t);
 
 		if (NULL != ptr)
 		{
 			ptr += pre_root_path_length;
-			(*path) = ptr;
+			*path = ptr;
 		}
 	}
 }
@@ -380,7 +406,14 @@ uint8_t file_system_path_in_range_to_pathW(
 		return 0;
 	}
 
-	if (path_is_path_rooted(path_start, path_finish) &&
+	uint8_t is_path_rooted;
+
+	if (!path_is_path_rooted(path_start, path_finish, &is_path_rooted))
+	{
+		return 0;
+	}
+
+	if (is_path_rooted &&
 		!string_starts_with(path_start, path_finish, pre_root_path, pre_root_path + pre_root_path_length) &&
 		!buffer_append_wchar_t(pathW, pre_root_path_wchar_t, pre_root_path_length))
 	{
@@ -573,7 +606,7 @@ uint8_t directory_create(const uint8_t* path)
 			continue;
 		}
 
-		(*pos) = L'\0';
+		*pos = L'\0';
 
 		if (!directory_exists_wchar_t(path_start))
 		{
@@ -584,7 +617,7 @@ uint8_t directory_create(const uint8_t* path)
 			}
 		}
 
-		(*pos) = L'\\';
+		*pos = L'\\';
 	}
 
 	const uint8_t returned = directory_create_wchar_t(path_start);
@@ -1012,7 +1045,7 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 	{
 		if (NULL != the_property)
 		{
-			(*the_property) = NULL;
+			*the_property = NULL;
 		}
 
 		return path_get_directory_for_current_process(output);
@@ -1582,8 +1615,8 @@ uint8_t file_get_attributes_wchar_t(const wchar_t* path, unsigned long* attribut
 		return 0;
 	}
 
-	(*attributes) = GetFileAttributesW(path);
-	return INVALID_FILE_ATTRIBUTES != (*attributes);
+	*attributes = GetFileAttributesW(path);
+	return INVALID_FILE_ATTRIBUTES != *attributes;
 }
 #endif
 uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes)
@@ -1608,7 +1641,7 @@ uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes)
 	buffer_release(&pathW);
 	return returned;
 #else
-	(*attributes) = 0;
+	*attributes = 0;
 	return 0;
 #endif
 }
@@ -1713,10 +1746,10 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 	}
 
 #if __STDC_LIB_EXT1__
-	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != (*output));
+	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != *output);
 #else
-	(*output) = (void*)_wfopen(path, mode);
-	return (NULL != (*output));
+	*output = (void*)_wfopen(path, mode);
+	return NULL != *output;
 #endif
 }
 #endif
@@ -1809,10 +1842,10 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	return returned;
 #else
 #if __STDC_LIB_EXT1__
-	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != (*output));
+	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != *output);
 #else
-	(*output) = (void*)fopen((const char*)path, (const char*)mode);
-	return (NULL != (*output));
+	*output = (void*)fopen((const char*)path, (const char*)mode);
+	return NULL != *output;
 #endif
 #endif
 }
@@ -1909,22 +1942,25 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 
 	ptrdiff_t size = 0;
 	ptrdiff_t readed = 0;
+	const uint8_t* start;
 	uint16_t count_of_lines = 1;
 	static const uint8_t n = '\n';
 	uint8_t* ptr = buffer_data(output, 0);
 
 	while (0 < (readed = (ptrdiff_t)file_read(ptr, sizeof(uint8_t), 4096, stream)))
 	{
-		size += (ptrdiff_t)readed;
+		size += readed;
 		path = ptr + readed;
+		start = ptr;
 
-		while (-1 != (readed = string_index_of(ptr, path, &n, &n + 1)))
+		do
 		{
-			ptr += readed + 1;
-			++count_of_lines;
+			if (n == *start)
+			{
+				++count_of_lines;
+			}
 		}
-
-		ptr = buffer_data(output, 0);
+		while (path != (start = string_enumerate(start, path, NULL)));
 	}
 
 	if (!size)
@@ -1974,20 +2010,37 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 
 	count_of_lines = 0;
 	struct range* range_of_line = NULL;
+	start = ptr;
+	const uint8_t* finish = start;
 
-	while (-1 != (size = string_index_of(ptr, path, &n, &n + 1)) &&
-		   NULL != (range_of_line = buffer_range_data(output, count_of_lines++)))
+	do
 	{
-		range_of_line->start = ptr;
-		ptr += size;
-		range_of_line->finish = ptr;
-		++ptr;
-	}
+		if (n == *start)
+		{
+			range_of_line = buffer_range_data(output, count_of_lines++);
 
-	if (ptr < path)
+			if (!range_of_line)
+			{
+				break;
+			}
+
+			range_of_line->start = finish;
+			range_of_line->finish = start;
+			finish = range_of_line->finish + 1;
+		}
+	}
+	while (path != (start = string_enumerate(start, path, NULL)));
+
+	if (finish < path)
 	{
 		range_of_line = buffer_range_data(output, count_of_lines++);
-		range_of_line->start = ptr;
+
+		if (!range_of_line)
+		{
+			return 0;
+		}
+
+		range_of_line->start = finish;
 		range_of_line->finish = path;
 	}
 	else
@@ -2365,18 +2418,21 @@ uint8_t file_replace_with_same_length(
 	const uint8_t* to_be_replaced, const uint8_t* by_replacement, ptrdiff_t length)
 {
 	ptrdiff_t readed = 0;
-	const uint8_t* to_be_replaced_finish = to_be_replaced + length;
 
 	while (0 < (readed = file_read(content, sizeof(uint8_t), size, stream)))
 	{
-		long index;
-		const uint8_t* sub_content = content;
+		const uint8_t* start = content;
+		const uint8_t* finish = content + readed;
 
-		while (-1 != (index = (long)string_index_of(sub_content, content + readed, to_be_replaced,
-							  to_be_replaced_finish)))
+		while (NULL != start && length <= finish - start)
 		{
-			sub_content += index;
-			index = (long)((sub_content - content) - readed);
+			if (memcmp(start, to_be_replaced, length))
+			{
+				start = string_enumerate(start, finish, NULL);
+				continue;
+			}
+
+			long index = (long)((start - content) - readed);
 
 			if (!file_seek(stream, index, SEEK_CUR))
 			{
@@ -2388,14 +2444,14 @@ uint8_t file_replace_with_same_length(
 				return 0;
 			}
 
-			index = (long)(readed - (sub_content - content) - length);
+			index = (long)(readed - (start - content) - length);
 
 			if (!file_seek(stream, index, SEEK_CUR))
 			{
 				return 0;
 			}
 
-			sub_content += length;
+			start += length;
 		}
 
 		if (readed < size)
@@ -2405,9 +2461,7 @@ uint8_t file_replace_with_same_length(
 
 		if (length < size)
 		{
-			index = (long)(-length);
-
-			if (!file_seek(stream, index, SEEK_CUR))
+			if (!file_seek(stream, (long)(-length), SEEK_CUR))
 			{
 				return 0;
 			}
@@ -2524,19 +2578,24 @@ uint8_t file_replace(const uint8_t* path,
 	return file_close(stream);
 }
 
-uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full_path)
+uint8_t file_get_full_path(
+	const uint8_t* partial_path_start, const uint8_t* partial_path_finish, struct buffer* full_path)
 {
-	if (range_is_null_or_empty(partial_path) ||
+	uint8_t is_path_rooted;
+
+	if (range_in_parts_is_null_or_empty(partial_path_start, partial_path_finish) ||
+		!path_is_path_rooted(partial_path_start, partial_path_finish, &is_path_rooted) ||
 		NULL == full_path)
 	{
 		return 0;
 	}
 
 	const ptrdiff_t size = buffer_size(full_path);
+	const ptrdiff_t size_of_partial_path = partial_path_finish - partial_path_start;
 
-	if (path_is_path_rooted(partial_path->start, partial_path->finish))
+	if (is_path_rooted)
 	{
-		return buffer_append_data_from_range(full_path, partial_path) &&
+		return buffer_append(full_path, partial_path_start, size_of_partial_path) &&
 			   buffer_push_back(full_path, 0) &&
 			   file_exists(buffer_data(full_path, size));
 	}
@@ -2552,7 +2611,7 @@ uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full
 	{
 		BUFFER_TO_RANGE(start_of_path, &variable);
 
-		if (!buffer_resize(full_path, range_size(&start_of_path) + range_size(partial_path)))
+		if (!buffer_resize(full_path, range_size(&start_of_path) + size_of_partial_path))
 		{
 			buffer_release(&variable);
 			return 0;
@@ -2575,7 +2634,7 @@ uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full
 				return 0;
 			}
 
-			if (!path_combine_in_place(full_path, size, partial_path->start, partial_path->finish) ||
+			if (!path_combine_in_place(full_path, size, partial_path_start, partial_path_finish) ||
 				!buffer_push_back(full_path, 0))
 			{
 				buffer_release(&variable);
@@ -2628,7 +2687,7 @@ uint8_t file_get_full_path(const struct range* partial_path, struct buffer* full
 				return 0;
 			}
 
-			if (!path_combine_in_place(full_path, size, partial_path->start, partial_path->finish) ||
+			if (!path_combine_in_place(full_path, size, partial_path_start, partial_path_finish) ||
 				!buffer_push_back(full_path, 0))
 			{
 				buffer_release(&variable);

@@ -5,6 +5,11 @@
  *
  */
 
+#if !defined(_WIN32)
+#define _POSIX_SOURCE 1
+#define _POSIX_C_SOURCE 200112L
+#endif
+
 #include "exec.h"
 #include "argument_parser.h"
 #include "buffer.h"
@@ -30,7 +35,6 @@ static const uint8_t space_symbol = ' ';
 static const wchar_t zero_symbol_w = L'\0';
 
 #else
-#define _POSIXSOURCE 1
 
 #include <errno.h>
 #include <stdlib.h>
@@ -120,10 +124,10 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 	}
 
 	const ptrdiff_t size = buffer_size(output);
-	struct range path_in_range;
-	path_in_range.start = buffer_data(output, 0);
-	path_in_range.finish = path_in_range.start + size;
-	const uint8_t contains = string_contains(path_in_range.start, path_in_range.finish,
+	const uint8_t* path_start = buffer_data(output, 0);
+	const uint8_t* path_finish = path_start + size;
+	/**/
+	const uint8_t contains = string_contains(path_start, path_finish,
 							 &space_symbol, &space_symbol + 1);
 
 	if (!buffer_append(output, NULL, size + 3) ||
@@ -132,27 +136,27 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 		return 0;
 	}
 
-	path_in_range.start = buffer_data(output, 0);
-	path_in_range.finish = path_in_range.start + size;
+	path_start = buffer_data(output, 0);
+	path_finish = path_start + size;
 
-	if (!file_system_get_position_after_pre_root(&path_in_range))
+	if (!file_system_get_position_after_pre_root(&path_start, path_finish))
 	{
 		return 0;
 	}
 
-	path_in_range.finish = 1 + find_any_symbol_like_or_not_like_that(
-							   path_in_range.finish - 1, path_in_range.start, &zero_symbol, 1, 0, -1);
+	path_finish = 1 + find_any_symbol_like_or_not_like_that(
+					  path_finish - 1, path_start, &zero_symbol, 1, 0, -1);
 
 	if (contains)
 	{
-		if (!string_quote(path_in_range.start, path_in_range.finish, output))
+		if (!string_quote(path_start, path_finish, output))
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		if (!buffer_append_data_from_range(output, &path_in_range))
+		if (!buffer_append(output, path_start, path_finish - path_start))
 		{
 			return 0;
 		}
@@ -363,7 +367,12 @@ uint8_t exec(
 
 	BUFFER_TO_RANGE(program_in_the_range, program);
 
-	const uint8_t is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
+	uint8_t is_path_rooted;
+
+	if (!path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish, &is_path_rooted))
+	{
+		return 0;
+	}
 
 	struct buffer application;
 
@@ -440,22 +449,27 @@ uint8_t exec(
 
 	const wchar_t* programW = (const wchar_t*)buffer_data(&application, size);
 
-	if (!range_is_null_or_empty(base_dir) && path_is_path_rooted(base_dir->start, base_dir->finish))
+	if (!range_is_null_or_empty(base_dir))
 	{
-		if (!file_exists_wchar_t(programW))
+		uint8_t is_base_dir_rooted;
+
+		if (!path_is_path_rooted(base_dir->start, base_dir->finish, &is_base_dir_rooted))
+		{
+			buffer_release(&application);
+			return 0;
+		}
+
+		if (is_base_dir_rooted && !file_exists_wchar_t(programW))
 		{
 			buffer_release(&application);
 			return 0;
 		}
 	}
 
-	if (is_path_rooted)
+	if (is_path_rooted && !file_exists_wchar_t(programW))
 	{
-		if (!file_exists_wchar_t(programW))
-		{
-			buffer_release(&application);
-			return 0;
-		}
+		buffer_release(&application);
+		return 0;
 	}
 
 	const wchar_t* start = programW;
@@ -723,11 +737,15 @@ uint8_t exec(
 		return 0;
 	}
 
-	struct range program_in_the_range;
+	const uint8_t* program_start = buffer_data(program, 0);
+	const uint8_t* program_finish = program_start + buffer_size(program);
+	uint8_t is_path_rooted;
 
-	BUFFER_TO_RANGE(program_in_the_range, program);
-
-	const uint8_t is_path_rooted = path_is_path_rooted(program_in_the_range.start, program_in_the_range.finish);
+	if (!path_is_path_rooted(program_start, program_finish, &is_path_rooted))
+	{
+		buffer_release(&application);
+		return 0;
+	}
 
 	if (!exec_get_program_full_path(
 			the_project, the_target, program,
@@ -782,7 +800,13 @@ uint8_t exec(
 
 		work_dir_path.finish = buffer_data(&application, 0) + buffer_size(&application);
 
-		if (path_is_path_rooted(work_dir_path.start, work_dir_path.finish) && !directory_exists(work_dir_path.start))
+		if (!path_is_path_rooted(work_dir_path.start, work_dir_path.finish, &is_path_rooted))
+		{
+			buffer_release(&application);
+			return 0;
+		}
+
+		if (is_path_rooted && !directory_exists(work_dir_path.start))
 		{
 			buffer_release(&application);
 			return 0;
@@ -925,9 +949,11 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	const struct buffer* base_dir_in_a_buffer = buffer_buffer_data(task_arguments, BASE_DIR_POSITION);
 	struct range base_directory;
 	BUFFER_TO_RANGE(base_directory, base_dir_in_a_buffer);
+	/**/
 	const struct buffer* command_line_in_a_buffer = buffer_buffer_data(task_arguments, COMMAND_LINE_POSITION);
 	struct range command_line;
 	BUFFER_TO_RANGE(command_line, command_line_in_a_buffer);
+	/**/
 	struct buffer* output_path_in_a_buffer = buffer_buffer_data(task_arguments, OUTPUT_POSITION);
 	struct range output_file;
 

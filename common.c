@@ -29,7 +29,7 @@
 		\
 		for (ptrdiff_t i = 0; i < that_length; ++i)											\
 		{																					\
-			is_like = (that[i] == (*start));												\
+			is_like = (that[i] == *start);													\
 			\
 			if (is_like)																	\
 			{																				\
@@ -60,7 +60,6 @@ const uint32_t* find_any_symbol_like_or_not_like_that_UTF32LE(
 {
 	FIND_ANY_SYMBOL_LIKE_OR_NOT_LIKE_THAT(start, finish, that, that_length, like, step);
 }
-
 #if defined(_WIN32)
 const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(
 	const wchar_t* start, const wchar_t* finish, const wchar_t* that,
@@ -73,7 +72,7 @@ uint8_t common_replace_double_byte_by_single(uint8_t* input, ptrdiff_t* size, ui
 {
 	ptrdiff_t match = 0;
 
-	if (NULL == input || NULL == size || 0 == (match = (*size)))
+	if (NULL == input || NULL == size || 0 == (match = *size))
 	{
 		return 0;
 	}
@@ -98,9 +97,9 @@ uint8_t common_replace_double_byte_by_single(uint8_t* input, ptrdiff_t* size, ui
 		}
 	}
 
-	if (match != (*size))
+	if (match != *size)
 	{
-		(*size) = match;
+		*size = match;
 	}
 
 	return 1;

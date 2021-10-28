@@ -83,7 +83,7 @@ uint8_t get_exists_functions(
 
 	const uint8_t* finish = functions;
 
-	while (0 != memcmp(finish, double_zero, 2))
+	while (memcmp(finish, double_zero, 2))
 	{
 		++finish;
 	}

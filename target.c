@@ -206,11 +206,13 @@ uint8_t target_new(void* the_project,
 		ptrdiff_t index = 0;
 		uint16_t depends_count = 1;
 		const uint8_t* depend_name = depends;
+		const uint8_t* depends_finish = depends + depends_length;
 
-		while (-1 != (index = string_index_of(depend_name, depends + depends_length,
-											  &depends_delimiter, &depends_delimiter + 1)))
+		while (depends_finish !=
+			   (depend_name = find_any_symbol_like_or_not_like_that(
+								  depend_name, depends_finish, &depends_delimiter, 1, 1, 1)))
 		{
-			depend_name += index + 1;
+			++depend_name;
 			++depends_count;
 		}
 
@@ -303,7 +305,7 @@ uint8_t target_get(const struct buffer* targets, const uint8_t* name,
 		{
 			if (NULL != the_target)
 			{
-				(*the_target) = the_real_target;
+				*the_target = the_real_target;
 			}
 
 			return 1;
@@ -420,7 +422,7 @@ uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
 
 	while (NULL != (ptr = (const void**)buffer_data(stack, index)))
 	{
-		if (the_target == (*ptr))
+		if (the_target == *ptr)
 		{
 			return 1;
 		}

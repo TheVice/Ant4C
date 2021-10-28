@@ -43,57 +43,6 @@ uint8_t environment_get_function(const uint8_t* name_start, const uint8_t* name_
 uint8_t environment_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 								  struct buffer* output)
 {
-	static const uint8_t* special_folder_str[] =
-	{
-		(const uint8_t*)"Desktop",
-		(const uint8_t*)"Programs",
-		(const uint8_t*)"Personal",
-		(const uint8_t*)"MyDocuments",
-		(const uint8_t*)"Favorites",
-		(const uint8_t*)"Startup",
-		(const uint8_t*)"Recent",
-		(const uint8_t*)"SendTo",
-		(const uint8_t*)"StartMenu",
-		(const uint8_t*)"MyMusic",
-		(const uint8_t*)"MyVideos",
-		(const uint8_t*)"DesktopDirectory",
-		(const uint8_t*)"MyComputer",
-		(const uint8_t*)"NetworkShortcuts",
-		(const uint8_t*)"Fonts",
-		(const uint8_t*)"Templates",
-		(const uint8_t*)"CommonStartMenu",
-		(const uint8_t*)"CommonPrograms",
-		(const uint8_t*)"CommonStartup",
-		(const uint8_t*)"CommonDesktopDirectory",
-		(const uint8_t*)"ApplicationData",
-		(const uint8_t*)"PrinterShortcuts",
-		(const uint8_t*)"LocalApplicationData",
-		(const uint8_t*)"InternetCache",
-		(const uint8_t*)"Cookies",
-		(const uint8_t*)"History",
-		(const uint8_t*)"CommonApplicationData",
-		(const uint8_t*)"Windows",
-		(const uint8_t*)"System",
-		(const uint8_t*)"ProgramFiles",
-		(const uint8_t*)"MyPictures",
-		(const uint8_t*)"UserProfile",
-		(const uint8_t*)"SystemX86",
-		(const uint8_t*)"ProgramFilesX86",
-		(const uint8_t*)"CommonProgramFiles",
-		(const uint8_t*)"CommonProgramFilesX86",
-		(const uint8_t*)"CommonTemplates",
-		(const uint8_t*)"CommonDocuments",
-		(const uint8_t*)"CommonAdminTools",
-		(const uint8_t*)"AdminTools",
-		(const uint8_t*)"CommonMusic",
-		(const uint8_t*)"CommonPictures",
-		(const uint8_t*)"CommonVideos",
-		(const uint8_t*)"Resources",
-		(const uint8_t*)"LocalizedResources",
-		(const uint8_t*)"CommonOemLinks",
-		(const uint8_t*)"CDBurning"
-	};
-
 	if (UNKNOWN_ENVIRONMENT <= function || NULL == arguments || 1 < arguments_count || NULL == output)
 	{
 		return 0;
@@ -114,6 +63,57 @@ uint8_t environment_exec_function(uint8_t function, const struct buffer* argumen
 	{
 		case get_folder_path:
 		{
+			static const uint8_t* special_folder_str[] =
+			{
+				(const uint8_t*)"Desktop",
+				(const uint8_t*)"Programs",
+				(const uint8_t*)"Personal",
+				(const uint8_t*)"MyDocuments",
+				(const uint8_t*)"Favorites",
+				(const uint8_t*)"Startup",
+				(const uint8_t*)"Recent",
+				(const uint8_t*)"SendTo",
+				(const uint8_t*)"StartMenu",
+				(const uint8_t*)"MyMusic",
+				(const uint8_t*)"MyVideos",
+				(const uint8_t*)"DesktopDirectory",
+				(const uint8_t*)"MyComputer",
+				(const uint8_t*)"NetworkShortcuts",
+				(const uint8_t*)"Fonts",
+				(const uint8_t*)"Templates",
+				(const uint8_t*)"CommonStartMenu",
+				(const uint8_t*)"CommonPrograms",
+				(const uint8_t*)"CommonStartup",
+				(const uint8_t*)"CommonDesktopDirectory",
+				(const uint8_t*)"ApplicationData",
+				(const uint8_t*)"PrinterShortcuts",
+				(const uint8_t*)"LocalApplicationData",
+				(const uint8_t*)"InternetCache",
+				(const uint8_t*)"Cookies",
+				(const uint8_t*)"History",
+				(const uint8_t*)"CommonApplicationData",
+				(const uint8_t*)"Windows",
+				(const uint8_t*)"System",
+				(const uint8_t*)"ProgramFiles",
+				(const uint8_t*)"MyPictures",
+				(const uint8_t*)"UserProfile",
+				(const uint8_t*)"SystemX86",
+				(const uint8_t*)"ProgramFilesX86",
+				(const uint8_t*)"CommonProgramFiles",
+				(const uint8_t*)"CommonProgramFilesX86",
+				(const uint8_t*)"CommonTemplates",
+				(const uint8_t*)"CommonDocuments",
+				(const uint8_t*)"CommonAdminTools",
+				(const uint8_t*)"AdminTools",
+				(const uint8_t*)"CommonMusic",
+				(const uint8_t*)"CommonPictures",
+				(const uint8_t*)"CommonVideos",
+				(const uint8_t*)"Resources",
+				(const uint8_t*)"LocalizedResources",
+				(const uint8_t*)"CommonOemLinks",
+				(const uint8_t*)"CDBurning"
+			};
+
 			if (!arguments_count)
 			{
 				break;

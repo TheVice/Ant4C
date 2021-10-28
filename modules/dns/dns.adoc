@@ -1,6 +1,14 @@
+= ant4c.dns(1)
+The Vice
+v2020.09
+:doctype: manpage
+:manmanual: ANT4C.DNS
+:mansource: ANT4C.DNS
+:man-linkstyle: pass:[blue R < >]
 
-= ant4c.dns help
-:toc:
+== Name
+
+ant4c.dns - module for Ant4C program that add get-host-name function from dns namespace.
 
 [[history]]
 == History
@@ -16,7 +24,8 @@ Place module file - *.dll, *.so or *.dylib depend on your system, into directory
 
 .Function from file unit.
 |===
-.s| Script function .s| Description
+| Script function | Description
+
 | <<dns-get-host-name,dns::get-host-name>> | Get name of DNS host.
 |===
 

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -20,6 +20,7 @@
 #include "for_each.h"
 #include "hash.h"
 #include "if_task.h"
+#include "interpreter.string_unit.h"
 #include "listener.h"
 #include "load_file.h"
 #include "load_tasks.h"
@@ -38,9 +39,11 @@
 #include "version.h"
 #include "xml.h"
 
+#include <string.h>
+
 static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
-static const uint8_t function_call_finish = '}';
+static const uint8_t call_of_expression_finish = '}';
 static const uint8_t apos = '\'';
 
 static const uint8_t arguments_delimiter = ',';
@@ -51,8 +54,8 @@ static const uint8_t space_and_tab[] = { ' ', '\t' };
 static const uint8_t name_space_border[] = { ':', ':' };
 #define NAME_SPACE_BORDER_LENGTH COUNT_OF(name_space_border)
 
-static const uint8_t function_call_start[] = { '$', '{' };
-#define FUNCTION_CALL_START_LENGTH COUNT_OF(function_call_start)
+static const uint8_t call_of_expression_start[] = { '$', '{' };
+#define CALL_OF_EXPRESSION_START_LENGTH COUNT_OF(call_of_expression_start)
 
 static const uint8_t* interpreter_string_enumeration_unit[] =
 {
@@ -129,19 +132,25 @@ uint8_t interpreter_disassemble_function(
 		return 0;
 	}
 
-	ptrdiff_t index = 0;
+	name_space->start = function->start;
+	name_space->finish = function->start;
 
-	if (-1 == (index = string_index_of(function->start,
-									   function->finish,
-									   name_space_border,
-									   name_space_border + NAME_SPACE_BORDER_LENGTH)))
+	while (name_space->finish + NAME_SPACE_BORDER_LENGTH <= function->finish)
+	{
+		if (memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
+		{
+			name_space->finish = string_enumerate(name_space->finish, function->finish, NULL);
+			continue;
+		}
+
+		break;
+	}
+
+	if (*name_space_border != *name_space->finish)
 	{
 		return 0;
 	}
 
-	name_space->start = function->start;
-	name_space->finish = function->start + index;
-	/**/
 	name->start = name_space->finish + NAME_SPACE_BORDER_LENGTH;
 	name->finish = find_any_symbol_like_or_not_like_that(
 					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
@@ -151,7 +160,7 @@ uint8_t interpreter_disassemble_function(
 		return 0;
 	}
 
-	arguments_area->start = name->finish + 1;
+	arguments_area->start = string_enumerate(name->finish, function->finish, NULL);
 	arguments_area->finish = find_any_symbol_like_or_not_like_that(
 								 function->finish, arguments_area->start, &finish_of_function_arguments_area, 1, 1, -1);
 	/**/
@@ -183,6 +192,13 @@ uint8_t interpreter_get_function_from_argument(
 		++argument_area->finish;
 		ch = *argument_area->finish;
 
+		if (apos == ch)
+		{
+			argument_area->finish =
+				find_any_symbol_like_or_not_like_that(argument_area->finish + 1, finish, &apos, 1, 1, 1);
+			continue;
+		}
+
 		if (finish_of_function_arguments_area == ch)
 		{
 			if (0 == depth)
@@ -212,18 +228,25 @@ uint8_t interpreter_evaluate_argument_area(
 	const void* the_project, const void* the_target,
 	const struct range* argument_area, struct buffer* output, uint8_t verbose)
 {
-	ptrdiff_t index = (apos == *(argument_area->start) && apos == *(argument_area->finish - 1));
 	const uint8_t* pos = argument_area->start;
 
-	if (!index)
+	if (apos != *(argument_area->start) || apos != *(argument_area->finish - 1))
 	{
-		while (-1 != (index = string_index_of(
-								  pos, argument_area->finish,
-								  name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH)))
+		const uint8_t* pos_with_index = pos;
+
+		while (pos_with_index + NAME_SPACE_BORDER_LENGTH <= argument_area->finish)
 		{
+			if (memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
+			{
+				pos_with_index = string_enumerate(pos_with_index, argument_area->finish, NULL);
+				continue;
+			}
+
 			struct range function;
-			function.start = find_any_symbol_like_or_not_like_that(pos + index, pos,
+
+			function.start = find_any_symbol_like_or_not_like_that(pos_with_index, pos,
 							 space_and_tab, SPACE_AND_TAB_LENGTH, 1, -1);
+
 			function.finish = argument_area->finish;
 
 			if (!string_trim(&function) ||
@@ -235,6 +258,7 @@ uint8_t interpreter_evaluate_argument_area(
 			}
 
 			pos = function.finish;
+			pos_with_index = pos;
 		}
 	}
 
@@ -311,7 +335,8 @@ uint8_t interpreter_get_value_for_argument(
 		return 0;
 	}
 
-	if (!interpreter_evaluate_argument_area(the_project, the_target, argument_area, &value, verbose))
+	if (!interpreter_evaluate_argument_area(
+			the_project, the_target, argument_area, &value, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -321,8 +346,10 @@ uint8_t interpreter_get_value_for_argument(
 	{
 		void* the_property = NULL;
 
-		if (project_property_exists(the_project, argument_area->start, (uint8_t)range_size(argument_area),
-									&the_property, verbose))
+		if (project_property_exists(
+				the_project,
+				argument_area->start, (uint8_t)range_size(argument_area),
+				&the_property, verbose))
 		{
 			if (!property_get_by_pointer(the_property, &value))
 			{
@@ -331,7 +358,8 @@ uint8_t interpreter_get_value_for_argument(
 			}
 
 			if (!interpreter_actualize_property_value(
-					the_project, the_target, property_get_id_of_get_value_function(),
+					the_project, the_target,
+					property_get_id_of_get_value_function(),
 					the_property, 0, &value, verbose))
 			{
 				buffer_release(&value);
@@ -340,31 +368,27 @@ uint8_t interpreter_get_value_for_argument(
 		}
 		else
 		{
-			const ptrdiff_t index_1 = string_index_of(
-										  argument_area->start, argument_area->finish, name_space_border,
-										  name_space_border + NAME_SPACE_BORDER_LENGTH);
-			const ptrdiff_t index_2 = -1 == index_1 ? index_1 :
-									  string_last_index_of(
-										  argument_area->start, argument_area->finish, name_space_border,
-										  name_space_border + NAME_SPACE_BORDER_LENGTH);
+			const ptrdiff_t size = range_size(argument_area);
 
-			if (-1 == index_1 || index_1 != index_2)
+			if (!string_un_quote(argument_area))
 			{
-				if (-1 == index_1)
+				buffer_release(&value);
+				return 0;
+			}
+
+			if (range_size(argument_area) < size)
+			{
+				if (!buffer_append_data_from_range(&value, argument_area))
 				{
-					const ptrdiff_t size = range_size(argument_area);
-
-					if (!string_un_quote(argument_area) ||
-						size == range_size(argument_area))
-					{
-						buffer_release(&value);
-						return 0;
-					}
+					buffer_release(&value);
+					return 0;
 				}
-
-				if (!buffer_resize(&value, 0) ||
-					!string_un_quote(argument_area) ||
-					!buffer_append_data_from_range(&value, argument_area))
+			}
+			else
+			{
+				if (!string_contains(
+						argument_area->start, argument_area->finish,
+						name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH))
 				{
 					buffer_release(&value);
 					return 0;
@@ -765,31 +789,33 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 		return 0;
 	}
 
-	const ptrdiff_t code_length = range_size(code);
 	struct buffer return_of_function;
+
 	SET_NULL_TO_BUFFER(return_of_function);
-	ptrdiff_t index = 0;
-	struct range function;
-	function.start = code->start;
+
 	const uint8_t* previous_pos = code->start;
 
-	while (-1 != (index = string_index_of(function.start,
-										  code->finish,
-										  function_call_start,
-										  function_call_start + FUNCTION_CALL_START_LENGTH)))
+	struct range function;
+
+	for (function.start = code->start; function.start + CALL_OF_EXPRESSION_START_LENGTH <= code->finish;)
 	{
+		if (memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
+		{
+			function.start = string_enumerate(function.start, code->finish, NULL);
+			continue;
+		}
+
 		if (!buffer_resize(&return_of_function, 0))
 		{
 			buffer_release(&return_of_function);
 			return 0;
 		}
 
-		function.start += index;
 		function.finish = function.start;
 
-		while (function.finish < code->finish)
+		while (NULL != function.finish && function.finish < code->finish)
 		{
-			if (apos == (*function.finish))
+			if (apos == *function.finish)
 			{
 				function.finish = find_any_symbol_like_or_not_like_that(
 									  function.finish + 1, code->finish,
@@ -800,15 +826,16 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 				continue;
 			}
 
-			if (function_call_finish == (*function.finish))
+			if (call_of_expression_finish == *function.finish)
 			{
 				break;
 			}
 
-			++function.finish;
+			function.finish = string_enumerate(function.finish, code->finish, NULL);
 		}
 
-		if (function.finish == code->finish && function_call_finish != *function.finish)
+		if (NULL == function.finish ||
+			(function.finish == code->finish && call_of_expression_finish != *function.finish))
 		{
 			buffer_release(&return_of_function);
 			return 0;
@@ -820,11 +847,12 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 			return 0;
 		}
 
-		function.start += 2;
+		function.start += CALL_OF_EXPRESSION_START_LENGTH;
 		void* the_property = NULL;
 
-		if (project_property_exists(the_project, function.start, (uint8_t)range_size(&function), &the_property,
-									verbose))
+		if (project_property_exists(
+				the_project, function.start,
+				(uint8_t)range_size(&function), &the_property, verbose))
 		{
 			if (!property_get_by_pointer(the_property, &return_of_function))
 			{
@@ -860,7 +888,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 	}
 
 	buffer_release(&return_of_function);
-	return buffer_append(output, previous_pos, code_length - (previous_pos - code->start));
+	return buffer_append(output, previous_pos, range_size(code) - (previous_pos - code->start));
 }
 
 uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
@@ -969,7 +997,7 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 		return 0;
 	}
 
-	const uint8_t count_of_attributes = (0 == (*task_verbose) ? 2 : 1);
+	const uint8_t count_of_attributes = (0 == *task_verbose ? 2 : 1);
 
 	if (!common_get_attributes_and_arguments_for_task(
 			NULL, NULL, count_of_attributes,
@@ -1119,20 +1147,20 @@ uint8_t interpreter_get_environments(
 	}
 
 	count = 0;
-	struct range name;
 	struct range* env_ptr = NULL;
 
 	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
 	{
 		static const uint8_t* env_name = (const uint8_t*)"environment";
+		const uint8_t* tag_name_finish = env_ptr->finish;
 
-		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
+		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
 		{
 			buffer_release(&elements);
 			return 0;
 		}
 
-		if (string_equal(name.start, name.finish, env_name, env_name + 11))
+		if (string_equal(env_ptr->start, tag_name_finish, env_name, env_name + 11))
 		{
 			break;
 		}
@@ -1144,7 +1172,7 @@ uint8_t interpreter_get_environments(
 		return 1;
 	}
 
-	name = *env_ptr;
+	struct range name = *env_ptr;
 
 	if (!buffer_resize(&elements, 0))
 	{
@@ -1172,15 +1200,17 @@ uint8_t interpreter_get_environments(
 		static const uint8_t* var_name = (const uint8_t*)"variable";
 		static const uint8_t* name_str = (const uint8_t*)"name";
 		static const uint8_t* value_str = (const uint8_t*)"value";
+		/**/
+		const uint8_t* tag_name_finish = env_ptr->finish;
 
-		if (!xml_get_tag_name(env_ptr->start, env_ptr->finish, &name))
+		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
 		{
 			buffer_release(&attribute_value);
 			buffer_release(&elements);
 			return 0;
 		}
 
-		if (!string_equal(name.start, name.finish, var_name, var_name + 8))
+		if (!string_equal(env_ptr->start, tag_name_finish, var_name, var_name + 8))
 		{
 			continue;
 		}
@@ -1401,7 +1431,7 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 
 	if (dynamic)
 	{
-		dynamic = (*task_attributes_count) - 1;
+		dynamic = *task_attributes_count - 1;
 
 		if (!interpreter_get_arguments_from_xml_tag_record(
 				the_project, the_target, attributes_start, attributes_finish,
@@ -2076,7 +2106,9 @@ uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
 	while (NULL != (element = buffer_range_data(elements, i++)))
 	{
 		struct range tag_name;
-		returned = xml_get_tag_name(element->start, element->finish, &tag_name);
+		tag_name.start = element->start;
+		tag_name.finish = element->finish;
+		returned = xml_get_tag_name(element->start, &(tag_name.finish));
 
 		if (!returned)
 		{

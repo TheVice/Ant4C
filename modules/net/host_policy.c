@@ -197,7 +197,7 @@ uint8_t core_host_is_function_exists(
 	for (uint8_t i = 0, count = COUNT_OF(host_policy_functions_string); i < count; ++i)
 	{
 		if (core_host_functions_lengths[i] != function_name_length ||
-			0 != memcmp(host_policy_functions_string[i], function_name, function_name_length))
+			memcmp(host_policy_functions_string[i], function_name, function_name_length))
 		{
 			continue;
 		}

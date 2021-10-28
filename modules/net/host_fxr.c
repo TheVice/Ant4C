@@ -398,7 +398,7 @@ uint8_t host_fx_resolver_is_function_exists(
 	for (uint8_t i = 0, count = COUNT_OF(host_fxr_functions_string); i < count; ++i)
 	{
 		if (host_fxr_functions_lengths[i] != function_name_length ||
-			0 != memcmp(host_fxr_functions_string[i], function_name, function_name_length))
+			memcmp(host_fxr_functions_string[i], function_name, function_name_length))
 		{
 			continue;
 		}

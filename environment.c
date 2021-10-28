@@ -6,6 +6,8 @@
  */
 
 #if !defined(_WIN32)
+/*#define _POSIX_SOURCE 1
+#define _POSIX_C_SOURCE 200112L*/
 #include "stdc_secure_api.h"
 #endif
 
@@ -210,8 +212,6 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 }
 
 #else
-
-#define _POSIXSOURCE 1
 
 #include "string_unit.h"
 
@@ -426,8 +426,8 @@ uint8_t environment_get_windows_version(void* version)
 	}
 
 #else
-	static uint8_t majors[] = { 10, 6, 6, 6, 6 };
-	static uint8_t minors[] = { 0, 3, 2, 1, 0 };
+	static const uint8_t majors[] = { 10, 6, 6, 6, 6 };
+	static const uint8_t minors[] = { 0, 3, 2, 1, 0 };
 	DWORDLONG const dwlConditionMask = VerSetConditionMask(
 										   VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL),
 										   VER_MINORVERSION, VER_GREATER_EQUAL);

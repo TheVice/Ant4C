@@ -5,6 +5,10 @@
  *
  */
 
+#if !defined(_WIN32)
+#define _POSIX_SOURCE 1
+#endif
+
 #include "operating_system.h"
 
 #include "common.h"
@@ -13,7 +17,6 @@
 #include "version.h"
 
 #if !defined(_WIN32)
-#define _POSIXSOURCE 1
 #include <sys/utsname.h>
 #endif
 

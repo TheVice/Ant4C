@@ -5,6 +5,10 @@
  *
  */
 
+#if !defined(_WIN32)
+#define _POSIX_SOURCE 1
+#endif
+
 #include "shared_object.h"
 /*#ifndef NDEBUG
 #include "common.h"
