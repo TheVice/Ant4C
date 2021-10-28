@@ -2479,8 +2479,6 @@
       <return>1</return>
     </interpreter_evaluate_code>
     <interpreter_evaluate_code if="${platform::is-windows()}">
-      <!--code>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => ${cygpath::get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection')}</code>
-      <output>get-dos-path('C:\Program Files\Windows Defender Advanced Threat Protection') => C:\PROGRA~1\WIF4A9~1</output-->
       <code>get-dos-path('C:\Program Files\Internet Explorer') => ${cygpath::get-dos-path('C:\Program Files\Internet Explorer')}</code>
       <output>get-dos-path('C:\Program Files\Internet Explorer') => C:\PROGRA~1\INTERN~1</output>
       <return>1</return>
@@ -7019,97 +7017,97 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </property_task>
   </TestProperty>
   <TestStringUnit>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    <string_find_any_symbol_like_or_not_like_that>
       <input></input>
       <that></that>
       <like></like>
       <step></step>
       <output></output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>bf</that>
       <like>1</like>
       <step>1</step>
       <output>bc</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>db</that>
       <like>1</like>
       <step>1</step>
       <output>bc</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abcabc</input>
       <that>bf</that>
       <like>1</like>
       <step>-1</step>
       <output>bc</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abcabc</input>
       <that>db</that>
       <like>1</like>
       <step>-1</step>
       <output>bc</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>abc</that>
       <like>0</like>
       <step>1</step>
       <output></output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>ab</that>
       <like>0</like>
       <step>1</step>
       <output>c</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>abc</that>
       <like>0</like>
       <step>-1</step>
       <output>abc</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>ab</that>
       <like>0</like>
       <step>1</step>
       <output>c</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>abc</that>
       <like>0</like>
       <step>-1</step>
       <output>abc</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input>abc</input>
       <that>ab</that>
       <like>0</like>
       <step>-1</step>
       <output>c</output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input><![CDATA[<tag>]]></input>
       <that>/</that>
       <like>0</like>
       <step>-1</step>
       <output><![CDATA[>]]></output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
-    <find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
+    <string_find_any_symbol_like_or_not_like_that>
       <input><![CDATA[<tag>]]></input>
       <that>/</that>
       <like>0</like>
       <step>1</step>
       <output><![CDATA[<tag>]]></output>
-    </find_any_symbol_like_or_not_like_that_UTF8>
+    </string_find_any_symbol_like_or_not_like_that>
     <string_ends_with input="" value="" return="true" />
     <string_ends_with input="" value="A" return="false" />
     <string_ends_with input=" " value=" " return="true" />
@@ -7164,12 +7162,12 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <input>&#xa188;&#xa320;&#xa071;&#xa0b7;&#x20;&#x28;&#xa34f;&#xa278;&#xa3d3;&#xa0b1;&#xa1ed;&#xa27c;&#xa1e9;&#x29;</input>
       <return>14</return>
     </string_get_length>
-    <TODO><string_index_of_value>
+    <string_index_of_value>
       <input></input>
       <value></value>
       <step>1</step>
       <return>0</return>
-    </string_index_of_value></TODO>
+    </string_index_of_value>
     <string_index_of_value>
       <input>""</input>
       <value>"</value>

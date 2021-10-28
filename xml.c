@@ -89,7 +89,7 @@ uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
 
 			pos += comment_finish_length;
 			static const uint8_t* that = &(characters[LESS_POSITION]);
-			pos = find_any_symbol_like_or_not_like_that_UTF8(
+			pos = string_find_any_symbol_like_or_not_like_that(
 					  pos, finish, that, that + 1, 1, 1);
 
 			if (finish == pos)
@@ -129,7 +129,7 @@ const uint8_t* xml_get_tag_finish_pos(
 			}
 
 			static const uint8_t* that = &(characters[QUOTE_POSITION]);
-			start = find_any_symbol_like_or_not_like_that_UTF8(
+			start = string_find_any_symbol_like_or_not_like_that(
 						start, finish, that, that + 1, 1, 1);
 
 			if (start == finish)
@@ -164,7 +164,7 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 	{
 		static const uint8_t question_mark = '?';
 		static const uint8_t* that = &(characters[LESS_POSITION]);
-		start = find_any_symbol_like_or_not_like_that_UTF8(
+		start = string_find_any_symbol_like_or_not_like_that(
 					start, finish, that, that + 1, 1, 1);
 
 		if (!xml_skip_comment(&start, finish))
@@ -221,7 +221,7 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 			}
 
 			const uint8_t* tag_finish_pos_prev =
-				find_any_symbol_like_or_not_like_that_UTF8(tag_finish_pos, start, &tag_close, &tag_close + 1, 0, -1);
+				string_find_any_symbol_like_or_not_like_that(tag_finish_pos, start, &tag_close, &tag_close + 1, 0, -1);
 
 			if (1 == string_get_length(tag_finish_pos_prev, tag_finish_pos) &&
 				tag_close != *tag_finish_pos_prev)
@@ -290,7 +290,7 @@ uint8_t xml_get_tag_name(const uint8_t* start, const uint8_t** finish)
 		return 0;
 	}
 
-	*finish = find_any_symbol_like_or_not_like_that_UTF8(
+	*finish = string_find_any_symbol_like_or_not_like_that(
 				  start, *finish, tab_space_close_tag, tab_space_close_tag + 6, 1, 1);
 	return start < *finish;
 }

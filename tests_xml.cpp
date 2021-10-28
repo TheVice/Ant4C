@@ -38,7 +38,7 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 		if (!range_is_null_or_empty(&input_in_range))
 		{
 			static const uint8_t less = '<';
-			input_in_range.start = find_any_symbol_like_or_not_like_that_UTF8(
+			input_in_range.start = string_find_any_symbol_like_or_not_like_that(
 									   input_in_range.start, input_in_range.finish, &less, &less + 1, 1, 1);
 			++input_in_range.start;
 		}
@@ -219,7 +219,7 @@ TEST_F(TestXml, xml_get_tag_name)
 		if (!input.empty())
 		{
 			static const uint8_t less = '<';
-			input_in_range.start = find_any_symbol_like_or_not_like_that_UTF8(
+			input_in_range.start = string_find_any_symbol_like_or_not_like_that(
 									   input_in_range.start, input_in_range.finish, &less, &less + 1, 0, 1);
 		}
 

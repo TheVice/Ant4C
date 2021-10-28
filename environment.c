@@ -6,6 +6,8 @@
  */
 
 #if !defined(_WIN32)
+/*#define _POSIX_SOURCE 1
+#define _POSIX_C_SOURCE 200112L*/
 #include "stdc_secure_api.h"
 #endif
 
@@ -210,8 +212,6 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 }
 
 #else
-
-#define _POSIXSOURCE 1
 
 #include "string_unit.h"
 

@@ -5,6 +5,14 @@
  *
  */
 
+#if !defined(_WIN32)
+#if defined(__linux)
+#define _POSIX_SOURCE 1
+#else
+#define _BSD_SOURCE 1
+#endif
+#endif
+
 #include "tests_base_xml.h"
 
 extern "C" {
@@ -28,7 +36,6 @@ extern "C" {
 #include <iostream>
 
 #if !defined(_WIN32)
-#define _POSIXSOURCE 1
 #include <sys/utsname.h>
 #endif
 

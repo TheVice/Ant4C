@@ -13,7 +13,7 @@
 
 struct buffer;
 struct range;
-#define find_any_symbol_like_or_not_like_that_UTF8 string_find_any_symbol_like_or_not_like_that
+
 uint8_t string_contains(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* value_start, const uint8_t* value_finish);

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -79,8 +79,8 @@ TEST_F(TestStringUnit, string_equal)
 		--node_count;
 	}
 }
-#undef find_any_symbol_like_or_not_like_that_UTF8
-TEST_F(TestStringUnit, find_any_symbol_like_or_not_like_that_UTF8)
+
+TEST_F(TestStringUnit, string_find_any_symbol_like_or_not_like_that)
 {
 	for (const auto& node : nodes)
 	{

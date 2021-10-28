@@ -5,6 +5,15 @@
  *
  */
 
+/*#if !defined(_WIN32)
+#if defined(__linux)
+#define _POSIX_SOURCE 1
+#define _DEFAULT_SOURCE 1
+#else
+#define _BSD_SOURCE 1
+#endif
+#endif*/
+
 #include "stdc_secure_api.h"
 
 #include "file_system.h"
@@ -27,7 +36,6 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
-#define _POSIXSOURCE 1
 
 #include <utime.h>
 #include <dirent.h>

@@ -32,85 +32,14 @@ ptrdiff_t string_cmp_(
 		}
 	}
 
-	return NULL == input_2_start ? 0 : (input_1_start < input_2_start ? -1 : 1);
+	return (NULL == input_2_start || input_2_finish == input_2_start) ?
+		   0 : (input_1_start < input_2_start ? -1 : 1);
 }
 
 ptrdiff_t string_index_of_value(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* value_start, const uint8_t* value_finish, int8_t step)
 {
-#if 1
-
-	if (NULL == input_start || NULL == input_finish ||
-		input_finish < input_start ||
-		NULL == value_start || NULL == value_finish ||
-		value_finish < value_start ||
-		(-1 != step && 1 != step))
-	{
-		return -1;
-	}
-
-	const ptrdiff_t input_length = input_finish - input_start;
-	const ptrdiff_t value_length = value_finish - value_start;
-
-	if (input_length < value_length)
-	{
-		return -1;
-	}
-
-	if (0 == input_length && input_length == value_length)
-	{
-		return 0;
-	}
-
-	if (input_length == value_length)
-	{
-		if (input_start == value_start)
-		{
-			return 0;
-		}
-
-		return 0 == memcmp(input_start, value_start, input_length) ? 0 : -1;
-	}
-
-	ptrdiff_t i = 0;
-
-	if (0 < step)
-	{
-		step = 0;
-
-		while (NULL != input_start && value_length <= input_finish - input_start)
-		{
-			if (memcmp(input_start, value_start, value_length))
-			{
-				input_start = string_enumerate(input_start, input_finish, NULL);
-				++i;
-				continue;
-			}
-
-			step = 1;
-			break;
-		}
-
-		return step ? i : -1;
-	}
-
-	ptrdiff_t result = -1;
-
-	while (NULL != input_start && value_length <= input_finish - input_start)
-	{
-		if (0 == memcmp(input_start, value_start, value_length))
-		{
-			result = i;
-		}
-
-		input_start = string_enumerate(input_start, input_finish, NULL);
-		++i;
-	}
-
-	return result;
-#else
-
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		range_in_parts_is_null_or_empty(value_start, value_finish) ||
 		(-1 != step && 1 != step))
@@ -158,7 +87,6 @@ ptrdiff_t string_index_of_value(
 	}
 
 	return index;
-#endif
 }
 
 uint8_t string_contains(const uint8_t* input_start, const uint8_t* input_finish,

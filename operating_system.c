@@ -5,6 +5,10 @@
  *
  */
 
+#if !defined(_WIN32)
+#define _POSIX_SOURCE 1
+#endif
+
 #include "stdc_secure_api.h"
 
 #include "operating_system.h"
@@ -17,7 +21,6 @@
 #include <string.h>
 
 #if !defined(_WIN32)
-#define _POSIXSOURCE 1
 #include <sys/utsname.h>
 #endif
 

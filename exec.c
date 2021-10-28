@@ -5,6 +5,11 @@
  *
  */
 
+#if !defined(_WIN32)
+#define _POSIX_SOURCE 1
+#define _POSIX_C_SOURCE 200112L
+#endif
+
 #include "exec.h"
 #include "argument_parser.h"
 #include "buffer.h"
@@ -30,7 +35,6 @@ static const uint8_t space_symbol = ' ';
 static const wchar_t zero_symbol_w = L'\0';
 
 #else
-#define _POSIXSOURCE 1
 
 #include <errno.h>
 #include <stdlib.h>

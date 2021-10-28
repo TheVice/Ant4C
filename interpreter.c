@@ -368,42 +368,6 @@ uint8_t interpreter_get_value_for_argument(
 		}
 		else
 		{
-#if 1
-			const ptrdiff_t index_1 = string_index_of(
-										  argument_area->start, argument_area->finish, name_space_border,
-										  name_space_border + NAME_SPACE_BORDER_LENGTH);
-			const ptrdiff_t index_2 = -1 == index_1 ? index_1 :
-									  string_last_index_of(
-										  argument_area->start, argument_area->finish, name_space_border,
-										  name_space_border + NAME_SPACE_BORDER_LENGTH);
-
-			if (-1 == index_1 || index_1 != index_2)
-			{
-				const ptrdiff_t size = range_size(argument_area);
-
-				if (!string_un_quote(argument_area))
-				{
-					buffer_release(&value);
-					return 0;
-				}
-
-				if (-1 == index_1)
-				{
-					if (size == range_size(argument_area))
-					{
-						buffer_release(&value);
-						return 0;
-					}
-				}
-
-				if (!buffer_append_data_from_range(&value, argument_area))
-				{
-					buffer_release(&value);
-					return 0;
-				}
-			}
-
-#else
 			const ptrdiff_t size = range_size(argument_area);
 
 			if (!string_un_quote(argument_area))
@@ -412,24 +376,24 @@ uint8_t interpreter_get_value_for_argument(
 				return 0;
 			}
 
-			if (!string_contains(
-					argument_area->start, argument_area->finish,
-					name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH))
+			if (range_size(argument_area) < size)
 			{
-				if (size == range_size(argument_area))
-				{
-					buffer_release(&value);
-					return 0;
-				}
-
 				if (!buffer_append_data_from_range(&value, argument_area))
 				{
 					buffer_release(&value);
 					return 0;
 				}
 			}
-
-#endif
+			else
+			{
+				if (!string_contains(
+						argument_area->start, argument_area->finish,
+						name_space_border, name_space_border + NAME_SPACE_BORDER_LENGTH))
+				{
+					buffer_release(&value);
+					return 0;
+				}
+			}
 		}
 	}
 
