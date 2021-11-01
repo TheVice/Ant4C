@@ -49,13 +49,14 @@ struct target* buffer_target_data(const struct buffer* targets, ptrdiff_t data_p
 	return (struct target*)buffer_data(targets, sizeof(struct target) * data_position);
 }
 
-uint8_t target_exists(const struct buffer* targets,
-					  const uint8_t* name, uint8_t name_length)
+uint8_t target_exists(
+	const struct buffer* targets, const uint8_t* name, uint8_t name_length)
 {
 	return target_get(targets, name, name_length, NULL);
 }
 
-uint8_t target_get_current_target(const void* the_target, const uint8_t** name, uint8_t* name_length)
+uint8_t target_get_current_target(
+	const void* the_target, const uint8_t** name, uint8_t* name_length)
 {
 	if (NULL == the_target ||
 		NULL == name)
@@ -75,8 +76,8 @@ uint8_t target_get_current_target(const void* the_target, const uint8_t** name, 
 	return 1;
 }
 
-uint8_t target_has_executed(const struct buffer* targets,
-							const uint8_t* name, uint8_t name_length)
+uint8_t target_has_executed(
+	const struct buffer* targets, const uint8_t* name, uint8_t name_length)
 {
 	void* the_target = NULL;
 
@@ -88,11 +89,15 @@ uint8_t target_has_executed(const struct buffer* targets,
 	return 0 < ((struct target*)the_target)->has_executed;
 }
 
-uint8_t target_print_description(void* the_project, struct target* the_target,
-								 struct buffer* target_description,
-								 const uint8_t* attributes_finish, const uint8_t* element_finish,
-								 const struct buffer* sub_nodes_names, uint8_t verbose)
+uint8_t target_print_description(
+	void* the_project, struct target* the_target,
+	struct buffer* target_description,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	const struct range* sub_nodes_names, uint8_t verbose)
 {
+	static const uint8_t* n = (const uint8_t*)"\n";
+	static const uint8_t* t = (const uint8_t*)"\t";
+
 	if (NULL == the_target ||
 		NULL == target_description)
 	{
@@ -106,7 +111,7 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 
 	if (buffer_size(target_description))
 	{
-		if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
+		if (!echo(0, Default, NULL, Info, t, 1, 0, verbose))
 		{
 			return 0;
 		}
@@ -117,21 +122,20 @@ uint8_t target_print_description(void* the_project, struct target* the_target,
 
 	if (range_in_parts_is_null_or_empty(attributes_finish, element_finish))
 	{
-		return echo(0, Default, NULL, Info, (const uint8_t*)"\n", 1, 0, verbose);
+		return echo(0, Default, NULL, Info, n, 1, 0, verbose);
 	}
 
-	if (!range_from_string((const uint8_t*)"description\0", 12, 1, target_description) ||
-		!buffer_resize(&(the_target->tasks), 0))
+	static const uint8_t* description_str = (const uint8_t*)"description\0";
+	struct range sub_node_name;
+	sub_node_name.start = description_str;
+	sub_node_name.finish = sub_node_name.start + 12;
+
+	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, &sub_node_name, &(the_target->tasks)))
 	{
-		return 0;
+		return echo(0, Default, NULL, Info, n, 1, 0, verbose);
 	}
 
-	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, target_description, &(the_target->tasks)))
-	{
-		return echo(0, Default, NULL, Info, (const uint8_t*)"\n", 1, 0, verbose);
-	}
-
-	if (!echo(0, Default, NULL, Info, (const uint8_t*)"\t", 1, 0, verbose))
+	if (!echo(0, Default, NULL, Info, t, 1, 0, verbose))
 	{
 		return 0;
 	}
@@ -164,14 +168,15 @@ uint8_t target_set_name(struct target* the_target, const uint8_t* name, uint8_t 
 	return 1;
 }
 
-uint8_t target_new(void* the_project,
-				   const uint8_t* name, uint8_t name_length,
-				   const uint8_t* depends, uint16_t depends_length,
-				   struct buffer* description,
-				   const uint8_t* attributes_start, const uint8_t* attributes_finish,
-				   const uint8_t* element_finish,
-				   struct buffer* targets,
-				   const struct buffer* sub_nodes_names, uint8_t verbose)
+uint8_t target_new(
+	void* the_project,
+	const uint8_t* name, uint8_t name_length,
+	const uint8_t* depends, uint16_t depends_length,
+	struct buffer* description,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	const uint8_t* element_finish,
+	struct buffer* targets,
+	const struct range* sub_nodes_names, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -287,8 +292,10 @@ uint8_t target_new(void* the_project,
 	return 1;
 }
 
-uint8_t target_get(const struct buffer* targets, const uint8_t* name,
-				   uint8_t name_length, void** the_target)
+uint8_t target_get(
+	const struct buffer* targets,
+	const uint8_t* name, uint8_t name_length,
+	void** the_target)
 {
 	if (NULL == targets ||  NULL == name || 0 == name_length)
 	{
@@ -382,10 +389,11 @@ uint8_t target_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t target_evaluate_task(void* the_project, struct buffer* task_arguments, uint8_t target_help,
-							 const uint8_t* attributes_start, const uint8_t* attributes_finish,
-							 const uint8_t* element_finish,
-							 const struct buffer* sub_nodes_names, uint8_t verbose)
+uint8_t target_evaluate_task(
+	void* the_project, struct buffer* task_arguments, uint8_t target_help,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	const uint8_t* element_finish,
+	const struct range* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == task_arguments)
 	{
@@ -433,8 +441,9 @@ uint8_t target_is_in_stack(const struct buffer* stack, const void* the_target)
 	return 0;
 }
 
-uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stack,
-						uint8_t cascade, uint8_t verbose)
+uint8_t target_evaluate(
+	void* the_project, void* the_target, struct buffer* stack,
+	uint8_t cascade, uint8_t verbose)
 {
 	listener_target_started(NULL, 0, the_project, the_target, verbose);
 
@@ -530,7 +539,8 @@ uint8_t target_evaluate(void* the_project, void* the_target, struct buffer* stac
 	return skip;
 }
 
-uint8_t target_evaluate_by_name(void* the_project, const struct range* target_name, uint8_t verbose)
+uint8_t target_evaluate_by_name(
+	void* the_project, const struct range* target_name, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		range_is_null_or_empty(target_name))
@@ -585,15 +595,17 @@ static const uint8_t* target_function_str[] =
 	(const uint8_t*)"has-executed"
 };
 
-uint8_t target_get_function(const uint8_t* name_start, const uint8_t* name_finish)
+uint8_t target_get_function(
+	const uint8_t* name_start, const uint8_t* name_finish)
 {
-	return common_string_to_enum(name_start, name_finish, target_function_str, UNKNOWN_TARGET_FUNCTION);
+	return common_string_to_enum(
+			   name_start, name_finish, target_function_str, UNKNOWN_TARGET_FUNCTION);
 }
 
-uint8_t target_exec_function(const void* the_project,
-							 const void* the_target,
-							 uint8_t function, const struct buffer* arguments,
-							 uint8_t arguments_count, struct buffer* output)
+uint8_t target_exec_function(
+	const void* the_project, const void* the_target,
+	uint8_t function, const struct buffer* arguments,
+	uint8_t arguments_count, struct buffer* output)
 {
 	if (UNKNOWN_TARGET_FUNCTION <= function ||
 		NULL == arguments ||
@@ -656,7 +668,8 @@ uint8_t call_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t call_evaluate_task(void* the_project, struct buffer* task_arguments, uint8_t verbose)
+uint8_t call_evaluate_task(
+	void* the_project, struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == task_arguments)

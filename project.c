@@ -51,17 +51,18 @@ static const uint8_t project_attributes_count = 3;
 
 #define CONTENT_POSITION		3
 #define ELEMENTS_POSITION		4
-#define SUB_NODES_POSITION		5
-#define LISTENER_PROJECT_NAME	6
-#define LISTENER_TASK_NAME		7
 
-#define MODULES_POSITION		8
+#define LISTENER_PROJECT_NAME	5
+#define LISTENER_TASK_NAME		6
+
+#define MODULES_POSITION		7
 
 #define COUNT_OF_POSITIONS	(MODULES_POSITION + 1)
 
-uint8_t project_property_exists(const void* the_project,
-								const uint8_t* property_name, uint8_t property_name_length,
-								void** the_property, uint8_t verbose)
+uint8_t project_property_exists(
+	const void* the_project,
+	const uint8_t* property_name, uint8_t property_name_length,
+	void** the_property, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == property_name || 0 == property_name_length)
 	{
@@ -87,11 +88,12 @@ uint8_t project_private_property_exists(const void* the_project,
 	return property_exists(private_properties, property_name, property_name_length, the_property);
 }
 
-uint8_t project_property_set_value(void* the_project,
-								   const uint8_t* property_name, uint8_t property_name_length,
-								   const uint8_t* property_value, ptrdiff_t property_value_length,
-								   uint8_t dynamic, uint8_t over_write,
-								   uint8_t read_only, uint8_t verbose)
+uint8_t project_property_set_value(
+	void* the_project,
+	const uint8_t* property_name, uint8_t property_name_length,
+	const uint8_t* property_value, ptrdiff_t property_value_length,
+	uint8_t dynamic, uint8_t over_write,
+	uint8_t read_only, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == property_name || 0 == property_name_length)
 	{
@@ -106,8 +108,9 @@ uint8_t project_property_set_value(void* the_project,
 }
 
 uint8_t project_property_get_by_name(
-	const void* the_project, const uint8_t* property_name, uint8_t property_name_length, struct buffer* output,
-	uint8_t verbose)
+	const void* the_project,
+	const uint8_t* property_name, uint8_t property_name_length,
+	struct buffer* output, uint8_t verbose)
 {
 	if (NULL == output)
 	{
@@ -124,12 +127,13 @@ uint8_t project_property_get_by_name(
 	return property_get_by_pointer(the_property, output);
 }
 
-uint8_t project_target_new(void* the_project, const uint8_t* target_name, uint8_t target_name_length,
-						   const uint8_t* target_depends, uint16_t target_depends_length,
-						   struct buffer* description,
-						   const uint8_t* attributes_start, const uint8_t* attributes_finish,
-						   const uint8_t* element_finish,
-						   const struct buffer* sub_nodes_names, uint8_t verbose)
+uint8_t project_target_new(
+	void* the_project, const uint8_t* target_name, uint8_t target_name_length,
+	const uint8_t* target_depends, uint16_t target_depends_length,
+	struct buffer* description,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	const uint8_t* element_finish,
+	const struct range* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == target_name ||
@@ -153,9 +157,9 @@ uint8_t project_target_new(void* the_project, const uint8_t* target_name, uint8_
 					  element_finish, targets, sub_nodes_names, verbose);
 }
 
-uint8_t project_target_get(const void* the_project, const uint8_t* name, uint8_t name_length,
-						   void** the_target,
-						   uint8_t verbose)
+uint8_t project_target_get(
+	const void* the_project, const uint8_t* name, uint8_t name_length,
+	void** the_target, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == name || 0 == name_length || NULL == the_target)
 	{
@@ -167,7 +171,8 @@ uint8_t project_target_get(const void* the_project, const uint8_t* name, uint8_t
 	return target_get(targets, name, name_length, the_target);
 }
 
-uint8_t project_target_exists(const void* the_project, const uint8_t* name, uint8_t name_length)
+uint8_t project_target_exists(
+	const void* the_project, const uint8_t* name, uint8_t name_length)
 {
 	if (NULL == the_project || NULL == name || 0 == name_length)
 	{
@@ -178,7 +183,8 @@ uint8_t project_target_exists(const void* the_project, const uint8_t* name, uint
 	return target_exists(targets, name, name_length);
 }
 
-uint8_t project_target_has_executed(const void* the_project, const uint8_t* name, uint8_t name_length)
+uint8_t project_target_has_executed(
+	const void* the_project, const uint8_t* name, uint8_t name_length)
 {
 	if (NULL == the_project || NULL == name || 0 == name_length)
 	{
@@ -189,7 +195,8 @@ uint8_t project_target_has_executed(const void* the_project, const uint8_t* name
 	return target_has_executed(targets, name, name_length);
 }
 
-uint8_t project_add_module(void* the_project, const void* the_module, uint8_t length)
+uint8_t project_add_module(
+	void* the_project, const void* the_module, uint8_t length)
 {
 	if (NULL == the_project || NULL == the_module || 0 == length)
 	{
@@ -201,8 +208,9 @@ uint8_t project_add_module(void* the_project, const void* the_module, uint8_t le
 	return buffer_append(modules, the_module, length);
 }
 
-const uint8_t* project_get_task_from_module(const void* the_project, const struct range* task_name,
-		void** the_module_of_task, ptrdiff_t* task_id)
+const uint8_t* project_get_task_from_module(
+	const void* the_project, const struct range* task_name,
+	void** the_module_of_task, ptrdiff_t* task_id)
 {
 	if (NULL == the_project || range_is_null_or_empty(task_name))
 	{
@@ -213,9 +221,10 @@ const uint8_t* project_get_task_from_module(const void* the_project, const struc
 	return load_tasks_get_task(modules, task_name, the_module_of_task, task_id);
 }
 
-const uint8_t* project_get_function_from_module(const void* the_project,
-		const struct range* name_space, const struct range* function_name,
-		void** the_module_of_task, const uint8_t** name_space_at_module)
+const uint8_t* project_get_function_from_module(
+	const void* the_project,
+	const struct range* name_space, const struct range* function_name,
+	void** the_module_of_task, const uint8_t** name_space_at_module)
 {
 	if (NULL == the_project || range_is_null_or_empty(name_space) || range_is_null_or_empty(function_name))
 	{
@@ -226,7 +235,8 @@ const uint8_t* project_get_function_from_module(const void* the_project,
 	return load_tasks_get_function(modules, name_space, function_name, the_module_of_task, name_space_at_module);
 }
 
-uint8_t project_get_base_directory(const void* the_project, const void** the_property, uint8_t verbose)
+uint8_t project_get_base_directory(
+	const void* the_project, const void** the_property, uint8_t verbose)
 {
 	if (NULL == the_property)
 	{
@@ -241,7 +251,8 @@ uint8_t project_get_base_directory(const void* the_project, const void** the_pro
 	return returned;
 }
 
-uint8_t project_get_buildfile_path(const void* the_project, const void** the_property, uint8_t verbose)
+uint8_t project_get_buildfile_path(
+	const void* the_project, const void** the_property, uint8_t verbose)
 {
 	if (NULL == the_property)
 	{
@@ -256,7 +267,8 @@ uint8_t project_get_buildfile_path(const void* the_project, const void** the_pro
 	return returned;
 }
 
-uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build_file_uri, uint8_t verbose)
+uint8_t project_get_buildfile_uri(
+	const void* the_property, struct buffer* build_file_uri, uint8_t verbose)
 {
 	if (NULL == the_property || NULL == build_file_uri)
 	{
@@ -299,7 +311,8 @@ uint8_t project_get_buildfile_uri(const void* the_property, struct buffer* build
 	return 1;
 }
 
-uint8_t project_get_default_target(const void* the_project, const void** the_property, uint8_t verbose)
+uint8_t project_get_default_target(
+	const void* the_project, const void** the_property, uint8_t verbose)
 {
 	if (NULL == the_property)
 	{
@@ -314,7 +327,8 @@ uint8_t project_get_default_target(const void* the_project, const void** the_pro
 	return returned;
 }
 
-uint8_t project_get_name(const void* the_project, const void** the_property, uint8_t verbose)
+uint8_t project_get_name(
+	const void* the_project, const void** the_property, uint8_t verbose)
 {
 	if (NULL == the_property)
 	{
@@ -329,8 +343,9 @@ uint8_t project_get_name(const void* the_project, const void** the_property, uin
 	return returned;
 }
 
-uint8_t project_get_current_directory(const void* the_project, const void* the_target,
-									  struct buffer* output, ptrdiff_t size, uint8_t verbose)
+uint8_t project_get_current_directory(
+	const void* the_project, const void* the_target,
+	struct buffer* output, ptrdiff_t size, uint8_t verbose)
 {
 	if (!buffer_resize(output, size))
 	{
@@ -378,34 +393,28 @@ uint8_t project_load(void* the_project, uint8_t project_help, uint8_t verbose)
 		return 0;
 	}
 
-	struct buffer* sub_nodes_names = buffer_buffer_data(the_project, SUB_NODES_POSITION);
-
-	if (project_help &&
-		!buffer_resize(sub_nodes_names, 0))
-	{
-		return 0;
-	}
-
-	if (project_help &&
-		!range_from_string((const uint8_t*)"project\0target\0description\0", 27, 3, sub_nodes_names))
-	{
-		return 0;
-	}
-
+	static const uint8_t* tags = (const uint8_t*)"project\0target\0description\0";
+	struct range sub_nodes_names;
+	sub_nodes_names.start = tags;
+	sub_nodes_names.finish = sub_nodes_names.start + 27;
 	struct buffer* elements = buffer_buffer_data(the_project, ELEMENTS_POSITION);
 
 	if (!buffer_resize(elements, 0) ||
 		1 != xml_get_sub_nodes_elements(
-			content_in_the_range.start, content_in_the_range.finish, sub_nodes_names, elements))
+			content_in_the_range.start, content_in_the_range.finish,
+			project_help ? &sub_nodes_names : NULL, elements))
 	{
 		return 0;
 	}
 
-	return interpreter_evaluate_tasks(the_project, NULL, elements, sub_nodes_names, project_help, verbose);
+	return interpreter_evaluate_tasks(
+			   the_project, NULL, elements,
+			   project_help ? &sub_nodes_names : NULL, project_help, verbose);
 }
 
-uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* content_finish,
-								  void* the_project, uint8_t project_help, uint8_t verbose)
+uint8_t project_load_from_content(
+	const uint8_t* content_start, const uint8_t* content_finish,
+	void* the_project, uint8_t project_help, uint8_t verbose)
 {
 	if (range_in_parts_is_null_or_empty(content_start, content_finish) ||
 		NULL == the_project)
@@ -424,10 +433,11 @@ uint8_t project_load_from_content(const uint8_t* content_start, const uint8_t* c
 	return project_load(the_project, project_help, verbose);
 }
 
-uint8_t project_load_from_build_file(const struct range* path_to_build_file,
-									 const struct range* current_directory,
-									 uint16_t encoding, void* the_project,
-									 uint8_t project_help, uint8_t verbose)
+uint8_t project_load_from_build_file(
+	const struct range* path_to_build_file,
+	const struct range* current_directory,
+	uint16_t encoding, void* the_project,
+	uint8_t project_help, uint8_t verbose)
 {
 	if (range_is_null_or_empty(path_to_build_file) ||
 		range_is_null_or_empty(current_directory) ||
@@ -643,7 +653,8 @@ void project_unload(void* the_project)
 	buffer_release(the_project);
 }
 
-ptrdiff_t project_get_source_offset(const void* the_project, const uint8_t* cursor)
+ptrdiff_t project_get_source_offset(
+	const void* the_project, const uint8_t* cursor)
 {
 	if (NULL == the_project ||
 		NULL == cursor)
@@ -702,16 +713,18 @@ uint8_t project_evaluate_target_by_name_from_property(
 	return target_evaluate_by_name(the_project, &target_name, verbose);
 }
 
-uint8_t project_on_success(void* the_project, const void* the_target, struct buffer* argument_value,
-						   uint8_t verbose)
+uint8_t project_on_success(
+	void* the_project, const void* the_target, struct buffer* argument_value,
+	uint8_t verbose)
 {
 	static const uint8_t* property_name = (const uint8_t*)"project.onsuccess";
 	return project_evaluate_target_by_name_from_property(the_project, the_target, property_name, 17,
 			argument_value, verbose);
 }
 
-uint8_t project_on_failure(void* the_project, const void* the_target, struct buffer* argument_value,
-						   uint8_t verbose)
+uint8_t project_on_failure(
+	void* the_project, const void* the_target, struct buffer* argument_value,
+	uint8_t verbose)
 {
 	static const uint8_t* property_name = (const uint8_t*)"project.onfailure";
 	return project_evaluate_target_by_name_from_property(the_project, the_target, property_name, 17,
@@ -790,7 +803,8 @@ uint8_t project_get_build_files_from_directory(
 	return 1;
 }
 
-uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbose)
+uint8_t project_set_listener_project_name(
+	const void* the_project, uint8_t verbose)
 {
 	if (NULL == the_project)
 	{
@@ -832,7 +846,8 @@ uint8_t project_set_listener_project_name(const void* the_project, uint8_t verbo
 }
 
 uint8_t project_set_listener_task(
-	const void* the_project, const struct range* task_name, ptrdiff_t task_id, const uint8_t* the_module)
+	const void* the_project, const struct range* task_name,
+	ptrdiff_t task_id, const uint8_t* the_module)
 {
 	if (NULL == the_project ||
 		range_is_null_or_empty(task_name))
@@ -947,10 +962,11 @@ uint8_t project_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t project_evaluate_task(void* the_project,
-							  const uint8_t* attributes_finish, const uint8_t* element_finish,
-							  const struct buffer* sub_nodes_names, uint8_t project_help,
-							  const struct buffer* task_arguments, uint8_t verbose)
+uint8_t project_evaluate_task(
+	void* the_project,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	const struct range* sub_nodes_names, uint8_t project_help,
+	const struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == the_project || NULL == task_arguments)
 	{
@@ -1066,14 +1082,16 @@ enum project_function
 	UNKNOWN_PROJECT_FUNCTION
 };
 
-uint8_t project_get_function(const uint8_t* name_start, const uint8_t* name_finish)
+uint8_t project_get_function(
+	const uint8_t* name_start, const uint8_t* name_finish)
 {
 	return common_string_to_enum(name_start, name_finish, project_function_str, UNKNOWN_PROJECT_FUNCTION);
 }
 
-uint8_t project_exec_function(const void* the_project,
-							  uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							  const void** the_property, struct buffer* output, uint8_t verbose)
+uint8_t project_exec_function(
+	const void* the_project,
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	const void** the_property, struct buffer* output, uint8_t verbose)
 {
 	if (UNKNOWN_PROJECT_FUNCTION <= function ||
 		NULL == arguments ||
@@ -1113,8 +1131,9 @@ uint8_t project_exec_function(const void* the_project,
 	return 0;
 }
 
-uint8_t program_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							  struct buffer* output)
+uint8_t program_exec_function(
+	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
+	struct buffer* output)
 {
 	if (UNKNOWN_PROJECT_FUNCTION <= function ||
 		NULL == arguments ||
@@ -1229,16 +1248,6 @@ uint8_t program_get_properties(
 		return 1;
 	}
 
-	struct buffer property_range;
-
-	SET_NULL_TO_BUFFER(property_range);
-
-	if (is_root && !range_from_string((const uint8_t*)"property\0", 9, 1, &property_range))
-	{
-		buffer_release(&property_range);
-		return 0;
-	}
-
 	const uint8_t** task_attributes = NULL;
 	const uint8_t* task_attributes_lengths = NULL;
 	/**/
@@ -1290,6 +1299,11 @@ uint8_t program_get_properties(
 
 		if (is_root)
 		{
+			static const uint8_t* tag = (const uint8_t*)"property\0";
+			struct range property_range;
+			property_range.start = tag;
+			property_range.finish = property_range.start + 9;
+
 			if (xml_get_sub_nodes_elements(element->start, element->finish, &property_range, &attributes))
 			{
 				if (!program_get_properties(the_project, the_target, &attributes, properties, 0, verbose))
@@ -1336,15 +1350,15 @@ uint8_t program_get_properties(
 		}
 	}
 
-	buffer_release(&property_range);
 	buffer_release_with_inner_buffers(&attributes);
 	/**/
 	return returned;
 }
 
-uint8_t program_evaluate_task(const void* the_project, const void* the_target,
-							  struct buffer* task_arguments, const uint8_t* attributes_finish,
-							  const uint8_t* element_finish, uint8_t verbose)
+uint8_t program_evaluate_task(
+	const void* the_project, const void* the_target,
+	struct buffer* task_arguments, const uint8_t* attributes_finish,
+	const uint8_t* element_finish, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == task_arguments)
@@ -1370,11 +1384,6 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 		{
 			return 0;
 		}
-	}
-
-	if (!buffer_resize(encoding_in_a_buffer, 0))
-	{
-		return 0;
 	}
 
 	uint8_t inherit_properties = 1;
@@ -1407,18 +1416,16 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 		}
 	}
 
+	static const uint8_t* tag = (const uint8_t*)"properties\0";
+	struct range sub_node_name;
+	sub_node_name.start = tag;
+	sub_node_name.finish = sub_node_name.start + 11;
 	struct buffer properties;
-
 	SET_NULL_TO_BUFFER(properties);
 
-	if (!range_from_string((const uint8_t*)"properties\0", 11, 1, encoding_in_a_buffer))
-	{
-		property_release(&properties);
-		return 0;
-	}
-
-	if (xml_get_sub_nodes_elements(attributes_finish, element_finish, encoding_in_a_buffer,
-								   inherit_all_in_a_buffer))
+	if (xml_get_sub_nodes_elements(
+			attributes_finish, element_finish,
+			&sub_node_name, inherit_all_in_a_buffer))
 	{
 		if (!program_get_properties(the_project, the_target, inherit_all_in_a_buffer, &properties, 1, verbose))
 		{
@@ -1512,7 +1519,8 @@ uint8_t program_evaluate_task(const void* the_project, const void* the_target,
 }
 
 uint8_t program_set_log_file(
-	const struct range* path_to_log_file, const struct range* current_directory,
+	const struct range* path_to_log_file,
+	const struct range* current_directory,
 	struct buffer* tmp, void** file_stream)
 {
 	if (range_is_null_or_empty(path_to_log_file))
@@ -1547,7 +1555,8 @@ uint8_t program_set_log_file(
 }
 
 uint8_t program_set_listener(
-	const struct range* path_to_listener, const struct range* current_directory,
+	const struct range* path_to_listener,
+	const struct range* current_directory,
 	struct buffer* tmp, void** listener_object)
 {
 	if (range_is_null_or_empty(path_to_listener))

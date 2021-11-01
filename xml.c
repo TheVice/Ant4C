@@ -42,20 +42,17 @@ static const uint8_t cdata_finish_length = 3;
 #define AMPERSAND_POSITION	2
 #define QUOTE_POSITION		4
 
-uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
+const uint8_t* xml_skip_comment(const uint8_t* start, const uint8_t* finish)
 {
 	static const uint8_t* comment_start = (const uint8_t*)"<!--";
 	static const uint8_t comment_start_length = 4;
 	/**/
 	static const uint8_t* comment_finish = (const uint8_t*)"-->";
 	static const uint8_t comment_finish_length = 3;
-	/**/
-	const uint8_t* pos;
 
-	if (NULL == start || NULL == finish ||
-		NULL == (pos = *start) || finish <= pos)
+	if (range_in_parts_is_null_or_empty(start, finish))
 	{
-		return 0;
+		return NULL;
 	}
 
 	for (uint8_t i = 0; i < 2; ++i)
@@ -65,44 +62,45 @@ uint8_t xml_skip_comment(const uint8_t** start, const uint8_t* finish)
 		/**/
 		const uint8_t* tag_finish = i ? cdata_finish : comment_finish;
 
-		if (string_starts_with(pos, finish, tag_start, tag_start + tag_start_length))
+		if (!string_starts_with(start, finish, tag_start, tag_start + tag_start_length))
 		{
-			pos += tag_start_length;
-			uint8_t found = 0;
-
-			while (NULL != pos && comment_finish_length <= finish - pos)
-			{
-				if (memcmp(pos, tag_finish, comment_finish_length))
-				{
-					pos = string_enumerate(pos, finish, NULL);
-					continue;
-				}
-
-				found = 1;
-				break;
-			}
-
-			if (!found)
-			{
-				return 0;
-			}
-
-			pos += comment_finish_length;
-			static const uint8_t* that = &(characters[LESS_POSITION]);
-			pos = string_find_any_symbol_like_or_not_like_that(
-					  pos, finish, that, that + 1, 1, 1);
-
-			if (finish == pos)
-			{
-				return 0;
-			}
-
-			*start = pos;
-			return xml_skip_comment(start, finish);
+			continue;
 		}
+
+		start += tag_start_length;
+		uint8_t found = 0;
+
+		while (NULL != start && comment_finish_length <= finish - start)
+		{
+			if (memcmp(start, tag_finish, comment_finish_length))
+			{
+				start = string_enumerate(start, finish, NULL);
+				continue;
+			}
+
+			found = 1;
+			break;
+		}
+
+		if (!found)
+		{
+			return NULL;
+		}
+
+		start += comment_finish_length;
+		static const uint8_t* that = &characters[LESS_POSITION];
+		start = string_find_any_symbol_like_or_not_like_that(
+					start, finish, that, that + 1, 1, 1);
+
+		if (finish == start)
+		{
+			return NULL;
+		}
+
+		return xml_skip_comment(start, finish);
 	}
 
-	return finish != pos;
+	return start;
 }
 
 const uint8_t* xml_get_tag_finish_pos(
@@ -128,7 +126,7 @@ const uint8_t* xml_get_tag_finish_pos(
 				return NULL;
 			}
 
-			static const uint8_t* that = &(characters[QUOTE_POSITION]);
+			static const uint8_t* that = &characters[QUOTE_POSITION];
 			start = string_find_any_symbol_like_or_not_like_that(
 						start, finish, that, that + 1, 1, 1);
 
@@ -148,8 +146,38 @@ const uint8_t* xml_get_tag_finish_pos(
 	return start;
 }
 
-uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
-									const struct buffer* sub_nodes_names, struct buffer* elements)
+uint16_t xml_get_sub_nodes_elements_(const uint8_t* start, const uint8_t* finish,
+									 const struct buffer* sub_nodes_names, struct buffer* elements)
+{
+	struct buffer r;
+	SET_NULL_TO_BUFFER(r);
+	const struct range* sub_node_name = NULL;
+	ptrdiff_t i = 0;
+
+	while (NULL != (sub_node_name = buffer_range_data(sub_nodes_names, i++)))
+	{
+		if (!buffer_append(&r, sub_node_name->start, range_size(sub_node_name)) ||
+			!buffer_push_back(&r, 0))
+		{
+			buffer_release(&r);
+			return 0;
+		}
+	}
+
+	struct range R;
+
+	BUFFER_TO_RANGE(R, &r);
+
+	i = xml_get_sub_nodes_elements(start, finish, &R, elements);
+
+	buffer_release(&r);
+
+	return (uint16_t)i;
+}
+
+uint16_t xml_get_sub_nodes_elements(
+	const uint8_t* start, const uint8_t* finish,
+	const struct range* sub_nodes_names, struct buffer* elements)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == elements)
@@ -163,11 +191,11 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 	while (NULL != start && finish != start)
 	{
 		static const uint8_t question_mark = '?';
-		static const uint8_t* that = &(characters[LESS_POSITION]);
+		static const uint8_t* that = &characters[LESS_POSITION];
 		start = string_find_any_symbol_like_or_not_like_that(
 					start, finish, that, that + 1, 1, 1);
 
-		if (!xml_skip_comment(&start, finish))
+		if (NULL == (start = xml_skip_comment(start, finish)))
 		{
 			return 0 == depth ? count : 0;
 		}
@@ -221,7 +249,8 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 			}
 
 			const uint8_t* tag_finish_pos_prev =
-				string_find_any_symbol_like_or_not_like_that(tag_finish_pos, start, &tag_close, &tag_close + 1, 0, -1);
+				string_find_any_symbol_like_or_not_like_that(
+					tag_finish_pos, start, &tag_close, &tag_close + 1, 0, -1);
 
 			if (1 == string_get_length(tag_finish_pos_prev, tag_finish_pos) &&
 				tag_close != *tag_finish_pos_prev)
@@ -242,35 +271,42 @@ uint16_t xml_get_sub_nodes_elements(const uint8_t* start, const uint8_t* finish,
 			struct range* element = buffer_range_data(elements, count - 1);
 			element->finish = tag_finish_pos;
 
-			if (0 != buffer_size(sub_nodes_names))
+			if (!range_is_null_or_empty(sub_nodes_names))
 			{
-				ptrdiff_t i = 0;
-				const struct range* sub_node_name = NULL;
+				const uint8_t* tag_name_finish = element->finish;
 
-				while (NULL != (sub_node_name = buffer_range_data(sub_nodes_names, i++)))
+				if (!xml_get_tag_name(element->start, &tag_name_finish))
 				{
-					const uint8_t* tag_name_finish = element->finish;
-
-					if (!xml_get_tag_name(element->start, &tag_name_finish))
-					{
-						return 0;
-					}
-
-					if (string_equal(element->start, tag_name_finish, sub_node_name->start, sub_node_name->finish))
-					{
-						i = -1;
-						break;
-					}
+					return 0;
 				}
 
-				if (0 < i)
+				uint8_t found = 0;
+				const uint8_t* sub_node_name_start = sub_nodes_names->start;
+				const uint8_t* sub_node_name_finish = sub_nodes_names->start;
+				static const uint8_t zero = '\0';
+
+				while (sub_nodes_names->finish != (sub_node_name_finish = string_find_any_symbol_like_or_not_like_that(
+													   sub_node_name_finish, sub_nodes_names->finish, &zero, &zero + 1, 1, 1)))
+				{
+					if (string_equal(element->start, tag_name_finish, sub_node_name_start, sub_node_name_finish))
+					{
+						found = 1;
+						break;
+					}
+
+					sub_node_name_finish = string_find_any_symbol_like_or_not_like_that(
+											   sub_node_name_finish, sub_nodes_names->finish, &zero, &zero + 1, 0, 1);
+					sub_node_name_start = sub_node_name_finish;
+				}
+
+				if (!found)
 				{
 					if (!buffer_resize(elements, buffer_size(elements) - sizeof(struct range)))
 					{
 						return 0;
 					}
 
-					count -= 1;
+					--count;
 				}
 			}
 		}

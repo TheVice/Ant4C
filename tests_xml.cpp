@@ -158,7 +158,7 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 				buffer_free(&sub_nodes_names) <<
 				buffer_free_with_inner_buffers(&expected_elements);
 		//
-		const auto returned = xml_get_sub_nodes_elements(
+		const auto returned = xml_get_sub_nodes_elements_(
 								  input_in_range.start, input_in_range.finish, &sub_nodes_names, &elements);
 		//
 		ASSERT_EQ(expected_return, returned) <<

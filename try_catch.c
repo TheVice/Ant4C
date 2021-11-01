@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -20,9 +20,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#define SUB_NODES_NAMES_POSITION	0
-#define ELEMENTS_POSITION			1
-#define SUB_ELEMENTS_POSITION		2
+#define ELEMENTS_POSITION			0
+#define SUB_ELEMENTS_POSITION		1
+
+#define COUNT						(SUB_ELEMENTS_POSITION + 1)
 
 void* try_catch_create_error_output_stream(struct buffer* tmp)
 {
@@ -115,12 +116,14 @@ uint8_t try_catch_evaluate_task(
 	/**/
 	static const uint8_t count = 3;
 
-	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, count, NULL, NULL, NULL, task_arguments))
+	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, COUNT, NULL, NULL, NULL, task_arguments))
 	{
 		return 0;
 	}
 
-	struct buffer* sub_nodes_names = buffer_buffer_data(task_arguments, SUB_NODES_NAMES_POSITION);
+	struct buffer tmp;
+
+	SET_NULL_TO_BUFFER(tmp);
 
 	struct buffer* elements = buffer_buffer_data(task_arguments, ELEMENTS_POSITION);
 
@@ -135,15 +138,19 @@ uint8_t try_catch_evaluate_task(
 
 	for (uint8_t i = 0; i < count;)
 	{
-		if (!buffer_resize(sub_nodes_names, 0) ||
-			!range_from_string(tags[i], tags_lengths[i], 1, sub_nodes_names) ||
-			!buffer_resize(elements, 0))
+		if (!buffer_resize(elements, 0))
 		{
 			memset(result, 0, sizeof(result));
 			break;
 		}
 
-		if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, sub_nodes_names, elements))
+		struct range sub_nodes_name;
+
+		sub_nodes_name.start = tags[i];
+
+		sub_nodes_name.finish = sub_nodes_name.start + tags_lengths[i];
+
+		if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, &sub_nodes_name, elements))
 		{
 			if (!i)
 			{
@@ -164,31 +171,36 @@ uint8_t try_catch_evaluate_task(
 		}
 
 		ptrdiff_t index = 0;
-		struct range* ptr = NULL;
+		struct range* element;
 		void* the_first_property = NULL;
 
-		while (NULL != (ptr = buffer_range_data(elements, index++)))
+		while (NULL != (element = buffer_range_data(elements, index++)))
 		{
-			if (xml_get_sub_nodes_elements(ptr->start, ptr->finish, NULL, sub_elements) && 1 == i)
+			if (xml_get_sub_nodes_elements(element->start, element->finish, NULL, sub_elements) && 1 == i)
 			{
-				if (!buffer_resize(sub_nodes_names, 0))
+				if (!buffer_resize(&tmp, 0))
 				{
 					i = count;
 					break;
 				}
 
-				if (xml_get_attribute_value(ptr->start, ptr->finish,
-											(const uint8_t*)"property", 8, sub_nodes_names))
+				static const uint8_t* property_str = (const uint8_t*)"property";
+				static const uint8_t property_str_length = 8;
+
+				if (xml_get_attribute_value(element->start, element->finish,
+											property_str, property_str_length, &tmp))
 				{
 					void* the_property = NULL;
+					const uint8_t* property_name = buffer_data(&tmp, 0);
+					const uint8_t property_name_length = (uint8_t)buffer_size(&tmp);
 
 					if (!project_property_set_value(
 							the_project,
-							buffer_data(sub_nodes_names, 0), (uint8_t)buffer_size(sub_nodes_names),
+							property_name, property_name_length,
 							(const uint8_t*)&index, 0, 0, 1, 0, verbose) ||
 						!project_property_exists(
 							the_project,
-							buffer_data(sub_nodes_names, 0), (uint8_t)buffer_size(sub_nodes_names),
+							property_name, property_name_length,
 							&the_property, verbose))
 					{
 						i = count;
@@ -208,9 +220,9 @@ uint8_t try_catch_evaluate_task(
 					}
 					else
 					{
-						if (!buffer_resize(sub_nodes_names, 0) ||
+						if (!buffer_resize(&tmp, 0) ||
 							!try_catch_copy_property_value(
-								the_first_property, the_property, sub_nodes_names, verbose))
+								the_first_property, the_property, &tmp, verbose))
 						{
 							i = count;
 							the_first_property = NULL;
@@ -271,6 +283,8 @@ uint8_t try_catch_evaluate_task(
 
 		++i;
 	}
+
+	buffer_release(&tmp);
 
 	if (error_output_stream)
 	{

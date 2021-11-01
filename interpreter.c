@@ -1465,9 +1465,10 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	return 1;
 }
 
-uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, const struct range* task_name,
-								  const uint8_t* element_finish, const struct buffer* sub_nodes_names,
-								  uint8_t target_help, uint8_t verbose)
+uint8_t interpreter_evaluate_task(
+	void* the_project, const void* the_target, const struct range* task_name,
+	const uint8_t* element_finish, const struct range* sub_nodes_names,
+	uint8_t target_help, uint8_t verbose)
 {
 	void* the_module = NULL;
 	struct buffer task_arguments;
@@ -2094,10 +2095,10 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, con
 	return task_attributes_count;
 }
 
-uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
-								   const struct buffer* elements,
-								   const struct buffer* sub_nodes_names,
-								   uint8_t target_help, uint8_t verbose)
+uint8_t interpreter_evaluate_tasks(
+	void* the_project, const void* the_target,
+	const struct buffer* elements, const struct range* sub_nodes_names,
+	uint8_t target_help, uint8_t verbose)
 {
 	ptrdiff_t i = 0;
 	uint8_t returned = 1;
