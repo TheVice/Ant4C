@@ -7112,6 +7112,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <string_ends_with input="" value="A" return="false" />
     <string_ends_with input=" " value=" " return="true" />
     <string_ends_with input="AB" value="CD" return="false" />
+    <string_ends_with input="AB" value="AB" return="true" />
     <string_ends_with input="ABCD" value="AB" return="false" />
     <string_ends_with input="ABCDAF" value="AF" return="true" />
     <string_get_length>
@@ -7440,6 +7441,7 @@ Approximate round trip times in milli-seconds:
     <string_starts_with input="" value="A" return="false" />
     <string_starts_with input=" " value=" " return="true" />
     <string_starts_with input="AB" value="CD" return="false" />
+    <string_starts_with input="AB" value="AB" return="true" />
     <string_starts_with input="ABCD" value="AB" return="true" />
     <string_transform_to_case>
       <input></input>

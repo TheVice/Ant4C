@@ -1147,18 +1147,12 @@ uint8_t interpreter_get_environments(
 	}
 
 	count = 0;
-	struct range* env_ptr = NULL;
+	struct range* env_ptr;
 
 	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
 	{
 		static const uint8_t* env_name = (const uint8_t*)"environment";
-		const uint8_t* tag_name_finish = env_ptr->finish;
-
-		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
-		{
-			buffer_release(&elements);
-			return 0;
-		}
+		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
 
 		if (string_equal(env_ptr->start, tag_name_finish, env_name, env_name + 11))
 		{
@@ -1201,14 +1195,7 @@ uint8_t interpreter_get_environments(
 		static const uint8_t* name_str = (const uint8_t*)"name";
 		static const uint8_t* value_str = (const uint8_t*)"value";
 		/**/
-		const uint8_t* tag_name_finish = env_ptr->finish;
-
-		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
+		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
 
 		if (!string_equal(env_ptr->start, tag_name_finish, var_name, var_name + 8))
 		{
@@ -2108,14 +2095,8 @@ uint8_t interpreter_evaluate_tasks(
 	{
 		struct range tag_name;
 		tag_name.start = element->start;
-		tag_name.finish = element->finish;
-		returned = xml_get_tag_name(element->start, &(tag_name.finish));
-
-		if (!returned)
-		{
-			break;
-		}
-
+		tag_name.finish = xml_get_tag_name(element->start, element->finish);
+		/**/
 		returned = interpreter_evaluate_task(the_project, the_target, &tag_name, element->finish,
 											 sub_nodes_names, target_help, verbose);
 

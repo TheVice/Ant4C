@@ -75,13 +75,7 @@ uint8_t choose_evaluate_task(
 		static const uint8_t test_length = 4;
 		/**/
 		struct range* element = buffer_range_data(elements, i);
-		element_finish = element->finish;
-
-		if (!xml_get_tag_name(element->start, &element_finish))
-		{
-			buffer_release_inner_buffers(attribute_value);
-			return 0;
-		}
+		element_finish = xml_get_tag_name(element->start, element->finish);
 
 		if (!string_equal(sub_nodes_names.start, sub_nodes_names.finish,
 						  element->start, element_finish))

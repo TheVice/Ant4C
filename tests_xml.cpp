@@ -40,11 +40,10 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 			static const uint8_t less = '<';
 			input_in_range.start = string_find_any_symbol_like_or_not_like_that(
 									   input_in_range.start, input_in_range.finish, &less, &less + 1, 1, 1);
-			++input_in_range.start;
+			input_in_range.start = string_enumerate(input_in_range.start, input_in_range.finish, NULL);
 		}
 
 		const auto finish = xml_get_tag_finish_pos(input_in_range.start, input_in_range.finish);
-		//
 		ASSERT_LE(finish, input_in_range.finish) << input;
 
 		if (nullptr == finish)
@@ -66,85 +65,52 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 	buffer elements;
 	SET_NULL_TO_BUFFER(elements);
 	//
-	buffer sub_nodes_names;
-	SET_NULL_TO_BUFFER(sub_nodes_names);
-	//
 	buffer expected_elements;
 	SET_NULL_TO_BUFFER(expected_elements);
 
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		//
 		std::string sub_nodes;
-		std::list<std::size_t> positions;
 
 		for (const auto& sub_node : node.node().select_nodes("sub_node"))
 		{
 			sub_nodes.append(sub_node.node().child_value());
-			positions.push_back(sub_nodes.size());
+			sub_nodes.push_back(0);
 		}
 
-		ASSERT_TRUE(buffer_resize(&sub_nodes_names, 0)) <<
-				buffer_free(&elements) <<
-				buffer_free(&sub_nodes_names) <<
-				buffer_free_with_inner_buffers(&expected_elements);
-
-		if (!sub_nodes.empty())
-		{
-			auto sub_node = string_to_range(sub_nodes);
-
-			for (const auto& position : positions)
-			{
-				sub_node.finish = reinterpret_cast<const uint8_t*>(sub_nodes.data());
-				sub_node.finish += position;
-				//
-				ASSERT_TRUE(buffer_append_range(&sub_nodes_names, &sub_node, 1)) <<
-						buffer_free(&elements) <<
-						buffer_free(&sub_nodes_names) <<
-						buffer_free_with_inner_buffers(&expected_elements);
-				//
-				sub_node.start = sub_node.finish;
-			}
-		}
-
+		const auto sub_nodes_names(string_to_range(sub_nodes));
 		ASSERT_TRUE(buffer_resize_and_free_inner_buffers(&expected_elements)) <<
 				buffer_free(&elements) <<
-				buffer_free(&sub_nodes_names) <<
 				buffer_free_with_inner_buffers(&expected_elements);
-		ptrdiff_t i = 0;
 
 		for (const auto& output : node.node().select_nodes("output"))
 		{
-			i = buffer_size(&expected_elements);
+			const auto size = buffer_size(&expected_elements);
 			//
 			ASSERT_TRUE(buffer_append_buffer(&expected_elements, nullptr, 1)) <<
 					buffer_free(&elements) <<
-					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
 			//
-			auto buffer_for_expected_output = reinterpret_cast<buffer*>(buffer_data(&expected_elements, i));
+			auto buffer_for_expected_output = reinterpret_cast<buffer*>(
+												  buffer_data(&expected_elements, size));
 			//
-			ASSERT_TRUE(buffer_resize(&expected_elements, i)) <<
+			ASSERT_TRUE(buffer_resize(&expected_elements, size)) <<
 					buffer_free(&elements) <<
-					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
 			//
 			ASSERT_NE(nullptr, buffer_for_expected_output) <<
 					buffer_free(&elements) <<
-					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
 			SET_NULL_TO_BUFFER(*buffer_for_expected_output);
 			//
-			ASSERT_TRUE(buffer_resize(&expected_elements, i + sizeof(buffer))) <<
+			ASSERT_TRUE(buffer_resize(&expected_elements, size + sizeof(buffer))) <<
 					buffer_free(&elements) <<
-					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
 			//
 			const std::string expected_output(output.node().child_value());
 			ASSERT_TRUE(string_to_buffer(expected_output, buffer_for_expected_output)) <<
 					buffer_free(&elements) <<
-					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
 		}
 
@@ -155,16 +121,15 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 		//
 		ASSERT_TRUE(buffer_resize(&elements, 0)) <<
 				buffer_free(&elements) <<
-				buffer_free(&sub_nodes_names) <<
 				buffer_free_with_inner_buffers(&expected_elements);
 		//
-		const auto returned = xml_get_sub_nodes_elements_(
-								  input_in_range.start, input_in_range.finish, &sub_nodes_names, &elements);
+		const auto returned = xml_get_sub_nodes_elements(
+								  input_in_range.start, input_in_range.finish,
+								  &sub_nodes_names, &elements);
 		//
 		ASSERT_EQ(expected_return, returned) <<
 											 input << std::endl <<
 											 buffer_free(&elements) <<
-											 buffer_free(&sub_nodes_names) <<
 											 buffer_free_with_inner_buffers(&expected_elements);
 
 		if (!expected_return)
@@ -173,35 +138,30 @@ TEST_F(TestXml, xml_get_sub_nodes_elements)
 			continue;
 		}
 
-		i = 0;
+		ptrdiff_t i = 0;
 		range* element = nullptr;
 		buffer* expected_element = nullptr;
 
 		while (nullptr != (expected_element = buffer_buffer_data(&expected_elements, i)))
 		{
-			element = buffer_range_data(&elements, i);
+			element = buffer_range_data(&elements, i++);
 			ASSERT_NE(nullptr, element) <<
 										buffer_free(&elements) <<
-										buffer_free(&sub_nodes_names) <<
 										buffer_free_with_inner_buffers(&expected_elements);
-			++i;
 			ASSERT_EQ(buffer_to_string(expected_element), range_to_string(element->start, element->finish)) <<
 					buffer_free(&elements) <<
-					buffer_free(&sub_nodes_names) <<
 					buffer_free_with_inner_buffers(&expected_elements);
 		}
 
 		element = buffer_range_data(&elements, i);
 		ASSERT_EQ(nullptr, element) <<
 									buffer_free(&elements) <<
-									buffer_free(&sub_nodes_names) <<
 									buffer_free_with_inner_buffers(&expected_elements);
 		//
 		--node_count;
 	}
 
 	buffer_release(&elements);
-	buffer_release(&sub_nodes_names);
 	buffer_release_with_inner_buffers(&expected_elements);
 }
 
@@ -223,9 +183,9 @@ TEST_F(TestXml, xml_get_tag_name)
 									   input_in_range.start, input_in_range.finish, &less, &less + 1, 0, 1);
 		}
 
-		const auto returned = xml_get_tag_name(input_in_range.start, &input_in_range.finish);
-		ASSERT_EQ(expected_return, returned) << "'" << input << "'" << std::endl;
-		ASSERT_EQ(returned, !range_in_parts_is_null_or_empty(input_in_range.start, input_in_range.finish))
+		const auto tag_name_finish = xml_get_tag_name(input_in_range.start, input_in_range.finish);
+		input_in_range.finish = tag_name_finish;
+		ASSERT_EQ(expected_return, !range_in_parts_is_null_or_empty(input_in_range.start, input_in_range.finish))
 				<< "'" << input << "'" << std::endl;
 		const auto output(range_to_string(input_in_range));
 		ASSERT_EQ(expected_output, output) << "'" << input << "'" << std::endl;

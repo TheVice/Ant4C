@@ -13,7 +13,6 @@
 #include "text_encoding.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 static const uint8_t tag_close = '/';
 
@@ -70,9 +69,10 @@ const uint8_t* xml_skip_comment(const uint8_t* start, const uint8_t* finish)
 		start += tag_start_length;
 		uint8_t found = 0;
 
-		while (NULL != start && comment_finish_length <= finish - start)
+		while (finish != (start = string_find_any_symbol_like_or_not_like_that(
+									  start, finish, tag_finish, tag_finish + 1, 1, 1)))
 		{
-			if (memcmp(start, tag_finish, comment_finish_length))
+			if (!string_starts_with(start, finish, tag_finish, tag_finish + comment_finish_length))
 			{
 				start = string_enumerate(start, finish, NULL);
 				continue;
@@ -146,35 +146,6 @@ const uint8_t* xml_get_tag_finish_pos(
 	return start;
 }
 
-uint16_t xml_get_sub_nodes_elements_(const uint8_t* start, const uint8_t* finish,
-									 const struct buffer* sub_nodes_names, struct buffer* elements)
-{
-	struct buffer r;
-	SET_NULL_TO_BUFFER(r);
-	const struct range* sub_node_name = NULL;
-	ptrdiff_t i = 0;
-
-	while (NULL != (sub_node_name = buffer_range_data(sub_nodes_names, i++)))
-	{
-		if (!buffer_append(&r, sub_node_name->start, range_size(sub_node_name)) ||
-			!buffer_push_back(&r, 0))
-		{
-			buffer_release(&r);
-			return 0;
-		}
-	}
-
-	struct range R;
-
-	BUFFER_TO_RANGE(R, &r);
-
-	i = xml_get_sub_nodes_elements(start, finish, &R, elements);
-
-	buffer_release(&r);
-
-	return (uint16_t)i;
-}
-
 uint16_t xml_get_sub_nodes_elements(
 	const uint8_t* start, const uint8_t* finish,
 	const struct range* sub_nodes_names, struct buffer* elements)
@@ -186,7 +157,7 @@ uint16_t xml_get_sub_nodes_elements(
 	}
 
 	uint16_t count = 0;
-	uint8_t depth = 0;
+	uint16_t depth = 0;
 
 	while (NULL != start && finish != start)
 	{
@@ -255,7 +226,7 @@ uint16_t xml_get_sub_nodes_elements(
 			if (1 == string_get_length(tag_finish_pos_prev, tag_finish_pos) &&
 				tag_close != *tag_finish_pos_prev)
 			{
-				if (depth < UINT8_MAX)
+				if (depth < UINT16_MAX)
 				{
 					++depth;
 				}
@@ -273,17 +244,11 @@ uint16_t xml_get_sub_nodes_elements(
 
 			if (!range_is_null_or_empty(sub_nodes_names))
 			{
-				const uint8_t* tag_name_finish = element->finish;
-
-				if (!xml_get_tag_name(element->start, &tag_name_finish))
-				{
-					return 0;
-				}
-
 				uint8_t found = 0;
+				static const uint8_t zero = '\0';
+				const uint8_t* tag_name_finish = xml_get_tag_name(element->start, element->finish);
 				const uint8_t* sub_node_name_start = sub_nodes_names->start;
 				const uint8_t* sub_node_name_finish = sub_nodes_names->start;
-				static const uint8_t zero = '\0';
 
 				while (sub_nodes_names->finish != (sub_node_name_finish = string_find_any_symbol_like_or_not_like_that(
 													   sub_node_name_finish, sub_nodes_names->finish, &zero, &zero + 1, 1, 1)))
@@ -317,21 +282,15 @@ uint16_t xml_get_sub_nodes_elements(
 	return 0 == depth ? count : 0;
 }
 
-uint8_t xml_get_tag_name(const uint8_t* start, const uint8_t** finish)
+const uint8_t* xml_get_tag_name(const uint8_t* start, const uint8_t* finish)
 {
 	static const uint8_t tab_space_close_tag[] = { '\t', ' ', '/', '>', '\r', '\n' };
-
-	if (!finish || range_in_parts_is_null_or_empty(start, *finish))
-	{
-		return 0;
-	}
-
-	*finish = string_find_any_symbol_like_or_not_like_that(
-				  start, *finish, tab_space_close_tag, tab_space_close_tag + 6, 1, 1);
-	return start < *finish;
+	return string_find_any_symbol_like_or_not_like_that(
+			   start, finish, tab_space_close_tag, tab_space_close_tag + 6, 1, 1);
 }
 
-uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finish, struct buffer* output)
+uint8_t xml_read_ampersand_based_data(
+	const uint8_t* start, const uint8_t* finish, struct buffer* output)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == output)
@@ -358,56 +317,59 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 		return 0;
 	}
 
-	const uint8_t* previous_pos = start;
+	const uint8_t* pos = start;
+	static const uint8_t* that = &characters[AMPERSAND_POSITION];
 
-	while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish,
-							  &(characters[AMPERSAND_POSITION]), 1, 1, 1)))
+	while (finish != (start = string_find_any_symbol_like_or_not_like_that(
+								  start, finish, that, that + 1, 1, 1)))
 	{
-		if (previous_pos < start && buffer_size(&digits))
+		if (pos < start && buffer_size(&digits))
 		{
-#if 0
+			const uint16_t* digits_start = buffer_uint16_data(&digits, 0);
+			const uint16_t* digits_finish = (const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits));
 
-			if (BigEndian)
+			if (!text_encoding_UTF16LE_to_UTF8(digits_start, digits_finish, output) ||
+				!buffer_resize(&digits, 0))
 			{
-				...
+				buffer_release(&digits);
+				return 0;
 			}
-			else
-			{
-#endif
-
-				if (!text_encoding_UTF16LE_to_UTF8(
-						buffer_uint16_data(&digits, 0),
-						(const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits)), output) ||
-					!buffer_resize(&digits, 0))
-				{
-					buffer_release(&digits);
-					return 0;
-				}
-
-#if 0
-			}
-
-#endif
 		}
 
-		if (previous_pos < start && !buffer_append(output, previous_pos, start - previous_pos))
+		if (pos < start && !buffer_append(output, pos, start - pos))
 		{
 			buffer_release(&digits);
 			return 0;
 		}
 
-		static const uint8_t* hex_value_start = (const uint8_t*)"&#x";
-		static const uint8_t* hex_value_start_upper = (const uint8_t*)"&#X";
-		static const uint8_t* decimal_value_start = (const uint8_t*)"&#";
+		static const uint8_t* ampersand_based_start[] =
+		{
+			(const uint8_t*)"&#x",
+			(const uint8_t*)"&#X",
+			(const uint8_t*)"&#"
+		};
+		/**/
+		static const uint8_t ampersand_based_start_lengths[] = { 3, 3, 2 };
+		uint8_t found = 0;
 
-		if (string_starts_with(start, finish, hex_value_start, hex_value_start + 3) ||
-			string_starts_with(start, finish, hex_value_start_upper, hex_value_start_upper + 3) ||
-			string_starts_with(start, finish, decimal_value_start, decimal_value_start + 2))
+		for (uint8_t i = 0, count = COUNT_OF(ampersand_based_start_lengths); i < count; ++i)
+		{
+			if (string_starts_with(
+					start, finish,
+					ampersand_based_start[i],
+					ampersand_based_start[i] + ampersand_based_start_lengths[i]))
+			{
+				found = i + 1;
+				break;
+			}
+		}
+
+		if (found)
 		{
 			static const uint8_t* skip_to_digit = (const uint8_t*)"&#xX";
-			static const uint8_t number_sign = '#';
-			start = find_any_symbol_like_or_not_like_that(start + 2, finish, skip_to_digit, 4, 0, 1);
-			const long value = strtol((const char*)start, NULL, number_sign == (*(start - 1)) ? 10 : 16);
+			start = string_find_any_symbol_like_or_not_like_that(
+						start + 2, finish, skip_to_digit, skip_to_digit + 4, 0, 1);
+			const long value = strtol((const char*)start, NULL, 3 == found ? 10 : 16);
 
 			if ((value < 0 || UINT16_MAX < value) ||
 				!buffer_push_back_uint16(&digits, (uint16_t)value))
@@ -441,52 +403,41 @@ uint8_t xml_read_ampersand_based_data(const uint8_t* start, const uint8_t* finis
 					return 0;
 				}
 
-				++start;
-				previous_pos = start;
+				start = string_enumerate(start, finish, NULL);
+				pos = start;
 				continue;
 			}
 		}
 
 		static const uint8_t semicolon = ';';
-		start = 1 + find_any_symbol_like_or_not_like_that(start, finish, &semicolon, 1, 1, 1);
-		previous_pos = start;
+		start = string_find_any_symbol_like_or_not_like_that(start, finish, &semicolon, &semicolon + 1, 1, 1);
+		start = string_enumerate(start, finish, NULL);
+		pos = start;
 	}
 
 	if (buffer_size(&digits))
 	{
-#if 0
+		const uint16_t* digits_start = buffer_uint16_data(&digits, 0);
+		const uint16_t* digits_finish = (const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits));
 
-		if (BigEndian)
+		if (!text_encoding_UTF16LE_to_UTF8(digits_start, digits_finish, output) ||
+			!buffer_resize(&digits, 0))
 		{
-			...
+			buffer_release(&digits);
+			return 0;
 		}
-		else
-		{
-#endif
-
-			if (!text_encoding_UTF16LE_to_UTF8(
-					buffer_uint16_data(&digits, 0),
-					(const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits)), output) ||
-				!buffer_resize(&digits, 0))
-			{
-				buffer_release(&digits);
-				return 0;
-			}
-
-#if 0
-		}
-
-#endif
 	}
 
 	buffer_release(&digits);
-	return previous_pos < finish ? buffer_append(output, previous_pos, finish - previous_pos) : 1;
+	return pos < finish ? buffer_append(output, pos, finish - pos) : 1;
 }
 
-uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
-								const uint8_t* attribute, ptrdiff_t attribute_length, struct buffer* value)
+uint8_t xml_get_attribute_value(
+	const uint8_t* start, const uint8_t* finish,
+	const uint8_t* attribute, ptrdiff_t attribute_length,
+	struct buffer* value)
 {
-	static const uint8_t equal_symbol = '=';
+	static const uint8_t* equal_space_tab = (const uint8_t*)"= \t";
 
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == attribute ||
@@ -498,40 +449,59 @@ uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
 
 	const uint8_t* pos = start;
 
-	while (finish != (pos = (find_any_symbol_like_or_not_like_that(pos, finish, &equal_symbol, 1, 1, 1))))
+	while (finish != (pos = (string_find_any_symbol_like_or_not_like_that(
+								 pos, finish,
+								 equal_space_tab, equal_space_tab + 1,
+								 1, 1))))
 	{
-		static const uint8_t* equal_space_tab = (const uint8_t*)"= \t";
-		static const uint8_t* space_tab = (const uint8_t*)" \t";
 		static const uint8_t* double_quote = (const uint8_t*)"\"\"";
+		const uint8_t* space_tab = equal_space_tab + 1;
 		/**/
-		const uint8_t* key_finish = find_any_symbol_like_or_not_like_that(pos, start, equal_space_tab, 3, 0, -1);
-		const uint8_t* key_start = find_any_symbol_like_or_not_like_that(key_finish, start, space_tab, 2, 1, -1);
+		const uint8_t* key_finish =
+			string_find_any_symbol_like_or_not_like_that(
+				pos, start, equal_space_tab, equal_space_tab + 3, 0, -1);
+		const uint8_t* key_start =
+			string_find_any_symbol_like_or_not_like_that(
+				key_finish, start, space_tab, space_tab + 2, 1, -1);
 		/**/
-		key_start = find_any_symbol_like_or_not_like_that(key_start, key_finish, space_tab, 2, 0, 1);
-		key_finish = find_any_symbol_like_or_not_like_that(key_finish, pos, equal_space_tab, 3, 1, 1);
+		key_start =
+			string_find_any_symbol_like_or_not_like_that(
+				key_start, key_finish, space_tab, space_tab + 2, 0, 1);
+		key_finish =
+			string_find_any_symbol_like_or_not_like_that(
+				key_finish, pos, equal_space_tab, equal_space_tab + 3, 1, 1);
 		/**/
-		++pos;
+		pos = string_enumerate(pos, finish, NULL);
 
-		if (!string_equal(key_start, key_finish, attribute, attribute + attribute_length))
+		if (!string_equal(
+				key_start, key_finish,
+				attribute, attribute + attribute_length))
 		{
 			continue;
 		}
 
-		pos = find_any_symbol_like_or_not_like_that(pos, finish, &(characters[QUOTE_POSITION]), 1, 1, 1);
+		static const uint8_t* that = &characters[QUOTE_POSITION];
+		pos = string_find_any_symbol_like_or_not_like_that(
+				  pos, finish, that, that + 1, 1, 1);
 
-		if (finish != pos && string_starts_with(pos, finish, double_quote, double_quote + 2))
+		if (finish != pos &&
+			string_starts_with(pos, finish, double_quote, double_quote + 2))
 		{
 			return 1;
 		}
 
-		pos = find_any_symbol_like_or_not_like_that(pos + 1, finish, &(characters[QUOTE_POSITION]), 1, 0, 1);
+		pos = string_enumerate(pos, finish, NULL);
+		pos = string_find_any_symbol_like_or_not_like_that(
+				  pos, finish, that, that + 1, 0, 1);
 
 		if (finish == pos)
 		{
 			return 0;
 		}
 
-		key_finish = find_any_symbol_like_or_not_like_that(pos + 1, finish, &(characters[QUOTE_POSITION]), 1, 1, 1);
+		key_finish = string_enumerate(pos, finish, NULL);
+		key_finish = string_find_any_symbol_like_or_not_like_that(
+						 key_finish, finish, that, that + 1, 1, 1);
 
 		if (finish == key_finish &&
 			characters[QUOTE_POSITION] != *key_finish)
@@ -550,7 +520,8 @@ uint8_t xml_get_attribute_value(const uint8_t* start, const uint8_t* finish,
 	return 0;
 }
 
-uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struct buffer* value)
+uint8_t xml_get_element_value(
+	const uint8_t* start, const uint8_t* finish, struct buffer* value)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == value)
@@ -558,50 +529,57 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 		return 0;
 	}
 
-	start = find_any_symbol_like_or_not_like_that(
-				start, finish, &(characters[GREATER_POSITION]), 1, 1, 1);
+	const uint8_t* pos = start;
+	const uint8_t* that = &characters[GREATER_POSITION];
+	start = string_find_any_symbol_like_or_not_like_that(
+				start, finish, that, that + 1, 1, 1);
 
 	if (finish == start)
 	{
 		return 0;
 	}
 
-	if (tag_close == *(start - 1))
+	pos = string_find_any_symbol_like_or_not_like_that(
+			  start, pos, &tag_close, &tag_close + 1, 1, -1);
+
+	if (1 == string_get_length(pos, start) &&
+		tag_close == *pos)
 	{
 		return 1;
 	}
-	else
-	{
-		start = find_any_symbol_like_or_not_like_that(
-					start + 1, finish, &(characters[GREATER_POSITION]), 1, 0, 1);
-	}
+
+	start = string_enumerate(start, finish, NULL);
+	start = string_find_any_symbol_like_or_not_like_that(
+				start, finish, that, that + 1, 0, 1);
 
 	if (string_contains(start, finish, cdata_start, cdata_start + cdata_start_length))
 	{
-		const uint8_t* start_with_index = start;
+		pos = start;
 
-		while (NULL != start_with_index && cdata_start_length <= finish - start_with_index)
+		while (finish != (pos = string_find_any_symbol_like_or_not_like_that(
+									pos, finish, cdata_start, cdata_start + 1, 1, 1)))
 		{
-			if (memcmp(start_with_index, cdata_start, cdata_start_length))
+			if (!string_starts_with(pos, finish, cdata_start, cdata_start + cdata_start_length))
 			{
-				start_with_index = string_enumerate(start_with_index, finish, NULL);
+				pos = string_enumerate(pos, finish, NULL);
 				continue;
 			}
 
-			if (start < start_with_index && !xml_read_ampersand_based_data(start, start_with_index, value))
+			if (start < pos && !xml_read_ampersand_based_data(start, pos, value))
 			{
 				return 0;
 			}
 
-			start_with_index += cdata_start_length;
-			start = start_with_index;
+			pos += cdata_start_length;
+			start = pos;
 			uint8_t found = 0;
 
-			while (NULL != start_with_index && cdata_finish_length <= finish - start_with_index)
+			while (finish != (pos = string_find_any_symbol_like_or_not_like_that(
+										pos, finish, cdata_finish, cdata_finish + 1, 1, 1)))
 			{
-				if (memcmp(start_with_index, cdata_finish, cdata_finish_length))
+				if (!string_starts_with(pos, finish, cdata_finish, cdata_finish + cdata_finish_length))
 				{
-					start_with_index = string_enumerate(start_with_index, finish, NULL);
+					pos = string_enumerate(pos, finish, NULL);
 					continue;
 				}
 
@@ -624,13 +602,13 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 				break;
 			}
 
-			if (!buffer_append(value, start, start_with_index - start))
+			if (!buffer_append(value, start, pos - start))
 			{
 				return 0;
 			}
 
-			start_with_index += cdata_finish_length;
-			start = start_with_index;
+			pos += cdata_finish_length;
+			start = pos;
 		}
 
 		if (start < finish)
@@ -643,8 +621,9 @@ uint8_t xml_get_element_value(const uint8_t* start, const uint8_t* finish, struc
 	}
 	else
 	{
-		finish = find_any_symbol_like_or_not_like_that(
-					 finish, start, &(characters[LESS_POSITION]), 1, 1, -1);
+		that = &characters[LESS_POSITION];
+		finish = string_find_any_symbol_like_or_not_like_that(
+					 finish, start, that, that + 1, 1, -1);
 
 		if (!range_in_parts_is_null_or_empty(start, finish) &&
 			!xml_read_ampersand_based_data(start, finish, value))
