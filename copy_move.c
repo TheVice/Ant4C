@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -131,14 +131,18 @@ uint8_t copy_move_file(uint8_t task_id, const uint8_t* source,
 	return 1;
 }
 
-uint8_t copy_move_read_over_write(struct buffer* task_arguments, uint8_t* over_write, uint8_t verbose)
+uint8_t copy_move_read_over_write(
+	struct buffer* task_arguments, uint8_t* over_write, uint8_t verbose)
 {
-	struct buffer* over_write_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_OVER_WRITE);
-	(*over_write) = (uint8_t)buffer_size(over_write_in_a_buffer);
+	struct buffer* over_write_in_a_buffer = buffer_buffer_data(
+			task_arguments, COPY_MOVE_OVER_WRITE);
+	const uint8_t size = (uint8_t)buffer_size(over_write_in_a_buffer);
 
-	if (*over_write)
+	if (size)
 	{
-		if (!bool_parse(buffer_data(over_write_in_a_buffer, 0), *over_write, over_write) ||
+		const uint8_t* value = buffer_data(over_write_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + size, over_write) ||
 			!buffer_resize(over_write_in_a_buffer, 0))
 		{
 			return 0;
@@ -149,9 +153,10 @@ uint8_t copy_move_read_over_write(struct buffer* task_arguments, uint8_t* over_w
 	return 1;
 }
 
-uint8_t copy_move_read_encodings(struct buffer* task_arguments,
-								 uint16_t* input_encoding, uint8_t* output_encoding,
-								 uint8_t verbose)
+uint8_t copy_move_read_encodings(
+	struct buffer* task_arguments,
+	uint16_t* input_encoding, uint8_t* output_encoding,
+	uint8_t verbose)
 {
 	if (NULL == task_arguments ||
 		NULL == input_encoding ||
@@ -163,39 +168,40 @@ uint8_t copy_move_read_encodings(struct buffer* task_arguments,
 	struct buffer* input_encoding_in_a_buffer = buffer_buffer_data(
 				task_arguments, COPY_MOVE_INPUT_ENCODING);
 
-	(*input_encoding) = (uint16_t)buffer_size(input_encoding_in_a_buffer);
+	*input_encoding = (uint16_t)buffer_size(input_encoding_in_a_buffer);
 
 	if (*input_encoding)
 	{
-		(*input_encoding) = load_file_get_encoding(input_encoding_in_a_buffer);
+		*input_encoding = load_file_get_encoding(input_encoding_in_a_buffer);
 
-		if (FILE_ENCODING_UNKNOWN == (*input_encoding))
+		if (FILE_ENCODING_UNKNOWN == *input_encoding)
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		(*input_encoding) = Default;
+		*input_encoding = Default;
 	}
 
 	const struct buffer* output_encoding_in_a_buffer = buffer_buffer_data(
 				task_arguments, COPY_MOVE_OUTPUT_ENCODING);
-	(*output_encoding) = (uint8_t)buffer_size(output_encoding_in_a_buffer);
+	*output_encoding = (uint8_t)buffer_size(output_encoding_in_a_buffer);
 
 	if (*output_encoding)
 	{
-		const uint8_t* ptr = buffer_data(output_encoding_in_a_buffer, 0);
-		(*output_encoding) = text_encoding_get_one(ptr, ptr + (*output_encoding));
+		const uint8_t* value = buffer_data(output_encoding_in_a_buffer, 0);
+		*output_encoding = text_encoding_get_one(
+							   value, value + *output_encoding);
 
-		if (TEXT_ENCODING_UNKNOWN == (*output_encoding))
+		if (TEXT_ENCODING_UNKNOWN == *output_encoding)
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		(*output_encoding) = Default;
+		*output_encoding = Default;
 	}
 
 	(void)verbose;
@@ -294,7 +300,9 @@ uint8_t copy_move_dir_evaluate_task(
 
 	if (flatten)
 	{
-		if (!bool_parse(buffer_data(flatten_in_a_buffer, 0), flatten, &flatten))
+		const uint8_t* value = buffer_data(flatten_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + flatten, &flatten))
 		{
 			return 0;
 		}
@@ -433,8 +441,9 @@ uint8_t copy_move_dir_evaluate_task(
 
 	if (include_empty_dirs)
 	{
-		if (!bool_parse(
-				buffer_data(include_empty_dirs_in_a_buffer, 0), include_empty_dirs, &include_empty_dirs))
+		const uint8_t* value = buffer_data(include_empty_dirs_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + include_empty_dirs, &include_empty_dirs))
 		{
 			return 0;
 		}
@@ -444,7 +453,7 @@ uint8_t copy_move_dir_evaluate_task(
 		include_empty_dirs = 1;
 	}
 
-	if (1 == include_empty_dirs)
+	if (include_empty_dirs)
 	{
 		if (!buffer_resize(flatten_in_a_buffer, 0) ||
 			!directory_enumerate_file_system_entries(dir_in_a_buffer, 0, 1, flatten_in_a_buffer, 1))

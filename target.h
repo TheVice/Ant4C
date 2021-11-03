@@ -50,7 +50,7 @@ uint8_t target_evaluate(
 	void* the_project, void* the_target, struct buffer* stack,
 	uint8_t cascade, uint8_t verbose);
 uint8_t target_evaluate_by_name(
-	void* the_project, const struct range* target_name, uint8_t verbose);
+	void* the_project, const uint8_t* name, uint8_t name_length, uint8_t verbose);
 
 uint8_t target_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);

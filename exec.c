@@ -922,8 +922,9 @@ uint8_t exec_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-uint8_t exec_evaluate_task(void* the_project, const void* the_target, const struct buffer* task_arguments,
-						   uint8_t verbose)
+uint8_t exec_evaluate_task(
+	void* the_project, const void* the_target,
+	const struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -938,10 +939,10 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	}
 
 	const struct buffer* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
-	uint8_t append = 0;
+	uint8_t append = (uint8_t)buffer_size(append_in_a_buffer);
+	const uint8_t* value = buffer_data(append_in_a_buffer, 0);
 
-	if (buffer_size(append_in_a_buffer) &&
-		!bool_parse(buffer_data(append_in_a_buffer, 0), buffer_size(append_in_a_buffer), &append))
+	if (append && !bool_parse(value, value + append, &append))
 	{
 		return 0;
 	}
@@ -956,16 +957,18 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	/**/
 	struct buffer* output_path_in_a_buffer = buffer_buffer_data(task_arguments, OUTPUT_POSITION);
 	struct range output_file;
+	ptrdiff_t size = buffer_size(output_path_in_a_buffer);
 
-	if (buffer_size(output_path_in_a_buffer))
+	if (size)
 	{
 		if (!buffer_push_back(output_path_in_a_buffer, 0))
 		{
 			return 0;
 		}
 
+		++size;
 		output_file.start = buffer_data(output_path_in_a_buffer, 0);
-		output_file.finish = output_file.start + buffer_size(output_path_in_a_buffer);
+		output_file.finish = output_file.start + size;
 	}
 	else
 	{
@@ -978,8 +981,9 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	for (uint8_t index = PID_PROPERTY_POSITION; ; index = RESULT_PROPERTY_POSITION)
 	{
 		const struct buffer* property_in_a_buffer = buffer_buffer_data(task_arguments, index);
+		size = buffer_size(property_in_a_buffer);
 
-		if (!buffer_size(property_in_a_buffer))
+		if (!size)
 		{
 			if (RESULT_PROPERTY_POSITION == index)
 			{
@@ -995,12 +999,13 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 		}
 
 		void** the_property = (PID_PROPERTY_POSITION == index ? &pid_property : &result_property);
+		value = buffer_data(property_in_a_buffer, 0);
 
-		if (!project_property_set_value(the_project, buffer_data(property_in_a_buffer, 0),
-										(uint8_t)buffer_size(property_in_a_buffer),
-										(const uint8_t*)the_property, 0, 0, 1, 0, verbose) ||
-			!project_property_exists(the_project, buffer_data(property_in_a_buffer, 0),
-									 (uint8_t)buffer_size(property_in_a_buffer), the_property, verbose))
+		if (!project_property_set_value(the_project, value,
+										(uint8_t)size, (const uint8_t*)the_property,
+										0, 0, 1, 0, verbose) ||
+			!project_property_exists(the_project, value,
+									 (uint8_t)size, the_property, verbose))
 		{
 			return 0;
 		}
@@ -1012,10 +1017,10 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	}
 
 	const struct buffer* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
-	uint8_t spawn = 0;
+	uint8_t spawn = (uint8_t)buffer_size(spawn_in_a_buffer);
+	value = buffer_data(spawn_in_a_buffer, 0);
 
-	if (buffer_size(spawn_in_a_buffer) &&
-		!bool_parse(buffer_data(spawn_in_a_buffer, 0), buffer_size(spawn_in_a_buffer), &spawn))
+	if (spawn && !bool_parse(value, value + spawn, &spawn))
 	{
 		return 0;
 	}
@@ -1024,15 +1029,18 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	struct range working_directory;
 
-	if (buffer_size(working_dir_in_a_buffer))
+	size = buffer_size(working_dir_in_a_buffer);
+
+	if (size)
 	{
 		if (!buffer_push_back(working_dir_in_a_buffer, 0))
 		{
 			return 0;
 		}
 
+		++size;
 		working_directory.start = buffer_data(working_dir_in_a_buffer, 0);
-		working_directory.finish = working_directory.start + buffer_size(working_dir_in_a_buffer);
+		working_directory.finish = working_directory.start + size;
 	}
 	else
 	{
@@ -1043,11 +1051,12 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	uint64_t time_out = 0;
 
-	if (buffer_size(time_out_in_a_buffer))
+	size = buffer_size(time_out_in_a_buffer);
+
+	if (size)
 	{
-		const uint8_t* start = buffer_data(time_out_in_a_buffer, 0);
-		const uint8_t* finish = start + buffer_size(time_out_in_a_buffer);
-		time_out = uint64_parse(start, finish);
+		value = buffer_data(time_out_in_a_buffer, 0);
+		time_out = uint64_parse(value, value + size);
 
 		if (1000 < time_out)
 		{
@@ -1062,11 +1071,12 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
 	struct range environment_variables;
+	size = buffer_size(environment_in_a_buffer);
 
-	if (buffer_size(environment_in_a_buffer))
+	if (size)
 	{
 		environment_variables.start = buffer_data(environment_in_a_buffer, 0);
-		environment_variables.finish = environment_variables.start + buffer_size(environment_in_a_buffer);
+		environment_variables.finish = environment_variables.start + size;
 	}
 	else
 	{

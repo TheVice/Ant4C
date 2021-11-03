@@ -2797,13 +2797,13 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 			uint8_t recurse = 0;
 
 			if (3 == arguments_count &&
-				!bool_parse(values[2].start, range_size(&values[2]), &recurse))
+				!bool_parse(values[2].start, values[2].finish, &recurse))
 			{
 				break;
 			}
 
-			return directory_enumerate_file_system_entries(buffer_buffer_data(arguments, 0), entry_type, recurse, output,
-					1);
+			return directory_enumerate_file_system_entries(
+					   buffer_buffer_data(arguments, 0), entry_type, recurse, output, 1);
 		}
 
 		case dir_exists:
@@ -3028,7 +3028,9 @@ uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			continue;
 		}
 
-		if (!bool_parse(buffer_data(data, 0), attributes[ATTRIB_FILE_POSITION], &(attributes[i])))
+		const uint8_t* value = buffer_data(data, 0);
+
+		if (!bool_parse(value, value + attributes[ATTRIB_FILE_POSITION], &(attributes[i])))
 		{
 			return 0;
 		}

@@ -166,7 +166,9 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 		}
 		else
 		{
-			ASSERT_TRUE(target_evaluate_by_name(&the_project, &target_name_in_range, verbose))
+			ASSERT_TRUE(target_evaluate_by_name(&the_project,
+												target_name_in_range.start,
+												(uint8_t)range_size(&target_name_in_range), verbose))
 					<< "Path to module: '" << path_to_module << "'" << std::endl
 					<< "Path to script: '" << path_to_script << "'" << std::endl
 					<< "Name of module: '" << name_of_module << "'" << std::endl

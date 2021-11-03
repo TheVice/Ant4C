@@ -450,38 +450,44 @@ uint8_t property_evaluate_task(void* the_project, struct buffer* properties,
 		return 0;
 	}
 
-	const struct buffer* value_in_a_buffer = buffer_buffer_data(task_arguments, VALUE_POSITION);
 	const struct buffer* dynamic_in_a_buffer = buffer_buffer_data(task_arguments, DYNAMIC_POSITION);
 	const struct buffer* over_write_in_a_buffer = buffer_buffer_data(task_arguments, OVER_WRITE_POSITION);
 	const struct buffer* read_only_in_a_buffer = buffer_buffer_data(task_arguments, READ_ONLY_POSITION);
 	/**/
-	const uint8_t* value = buffer_data(value_in_a_buffer, 0);
+	const uint8_t* value = buffer_data(dynamic_in_a_buffer, 0);
+	uint8_t dynamic = (uint8_t)buffer_size(dynamic_in_a_buffer);
+
+	if (dynamic && !bool_parse(value, value + dynamic, &dynamic))
+	{
+		return 0;
+	}
+
+	value = buffer_data(over_write_in_a_buffer, 0);
+	uint8_t over_write = (uint8_t)buffer_size(over_write_in_a_buffer);
+
+	if (over_write && !bool_parse(value, value + over_write, &over_write))
+	{
+		return 0;
+	}
+	else
+	{
+		over_write = 1;
+	}
+
+	value = buffer_data(read_only_in_a_buffer, 0);
+	uint8_t read_only = (uint8_t)buffer_size(read_only_in_a_buffer);
+
+	if (read_only && !bool_parse(value, value + read_only, &read_only))
+	{
+		return 0;
+	}
+
+	const struct buffer* value_in_a_buffer = buffer_buffer_data(task_arguments, VALUE_POSITION);
+	value = buffer_data(value_in_a_buffer, 0);
 
 	if (NULL == value)
 	{
 		value = (const uint8_t*)&value;
-	}
-
-	uint8_t dynamic = (uint8_t)buffer_size(dynamic_in_a_buffer);
-
-	if (dynamic && !bool_parse(buffer_data(dynamic_in_a_buffer, 0), dynamic, &dynamic))
-	{
-		return 0;
-	}
-
-	uint8_t over_write = 1;
-
-	if (buffer_size(over_write_in_a_buffer) &&
-		!bool_parse(buffer_data(over_write_in_a_buffer, 0), buffer_size(over_write_in_a_buffer), &over_write))
-	{
-		return 0;
-	}
-
-	uint8_t read_only = (uint8_t)buffer_size(read_only_in_a_buffer);
-
-	if (read_only && !bool_parse(buffer_data(read_only_in_a_buffer, 0), read_only, &read_only))
-	{
-		return 0;
 	}
 
 	if (the_project)

@@ -511,11 +511,9 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
 			return 0;
 		}
 
-		struct range target_name;
-
-		BUFFER_TO_RANGE(target_name, &property_value);
-
-		if (!target_evaluate_by_name(the_project, &target_name, verbose))
+		if (!target_evaluate_by_name(
+				the_project, buffer_data(&property_value, 0),
+				(uint8_t)buffer_size(&property_value), verbose))
 		{
 			buffer_release(&property_value);
 			return 0;
@@ -564,7 +562,8 @@ uint8_t project_load_and_evaluate_target(
 
 			while (NULL != (target_name = argument_parser_get_target(arguments, &target_name_, index++)))
 			{
-				is_loaded = target_evaluate_by_name(the_project, target_name, verbose);
+				is_loaded = target_evaluate_by_name(
+								the_project, target_name->start, (uint8_t)range_size(target_name), verbose);
 
 				if (!is_loaded)
 				{
@@ -706,11 +705,10 @@ uint8_t project_evaluate_target_by_name_from_property(
 		return 0;
 	}
 
-	struct range target_name;
-
-	BUFFER_TO_RANGE(target_name, argument_value);
-
-	return target_evaluate_by_name(the_project, &target_name, verbose);
+	return target_evaluate_by_name(
+			   the_project,
+			   buffer_data(argument_value, 0),
+			   (uint8_t)buffer_size(argument_value), verbose);
 }
 
 uint8_t project_on_success(
@@ -1366,7 +1364,8 @@ uint8_t program_evaluate_task(
 		return 0;
 	}
 
-	const struct buffer* build_file_in_a_buffer = buffer_buffer_data(task_arguments, PROGRAM_BUILD_FILE_POSITION);
+	const struct buffer* build_file_in_a_buffer = buffer_buffer_data(
+				task_arguments, PROGRAM_BUILD_FILE_POSITION);
 
 	if (!buffer_size(build_file_in_a_buffer))
 	{
@@ -1374,7 +1373,8 @@ uint8_t program_evaluate_task(
 	}
 
 	uint16_t encoding = UTF8;
-	struct buffer* encoding_in_a_buffer = buffer_buffer_data(task_arguments, PROGRAM_ENCODING_POSITION);
+	struct buffer* encoding_in_a_buffer = buffer_buffer_data(
+			task_arguments, PROGRAM_ENCODING_POSITION);
 
 	if (buffer_size(encoding_in_a_buffer))
 	{
@@ -1386,16 +1386,23 @@ uint8_t program_evaluate_task(
 		}
 	}
 
-	uint8_t inherit_properties = 1;
-	struct buffer* inherit_all_in_a_buffer = buffer_buffer_data(task_arguments, PROGRAM_INHERIT_ALL_POSITION);
+	struct buffer* inherit_all_in_a_buffer = buffer_buffer_data(
+				task_arguments, PROGRAM_INHERIT_ALL_POSITION);
 
-	if (buffer_size(inherit_all_in_a_buffer))
+	uint8_t inherit_properties = (uint8_t)buffer_size(inherit_all_in_a_buffer);
+
+	if (inherit_properties)
 	{
-		if (!bool_parse(buffer_data(inherit_all_in_a_buffer, 0), buffer_size(inherit_all_in_a_buffer),
-						&inherit_properties))
+		const uint8_t* value = buffer_data(inherit_all_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + inherit_properties, &inherit_properties))
 		{
 			return 0;
 		}
+	}
+	else
+	{
+		inherit_properties = 1;
 	}
 
 	if (!buffer_resize(inherit_all_in_a_buffer, 0))
@@ -1403,17 +1410,23 @@ uint8_t program_evaluate_task(
 		return 0;
 	}
 
-	uint8_t inherit_modules = 1;
-	struct buffer* inherit_modules_in_a_buffer = buffer_buffer_data(task_arguments,
-			PROGRAM_INHERIT_MODULES_POSITION);
+	struct buffer* inherit_modules_in_a_buffer = buffer_buffer_data(
+				task_arguments, PROGRAM_INHERIT_MODULES_POSITION);
 
-	if (buffer_size(inherit_modules_in_a_buffer))
+	uint8_t inherit_modules = (uint8_t)buffer_size(inherit_modules_in_a_buffer);
+
+	if (inherit_modules)
 	{
-		if (!bool_parse(buffer_data(inherit_modules_in_a_buffer, 0), buffer_size(inherit_modules_in_a_buffer),
-						&inherit_modules))
+		const uint8_t* value = buffer_data(inherit_modules_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + inherit_modules, &inherit_modules))
 		{
 			return 0;
 		}
+	}
+	else
+	{
+		inherit_modules = 1;
 	}
 
 	static const uint8_t* tag = (const uint8_t*)"properties\0";
@@ -1427,7 +1440,9 @@ uint8_t program_evaluate_task(
 			attributes_finish, element_finish,
 			&sub_node_name, inherit_all_in_a_buffer))
 	{
-		if (!program_get_properties(the_project, the_target, inherit_all_in_a_buffer, &properties, 1, verbose))
+		if (!program_get_properties(
+				the_project, the_target, inherit_all_in_a_buffer,
+				&properties, 1, verbose))
 		{
 			property_release(&properties);
 			return 0;
@@ -1458,9 +1473,11 @@ uint8_t program_evaluate_task(
 
 	if (inherit_properties)
 	{
-		const struct buffer* current_project_properties = buffer_buffer_data(the_project, PROPERTIES_POSITION);
+		const struct buffer* current_project_properties = buffer_buffer_data(
+					the_project, PROPERTIES_POSITION);
 
-		if (!property_add_at_project(inherit_all_in_a_buffer, current_project_properties, verbose))
+		if (!property_add_at_project(
+				inherit_all_in_a_buffer, current_project_properties, verbose))
 		{
 			project_unload(inherit_all_in_a_buffer);
 			return 0;
@@ -1469,10 +1486,13 @@ uint8_t program_evaluate_task(
 
 	if (inherit_modules)
 	{
-		const struct buffer* current_project_modules = buffer_buffer_data(the_project, MODULES_POSITION);
-		struct buffer* new_project_modules = buffer_buffer_data(inherit_all_in_a_buffer, MODULES_POSITION);
+		const struct buffer* current_project_modules = buffer_buffer_data(
+					the_project, MODULES_POSITION);
+		struct buffer* new_project_modules = buffer_buffer_data(
+				inherit_all_in_a_buffer, MODULES_POSITION);
 
-		if (!load_tasks_copy_modules_with_out_objects(current_project_modules, new_project_modules))
+		if (!load_tasks_copy_modules_with_out_objects(
+				current_project_modules, new_project_modules))
 		{
 			project_unload(inherit_all_in_a_buffer);
 			return 0;
@@ -1483,7 +1503,8 @@ uint8_t program_evaluate_task(
 
 	BUFFER_TO_RANGE(build_file, build_file_in_a_buffer);
 
-	if (!project_get_current_directory(the_project, the_target, encoding_in_a_buffer, 0, verbose))
+	if (!project_get_current_directory(
+			the_project, the_target, encoding_in_a_buffer, 0, verbose))
 	{
 		project_unload(inherit_all_in_a_buffer);
 		return 0;
@@ -1494,7 +1515,8 @@ uint8_t program_evaluate_task(
 	BUFFER_TO_RANGE(current_directory, encoding_in_a_buffer);
 
 	inherit_properties = project_load_from_build_file(
-							 &build_file, &current_directory, encoding, inherit_all_in_a_buffer, 0, verbose);
+							 &build_file, &current_directory, encoding,
+							 inherit_all_in_a_buffer, 0, verbose);
 
 	if (!inherit_properties)
 	{
@@ -1502,16 +1524,21 @@ uint8_t program_evaluate_task(
 		return 0;
 	}
 
-	const struct buffer* target_name_in_a_buffer = buffer_buffer_data(task_arguments, PROGRAM_TARGET_POSITION);
+	const struct buffer* target_name_in_a_buffer = buffer_buffer_data(
+				task_arguments, PROGRAM_TARGET_POSITION);
+	inherit_properties = (uint8_t)buffer_size(target_name_in_a_buffer);
 
-	if (buffer_size(target_name_in_a_buffer))
+	if (inherit_properties)
 	{
-		BUFFER_TO_RANGE(current_directory, target_name_in_a_buffer);
-		inherit_properties = target_evaluate_by_name(inherit_all_in_a_buffer, &current_directory, verbose);
+		inherit_properties = target_evaluate_by_name(
+								 inherit_all_in_a_buffer,
+								 buffer_data(target_name_in_a_buffer, 0),
+								 inherit_properties, verbose);
 	}
 	else
 	{
-		inherit_properties = project_evaluate_default_target(inherit_all_in_a_buffer, verbose);
+		inherit_properties = project_evaluate_default_target(
+								 inherit_all_in_a_buffer, verbose);
 	}
 
 	project_unload(inherit_all_in_a_buffer);

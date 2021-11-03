@@ -953,9 +953,10 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
 		const struct buffer* attribute = buffer_buffer_data(attributes, i);
-		uint8_t bool_value = 0;
+		const uint8_t* value = buffer_data(attribute, 0);
+		uint8_t bool_value = (uint8_t)buffer_size(attribute);
 
-		if (!bool_parse(buffer_data(attribute, 0), buffer_size(attribute), &bool_value))
+		if (!bool_parse(value, value + bool_value, &bool_value))
 		{
 			return 0;
 		}
@@ -1013,20 +1014,24 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 		return 0;
 	}
 
-	const struct buffer* ptr = NULL;
+	const struct buffer* attribute;
 	uint8_t* outputs[2];
 	outputs[0] = fail_on_error;
 	outputs[1] = task_verbose;
 	uint8_t i = 0;
 
-	while (NULL != (ptr = buffer_buffer_data(attributes, i++)))
+	while (NULL != (attribute = buffer_buffer_data(attributes, i++)))
 	{
-		if (!buffer_size(ptr))
+		const uint8_t size = (uint8_t)buffer_size(attribute);
+
+		if (!size)
 		{
 			continue;
 		}
 
-		if (!bool_parse(buffer_data(ptr, 0), buffer_size(ptr), outputs[i - 1]))
+		const uint8_t* value = buffer_data(attribute, 0);
+
+		if (!bool_parse(value, value + size, outputs[i - 1]))
 		{
 			return 0;
 		}
@@ -1409,9 +1414,11 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 
 	struct buffer* argument = buffer_buffer_data(task_arguments, 0);
 
+	const uint8_t* value = buffer_data(argument, 0);
+
 	uint8_t dynamic = (uint8_t)buffer_size(argument);
 
-	if (dynamic && !bool_parse(buffer_data(argument, 0), dynamic, &dynamic))
+	if (dynamic && !bool_parse(value, value + dynamic, &dynamic))
 	{
 		return 0;
 	}

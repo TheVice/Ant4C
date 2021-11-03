@@ -52,9 +52,10 @@ uint8_t file_is_assembly(
 		return 0;
 	}
 
-	uint8_t is_function_exist = 0;
+	const uint8_t* value = buffer_data(output, 0);
+	uint8_t is_function_exist = (uint8_t)buffer_size(output);
 
-	if (!bool_parse(buffer_data(output, 0), buffer_size(output), &is_function_exist))
+	if (!bool_parse(value, value + is_function_exist, &is_function_exist))
 	{
 		return 0;
 	}

@@ -540,18 +540,17 @@ uint8_t target_evaluate(
 }
 
 uint8_t target_evaluate_by_name(
-	void* the_project, const struct range* target_name, uint8_t verbose)
+	void* the_project, const uint8_t* name, uint8_t name_length, uint8_t verbose)
 {
 	if (NULL == the_project ||
-		range_is_null_or_empty(target_name))
+		!name || !name_length)
 	{
 		return 0;
 	}
 
 	void* the_target = NULL;
-	const uint8_t name_length = (uint8_t)range_size(target_name);
 
-	if (!project_target_get(the_project, target_name->start, name_length, &the_target, verbose))
+	if (!project_target_get(the_project, name, name_length, &the_target, verbose))
 	{
 		static const uint8_t asterisk = '*';
 
@@ -560,7 +559,7 @@ uint8_t target_evaluate_by_name(
 			return 0;
 		}
 
-		if (!target_set_name((struct target*)the_target, target_name->start, name_length))
+		if (!target_set_name((struct target*)the_target, name, name_length))
 		{
 			return 0;
 		}
@@ -677,7 +676,8 @@ uint8_t call_evaluate_task(
 		return 0;
 	}
 
-	const struct buffer* target_name_in_a_buffer = buffer_buffer_data(task_arguments, CALL_TARGET_POSITION);
+	const struct buffer* target_name_in_a_buffer = buffer_buffer_data(
+				task_arguments, CALL_TARGET_POSITION);
 
 	if (!buffer_size(target_name_in_a_buffer))
 	{
@@ -692,16 +692,24 @@ uint8_t call_evaluate_task(
 		return 0;
 	}
 
-	uint8_t cascade_value = 1;
-	struct buffer* cascade_in_a_buffer = buffer_buffer_data(task_arguments, CALL_CASCADE_POSITION);
+	struct buffer* cascade_in_a_buffer = buffer_buffer_data(
+			task_arguments, CALL_CASCADE_POSITION);
 
-	if (buffer_size(cascade_in_a_buffer))
+	uint8_t cascade_value = (uint8_t)buffer_size(cascade_in_a_buffer);
+
+	if (cascade_value)
 	{
-		if (!bool_parse(buffer_data(cascade_in_a_buffer, 0), buffer_size(cascade_in_a_buffer), &cascade_value) ||
+		const uint8_t* value = buffer_data(cascade_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + cascade_value, &cascade_value) ||
 			!buffer_resize(cascade_in_a_buffer, 0))
 		{
 			return 0;
 		}
+	}
+	else
+	{
+		cascade_value = 1;
 	}
 
 	return target_evaluate(the_project, the_target, cascade_in_a_buffer, cascade_value, verbose);

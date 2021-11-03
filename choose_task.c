@@ -92,9 +92,10 @@ uint8_t choose_evaluate_task(
 			return 0;
 		}
 
-		uint8_t test_value = 0;
+		const uint8_t* value = buffer_data(test_value_in_buffer, 0);
+		uint8_t test_value;
 
-		if (!bool_parse(buffer_data(test_value_in_buffer, 0), buffer_size(test_value_in_buffer),
+		if (!bool_parse(value, value + buffer_size(test_value_in_buffer),
 						&test_value))
 		{
 			buffer_release_inner_buffers(attribute_value);

@@ -149,15 +149,15 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 	if (NULL != file)
 	{
 		result = file_open(file, append ? (const uint8_t*)"ab" : (const uint8_t*)"wb", &file_stream);
+
+		if (!result)
+		{
+			return 0;
+		}
 	}
 	else
 	{
 		file_stream = (Error != level) ? common_get_output_stream() : common_get_error_output_stream();
-	}
-
-	if (!result)
-	{
-		return 0;
 	}
 
 	if (NULL != message && 0 < message_length)
@@ -182,7 +182,6 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 				return 0;
 			}
 
-			/*message_length = buffer_size(&new_message) / sizeof(uint16_t);*/
 			message_length = string_get_length(message, message + message_length);
 			message = buffer_data(&new_message, 0);
 			result = file_flush(file_stream);
@@ -193,11 +192,11 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		{
 			if (NULL != file)
 			{
-				struct range message_in_range;
-				message_in_range.start = message;
-				message_in_range.finish = message + message_length;
+				struct range message_in_a_range;
+				message_in_a_range.start = message;
+				message_in_a_range.finish = message + message_length;
 				/**/
-				result = file_write_with_encoding(&message_in_range, encoding, file_stream);
+				result = file_write_with_encoding(&message_in_a_range, encoding, file_stream);
 			}
 			else
 			{
@@ -259,68 +258,67 @@ uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		return 0;
 	}
 
-	const struct buffer* append_in_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
-	const struct buffer* encoding_in_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
-	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
-	const struct buffer* message_in_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
+	const struct buffer* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
+	const struct buffer* encoding_in_a_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
+	struct buffer* file_path_in_a_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
+	const struct buffer* message_in_a_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
 	/**/
-	uint8_t append = 0;
+	uint8_t append = (uint8_t)buffer_size(append_in_a_buffer);
+	const uint8_t* value = buffer_data(append_in_a_buffer, 0);
 
-	if (buffer_size(append_in_buffer) &&
-		!bool_parse(buffer_data(append_in_buffer, 0), buffer_size(append_in_buffer), &append))
+	if (append && !bool_parse(value, value + append, &append))
 	{
 		return 0;
 	}
 
-	uint8_t encoding = UTF8;
+	uint8_t encoding = (uint8_t)buffer_size(encoding_in_a_buffer);
 
-	if (buffer_size(encoding_in_buffer))
+	if (encoding)
 	{
-		struct range value;
-		value.start = buffer_data(encoding_in_buffer, 0);
-		value.finish = value.start + buffer_size(encoding_in_buffer);
-		/**/
-		encoding = text_encoding_get_one(value.start, value.finish);
+		value = buffer_data(encoding_in_a_buffer, 0);
+		encoding = text_encoding_get_one(value, value + encoding);
+	}
+	else
+	{
+		encoding = UTF8;
 	}
 
 	const uint8_t* file = NULL;
 
-	if (buffer_size(file_path_in_buffer))
+	if (buffer_size(file_path_in_a_buffer))
 	{
-		if (!buffer_push_back(file_path_in_buffer, 0))
+		if (!buffer_push_back(file_path_in_a_buffer, 0))
 		{
 			return 0;
 		}
 
-		file = buffer_data(file_path_in_buffer, 0);
+		file = buffer_data(file_path_in_a_buffer, 0);
 	}
 
 	uint8_t level = Info;
 
 	if (!file)
 	{
-		const struct buffer* level_in_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
+		const struct buffer* level_in_a_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
+		level = (uint8_t)buffer_size(level_in_a_buffer);
 
-		if (buffer_size(level_in_buffer))
+		if (level)
 		{
-			struct range value;
-			value.start = buffer_data(level_in_buffer, 0);
-			value.finish = value.start + buffer_size(level_in_buffer);
-			/**/
-			level = echo_get_level(value.start, value.finish);
+			value = buffer_data(level_in_a_buffer, 0);
+			level = echo_get_level(value, value + level);
+		}
+		else
+		{
+			level = Info;
 		}
 	}
 
-	const uint8_t* message = NULL;
-	ptrdiff_t message_length = 0;
-
-	if (buffer_size(message_in_buffer))
+	value = buffer_data(message_in_a_buffer, 0);
+	ptrdiff_t message_length = buffer_size(message_in_a_buffer);
+	/*if (message_length)
 	{
-		/*TODO: string_trim for 'NULL == file'.*/
-		message = buffer_data(message_in_buffer, 0);
-		message_length = buffer_size(message_in_buffer);
-	}
-
+		TODO: string_trim for 'NULL == file'.
+	}*/
 	uint8_t new_line = 1;
-	return echo(append, encoding, file, level, message, message_length, new_line, verbose);
+	return echo(append, encoding, file, level, value, message_length, new_line, verbose);
 }

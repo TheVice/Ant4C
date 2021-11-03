@@ -36,7 +36,7 @@ TEST_F(TestConversion, bool_parse)
 		const auto input_in_range(string_to_range(input));
 		uint8_t output = 0;
 		//
-		const auto returned = bool_parse(input_in_range.start, range_size(&input_in_range), &output);
+		const auto returned = bool_parse(input_in_range.start, input_in_range.finish, &output);
 		//
 		ASSERT_EQ(expected_return, returned);
 		ASSERT_EQ(expected_output, output);

@@ -212,7 +212,11 @@ TEST_F(TestProject, project_load_from_content)
 		else
 		{
 			const auto target_to_run_in_range(string_to_range(target_to_run));
-			ASSERT_EQ(expected_target_return, target_evaluate_by_name(the_project, &target_to_run_in_range, verbose))
+			ASSERT_EQ(expected_target_return, target_evaluate_by_name(
+						  the_project,
+						  target_to_run_in_range.start,
+						  (uint8_t)range_size(&target_to_run_in_range),
+						  verbose))
 					<< content << std::endl << buffer_free(&output) << project_free(the_project);
 		}
 
@@ -577,7 +581,11 @@ TEST_F(TestProject, project_load_from_build_file)
 		else
 		{
 			const auto target_to_run_in_range(string_to_range(target_to_run));
-			returned = target_evaluate_by_name(the_project, &target_to_run_in_range, verbose);
+			returned = target_evaluate_by_name(
+						   the_project,
+						   target_to_run_in_range.start,
+						   (uint8_t)range_size(&target_to_run_in_range),
+						   verbose);
 			ASSERT_EQ(expected_target_return, returned)
 					<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
 		}

@@ -787,10 +787,13 @@ uint8_t argument_parser_get_bool_value(
 	const struct buffer* arguments, uint8_t a, uint8_t b, struct buffer* argument_value)
 {
 	const struct range* result = argument_parser_get_value_by_index(arguments, a, b, argument_value, 0);
+	const ptrdiff_t size = range_size(result);
 
-	if (result && buffer_resize(argument_value, range_size(result)))
+	if (result && buffer_resize(argument_value, size))
 	{
-		if (!bool_parse(buffer_data(argument_value, 0), buffer_size(argument_value), &a))
+		const uint8_t* value = buffer_data(argument_value, 0);
+
+		if (!bool_parse(value, value + size, &a))
 		{
 			return 0;
 		}

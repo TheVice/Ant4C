@@ -45,7 +45,7 @@ build_with_MSVC:
 
   parallel:
     matrix:
-      - TargetPlatform: [x64, Win32]
+      - TargetPlatform: [ x64, Win32 ]
 
   script: |
     if (-not(Test-Path -Path .\cmake.env))
@@ -158,7 +158,7 @@ build_with_MSVC:
 
   artifacts:
     paths:
-      - "$CI_PROJECT_DIR\build-$TargetPlatform"
+      - $CI_PROJECT_DIR\build-$TargetPlatform
     when: always
     reports:
       junit: $CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-$TargetPlatform.xml
@@ -177,7 +177,7 @@ build_with_MinGW:
 
   parallel:
     matrix:
-      - BUILD_TYPE: [Debug, Release]
+      - BUILD_TYPE: [ Debug, Release ]
 
   script: |
     if (-not(Test-Path -Path .\cmake.env))
@@ -265,7 +265,7 @@ build_with_MinGW:
 
   artifacts:
     paths:
-      - "$CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE"
+      - $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE
     when: always
     reports:
       junit: $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE.xml
@@ -282,7 +282,7 @@ build_on_unix_like:
 
   parallel:
     matrix:
-      - BUILD_TYPE: [Debug, Release]
+      - BUILD_TYPE: [ Debug, Release ]
 
   script: |
     cmake -E make_directory $CI_PROJECT_DIR/build-$BUILD_TYPE

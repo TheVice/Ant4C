@@ -357,8 +357,8 @@ TEST_F(TestOperatingSystem, operating_system_init)
 
 		if (!is_server_value.empty())
 		{
-			ASSERT_TRUE
-			(bool_parse(reinterpret_cast<const uint8_t*>(is_server_value.data()), is_server_value.size(), &is_server));
+			const auto is_server_value_in_a_range(string_to_range(is_server_value));
+			ASSERT_TRUE(bool_parse(is_server_value_in_a_range.start, is_server_value_in_a_range.finish, &is_server));
 		}
 
 #else

@@ -8,12 +8,12 @@
 #ifndef _CONVERSION_H_
 #define _CONVERSION_H_
 
-#include <stddef.h>
 #include <stdint.h>
 
 struct buffer;
 
-uint8_t bool_parse(const uint8_t* input, ptrdiff_t length, uint8_t* output);
+uint8_t bool_parse(
+	const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output);
 uint8_t bool_to_string(uint8_t input, struct buffer* output);
 
 double double_parse(const uint8_t* value);

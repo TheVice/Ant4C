@@ -327,7 +327,9 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 		}
 		else
 		{
-			ASSERT_TRUE(target_evaluate_by_name(&the_project, &target_name_in_range, verbose))
+			ASSERT_TRUE(target_evaluate_by_name(&the_project,
+												target_name_in_range.start,
+												(uint8_t)range_size(&target_name_in_range), verbose))
 					<< path_to_module << std::endl
 					<< path_to_build_file << std::endl
 					<< current_directory << std::endl
