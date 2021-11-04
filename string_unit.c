@@ -471,7 +471,7 @@ uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_fini
 }
 
 uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish,
-						 ptrdiff_t index, ptrdiff_t length, struct buffer* output)
+						 ptrdiff_t index, ptrdiff_t length, struct range* output)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		index < 0 ||
@@ -480,52 +480,39 @@ uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(output);
-
-	if (!buffer_append(output, NULL, (input_finish - input_start) + sizeof(uint32_t)))
-	{
-		return 0;
-	}
-
-	uint32_t* ptr = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
-
-	if (!buffer_resize(output, size))
-	{
-		return 0;
-	}
-
 	while (index)
 	{
-		const uint8_t offset = text_encoding_decode_UTF8_single(
-								   input_start, input_finish, ptr);
-
-		if (!offset)
+		if (NULL == (input_start =
+						 string_enumerate(input_start, input_finish, NULL)))
 		{
+			output->start = output->finish = NULL;
 			return 0;
 		}
 
-		input_start += offset;
 		--index;
 	}
 
+	output->start = input_start;
+
 	if (length < 0)
 	{
-		return buffer_append(output, input_start, input_finish - input_start);
+		output->finish = input_finish;
 	}
-
-	while (length)
+	else
 	{
-		const uint8_t offset = text_encoding_decode_UTF8_single(
-								   input_start, input_finish, ptr);
-
-		if (!offset ||
-			!buffer_append(output, input_start, offset))
+		while (length)
 		{
-			return 0;
+			if (NULL == (input_start =
+							 string_enumerate(input_start, input_finish, NULL)))
+			{
+				output->start = output->finish = NULL;
+				return 0;
+			}
+
+			--length;
 		}
 
-		input_start += offset;
-		--length;
+		output->finish = input_start;
 	}
 
 	return 1;

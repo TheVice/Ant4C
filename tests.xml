@@ -7443,6 +7443,62 @@ Approximate round trip times in milli-seconds:
     <string_starts_with input="AB" value="CD" return="false" />
     <string_starts_with input="AB" value="AB" return="true" />
     <string_starts_with input="ABCD" value="AB" return="true" />
+    <string_substring>
+      <input></input>
+      <index></index>
+      <length></length>
+      <output></output>
+      <return></return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>1</index>
+      <length>1</length>
+      <output>b</output>
+      <return>1</return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>1</index>
+      <length></length>
+      <output></output>
+      <return>1</return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>-1</index>
+      <length></length>
+      <output></output>
+      <return></return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>1</index>
+      <length>-1</length>
+      <output>bc</output>
+      <return>1</return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>2</index>
+      <length>1</length>
+      <output>c</output>
+      <return>1</return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>3</index>
+      <length>1</length>
+      <output></output>
+      <return></return>
+    </string_substring>
+    <string_substring>
+      <input>abc</input>
+      <index>2</index>
+      <length>2</length>
+      <output></output>
+      <return></return>
+    </string_substring>
     <string_transform_to_case>
       <input></input>
       <letter_case></letter_case>

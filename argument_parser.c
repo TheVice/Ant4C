@@ -22,6 +22,8 @@ static const uint8_t equal_symbol = '=';
 static const uint8_t quote_symbol = '"';
 static const uint8_t space_symbol = ' ';
 static const uint8_t zero_symbol = '\0';
+static const uint8_t plus = '+';
+static const uint8_t minus = '-';
 
 static const uint8_t* properties_names[] =
 {
@@ -106,36 +108,70 @@ uint8_t argument_parser_get_verbose_char(int i, int argc, char** argv)
 
 	for (; i < argc; ++i)
 	{
-		if ('-' != argv[i][0])
+		const uint8_t* input = (const uint8_t*)argv[i];
+		const uint8_t* input_finish =
+			input + common_count_bytes_until(input, 0);
+		const ptrdiff_t length = string_get_length(input, input_finish);
+
+		if (!length)
 		{
 			continue;
 		}
 
-		const size_t length = strlen(argv[i]);
-
-		if ((9 == length && (0 == memcmp(argv[i], "-verbose+", 9) ||
-							 0 == memcmp(argv[i], "-verbose-", 9))) ||
-			(8 == length && (0 == memcmp(argv[i], "-verbose", 8))) ||
-			(3 == length && (0 == memcmp(argv[i], "-v+", 3) ||
-							 0 == memcmp(argv[i], "-v-", 3))) ||
-			(2 == length && (0 == memcmp(argv[i], "-v", 2))))
+		static const uint8_t* verbose_str[] =
 		{
-			const char ch = argv[i][length - 1];
+			(const uint8_t*)"-verbose",
+			(const uint8_t*)"-v"
+		};
+		/**/
+		static const uint8_t verbose_lengths[] = { 8, 2 };
 
-			if ('+' == ch)
+		for (uint8_t j = 0; j < 2;)
+		{
+			if (string_starts_with(
+					input, input_finish,
+					verbose_str[j], verbose_str[j] + verbose_lengths[j]))
 			{
-				verbose = 1;
-			}
-			else if ('-' == ch)
-			{
-				verbose = 0;
-			}
-			else
-			{
-				verbose = 1;
+				if (length == verbose_lengths[j])
+				{
+					verbose = 1;
+					break;
+				}
+
+				if (length == verbose_lengths[j] + 1)
+				{
+					struct range ch_in_a_range;
+
+					if (!string_substring(
+							input, input_finish, length - 1, 1,
+							&ch_in_a_range))
+					{
+						break;
+					}
+
+					uint32_t ch;
+					ch_in_a_range.start = string_enumerate(
+											  ch_in_a_range.start, ch_in_a_range.finish, &ch);
+
+					if (ch_in_a_range.start != ch_in_a_range.finish)
+					{
+						break;
+					}
+
+					if (plus == ch)
+					{
+						verbose = 1;
+						break;
+					}
+					else if (minus == ch)
+					{
+						verbose = 0;
+						break;
+					}
+				}
 			}
 
-			break;
+			++j;
 		}
 	}
 
@@ -198,7 +234,7 @@ uint8_t argument_get_key_and_value(
 	{
 		return 0;
 	}
-
+#if 1
 	value->start = find_any_symbol_like_or_not_like_that(input_start, input_finish,
 				   &equal_symbol, 1, 1, 1);
 
@@ -217,48 +253,81 @@ uint8_t argument_get_key_and_value(
 				 &quote_symbol, 1, 0, 1);
 	key->finish = 1 + find_any_symbol_like_or_not_like_that(key->finish - 1, key->start,
 				  &quote_symbol, 1, 0, -1);
+#else
+	value->start = string_find_any_symbol_like_or_not_like_that(
+					   input_start, input_finish,
+					   &equal_symbol, &equal_symbol + 1, 1, 1);
+
+	if (input_finish == value->start)
+	{
+		return 0;
+	}
+
+	key->finish = value->start;
+	value->start = string_enumerate(value->start, input_finish, NULL);
+	value->start = string_find_any_symbol_like_or_not_like_that(
+					   value->start, input_finish, &quote_symbol, &quote_symbol + 1, 0, 1);
+	/*TODO:*/
+	value->finish = 1 + string_find_any_symbol_like_or_not_like_that(
+						input_finish - 1, value->start,
+						&quote_symbol, &quote_symbol + 1, 0, -1);
+	/**/
+	key->start = string_find_any_symbol_like_or_not_like_that(
+					 input_start, key->finish,
+					 &quote_symbol, &quote_symbol + 1, 0, 1);
+	/*TODO:*/
+	key->finish = 1 + string_find_any_symbol_like_or_not_like_that(
+					  key->finish - 1, key->start,
+					  &quote_symbol, &quote_symbol + 1, 0, -1);
+#endif
 	/**/
 	return !range_is_null_or_empty(key) && string_trim(key) && value->start <= value->finish;
 }
 
-uint8_t argument_parser_buffer_to_properties(const struct buffer* input, struct buffer* properties,
-		uint8_t verbose)
+uint8_t argument_parser_buffer_to_properties(
+	const struct buffer* input, struct buffer* properties, uint8_t verbose)
 {
 	const uint8_t* start = buffer_data(input, 0);
-	const uint8_t* previous_pos = start;
 	const uint8_t* finish = start + buffer_size(input);
+	const uint8_t* pos = start;
 
-	while ((start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1)) < finish)
+	while ((start = string_find_any_symbol_like_or_not_like_that(
+						start, finish,
+						&zero_symbol, &zero_symbol + 1, 1, 1)) < finish)
 	{
 		struct range key;
 		struct range value;
 
-		if (!argument_get_key_and_value(
-				previous_pos, start, &key, &value))
+		if (!argument_get_key_and_value(pos, start, &key, &value))
 		{
 			return 0;
 		}
 
-		if (!property_set_by_name(properties,
-								  key.start, (uint8_t)range_size(&key),
-								  value.start, range_size(&value),
-								  property_value_is_byte_array,
-								  1, 1, 1, verbose))
+		if (!property_set_by_name(
+				properties,
+				key.start, (uint8_t)range_size(&key),
+				value.start, range_size(&value),
+				property_value_is_byte_array,
+				1, 1, 1, verbose))
 		{
 			return 0;
 		}
 
-		start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1);
-		previous_pos = start;
+		start = string_find_any_symbol_like_or_not_like_that(
+					start, finish, &zero_symbol, &zero_symbol + 1, 0, 1);
+		pos = start;
 	}
 
 	return 1;
 }
 
-uint8_t argument_parser_append_property(struct buffer* properties_, const uint8_t* name, uint8_t name_length,
-										struct buffer* argument_value, uint8_t append_property_value, uint8_t verbose)
+uint8_t argument_parser_append_property(
+	struct buffer* properties_,
+	const uint8_t* name, uint8_t name_length,
+	struct buffer* argument_value, uint8_t append_property_value,
+	uint8_t verbose)
 {
-	void* the_property = NULL;
+	void* the_property;
 	ptrdiff_t size = buffer_size(argument_value);
 
 	if (size)
@@ -273,9 +342,10 @@ uint8_t argument_parser_append_property(struct buffer* properties_, const uint8_
 
 	if (!property_exists(properties_, name, name_length, &the_property))
 	{
-		return property_set_by_name(properties_, name, name_length,
-									size ? buffer_data(argument_value, 0) : (const uint8_t*)&size, size,
-									property_value_is_byte_array, 0, 0, 0, verbose);
+		return property_set_by_name(
+				   properties_, name, name_length,
+				   size ? buffer_data(argument_value, 0) : (const uint8_t*)&size,
+				   size, property_value_is_byte_array, 0, 0, 0, verbose);
 	}
 
 	size = buffer_size(argument_value);
@@ -320,12 +390,14 @@ uint8_t argument_parser_append_property(struct buffer* properties_, const uint8_
 	}
 
 	size = buffer_size(argument_value);
-	return property_set_by_pointer(the_property,
-								   size ? buffer_data(argument_value, 0) : (const uint8_t*)&size, size,
-								   property_value_is_byte_array, 0, 0, verbose);
+	return property_set_by_pointer(
+			   the_property,
+			   size ? buffer_data(argument_value, 0) : (const uint8_t*)&size,
+			   size, property_value_is_byte_array, 0, 0, verbose);
 }
 
-uint8_t argument_parser_char(int i, int argc, char** argv, struct buffer* arguments, uint8_t verbose)
+uint8_t argument_parser_char(int i, int argc, char** argv,
+							 struct buffer* arguments, uint8_t verbose)
 {
 	if ((i < argc && NULL == argv) ||
 		NULL == arguments)
@@ -352,16 +424,20 @@ uint8_t argument_parser_char(int i, int argc, char** argv, struct buffer* argume
 			return 0;
 		}
 
-		if (1 < length && ('-' == argv[i][0] || '/' == argv[i][0]))
+		if (1 < length && (minus == argv[i][0] || '/' == argv[i][0]))
 		{
 			static const uint8_t colon_mark = ':';
 			const uint8_t* start = (const uint8_t*)argv[i] + 1;
 			const uint8_t* finish = (const uint8_t*)argv[i] + length;
-			const uint8_t* middle = find_any_symbol_like_or_not_like_that(start, finish, &colon_mark, 1, 1, 1);
+			const uint8_t* middle =
+				string_find_any_symbol_like_or_not_like_that(
+					start, finish, &colon_mark, &colon_mark + 1, 1, 1);
 
 			if (middle != finish)
 			{
-				middle = find_any_symbol_like_or_not_like_that(middle, finish, &colon_mark, 1, 0, 1);
+				middle = string_find_any_symbol_like_or_not_like_that(
+							 middle, finish, &colon_mark, &colon_mark + 1,
+							 0, 1);
 
 				if (middle == finish)
 				{
@@ -377,7 +453,9 @@ uint8_t argument_parser_char(int i, int argc, char** argv, struct buffer* argume
 					return 0;
 				}
 
-				middle = find_any_symbol_like_or_not_like_that(middle, start, &colon_mark, 1, 1, -1);
+				middle = string_find_any_symbol_like_or_not_like_that(
+							 middle, start, &colon_mark, &colon_mark + 1,
+							 1, -1);
 				ptrdiff_t name_length = middle - start;
 
 				if (UINT8_MAX < name_length)
@@ -419,7 +497,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv, struct buffer* argume
 
 				uint8_t offset = 1;
 
-				if ('-' == argv[i][length - 1])
+				if (minus == argv[i][length - 1])
 				{
 					if (!bool_to_string(0, &argument_value))
 					{
@@ -437,7 +515,7 @@ uint8_t argument_parser_char(int i, int argc, char** argv, struct buffer* argume
 						return 0;
 					}
 
-					if ('+' == argv[i][length - 1])
+					if (plus == argv[i][length - 1])
 					{
 						++offset;
 					}
@@ -477,7 +555,8 @@ uint8_t argument_parser_char(int i, int argc, char** argv, struct buffer* argume
 	return 1;
 }
 #if defined(_WIN32)
-uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv, struct buffer* arguments, uint8_t verbose)
+uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv,
+								struct buffer* arguments, uint8_t verbose)
 {
 	if ((i < argc && NULL == argv) ||
 		NULL == arguments)
@@ -547,7 +626,6 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv, struct buffer* 
 	return 1;
 }
 #endif
-
 uint8_t argument_assign_un_quote(const uint8_t* previous_pos, const uint8_t* input_start,
 								 struct buffer* output)
 {
@@ -567,7 +645,7 @@ uint8_t argument_assign_un_quote(const uint8_t* previous_pos, const uint8_t* inp
 
 	while (previous_pos < input_start)
 	{
-		if (quote_symbol != *previous_pos)
+		if (quote_symbol != *previous_pos)/*TODO:*/
 		{
 			if (!buffer_push_back(output, *previous_pos))
 			{
@@ -575,7 +653,7 @@ uint8_t argument_assign_un_quote(const uint8_t* previous_pos, const uint8_t* inp
 			}
 		}
 
-		++previous_pos;
+		previous_pos = string_enumerate(previous_pos, input_start, NULL);
 	}
 
 	return buffer_push_back(output, 0);
@@ -608,14 +686,16 @@ uint8_t argument_append_arguments(
 					return 0;
 				}
 
-				input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, &space_symbol, 1, 0, 1);
+				input_start = string_find_any_symbol_like_or_not_like_that(
+								  input_start, input_finish,
+								  &space_symbol, &space_symbol + 1, 0, 1);
 				previous_pos = input_start;
 				/**/
 				continue;
 			}
 		}
 
-		++input_start;
+		input_start = string_enumerate(input_start, input_finish, NULL);
 	}
 
 	if (previous_pos < input_start &&
@@ -642,28 +722,28 @@ uint8_t argument_create_arguments(struct buffer* output, int* argc, char*** argv
 
 	if (NULL == start)
 	{
-		start = NULL;
-
 		if (!buffer_append(output, (const uint8_t*)&start, sizeof(const uint8_t*)))
 		{
 			return 0;
 		}
 
-		(*argv) = (char**)buffer_data(output, buffer_size(output) - sizeof(const uint8_t*));
+		*argv = (char**)buffer_data(output, buffer_size(output) - sizeof(const uint8_t*));
 		return 1;
 	}
 
 	const uint8_t* finish = (const uint8_t*)(buffer_data(output, 0) + buffer_size(output));
 
-	while ((start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1)) < finish)
+	while ((start = string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero_symbol, &zero_symbol + 1, 1, 1)) < finish)
 	{
-		start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1);
+		start = string_find_any_symbol_like_or_not_like_that(
+					start, finish, &zero_symbol, &zero_symbol + 1, 0, 1);
 		(*argc)++;
 	}
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if ((*argc) < 1)
+	if (*argc < 1)
 	{
 		start = NULL;
 
@@ -672,11 +752,11 @@ uint8_t argument_create_arguments(struct buffer* output, int* argc, char*** argv
 			return 0;
 		}
 
-		(*argv) = (char**)buffer_data(output, size);
+		*argv = (char**)buffer_data(output, size);
 		return 1;
 	}
 
-	if (!buffer_append(output, NULL, ((ptrdiff_t)1 + (*argc)) * sizeof(const uint8_t*)))
+	if (!buffer_append(output, NULL, ((ptrdiff_t)1 + *argc) * sizeof(const uint8_t*)))
 	{
 		return 0;
 	}
@@ -689,14 +769,16 @@ uint8_t argument_create_arguments(struct buffer* output, int* argc, char*** argv
 		return 0;
 	}
 
-	while ((start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1)) < finish)
+	while ((start = string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero_symbol, &zero_symbol + 1, 0, 1)) < finish)
 	{
 		if (!buffer_append(output, (const uint8_t*)&start, sizeof(const uint8_t*)))
 		{
 			return 0;
 		}
 
-		start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1);
+		start = string_find_any_symbol_like_or_not_like_that(
+					start, finish, &zero_symbol, &zero_symbol + 1, 1, 1);
 	}
 
 	start = NULL;
@@ -706,7 +788,7 @@ uint8_t argument_create_arguments(struct buffer* output, int* argc, char*** argv
 		return 0;
 	}
 
-	(*argv) = (char**)buffer_data(output, size);
+	*argv = (char**)buffer_data(output, size);
 	return 1;
 }
 
@@ -717,17 +799,19 @@ uint8_t argument_from_char(const char* input_start, const char* input_finish,
 		   argument_create_arguments(output, argc, argv);
 }
 
-const uint8_t* argument_parser_get_null_terminated_by_index(struct buffer* argument_value, int index,
-		int* current_i)
+const uint8_t* argument_parser_get_null_terminated_by_index(
+	struct buffer* argument_value, int index, int* current_i)
 {
 	int i = 0;
 	const uint8_t* start = buffer_data(argument_value, 0);
 	const uint8_t* finish = start + buffer_size(argument_value);
 
-	while ((start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1)) < finish &&
+	while ((start = string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero_symbol, &zero_symbol + 1, 0, 1)) < finish &&
 		   (i++) < index)
 	{
-		start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1);
+		start = string_find_any_symbol_like_or_not_like_that(
+					start, finish, &zero_symbol, &zero_symbol + 1, 1, 1);
 	}
 
 	if (NULL != current_i)
@@ -776,8 +860,9 @@ const struct range* argument_parser_get_value_by_index(
 
 		result = (struct range*)buffer_data(argument_value, size);
 		result->start = buffer_data(argument_value, index);
-		result->finish = find_any_symbol_like_or_not_like_that(result->start, buffer_data(argument_value, size) - 1,
-						 &zero_symbol, 1, 1, 1);
+		result->finish = string_find_any_symbol_like_or_not_like_that(
+							 result->start, buffer_data(argument_value, size) - 1,/*TODO:*/
+							 &zero_symbol, &zero_symbol + 1, 1, 1);
 	}
 
 	return result;
@@ -786,7 +871,8 @@ const struct range* argument_parser_get_value_by_index(
 uint8_t argument_parser_get_bool_value(
 	const struct buffer* arguments, uint8_t a, uint8_t b, struct buffer* argument_value)
 {
-	const struct range* result = argument_parser_get_value_by_index(arguments, a, b, argument_value, 0);
+	const struct range* result = argument_parser_get_value_by_index(
+									 arguments, a, b, argument_value, 0);
 	const ptrdiff_t size = range_size(result);
 
 	if (result && buffer_resize(argument_value, size))
@@ -870,7 +956,7 @@ uint8_t argument_parser_get_quiet(const struct buffer* arguments, struct buffer*
 uint8_t argument_parser_get_properties(const struct buffer* arguments, struct buffer* properties,
 									   uint8_t verbose)
 {
-	void* the_property = NULL;
+	void* the_property;
 
 	if (property_exists(arguments, properties_names[PROPERTY_POSITION],
 						properties_names_lengths[PROPERTY_POSITION],
