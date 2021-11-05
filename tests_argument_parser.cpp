@@ -459,6 +459,116 @@ static const std::map<std::string, std::uint16_t> encodings =
 	std::make_pair("ISO_8859_13", static_cast<std::uint16_t>(ISO_8859_13))
 };
 
+template<typename TYPE>
+std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>>
+		all_arguments(
+			const std::vector<std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>>>& arguments)
+{
+	std::basic_string<TYPE, std::char_traits<TYPE>, std::allocator<TYPE>>
+			output;
+
+	for (const auto& argument : arguments)
+	{
+		output += argument;
+		output.push_back('\n');
+	}
+
+	return output;
+}
+
+TEST_F(TestArgumentParser, argument_parser_get_verbose)
+{
+	std::vector<std::string> arguments;
+	std::vector<char*> argv;
+#if defined(_WIN32)
+	std::vector<std::wstring> argumentsW;
+	std::vector<wchar_t*> argvW;
+#endif
+
+	for (const auto& node : nodes)
+	{
+		const std::string i_str(
+			node.node().select_node("i").node().child_value());
+		const auto i_in_a_range(string_to_range(i_str));
+		const auto i = int_parse(i_in_a_range.start, i_in_a_range.finish);
+		//
+		const std::string return_str(
+			node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const uint8_t expected_return =
+			static_cast<uint8_t>(
+				int_parse(return_in_a_range.start, return_in_a_range.finish));
+		//
+		arguments.clear();
+		/*for (const auto& argument : node.node().select_nodes("argument"))
+		{
+			arguments.push_back(argument.node().child_value());
+		}*/
+		const auto arguments_ = node.node().select_nodes("argument");
+		std::transform(
+			arguments_.begin(), arguments_.end(),
+			std::back_inserter(arguments),
+			[](const pugi::xpath_node & argument)
+		{
+			return argument.node().child_value();
+		});
+		argv.clear();
+		const int argc = static_cast<int>(arguments.size());
+
+		for (auto& argument : arguments)
+		{
+			if (argument.empty())
+			{
+				argv.push_back(nullptr);
+				continue;
+			}
+
+			argv.push_back(&argument[0]);
+		}
+
+		auto returned =
+			argument_parser_get_verbose_char(i, argc, argv.data());
+		ASSERT_EQ(expected_return, returned)
+				<< i << std::endl
+				<< static_cast<int>(expected_return) << std::endl
+				<< all_arguments(arguments) << std::endl;
+#if defined(_WIN32)
+		argumentsW.clear();
+		/*for (const auto& argument : arguments)
+		{
+			argumentsW.push_back(char_to_wchar_t(argument));
+		}*/
+		std::transform(
+			arguments.begin(), arguments.end(),
+			std::back_inserter(argumentsW),
+			[](const std::string & argument)
+		{
+			return char_to_wchar_t(argument);
+		});
+		argvW.clear();
+
+		for (auto& argument : argumentsW)
+		{
+			if (argument.empty())
+			{
+				argvW.push_back(nullptr);
+				continue;
+			}
+
+			argvW.push_back(&argument[0]);
+		}
+
+		returned =
+			argument_parser_get_verbose_wchar_t(i, argc, argvW.data());
+		ASSERT_EQ(expected_return, returned)
+				<< i << std::endl
+				<< static_cast<int>(expected_return) << std::endl
+				<< all_arguments(argumentsW) << std::endl;
+#endif
+		--node_count;
+	}
+}
+
 TEST_F(TestArgumentParser, argument_parser_at_all)
 {
 	buffer command_arguments;

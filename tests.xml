@@ -1,6 +1,48 @@
 <?xml version="1.0"?>
 <Tests>
   <TestArgumentParser>
+    <argument_parser_get_verbose>
+      <int></int>
+      <argument></argument>
+      <return></return>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>def</argument>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>def</argument>
+      <argument>-verbose</argument>
+      <return>1</return>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>-verbose+</argument>
+      <argument>def</argument>
+      <return>1</return>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>-verbose-</argument>
+      <argument>def</argument>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>-verbose+z</argument>
+      <argument>def</argument>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>-verbose-y</argument>
+      <argument>def</argument>
+    </argument_parser_get_verbose>
     <argument_parser_at_all>
       <input />
       <return>1</return>
