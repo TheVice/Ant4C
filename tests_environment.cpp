@@ -149,35 +149,35 @@ TEST(TestEnvironment_, environment_get_folder_path)
 		{
 			const auto size = buffer_size(&path);
 			const auto code(string_to_range(expected_result[i]));
-			ASSERT_TRUE(interpreter_evaluate_code(NULL, NULL, &code, &path, verbose))
+			ASSERT_TRUE(interpreter_evaluate_code(nullptr, nullptr, &code, &path, verbose))
 					<< "'" << expected_result[i] << "'" << std::endl
 					<< buffer_free(&path);
 			//
-			auto path_in_string(buffer_to_string(&path));
-			ASSERT_FALSE(path_in_string.empty())
+			auto path_str(buffer_to_string(&path));
+			ASSERT_FALSE(path_str.empty())
 					<< static_cast<uint32_t>(i) << std::endl << buffer_free(&path);
 			ASSERT_EQ(2 * size, buffer_size(&path))
 					<< static_cast<uint32_t>(i) << std::endl
-					<< path_in_string << std::endl << buffer_free(&path);
+					<< path_str << std::endl << buffer_free(&path);
 			//
 			ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
-			const auto path_in_range(string_to_range(path_in_string));
-			ASSERT_TRUE(string_to_lower(path_in_range.start, path_in_range.finish, &path))
-					<< path_in_string << std::endl << buffer_free(&path);
-			path_in_string = buffer_to_string(&path);
+			const auto path_in_a_range(string_to_range(path_str));
+			ASSERT_TRUE(string_to_lower(path_in_a_range.start, path_in_a_range.finish, &path))
+					<< path_str << std::endl << buffer_free(&path);
+			path_str = buffer_to_string(&path);
 			//
-			ASSERT_EQ(2 * size, static_cast<ptrdiff_t>(path_in_string.size()))
+			ASSERT_EQ(2 * size, static_cast<ptrdiff_t>(path_str.size()))
 					<< static_cast<uint32_t>(i) << std::endl
-					<< path_in_string << std::endl << buffer_free(&path);
-			ASSERT_EQ(path_in_string.substr(size), path_in_string.substr(0, size))
+					<< path_str << std::endl << buffer_free(&path);
+			ASSERT_EQ(path_str.substr(size), path_str.substr(0, size))
 					<< static_cast<uint32_t>(i) << std::endl << buffer_free(&path);
 		}
 		else
 		{
-			const auto path_in_string(buffer_to_string(&path));
+			const auto path_str(buffer_to_string(&path));
 			ASSERT_EQ(0, buffer_size(&path))
 					<< static_cast<uint32_t>(i)
-					<< " '" << path_in_string << "'" << std::endl
+					<< " '" << path_str << "'" << std::endl
 					<< buffer_free(&path);
 		}
 	}
@@ -188,7 +188,7 @@ TEST(TestEnvironment_, environment_get_folder_path)
 TEST(TestEnvironment_, environment_get_machine_name)
 {
 #if defined(_WIN32)
-	const std::string variable_name = "COMPUTERNAME";
+	const std::string variable_name("COMPUTERNAME");
 #endif
 	buffer result;
 	SET_NULL_TO_BUFFER(result);
@@ -199,9 +199,9 @@ TEST(TestEnvironment_, environment_get_machine_name)
 	SET_NULL_TO_BUFFER(expected_result);
 	//
 	const auto returned(buffer_to_string(&result));
-	const auto variable_name_in_range(string_to_range(variable_name));
+	const auto variable_name_in_a_range(string_to_range(variable_name));
 	ASSERT_TRUE(
-		environment_get_variable(variable_name_in_range.start, variable_name_in_range.finish, &expected_result))
+		environment_get_variable(variable_name_in_a_range.start, variable_name_in_a_range.finish, &expected_result))
 			<< "Expected value for variable is '" << returned << "'" << std::endl
 			<< buffer_free(&expected_result) << buffer_free(&result);
 	const auto expected_return(buffer_to_string(&expected_result));
@@ -245,9 +245,9 @@ TEST(TestEnvironment_, environment_get_user_name)
 		ASSERT_TRUE(buffer_resize(&output, 0))
 				<< "'" << user_name << "'" << std::endl
 				<< buffer_free(&output);
-		const auto name_in_range(string_to_range(names[i]));
+		const auto name_in_a_range(string_to_range(names[i]));
 
-		if (environment_get_variable(name_in_range.start, name_in_range.finish, &output))
+		if (environment_get_variable(name_in_a_range.start, name_in_a_range.finish, &output))
 		{
 			break;
 		}
@@ -325,10 +325,18 @@ TEST_F(TestEnvironment, environment_variable_exists)
 				<< buffer_free(&variable);
 		const auto variable_name = reinterpret_cast<const uint8_t*>(
 									   node.node().select_node("variable_name").node().child_value());
-		const auto variable_name_length = static_cast<uint8_t>(
-											  INT_PARSE(node.node().select_node("variable_name_length").node().child_value()));
-		const auto expected_return = static_cast<uint8_t>(
-										 INT_PARSE(node.node().select_node("return").node().child_value()));
+		//
+		const std::string variable_name_length_str(
+			node.node().select_node("variable_name_length").node().child_value());
+		auto input_in_a_range = string_to_range(variable_name_length_str);
+		const auto variable_name_length =
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		input_in_a_range = string_to_range(return_str);
+		const auto expected_return =
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
 		const auto returned = environment_variable_exists(variable_name, variable_name + variable_name_length);
 		ASSERT_EQ(expected_return, returned)
 				<< "'" << variable_name << "'" << std::endl << buffer_free(&variable);
@@ -349,8 +357,10 @@ TEST_F(TestOperatingSystem, operating_system_init)
 
 	for (const auto& node : nodes)
 	{
-		const auto platformID = static_cast<uint8_t>(INT_PARSE(
-									node.node().select_node("platformID").node().child_value()));
+		const std::string platformID_str(node.node().select_node("platformID").node().child_value());
+		const auto platformID_in_a_range(string_to_range(platformID_str));
+		const auto platformID =
+			static_cast<uint8_t>(int_parse(platformID_in_a_range.start, platformID_in_a_range.finish));
 #if defined(_WIN32)
 		const std::string is_server_value(node.node().select_node("is_server").node().child_value());
 		uint8_t is_server = 0;
@@ -371,20 +381,20 @@ TEST_F(TestOperatingSystem, operating_system_init)
 		//
 		const uint8_t* version_string[] =
 		{
-			reinterpret_cast<const uint8_t*>(value_1.data()),
-			reinterpret_cast<const uint8_t*>(value_2.data()),
-			reinterpret_cast<const uint8_t*>(value_3.data()),
-			reinterpret_cast<const uint8_t*>(value_4.data())
+			reinterpret_cast<const uint8_t*>(value_1.c_str()),
+			reinterpret_cast<const uint8_t*>(value_2.c_str()),
+			reinterpret_cast<const uint8_t*>(value_3.c_str()),
+			reinterpret_cast<const uint8_t*>(value_4.c_str())
 		};
 #endif
-		const uint8_t* ptr_version = NULL;
+		const uint8_t* ptr_version = nullptr;
 		uint8_t version[VERSION_SIZE];
 		const std::string version_str(node.node().select_node("version").node().child_value());
 
 		if (!version_str.empty())
 		{
-			const auto version_str_range(string_to_range(version_str));
-			ASSERT_TRUE(version_parse(version_str_range.start, version_str_range.finish, version));
+			const auto version_in_a_range(string_to_range(version_str));
+			ASSERT_TRUE(version_parse(version_in_a_range.start, version_in_a_range.finish, version));
 			ptr_version = version;
 		}
 
@@ -410,7 +420,7 @@ TEST_F(TestOperatingSystem, operating_system_init)
 			std::string returned_os_information(reinterpret_cast<const char*>(ptr_version));
 			std::string expected;
 
-			for (auto i = 0; i < 4; ++i)
+			for (uint8_t i = 0; i < 4; ++i)
 			{
 				expected += reinterpret_cast<const char*>(version_string[i]);
 			}
@@ -446,9 +456,9 @@ TEST_F(TestOperatingSystem, operating_system_parse)
 		const auto expected_build = output_node.attribute("build").as_uint();
 		const auto expected_revision = output_node.attribute("revision").as_uint();
 		//
-		const auto input_in_range(string_to_range(input));
+		const auto input_in_a_range(string_to_range(input));
 		ASSERT_TRUE(operating_system_parse(
-						input_in_range.start, input_in_range.finish, OPERATING_SYSTEM_SIZE, os)) << input;
+						input_in_a_range.start, input_in_a_range.finish, OPERATING_SYSTEM_SIZE, os)) << input;
 		//
 		ASSERT_EQ(expected_platform, operating_system_get_platform(os)) << input;
 		ASSERT_EQ(expected_is_server, operating_system_is_windows_server(os)) << input;
@@ -460,13 +470,13 @@ TEST_F(TestOperatingSystem, operating_system_parse)
 		ASSERT_EQ(expected_build, version_get_build(returned_version)) << input;
 		ASSERT_EQ(expected_revision, version_get_revision(returned_version)) << input;
 		//
-		ASSERT_STREQ(input.data(), reinterpret_cast<const char*>(operating_system_to_string(os))) << input;
+		ASSERT_STREQ(input.c_str(), reinterpret_cast<const char*>(operating_system_to_string(os))) << input;
 		//
 		--node_count;
 	}
 }
 
-TEST(TestPlatform, platform_get_name)
+TEST(TestPlatform_, platform_get_name)
 {
 	const std::string platform_name(
 		reinterpret_cast<const char*>(platform_get_name()));
@@ -483,7 +493,7 @@ TEST(TestPlatform, platform_get_name)
 #endif
 }
 
-TEST(TestPlatform, platform_at_all)
+TEST(TestPlatform_, platform_at_all)
 {
 	if (platform_is_macos())
 	{
@@ -492,4 +502,9 @@ TEST(TestPlatform, platform_at_all)
 	}
 
 	ASSERT_NE(platform_is_unix(), platform_is_windows());
+
+	if (platform_is_unix())
+	{
+		ASSERT_NE(platform_is_unix(), platform_is_windows_server());
+	}
 }

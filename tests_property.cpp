@@ -97,22 +97,22 @@ TEST(TestProperty_, property_at_all)
 TEST(TestProperty_, property_get)
 {
 	std::string code("<property name=\"my\" value=\"${my}\" failonerror=\"false\" />");
-	auto code_in_range(string_to_range(code));
+	auto code_in_a_range(string_to_range(code));
 	//
 	buffer the_project;
 	SET_NULL_TO_BUFFER(the_project);
 	//
 	ASSERT_TRUE(project_new(&the_project));
 	//
-	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish,
+	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_a_range.start, code_in_a_range.finish,
 			  &the_project, 0, 0)) << project_free(&the_project);
 	//
 	project_clear(&the_project);
 	//
 	code = "<project><property name=\"my\" value=\"${my}\" failonerror=\"false\" /></project>";
-	code_in_range = string_to_range(code);
+	code_in_a_range = string_to_range(code);
 	//
-	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_range.start, code_in_range.finish,
+	ASSERT_EQ(FAIL_WITH_OUT_ERROR, project_load_from_content(code_in_a_range.start, code_in_a_range.finish,
 			  &the_project, 0, 0)) << project_free(&the_project);
 	//
 	project_unload(&the_project);
@@ -293,7 +293,10 @@ TEST_F(TestProperty, property_task)
 		ASSERT_TRUE(properties_load_from_node(node, "properties/property", &properties))
 				<< properties_free(&properties);
 		//
-		const auto expected_return = (uint8_t)INT_PARSE(node.node().select_node("return").node().child_value());
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return =
+			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
 		const auto output_properties = node.node().select_nodes("output_properties/property");
 		//
 		buffer the_project;
@@ -309,15 +312,15 @@ TEST_F(TestProperty, property_task)
 		for (const auto& record_node : node.node().select_nodes("record"))
 		{
 			const auto record = property_str + " " + record_node.node().child_value();
-			const auto record_in_range(string_to_range(record));
+			const auto record_in_a_range(string_to_range(record));
 			//
-			range task_in_range;
-			task_in_range.start = reinterpret_cast<const uint8_t*>(record.c_str());
-			task_in_range.finish = task_in_range.start + property_str.size();
+			range task_in_a_range;
+			task_in_a_range.start = reinterpret_cast<const uint8_t*>(record.c_str());
+			task_in_a_range.finish = task_in_a_range.start + property_str.size();
 			//
 			const auto returned = interpreter_evaluate_task(
 									  &the_project, nullptr,
-									  &task_in_range, record_in_range.finish,
+									  &task_in_a_range, record_in_a_range.finish,
 									  nullptr, 0, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)

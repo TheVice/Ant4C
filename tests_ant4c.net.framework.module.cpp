@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -118,11 +118,13 @@ TEST(TestMetaHost, meta_host_get_version_from_file)
 	unknown_free(the_runtime);
 	the_runtime = nullptr;
 	//
-	const uint8_t* start = buffer_data(&tmp, 0);
-	const uint8_t* finish = start + buffer_size(&tmp);
+	const auto* start = buffer_data(&tmp, 0);
+	const auto* finish = start + buffer_size(&tmp);
 	static const uint8_t zero = 0;
-	finish = find_any_symbol_like_or_not_like_that(finish, start, &zero, 1, 1, -1);
-	finish = find_any_symbol_like_or_not_like_that(finish, start, &zero, 1, 0, -1);
+	finish = string_find_any_symbol_like_or_not_like_that(
+				 finish, start, &zero, &zero + 1, 1, -1);
+	finish = string_find_any_symbol_like_or_not_like_that(
+				 finish, start, &zero, &zero + 1, 0, -1);
 
 	if (finish != start)
 	{

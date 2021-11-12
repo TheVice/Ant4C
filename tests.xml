@@ -2,7 +2,7 @@
 <Tests>
   <TestArgumentParser>
     <argument_parser_get_verbose>
-      <int></int>
+      <i></i>
       <argument></argument>
       <return></return>
     </argument_parser_get_verbose>
@@ -41,6 +41,13 @@
       <argument>a</argument>
       <argument>bc</argument>
       <argument>-verbose-y</argument>
+      <argument>def</argument>
+    </argument_parser_get_verbose>
+    <argument_parser_get_verbose>
+      <i>3</i>
+      <argument>a</argument>
+      <argument>bc</argument>
+      <argument>-verbose+</argument>
       <argument>def</argument>
     </argument_parser_get_verbose>
     <argument_parser_at_all>
@@ -4773,6 +4780,111 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <path_glob input="Lawyer" wild_card="*Law*" result="true" />
     <path_glob input="La" wild_card="*Law*" result="false" />
     <path_glob input="aw" wild_card="*Law*" result="false" />
+    <path_get_path_root>
+      <input></input>
+      <root></root>
+      <return></return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-windows()}">
+      <input>C:</input>
+      <root>C:</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-windows()}">
+      <input>C:\</input>
+      <root>C:\</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-windows()}">
+      <input>C:/</input>
+      <root>C:/</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-windows()}">
+      <input>C:\Windows</input>
+      <root>C:\</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-windows()}">
+      <input>C:/Windows</input>
+      <root>C:/</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-windows()}">
+      <input>Windows</input>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-unix()}">
+      <input>\</input>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-unix()}">
+      <input>/</input>
+      <root>/</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-unix()}">
+      <input>/tmp</input>
+      <root>/</root>
+      <return>1</return>
+    </path_get_path_root>
+    <path_get_path_root if="${platform::is-unix()}">
+      <input>\tmp</input>
+    </path_get_path_root>
+    <path_has_extension>
+      <input></input>
+      <return></return>
+    </path_has_extension>
+    <path_has_extension>
+      <input>a.txt</input>
+      <return>1</return>
+    </path_has_extension>
+    <path_has_extension>
+      <input>b.exe</input>
+      <return>1</return>
+    </path_has_extension>
+    <path_has_extension>
+      <input>c</input>
+    </path_has_extension>
+    <path_is_path_rooted>
+      <input></input>
+      <return></return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-windows()}">
+      <input>C:</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-windows()}">
+      <input>C:\</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-windows()}">
+      <input>C:/</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-windows()}">
+      <input>C:\Windows</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-windows()}">
+      <input>C:/Windows</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-windows()}">
+      <input>Windows</input>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-unix()}">
+      <input>\</input>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-unix()}">
+      <input>/</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-unix()}">
+      <input>/tmp</input>
+      <return>1</return>
+    </path_is_path_rooted>
+    <path_is_path_rooted if="${platform::is-unix()}">
+      <input>\tmp</input>
+    </path_is_path_rooted>
     <cygpath_get_dos_path>
       <input>C:\Program Files\Internet Explorer</input>
       <output>C:\PROGRA~1\INTERN~1</output>

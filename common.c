@@ -290,3 +290,83 @@ uint8_t common_get_module_priority()
 {
 	return module_priority;
 }
+
+const uint8_t* common_get_string_at(
+	const uint8_t* start, const uint8_t* finish,
+	ptrdiff_t x, ptrdiff_t y)
+{
+	uint32_t char_set;
+	uint8_t count = 0;
+	ptrdiff_t i = 0;
+
+	while (i < x &&
+		   NULL != (start = string_enumerate(start, finish, &char_set)))
+	{
+		if (0 == char_set)
+		{
+			++count;
+		}
+		else
+		{
+			count = 0;
+		}
+
+		if (2 == count)
+		{
+			++i;
+			count = 0;
+		}
+	}
+
+	if (i != x)
+	{
+		return NULL;
+	}
+
+	count = 0;
+	const uint8_t* pos = start;
+
+	while (NULL != (pos = string_enumerate(pos, finish, &char_set)))
+	{
+		if (0 == char_set)
+		{
+			++count;
+		}
+		else
+		{
+			count = 0;
+		}
+
+		if (2 == count)
+		{
+			break;
+		}
+	}
+
+	finish = pos;
+	i = 0;
+
+	while (i < y &&
+		   NULL != (start = string_enumerate(start, finish, &char_set)))
+	{
+		if (0 == char_set)
+		{
+			++i;
+		}
+	}
+
+	if (i != y)
+	{
+		return NULL;
+	}
+
+	pos = start;
+
+	if (!string_enumerate(pos, finish, &char_set) ||
+		0 == char_set)
+	{
+		return NULL;
+	}
+
+	return start;
+}

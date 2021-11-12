@@ -9,17 +9,18 @@
 
 extern "C" {
 #include "buffer.h"
-#include "common.h"
 #include "conversion.h"
 #include "echo.h"
 #include "interpreter.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
+#include "string_unit.h"
 #include "text_encoding.h"
 };
 
 #include <cassert>
+#include <cstring>
 #include <ostream>
 #include <utility>
 #include <iostream>
@@ -91,10 +92,11 @@ GTEST_API_ int wmain(int argc, wchar_t** argv)
 
 		do
 		{
-			pos = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 0, 1);
+			pos = string_find_any_symbol_like_or_not_like_that(pos, finish, &zero, &zero + 1, 0, 1);
 			argvA[i++] = &arguments[pos - start];
 		}
-		while (i < argc && finish != (pos = find_any_symbol_like_or_not_like_that(pos, finish, &zero, 1, 1, 1)));
+		while (i < argc &&
+			   finish != (pos = string_find_any_symbol_like_or_not_like_that(pos, finish, &zero, &zero + 1, 1, 1)));
 	}
 
 	return main_(argc, argvA);
@@ -123,13 +125,13 @@ range buffer_to_range(const buffer* input)
 
 uint8_t string_to_buffer(const std::string& input, buffer* output)
 {
-	return nullptr != output && buffer_append_char(output, input.empty() ? nullptr : input.data(), input.size());
+	return nullptr != output && buffer_append_char(output, input.empty() ? nullptr : input.c_str(), input.size());
 }
 
 range string_to_range(const std::string& input)
 {
 	range output;
-	output.start = input.empty() ? nullptr : reinterpret_cast<const uint8_t*>(input.data());
+	output.start = input.empty() ? nullptr : reinterpret_cast<const uint8_t*>(input.c_str());
 	output.finish = input.empty() ? nullptr : output.start + input.size();
 	return output;
 }
@@ -198,7 +200,7 @@ uint8_t is_this_node_pass_by_if_condition(
 	{
 		const auto attribute_value = node.node().attribute(attribute).as_string();
 
-		if (!common_count_bytes_until(reinterpret_cast<const uint8_t*>(attribute_value), 0))
+		if (!std::strlen(attribute_value))
 		{
 			continue;
 		}
@@ -298,12 +300,12 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 			return 0;
 		}
 
-		const uint8_t returned = property_set_by_name(
-									 properties,
-									 reinterpret_cast<const uint8_t*>(name.c_str()), static_cast<uint8_t>(name.size()),
-									 reinterpret_cast<const uint8_t*>(value.c_str()), value.size(),
-									 property_value_is_byte_array,
-									 dynamic, over_write, read_only, verbose);
+		const auto returned = property_set_by_name(
+								  properties,
+								  reinterpret_cast<const uint8_t*>(name.c_str()), static_cast<uint8_t>(name.size()),
+								  reinterpret_cast<const uint8_t*>(value.c_str()), value.size(),
+								  property_value_is_byte_array,
+								  dynamic, over_write, read_only, verbose);
 
 		if (!returned && fail_on_error)
 		{
@@ -387,8 +389,9 @@ std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
 	return current_directory;
 }
 
-uint8_t select_nodes_by_condition(const pugi::xpath_node_set& all_nodes, std::list<pugi::xpath_node>& nodes,
-								  buffer* tmp)
+uint8_t select_nodes_by_condition(
+	const pugi::xpath_node_set& all_nodes,
+	std::list<pugi::xpath_node>& nodes, buffer* tmp)
 {
 	if (!tmp)
 	{
@@ -563,4 +566,11 @@ void TestsBaseXml::TearDown()
 
 TestsBaseXml::~TestsBaseXml()
 {
+}
+
+int INT_PARSE(const char* input)
+{
+	const std::string i(input);
+	const auto r(string_to_range(i));
+	return int_parse(r.start, r.finish);
 }

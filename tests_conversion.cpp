@@ -28,18 +28,27 @@ TEST_F(TestConversion, bool_parse)
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto expected_output = static_cast<uint8_t>(INT_PARSE(
-										 node.node().select_node("output").node().child_value()));
-		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
-										 node.node().select_node("return").node().child_value()));
 		//
-		const auto input_in_range(string_to_range(input));
+		const std::string output_str(node.node().select_node("output").node().child_value());
+		const auto output_in_a_range(string_to_range(output_str));
+		const auto expected_output =
+			static_cast<uint8_t>(int_parse(
+									 output_in_a_range.start, output_in_a_range.finish));
+		//
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return =
+			static_cast<uint8_t>(int_parse(
+									 return_in_a_range.start, return_in_a_range.finish));
+		//
+		const auto input_in_a_range(string_to_range(input));
 		uint8_t output = 0;
 		//
-		const auto returned = bool_parse(input_in_range.start, input_in_range.finish, &output);
+		const auto returned =
+			bool_parse(input_in_a_range.start, input_in_a_range.finish, &output);
 		//
-		ASSERT_EQ(expected_return, returned);
 		ASSERT_EQ(expected_output, output);
+		ASSERT_EQ(expected_return, returned);
 		//
 		--node_count;
 	}
@@ -52,10 +61,17 @@ TEST_F(TestConversion, bool_to_string)
 
 	for (const auto& node : nodes)
 	{
-		const auto input = static_cast<uint8_t>(INT_PARSE(node.node().select_node("input").node().child_value()));
+		const std::string input_str(node.node().select_node("input").node().child_value());
+		const auto input_in_a_range(string_to_range(input_str));
+		const auto input =
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
 		const std::string expected_output(node.node().select_node("output").node().child_value());
-		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
-										 node.node().select_node("return").node().child_value()));
+		//
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return =
+			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
 		//
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		const auto returned = bool_to_string(input, &output);
@@ -247,11 +263,11 @@ TEST(TestConversion_, uint64_parse)
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		range input_in_range;
-		input_in_range.start = input[i];
-		input_in_range.finish = input[i] + common_count_bytes_until(input[i], 0);
+		range input_in_a_range;
+		input_in_a_range.start = input[i];
+		input_in_a_range.finish = input[i] + common_count_bytes_until(input[i], 0);
 		//
-		const auto returned = uint64_parse(input_in_range.start, input_in_range.finish);
+		const auto returned = uint64_parse(input_in_a_range.start, input_in_a_range.finish);
 		//
 		ASSERT_EQ(expected_output[i], returned) << input[i] << std::endl << static_cast<int>(i);
 	}

@@ -95,7 +95,8 @@ uint8_t get_exists_functions(
 
 	do
 	{
-		functions = find_any_symbol_like_or_not_like_that(functions, finish, double_zero, 1, 0, 1);
+		functions = string_find_any_symbol_like_or_not_like_that(
+						functions, finish, double_zero, double_zero + 1, 0, 1);
 
 		if (!buffer_resize(output, 0) ||
 			!convert_function_name(
@@ -116,7 +117,8 @@ uint8_t get_exists_functions(
 		++i;
 	}
 	while (finish !=
-		   (functions = find_any_symbol_like_or_not_like_that(functions, finish, double_zero, 1, 1, 1)) && i < 16);
+		   (functions = string_find_any_symbol_like_or_not_like_that(
+							functions, finish, double_zero, double_zero + 1, 1, 1)) && i < 16);
 
 	if (!buffer_resize(output, 0))
 	{

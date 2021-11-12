@@ -63,6 +63,10 @@ uint8_t common_is_error_output_stream_standard();
 void common_set_module_priority(uint8_t priority);
 uint8_t common_get_module_priority();
 
+const uint8_t* common_get_string_at(
+	const uint8_t* start, const uint8_t* finish,
+	ptrdiff_t x, ptrdiff_t y);
+
 #define XCHG(A, Z)	\
 	(A) -= (Z);		\
 	(Z) += (A);		\

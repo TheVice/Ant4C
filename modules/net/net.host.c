@@ -11,8 +11,8 @@
 #include "host_fxr.h"
 
 #include "buffer.h"
-#include "common.h"
 #include "conversion.h"
+#include "string_unit.h"
 #if defined(_WIN32)
 #include "text_encoding.h"
 #endif
@@ -20,14 +20,8 @@
 uint8_t net_result_to_string(
 	const uint8_t* result, uint16_t result_length, struct buffer* output)
 {
-	const int32_t result_ = int_parse(result, result + result_length);
-
-	if (!result_code_to_string(result_, output))
-	{
-		return 0;
-	}
-
-	return 1;
+	const int32_t code = int_parse(result, result + result_length);
+	return result_code_to_string(code, output);
 }
 
 uint8_t net_host_get_hostfxr_path(
@@ -96,8 +90,10 @@ uint8_t net_host_get_hostfxr_path(
 	/**/
 	static const uint8_t zero = 0;
 	/**/
-	const uint8_t* new_finish = find_any_symbol_like_or_not_like_that(finish, start, &zero, 1, 0, -1);
-	new_finish = find_any_symbol_like_or_not_like_that(new_finish, finish, &zero, 1, 1, 1);
+	const uint8_t* new_finish =
+		string_find_any_symbol_like_or_not_like_that(finish, start, &zero, &zero + 1, 0, -1);
+	new_finish =
+		string_find_any_symbol_like_or_not_like_that(new_finish, finish, &zero, &zero + 1, 1, 1);
 	/**/
 	return buffer_resize(output, new_finish - start);
 }

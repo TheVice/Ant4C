@@ -32,15 +32,16 @@ TEST_F(TestVersion, version_init)
 		const std::string build_str(node.node().select_node("build").node().child_value());
 		const std::string revision_str(node.node().select_node("revision").node().child_value());
 		//
-		const auto major_in_range(string_to_range(major_str));
-		const auto minor_in_range(string_to_range(minor_str));
-		const auto build_in_range(string_to_range(build_str));
-		const auto revision_in_range(string_to_range(revision_str));
+		const auto major_in_a_range(string_to_range(major_str));
+		const auto minor_in_a_range(string_to_range(minor_str));
+		const auto build_in_a_range(string_to_range(build_str));
+		const auto revision_in_a_range(string_to_range(revision_str));
 		//
-		const auto major = static_cast<uint32_t>(uint64_parse(major_in_range.start, major_in_range.finish));
-		const auto minor = static_cast<uint32_t>(uint64_parse(minor_in_range.start, minor_in_range.finish));
-		const auto build = static_cast<uint32_t>(uint64_parse(build_in_range.start, build_in_range.finish));
-		const auto revision = static_cast<uint32_t>(uint64_parse(revision_in_range.start, revision_in_range.finish));
+		const auto major = static_cast<uint32_t>(uint64_parse(major_in_a_range.start, major_in_a_range.finish));
+		const auto minor = static_cast<uint32_t>(uint64_parse(minor_in_a_range.start, minor_in_a_range.finish));
+		const auto build = static_cast<uint32_t>(uint64_parse(build_in_a_range.start, build_in_a_range.finish));
+		const auto revision = static_cast<uint32_t>(uint64_parse(revision_in_a_range.start,
+							  revision_in_a_range.finish));
 		//
 		const std::string expected_output(node.node().select_node("output").node().child_value());
 		//
@@ -72,25 +73,26 @@ TEST_F(TestVersion, version_parse)
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto input_in_range(string_to_range(input));
+		const auto input_in_a_range(string_to_range(input));
 		//
 		const std::string major_str(node.node().select_node("major").node().child_value());
 		const std::string minor_str(node.node().select_node("minor").node().child_value());
 		const std::string build_str(node.node().select_node("build").node().child_value());
 		const std::string revision_str(node.node().select_node("revision").node().child_value());
 		//
-		const auto major_in_range(string_to_range(major_str));
-		const auto minor_in_range(string_to_range(minor_str));
-		const auto build_in_range(string_to_range(build_str));
-		const auto revision_in_range(string_to_range(revision_str));
+		const auto major_in_a_range(string_to_range(major_str));
+		const auto minor_in_a_range(string_to_range(minor_str));
+		const auto build_in_a_range(string_to_range(build_str));
+		const auto revision_in_a_range(string_to_range(revision_str));
 		//
-		const auto major = static_cast<uint32_t>(uint64_parse(major_in_range.start, major_in_range.finish));
-		const auto minor = static_cast<uint32_t>(uint64_parse(minor_in_range.start, minor_in_range.finish));
-		const auto build = static_cast<uint32_t>(uint64_parse(build_in_range.start, build_in_range.finish));
-		const auto revision = static_cast<uint32_t>(uint64_parse(revision_in_range.start, revision_in_range.finish));
+		const auto major = static_cast<uint32_t>(uint64_parse(major_in_a_range.start, major_in_a_range.finish));
+		const auto minor = static_cast<uint32_t>(uint64_parse(minor_in_a_range.start, minor_in_a_range.finish));
+		const auto build = static_cast<uint32_t>(uint64_parse(build_in_a_range.start, build_in_a_range.finish));
+		const auto revision = static_cast<uint32_t>(uint64_parse(revision_in_a_range.start,
+							  revision_in_a_range.finish));
 		//
 		ASSERT_TRUE(
-			version_parse(input_in_range.start, input_in_range.finish, version))
+			version_parse(input_in_a_range.start, input_in_a_range.finish, version))
 				<< node_count;
 		//
 		ASSERT_EQ(major, version_get_major(version)) << node_count;
@@ -111,19 +113,21 @@ TEST_F(TestVersion, version_less)
 	{
 		const std::string version_a_str(node.node().select_node("version_a").node().child_value());
 		const std::string version_b_str(node.node().select_node("version_b").node().child_value());
+		const std::string output_str(node.node().select_node("output").node().child_value());
 		//
-		auto input_in_range = string_to_range(version_a_str);
+		auto input_in_a_range = string_to_range(version_a_str);
 		ASSERT_TRUE(
-			version_parse(input_in_range.start, input_in_range.finish, version_a))
+			version_parse(input_in_a_range.start, input_in_a_range.finish, version_a))
 				<< node_count;
 		//
-		input_in_range = string_to_range(version_b_str);
+		input_in_a_range = string_to_range(version_b_str);
 		ASSERT_TRUE(
-			version_parse(input_in_range.start, input_in_range.finish, version_b))
+			version_parse(input_in_a_range.start, input_in_a_range.finish, version_b))
 				<< node_count;
 		//
+		input_in_a_range = string_to_range(output_str);
 		const auto expected_return =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("output").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		ASSERT_EQ(expected_return, version_less(version_a, version_b))
 				<< version_a_str << " " << version_b_str << " " << node_count;
 		//
@@ -140,19 +144,21 @@ TEST_F(TestVersion, version_greater)
 	{
 		const std::string version_a_str(node.node().select_node("version_a").node().child_value());
 		const std::string version_b_str(node.node().select_node("version_b").node().child_value());
+		const std::string output_str(node.node().select_node("output").node().child_value());
 		//
-		auto input_in_range = string_to_range(version_a_str);
+		auto input_in_a_range = string_to_range(version_a_str);
 		ASSERT_TRUE(
-			version_parse(input_in_range.start, input_in_range.finish, version_a))
+			version_parse(input_in_a_range.start, input_in_a_range.finish, version_a))
 				<< node_count;
 		//
-		input_in_range = string_to_range(version_b_str);
+		input_in_a_range = string_to_range(version_b_str);
 		ASSERT_TRUE(
-			version_parse(input_in_range.start, input_in_range.finish, version_b))
+			version_parse(input_in_a_range.start, input_in_a_range.finish, version_b))
 				<< node_count;
 		//
+		input_in_a_range = string_to_range(output_str);
 		const auto expected_return =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("output").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		ASSERT_EQ(expected_return, version_greater(version_a, version_b))
 				<< version_a_str << " " << version_b_str << " " << node_count;
 		//

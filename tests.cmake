@@ -116,16 +116,7 @@ add_custom_command(TARGET ant4c_tests POST_BUILD
 
 add_dependencies(ant4c_tests
   tests_exec_app
-  example_of_the_module
-  default_listener
 )
-
-if(DEFINED USE_BOOST)
-  add_dependencies(ant4c_tests
-    ant4c.dns
-    ant4c.regex
-  )
-endif()
 
 # tests_ant4c.net.framework.module
 

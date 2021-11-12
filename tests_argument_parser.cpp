@@ -27,9 +27,9 @@ extern "C" {
 
 uint8_t string_to_command_arguments(const std::string& input, buffer* output, int* argc, char*** argv)
 {
-	if (NULL == output ||
-		NULL == argc ||
-		NULL == argv)
+	if (nullptr == output ||
+		nullptr == argc ||
+		nullptr == argv)
 	{
 		return 0;
 	}
@@ -37,28 +37,28 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 	if (input.empty())
 	{
 		*argc = 0;
-		*argv = NULL;
+		*argv = nullptr;
 		return 1;
 	}
 
-	auto input_in_range = string_to_range(input);
+	auto input_in_a_range = string_to_range(input);
 
-	if (!string_trim(&input_in_range))
+	if (!string_trim(&input_in_a_range))
 	{
 		return 0;
 	}
 
 	return argument_from_char(
-			   reinterpret_cast<const char*>(input_in_range.start),
-			   reinterpret_cast<const char*>(input_in_range.finish),
+			   reinterpret_cast<const char*>(input_in_a_range.start),
+			   reinterpret_cast<const char*>(input_in_a_range.finish),
 			   output, argc, argv);
 }
 #if defined(_WIN32)
 uint8_t string_to_command_arguments(const std::string& input, buffer* output, int* argc, wchar_t*** argv)
 {
-	if (NULL == output ||
-		NULL == argc ||
-		NULL == argv)
+	if (nullptr == output ||
+		nullptr == argc ||
+		nullptr == argv)
 	{
 		return 0;
 	}
@@ -66,20 +66,20 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 	if (input.empty())
 	{
 		*argc = 0;
-		*argv = NULL;
+		*argv = nullptr;
 		return 1;
 	}
 
-	char** argvA = NULL;
+	char** argvA;
 
 	if (!string_to_command_arguments(input, output, argc, &argvA))
 	{
 		return 0;
 	}
 
-	const ptrdiff_t size = reinterpret_cast<uint8_t*>(argvA) - buffer_data(output, 0);
+	const auto size = reinterpret_cast<uint8_t*>(argvA) - buffer_data(output, 0);
 
-	if (!buffer_append(output, NULL, 4 * (size + 1) + sizeof(uint32_t)))
+	if (!buffer_append(output, nullptr, 4 * (size + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
@@ -99,14 +99,14 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 
 	const auto new_size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, (ptrdiff_t)1 + (*argc) * sizeof(wchar_t*)) ||
+	if (!buffer_append(output, nullptr, static_cast<ptrdiff_t>(1) + (*argc) * sizeof(wchar_t*)) ||
 		!buffer_resize(output, new_size))
 	{
 		return 0;
 	}
 
 	int i = 0;
-	static const wchar_t zero_symbol = L'\0';
+	static const auto zero_symbol = L'\0';
 	const auto* startW = reinterpret_cast<const wchar_t*>(buffer_data(output, size));
 	const auto* finishW = reinterpret_cast<const wchar_t*>(buffer_data(output, 0) + new_size);
 
@@ -122,7 +122,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 		++i;
 	}
 
-	startW = NULL;
+	startW = nullptr;
 
 	if (!buffer_append(output, reinterpret_cast<const uint8_t*>(&startW), sizeof(const wchar_t*)))
 	{
@@ -164,7 +164,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 			properties_free(&command_arguments) <<																					\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_build_files.empty(), NULL == argument_parser_get_build_file(&command_arguments, &argument_value, (I))) <<	\
+	ASSERT_EQ(expected_build_files.empty(), nullptr == argument_parser_get_build_file(&command_arguments, &argument_value, (I))) <<	\
 			(INPUT) << std::endl <<																									\
 			buffer_free(&argument_value) <<																							\
 			properties_free(&command_arguments) <<																					\
@@ -195,7 +195,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 	/**/																															\
 	(I) = 0;																														\
 	\
-	ASSERT_EQ(expected_targets.empty(), NULL == argument_parser_get_target(&command_arguments, &argument_value, I)) <<				\
+	ASSERT_EQ(expected_targets.empty(), nullptr == argument_parser_get_target(&command_arguments, &argument_value, I)) <<			\
 			(INPUT) << std::endl <<																									\
 			buffer_free(&argument_value) <<																							\
 			properties_free(&command_arguments) <<																					\
@@ -286,10 +286,10 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 		const uint8_t expected_dynamic = expected_property.node().attribute("dynamic").as_bool();									\
 		const uint8_t expected_readonly = expected_property.node().attribute("readonly").as_bool();									\
 		/**/																														\
-		void* the_property = NULL;																									\
+		void* the_property;																											\
 		ASSERT_TRUE(property_exists(&argument_value,																				\
-									reinterpret_cast<const uint8_t*>(name.data()),													\
-									(uint8_t)name.size(), &the_property)) <<														\
+									reinterpret_cast<const uint8_t*>(name.c_str()),													\
+									static_cast<uint8_t>(name.size()), &the_property)) <<											\
 											(INPUT) << std::endl <<																	\
 											properties_free(&argument_value) <<														\
 											properties_free(&command_arguments) <<													\
@@ -312,7 +312,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 				properties_free(&command_arguments) <<																				\
 				buffer_free(&property_value);																						\
 		/**/																														\
-		uint8_t returned_dynamic = 0;																								\
+		uint8_t returned_dynamic;																									\
 		ASSERT_TRUE(property_is_dynamic(the_property, &returned_dynamic)) <<														\
 				(INPUT) << std::endl <<																								\
 				properties_free(&argument_value) <<																					\
@@ -324,7 +324,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 				properties_free(&command_arguments) <<																				\
 				buffer_free(&property_value);																						\
 		/**/																														\
-		uint8_t returned_readonly = 0;																								\
+		uint8_t returned_readonly;																									\
 		ASSERT_TRUE(property_is_readonly(the_property, &returned_readonly)) <<														\
 				(INPUT) << std::endl <<																								\
 				properties_free(&argument_value) <<																					\
@@ -346,7 +346,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 			buffer_free(&property_value);																							\
 	/**/																															\
 	const auto log_file = argument_parser_get_log_file(&command_arguments, &argument_value);										\
-	ASSERT_EQ(expected_log_file.empty(), NULL == log_file)  <<																		\
+	ASSERT_EQ(expected_log_file.empty(), nullptr == log_file)  <<																	\
 			(INPUT) << std::endl <<																									\
 			buffer_free(&argument_value) <<																							\
 			properties_free(&command_arguments) <<																					\
@@ -495,15 +495,12 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 		const std::string return_str(
 			node.node().select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
-		const uint8_t expected_return =
+		const auto expected_return =
 			static_cast<uint8_t>(
 				int_parse(return_in_a_range.start, return_in_a_range.finish));
 		//
 		arguments.clear();
-		/*for (const auto& argument : node.node().select_nodes("argument"))
-		{
-			arguments.push_back(argument.node().child_value());
-		}*/
+		//
 		const auto arguments_ = node.node().select_nodes("argument");
 		std::transform(
 			arguments_.begin(), arguments_.end(),
@@ -512,8 +509,9 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 		{
 			return argument.node().child_value();
 		});
+		//
 		argv.clear();
-		const int argc = static_cast<int>(arguments.size());
+		const auto argc = static_cast<int>(arguments.size());
 
 		for (auto& argument : arguments)
 		{
@@ -534,10 +532,7 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 				<< all_arguments(arguments) << std::endl;
 #if defined(_WIN32)
 		argumentsW.clear();
-		/*for (const auto& argument : arguments)
-		{
-			argumentsW.push_back(char_to_wchar_t(argument));
-		}*/
+		//
 		std::transform(
 			arguments.begin(), arguments.end(),
 			std::back_inserter(argumentsW),
@@ -545,6 +540,7 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 		{
 			return char_to_wchar_t(argument);
 		});
+		//
 		argvW.clear();
 
 		for (auto& argument : argumentsW)
@@ -583,27 +579,54 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 	for (const auto& node : nodes)
 	{
 		const auto input(get_data_from_nodes(node, "input"));
-		//
 		const auto expected_build_files =
 			node.node().select_nodes("build_file");
+		//
+		const std::string debug_str(node.node().select_node("debug").node().child_value());
+		auto input_in_a_range = string_to_range(debug_str);
 		const auto expected_debug =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("debug").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string help_str(node.node().select_node("help").node().child_value());
+		input_in_a_range = string_to_range(help_str);
 		const auto expected_help =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("help").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string indent_str(node.node().select_node("indent").node().child_value());
+		input_in_a_range = string_to_range(indent_str);
 		const auto expected_indent =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("indent").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string no_logo_str(node.node().select_node("no_logo").node().child_value());
+		input_in_a_range = string_to_range(no_logo_str);
 		const auto expected_no_logo =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("no_logo").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string pause_str(node.node().select_node("pause").node().child_value());
+		input_in_a_range = string_to_range(pause_str);
 		const auto expected_pause =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("pause").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string project_help_str(node.node().select_node("project_help").node().child_value());
+		input_in_a_range = string_to_range(project_help_str);
 		const auto expected_project_help =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("project_help").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string quiet_str(node.node().select_node("quiet").node().child_value());
+		input_in_a_range = string_to_range(quiet_str);
 		const auto expected_quiet =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("quiet").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		input_in_a_range = string_to_range(return_str);
 		const auto expected_return =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("return").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		const std::string verbose_str(node.node().select_node("verbose").node().child_value());
+		input_in_a_range = string_to_range(verbose_str);
 		const auto expected_verbose =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("verbose").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
 		const auto expected_properties = node.node().select_nodes("properties/property");
 		const auto expected_targets = node.node().select_nodes("target");
 		const std::string expected_log_file(node.node().select_node("log_file").node().child_value());
@@ -612,8 +635,11 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 			encodings.count(expected_encoding_str) ?
 			encodings.at(expected_encoding_str) : (expected_encoding_str.empty() ? UTF8 : FILE_ENCODING_UNKNOWN);
 		const std::string expected_listener(node.node().select_node("listener").node().child_value());
+		//
+		const std::string module_priority_str(node.node().select_node("module_priority").node().child_value());
+		input_in_a_range = string_to_range(module_priority_str);
 		const auto expected_module_priority =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("module_priority").node().child_value()));
+			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 
 		for (uint8_t step = 0; step < 2; ++step)
 		{
@@ -621,7 +647,7 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 			{
 				int i = 0;
 				int argc = 0;
-				char** argv = NULL;
+				char** argv = nullptr;
 				ARGUMENT_PARSER_AT_ALL(input, argument_parser_get_verbose_char, argument_parser_char, i);
 			}
 
@@ -630,7 +656,7 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 			{
 				int i = 0;
 				int argc = 0;
-				wchar_t** argv = NULL;
+				wchar_t** argv = nullptr;
 				ARGUMENT_PARSER_AT_ALL(input, argument_parser_get_verbose_wchar_t, argument_parser_wchar_t, i);
 			}
 
@@ -660,8 +686,10 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 		ASSERT_TRUE(buffer_resize(&command_arguments, 0)) << buffer_free(&command_arguments);
 		//
 		const auto arguments = node.node().select_nodes("input");
-		const auto expected_return =
-			static_cast<uint8_t>(INT_PARSE(node.node().select_node("return").node().child_value()));
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return = static_cast<uint8_t>(
+										 int_parse(return_in_a_range.start, return_in_a_range.finish));
 		std::string expected_output(node.node().select_node("output").node().child_value());
 		size_t pos;
 
@@ -673,9 +701,11 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 		for (const auto& argument : arguments)
 		{
 			const std::string argument_str(argument.node().child_value());
-			const auto argument_in_range = string_to_range(argument_str);
+			const auto argument_in_a_range = string_to_range(argument_str);
 			const auto returned = argument_append_arguments(
-									  argument_in_range.start, argument_in_range.finish, &command_arguments);
+									  argument_in_a_range.start,
+									  argument_in_a_range.finish,
+									  &command_arguments);
 			//
 			ASSERT_EQ(expected_return, returned) << buffer_free(&command_arguments);
 		}

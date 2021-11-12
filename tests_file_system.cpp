@@ -34,27 +34,27 @@ class TestFileSystem : public TestsBaseXml
 
 uint8_t get_crc32_of(const int64_t input, buffer* output)
 {
-	if (NULL == output)
+	if (nullptr == output)
 	{
 		return 0;
 	}
 
 	const auto size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 4 * sizeof(uint32_t)))
+	if (!buffer_append(output, nullptr, 4 * sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	auto ptr = (const uint8_t*)&input;
-	auto out = (uint32_t*)buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+	auto ptr = reinterpret_cast<const uint8_t*>(&input);
+	auto out = reinterpret_cast<uint32_t*>(buffer_data(output, buffer_size(output) - sizeof(uint32_t)));
 
 	if (!hash_algorithm_crc32(ptr, ptr + sizeof(int64_t), out, 1))
 	{
 		return 0;
 	}
 
-	ptr = (const uint8_t*)out;
+	ptr = reinterpret_cast<const uint8_t*>(out);
 
 	if (!buffer_resize(output, size))
 	{
@@ -80,15 +80,16 @@ TEST(TestFileSystem_, directory_create_and_delete)
 	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
 	const auto ptr = buffer_data(&path, 0);
-	ASSERT_FALSE(directory_exists(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
-	ASSERT_TRUE(directory_create(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
-	ASSERT_TRUE(directory_exists(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
+	ASSERT_FALSE(directory_exists(ptr)) << reinterpret_cast<const char*>(ptr) << std::endl << buffer_free(&path);
+	ASSERT_TRUE(directory_create(ptr)) << reinterpret_cast<const char*>(ptr) << std::endl << buffer_free(&path);
+	ASSERT_TRUE(directory_exists(ptr)) << reinterpret_cast<const char*>(ptr) << std::endl << buffer_free(&path);
 	//
-	ASSERT_TRUE(buffer_resize(&path, size)) << (const char*)ptr << std::endl << buffer_free(&path);
-	ASSERT_TRUE(buffer_push_back(&path, 0)) << (const char*)ptr << buffer_free(&path);
+	ASSERT_TRUE(buffer_resize(&path, size)) << reinterpret_cast<const char*>(ptr) << std::endl <<
+											buffer_free(&path);
+	ASSERT_TRUE(buffer_push_back(&path, 0)) << reinterpret_cast<const char*>(ptr) << buffer_free(&path);
 	//
-	ASSERT_TRUE(directory_delete(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
-	ASSERT_FALSE(directory_exists(ptr)) << (const char*)ptr << std::endl << buffer_free(&path);
+	ASSERT_TRUE(directory_delete(ptr)) << reinterpret_cast<const char*>(ptr) << std::endl << buffer_free(&path);
+	ASSERT_FALSE(directory_exists(ptr)) << reinterpret_cast<const char*>(ptr) << std::endl << buffer_free(&path);
 	//
 	buffer_release(&path);
 }
@@ -97,9 +98,9 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 {
 	static const std::map<std::string, uint8_t> entry_types(
 	{
-		std::make_pair(std::string("directory"), (uint8_t)0),
-		std::make_pair(std::string("file"), (uint8_t)1),
-		std::make_pair(std::string("all"), (uint8_t)2)
+		std::make_pair(std::string("directory"), static_cast<uint8_t>(0)),
+		std::make_pair(std::string("file"), static_cast<uint8_t>(1)),
+		std::make_pair(std::string("all"), static_cast<uint8_t>(2))
 	});
 	//
 	buffer property_value;
@@ -134,7 +135,11 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			returned = project_property_get_by_name(
-						   &the_project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &property_value, verbose);
+						   &the_project,
+						   reinterpret_cast<const uint8_t*>(property_name.c_str()),
+						   static_cast<uint8_t>(property_name.size()),
+						   &property_value,
+						   verbose);
 			ASSERT_TRUE(returned)
 					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
@@ -158,7 +163,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
 			ptrdiff_t counter = 0;
-			const ptrdiff_t returned_counter = buffer_size(&file_tree);
+			const auto returned_counter = buffer_size(&file_tree);
 			const auto returned_paths(buffer_to_string(&file_tree));
 			const auto returned_output = string_to_range(returned_paths);
 
@@ -170,8 +175,12 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 				ASSERT_TRUE(returned)
 						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 				//
-				returned = project_property_get_by_name(&the_project, (const uint8_t*)entry_str.c_str(),
-														(uint8_t)entry_str.size(), &file_tree, verbose);
+				returned = project_property_get_by_name(
+							   &the_project,
+							   reinterpret_cast<const uint8_t*>(entry_str.c_str()),
+							   static_cast<uint8_t>(entry_str.size()),
+							   &file_tree,
+							   verbose);
 				ASSERT_TRUE(returned)
 						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 				//
@@ -208,7 +217,11 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 		//
 		returned = project_property_get_by_name(
-					   &the_project, (const uint8_t*)property_name.c_str(), (uint8_t)property_name.size(), &property_value, verbose);
+					   &the_project,
+					   reinterpret_cast<const uint8_t*>(property_name.c_str()),
+					   static_cast<uint8_t>(property_name.size()),
+					   &property_value,
+					   verbose);
 		ASSERT_TRUE(returned)
 				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 		//
@@ -219,9 +232,11 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		returned = path_get_file_name(content.start, content.finish, &content);
 		ASSERT_TRUE(returned)
 				<< buffer_free(&property_value) << buffer_free(&file_tree);
+		//
+		static const auto* that = reinterpret_cast<const uint8_t*>("?*");
 
-		if (content.finish != find_any_symbol_like_or_not_like_that(content.start, content.finish,
-				(const uint8_t*)"?*", 2, 1, 1))
+		if (content.finish != string_find_any_symbol_like_or_not_like_that(
+				content.start, content.finish, that, that + 2, 1, 1))
 		{
 			content = buffer_to_range(&property_value);
 			returned = path_get_directory_name(content.start, content.finish, &content);
@@ -243,7 +258,8 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		returned = directory_delete(content.start);
 		//
 		ASSERT_TRUE(returned)
-				<< (const char*)(content.start) << std::endl << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< reinterpret_cast<const char*>(content.start)
+				<< std::endl << buffer_free(&property_value) << buffer_free(&file_tree);
 		//
 		--node_count;
 	}
@@ -257,10 +273,12 @@ TEST_F(TestFileSystem, directory_exists)
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return =
+			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
 		//
-		auto returned = directory_exists((const uint8_t*)input.c_str());
+		auto returned = directory_exists(reinterpret_cast<const uint8_t*>(input.c_str()));
 		ASSERT_EQ(expected_return, returned) << input;
 #if defined(_WIN32)
 		const auto input_w(char_to_wchar_t(input));
@@ -288,7 +306,7 @@ TEST(TestFileSystem_, directory_get_time_attributes)
 
 	for (auto& input : inputs)
 	{
-		const uint8_t* path = (const uint8_t*)input.c_str();
+		const auto* path = reinterpret_cast<const uint8_t*>(input.c_str());
 
 		if (!directory_exists(path))
 		{
@@ -316,7 +334,7 @@ TEST(TestFileSystem_, directory_get_logical_drives)
 #if defined(_WIN32)
 	ASSERT_TRUE(buffer_size(&drives)) << buffer_free(&drives);
 	uint8_t i = 0;
-	const uint8_t* returned = NULL;
+	const uint8_t* returned;
 
 	for (uint8_t a = 'A'; a < 'Z' + 1; ++a)
 	{
@@ -325,8 +343,8 @@ TEST(TestFileSystem_, directory_get_logical_drives)
 
 		if (*returned == a)
 		{
-			static const uint8_t* expected_output = (const uint8_t*)":\\\0";
-			const uint8_t* expected = expected_output;
+			static const auto* expected_output = reinterpret_cast<const uint8_t*>(":\\\0");
+			const auto* expected = expected_output;
 
 			for (uint8_t count = i + 3; i < count;)
 			{
@@ -363,7 +381,7 @@ TEST(TestFileSystem_, directory_move)
 	ASSERT_TRUE(get_crc32_of(datetime_now_utc() + __LINE__, &path)) << buffer_free(&path);
 	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
-	const ptrdiff_t size = buffer_size(&path);
+	const auto size = buffer_size(&path);
 	//
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
 	ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
@@ -402,17 +420,17 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	buffer path;
 	SET_NULL_TO_BUFFER(path);
 	//
-	ASSERT_TRUE(directory_get_current_directory(NULL, NULL, &path, verbose))
+	ASSERT_TRUE(directory_get_current_directory(nullptr, nullptr, &path, verbose))
 			<< buffer_free(&path);
 	const auto current_directory(buffer_to_string(&path));
 	//
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
-	auto path_in_range(buffer_to_range(&path));
+	auto path_in_a_range(buffer_to_range(&path));
 	//
-	auto returned = path_get_path_root(path_in_range.start, path_in_range.finish, &path_in_range);
+	auto returned = path_get_path_root(path_in_a_range.start, path_in_a_range.finish, &path_in_a_range);
 	ASSERT_TRUE(returned) << buffer_free(&path);
 	//
-	returned = buffer_resize(&path, range_size(&path_in_range));
+	returned = buffer_resize(&path, range_size(&path_in_a_range));
 	ASSERT_TRUE(returned) << buffer_free(&path);
 	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
@@ -425,7 +443,7 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	const auto path_that_was_set(buffer_to_string(&path));
 	//
 	ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
-	returned = directory_get_current_directory(NULL, NULL, &path, verbose);
+	returned = directory_get_current_directory(nullptr, nullptr, &path, verbose);
 	ASSERT_TRUE(returned) << buffer_free(&path);
 	//
 	const auto current_path(buffer_to_string(&path));
@@ -449,7 +467,7 @@ TEST(TestFileSystem_, file_copy)
 		ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
 		ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 		//
-		const ptrdiff_t size = buffer_size(&path);
+		const auto size = buffer_size(&path);
 		//
 		ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
 		ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
@@ -515,10 +533,12 @@ TEST_F(TestFileSystem, file_exists)
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto expected_return = (uint8_t)INT_PARSE(
-										 node.node().select_node("return").node().child_value());
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return =
+			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
 		//
-		auto returned = file_exists((const uint8_t*)input.c_str());
+		auto returned = file_exists(reinterpret_cast<const uint8_t*>(input.c_str()));
 		ASSERT_EQ(expected_return, returned) << input;
 #if defined(_WIN32)
 		const auto input_w(char_to_wchar_t(input));
@@ -537,8 +557,10 @@ TEST_F(TestFileSystem, file_read_lines)
 	for (const auto& node : nodes)
 	{
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto expected_output = (uint16_t)INT_PARSE(
-										 node.node().select_node("output").node().child_value());
+		const std::string output_str(node.node().select_node("output").node().child_value());
+		const auto output_in_a_range(string_to_range(output_str));
+		const auto expected_output =
+			static_cast<uint16_t>(int_parse(output_in_a_range.start, output_in_a_range.finish));
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 		ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
@@ -547,30 +569,33 @@ TEST_F(TestFileSystem, file_read_lines)
 		const void* ptr = buffer_data(&tmp, 0);
 		//
 		ASSERT_TRUE(echo(0, Default,
-						 (const uint8_t*)ptr, Info,
-						 (const uint8_t*)input.c_str(), (ptrdiff_t)input.size(),
-						 0, verbose)) << buffer_free(&tmp);
+						 reinterpret_cast<const uint8_t*>(ptr),
+						 Info,
+						 reinterpret_cast<const uint8_t*>(input.c_str()),
+						 static_cast<ptrdiff_t>(input.size()),
+						 0,
+						 verbose)) << buffer_free(&tmp);
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-		ASSERT_TRUE(file_read_lines((const uint8_t*)ptr, &tmp)) << buffer_free(&tmp);
+		ASSERT_TRUE(file_read_lines(reinterpret_cast<const uint8_t*>(ptr), &tmp)) << buffer_free(&tmp);
 		//
 		uint16_t i = 0;
 		std::string returned_output;
 
-		while (NULL != (ptr = buffer_range_data(&tmp, i++)))
+		while (nullptr != (ptr = buffer_range_data(&tmp, i++)))
 		{
 			returned_output.append(range_to_string(static_cast<const range*>(ptr)));
 		}
 
-		const auto input_in_range(string_to_range(input));
+		const auto input_in_a_range(string_to_range(input));
 		static const uint8_t n = '\n';
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 
-		if (!range_is_null_or_empty(&input_in_range))
+		if (!range_is_null_or_empty(&input_in_a_range))
 		{
-			ASSERT_TRUE(string_replace(input_in_range.start, input_in_range.finish,
-									   &n, &n + 1, NULL, NULL, &tmp)) << buffer_free(&tmp);
+			ASSERT_TRUE(string_replace(input_in_a_range.start, input_in_a_range.finish,
+									   &n, &n + 1, nullptr, nullptr, &tmp)) << buffer_free(&tmp);
 		}
 
 		ASSERT_EQ(expected_output, i - 1) << buffer_free(&tmp);
@@ -620,7 +645,7 @@ TEST(TestFileSystem_, file_move)
 		ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
 		ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 		//
-		const ptrdiff_t size = buffer_size(&path);
+		const auto size = buffer_size(&path);
 		//
 		ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
 		ASSERT_TRUE(buffer_push_back(&path, PATH_DELIMITER)) << buffer_free(&path);
@@ -738,7 +763,7 @@ TEST(TestFileSystem_, file_set_attributes)
 	ASSERT_TRUE(file_set_attributes(buffer_data(&path, 0), 0, 0, 1, 0, 0)) << buffer_free(&path);
 #endif
 	ASSERT_TRUE(file_delete(buffer_data(&path, 0))) << buffer_free(&path);
-	/**/
+	//
 	buffer_release(&path);
 }
 
@@ -758,7 +783,7 @@ TEST(TestFileSystem_, file_set_last_access_time)
 	const int64_t time_to_set = 1569840495;
 	ASSERT_TRUE(file_set_last_access_time_utc(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
 	ASSERT_TRUE(file_set_last_access_time(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
-	const int64_t time = file_get_last_access_time(buffer_data(&path, 0));
+	const auto time = file_get_last_access_time(buffer_data(&path, 0));
 	//
 	ASSERT_EQ(time_to_set, time) << buffer_free(&path);
 	//
@@ -782,7 +807,7 @@ TEST(TestFileSystem_, file_set_last_write_time)
 	const int64_t time_to_set = 1569840495;
 	ASSERT_TRUE(file_set_last_write_time_utc(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
 	ASSERT_TRUE(file_set_last_write_time(buffer_data(&path, 0), time_to_set)) << buffer_free(&path);
-	const int64_t time = file_get_last_write_time(buffer_data(&path, 0));
+	const auto time = file_get_last_write_time(buffer_data(&path, 0));
 	//
 	ASSERT_EQ(time_to_set, time) << buffer_free(&path);
 	//
@@ -804,23 +829,23 @@ TEST(TestFileSystem_, file_write_all_bytes)
 	ASSERT_TRUE(buffer_push_back(&path, 0)) << buffer_free(&path);
 	//
 	const auto path_str(buffer_to_string(&path));
-	const uint8_t* ptr = (const uint8_t*)path_str.c_str();
+	const auto* ptr = reinterpret_cast<const uint8_t*>(path_str.c_str());
 
 	for (uint8_t i = 0, count = COUNT_OF(content_size); i < count; ++i)
 	{
 		static const uint8_t value = '\0';
 		//
 		ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
-		const uint8_t returned =
+		const auto returned =
 			string_pad_left(&value, &value, &value, &value + 1, content_size[i], &path);
 		ASSERT_TRUE(returned) << buffer_free(&path);
 		//
-		ptrdiff_t size = buffer_size(&path);
+		auto size = buffer_size(&path);
 		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
 		//
 		ASSERT_TRUE(file_write_all(ptr, &path));
 		//
-		size = (ptrdiff_t)file_get_length((const uint8_t*)path_str.c_str());
+		size = static_cast<ptrdiff_t>(file_get_length(ptr));
 		ASSERT_EQ(content_size[i], size) << buffer_free(&path);
 	}
 
