@@ -877,54 +877,68 @@ uint8_t string_trim_any(struct range* input_output, uint8_t mode, const uint16_t
 		return 0;
 	}
 
-	uint32_t out;
-	const uint32_t* finish = &out + 1;
-
 	if (string_get_id_of_trim_function() == mode ||
 		string_get_id_of_trim_start_function() == mode)
 	{
-		const uint8_t* pos = NULL;
+		uint32_t out;
+		const uint8_t* pos;
 
-		while (NULL != (pos = string_enumerate(input_output->start, input_output->finish, &out)))
+		while (NULL != (pos = string_enumerate(
+								  input_output->start, input_output->finish, &out)))
 		{
-			if (finish == find_any_symbol_like_or_not_like_that_UTF32LE(
-					&out, finish, trim_symbols, count_of_symbols, 1, 1))
+			uint8_t match = 0;
+
+			for (uint8_t i = 0; i < count_of_symbols; ++i)
 			{
-				break;
+				if (trim_symbols[i] == out)
+				{
+					match = 1;
+					break;
+				}
+			}
+
+			if (match)
+			{
+				input_output->start = pos;
 			}
 			else
 			{
-				input_output->start = pos;
+				break;
 			}
 		}
 	}
 
-	if (input_output->start < input_output->finish &&
-		(string_get_id_of_trim_function() == mode ||
-		 string_get_id_of_trim_end_function() == mode))
+	if (string_get_id_of_trim_function() == mode ||
+		string_get_id_of_trim_end_function() == mode)
 	{
 		mode = 0;
-		/**/
+		uint32_t out;
+		const uint8_t* pos;
+		const uint8_t* prev_pos = input_output->start;
 		const uint8_t* expected_finish = input_output->finish;
-		const uint8_t* pos = input_output->start;
-		const uint8_t* prev_pos = pos;
 
 		while (NULL != (pos = string_enumerate(prev_pos, input_output->finish, &out)))
 		{
-			if (finish == find_any_symbol_like_or_not_like_that_UTF32LE(
-					&out, finish, trim_symbols, count_of_symbols, 1, 1))
+			uint8_t match = 0;
+
+			for (uint8_t i = 0; i < count_of_symbols; ++i)
+			{
+				if (trim_symbols[i] == out)
+				{
+					match = 1;
+					break;
+				}
+			}
+
+			if (!match)
 			{
 				mode = 0;
 				expected_finish = input_output->finish;
 			}
-			else
+			else if (!mode)
 			{
-				if (!mode)
-				{
-					expected_finish = prev_pos;
-				}
-
 				mode = 1;
+				expected_finish = prev_pos;
 			}
 
 			prev_pos = pos;
@@ -986,16 +1000,21 @@ uint8_t string_un_quote(struct range* input_output)
 		return 0;
 	}
 
-	input_output->start = find_any_symbol_like_or_not_like_that(
-							  input_output->start, input_output->finish, quote_symbols, 2, 0, 1);
+	input_output->start = string_find_any_symbol_like_or_not_like_that(
+							  input_output->start, input_output->finish,
+							  quote_symbols, quote_symbols + 2, 0, 1);
 
 	if (input_output->finish == input_output->start)
 	{
 		return 1;
 	}
 
-	input_output->finish = 1 + find_any_symbol_like_or_not_like_that(
-							   input_output->finish - 1, input_output->start, quote_symbols, 2, 0, -1);
+	const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
+							 input_output->finish, input_output->start,
+							 quote_symbols, quote_symbols + 2, 0, -1);
+	input_output->finish = string_find_any_symbol_like_or_not_like_that(
+							   pos, input_output->finish,
+							   quote_symbols, quote_symbols + 2, 1, 1);
 	return 1;
 }
 

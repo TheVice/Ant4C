@@ -30,19 +30,18 @@
 
 #if defined(_WIN32)
 #include <windows.h>
-
-static const uint8_t space_symbol = ' ';
-static const wchar_t zero_symbol_w = L'\0';
-
 #else
-
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #endif
 
-static const uint8_t zero_symbol = '\0';
+#if defined(_WIN32)
+static const uint8_t space = ' ';
+static const wchar_t zeroW = L'\0';
+#endif
+static const uint8_t zero = '\0';
 
 uint8_t exec_get_program_full_path(
 	const void* the_project, const void* the_target,
@@ -85,7 +84,7 @@ uint8_t exec_get_program_full_path(
 				return 0;
 			}
 
-			if (!buffer_append(path_to_the_program, path, common_count_bytes_until(path, zero_symbol)) ||
+			if (!buffer_append(path_to_the_program, path, common_count_bytes_until(path, zero)) ||
 				!buffer_push_back(path_to_the_program, 0))
 			{
 				return 0;
@@ -103,20 +102,21 @@ uint8_t exec_get_program_full_path(
 	}
 
 	if (!path_combine_in_place(path_to_the_program,
-							   buffer_size(path_to_the_program) - size, &zero_symbol, &zero_symbol))
+							   buffer_size(path_to_the_program) - size, &zero, &zero))
 #else
-	if (!path_combine_in_place(path_to_the_program, 0, &zero_symbol, &zero_symbol))
+	if (!path_combine_in_place(path_to_the_program, 0, &zero, &zero))
 #endif
 	{
 		return 0;
 	}
 
-	return buffer_push_back(path_to_the_program, zero_symbol);
+	return buffer_push_back(path_to_the_program, zero);
 }
 
 #if defined(_WIN32)
 
-uint8_t exec_win32_append_command_line(const struct range* command_line, struct buffer* output)
+uint8_t exec_win32_append_command_line(
+	const struct range* command_line, struct buffer* output)
 {
 	if (!output)
 	{
@@ -127,8 +127,9 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 	const uint8_t* path_start = buffer_data(output, 0);
 	const uint8_t* path_finish = path_start + size;
 	/**/
-	const uint8_t contains = string_contains(path_start, path_finish,
-							 &space_symbol, &space_symbol + 1);
+	const uint8_t contains = string_contains(
+								 path_start, path_finish,
+								 &space, &space + 1);
 
 	if (!buffer_append(output, NULL, size + 3) ||
 		!buffer_resize(output, size))
@@ -144,8 +145,12 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 		return 0;
 	}
 
-	path_finish = 1 + find_any_symbol_like_or_not_like_that(
-					  path_finish - 1, path_start, &zero_symbol, 1, 0, -1);
+	const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
+							 path_finish, path_start,
+							 &zero, &zero + 1, 0, -1);
+	path_finish = string_find_any_symbol_like_or_not_like_that(
+					  pos, path_finish,
+					  &zero, &zero + 1, 1, 1);
 
 	if (contains)
 	{
@@ -164,14 +169,14 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 
 	if (!range_is_null_or_empty(command_line))
 	{
-		if (!buffer_push_back(output, space_symbol) ||
+		if (!buffer_push_back(output, space) ||
 			!buffer_append_data_from_range(output, command_line))
 		{
 			return 0;
 		}
 	}
 
-	return buffer_push_back(output, zero_symbol);
+	return buffer_push_back(output, zero);
 }
 
 uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
@@ -408,7 +413,7 @@ uint8_t exec(
 			return 0;
 		}
 
-		if (!buffer_push_back(&application, zero_symbol))
+		if (!buffer_push_back(&application, zero))
 		{
 			buffer_release(&application);
 			return 0;
@@ -418,7 +423,7 @@ uint8_t exec(
 	if (!range_is_null_or_empty(environment_variables))
 	{
 		if (!buffer_append_data_from_range(&application, environment_variables) ||
-			!buffer_push_back(&application, zero_symbol))
+			!buffer_push_back(&application, zero))
 		{
 			buffer_release(&application);
 			return 0;
@@ -479,11 +484,11 @@ uint8_t exec(
 	memset(indexes, 0, sizeof(indexes));
 	uint8_t count = 0;
 
-	while (finish != (start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zero_symbol_w, 1, 1,
+	while (finish != (start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 1,
 							  1)) &&
 		   count < COUNT_OF(indexes))
 	{
-		if (finish == (start = find_any_symbol_like_or_not_like_that_wchar_t(start + 1, finish, &zero_symbol_w, 1, 0,
+		if (finish == (start = find_any_symbol_like_or_not_like_that_wchar_t(start + 1, finish, &zeroW, 1, 0,
 							   1)))
 		{
 			break;
@@ -788,7 +793,7 @@ uint8_t exec(
 			return 0;
 		}
 
-		if (!buffer_push_back(&application, zero_symbol))
+		if (!buffer_push_back(&application, zero))
 		{
 			buffer_release(&application);
 			return 0;

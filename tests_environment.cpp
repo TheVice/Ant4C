@@ -263,7 +263,7 @@ TEST(TestEnvironment_, environment_get_user_name)
 	if (string_contains(variable_value.start, variable_value.finish, &PATH_DELIMITER, &PATH_DELIMITER))
 	{
 		ASSERT_TRUE(
-			path_get_file_name(variable_value.start, variable_value.finish, &variable_value))
+			path_get_file_name(&variable_value.start, variable_value.finish))
 				<< "'" << user_name << "'" << std::endl
 				<< "'" << expected_user_name << "'" << std::endl
 				<< buffer_free(&output);

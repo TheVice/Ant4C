@@ -30,19 +30,23 @@ uint8_t project_property_get_by_name(
 	struct buffer* output, uint8_t verbose);
 
 uint8_t project_target_new(
-	void* the_project, const uint8_t* target_name, uint8_t target_name_length,
-	const uint8_t* target_depends, uint16_t target_depends_length,
+	void* the_project,
+	const uint8_t* target_name_start, const uint8_t* target_name_finish,
+	const uint8_t* target_depends_start, const uint8_t* target_depends_finish,
 	struct buffer* description,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
 	const struct range* sub_nodes_names, uint8_t verbose);
 uint8_t project_target_get(
-	const void* the_project, const uint8_t* name, uint8_t name_length,
+	const void* the_project,
+	const uint8_t* name_start, const uint8_t* name_finish,
 	void** the_target, uint8_t verbose);
 uint8_t project_target_exists(
-	const void* the_project, const uint8_t* name, uint8_t name_length);
+	const void* the_project,
+	const uint8_t* name_start, const uint8_t* name_finish, uint8_t verbose);
 uint8_t project_target_has_executed(
-	const void* the_project, const uint8_t* name, uint8_t name_length);
+	const void* the_project,
+	const uint8_t* name_start, const uint8_t* name_finish, uint8_t verbose);
 
 uint8_t project_add_module(
 	void* the_project, const void* the_module, uint8_t length);

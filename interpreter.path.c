@@ -99,18 +99,18 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 		case path_get_directory_name_function:
 			return (1 == arguments_count) &&
-				   path_get_directory_name(values[0].start, values[0].finish, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
+				   path_get_directory_name(values[0].start, &values[0].finish) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case path_get_extension_function:
 			return (1 == arguments_count) &&
-				   path_get_extension(values[0].start, values[0].finish, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
+				   path_get_extension(&values[0].start, values[0].finish) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case path_get_file_name_function:
 			return (1 == arguments_count) &&
-				   path_get_file_name(values[0].start, values[0].finish, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
+				   path_get_file_name(&values[0].start, values[0].finish) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case path_get_file_name_without_extension_function:
 			return (1 == arguments_count) &&
@@ -119,8 +119,8 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 		case path_get_path_root_function:
 			return (1 == arguments_count) &&
-				   path_get_path_root(values[0].start, values[0].finish, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
+				   path_get_path_root(values[0].start, &values[0].finish) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case path_get_temp_file_name_function:
 #if defined(_WIN32)

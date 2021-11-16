@@ -13,6 +13,7 @@
 #include "conversion.h"
 #include "math_unit.h"
 #include "range.h"
+#include "string_unit.h"
 
 #include <time.h>
 #include <stddef.h>
@@ -155,7 +156,8 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 	return 1;
 }
 
-uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct buffer* output)
+uint8_t datetime_format_to_string(
+	int64_t input, const uint8_t* format, struct buffer* output)
 {
 	struct tm tm_;
 
@@ -185,9 +187,10 @@ uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct b
 	return buffer_resize(output, size + new_size);
 }
 
-uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
-					   uint32_t* year, uint8_t* month, uint8_t* day,
-					   uint8_t* hour, uint8_t* minute, uint8_t* second)
+uint8_t datetime_parse(
+	const uint8_t* input_start, const uint8_t* input_finish,
+	uint32_t* year, uint8_t* month, uint8_t* day,
+	uint8_t* hour, uint8_t* minute, uint8_t* second)
 {
 	static const uint8_t* digits = (const uint8_t*)"0123456789";
 	static const uint8_t count_of_digits = 10;
@@ -210,7 +213,8 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 
 	while (input_start != input_finish && step < 6)
 	{
-		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, digits, count_of_digits, 1, 1);
+		input_start = string_find_any_symbol_like_or_not_like_that(
+						  input_start, input_finish, digits, digits + count_of_digits, 1, 1);
 
 		if (input_start == input_finish)
 		{
@@ -221,16 +225,18 @@ uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
 
 		if (2 == step)
 		{
-			(*year) = value;
+			*year = value;
 		}
 		else
 		{
-			(*ptr[step]) = (uint8_t)value;
+			*ptr[step] = (uint8_t)value;
 		}
 
 		++step;
-		input_start = find_any_symbol_like_or_not_like_that(
-						  input_start + 1, input_finish, digits, count_of_digits, 0, 1);
+		input_start = string_enumerate(input_start, input_finish, NULL);
+		input_start = string_find_any_symbol_like_or_not_like_that(
+						  input_start, input_finish,
+						  digits, digits + count_of_digits, 0, 1);
 	}
 
 	return (0 < *day && *day < 32 && 1 < *month && *month < 31 && *hour < 24 && *minute < 60 && *second < 60);
@@ -295,7 +301,8 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 		const uint8_t* c = uint64_to_string_to_byte_array(inputs[i], a, b, 21);
 		const uint8_t* d = c + 21;
 		/**/
-		c = find_any_symbol_like_or_not_like_that(c, d, &zero, 1, 0, 1);
+		c = string_find_any_symbol_like_or_not_like_that(
+				c, d, &zero, &zero + 1, 0, 1);
 		/**/
 		const uint8_t length = (uint8_t)(d - c);
 
@@ -331,9 +338,10 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 	return (uint8_t)(ptr - output);
 }
 
-uint8_t datetime_to_string(uint32_t year, uint8_t month, uint8_t day,
-						   uint8_t hour, uint8_t minute, uint8_t second,
-						   struct buffer* output)
+uint8_t datetime_to_string(
+	uint32_t year, uint8_t month, uint8_t day,
+	uint8_t hour, uint8_t minute, uint8_t second,
+	struct buffer* output)
 {
 	if (year < 1970 || INT32_MAX < year ||
 		month < 1 || 12 < month ||
@@ -531,8 +539,9 @@ int64_t datetime_now()
 						   (uint8_t)tm_->tm_hour, (uint8_t)tm_->tm_min, (uint8_t)tm_->tm_sec);
 }
 
-int64_t datetime_encode(uint32_t year, uint8_t month, uint8_t day,
-						uint8_t hour, uint8_t minute, uint8_t second)
+int64_t datetime_encode(
+	uint32_t year, uint8_t month, uint8_t day,
+	uint8_t hour, uint8_t minute, uint8_t second)
 {
 	if (year < 1970 || INT32_MAX < year ||
 		month < 1 || 12 < month ||
@@ -575,8 +584,9 @@ int64_t datetime_encode(uint32_t year, uint8_t month, uint8_t day,
 	return this_time;
 }
 
-uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* day,
-						uint8_t* hour, uint8_t* minute, uint8_t* second, uint16_t* year_day)
+uint8_t datetime_decode(
+	int64_t time, uint32_t* year, uint8_t* month, uint8_t* day,
+	uint8_t* hour, uint8_t* minute, uint8_t* second, uint16_t* year_day)
 {
 	if (!year && !month && !day &&
 		!hour && !minute && !second &&
@@ -594,37 +604,37 @@ uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* d
 
 	if (year)
 	{
-		(*year) = tm_.tm_year;
+		*year = tm_.tm_year;
 	}
 
 	if (month)
 	{
-		(*month) = (uint8_t)tm_.tm_mon;
+		*month = (uint8_t)tm_.tm_mon;
 	}
 
 	if (day)
 	{
-		(*day) = (uint8_t)tm_.tm_mday;
+		*day = (uint8_t)tm_.tm_mday;
 	}
 
 	if (hour)
 	{
-		(*hour) = (uint8_t)tm_.tm_hour;
+		*hour = (uint8_t)tm_.tm_hour;
 	}
 
 	if (minute)
 	{
-		(*minute) = (uint8_t)tm_.tm_min;
+		*minute = (uint8_t)tm_.tm_min;
 	}
 
 	if (second)
 	{
-		(*second) = (uint8_t)tm_.tm_sec;
+		*second = (uint8_t)tm_.tm_sec;
 	}
 
 	if (year_day)
 	{
-		(*year_day) = (uint16_t)tm_.tm_yday;
+		*year_day = (uint16_t)tm_.tm_yday;
 	}
 
 	return 1;

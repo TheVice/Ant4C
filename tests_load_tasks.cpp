@@ -69,9 +69,8 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 			//
 			ASSERT_TRUE(
 				path_get_file_name(
-					name_of_module_in_range.start,
-					name_of_module_in_range.finish,
-					&name_of_module_in_range))
+					&name_of_module_in_range.start,
+					name_of_module_in_range.finish))
 					<< "Path to module: '" << path_to_module << "'" << std::endl
 					<< project_free(&the_project);
 			//
@@ -168,7 +167,7 @@ TEST_F(TestLoadTasks, project_load_from_build_file)
 		{
 			ASSERT_TRUE(target_evaluate_by_name(&the_project,
 												target_name_in_range.start,
-												(uint8_t)range_size(&target_name_in_range), verbose))
+												target_name_in_range.finish, verbose))
 					<< "Path to module: '" << path_to_module << "'" << std::endl
 					<< "Path to script: '" << path_to_script << "'" << std::endl
 					<< "Name of module: '" << name_of_module << "'" << std::endl

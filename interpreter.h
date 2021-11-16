@@ -81,6 +81,29 @@ uint8_t sleep_unit_get_attributes_and_arguments_for_task(
 uint8_t sleep_unit_evaluate_task(
 	struct buffer* task_arguments, uint8_t verbose);
 
+/*target*/
+uint8_t target_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t target_evaluate_task(
+	void* the_project, struct buffer* task_arguments, uint8_t target_help,
+	const uint8_t* attributes_start, const uint8_t* attributes_finish,
+	const uint8_t* element_finish,
+	const struct range* sub_nodes_names, uint8_t verbose);
+
+uint8_t target_get_function(
+	const uint8_t* name_start, const uint8_t* name_finish);
+uint8_t target_exec_function(
+	const void* the_project, const void* the_target,
+	uint8_t function, const struct buffer* arguments,
+	uint8_t arguments_count, struct buffer* output, uint8_t verbose);
+
+uint8_t call_get_attributes_and_arguments_for_task(
+	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
+	uint8_t* task_attributes_count, struct buffer* task_arguments);
+uint8_t call_evaluate_task(
+	void* the_project, struct buffer* task_arguments, uint8_t verbose);
+
 /*version*/
 uint8_t version_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);

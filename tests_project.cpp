@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2021 TheVice
  *
  */
 
@@ -172,6 +172,7 @@ TEST_F(TestProject, project_load_from_content)
 		const std::string expected_name(node.node().select_node("name").node().child_value());
 		const std::string expected_default_target(node.node().select_node("default").node().child_value());
 		const std::string target_to_run(node.node().select_node("target_to_run").node().child_value());
+		const auto expected_default_target_in_a_range(string_to_range(expected_default_target));
 		//
 		std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
 
@@ -215,7 +216,7 @@ TEST_F(TestProject, project_load_from_content)
 			ASSERT_EQ(expected_target_return, target_evaluate_by_name(
 						  the_project,
 						  target_to_run_in_range.start,
-						  (uint8_t)range_size(&target_to_run_in_range),
+						  target_to_run_in_range.finish,
 						  verbose))
 					<< content << std::endl << buffer_free(&output) << project_free(the_project);
 		}
@@ -250,10 +251,13 @@ TEST_F(TestProject, project_load_from_content)
 		//
 		static const uint8_t asterisk = '*';
 
-		if (!project_target_exists(the_project, &asterisk, 1))
+		if (!project_target_exists(the_project, &asterisk, &asterisk + 1, verbose))
 		{
-			ASSERT_NE(expected_default_target.empty(), project_target_exists(the_project,
-					  (const uint8_t*)expected_default_target.c_str(), (uint8_t)expected_default_target.size()))
+			ASSERT_NE(expected_default_target.empty(),
+					  project_target_exists(
+						  the_project,
+						  expected_default_target_in_a_range.start,
+						  expected_default_target_in_a_range.finish, verbose))
 					<< buffer_free(&output) << project_free(the_project) << std::endl
 					<< expected_default_target;
 		}
@@ -317,14 +321,23 @@ TEST_F(TestProject, project_load_from_content)
 		for (const auto& target_name : targets)
 		{
 			std::string target_name_str(target_name.node().child_value());
-			ASSERT_TRUE(project_target_exists(the_project, (const uint8_t*)target_name_str.c_str(),
-											  (uint8_t)target_name_str.size()))
+			auto target_name_in_a_range = string_to_range(target_name_str);
+			//
+			ASSERT_TRUE(project_target_exists(
+							the_project,
+							target_name_in_a_range.start,
+							target_name_in_a_range.finish,
+							verbose))
 					<< buffer_free(&output) << project_free(the_project) << std::endl
 					<< "Target name - '" << target_name_str << "'." << std::endl;
 			//
 			void* target = NULL;
-			ASSERT_TRUE(project_target_get(the_project, (const uint8_t*)target_name_str.c_str(),
-										   (uint8_t)target_name_str.size(), &target, verbose))
+			ASSERT_TRUE(project_target_get(
+							the_project,
+							target_name_in_a_range.start,
+							target_name_in_a_range.finish,
+							&target,
+							verbose))
 					<< buffer_free(&output) << project_free(the_project) << std::endl
 					<< "Target name - '" << target_name_str << "'." << std::endl;
 			//
@@ -334,8 +347,13 @@ TEST_F(TestProject, project_load_from_content)
 			while (NULL != (depend_target_name = target_get_depend(target, index++)))
 			{
 				target_name_str = range_to_string(depend_target_name);
-				ASSERT_TRUE(project_target_exists(the_project, (const uint8_t*)target_name_str.c_str(),
-												  (uint8_t)target_name_str.size()))
+				target_name_in_a_range = string_to_range(target_name_str);
+				//
+				ASSERT_TRUE(project_target_exists(
+								the_project,
+								target_name_in_a_range.start,
+								target_name_in_a_range.finish,
+								verbose))
 						<< buffer_free(&output) << project_free(the_project) << std::endl
 						<< "Target name - '" << target_name_str << "'." << std::endl;
 			}
@@ -584,7 +602,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			returned = target_evaluate_by_name(
 						   the_project,
 						   target_to_run_in_range.start,
-						   (uint8_t)range_size(&target_to_run_in_range),
+						   target_to_run_in_range.finish,
 						   verbose);
 			ASSERT_EQ(expected_target_return, returned)
 					<< path << std::endl << buffer_free(&tmp) << project_free(the_project);

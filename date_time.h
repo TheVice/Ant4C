@@ -12,14 +12,17 @@
 
 struct buffer;
 
-uint8_t datetime_format_to_string(int64_t input, const uint8_t* format, struct buffer* output);
-uint8_t datetime_parse(const uint8_t* input_start, const uint8_t* input_finish,
-					   uint32_t* year, uint8_t* month, uint8_t* day,
-					   uint8_t* hour, uint8_t* minute, uint8_t* second);
+uint8_t datetime_format_to_string(
+	int64_t input, const uint8_t* format, struct buffer* output);
+uint8_t datetime_parse(
+	const uint8_t* input_start, const uint8_t* input_finish,
+	uint32_t* year, uint8_t* month, uint8_t* day,
+	uint8_t* hour, uint8_t* minute, uint8_t* second);
 uint8_t datetime_parse_buffer(struct buffer* input_output);
-uint8_t datetime_to_string(uint32_t year, uint8_t month, uint8_t day,
-						   uint8_t hour, uint8_t minute, uint8_t second,
-						   struct buffer* output);
+uint8_t datetime_to_string(
+	uint32_t year, uint8_t month, uint8_t day,
+	uint8_t hour, uint8_t minute, uint8_t second,
+	struct buffer* output);
 
 uint8_t datetime_get_day(int64_t input);
 uint8_t datetime_get_day_of_week(int64_t input);
@@ -41,10 +44,12 @@ int64_t datetime_ticks();
 int64_t datetime_now_utc();
 int64_t datetime_now();
 
-int64_t datetime_encode(uint32_t year, uint8_t month, uint8_t day,
-						uint8_t hour, uint8_t minute, uint8_t second);
-uint8_t datetime_decode(int64_t time, uint32_t* year, uint8_t* month, uint8_t* day,
-						uint8_t* hour, uint8_t* minute, uint8_t* second, uint16_t* year_day);
+int64_t datetime_encode(
+	uint32_t year, uint8_t month, uint8_t day,
+	uint8_t hour, uint8_t minute, uint8_t second);
+uint8_t datetime_decode(
+	int64_t time, uint32_t* year, uint8_t* month, uint8_t* day,
+	uint8_t* hour, uint8_t* minute, uint8_t* second, uint16_t* year_day);
 
 #if !defined(_WIN32)
 long datetime_get_bias();

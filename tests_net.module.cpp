@@ -65,9 +65,8 @@ protected:
 			auto start = sub_path_in_range.start;
 
 			if (!path_get_file_name(
-					sub_path_in_range.start,
-					sub_path_in_range.finish,
-					&sub_path_in_range))
+					&sub_path_in_range.start,
+					sub_path_in_range.finish))
 			{
 				return "";
 			}
@@ -329,7 +328,7 @@ TEST_F(TestNetModuleEx, project_load_from_build_file)
 		{
 			ASSERT_TRUE(target_evaluate_by_name(&the_project,
 												target_name_in_range.start,
-												(uint8_t)range_size(&target_name_in_range), verbose))
+												target_name_in_range.finish, verbose))
 					<< path_to_module << std::endl
 					<< path_to_build_file << std::endl
 					<< current_directory << std::endl

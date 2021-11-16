@@ -20,9 +20,6 @@ struct range;
 const uint8_t* find_any_symbol_like_or_not_like_that(
 	const uint8_t* start, const uint8_t* finish,
 	const uint8_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
-const uint32_t* find_any_symbol_like_or_not_like_that_UTF32LE(
-	const uint32_t* start, const uint32_t* finish,
-	const uint16_t* that, ptrdiff_t that_length, uint8_t like, int8_t step);
 #if defined(_WIN32)
 const wchar_t* find_any_symbol_like_or_not_like_that_wchar_t(
 	const wchar_t* start, const wchar_t* finish,

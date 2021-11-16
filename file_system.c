@@ -36,12 +36,16 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
-
 #include <utime.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#endif
+
+static const uint8_t zero = '\0';
+#if defined(_WIN32)
+static const wchar_t zeroW = L'\0';
 #endif
 
 enum entry_types { directory_entry, file_entry, all_entries, UNKNOWN_ENTRY_TYPE };
@@ -208,8 +212,7 @@ void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path)
 
 		if (NULL != ptr)
 		{
-			ptr += pre_root_path_length;
-			*path = ptr;
+			*path = ptr + pre_root_path_length;
 		}
 	}
 }
@@ -606,7 +609,7 @@ uint8_t directory_create(const uint8_t* path)
 			continue;
 		}
 
-		*pos = L'\0';
+		*pos = zeroW;
 
 		if (!directory_exists_wchar_t(path_start))
 		{
@@ -759,11 +762,11 @@ uint8_t directory_delete(const uint8_t* path)
 				}
 
 #if defined(_WIN32)
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 0, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 0, 1);
 #else
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 0, 1);
+				start = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 0, 1);
 #endif
 			}
 		}
@@ -784,11 +787,11 @@ uint8_t directory_delete(const uint8_t* path)
 				}
 
 #if defined(_WIN32)
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 0, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 0, 1);
 #else
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 0, 1);
+				start = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 0, 1);
 #endif
 			}
 
@@ -833,11 +836,9 @@ uint8_t directory_enumerate_file_system_entries(
 
 	struct range file_name;
 
-	file_name.start = buffer_data(path, 0);
+	BUFFER_TO_RANGE(file_name, path);
 
-	file_name.finish = file_name.start + buffer_size(path);
-
-	if (!path_get_file_name(file_name.start, file_name.finish, &file_name))
+	if (!path_get_file_name(&file_name.start, file_name.finish))
 	{
 		return 0;
 	}
@@ -872,10 +873,9 @@ uint8_t directory_enumerate_file_system_entries(
 	buffer_release(&patternW);
 	return returned;
 #else
-	file_name.start = buffer_data(path, 0);
-	file_name.finish = file_name.start + buffer_size(path);
+	BUFFER_TO_RANGE(file_name, path);
 
-	if (!path_get_file_name(file_name.start, file_name.finish, &file_name))
+	if (!path_get_file_name(&file_name.start, file_name.finish))
 	{
 		return 0;
 	}
@@ -890,10 +890,9 @@ uint8_t directory_enumerate_file_system_entries(
 		return 0;
 	}
 
-	file_name.start = buffer_data(path, 0);
-	file_name.finish = file_name.start + buffer_size(path);
+	BUFFER_TO_RANGE(file_name, path);
 
-	if (!path_get_directory_name(file_name.start, file_name.finish, &file_name) ||
+	if (!path_get_directory_name(file_name.start, &file_name.finish) ||
 		!buffer_resize(path, range_size(&file_name)) ||
 		!buffer_push_back(path, 0))
 	{
@@ -1054,11 +1053,6 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 	return property_get_by_pointer(*the_property, output);
 }
 
-uint8_t directory_get_directory_root(const uint8_t* path, struct range* root)
-{
-	return NULL != path && path_get_path_root(path, path + common_count_bytes_until(path, 0), root);
-}
-
 int64_t directory_get_last_access_time(const uint8_t* path)
 {
 	return directory_get_last_access_time_utc(path) - (int64_t)60 * file_system_get_bias();
@@ -1143,24 +1137,19 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 			if (!buffer_push_back(drives, (uint8_t)drive) ||
 				!buffer_push_back(drives, ':') ||
 				!buffer_push_back(drives, '\\') ||
-				!buffer_push_back(drives, '\0'))
+				!buffer_push_back(drives, zero))
 			{
 				return 0;
 			}
 		}
 	}
 
-	return buffer_push_back(drives, '\0');
+	return buffer_push_back(drives, zero);
 #else
 	return buffer_push_back(drives, PATH_DELIMITER) && buffer_push_back_uint16(drives, 0);
 #endif
 }
 
-uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t* path_finish,
-									   struct range* parent)
-{
-	return path_get_directory_name(path_start, path_finish, parent);
-}
 #if !defined(_WIN32)
 uint8_t file_system_move_entry(const uint8_t* current_path, const uint8_t* new_path)
 {
@@ -1829,7 +1818,7 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 
 	const ptrdiff_t size = buffer_size(&pathW);
 
-	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, '\0'), &pathW) ||
+	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, zero), &pathW) ||
 		!buffer_push_back_uint16(&pathW, 0))
 	{
 		buffer_release(&pathW);
@@ -2817,8 +2806,8 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 
 		case get_directory_root:
 			return 1 == arguments_count &&
-				   directory_get_directory_root(values[0].start, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
+				   directory_get_directory_root(values[0].start, &values[0].finish) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case dir_get_last_access_time:
 			return 1 == arguments_count && int64_to_string(directory_get_last_access_time(values[0].start), output);
@@ -2837,8 +2826,8 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 
 		case get_parent_directory:
 			return 1 == arguments_count &&
-				   directory_get_parent_directory(values[0].start, values[0].finish, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
+				   directory_get_parent_directory(values[0].start, &values[0].finish) &&
+				   buffer_append_data_from_range(output, &values[0]);
 
 		case UNKNOWN_DIR_FUNCTION:
 		default:

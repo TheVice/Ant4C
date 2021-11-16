@@ -229,7 +229,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		//
 		content = buffer_to_range(&property_value);
 		//
-		returned = path_get_file_name(content.start, content.finish, &content);
+		returned = path_get_file_name(&content.start, content.finish);
 		ASSERT_TRUE(returned)
 				<< buffer_free(&property_value) << buffer_free(&file_tree);
 		//
@@ -239,7 +239,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 				content.start, content.finish, that, that + 2, 1, 1))
 		{
 			content = buffer_to_range(&property_value);
-			returned = path_get_directory_name(content.start, content.finish, &content);
+			returned = path_get_directory_name(content.start, &content.finish);
 			ASSERT_TRUE(returned)
 					<< buffer_free(&property_value) << buffer_free(&file_tree);
 			//
@@ -427,7 +427,7 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	ASSERT_TRUE(path_get_temp_path(&path)) << buffer_free(&path);
 	auto path_in_a_range(buffer_to_range(&path));
 	//
-	auto returned = path_get_path_root(path_in_a_range.start, path_in_a_range.finish, &path_in_a_range);
+	auto returned = path_get_path_root(path_in_a_range.start, &path_in_a_range.finish);
 	ASSERT_TRUE(returned) << buffer_free(&path);
 	//
 	returned = buffer_resize(&path, range_size(&path_in_a_range));

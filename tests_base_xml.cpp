@@ -434,7 +434,7 @@ std::string get_path_to_directory_with_source(uint8_t* result)
 		path_to_source = __FILE__;
 		auto path_in_range(string_to_range(path_to_source));
 
-		if (!path_get_directory_name(path_in_range.start, path_in_range.finish, &path_in_range))
+		if (!path_get_directory_name(path_in_range.start, &path_in_range.finish))
 		{
 			*result = 0;
 			return path_to_source;

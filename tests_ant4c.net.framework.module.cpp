@@ -378,7 +378,7 @@ TEST(TestLoadTasks_, ant4c_net_framework_module)
 	working_dir = string_to_range(path_to_module);
 	ASSERT_TRUE(
 		path_get_directory_name(
-			working_dir.start, working_dir.finish, &working_dir)) << project_free(&path);
+			working_dir.start, &working_dir.finish)) << project_free(&path);
 	//
 	result = common_get_module_priority();
 	common_set_module_priority(1);

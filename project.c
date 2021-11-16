@@ -128,71 +128,77 @@ uint8_t project_property_get_by_name(
 }
 
 uint8_t project_target_new(
-	void* the_project, const uint8_t* target_name, uint8_t target_name_length,
-	const uint8_t* target_depends, uint16_t target_depends_length,
+	void* the_project,
+	const uint8_t* target_name_start, const uint8_t* target_name_finish,
+	const uint8_t* target_depends_start, const uint8_t* target_depends_finish,
 	struct buffer* description,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
 	const struct range* sub_nodes_names, uint8_t verbose)
 {
 	if (NULL == the_project ||
-		NULL == target_name ||
-		target_name_length < 1)
+		range_in_parts_is_null_or_empty(target_name_start, target_name_finish))
 	{
 		return 0;
 	}
 
 	struct buffer* targets = buffer_buffer_data(the_project, TARGETS_POSITION);
 
-	if (target_exists(targets, target_name, target_name_length))
+	if (target_exists(targets, target_name_start, target_name_finish, verbose))
 	{
 		return 0;
 	}
 
 	return target_new(the_project,
-					  target_name, target_name_length,
-					  target_depends, target_depends_length,
+					  target_name_start, target_name_finish,
+					  target_depends_start, target_depends_finish,
 					  description,
 					  attributes_start, attributes_finish,
 					  element_finish, targets, sub_nodes_names, verbose);
 }
 
 uint8_t project_target_get(
-	const void* the_project, const uint8_t* name, uint8_t name_length,
+	const void* the_project,
+	const uint8_t* name_start, const uint8_t* name_finish,
 	void** the_target, uint8_t verbose)
 {
-	if (NULL == the_project || NULL == name || 0 == name_length || NULL == the_target)
+	if (NULL == the_project ||
+		range_in_parts_is_null_or_empty(name_start, name_finish) ||
+		NULL == the_target)
 	{
 		return 0;
 	}
 
-	(void)verbose;/*TODO*/
 	const struct buffer* targets = buffer_buffer_data(the_project, TARGETS_POSITION);
-	return target_get(targets, name, name_length, the_target);
+	return target_get(targets, name_start, name_finish, the_target, verbose);
 }
 
 uint8_t project_target_exists(
-	const void* the_project, const uint8_t* name, uint8_t name_length)
+	const void* the_project,
+	const uint8_t* name_start, const uint8_t* name_finish, uint8_t verbose)
 {
-	if (NULL == the_project || NULL == name || 0 == name_length)
+	if (NULL == the_project ||
+		range_in_parts_is_null_or_empty(name_start, name_finish))
 	{
 		return 0;
 	}
 
 	const struct buffer* targets = buffer_buffer_data(the_project, TARGETS_POSITION);
-	return target_exists(targets, name, name_length);
+	return target_exists(targets, name_start, name_finish, verbose);
 }
 
 uint8_t project_target_has_executed(
-	const void* the_project, const uint8_t* name, uint8_t name_length)
+	const void* the_project,
+	const uint8_t* name_start, const uint8_t* name_finish, uint8_t verbose)
 {
-	if (NULL == the_project || NULL == name || 0 == name_length)
+	if (NULL == the_project ||
+		range_in_parts_is_null_or_empty(name_start, name_finish))
 	{
 		return 0;
 	}
 
 	const struct buffer* targets = buffer_buffer_data(the_project, TARGETS_POSITION);
-	return target_has_executed(targets, name, name_length);
+	return target_has_executed(targets, name_start, name_finish, verbose);
 }
 
 uint8_t project_add_module(
@@ -511,9 +517,11 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
 			return 0;
 		}
 
+		const uint8_t* name_start = buffer_data(&property_value, 0);
+		const uint8_t* name_finish = name_start + buffer_size(&property_value);
+
 		if (!target_evaluate_by_name(
-				the_project, buffer_data(&property_value, 0),
-				(uint8_t)buffer_size(&property_value), verbose))
+				the_project, name_start, name_finish, verbose))
 		{
 			buffer_release(&property_value);
 			return 0;
@@ -563,7 +571,7 @@ uint8_t project_load_and_evaluate_target(
 			while (NULL != (target_name = argument_parser_get_target(arguments, &target_name_, index++)))
 			{
 				is_loaded = target_evaluate_by_name(
-								the_project, target_name->start, (uint8_t)range_size(target_name), verbose);
+								the_project, target_name->start, target_name->finish, verbose);
 
 				if (!is_loaded)
 				{
@@ -705,10 +713,10 @@ uint8_t project_evaluate_target_by_name_from_property(
 		return 0;
 	}
 
+	const uint8_t* name_start = buffer_data(argument_value, 0);
+	const uint8_t* name_finish = name_start + buffer_size(argument_value);
 	return target_evaluate_by_name(
-			   the_project,
-			   buffer_data(argument_value, 0),
-			   (uint8_t)buffer_size(argument_value), verbose);
+			   the_project, name_start, name_finish, verbose);
 }
 
 uint8_t project_on_success(
@@ -904,7 +912,7 @@ uint8_t project_print_default_target(const void* the_project, struct buffer* tmp
 		return 0;
 	}
 
-	const void* the_property = NULL;
+	const void* the_property;
 
 	if (project_get_default_target(the_project, &the_property, verbose))
 	{
@@ -925,22 +933,32 @@ uint8_t project_print_default_target(const void* the_project, struct buffer* tmp
 			return 0;
 		}
 
-		if (!project_target_exists(the_project,
-								   buffer_data(tmp, 0),
-								   (uint8_t)buffer_size(tmp)))
+		const uint8_t* name_start =
+			buffer_data(tmp, 0);
+		const uint8_t* name_finish =
+			name_start + buffer_size(tmp);
+
+		if (!project_target_exists(
+				the_project,
+				name_start,
+				name_finish,
+				verbose))
 		{
 			return 0;
 		}
 
+		static const uint8_t* default_target =
+			(const uint8_t*)"\nDefault target: ";
+
 		if (!echo(0, Default, NULL, Info,
-				  (const uint8_t*)"\nDefault target: ",
+				  default_target,
 				  17, 0, verbose))
 		{
 			return 0;
 		}
 
 		if (!echo(0, Default, NULL, Info,
-				  buffer_data(tmp, 0),
+				  name_start,
 				  buffer_size(tmp), 1, verbose))
 		{
 			return 0;
@@ -1014,10 +1032,9 @@ uint8_t project_evaluate_task(
 			buffer_size(&build_file))
 		{
 			struct range base_directory;
+			BUFFER_TO_RANGE(base_directory, &build_file);
 
-			if (!path_get_directory_name(
-					buffer_data(&build_file, 0),
-					buffer_data(&build_file, 0) + buffer_size(&build_file), &base_directory))
+			if (!path_get_directory_name(base_directory.start, &base_directory.finish))
 			{
 				buffer_release(&build_file);
 				return 0;
@@ -1530,10 +1547,11 @@ uint8_t program_evaluate_task(
 
 	if (inherit_properties)
 	{
+		const uint8_t* name_start = buffer_data(target_name_in_a_buffer, 0);
+		const uint8_t* name_finish = name_start + inherit_properties;
 		inherit_properties = target_evaluate_by_name(
 								 inherit_all_in_a_buffer,
-								 buffer_data(target_name_in_a_buffer, 0),
-								 inherit_properties, verbose);
+								 name_start, name_finish, verbose);
 	}
 	else
 	{

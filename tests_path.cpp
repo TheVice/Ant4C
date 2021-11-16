@@ -105,11 +105,9 @@ TEST_F(TestPath, path_get_directory_name)
 		//
 		path_in_a_range = string_to_range(path);
 		//
-		range directory;
-		directory.start = directory.finish = nullptr;
-		const auto returned = path_get_directory_name(path_in_a_range.start, path_in_a_range.finish, &directory);
+		const auto returned = path_get_directory_name(path_in_a_range.start, &path_in_a_range.finish);
 		ASSERT_EQ(expected_return, returned);
-		ASSERT_EQ(expected_directory, range_to_string(directory));
+		ASSERT_EQ(expected_directory, range_to_string(path_in_a_range));
 		//
 		--node_count;
 	}
@@ -129,11 +127,9 @@ TEST_F(TestPath, path_get_extension)
 		//
 		path_in_a_range = string_to_range(path);
 		//
-		range ext;
-		ext.start = ext.finish = nullptr;
-		const auto returned = path_get_extension(path_in_a_range.start, path_in_a_range.finish, &ext);
+		const auto returned = path_get_extension(&path_in_a_range.start, path_in_a_range.finish);
 		ASSERT_EQ(expected_return, returned);
-		ASSERT_EQ(expected_ext, range_to_string(ext));
+		ASSERT_EQ(expected_ext, range_to_string(path_in_a_range));
 		//
 		--node_count;
 	}
@@ -153,11 +149,9 @@ TEST_F(TestPath, path_get_file_name)
 		//
 		path_in_a_range = string_to_range(path);
 		//
-		range file_name;
-		file_name.start = file_name.finish = nullptr;
-		const auto returned = path_get_file_name(path_in_a_range.start, path_in_a_range.finish, &file_name);
+		const auto returned = path_get_file_name(&path_in_a_range.start, path_in_a_range.finish);
 		ASSERT_EQ(expected_return, returned);
-		ASSERT_EQ(expected_file_name, range_to_string(file_name));
+		ASSERT_EQ(expected_file_name, range_to_string(path_in_a_range));
 		//
 		--node_count;
 	}
@@ -264,19 +258,22 @@ TEST_F(TestPath, path_get_path_root)
 {
 	for (const auto& node : nodes)
 	{
+		const std::string return_str(
+			node.node().select_node("return").node().child_value());
+		auto input_in_a_range = string_to_range(return_str);
+		const auto expected_return =
+			static_cast<uint8_t>(
+				int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
 		const std::string input(node.node().select_node("input").node().child_value());
-		const auto input_in_a_range(string_to_range(input));
+		input_in_a_range = string_to_range(input);
 		//
 		const std::string expected_root(node.node().select_node("root").node().child_value());
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
-		auto root = string_to_range(return_str);
-		const auto expected_return = static_cast<uint8_t>(int_parse(root.start, root.finish));
-		//
-		root.start = root.finish = nullptr;
-		const auto returned = path_get_path_root(input_in_a_range.start, input_in_a_range.finish, &root);
+		const auto returned =
+			path_get_path_root(input_in_a_range.start, &input_in_a_range.finish);
 		ASSERT_EQ(expected_return, returned);
-		ASSERT_EQ(expected_root, range_to_string(root));
+		ASSERT_EQ(expected_root, range_to_string(input_in_a_range));
 		//
 		--node_count;
 	}

@@ -71,7 +71,7 @@ std::string TestExec::get_path_to_directory_with_image(buffer* tmp, uint8_t* res
 				auto working_dir = string_to_range(tests_exec_app);
 
 				if (!path_get_directory_name(
-						working_dir.start, working_dir.finish, &working_dir))
+						working_dir.start, &working_dir.finish))
 				{
 					*result = 0;
 					return path_to_directory_with_image;
