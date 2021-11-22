@@ -29,6 +29,8 @@
 #include <stdio.h>
 
 #if defined(_WIN32)
+#include <wchar.h>
+
 #include <windows.h>
 #else
 #include <errno.h>

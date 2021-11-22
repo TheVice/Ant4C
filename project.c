@@ -303,8 +303,11 @@ uint8_t project_get_buildfile_uri(
 	}
 
 #endif
+	uint32_t char_set;
 
-	if (path_start + 8 < path_finish && '/' == *(path_start + 8))
+	if (path_start + 8 < path_finish &&
+		string_enumerate(path_start + 8, path_finish, &char_set) &&
+		'/' == char_set)
 	{
 		path_start += 8;
 		const ptrdiff_t length = path_finish - path_start;

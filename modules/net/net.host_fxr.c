@@ -20,6 +20,9 @@
 #endif
 
 #include <stdio.h>
+#if defined(_WIN32)
+#include <wchar.h>
+#endif
 #include <string.h>
 
 #if defined(_WIN32)

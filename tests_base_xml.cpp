@@ -567,10 +567,3 @@ void TestsBaseXml::TearDown()
 TestsBaseXml::~TestsBaseXml()
 {
 }
-
-int INT_PARSE(const char* input)
-{
-	const std::string i(input);
-	const auto r(string_to_range(i));
-	return int_parse(r.start, r.finish);
-}

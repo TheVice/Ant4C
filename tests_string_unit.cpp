@@ -464,6 +464,43 @@ TEST_F(TestStringUnit, string_replace)
 	buffer_release(&output);
 }
 
+TEST_F(TestStringUnit, string_replace_double_char_with_single)
+{
+	for (const auto& node : nodes)
+	{
+		const std::string input_str(node.node().select_node("input").node().child_value());
+		const std::string to_be_replaced_str(node.node().select_node("to_be_replaced").node().child_value());
+		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string expected_output(node.node().select_node("output").node().child_value());
+		//
+		auto input_in_a_range = string_to_range(return_str);
+		const auto expected_return =
+			static_cast<uint8_t>(
+				int_parse(input_in_a_range.start, input_in_a_range.finish));
+		//
+		auto tmp = input_str;
+		uint8_t* input =
+			tmp.empty() ? nullptr : reinterpret_cast<uint8_t*>(&tmp[0]);
+		ptrdiff_t size = tmp.size();
+		input_in_a_range = string_to_range(to_be_replaced_str);
+		//
+		const auto returned =
+			string_replace_double_char_with_single(
+				input, &size, input_in_a_range.start, input_in_a_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned)
+				<< input_str << std::endl << to_be_replaced_str;
+		//
+		const std::string output(
+			input ? reinterpret_cast<const char*>(input) : "", input ? size : 0);
+		//
+		ASSERT_EQ(expected_output, output)
+				<< input_str << std::endl << to_be_replaced_str;
+		//
+		--node_count;
+	}
+}
+
 TEST_F(TestStringUnit, string_starts_with)
 {
 	for (const auto& node : nodes)

@@ -29,6 +29,8 @@
 #include "text_encoding.h"
 
 #if defined(_WIN32)
+#include <wchar.h>
+
 #include <windows.h>
 #else
 
@@ -145,7 +147,10 @@ uint8_t path_combine_in_place(
 			return 0;
 		}
 
-		if (!common_replace_double_byte_by_single(buffer_data(path1, size), &new_size, PATH_DELIMITER))
+		if (!string_replace_double_char_with_single(
+				buffer_data(path1, size),
+				&new_size, &PATH_DELIMITER,
+				&PATH_DELIMITER + 1))
 		{
 			return 0;
 		}

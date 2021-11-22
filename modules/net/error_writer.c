@@ -14,6 +14,7 @@
 #include "file_system.h"
 #if defined(_WIN32)
 #include "text_encoding.h"
+#include <wchar.h>
 #endif
 
 #if defined(_WIN32)

@@ -113,13 +113,21 @@ const uint8_t* xml_get_tag_finish_pos(
 
 	while (NULL != start && start < finish)
 	{
-		if (characters[GREATER_POSITION] == *start)
+		uint32_t char_set;
+		const uint8_t* pos = string_enumerate(start, finish, &char_set);
+
+		if (!pos)
+		{
+			return NULL;
+		}
+
+		if (characters[GREATER_POSITION] == char_set)
 		{
 			break;
 		}
-		else if (characters[QUOTE_POSITION] == *start)
+		else if (characters[QUOTE_POSITION] == char_set)
 		{
-			start = string_enumerate(start, finish, NULL);
+			start = pos;
 
 			if (!start)
 			{
@@ -134,13 +142,15 @@ const uint8_t* xml_get_tag_finish_pos(
 			{
 				break;
 			}
+
+			pos = string_enumerate(start, finish, NULL);
 		}
-		else if (characters[LESS_POSITION] == *start)
+		else if (characters[LESS_POSITION] == char_set)
 		{
 			return NULL;
 		}
 
-		start = string_enumerate(start, finish, NULL);
+		start = pos;
 	}
 
 	return start;
@@ -179,13 +189,20 @@ uint16_t xml_get_sub_nodes_elements(
 			return 0;
 		}
 
-		if (question_mark == *start)
+		uint32_t char_set;
+
+		if (!string_enumerate(start, finish, &char_set))
+		{
+			return 0;
+		}
+
+		if (question_mark == char_set)
 		{
 			start = tag_finish_pos;
 			continue;
 		}
 
-		if (tag_close == *start)
+		if (tag_close == char_set)
 		{
 			if (!depth)
 			{
@@ -395,7 +412,10 @@ uint8_t xml_read_ampersand_based_data(
 				}
 			}
 
-			if (characters[AMPERSAND_POSITION] == *start)
+			uint32_t char_set;
+			pos = string_enumerate(start, finish, &char_set);
+
+			if (characters[AMPERSAND_POSITION] == char_set)
 			{
 				if (!buffer_push_back(output, characters[AMPERSAND_POSITION]))
 				{
@@ -403,8 +423,7 @@ uint8_t xml_read_ampersand_based_data(
 					return 0;
 				}
 
-				start = string_enumerate(start, finish, NULL);
-				pos = start;
+				start = pos;
 				continue;
 			}
 		}
@@ -541,9 +560,11 @@ uint8_t xml_get_element_value(
 
 	pos = string_find_any_symbol_like_or_not_like_that(
 			  start, pos, &tag_close, &tag_close + 1, 1, -1);
+	uint32_t char_set;
 
 	if (1 == string_get_length(pos, start) &&
-		tag_close == *pos)
+		string_enumerate(pos, finish, &char_set) &&
+		tag_close == char_set)
 	{
 		return 1;
 	}

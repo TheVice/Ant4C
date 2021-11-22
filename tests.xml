@@ -7591,6 +7591,30 @@ Approximate round trip times in milli-seconds:
       </output>
       <return>1</return>
     </string_replace>
+    <string_replace_double_char_with_single>
+      <input></input>
+      <to_be_replaced></to_be_replaced>
+      <return></return>
+      <output></output>
+    </string_replace_double_char_with_single>
+    <string_replace_double_char_with_single>
+      <input>///</input>
+      <to_be_replaced>/</to_be_replaced>
+      <return>1</return>
+      <output>/</output>
+    </string_replace_double_char_with_single>
+    <string_replace_double_char_with_single>
+      <input>/a/b/c</input>
+      <to_be_replaced>/</to_be_replaced>
+      <return>1</return>
+      <output>/a/b/c</output>
+    </string_replace_double_char_with_single>
+    <string_replace_double_char_with_single>
+      <input>/a//b/c</input>
+      <to_be_replaced>/</to_be_replaced>
+      <return>1</return>
+      <output>/a/b/c</output>
+    </string_replace_double_char_with_single>
     <string_starts_with input="" value="" return="true" />
     <string_starts_with input="" value="A" return="false" />
     <string_starts_with input=" " value=" " return="true" />

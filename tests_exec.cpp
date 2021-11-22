@@ -234,8 +234,14 @@ static uint8_t argument_get_keys_and_values(
 		input_start = string_enumerate(input_start, input_finish, nullptr);
 		input_start = string_find_any_symbol_like_or_not_like_that(
 						  input_start, input_finish, &equal_symbol, &equal_symbol + 1, 0, 1);
+		uint32_t char_set;
 
-		if (quote_symbol == *input_start)
+		if (!string_enumerate(input_start, input_finish, &char_set))
+		{
+			return 0;
+		}
+
+		if (quote_symbol == char_set)
 		{
 			input_start = string_enumerate(input_start, input_finish, nullptr);
 			input_start = string_find_any_symbol_like_or_not_like_that(

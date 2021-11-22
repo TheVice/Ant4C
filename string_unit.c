@@ -445,6 +445,63 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 	return buffer_append(output, start, input_finish - start);
 }
 
+uint8_t string_replace_double_char_with_single(
+	uint8_t* input, ptrdiff_t* size,
+	const uint8_t* to_be_replaced_start,
+	const uint8_t* to_be_replaced_finish)
+{
+	uint32_t char_set;
+
+	if (NULL == input || NULL == size || 0 == *size ||
+		NULL == (string_enumerate(
+					 to_be_replaced_start, to_be_replaced_finish, &char_set)))
+	{
+		return 0;
+	}
+
+	uint8_t* start = NULL;
+	ptrdiff_t match = 0;
+	uint32_t input_char_set;
+	const uint8_t* pos = input;
+	const uint8_t* prev_pos = input;
+	const uint8_t* finish = input + *size;
+
+	while (NULL != (pos = string_enumerate(prev_pos, finish, &input_char_set)))
+	{
+		if (input_char_set == char_set)
+		{
+			if (!match)
+			{
+				start = input + (pos - input);
+			}
+
+			match++;
+		}
+		else
+		{
+			if (1 < match)
+			{
+				const ptrdiff_t length = finish - prev_pos;
+				const uint8_t* src = prev_pos;
+				MEM_CPY(start, src, length);
+				finish -= match - 1;
+			}
+
+			match = 0;
+		}
+
+		prev_pos = pos;
+	}
+
+	if (1 < match)
+	{
+		finish -= match - 1;
+	}
+
+	*size = finish - input;
+	return 1;
+}
+
 uint8_t string_starts_with(const uint8_t* input_start, const uint8_t* input_finish,
 						   const uint8_t* value_start, const uint8_t* value_finish)
 {

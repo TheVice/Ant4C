@@ -17,11 +17,11 @@ extern "C" {
 
 #include <map>
 #include <list>
+#include <cwchar>
 #include <string>
 #include <cstdint>
 
 #define DOUBLE_PARSE(A) double_parse(reinterpret_cast<const uint8_t*>(A))
-int INT_PARSE(const char* input);
 
 struct buffer;
 

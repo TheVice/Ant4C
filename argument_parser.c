@@ -718,11 +718,18 @@ uint8_t argument_append_arguments(
 
 	while (input_start < input_finish)
 	{
-		if (quote_symbol == *input_start)
+		uint32_t char_set;
+
+		if (!string_enumerate(input_start, input_finish, &char_set))
+		{
+			return 0;
+		}
+
+		if (quote_symbol == char_set)
 		{
 			inside_quote = !inside_quote;
 		}
-		else if (space_symbol == *input_start)
+		else if (space_symbol == char_set)
 		{
 			if (!inside_quote)
 			{

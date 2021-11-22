@@ -20,6 +20,7 @@
 #include "for_each.h"
 #include "hash.h"
 #include "if_task.h"
+#include "interpreter.file_system.h"
 #include "interpreter.string_unit.h"
 #include "listener.h"
 #include "load_file.h"

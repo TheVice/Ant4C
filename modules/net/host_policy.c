@@ -13,6 +13,7 @@
 #include "shared_object.h"
 #if defined(_WIN32)
 #include "text_encoding.h"
+#include <wchar.h>
 #endif
 
 #include <string.h>

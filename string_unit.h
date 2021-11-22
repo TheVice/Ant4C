@@ -63,6 +63,10 @@ uint8_t string_replace(
 	const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
 	const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
 	struct buffer* output);
+uint8_t string_replace_double_char_with_single(
+	uint8_t* input, ptrdiff_t* size,
+	const uint8_t* to_be_replaced_start,
+	const uint8_t* to_be_replaced_finish);
 uint8_t string_starts_with(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* value_start, const uint8_t* value_finish);

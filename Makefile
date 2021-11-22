@@ -163,6 +163,7 @@ interpreter.c: xml.h
 interpreter.conversion.c: interpreter.h
 interpreter.date_time.c: interpreter.h
 interpreter.environment.c: interpreter.h
+interpreter.file_system.c: interpreter.h
 interpreter.operating_system.c: interpreter.h
 interpreter.path.c: interpreter.h
 interpreter.sleep_unit.c: interpreter.h
@@ -411,6 +412,9 @@ interpreter.date_time.obj: interpreter.date_time.c
 interpreter.environment.obj: interpreter.environment.c
 	$(CC) $(CFLAGS) -c interpreter.environment.c -o $@
 
+interpreter.file_system.obj: interpreter.file_system.c
+	$(CC) $(CFLAGS) -c interpreter.file_system.c -o $@
+
 interpreter.operating_system.obj: interpreter.operating_system.c
 	$(CC) $(CFLAGS) -c interpreter.operating_system.c -o $@
 
@@ -510,6 +514,7 @@ libant4c.a: interpreter.obj
 libant4c.a: interpreter.conversion.obj
 libant4c.a: interpreter.date_time.obj
 libant4c.a: interpreter.environment.obj
+libant4c.a: interpreter.file_system.obj
 libant4c.a: interpreter.operating_system.obj
 libant4c.a: interpreter.path.obj
 libant4c.a: interpreter.sleep_unit.obj
@@ -534,7 +539,7 @@ libant4c.a: text_encoding.obj
 libant4c.a: try_catch.obj
 libant4c.a: version.obj
 libant4c.a: xml.obj
-	ar qc $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj hash.xxhash.obj if_task.obj interpreter.obj interpreter.conversion.obj interpreter.date_time.obj interpreter.environment.obj interpreter.operating_system.obj interpreter.path.obj interpreter.sleep_unit.obj interpreter.string_unit.obj interpreter.target.obj interpreter.version.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	ar qc $@ argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj hash.xxhash.obj if_task.obj interpreter.obj interpreter.conversion.obj interpreter.date_time.obj interpreter.environment.obj interpreter.file_system.obj interpreter.operating_system.obj interpreter.path.obj interpreter.sleep_unit.obj interpreter.string_unit.obj interpreter.target.obj interpreter.version.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 
 ant4c: libant4c.a
 ant4c: main.obj
@@ -547,5 +552,5 @@ libdefault_listener.so: default_listener.obj
 install: ant4c
 
 clean:
-	-rm ant4c libant4c.a main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj hash.xxhash.obj if_task.obj interpreter.obj interpreter.conversion.obj interpreter.date_time.obj interpreter.environment.obj interpreter.operating_system.obj interpreter.path.obj interpreter.sleep_unit.obj interpreter.string_unit.obj interpreter.target.obj interpreter.version.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
+	-rm ant4c libant4c.a main.obj libdefault_listener.so argument_parser.obj buffer.obj choose_task.obj common.obj conversion.obj copy_move.obj date_time.obj default_listener.obj echo.obj environment.obj exec.obj fail_task.obj file_system.obj for_each.obj hash.blake2.obj hash.blake3.obj hash.obj hash.crc32.obj hash.sha3.obj hash.xxhash.obj if_task.obj interpreter.obj interpreter.conversion.obj interpreter.date_time.obj interpreter.environment.obj interpreter.file_system.obj interpreter.operating_system.obj interpreter.path.obj interpreter.sleep_unit.obj interpreter.string_unit.obj interpreter.target.obj interpreter.version.obj listener.obj load_file.obj load_tasks.obj math_unit.obj operating_system.obj path.obj project.obj property.obj range.obj shared_object.obj sleep_unit.obj string_unit.obj target.obj task.obj text_encoding.obj try_catch.obj version.obj xml.obj
 .PHONY: ant4c clean
