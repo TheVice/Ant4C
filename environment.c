@@ -19,10 +19,10 @@
 #include "text_encoding.h"
 #include "version.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #if defined(_WIN32)
+#include <stdio.h>
 #include <wchar.h>
 
 #include <windows.h>
@@ -376,11 +376,8 @@ uint8_t environment_get_machine_name(struct buffer* name)
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__
-	return (size < buffer_size(name)) && buffer_resize(name, size + strlen_s(host_name, UINT8_MAX));
-#else
-	return (size < buffer_size(name)) && buffer_resize(name, size + strlen(host_name));
-#endif
+	return (size < buffer_size(name)) &&
+		   buffer_resize(name, size + common_count_bytes_until((const uint8_t*)host_name, '\0'));
 }
 
 #endif
@@ -514,11 +511,8 @@ const void* environment_get_operating_system()
 		}
 
 		const uint8_t* version_start = (const uint8_t*)uname_data.version;
-#if __STDC_LIB_EXT1__
-		const uint8_t* version_finish = version_start + strlen_s(uname_data.version, sizeof(uname_data.version));
-#else
-		const uint8_t* version_finish = version_start + strlen(uname_data.version);
-#endif
+		const uint8_t* version_finish = version_start +
+										common_count_bytes_until((const uint8_t*)uname_data.version, '\0');
 
 		if (!version_parse(version_start, version_finish, version))
 		{

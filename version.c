@@ -10,6 +10,7 @@
 #include "common.h"
 #include "conversion.h"
 #include "range.h"
+#include "string_unit.h"
 
 struct version_
 {
@@ -102,29 +103,30 @@ uint8_t version_parse(
 	}
 
 	uint8_t i = 0;
-	input_start = find_any_symbol_like_or_not_like_that(
-					  input_start, input_finish, digits, count_of_digits, 1, 1);
 
 	for (uint8_t count = VERSION_SIZE / sizeof(uint32_t);
-		 input_start < input_finish && i < count;
-		 ++i, ++input_start, version += sizeof(uint32_t))
+		 NULL != input_start && input_start < input_finish && i < count;
+		 ++i, version += sizeof(uint32_t))
 	{
-		if (input_finish == input_start ||
-			input_start + 1 == find_any_symbol_like_or_not_like_that(
-				input_start, input_start + 1, digits, count_of_digits, 1, 1))
+		input_start = string_find_any_symbol_like_or_not_like_that(
+						  input_start, input_finish,
+						  digits, digits + count_of_digits, 1, 1);
+
+		if (input_start == input_finish)
 		{
 			break;
 		}
 
+		uint32_t char_set;
 		*((uint32_t*)version) = (uint32_t)int64_parse(input_start, input_finish);
-		++input_start;
-		/**/
 		const uint8_t* start = input_start;
-		input_start = find_any_symbol_like_or_not_like_that(input_start, input_finish, &point, 1, 1, 1);
+		input_start = string_find_any_symbol_like_or_not_like_that(
+						  input_start, input_finish,
+						  &point, &point + 1, 1, 1);
 
-		for (; start < input_start; ++start)
+		while (NULL != (start = string_enumerate(start, input_start, &char_set)))
 		{
-			if (' ' == *start)
+			if (' ' == char_set)
 			{
 				i = count;
 				break;
@@ -152,7 +154,7 @@ uint8_t version_to_byte_array(const void* version, uint8_t* output)
 
 	for (uint8_t i = 0; i < 4; ++i)
 	{
-		static uint8_t zero = '0';
+		static const uint8_t zero = '0';
 		/**/
 		uint8_t* a = ptr;
 		uint8_t* b = ptr + 21;
@@ -160,12 +162,13 @@ uint8_t version_to_byte_array(const void* version, uint8_t* output)
 		const uint8_t* start = uint64_to_string_to_byte_array(*input[i], a, b, 21);
 		const uint8_t* finish = start + 21;
 		/**/
-		start = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 0, 1);
-		const uint8_t l = (uint8_t)(finish - start);
+		start = string_find_any_symbol_like_or_not_like_that(
+					start, finish, &zero, &zero + 1, 0, 1);
+		const uint8_t size = (uint8_t)(finish - start);
 
-		if (l)
+		if (size)
 		{
-			MEM_CPY(ptr, start, l);
+			MEM_CPY(ptr, start, size);
 		}
 		else
 		{

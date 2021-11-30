@@ -186,14 +186,10 @@ uint8_t string_exec_function(uint8_t function,
 			if (3 == arguments_count)
 			{
 				length = (ptrdiff_t)int64_parse(values[2].start, values[2].finish);
-
-				if (length < 0)
-				{
-					return 0;
-				}
 			}
 
-			return string_substring(values[0].start, values[0].finish, index, length, output);
+			return string_substring(values[0].start, values[0].finish, index, length, &values[1]) &&
+				   buffer_append_data_from_range(output, &values[1]);
 		}
 
 		case to_lower:

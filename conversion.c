@@ -11,12 +11,12 @@
 #include "buffer.h"
 #include "common.h"
 #include "range.h"
+#include "string_unit.h"
 
 #include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 static const uint8_t* digits = (const uint8_t*)"0123456789";
 static const uint8_t count_of_digits = 10;
@@ -30,32 +30,36 @@ static const uint8_t* True = (const uint8_t*)"True";
 #define FALSE_LENGTH 5
 #define TRUE_LENGTH  4
 
-uint8_t bool_parse(const uint8_t* input, ptrdiff_t length, uint8_t* output)
+uint8_t bool_parse(
+	const uint8_t* input_start, const uint8_t* input_finish, uint8_t* output)
 {
-	if (!input ||
-		length < TRUE_LENGTH ||
-		FALSE_LENGTH < length ||
+	static const uint8_t* false_ = (const uint8_t*)"false";
+	static const uint8_t* true_ = (const uint8_t*)"true";
+
+	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		!output)
 	{
 		return 0;
 	}
 
-	if (FALSE_LENGTH == length &&
-		(0 == memcmp(False, input, length) ||
-		 0 == memcmp("false", input, length)))
+	if (string_equal(input_start, input_finish, False, False + FALSE_LENGTH) ||
+		string_equal(input_start, input_finish, false_, false_ + FALSE_LENGTH))
 	{
 		*output = 0;
-		return 1;
 	}
-	else if (TRUE_LENGTH == length &&
-			 (0 == memcmp(True, input, length) ||
-			  0 == memcmp("true", input, length)))
+	else if (string_equal(
+				 input_start, input_finish, True, True + TRUE_LENGTH) ||
+			 string_equal(
+				 input_start, input_finish, true_, true_ + TRUE_LENGTH))
 	{
 		*output = 1;
-		return 1;
+	}
+	else
+	{
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 uint8_t bool_to_string(uint8_t input, struct buffer* output)
@@ -85,15 +89,15 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 		return 0;												\
 	}															\
 	\
-	char* ptr = (char*)buffer_data((OUTPUT), size);
+	char* out = (char*)buffer_data((OUTPUT), size);
 
 #define DIGIT_TO_STRING(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)	\
 	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))			\
-	return buffer_resize((OUTPUT), size + sprintf(ptr, (FORMAT), (VALUE)));
+	return buffer_resize((OUTPUT), size + sprintf(out, (FORMAT), (VALUE)));
 
 #define DIGIT_TO_STRING_STDC_SEC_API(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)	\
 	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))						\
-	return buffer_resize((OUTPUT), size + sprintf_s(ptr, (EXPECTED_SIZE), (FORMAT), (VALUE)));
+	return buffer_resize((OUTPUT), size + sprintf_s(out, (EXPECTED_SIZE), (FORMAT), (VALUE)));
 
 #define PARSE(START, FINISH, MAX_VALUE, MIN_VALUE, TYPE)			\
 	const uint64_t output = uint64_parse((START), (FINISH));		\
@@ -103,11 +107,23 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 		return 0;													\
 	}																\
 	\
-	(FINISH) = find_any_symbol_like_or_not_like_that(				\
-			   (START), (FINISH), digits, count_of_digits, 1, 1);	\
-	(START) = find_any_symbol_like_or_not_like_that(				\
-			  (START), (FINISH), &minus, 1, 1, 1);					\
-	const uint8_t is_minus = minus == *(START);						\
+	(FINISH) = string_find_any_symbol_like_or_not_like_that(		\
+			   (START), (FINISH), digits, digits + count_of_digits,	\
+			   1, 1);												\
+	(START) = string_find_any_symbol_like_or_not_like_that(			\
+			  (START), (FINISH), &minus, &minus + 1, 1, 1);			\
+	\
+	uint32_t char_set;												\
+	uint8_t is_minus;												\
+	\
+	if (!string_enumerate((START), (FINISH), &char_set))			\
+	{																\
+		is_minus = 0;												\
+	}																\
+	else															\
+	{																\
+		is_minus = minus == char_set;								\
+	}																\
 	\
 	if ((MAX_VALUE) < output)										\
 	{																\
@@ -121,7 +137,7 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 	return is_minus ? -1 * (TYPE)output : (TYPE)output;
 
 #define TO_STRING(INPUT, OUTPUT)				\
-	uint64_t input_;							\
+	uint64_t digit;								\
 	\
 	if ((INPUT) < 0)							\
 	{											\
@@ -132,15 +148,15 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 		\
 		(INPUT) += 1;							\
 		(INPUT) *= -1;							\
-		input_ = (INPUT);						\
-		++input_;								\
+		digit = (INPUT);						\
+		++digit;								\
 	}											\
 	else										\
 	{											\
-		input_ = (INPUT);						\
+		digit = (INPUT);						\
 	}											\
 	\
-	return uint64_to_string(input_, (OUTPUT));
+	return uint64_to_string(digit, (OUTPUT));
 
 double double_parse(const uint8_t* value)
 {
@@ -193,46 +209,52 @@ uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 		return 0;
 	}
 
-	input_start = find_any_symbol_like_or_not_like_that(
+	input_start = string_find_any_symbol_like_or_not_like_that(
 					  input_start, input_finish,
-					  digits, count_of_digits, 1, 1);
+					  digits, digits + count_of_digits, 1, 1);
 	const uint8_t* start = input_start;
-	input_start = find_any_symbol_like_or_not_like_that(
+	input_start = string_find_any_symbol_like_or_not_like_that(
 					  input_start, input_finish,
-					  digits + 1, count_of_digits - 1, 1, 1);
-	start = find_any_symbol_like_or_not_like_that(
+					  digits + 1, digits + count_of_digits,
+					  1, 1);
+	start = string_find_any_symbol_like_or_not_like_that(
 				start, input_start,
-				digits, count_of_digits, 0, 1);
+				digits, digits + count_of_digits, 0, 1);
 
 	if (start != input_start)
 	{
 		return 0;
 	}
 
-	input_finish = find_any_symbol_like_or_not_like_that(
+	input_finish = string_find_any_symbol_like_or_not_like_that(
 					   input_start, input_finish,
-					   digits, count_of_digits, 0, 1);
+					   digits, digits + count_of_digits, 0, 1);
+	/**/
+	uint32_t output[21];
+	uint32_t* out = output;
+	const uint32_t* out_finish = out + 21;
 
-	if (input_finish == input_start)
+	while (NULL != (input_start = string_enumerate(input_start, input_finish, out)))
 	{
-		return 0;
-	}
-	else if (20 < input_finish - input_start)
-	{
-		return UINT64_MAX;
+		++out;
+
+		if (out_finish == out)
+		{
+			return UINT64_MAX;
+		}
 	}
 
 	uint64_t multi = 1;
 	uint64_t result = 0;
 
-	do
+	while (output < out)
 	{
-		--input_finish;
+		--out;
 		const uint64_t previous_result = result;
 
 		for (uint8_t i = 0; i < count_of_digits; ++i)
 		{
-			if (digits[i] == *input_finish)
+			if (digits[i] == *out)
 			{
 				result += multi * i;
 				break;
@@ -246,7 +268,6 @@ uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 
 		multi *= 10;
 	}
-	while (input_start != input_finish);
 
 	return result;
 }
@@ -454,7 +475,8 @@ uint8_t uint64_to_string(uint64_t input, struct buffer* output)
 	/**/
 	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, 21);
 	const uint8_t* result_finish = result_start + 21;
-	result_start = find_any_symbol_like_or_not_like_that(result_start, result_finish, &zero, 1, 0, 1);
+	result_start = string_find_any_symbol_like_or_not_like_that(
+					   result_start, result_finish, &zero, &zero + 1, 0, 1);
 	/**/
 	const uint8_t length = (uint8_t)(result_finish - result_start);
 

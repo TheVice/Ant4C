@@ -55,7 +55,7 @@ uint8_t bool_exec_function(
 		{
 			uint8_t bool_value = 0;
 
-			if (!bool_parse(argument.start, range_size(&argument), &bool_value))
+			if (!bool_parse(argument.start, argument.finish, &bool_value))
 			{
 				break;
 			}

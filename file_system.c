@@ -19,10 +19,9 @@
 #include "file_system.h"
 #include "buffer.h"
 #include "common.h"
-#include "conversion.h"
 #include "date_time.h"
 #include "environment.h"
-#include "hash.h"
+#include "interpreter.file_system.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -36,7 +35,6 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
-
 #include <utime.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -44,7 +42,10 @@
 #include <sys/types.h>
 #endif
 
-enum entry_types { directory_entry, file_entry, all_entries, UNKNOWN_ENTRY_TYPE };
+static const uint8_t zero = '\0';
+#if defined(_WIN32)
+static const wchar_t zeroW = L'\0';
+#endif
 
 #if defined(_WIN32)
 
@@ -208,8 +209,7 @@ void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path)
 
 		if (NULL != ptr)
 		{
-			ptr += pre_root_path_length;
-			*path = ptr;
+			*path = ptr + pre_root_path_length;
 		}
 	}
 }
@@ -231,7 +231,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 	struct buffer* output, uint8_t fail_on_error)
 {
 	if (NULL == pattern ||
-		all_entries < entry_type ||
+		file_system_get_id_of_all_entries() < entry_type ||
 		(0 != recurse && 1 != recurse) ||
 		(UTF8 != output_encoding && UTF16LE != output_encoding) ||
 		NULL == output)
@@ -318,7 +318,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 				}
 			}
 
-			if (file_entry == entry_type)
+			if (file_system_get_id_of_file_entry() == entry_type)
 			{
 				finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
@@ -332,7 +332,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 				continue;
 			}
 		}
-		else if (directory_entry == entry_type)
+		else if (file_system_get_id_of_directory_entry() == entry_type)
 		{
 			finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
@@ -469,7 +469,7 @@ uint8_t directory_enumerate_file_system_entries_(
 {
 	if (NULL == path ||
 		range_in_parts_is_null_or_empty(wild_card_start, wild_card_finish) ||
-		all_entries < entry_type ||
+		file_system_get_id_of_all_entries() < entry_type ||
 		(0 != recurse && 1 != recurse) ||
 		NULL == output)
 	{
@@ -522,7 +522,7 @@ uint8_t directory_enumerate_file_system_entries_(
 				}
 			}
 
-			if (file_entry == entry_type)
+			if (file_system_get_id_of_file_entry() == entry_type)
 			{
 				if (!buffer_resize(path, size - 1) ||
 					!buffer_push_back(path, 0))
@@ -534,7 +534,7 @@ uint8_t directory_enumerate_file_system_entries_(
 				continue;
 			}
 		}
-		else if (directory_entry == entry_type)
+		else if (file_system_get_id_of_directory_entry() == entry_type)
 		{
 			if (!buffer_resize(path, size - 1) ||
 				!buffer_push_back(path, 0))
@@ -606,7 +606,7 @@ uint8_t directory_create(const uint8_t* path)
 			continue;
 		}
 
-		*pos = L'\0';
+		*pos = zeroW;
 
 		if (!directory_exists_wchar_t(path_start))
 		{
@@ -639,12 +639,15 @@ uint8_t directory_create(const uint8_t* path)
 		return 0;
 	}
 
-	while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &path_posix_delimiter, 1, 1,
-							  1)))
+	while (finish != (start =
+						  string_find_any_symbol_like_or_not_like_that(
+							  start, finish,
+							  &path_posix_delimiter, &path_posix_delimiter + 1,
+							  1, 1)))
 	{
 		if (start == path)
 		{
-			++start;
+			start = string_enumerate(start, finish, NULL);
 			continue;
 		}
 
@@ -656,7 +659,7 @@ uint8_t directory_create(const uint8_t* path)
 			return 0;
 		}
 
-		++start;
+		start = string_enumerate(start, finish, NULL);
 
 		if (!directory_exists(buffer_data(&current_directory, 0)))
 		{
@@ -713,7 +716,7 @@ uint8_t directory_delete(const uint8_t* path)
 	struct buffer entries;
 	SET_NULL_TO_BUFFER(entries);
 
-	for (uint8_t entry = file_entry; ; entry = directory_entry)
+	for (uint8_t entry = file_system_get_id_of_file_entry(); ; entry = file_system_get_id_of_directory_entry())
 	{
 		if (!buffer_resize(&entries, 0))
 		{
@@ -742,7 +745,7 @@ uint8_t directory_delete(const uint8_t* path)
 		const uint8_t* finish = start + buffer_size(&entries);
 #endif
 
-		if (file_entry == entry)
+		if (file_system_get_id_of_file_entry() == entry)
 		{
 			while (start != finish)
 			{
@@ -759,11 +762,15 @@ uint8_t directory_delete(const uint8_t* path)
 				}
 
 #if defined(_WIN32)
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 0, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 0, 1);
 #else
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 0, 1);
+				start =
+					string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero, &zero + 1, 1, 1);
+				start =
+					string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero, &zero + 1, 0, 1);
 #endif
 			}
 		}
@@ -784,11 +791,15 @@ uint8_t directory_delete(const uint8_t* path)
 				}
 
 #if defined(_WIN32)
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, L"\0", 1, 0, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 1, 1);
+				start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 0, 1);
 #else
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 1, 1);
-				start = find_any_symbol_like_or_not_like_that(start, finish, (const uint8_t*)"\0", 1, 0, 1);
+				start =
+					string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero, &zero + 1, 1, 1);
+				start =
+					string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero, &zero + 1, 0, 1);
 #endif
 			}
 
@@ -824,7 +835,7 @@ uint8_t directory_enumerate_file_system_entries(
 	struct buffer* output, uint8_t fail_on_error)
 {
 	if (NULL == path ||
-		all_entries < entry_type ||
+		file_system_get_id_of_all_entries() < entry_type ||
 		(0 != recurse && 1 != recurse) ||
 		NULL == output)
 	{
@@ -833,23 +844,27 @@ uint8_t directory_enumerate_file_system_entries(
 
 	struct range file_name;
 
-	file_name.start = buffer_data(path, 0);
+	BUFFER_TO_RANGE(file_name, path);
 
-	file_name.finish = file_name.start + buffer_size(path);
-
-	if (!path_get_file_name(file_name.start, file_name.finish, &file_name))
+	if (!path_get_file_name(&file_name.start, file_name.finish))
 	{
 		return 0;
 	}
 
-	if (file_name.finish == find_any_symbol_like_or_not_like_that(
-			file_name.start, file_name.finish, (const uint8_t*)"?*", 2, 1, 1))
+	static const uint8_t* question_mark_and_asterisk = (const uint8_t*)"?*";
+
+	if (file_name.finish == string_find_any_symbol_like_or_not_like_that(
+			file_name.start, file_name.finish,
+			question_mark_and_asterisk, question_mark_and_asterisk + 2, 1, 1))
 	{
 		const ptrdiff_t index = file_name.start - buffer_data(path, 0);
-		static const uint8_t asterisk = '*';
 
 		if (!buffer_resize(path, buffer_size(path) - 1) ||
-			!path_combine_in_place(path, buffer_size(path) < index ? index - 1 : index, &asterisk, &asterisk + 1) ||
+			!path_combine_in_place(
+				path,
+				buffer_size(path) < index ? index - 1 : index,
+				question_mark_and_asterisk + 1,
+				question_mark_and_asterisk + 2) ||
 			!buffer_push_back(path, 0))
 		{
 			return 0;
@@ -872,10 +887,9 @@ uint8_t directory_enumerate_file_system_entries(
 	buffer_release(&patternW);
 	return returned;
 #else
-	file_name.start = buffer_data(path, 0);
-	file_name.finish = file_name.start + buffer_size(path);
+	BUFFER_TO_RANGE(file_name, path);
 
-	if (!path_get_file_name(file_name.start, file_name.finish, &file_name))
+	if (!path_get_file_name(&file_name.start, file_name.finish))
 	{
 		return 0;
 	}
@@ -890,10 +904,9 @@ uint8_t directory_enumerate_file_system_entries(
 		return 0;
 	}
 
-	file_name.start = buffer_data(path, 0);
-	file_name.finish = file_name.start + buffer_size(path);
+	BUFFER_TO_RANGE(file_name, path);
 
-	if (!path_get_directory_name(file_name.start, file_name.finish, &file_name) ||
+	if (!path_get_directory_name(file_name.start, &file_name.finish) ||
 		!buffer_resize(path, range_size(&file_name)) ||
 		!buffer_push_back(path, 0))
 	{
@@ -1054,11 +1067,6 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 	return property_get_by_pointer(*the_property, output);
 }
 
-uint8_t directory_get_directory_root(const uint8_t* path, struct range* root)
-{
-	return NULL != path && path_get_path_root(path, path + common_count_bytes_until(path, 0), root);
-}
-
 int64_t directory_get_last_access_time(const uint8_t* path)
 {
 	return directory_get_last_access_time_utc(path) - (int64_t)60 * file_system_get_bias();
@@ -1143,24 +1151,19 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 			if (!buffer_push_back(drives, (uint8_t)drive) ||
 				!buffer_push_back(drives, ':') ||
 				!buffer_push_back(drives, '\\') ||
-				!buffer_push_back(drives, '\0'))
+				!buffer_push_back(drives, zero))
 			{
 				return 0;
 			}
 		}
 	}
 
-	return buffer_push_back(drives, '\0');
+	return buffer_push_back(drives, zero);
 #else
 	return buffer_push_back(drives, PATH_DELIMITER) && buffer_push_back_uint16(drives, 0);
 #endif
 }
 
-uint8_t directory_get_parent_directory(const uint8_t* path_start, const uint8_t* path_finish,
-									   struct range* parent)
-{
-	return path_get_directory_name(path_start, path_finish, parent);
-}
 #if !defined(_WIN32)
 uint8_t file_system_move_entry(const uint8_t* current_path, const uint8_t* new_path)
 {
@@ -1221,28 +1224,6 @@ uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path)
 	return file_system_move_entry(current_path, new_path);
 #endif
 }
-
-enum file_function
-{
-	file_exists_,
-	file_get_checksum_,
-	file_get_creation_time_,
-	file_get_creation_time_utc_,
-	file_get_last_access_time_,
-	file_get_last_access_time_utc_,
-	file_get_last_write_time_,
-	file_get_last_write_time_utc_,
-	file_get_length_,
-	file_up_to_date_,
-	file_replace_,
-	UNKNOWN_FILE_FUNCTION,
-	file_set_creation_time_,
-	file_set_creation_time_utc_,
-	file_set_last_access_time_,
-	file_set_last_access_time_utc_,
-	file_set_last_write_time_,
-	file_set_last_write_time_utc_
-};
 
 #if defined(_WIN32)
 uint8_t file_system_set_time_utc_wchar_t(const wchar_t* path, const FILETIME* creationTime,
@@ -1311,18 +1292,18 @@ uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t func
 	const wchar_t* ptr = buffer_wchar_t_data(&pathW, 0);
 	uint8_t returned = 0;
 
-	if (file_set_creation_time_utc_ == function ||
-		file_set_creation_time_ == function)
+	if (file_get_id_of_file_set_creation_time_utc_function() == function ||
+		file_get_id_of_file_set_creation_time_function() == function)
 	{
 		returned = file_system_set_time_utc_wchar_t(ptr, &win32_time, NULL, NULL);
 	}
-	else if (file_set_last_access_time_utc_ == function ||
-			 file_set_last_access_time_ == function)
+	else if (file_get_id_of_file_set_last_access_time_utc_function() == function ||
+			 file_get_id_of_file_set_last_access_time_function() == function)
 	{
 		returned = file_system_set_time_utc_wchar_t(ptr, NULL, &win32_time, NULL);
 	}
-	else if (file_set_last_write_time_utc_ == function ||
-			 file_set_last_write_time_ == function)
+	else if (file_get_id_of_file_set_last_write_time_utc_function() == function ||
+			 file_get_id_of_file_set_last_write_time_function() == function)
 	{
 		returned = file_system_set_time_utc_wchar_t(ptr, NULL, NULL, &win32_time);
 	}
@@ -1829,7 +1810,7 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 
 	const ptrdiff_t size = buffer_size(&pathW);
 
-	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, '\0'), &pathW) ||
+	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, zero), &pathW) ||
 		!buffer_push_back_uint16(&pathW, 0))
 	{
 		buffer_release(&pathW);
@@ -1941,7 +1922,7 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 	}
 
 	ptrdiff_t size = 0;
-	ptrdiff_t readed = 0;
+	ptrdiff_t readed;
 	const uint8_t* start;
 	uint16_t count_of_lines = 1;
 	static const uint8_t n = '\n';
@@ -1955,7 +1936,7 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 
 		do
 		{
-			if (n == *start)
+			if (n == *start)/*TODO:*/
 			{
 				++count_of_lines;
 			}
@@ -2008,14 +1989,14 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 		return 0;
 	}
 
-	count_of_lines = 0;
-	struct range* range_of_line = NULL;
 	start = ptr;
+	count_of_lines = 0;
 	const uint8_t* finish = start;
+	struct range* range_of_line = NULL;
 
 	do
 	{
-		if (n == *start)
+		if (n == *start)/*TODO:*/
 		{
 			range_of_line = buffer_range_data(output, count_of_lines++);
 
@@ -2082,7 +2063,7 @@ uint64_t file_get_length(const uint8_t* path)
 	}
 
 	uint64_t length = file_data.nFileSizeHigh;
-	length *= ((uint64_t)(MAXDWORD) + (uint64_t)1);
+	length *= (uint64_t)(MAXDWORD) + (uint64_t)1;
 	length += file_data.nFileSizeLow;
 	return length;
 #else
@@ -2193,32 +2174,32 @@ uint8_t file_set_attributes(const uint8_t* path,
 #if defined(_WIN32)
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time(path, time, file_set_creation_time_);
+	return file_system_set_time(path, time, file_get_id_of_file_set_creation_time_function());
 }
 
 uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time_utc(path, time, file_set_creation_time_utc_);
+	return file_system_set_time_utc(path, time, file_get_id_of_file_set_creation_time_utc_function());
 }
 
 uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time(path, time, file_set_last_access_time_);
+	return file_system_set_time(path, time, file_get_id_of_file_set_last_access_time_function());
 }
 
 uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time_utc(path, time, file_set_last_access_time_utc_);
+	return file_system_set_time_utc(path, time, file_get_id_of_file_set_last_access_time_utc_function());
 }
 
 uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time(path, time, file_set_last_write_time_);
+	return file_system_set_time(path, time, file_get_id_of_file_set_last_write_time_function());
 }
 
 uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_system_set_time_utc(path, time, file_set_last_write_time_utc_);
+	return file_system_set_time_utc(path, time, file_get_id_of_file_set_last_write_time_utc_function());
 }
 #else
 uint8_t file_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
@@ -2230,20 +2211,20 @@ uint8_t file_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
 
 	struct utimbuf times;
 
-	if (file_set_last_access_time_ == function ||
-		file_set_last_access_time_utc_ == function)
+	if (file_get_id_of_file_set_last_access_time_function() == function ||
+		file_get_id_of_file_set_last_access_time_utc_function() == function)
 	{
 		times.actime = time;
 		times.modtime = file_get_last_write_time_utc(path);
 	}
-	else if (file_set_last_write_time_ == function ||
-			 file_set_last_write_time_utc_ == function)
+	else if (file_get_id_of_file_set_last_write_time_function() == function ||
+			 file_get_id_of_file_set_last_write_time_utc_function() == function)
 	{
 		times.actime = file_get_last_access_time_utc(path);
 		times.modtime = time;
 	}
-	else if (file_set_creation_time_ == function ||
-			 file_set_creation_time_utc_ == function)
+	else if (file_get_id_of_file_set_creation_time_function() == function ||
+			 file_get_id_of_file_set_creation_time_utc_function() == function)
 	{
 		return 1;
 	}
@@ -2262,32 +2243,32 @@ uint8_t file_set_time(const uint8_t* path, int64_t time, uint8_t function)
 
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
 {
-	return file_set_time(path, time, file_set_creation_time_);
+	return file_set_time(path, time, file_get_id_of_file_set_creation_time_function());
 }
 
 uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_set_time_utc(path, time, file_set_creation_time_utc_);
+	return file_set_time_utc(path, time, file_get_id_of_file_set_creation_time_utc_function());
 }
 
 uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
 {
-	return file_set_time(path, time, file_set_last_access_time_);
+	return file_set_time(path, time, file_get_id_of_file_set_last_access_time_function());
 }
 
 uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_set_time_utc(path, time, file_set_last_access_time_utc_);
+	return file_set_time_utc(path, time, file_get_id_of_file_set_last_access_time_utc_function());
 }
 
 uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
 {
-	return file_set_time(path, time, file_set_last_write_time_);
+	return file_set_time(path, time, file_get_id_of_file_set_last_write_time_function());
 }
 
 uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 {
-	return file_set_time_utc(path, time, file_set_last_write_time_utc_);
+	return file_set_time_utc(path, time, file_get_id_of_file_set_last_write_time_utc_function());
 }
 #endif
 
@@ -2297,7 +2278,7 @@ uint8_t file_write_with_several_steps(const struct buffer* content, void* stream
 
 	if (0 < size)
 	{
-		size_t written = 0;
+		size_t written;
 		uint8_t* ptr = buffer_data(content, 0);
 
 		while (0 < (written = file_write(ptr, sizeof(uint8_t), MIN(4096, size), stream)))
@@ -2619,8 +2600,10 @@ uint8_t file_get_full_path(
 
 		const uint8_t* ptr = start_of_path.start;
 
-		while (start_of_path.finish != (ptr = find_any_symbol_like_or_not_like_that(ptr, start_of_path.finish,
-											  &ENVIRONMENT_DELIMITER, 1, 1, 1)))
+		while (start_of_path.finish != (ptr =
+											string_find_any_symbol_like_or_not_like_that(
+												ptr, start_of_path.finish,
+												&ENVIRONMENT_DELIMITER, &ENVIRONMENT_DELIMITER + 1, 1, 1)))
 		{
 			if (!buffer_resize(full_path, size))
 			{
@@ -2647,7 +2630,10 @@ uint8_t file_get_full_path(
 				return 1;
 			}
 
-			ptr = find_any_symbol_like_or_not_like_that(ptr + 1, start_of_path.finish, &ENVIRONMENT_DELIMITER, 1, 0, 1);
+			ptr = string_enumerate(ptr, start_of_path.finish, NULL);
+			ptr = string_find_any_symbol_like_or_not_like_that(
+					  ptr, start_of_path.finish,
+					  &ENVIRONMENT_DELIMITER, &ENVIRONMENT_DELIMITER + 1, 0, 1);
 			start_of_path.start = ptr;
 		}
 	}
@@ -2705,567 +2691,4 @@ uint8_t file_get_full_path(
 #endif
 	buffer_release(&variable);
 	return 0;
-}
-
-static const uint8_t* entry_types_str[] =
-{
-	(const uint8_t*)"directory",
-	(const uint8_t*)"file",
-	(const uint8_t*)"all"
-};
-
-static const uint8_t* dir_function_str[] =
-{
-	(const uint8_t*)"enumerate-file-system-entries",
-	(const uint8_t*)"exists",
-	(const uint8_t*)"get-creation-time",
-	(const uint8_t*)"get-creation-time-utc",
-	(const uint8_t*)"get-current-directory",
-	(const uint8_t*)"get-directory-root",
-	(const uint8_t*)"get-last-access-time",
-	(const uint8_t*)"get-last-access-time-utc",
-	(const uint8_t*)"get-last-write-time",
-	(const uint8_t*)"get-last-write-time-utc",
-	(const uint8_t*)"get-logical-drives",
-	(const uint8_t*)"get-parent-directory"
-};
-
-enum dir_function
-{
-	enumerate_file_system_entries,
-	dir_exists,
-	dir_get_creation_time,
-	dir_get_creation_time_utc,
-	get_current_directory,
-	get_directory_root,
-	dir_get_last_access_time,
-	dir_get_last_access_time_utc,
-	dir_get_last_write_time,
-	dir_get_last_write_time_utc,
-	get_logical_drives,
-	get_parent_directory,
-	UNKNOWN_DIR_FUNCTION
-};
-
-uint8_t dir_get_id_of_get_current_directory_function()
-{
-	return get_current_directory;
-}
-
-uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish)
-{
-	return common_string_to_enum(name_start, name_finish, dir_function_str, UNKNOWN_DIR_FUNCTION);
-}
-
-uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						  struct buffer* output)
-{
-	if (UNKNOWN_DIR_FUNCTION <= function ||
-		get_current_directory == function ||
-		NULL == arguments ||
-		3 < arguments_count ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	struct range values[3];
-
-	if (arguments_count && !common_get_arguments(arguments, arguments_count, values, 1))
-	{
-		return 0;
-	}
-
-	switch (function)
-	{
-		case enumerate_file_system_entries:
-		{
-			if (3 != arguments_count &&
-				2 != arguments_count)
-			{
-				break;
-			}
-
-			const uint8_t entry_type = common_string_to_enum(
-										   values[1].start, values[1].finish, entry_types_str, UNKNOWN_ENTRY_TYPE);
-
-			if (UNKNOWN_ENTRY_TYPE == entry_type)
-			{
-				break;
-			}
-
-			uint8_t recurse = 0;
-
-			if (3 == arguments_count &&
-				!bool_parse(values[2].start, range_size(&values[2]), &recurse))
-			{
-				break;
-			}
-
-			return directory_enumerate_file_system_entries(buffer_buffer_data(arguments, 0), entry_type, recurse, output,
-					1);
-		}
-
-		case dir_exists:
-			return 1 == arguments_count && bool_to_string(directory_exists(values[0].start), output);
-
-		case dir_get_creation_time:
-			return 1 == arguments_count && int64_to_string(directory_get_creation_time(values[0].start), output);
-
-		case dir_get_creation_time_utc:
-			return 1 == arguments_count && int64_to_string(directory_get_creation_time_utc(values[0].start), output);
-
-		case get_directory_root:
-			return 1 == arguments_count &&
-				   directory_get_directory_root(values[0].start, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
-
-		case dir_get_last_access_time:
-			return 1 == arguments_count && int64_to_string(directory_get_last_access_time(values[0].start), output);
-
-		case dir_get_last_access_time_utc:
-			return 1 == arguments_count && int64_to_string(directory_get_last_access_time_utc(values[0].start), output);
-
-		case dir_get_last_write_time:
-			return 1 == arguments_count && int64_to_string(directory_get_last_write_time(values[0].start), output);
-
-		case dir_get_last_write_time_utc:
-			return 1 == arguments_count && int64_to_string(directory_get_last_write_time_utc(values[0].start), output);
-
-		case get_logical_drives:
-			return 0 == arguments_count && directory_get_logical_drives(output);
-
-		case get_parent_directory:
-			return 1 == arguments_count &&
-				   directory_get_parent_directory(values[0].start, values[0].finish, &values[1]) &&
-				   buffer_append_data_from_range(output, &values[1]);
-
-		case UNKNOWN_DIR_FUNCTION:
-		default:
-			break;
-	}
-
-	return 0;
-}
-
-static const uint8_t* file_function_str[] =
-{
-	(const uint8_t*)"exists",
-	(const uint8_t*)"get-checksum",
-	(const uint8_t*)"get-creation-time",
-	(const uint8_t*)"get-creation-time-utc",
-	(const uint8_t*)"get-last-access-time",
-	(const uint8_t*)"get-last-access-time-utc",
-	(const uint8_t*)"get-last-write-time",
-	(const uint8_t*)"get-last-write-time-utc",
-	(const uint8_t*)"get-length",
-	(const uint8_t*)"up-to-date",
-	(const uint8_t*)"replace"
-};
-
-uint8_t file_get_function(const uint8_t* name_start, const uint8_t* name_finish)
-{
-	return common_string_to_enum(name_start, name_finish, file_function_str, UNKNOWN_FILE_FUNCTION);
-}
-
-uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						   struct buffer* output)
-{
-	if (UNKNOWN_FILE_FUNCTION <= function ||
-		NULL == arguments ||
-		!arguments_count ||
-		3 < arguments_count ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	struct range values[3];
-
-	if (!common_get_arguments(arguments, arguments_count, values, 1))
-	{
-		return 0;
-	}
-
-	for (uint8_t i = arguments_count, count = COUNT_OF(values); i < count; ++i)
-	{
-		values[i].start = values[i].finish = NULL;
-	}
-
-	switch (function)
-	{
-		case file_exists_:
-			return 1 == arguments_count &&
-				   bool_to_string(file_exists(values[0].start), output);
-
-		case file_get_checksum_:
-			return (2 == arguments_count || 3 == arguments_count) &&
-				   file_get_checksum(values[0].start, &values[1], &values[2], output);
-
-		case file_get_creation_time_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_creation_time(values[0].start), output);
-
-		case file_get_creation_time_utc_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_creation_time_utc(values[0].start), output);
-
-		case file_get_last_access_time_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_access_time(values[0].start), output);
-
-		case file_get_last_access_time_utc_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_access_time_utc(values[0].start), output);
-
-		case file_get_last_write_time_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_write_time(values[0].start), output);
-
-		case file_get_last_write_time_utc_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_last_write_time_utc(values[0].start), output);
-
-		case file_get_length_:
-			return 1 == arguments_count &&
-				   int64_to_string(file_get_length(values[0].start), output);
-
-		case file_up_to_date_:
-			return 2 == arguments_count &&
-				   bool_to_string(file_up_to_date(values[0].start, values[1].start), output);
-
-		case file_replace_:
-			return 3 == arguments_count &&
-				   bool_to_string(
-					   file_replace(values[0].start,
-									values[1].start, values[1].finish,
-									values[2].start, values[2].finish), output);
-
-		case UNKNOWN_FILE_FUNCTION:
-		default:
-			break;
-	}
-
-	return 0;
-}
-
-#define ATTRIB_ARCHIVE_POSITION		0
-#define ATTRIB_FILE_POSITION		1
-#define ATTRIB_HIDDEN_POSITION		2
-#define ATTRIB_NORMAL_POSITION		3
-#define ATTRIB_READ_ONLY_POSITION	4
-#define ATTRIB_SYSTEM_POSITION		5
-
-#define ATTRIB_MAX_POSITION			(ATTRIB_SYSTEM_POSITION + 1)
-
-static const uint8_t* attrib_attributes[] =
-{
-	(const uint8_t*)"archive",
-	(const uint8_t*)"file",
-	(const uint8_t*)"hidden",
-	(const uint8_t*)"normal",
-	(const uint8_t*)"readonly",
-	(const uint8_t*)"system"
-};
-
-static const uint8_t attrib_attributes_lengths[] = { 7, 4, 6, 6, 8, 6 };
-
-uint8_t attrib_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   attrib_attributes, attrib_attributes_lengths,
-			   COUNT_OF(attrib_attributes),
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	(void)verbose;
-
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	struct buffer* file_path_in_a_buffer = buffer_buffer_data(task_arguments, ATTRIB_FILE_POSITION);
-
-	if (buffer_size(file_path_in_a_buffer))
-	{
-		if (!buffer_push_back(file_path_in_a_buffer, 0))
-		{
-			return 0;
-		}
-	}
-	else
-	{
-		return 1;
-	}
-
-	uint8_t attributes[ATTRIB_MAX_POSITION];
-
-	for (uint8_t i = 0, count = ATTRIB_MAX_POSITION; i < count; ++i)
-	{
-		if (ATTRIB_FILE_POSITION == i)
-		{
-			continue;
-		}
-
-		const struct buffer* data = buffer_buffer_data(task_arguments, i);
-
-		if (NULL == data)
-		{
-			return 0;
-		}
-
-		attributes[ATTRIB_FILE_POSITION] = (uint8_t)buffer_size(data);
-
-		if (!attributes[ATTRIB_FILE_POSITION])
-		{
-			attributes[i] = 0;
-			continue;
-		}
-
-		if (!bool_parse(buffer_data(data, 0), attributes[ATTRIB_FILE_POSITION], &(attributes[i])))
-		{
-			return 0;
-		}
-	}
-
-	return file_set_attributes(buffer_data(file_path_in_a_buffer, 0),
-							   attributes[ATTRIB_ARCHIVE_POSITION], attributes[ATTRIB_HIDDEN_POSITION],
-							   attributes[ATTRIB_NORMAL_POSITION], attributes[ATTRIB_READ_ONLY_POSITION],
-							   attributes[ATTRIB_SYSTEM_POSITION]);
-}
-
-#define DELETE_DIR_POSITION		0
-#define DELETE_FILE_POSITION	1
-
-static const uint8_t* delete_attributes[] =
-{
-	(const uint8_t*)"dir",
-	(const uint8_t*)"file"
-};
-
-static const uint8_t delete_attributes_lengths[] = { 3, 4 };
-
-uint8_t delete_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   delete_attributes, delete_attributes_lengths,
-			   COUNT_OF(delete_attributes),
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	struct buffer* dir_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_DIR_POSITION);
-
-	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_FILE_POSITION);
-
-	const uint8_t* dir_ = NULL;
-
-	if (buffer_size(dir_path_in_buffer))
-	{
-		if (!buffer_push_back(dir_path_in_buffer, 0))
-		{
-			return 0;
-		}
-
-		dir_ = buffer_data(dir_path_in_buffer, 0);
-
-		if (file_exists(dir_))
-		{
-			return 0;
-		}
-	}
-
-	const uint8_t* file = NULL;
-
-	if (buffer_size(file_path_in_buffer))
-	{
-		if (!buffer_push_back(file_path_in_buffer, 0))
-		{
-			return 0;
-		}
-
-		file = buffer_data(file_path_in_buffer, 0);
-
-		if (directory_exists(file))
-		{
-			return 0;
-		}
-	}
-
-	if (NULL == dir_ && NULL == file)
-	{
-		return 0;
-	}
-
-	if (file && file_exists(file))
-	{
-		verbose = file_delete(file);
-	}
-	else
-	{
-		verbose = 1;
-	}
-
-	if (dir_ && directory_exists(dir_))
-	{
-		verbose = directory_delete(dir_) && verbose;
-	}
-
-	return verbose;
-}
-
-#define MKDIR_DIR_POSITION		0
-
-uint8_t mkdir_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   delete_attributes, delete_attributes_lengths, 1,
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	(void)verbose;
-
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	struct buffer* dir_path_in_buffer = buffer_buffer_data(task_arguments, MKDIR_DIR_POSITION);
-
-	if (!buffer_size(dir_path_in_buffer))
-	{
-		return 0;
-	}
-
-	if (!buffer_push_back(dir_path_in_buffer, 0))
-	{
-		return 0;
-	}
-
-	const uint8_t* dir_ = buffer_data(dir_path_in_buffer, 0);
-
-	if (file_exists(dir_))
-	{
-		return 0;
-	}
-
-	return directory_create(dir_);
-}
-
-#define TOUCH_DATE_TIME_POSITION	0
-#define TOUCH_FILE_POSITION			1
-#define TOUCH_MILLIS_POSITION		2
-
-static const uint8_t* touch_attributes[] =
-{
-	(const uint8_t*)"datetime",
-	(const uint8_t*)"file",
-	(const uint8_t*)"millis"
-};
-
-static const uint8_t touch_attributes_lengths[] = { 8, 4, 6 };
-
-uint8_t touch_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   touch_attributes, touch_attributes_lengths,
-			   COUNT_OF(touch_attributes),
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	(void)verbose;
-
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, TOUCH_FILE_POSITION);
-
-	if (!buffer_size(file_path_in_buffer))
-	{
-		return 1;
-	}
-
-	if (!buffer_push_back(file_path_in_buffer, 0) ||
-		directory_exists(buffer_data(file_path_in_buffer, 0)))
-	{
-		return 0;
-	}
-
-	struct buffer* date_time_in_buffer = buffer_buffer_data(task_arguments, TOUCH_DATE_TIME_POSITION);
-
-	struct buffer* millis_in_buffer = buffer_buffer_data(task_arguments, TOUCH_MILLIS_POSITION);
-
-	if (!file_exists(buffer_data(file_path_in_buffer, 0)))
-	{
-		if (!file_create(buffer_data(file_path_in_buffer, 0)))
-		{
-			return 0;
-		}
-
-		if (!buffer_size(date_time_in_buffer) &&
-			!buffer_size(millis_in_buffer))
-		{
-			return 1;
-		}
-	}
-
-	int64_t seconds = 0;
-
-	if (buffer_size(date_time_in_buffer))
-	{
-		if (!datetime_parse_buffer(date_time_in_buffer))
-		{
-			return 0;
-		}
-
-		seconds = buffer_size(date_time_in_buffer);
-		seconds -= sizeof(int64_t);
-
-		if (seconds < 1)
-		{
-			return 0;
-		}
-
-		seconds = *(const int64_t*)buffer_data(date_time_in_buffer, (ptrdiff_t)seconds);
-	}
-	else if (buffer_size(millis_in_buffer))
-	{
-		const uint8_t* start = buffer_data(millis_in_buffer, 0);
-		const uint8_t* finish = start + buffer_size(millis_in_buffer);
-		seconds = int64_parse(start, finish);
-		seconds = date_time_millisecond_to_second(seconds);
-	}
-	else
-	{
-		seconds = datetime_now();
-	}
-
-	return file_set_last_write_time(buffer_data(file_path_in_buffer, 0), seconds);
 }

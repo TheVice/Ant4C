@@ -15,6 +15,7 @@
 #include "project.h"
 #include "range.h"
 #include "shared_object.h"
+#include "string_unit.h"
 #include "xml.h"
 
 #include <string.h>
@@ -326,7 +327,8 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 		}
 
 		const uint8_t* path = path_try_to_get_absolute_path(
-								  the_project, the_target, path_to_module_in_a_buffer, path_to_assembly_in_a_buffer, verbose);
+								  the_project, the_target, path_to_module_in_a_buffer,
+								  path_to_assembly_in_a_buffer, verbose);
 
 		if (!load_tasks_load_module(the_project, path, functions_names))
 		{
@@ -359,30 +361,34 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 
 		if (buffer_size(path_to_module_in_a_buffer))
 		{
-			static const uint8_t zero_symbol = '\0';
+			static const uint8_t zero = '\0';
 			const uint8_t* start = buffer_data(path_to_module_in_a_buffer, 0);
 			const uint8_t* finish = start + buffer_size(path_to_module_in_a_buffer);
 
-			while (finish != (start = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 0, 1)))
+			while (finish != (start = string_find_any_symbol_like_or_not_like_that(
+										  start, finish, &zero, &zero + 1, 0, 1)))
 			{
-				const uint8_t* start_ = find_any_symbol_like_or_not_like_that(start, finish, &zero_symbol, 1, 1, 1);
+				const uint8_t* pos =
+					string_find_any_symbol_like_or_not_like_that(
+						start, finish, &zero, &zero + 1, 1, 1);
 
 				if (!buffer_resize(path_in_a_buffer, 0) ||
-					!buffer_append(path_in_a_buffer, start, start_ - start) ||
+					!buffer_append(path_in_a_buffer, start, pos - start) ||
 					!buffer_push_back(path_in_a_buffer, 0))
 				{
 					return 0;
 				}
 
-				const uint8_t* path = path_try_to_get_absolute_path(
-										  the_project, the_target, path_in_a_buffer, path_to_assembly_in_a_buffer, verbose);
+				const uint8_t* path =
+					path_try_to_get_absolute_path(
+						the_project, the_target, path_in_a_buffer, path_to_assembly_in_a_buffer, verbose);
 
 				if (!load_tasks_load_module(the_project, path, functions_names))
 				{
 					return 0;
 				}
 
-				start = start_;
+				start = pos;
 			}
 
 			return 1;

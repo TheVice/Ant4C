@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "text_encoding.h"
 
+#include <wchar.h>
 #include <stddef.h>
 #include <string.h>
 

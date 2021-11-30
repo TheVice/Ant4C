@@ -20,6 +20,7 @@
 #include "for_each.h"
 #include "hash.h"
 #include "if_task.h"
+#include "interpreter.file_system.h"
 #include "interpreter.string_unit.h"
 #include "listener.h"
 #include "load_file.h"
@@ -45,44 +46,16 @@ static const uint8_t start_of_function_arguments_area = '(';
 static const uint8_t finish_of_function_arguments_area = ')';
 static const uint8_t call_of_expression_finish = '}';
 static const uint8_t apos = '\'';
-
 static const uint8_t arguments_delimiter = ',';
 
-static const uint8_t space_and_tab[] = { ' ', '\t' };
-#define SPACE_AND_TAB_LENGTH COUNT_OF(space_and_tab)
+static const uint8_t* space_and_tab = (const uint8_t*)" \t";
+#define SPACE_AND_TAB_LENGTH 2
 
-static const uint8_t name_space_border[] = { ':', ':' };
-#define NAME_SPACE_BORDER_LENGTH COUNT_OF(name_space_border)
+static const uint8_t* name_space_border = (const uint8_t*)"::";
+#define NAME_SPACE_BORDER_LENGTH 2
 
-static const uint8_t call_of_expression_start[] = { '$', '{' };
-#define CALL_OF_EXPRESSION_START_LENGTH COUNT_OF(call_of_expression_start)
-
-static const uint8_t* interpreter_string_enumeration_unit[] =
-{
-	(const uint8_t*)"bool",
-	(const uint8_t*)"cygpath",
-	(const uint8_t*)"datetime",
-	(const uint8_t*)"directory",
-	(const uint8_t*)"double",
-	(const uint8_t*)"environment",
-	(const uint8_t*)"file",
-	(const uint8_t*)"hash",
-	(const uint8_t*)"int",
-	(const uint8_t*)"int64",
-	(const uint8_t*)"long",
-	(const uint8_t*)"math",
-	(const uint8_t*)"operating-system",
-	(const uint8_t*)"path",
-	(const uint8_t*)"platform",
-	(const uint8_t*)"program",
-	(const uint8_t*)"project",
-	(const uint8_t*)"property",
-	(const uint8_t*)"string",
-	(const uint8_t*)"target",
-	(const uint8_t*)"task",
-	(const uint8_t*)"timespan",
-	(const uint8_t*)"version"
-};
+static const uint8_t* call_of_expression_start = (const uint8_t*)"${";
+#define CALL_OF_EXPRESSION_START_LENGTH 2
 
 enum interpreter_enumeration_unit
 {
@@ -114,8 +87,36 @@ enum interpreter_enumeration_unit
 
 uint8_t interpreter_get_unit(const uint8_t* name_space_start, const uint8_t* name_space_finish)
 {
-	return common_string_to_enum(name_space_start, name_space_finish, interpreter_string_enumeration_unit,
-								 UNKNOWN_UNIT);
+	static const uint8_t* interpreter_string_enumeration_unit[] =
+	{
+		(const uint8_t*)"bool",
+		(const uint8_t*)"cygpath",
+		(const uint8_t*)"datetime",
+		(const uint8_t*)"directory",
+		(const uint8_t*)"double",
+		(const uint8_t*)"environment",
+		(const uint8_t*)"file",
+		(const uint8_t*)"hash",
+		(const uint8_t*)"int",
+		(const uint8_t*)"int64",
+		(const uint8_t*)"long",
+		(const uint8_t*)"math",
+		(const uint8_t*)"operating-system",
+		(const uint8_t*)"path",
+		(const uint8_t*)"platform",
+		(const uint8_t*)"program",
+		(const uint8_t*)"project",
+		(const uint8_t*)"property",
+		(const uint8_t*)"string",
+		(const uint8_t*)"target",
+		(const uint8_t*)"task",
+		(const uint8_t*)"timespan",
+		(const uint8_t*)"version"
+	};
+	/**/
+	return common_string_to_enum(
+			   name_space_start, name_space_finish,
+			   interpreter_string_enumeration_unit, UNKNOWN_UNIT);
 }
 
 uint8_t interpreter_disassemble_function(
@@ -134,6 +135,7 @@ uint8_t interpreter_disassemble_function(
 
 	name_space->start = function->start;
 	name_space->finish = function->start;
+	uint8_t found = 0;
 
 	while (name_space->finish + NAME_SPACE_BORDER_LENGTH <= function->finish)
 	{
@@ -143,17 +145,20 @@ uint8_t interpreter_disassemble_function(
 			continue;
 		}
 
+		found = 1;
 		break;
 	}
 
-	if (*name_space_border != *name_space->finish)
+	if (!found)
 	{
 		return 0;
 	}
 
 	name->start = name_space->finish + NAME_SPACE_BORDER_LENGTH;
-	name->finish = find_any_symbol_like_or_not_like_that(
-					   name->start, function->finish, &start_of_function_arguments_area, 1, 1, 1);
+	name->finish = string_find_any_symbol_like_or_not_like_that(
+					   name->start, function->finish,
+					   &start_of_function_arguments_area,
+					   &start_of_function_arguments_area + 1, 1, 1);
 
 	if (function->finish == name->finish)
 	{
@@ -161,10 +166,24 @@ uint8_t interpreter_disassemble_function(
 	}
 
 	arguments_area->start = string_enumerate(name->finish, function->finish, NULL);
-	arguments_area->finish = find_any_symbol_like_or_not_like_that(
-								 function->finish, arguments_area->start, &finish_of_function_arguments_area, 1, 1, -1);
-	/**/
-	return finish_of_function_arguments_area == *arguments_area->finish;
+
+	if (NULL == arguments_area->start)
+	{
+		return 0;
+	}
+
+	arguments_area->finish = string_find_any_symbol_like_or_not_like_that(
+								 function->finish, arguments_area->start,
+								 &finish_of_function_arguments_area,
+								 &finish_of_function_arguments_area + 1, 1, -1);
+	uint32_t char_set;
+
+	if (!string_enumerate(arguments_area->finish, function->finish, &char_set))
+	{
+		return 0;
+	}
+
+	return finish_of_function_arguments_area == char_set;
 }
 
 uint8_t interpreter_get_function_from_argument(
@@ -176,47 +195,55 @@ uint8_t interpreter_get_function_from_argument(
 	}
 
 	const uint8_t* finish = argument_area->finish;
-	argument_area->finish = find_any_symbol_like_or_not_like_that(argument_area->start, argument_area->finish,
-							&start_of_function_arguments_area, 1, 1, 1);
+	argument_area->finish = string_find_any_symbol_like_or_not_like_that(
+								argument_area->start, argument_area->finish,
+								&start_of_function_arguments_area,
+								&start_of_function_arguments_area + 1, 1, 1);
 
 	if (finish == argument_area->finish)
 	{
 		return 0;
 	}
 
-	uint8_t ch = 0;
+	uint32_t char_set = 0;
 	uint8_t depth = 0;
 
 	while (argument_area->finish < finish)
 	{
-		++argument_area->finish;
-		ch = *argument_area->finish;
+		argument_area->finish = string_enumerate(argument_area->finish, finish, &char_set);
 
-		if (apos == ch)
+		if (!string_enumerate(argument_area->finish, finish, &char_set))
 		{
+			return 0;
+		}
+
+		if (apos == char_set)
+		{
+			argument_area->finish = string_enumerate(argument_area->finish, finish, NULL);
 			argument_area->finish =
-				find_any_symbol_like_or_not_like_that(argument_area->finish + 1, finish, &apos, 1, 1, 1);
+				string_find_any_symbol_like_or_not_like_that(
+					argument_area->finish, finish, &apos, &apos + 1, 1, 1);
 			continue;
 		}
 
-		if (finish_of_function_arguments_area == ch)
+		if (finish_of_function_arguments_area == char_set)
 		{
 			if (0 == depth)
 			{
-				++argument_area->finish;
+				argument_area->finish = string_enumerate(argument_area->finish, finish, NULL);
 				break;
 			}
 
 			--depth;
 		}
 
-		if (start_of_function_arguments_area == ch)
+		if (start_of_function_arguments_area == char_set)
 		{
 			++depth;
 		}
 	}
 
-	if (finish_of_function_arguments_area != ch || 0 != depth)
+	if (finish_of_function_arguments_area != char_set || 0 != depth)
 	{
 		return 0;
 	}
@@ -244,8 +271,9 @@ uint8_t interpreter_evaluate_argument_area(
 
 			struct range function;
 
-			function.start = find_any_symbol_like_or_not_like_that(pos_with_index, pos,
-							 space_and_tab, SPACE_AND_TAB_LENGTH, 1, -1);
+			function.start = string_find_any_symbol_like_or_not_like_that(
+								 pos_with_index, pos,
+								 space_and_tab, space_and_tab + SPACE_AND_TAB_LENGTH, 1, -1);
 
 			function.finish = argument_area->finish;
 
@@ -427,21 +455,31 @@ uint8_t interpreter_get_values_for_arguments(
 
 	while (argument_area.finish < arguments_area->finish)
 	{
-		const uint8_t ch = *argument_area.finish;
+		uint32_t char_set;
 
-		if (apos == ch)
+		if (!string_enumerate(argument_area.finish, arguments_area->finish, &char_set))
 		{
-			argument_area.finish = find_any_symbol_like_or_not_like_that(
-									   argument_area.finish + 1, arguments_area->finish, &apos, 1, 1, 1);
-			argument_area.finish = find_any_symbol_like_or_not_like_that(
-									   argument_area.finish + 1, arguments_area->finish, &apos, 1, 0, 1);
+			return 0;
+		}
+
+		if (apos == char_set)
+		{
+			argument_area.finish = string_enumerate(argument_area.finish, arguments_area->finish, NULL);
+			argument_area.finish = string_find_any_symbol_like_or_not_like_that(
+									   argument_area.finish, arguments_area->finish,
+									   &apos, &apos + 1, 1, 1);
+			argument_area.finish = string_enumerate(argument_area.finish, arguments_area->finish, NULL);
+			argument_area.finish = string_find_any_symbol_like_or_not_like_that(
+									   argument_area.finish, arguments_area->finish,
+									   &apos, &apos + 1, 0, 1);
 			continue;
 		}
-		else if (arguments_delimiter == ch && 0 == depth)
+		else if (arguments_delimiter == char_set && 0 == depth)
 		{
-			const uint8_t* pos = argument_area.finish + 1;/*TODO: MIN(pos, arguments_area->finish)*/
+			const uint8_t* pos = string_enumerate(argument_area.finish, arguments_area->finish, NULL);
 
-			if (!interpreter_get_value_for_argument(the_project, the_target, &argument_area, values, verbose))
+			if (NULL == pos ||
+				!interpreter_get_value_for_argument(the_project, the_target, &argument_area, values, verbose))
 			{
 				return 0;
 			}
@@ -451,7 +489,7 @@ uint8_t interpreter_get_values_for_arguments(
 			argument_area.start = pos;
 			argument_area.finish = pos;
 		}
-		else if (start_of_function_arguments_area == ch)
+		else if (start_of_function_arguments_area == char_set)
 		{
 			if (UINT8_MAX == depth)
 			{
@@ -461,7 +499,7 @@ uint8_t interpreter_get_values_for_arguments(
 
 			++depth;
 		}
-		else if (finish_of_function_arguments_area == ch)
+		else if (finish_of_function_arguments_area == char_set)
 		{
 			if (0 == depth)
 			{
@@ -472,7 +510,7 @@ uint8_t interpreter_get_values_for_arguments(
 			--depth;
 		}
 
-		++argument_area.finish;
+		argument_area.finish = string_enumerate(argument_area.finish, arguments_area->finish, NULL);
 	}
 
 	if (range_is_null_or_empty(&argument_area))
@@ -738,7 +776,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			values_count = target_exec_function(
 							   the_project, the_target,
 							   target_get_function(name.start, name.finish),
-							   &values, values_count, return_of_function);
+							   &values, values_count, return_of_function, verbose);
 			break;
 
 		case task_unit:
@@ -812,30 +850,31 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 		}
 
 		function.finish = function.start;
+		uint32_t char_set;
 
 		while (NULL != function.finish && function.finish < code->finish)
 		{
-			if (apos == *function.finish)
-			{
-				function.finish = find_any_symbol_like_or_not_like_that(
-									  function.finish + 1, code->finish,
-									  &apos, 1, 1, 1);
-				function.finish = find_any_symbol_like_or_not_like_that(
-									  function.finish + 1, code->finish,
-									  &apos, 1, 0, 1);
-				continue;
-			}
+			const uint8_t* pos = function.finish;
+			function.finish = string_enumerate(function.finish, code->finish, &char_set);
 
-			if (call_of_expression_finish == *function.finish)
+			if (apos == char_set)
 			{
+				function.finish = string_find_any_symbol_like_or_not_like_that(
+									  function.finish, code->finish,
+									  &apos, &apos + 1, 1, 1);
+				function.finish = string_enumerate(function.finish, code->finish, NULL);
+				function.finish = string_find_any_symbol_like_or_not_like_that(
+									  function.finish, code->finish,
+									  &apos, &apos + 1, 0, 1);
+			}
+			else if (call_of_expression_finish == char_set)
+			{
+				function.finish = pos;
 				break;
 			}
-
-			function.finish = string_enumerate(function.finish, code->finish, NULL);
 		}
 
-		if (NULL == function.finish ||
-			(function.finish == code->finish && call_of_expression_finish != *function.finish))
+		if (NULL == function.finish)
 		{
 			buffer_release(&return_of_function);
 			return 0;
@@ -883,7 +922,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 			return 0;
 		}
 
-		previous_pos = 1 + function.finish;
+		previous_pos = string_enumerate(function.finish, code->finish, NULL);
 		function.start = previous_pos;
 	}
 
@@ -953,9 +992,10 @@ uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	for (uint8_t i = 0; i < count_of_attributes; ++i)
 	{
 		const struct buffer* attribute = buffer_buffer_data(attributes, i);
-		uint8_t bool_value = 0;
+		const uint8_t* value = buffer_data(attribute, 0);
+		uint8_t bool_value = (uint8_t)buffer_size(attribute);
 
-		if (!bool_parse(buffer_data(attribute, 0), buffer_size(attribute), &bool_value))
+		if (!bool_parse(value, value + bool_value, &bool_value))
 		{
 			return 0;
 		}
@@ -1013,20 +1053,24 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 		return 0;
 	}
 
-	const struct buffer* ptr = NULL;
+	const struct buffer* attribute;
 	uint8_t* outputs[2];
 	outputs[0] = fail_on_error;
 	outputs[1] = task_verbose;
 	uint8_t i = 0;
 
-	while (NULL != (ptr = buffer_buffer_data(attributes, i++)))
+	while (NULL != (attribute = buffer_buffer_data(attributes, i++)))
 	{
-		if (!buffer_size(ptr))
+		const uint8_t size = (uint8_t)buffer_size(attribute);
+
+		if (!size)
 		{
 			continue;
 		}
 
-		if (!bool_parse(buffer_data(ptr, 0), buffer_size(ptr), outputs[i - 1]))
+		const uint8_t* value = buffer_data(attribute, 0);
+
+		if (!bool_parse(value, value + size, outputs[i - 1]))
 		{
 			return 0;
 		}
@@ -1063,9 +1107,7 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, c
 
 		struct range code;
 
-		code.start = buffer_data(&attribute_value, 0);
-
-		code.finish = code.start + buffer_size(&attribute_value);
+		BUFFER_TO_RANGE(code, &attribute_value);
 
 		if (!buffer_resize(argument, 0) ||
 			((code.start < code.finish) &&
@@ -1099,9 +1141,7 @@ uint8_t interpreter_get_xml_element_value(
 
 	struct range code;
 
-	code.start = buffer_data(&value, 0);
-
-	code.finish = code.start + buffer_size(&value);
+	BUFFER_TO_RANGE(code, &value);
 
 	if (!range_is_null_or_empty(&code) &&
 		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
@@ -1147,18 +1187,12 @@ uint8_t interpreter_get_environments(
 	}
 
 	count = 0;
-	struct range* env_ptr = NULL;
+	struct range* env_ptr;
 
 	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
 	{
 		static const uint8_t* env_name = (const uint8_t*)"environment";
-		const uint8_t* tag_name_finish = env_ptr->finish;
-
-		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
-		{
-			buffer_release(&elements);
-			return 0;
-		}
+		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
 
 		if (string_equal(env_ptr->start, tag_name_finish, env_name, env_name + 11))
 		{
@@ -1201,14 +1235,7 @@ uint8_t interpreter_get_environments(
 		static const uint8_t* name_str = (const uint8_t*)"name";
 		static const uint8_t* value_str = (const uint8_t*)"value";
 		/**/
-		const uint8_t* tag_name_finish = env_ptr->finish;
-
-		if (!xml_get_tag_name(env_ptr->start, &tag_name_finish))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
+		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
 
 		if (!string_equal(env_ptr->start, tag_name_finish, var_name, var_name + 8))
 		{
@@ -1224,9 +1251,8 @@ uint8_t interpreter_get_environments(
 			return 0;
 		}
 
-		name.start = buffer_data(&attribute_value, 0);
-		name.finish = name.start + buffer_size(&attribute_value);
-		uint8_t contains = string_contains(name.start, name.finish, &(space_and_tab[0]), &(space_and_tab[0]) + 1);
+		BUFFER_TO_RANGE(name, &attribute_value);
+		uint8_t contains = string_contains(name.start, name.finish, &space_and_tab[0], &space_and_tab[0] + 1);
 
 		if (contains)
 		{
@@ -1257,8 +1283,7 @@ uint8_t interpreter_get_environments(
 
 		if (xml_get_attribute_value(env_ptr->start, env_ptr->finish, value_str, 5, &attribute_value))
 		{
-			name.start = buffer_data(&attribute_value, 0);
-			name.finish = name.start + buffer_size(&attribute_value);
+			BUFFER_TO_RANGE(name, &attribute_value);
 
 			if (!interpreter_evaluate_code(the_project, the_target, &name, environments, verbose))
 			{
@@ -1267,7 +1292,7 @@ uint8_t interpreter_get_environments(
 			}
 
 #if 0
-			contains = string_contains(name.start, name.finish, &(space_and_tab[0]), &(space_and_tab[0]) + 1);
+			contains = string_contains(name.start, name.finish, &space_and_tab[0], &space_and_tab[0] + 1);
 
 			if (contains)
 			{
@@ -1304,45 +1329,6 @@ uint8_t interpreter_get_environments(
 	/**/
 	return 1;
 }
-
-static const uint8_t* interpreter_task_names[] =
-{
-	(const uint8_t*)"attrib",
-	(const uint8_t*)"call",
-	(const uint8_t*)"choose",
-	(const uint8_t*)"copy",
-	(const uint8_t*)"delete",
-	(const uint8_t*)"description",
-	(const uint8_t*)"do",
-	(const uint8_t*)"echo",
-	(const uint8_t*)"exec",
-	(const uint8_t*)"fail",
-	(const uint8_t*)"foreach",
-	(const uint8_t*)"if",
-#if 0
-	(const uint8_t*)"include",
-#endif
-	(const uint8_t*)"loadfile",
-	(const uint8_t*)"loadtasks",
-	(const uint8_t*)"mkdir",
-	(const uint8_t*)"move",
-	(const uint8_t*)"program",
-	(const uint8_t*)"project",
-	(const uint8_t*)"property",
-#if 0
-	(const uint8_t*)"setenv",
-#endif
-	(const uint8_t*)"sleep",
-	(const uint8_t*)"target",
-	(const uint8_t*)"touch",
-	(const uint8_t*)"trycatch",
-#if 0
-	(const uint8_t*)"tstamp",
-	(const uint8_t*)"uptodate",
-	(const uint8_t*)"xmlpeek",
-	(const uint8_t*)"xmlpoke"
-#endif
-};
 
 enum interpreter_task
 {
@@ -1386,8 +1372,48 @@ enum interpreter_task
 
 uint8_t interpreter_get_task(const uint8_t* task_name_start, const uint8_t* task_name_finish)
 {
-	return common_string_to_enum(task_name_start, task_name_finish,
-								 interpreter_task_names, UNKNOWN_TASK);
+	static const uint8_t* interpreter_task_names[] =
+	{
+		(const uint8_t*)"attrib",
+		(const uint8_t*)"call",
+		(const uint8_t*)"choose",
+		(const uint8_t*)"copy",
+		(const uint8_t*)"delete",
+		(const uint8_t*)"description",
+		(const uint8_t*)"do",
+		(const uint8_t*)"echo",
+		(const uint8_t*)"exec",
+		(const uint8_t*)"fail",
+		(const uint8_t*)"foreach",
+		(const uint8_t*)"if",
+#if 0
+		(const uint8_t*)"include",
+#endif
+		(const uint8_t*)"loadfile",
+		(const uint8_t*)"loadtasks",
+		(const uint8_t*)"mkdir",
+		(const uint8_t*)"move",
+		(const uint8_t*)"program",
+		(const uint8_t*)"project",
+		(const uint8_t*)"property",
+#if 0
+		(const uint8_t*)"setenv",
+#endif
+		(const uint8_t*)"sleep",
+		(const uint8_t*)"target",
+		(const uint8_t*)"touch",
+		(const uint8_t*)"trycatch",
+#if 0
+		(const uint8_t*)"tstamp",
+		(const uint8_t*)"uptodate",
+		(const uint8_t*)"xmlpeek",
+		(const uint8_t*)"xmlpoke"
+#endif
+	};
+	/**/
+	return common_string_to_enum(
+			   task_name_start, task_name_finish,
+			   interpreter_task_names, UNKNOWN_TASK);
 }
 
 uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
@@ -1422,9 +1448,11 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 
 	struct buffer* argument = buffer_buffer_data(task_arguments, 0);
 
+	const uint8_t* value = buffer_data(argument, 0);
+
 	uint8_t dynamic = (uint8_t)buffer_size(argument);
 
-	if (dynamic && !bool_parse(buffer_data(argument, 0), dynamic, &dynamic))
+	if (dynamic && !bool_parse(value, value + dynamic, &dynamic))
 	{
 		return 0;
 	}
@@ -1465,9 +1493,10 @@ uint8_t interpreter_prepare_attributes_and_arguments_for_property_task(
 	return 1;
 }
 
-uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, const struct range* task_name,
-								  const uint8_t* element_finish, const struct buffer* sub_nodes_names,
-								  uint8_t target_help, uint8_t verbose)
+uint8_t interpreter_evaluate_task(
+	void* the_project, const void* the_target, const struct range* task_name,
+	const uint8_t* element_finish, const struct range* sub_nodes_names,
+	uint8_t target_help, uint8_t verbose)
 {
 	void* the_module = NULL;
 	struct buffer task_arguments;
@@ -2094,29 +2123,24 @@ uint8_t interpreter_evaluate_task(void* the_project, const void* the_target, con
 	return task_attributes_count;
 }
 
-uint8_t interpreter_evaluate_tasks(void* the_project, const void* the_target,
-								   const struct buffer* elements,
-								   const struct buffer* sub_nodes_names,
-								   uint8_t target_help, uint8_t verbose)
+uint8_t interpreter_evaluate_tasks(
+	void* the_project, const void* the_target,
+	const struct buffer* elements, const struct range* sub_nodes_names,
+	uint8_t target_help, uint8_t verbose)
 {
 	ptrdiff_t i = 0;
 	uint8_t returned = 1;
-	struct range* element = NULL;
+	struct range* element;
 
 	while (NULL != (element = buffer_range_data(elements, i++)))
 	{
 		struct range tag_name;
 		tag_name.start = element->start;
-		tag_name.finish = element->finish;
-		returned = xml_get_tag_name(element->start, &(tag_name.finish));
-
-		if (!returned)
-		{
-			break;
-		}
-
-		returned = interpreter_evaluate_task(the_project, the_target, &tag_name, element->finish,
-											 sub_nodes_names, target_help, verbose);
+		tag_name.finish = xml_get_tag_name(element->start, element->finish);
+		/**/
+		returned = interpreter_evaluate_task(
+					   the_project, the_target, &tag_name, element->finish,
+					   sub_nodes_names, target_help, verbose);
 
 		if (!returned)
 		{

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -131,14 +131,18 @@ uint8_t copy_move_file(uint8_t task_id, const uint8_t* source,
 	return 1;
 }
 
-uint8_t copy_move_read_over_write(struct buffer* task_arguments, uint8_t* over_write, uint8_t verbose)
+uint8_t copy_move_read_over_write(
+	struct buffer* task_arguments, uint8_t* over_write, uint8_t verbose)
 {
-	struct buffer* over_write_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_OVER_WRITE);
-	(*over_write) = (uint8_t)buffer_size(over_write_in_a_buffer);
+	struct buffer* over_write_in_a_buffer = buffer_buffer_data(
+			task_arguments, COPY_MOVE_OVER_WRITE);
+	const uint8_t size = (uint8_t)buffer_size(over_write_in_a_buffer);
 
-	if (*over_write)
+	if (size)
 	{
-		if (!bool_parse(buffer_data(over_write_in_a_buffer, 0), *over_write, over_write) ||
+		const uint8_t* value = buffer_data(over_write_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + size, over_write) ||
 			!buffer_resize(over_write_in_a_buffer, 0))
 		{
 			return 0;
@@ -149,9 +153,10 @@ uint8_t copy_move_read_over_write(struct buffer* task_arguments, uint8_t* over_w
 	return 1;
 }
 
-uint8_t copy_move_read_encodings(struct buffer* task_arguments,
-								 uint16_t* input_encoding, uint8_t* output_encoding,
-								 uint8_t verbose)
+uint8_t copy_move_read_encodings(
+	struct buffer* task_arguments,
+	uint16_t* input_encoding, uint8_t* output_encoding,
+	uint8_t verbose)
 {
 	if (NULL == task_arguments ||
 		NULL == input_encoding ||
@@ -163,39 +168,40 @@ uint8_t copy_move_read_encodings(struct buffer* task_arguments,
 	struct buffer* input_encoding_in_a_buffer = buffer_buffer_data(
 				task_arguments, COPY_MOVE_INPUT_ENCODING);
 
-	(*input_encoding) = (uint16_t)buffer_size(input_encoding_in_a_buffer);
+	*input_encoding = (uint16_t)buffer_size(input_encoding_in_a_buffer);
 
 	if (*input_encoding)
 	{
-		(*input_encoding) = load_file_get_encoding(input_encoding_in_a_buffer);
+		*input_encoding = load_file_get_encoding(input_encoding_in_a_buffer);
 
-		if (FILE_ENCODING_UNKNOWN == (*input_encoding))
+		if (FILE_ENCODING_UNKNOWN == *input_encoding)
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		(*input_encoding) = Default;
+		*input_encoding = Default;
 	}
 
 	const struct buffer* output_encoding_in_a_buffer = buffer_buffer_data(
 				task_arguments, COPY_MOVE_OUTPUT_ENCODING);
-	(*output_encoding) = (uint8_t)buffer_size(output_encoding_in_a_buffer);
+	*output_encoding = (uint8_t)buffer_size(output_encoding_in_a_buffer);
 
 	if (*output_encoding)
 	{
-		const uint8_t* ptr = buffer_data(output_encoding_in_a_buffer, 0);
-		(*output_encoding) = text_encoding_get_one(ptr, ptr + (*output_encoding));
+		const uint8_t* value = buffer_data(output_encoding_in_a_buffer, 0);
+		*output_encoding = text_encoding_get_one(
+							   value, value + *output_encoding);
 
-		if (TEXT_ENCODING_UNKNOWN == (*output_encoding))
+		if (TEXT_ENCODING_UNKNOWN == *output_encoding)
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		(*output_encoding) = Default;
+		*output_encoding = Default;
 	}
 
 	(void)verbose;
@@ -220,14 +226,14 @@ uint8_t copy_move_file_evaluate_task(
 
 	if (buffer_size(to_dir_in_a_buffer))
 	{
-		struct range target_file;
+		const uint8_t* target_file_start = source_file->start;
 
-		if (!path_get_file_name(source_file->start, source_file->finish, &target_file))
+		if (!path_get_file_name(&target_file_start, source_file->finish))
 		{
 			return 0;
 		}
 
-		if (!path_combine_in_place(to_dir_in_a_buffer, 0, target_file.start, target_file.finish) ||
+		if (!path_combine_in_place(to_dir_in_a_buffer, 0, target_file_start, source_file->finish) ||
 			!buffer_push_back(to_dir_in_a_buffer, 0))
 		{
 			return 0;
@@ -294,7 +300,9 @@ uint8_t copy_move_dir_evaluate_task(
 
 	if (flatten)
 	{
-		if (!bool_parse(buffer_data(flatten_in_a_buffer, 0), flatten, &flatten))
+		const uint8_t* value = buffer_data(flatten_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + flatten, &flatten))
 		{
 			return 0;
 		}
@@ -327,7 +335,7 @@ uint8_t copy_move_dir_evaluate_task(
 	const uint8_t* start = buffer_data(flatten_in_a_buffer, 0);
 	const uint8_t* finish = start + buffer_size(flatten_in_a_buffer);
 	/**/
-	static const uint8_t zero = 0;
+	static const uint8_t zero = '\0';
 	/**/
 	struct buffer* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
 	const ptrdiff_t to_dir_path_size = buffer_size(to_dir_in_a_buffer);
@@ -336,24 +344,25 @@ uint8_t copy_move_dir_evaluate_task(
 	{
 		while (start < finish)
 		{
-			const uint8_t* pos = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 1, 1);
-			struct range file_name;
+			const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
+									 start, finish, &zero, &zero + 1, 1, 1);
+			const uint8_t* file_name_start = start;
 
-			if (!path_get_file_name(start, pos, &file_name))
+			if (!path_get_file_name(&file_name_start, pos))
 			{
 				return 0;
 			}
 
-			if (!path_combine_in_place(to_dir_in_a_buffer, 0, file_name.start, file_name.finish) ||
+			if (!path_combine_in_place(to_dir_in_a_buffer, 0, file_name_start, pos) ||
 				!buffer_push_back(to_dir_in_a_buffer, 0))
 			{
 				return 0;
 			}
 
-			BUFFER_TO_RANGE(file_name, to_dir_in_a_buffer);
+			file_name_start = buffer_data(to_dir_in_a_buffer, 0);
 
 			if (!copy_move_file(
-					task_id, start, &(file_name.start), 1,
+					task_id, start, &file_name_start, 1,
 					input_encoding, output_encoding,
 					over_write, verbose))
 			{
@@ -365,7 +374,7 @@ uint8_t copy_move_dir_evaluate_task(
 				return 0;
 			}
 
-			start = pos + 1;
+			start = string_enumerate(pos, finish, NULL);
 		}
 
 		return 1;
@@ -373,7 +382,8 @@ uint8_t copy_move_dir_evaluate_task(
 
 	while (start < finish)
 	{
-		const uint8_t* pos = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 1, 1);
+		const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
+								 start, finish, &zero, &zero + 1, 1, 1);
 		start += dir_in_a_buffer_size;
 
 		if (range_in_parts_is_null_or_empty(start, pos))
@@ -392,14 +402,14 @@ uint8_t copy_move_dir_evaluate_task(
 		BUFFER_TO_RANGE(directory_name, to_dir_in_a_buffer);
 
 		if (!path_get_directory_name(
-				directory_name.start, directory_name.finish, &directory_name))
+				directory_name.start, &directory_name.finish))
 		{
 			return 0;
 		}
 
-		const uint8_t delimiter = *(directory_name.finish);
+		const uint8_t delimiter = *directory_name.finish;
 		uint8_t* ptr = buffer_data(to_dir_in_a_buffer, directory_name.finish - directory_name.start);
-		*ptr = '\0';
+		*ptr = zero;
 
 		if (!directory_exists(directory_name.start) &&
 			!directory_create(directory_name.start))
@@ -423,7 +433,7 @@ uint8_t copy_move_dir_evaluate_task(
 			return 0;
 		}
 
-		start = pos + 1;
+		start = string_enumerate(pos, finish, NULL);
 	}
 
 	struct buffer* include_empty_dirs_in_a_buffer = buffer_buffer_data(
@@ -433,8 +443,9 @@ uint8_t copy_move_dir_evaluate_task(
 
 	if (include_empty_dirs)
 	{
-		if (!bool_parse(
-				buffer_data(include_empty_dirs_in_a_buffer, 0), include_empty_dirs, &include_empty_dirs))
+		const uint8_t* value = buffer_data(include_empty_dirs_in_a_buffer, 0);
+
+		if (!bool_parse(value, value + include_empty_dirs, &include_empty_dirs))
 		{
 			return 0;
 		}
@@ -444,7 +455,7 @@ uint8_t copy_move_dir_evaluate_task(
 		include_empty_dirs = 1;
 	}
 
-	if (1 == include_empty_dirs)
+	if (include_empty_dirs)
 	{
 		if (!buffer_resize(flatten_in_a_buffer, 0) ||
 			!directory_enumerate_file_system_entries(dir_in_a_buffer, 0, 1, flatten_in_a_buffer, 1))
@@ -457,7 +468,8 @@ uint8_t copy_move_dir_evaluate_task(
 
 		while (start < finish)
 		{
-			const uint8_t* pos = find_any_symbol_like_or_not_like_that(start, finish, &zero, 1, 1, 1);
+			const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
+									 start, finish, &zero, &zero + 1, 1, 1);
 			start += dir_in_a_buffer_size;
 
 			if (range_in_parts_is_null_or_empty(start, pos))
@@ -484,7 +496,7 @@ uint8_t copy_move_dir_evaluate_task(
 				return 0;
 			}
 
-			start = pos + 1;
+			start = string_enumerate(pos, finish, NULL);
 		}
 	}
 

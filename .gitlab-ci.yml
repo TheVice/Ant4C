@@ -45,7 +45,7 @@ build_with_MSVC:
 
   parallel:
     matrix:
-      - TargetPlatform: [x64, Win32]
+      - TargetPlatform: [ x64, Win32 ]
 
   script: |
     if (-not(Test-Path -Path .\cmake.env))
@@ -75,7 +75,7 @@ build_with_MSVC:
     }
 
     cd "$build_directory"
-    cmake "${env:CI_PROJECT_DIR}" -A ${env:TargetPlatform} -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}"/windows-latest
+    cmake "${env:CI_PROJECT_DIR}" -A ${env:TargetPlatform} -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}"\windows-latest
 
     if ($LastExitCode -ne 0)
     {
@@ -115,7 +115,7 @@ build_with_MSVC:
 
         if (Test-Path -Path "$ant4c")
         {
-          & $ant4c --tests_xml=$tests_xml --tests_exec_app=$tests_exec_app_exe --tests_base_directory=${env:CI_PROJECT_DIR}
+          & $ant4c --tests_xml=$tests_xml --tests_exec_app=$tests_exec_app_exe --tests_base_directory=${env:CI_PROJECT_DIR} --gtest_output="xml:$CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-$TargetPlatform.xml"
 
           if ($LastExitCode -ne 0)
           {
@@ -134,7 +134,7 @@ build_with_MSVC:
 
         if (Test-Path -Path "$ant4c")
         {
-          & $ant4c
+          & $ant4c --gtest_output="xml:$CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-tests_net.framework.module-$TargetPlatform.xml"
 
           if ($LastExitCode -ne 0)
           {
@@ -158,7 +158,10 @@ build_with_MSVC:
 
   artifacts:
     paths:
-      - "$CI_PROJECT_DIR\\build-$TargetPlatform"
+      - $CI_PROJECT_DIR\build-$TargetPlatform
+    when: always
+    reports:
+      junit: $CI_PROJECT_DIR\build-$TargetPlatform\*.xml
 
   cache:
     key: windows-build-cache
@@ -174,7 +177,7 @@ build_with_MinGW:
 
   parallel:
     matrix:
-      - BUILD_TYPE: [Debug, Release]
+      - BUILD_TYPE: [ Debug, Release ]
 
   script: |
     if (-not(Test-Path -Path .\cmake.env))
@@ -210,7 +213,7 @@ build_with_MinGW:
 
     cd "$build_directory"
 
-    $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DLIBRARY_BINARY_DIR={0}/windows-latest" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
+    $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DLIBRARY_BINARY_DIR={0}\windows-latest" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
     $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
     if ($process.ExitCode -ne 0)
@@ -242,8 +245,9 @@ build_with_MinGW:
 
     if (Test-Path -Path "$ant4c_tests")
     {
+      $test_output = "$CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE.xml"
       $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path $build_directory
-      $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2}" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}
+      $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2} --gtest_output=""xml:{3}""" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}, $test_output
       $process = Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
       if ($process.ExitCode -ne 0)
@@ -261,7 +265,10 @@ build_with_MinGW:
 
   artifacts:
     paths:
-      - "$CI_PROJECT_DIR\\build-MinGW-$BUILD_TYPE"
+      - $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE
+    when: always
+    reports:
+      junit: $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\*.xml
 
   cache:
     key: windows-build-cache
@@ -275,7 +282,7 @@ build_on_unix_like:
 
   parallel:
     matrix:
-      - BUILD_TYPE: [Debug, Release]
+      - BUILD_TYPE: [ Debug, Release ]
 
   script: |
     cmake -E make_directory $CI_PROJECT_DIR/build-$BUILD_TYPE
@@ -292,9 +299,13 @@ build_on_unix_like:
     cmake --build . --config $BUILD_TYPE
 
     if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c; fi
-    if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests --tests_xml=$CI_PROJECT_DIR/tests.xml --tests_exec_app=$CI_PROJECT_DIR/build-$BUILD_TYPE/tests_exec_app --tests_base_directory=$CI_PROJECT_DIR; fi
+    if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests --tests_xml=$CI_PROJECT_DIR/tests.xml --tests_exec_app=$CI_PROJECT_DIR/build-$BUILD_TYPE/tests_exec_app --tests_base_directory=$CI_PROJECT_DIR --gtest_output="xml:$CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml"; fi
     if [ ! -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then echo "File '"$CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
 
   artifacts:
     paths:
       - $CI_PROJECT_DIR/build-$BUILD_TYPE
+    when: always
+    reports:
+      junit: report.xml
+      junit: $CI_PROJECT_DIR/build-$BUILD_TYPE/*.xml

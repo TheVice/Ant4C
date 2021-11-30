@@ -12,6 +12,8 @@
 #include "range.h"
 #include "text_encoding.h"
 
+#include <wchar.h>
+
 #include <metahost.h>
 
 #pragma comment(lib, "mscoree.lib")

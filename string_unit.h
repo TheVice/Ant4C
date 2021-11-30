@@ -63,12 +63,16 @@ uint8_t string_replace(
 	const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
 	const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
 	struct buffer* output);
+uint8_t string_replace_double_char_with_single(
+	uint8_t* input, ptrdiff_t* size,
+	const uint8_t* to_be_replaced_start,
+	const uint8_t* to_be_replaced_finish);
 uint8_t string_starts_with(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* value_start, const uint8_t* value_finish);
 uint8_t string_substring(
 	const uint8_t* input_start, const uint8_t* input_finish,
-	ptrdiff_t index, ptrdiff_t length, struct buffer* output);
+	ptrdiff_t index, ptrdiff_t length, struct range* output);
 uint32_t string_to_case(uint32_t input, uint8_t required_case);
 uint8_t string_to_lower(
 	const uint8_t* input_start, const uint8_t* input_finish,

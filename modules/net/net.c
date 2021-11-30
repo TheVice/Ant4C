@@ -120,59 +120,6 @@ static const uint8_t* all_functions =
 
 #define COUNT_OF_ALL_FUNCTIONS 1213
 
-const uint8_t* all_functions_get_string_at(uint8_t x, uint8_t y)
-{
-	static const uint8_t* double_zero = (const uint8_t*)"\0\0";
-	const uint8_t* start = all_functions;
-	const uint8_t* finish = start + COUNT_OF_ALL_FUNCTIONS;
-	ptrdiff_t i;
-
-	for (i = 0; i < x; ++i)
-	{
-		const ptrdiff_t index = string_index_of(start, finish, double_zero, double_zero + 2);
-
-		if (-1 == index)
-		{
-			break;
-		}
-
-		start += index + 2;
-	}
-
-	if (i != x)
-	{
-		return NULL;
-	}
-
-	i = string_index_of(start, finish, double_zero, double_zero + 2);
-
-	if (-1 == i)
-	{
-		return NULL;
-	}
-
-	finish = start + i;
-
-	for (i = 0; i < y; ++i)
-	{
-		const ptrdiff_t index = string_index_of(start, finish, double_zero, double_zero + 1);
-
-		if (-1 == index)
-		{
-			break;
-		}
-
-		start += index + 1;
-	}
-
-	if (i != y)
-	{
-		return NULL;
-	}
-
-	return start;
-}
-
 enum ant4c_net_module_
 {
 	net_result_to_string_,
@@ -290,7 +237,9 @@ const uint8_t* enumerate_functions(const uint8_t* name_space, ptrdiff_t index)
 	const ptrdiff_t name_space_number = i - 1;
 	i = 0;
 
-	while (NULL != (ptr = all_functions_get_string_at((uint8_t)name_space_number, (uint8_t)(i++))))
+	while (NULL != (ptr = common_get_string_at(
+							  all_functions, all_functions + COUNT_OF_ALL_FUNCTIONS,
+							  name_space_number, i++)))
 	{
 		if (index == (i - 1))
 		{
@@ -346,7 +295,10 @@ uint8_t evaluate_function(
 	{
 		uint8_t y = 0;
 
-		while (NULL != (ptr = all_functions_get_string_at(x, y++)))
+		while (NULL != (ptr = common_get_string_at(
+								  all_functions,
+								  all_functions + COUNT_OF_ALL_FUNCTIONS,
+								  x, y++)))
 		{
 			if (function == ptr)
 			{
@@ -402,7 +354,9 @@ uint8_t evaluate_function(
 			if (!get_exists_functions(
 					ptr_to_host_fxr_object,
 					name_spaces[2],
-					all_functions_get_string_at(2, 3),
+					common_get_string_at(
+						all_functions, all_functions + COUNT_OF_ALL_FUNCTIONS,
+						2, 3),
 					values[0],
 					values_lengths[0],
 					host_fx_resolver_is_function_exists,
@@ -1020,7 +974,10 @@ uint8_t evaluate_function(
 			if (!get_exists_functions(
 					ptr_to_host_policy_object,
 					name_spaces[5],
-					all_functions_get_string_at(5, 2),
+					common_get_string_at(
+						all_functions,
+						all_functions + COUNT_OF_ALL_FUNCTIONS,
+						5, 2),
 					values[0],
 					values_lengths[0],
 					core_host_is_function_exists,

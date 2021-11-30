@@ -29,20 +29,21 @@
 #include <stdio.h>
 
 #if defined(_WIN32)
+#include <wchar.h>
+
 #include <windows.h>
-
-static const uint8_t space_symbol = ' ';
-static const wchar_t zero_symbol_w = L'\0';
-
 #else
-
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #endif
 
-static const uint8_t zero_symbol = '\0';
+#if defined(_WIN32)
+static const uint8_t space = ' ';
+static const wchar_t zeroW = L'\0';
+#endif
+static const uint8_t zero = '\0';
 
 uint8_t exec_get_program_full_path(
 	const void* the_project, const void* the_target,
@@ -85,7 +86,7 @@ uint8_t exec_get_program_full_path(
 				return 0;
 			}
 
-			if (!buffer_append(path_to_the_program, path, common_count_bytes_until(path, zero_symbol)) ||
+			if (!buffer_append(path_to_the_program, path, common_count_bytes_until(path, zero)) ||
 				!buffer_push_back(path_to_the_program, 0))
 			{
 				return 0;
@@ -103,20 +104,21 @@ uint8_t exec_get_program_full_path(
 	}
 
 	if (!path_combine_in_place(path_to_the_program,
-							   buffer_size(path_to_the_program) - size, &zero_symbol, &zero_symbol))
+							   buffer_size(path_to_the_program) - size, &zero, &zero))
 #else
-	if (!path_combine_in_place(path_to_the_program, 0, &zero_symbol, &zero_symbol))
+	if (!path_combine_in_place(path_to_the_program, 0, &zero, &zero))
 #endif
 	{
 		return 0;
 	}
 
-	return buffer_push_back(path_to_the_program, zero_symbol);
+	return buffer_push_back(path_to_the_program, zero);
 }
 
 #if defined(_WIN32)
 
-uint8_t exec_win32_append_command_line(const struct range* command_line, struct buffer* output)
+uint8_t exec_win32_append_command_line(
+	const struct range* command_line, struct buffer* output)
 {
 	if (!output)
 	{
@@ -127,8 +129,9 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 	const uint8_t* path_start = buffer_data(output, 0);
 	const uint8_t* path_finish = path_start + size;
 	/**/
-	const uint8_t contains = string_contains(path_start, path_finish,
-							 &space_symbol, &space_symbol + 1);
+	const uint8_t contains = string_contains(
+								 path_start, path_finish,
+								 &space, &space + 1);
 
 	if (!buffer_append(output, NULL, size + 3) ||
 		!buffer_resize(output, size))
@@ -144,8 +147,12 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 		return 0;
 	}
 
-	path_finish = 1 + find_any_symbol_like_or_not_like_that(
-					  path_finish - 1, path_start, &zero_symbol, 1, 0, -1);
+	const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
+							 path_finish, path_start,
+							 &zero, &zero + 1, 0, -1);
+	path_finish = string_find_any_symbol_like_or_not_like_that(
+					  pos, path_finish,
+					  &zero, &zero + 1, 1, 1);
 
 	if (contains)
 	{
@@ -164,14 +171,14 @@ uint8_t exec_win32_append_command_line(const struct range* command_line, struct 
 
 	if (!range_is_null_or_empty(command_line))
 	{
-		if (!buffer_push_back(output, space_symbol) ||
+		if (!buffer_push_back(output, space) ||
 			!buffer_append_data_from_range(output, command_line))
 		{
 			return 0;
 		}
 	}
 
-	return buffer_push_back(output, zero_symbol);
+	return buffer_push_back(output, zero);
 }
 
 uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
@@ -408,7 +415,7 @@ uint8_t exec(
 			return 0;
 		}
 
-		if (!buffer_push_back(&application, zero_symbol))
+		if (!buffer_push_back(&application, zero))
 		{
 			buffer_release(&application);
 			return 0;
@@ -418,7 +425,7 @@ uint8_t exec(
 	if (!range_is_null_or_empty(environment_variables))
 	{
 		if (!buffer_append_data_from_range(&application, environment_variables) ||
-			!buffer_push_back(&application, zero_symbol))
+			!buffer_push_back(&application, zero))
 		{
 			buffer_release(&application);
 			return 0;
@@ -479,11 +486,11 @@ uint8_t exec(
 	memset(indexes, 0, sizeof(indexes));
 	uint8_t count = 0;
 
-	while (finish != (start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zero_symbol_w, 1, 1,
+	while (finish != (start = find_any_symbol_like_or_not_like_that_wchar_t(start, finish, &zeroW, 1, 1,
 							  1)) &&
 		   count < COUNT_OF(indexes))
 	{
-		if (finish == (start = find_any_symbol_like_or_not_like_that_wchar_t(start + 1, finish, &zero_symbol_w, 1, 0,
+		if (finish == (start = find_any_symbol_like_or_not_like_that_wchar_t(start + 1, finish, &zeroW, 1, 0,
 							   1)))
 		{
 			break;
@@ -788,7 +795,7 @@ uint8_t exec(
 			return 0;
 		}
 
-		if (!buffer_push_back(&application, zero_symbol))
+		if (!buffer_push_back(&application, zero))
 		{
 			buffer_release(&application);
 			return 0;
@@ -922,8 +929,9 @@ uint8_t exec_get_attributes_and_arguments_for_task(
 	return 1;
 }
 
-uint8_t exec_evaluate_task(void* the_project, const void* the_target, const struct buffer* task_arguments,
-						   uint8_t verbose)
+uint8_t exec_evaluate_task(
+	void* the_project, const void* the_target,
+	const struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -938,10 +946,10 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	}
 
 	const struct buffer* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
-	uint8_t append = 0;
+	uint8_t append = (uint8_t)buffer_size(append_in_a_buffer);
+	const uint8_t* value = buffer_data(append_in_a_buffer, 0);
 
-	if (buffer_size(append_in_a_buffer) &&
-		!bool_parse(buffer_data(append_in_a_buffer, 0), buffer_size(append_in_a_buffer), &append))
+	if (append && !bool_parse(value, value + append, &append))
 	{
 		return 0;
 	}
@@ -956,16 +964,18 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	/**/
 	struct buffer* output_path_in_a_buffer = buffer_buffer_data(task_arguments, OUTPUT_POSITION);
 	struct range output_file;
+	ptrdiff_t size = buffer_size(output_path_in_a_buffer);
 
-	if (buffer_size(output_path_in_a_buffer))
+	if (size)
 	{
 		if (!buffer_push_back(output_path_in_a_buffer, 0))
 		{
 			return 0;
 		}
 
+		++size;
 		output_file.start = buffer_data(output_path_in_a_buffer, 0);
-		output_file.finish = output_file.start + buffer_size(output_path_in_a_buffer);
+		output_file.finish = output_file.start + size;
 	}
 	else
 	{
@@ -978,8 +988,9 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	for (uint8_t index = PID_PROPERTY_POSITION; ; index = RESULT_PROPERTY_POSITION)
 	{
 		const struct buffer* property_in_a_buffer = buffer_buffer_data(task_arguments, index);
+		size = buffer_size(property_in_a_buffer);
 
-		if (!buffer_size(property_in_a_buffer))
+		if (!size)
 		{
 			if (RESULT_PROPERTY_POSITION == index)
 			{
@@ -995,12 +1006,13 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 		}
 
 		void** the_property = (PID_PROPERTY_POSITION == index ? &pid_property : &result_property);
+		value = buffer_data(property_in_a_buffer, 0);
 
-		if (!project_property_set_value(the_project, buffer_data(property_in_a_buffer, 0),
-										(uint8_t)buffer_size(property_in_a_buffer),
-										(const uint8_t*)the_property, 0, 0, 1, 0, verbose) ||
-			!project_property_exists(the_project, buffer_data(property_in_a_buffer, 0),
-									 (uint8_t)buffer_size(property_in_a_buffer), the_property, verbose))
+		if (!project_property_set_value(the_project, value,
+										(uint8_t)size, (const uint8_t*)the_property,
+										0, 0, 1, 0, verbose) ||
+			!project_property_exists(the_project, value,
+									 (uint8_t)size, the_property, verbose))
 		{
 			return 0;
 		}
@@ -1012,10 +1024,10 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 	}
 
 	const struct buffer* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
-	uint8_t spawn = 0;
+	uint8_t spawn = (uint8_t)buffer_size(spawn_in_a_buffer);
+	value = buffer_data(spawn_in_a_buffer, 0);
 
-	if (buffer_size(spawn_in_a_buffer) &&
-		!bool_parse(buffer_data(spawn_in_a_buffer, 0), buffer_size(spawn_in_a_buffer), &spawn))
+	if (spawn && !bool_parse(value, value + spawn, &spawn))
 	{
 		return 0;
 	}
@@ -1024,15 +1036,18 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	struct range working_directory;
 
-	if (buffer_size(working_dir_in_a_buffer))
+	size = buffer_size(working_dir_in_a_buffer);
+
+	if (size)
 	{
 		if (!buffer_push_back(working_dir_in_a_buffer, 0))
 		{
 			return 0;
 		}
 
+		++size;
 		working_directory.start = buffer_data(working_dir_in_a_buffer, 0);
-		working_directory.finish = working_directory.start + buffer_size(working_dir_in_a_buffer);
+		working_directory.finish = working_directory.start + size;
 	}
 	else
 	{
@@ -1043,11 +1058,12 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	uint64_t time_out = 0;
 
-	if (buffer_size(time_out_in_a_buffer))
+	size = buffer_size(time_out_in_a_buffer);
+
+	if (size)
 	{
-		const uint8_t* start = buffer_data(time_out_in_a_buffer, 0);
-		const uint8_t* finish = start + buffer_size(time_out_in_a_buffer);
-		time_out = uint64_parse(start, finish);
+		value = buffer_data(time_out_in_a_buffer, 0);
+		time_out = uint64_parse(value, value + size);
 
 		if (1000 < time_out)
 		{
@@ -1062,11 +1078,12 @@ uint8_t exec_evaluate_task(void* the_project, const void* the_target, const stru
 
 	const struct buffer* environment_in_a_buffer = buffer_buffer_data(task_arguments, ENVIRONMENT_POSITION);
 	struct range environment_variables;
+	size = buffer_size(environment_in_a_buffer);
 
-	if (buffer_size(environment_in_a_buffer))
+	if (size)
 	{
 		environment_variables.start = buffer_data(environment_in_a_buffer, 0);
-		environment_variables.finish = environment_variables.start + buffer_size(environment_in_a_buffer);
+		environment_variables.finish = environment_variables.start + size;
 	}
 	else
 	{

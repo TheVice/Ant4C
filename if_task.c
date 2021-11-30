@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -44,9 +44,10 @@ uint8_t if_evaluate_task(
 		return 1;
 	}
 
-	uint8_t test_value = 0;
+	const uint8_t* value = buffer_data(test_in_a_buffer, 0);
+	uint8_t test_value = (uint8_t)buffer_size(test_in_a_buffer);
 
-	if (!bool_parse(buffer_data(test_in_a_buffer, 0), buffer_size(test_in_a_buffer), &test_value))
+	if (!bool_parse(value, value + test_value, &test_value))
 	{
 		return 0;
 	}

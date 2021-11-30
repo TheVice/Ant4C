@@ -20,6 +20,8 @@
 
 #include "echo.h"
 
+#include <wchar.h>
+
 #include <unknwn.h>
 
 static struct buffer output_data;

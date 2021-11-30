@@ -24,7 +24,8 @@ uint8_t file_system_get_position_after_pre_root(
 	const uint8_t** path_start, const uint8_t* path_finish);
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path);
 uint8_t file_system_path_in_range_to_pathW(
-	const uint8_t* path_start, const uint8_t* path_finish, struct buffer* pathW);
+	const uint8_t* path_start, const uint8_t* path_finish,
+	struct buffer* pathW);
 uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW);
 #endif
 
@@ -44,8 +45,9 @@ int64_t directory_get_creation_time(const uint8_t* path);
 int64_t directory_get_creation_time_utc(const uint8_t* path);
 
 uint8_t directory_get_current_directory(
-	const void* project, const void** the_property, struct buffer* output, uint8_t verbose);
-uint8_t directory_get_directory_root(const uint8_t* path, struct range* root);
+	const void* project, const void** the_property,
+	struct buffer* output, uint8_t verbose);
+#define directory_get_directory_root path_get_path_root
 
 int64_t directory_get_last_access_time(const uint8_t* path);
 int64_t directory_get_last_access_time_utc(const uint8_t* path);
@@ -53,8 +55,7 @@ int64_t directory_get_last_write_time(const uint8_t* path);
 int64_t directory_get_last_write_time_utc(const uint8_t* path);
 
 uint8_t directory_get_logical_drives(struct buffer* drives);
-uint8_t directory_get_parent_directory(
-	const uint8_t* path_start, const uint8_t* path_finish, struct range* parent);
+#define directory_get_parent_directory path_get_directory_name
 uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path);
 uint8_t directory_set_current_directory(const uint8_t* path);
 
@@ -62,7 +63,8 @@ uint8_t directory_set_current_directory(const uint8_t* path);
 int32_t _file_fileno(void* stream);
 #endif
 
-uint8_t file_append(const uint8_t* path, const struct range* data, uint16_t encoding);
+uint8_t file_append(
+	const uint8_t* path, const struct range* data, uint16_t encoding);
 uint8_t file_close(void* stream);
 uint8_t file_copy(const uint8_t* exists_file, const uint8_t* new_file);
 uint8_t file_create(const uint8_t* path);
@@ -119,40 +121,13 @@ uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file);
 size_t file_write(const void* content, const size_t size_of_content_element,
 				  const size_t count_of_elements, void* stream);
 uint8_t file_write_all(const uint8_t* path, const struct buffer* content);
-uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, void* stream);
-uint8_t file_write_with_several_steps(const struct buffer* content, void* stream);
+uint8_t file_write_with_encoding(
+	const struct range* data, uint16_t encoding, void* stream);
+uint8_t file_write_with_several_steps(
+	const struct buffer* content, void* stream);
 
 uint8_t file_get_full_path(
-	const uint8_t* partial_path_start, const uint8_t* partial_path_finish, struct buffer* full_path);
-
-uint8_t dir_get_id_of_get_current_directory_function();
-uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t dir_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count, struct buffer* output);
-
-uint8_t file_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t file_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output);
-
-uint8_t attrib_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
-
-uint8_t delete_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
-
-uint8_t mkdir_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
-
-uint8_t touch_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose);
+	const uint8_t* partial_path_start, const uint8_t* partial_path_finish,
+	struct buffer* full_path);
 
 #endif

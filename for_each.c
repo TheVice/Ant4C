@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020 - 2021 TheVice
  *
  */
 
@@ -146,11 +146,10 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target,
 
 	if (!range_is_null_or_empty(&substing))
 	{
-		const uint8_t* pos = find_any_symbol_like_or_not_like_that(start, finish, delimiter, 1, 1, 1);
-		/**/
 		struct range item;
 		item.start = start;
-		item.finish = pos;
+		item.finish = string_find_any_symbol_like_or_not_like_that(
+						  start, finish, delimiter, delimiter + 1, 1, 1);
 
 		if (!for_each_apply_trim(&item, trim_value))
 		{
@@ -338,9 +337,11 @@ uint8_t for_each_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
-							   const uint8_t* attributes_finish, const uint8_t* element_finish,
-							   struct buffer* task_arguments, uint8_t fail_on_error, uint8_t verbose)
+uint8_t for_each_evaluate_task(
+	void* the_project, const void* the_target,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	struct buffer* task_arguments,
+	uint8_t fail_on_error, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -354,8 +355,9 @@ uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 		return 0;
 	}
 
-	const uint8_t item_value = common_string_to_enum(buffer_data(item_value_in_a_buffer, 0),
-							   buffer_data(item_value_in_a_buffer, 0) + buffer_size(item_value_in_a_buffer), items_str, UNKNOWN_ITEM);
+	const uint8_t* start = buffer_data(item_value_in_a_buffer, 0);
+	const uint8_t* finish = start + buffer_size(item_value_in_a_buffer);
+	const uint8_t item_value = common_string_to_enum(start, finish, items_str, UNKNOWN_ITEM);
 
 	if (UNKNOWN_ITEM == item_value ||
 		!buffer_resize(item_value_in_a_buffer, 0))
@@ -418,9 +420,9 @@ uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 
 	if (buffer_size(trim_value_in_a_buffer))
 	{
-		trim_value = common_string_to_enum(buffer_data(trim_value_in_a_buffer, 0),
-										   buffer_data(trim_value_in_a_buffer, 0) + buffer_size(trim_value_in_a_buffer),
-										   trims_str, UNKNOWN_TRIM);
+		start = buffer_data(trim_value_in_a_buffer, 0);
+		finish = start + buffer_size(trim_value_in_a_buffer);
+		trim_value = common_string_to_enum(start, finish, trims_str, UNKNOWN_TRIM);
 
 		if (UNKNOWN_TRIM == trim_value)
 		{
@@ -482,9 +484,10 @@ uint8_t for_each_evaluate_task(void* the_project, const void* the_target,
 	return fail_on_error;
 }
 
-uint8_t do_evaluate_task(void* the_project, const void* the_target,
-						 const uint8_t* attributes_finish, const uint8_t* element_finish,
-						 struct buffer* task_arguments, uint8_t verbose)
+uint8_t do_evaluate_task(
+	void* the_project, const void* the_target,
+	const uint8_t* attributes_finish, const uint8_t* element_finish,
+	struct buffer* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
