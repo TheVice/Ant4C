@@ -462,7 +462,7 @@ uint8_t string_replace_double_char_with_single(
 	uint8_t* start = NULL;
 	ptrdiff_t match = 0;
 	uint32_t input_char_set;
-	const uint8_t* pos = input;
+	const uint8_t* pos;
 	const uint8_t* prev_pos = input;
 	const uint8_t* finish = input + *size;
 

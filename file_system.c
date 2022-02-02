@@ -353,7 +353,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			start = buffer_wchar_t_data(pattern, 0);
 			file_system_set_position_after_pre_root_wchar_t(&start);
 
-			if (!text_encoding_UTF16LE_to_UTF8(start, finish, output) ||
+			if (!text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, output) ||
 				!buffer_push_back(output, 0))
 			{
 				FindClose(file_handle);
@@ -1344,7 +1344,7 @@ uint8_t directory_set_current_directory(const uint8_t* path)
 #if defined(_WIN32)
 int32_t _file_fileno(void* stream)
 {
-	return _fileno(stream);
+	return _fileno((FILE*)stream);
 }
 #endif
 
@@ -1375,7 +1375,7 @@ uint8_t file_append(const uint8_t* path, const struct range* data, uint16_t enco
 uint8_t file_close(void* stream)
 {
 	return NULL != stream &&
-		   0 == fclose(stream);
+		   0 == fclose((FILE*)stream);
 }
 #if defined(_WIN32)
 uint8_t file_copy_wchar_t(const wchar_t* current_path, const wchar_t* new_path)
@@ -1569,23 +1569,23 @@ uint8_t file_exists(const uint8_t* path)
 
 uint8_t file_flush(void* stream)
 {
-	return NULL != stream && 0 == fflush(stream);
+	return NULL != stream && 0 == fflush((FILE*)stream);
 }
 
 uint8_t file_seek(void* stream, long offset, int32_t origin)
 {
-	return NULL != stream && 0 == fseek(stream, offset, origin);
+	return NULL != stream && 0 == fseek((FILE*)stream, offset, origin);
 }
 
 long file_tell(void* stream)
 {
-	return NULL != stream ? ftell(stream) : 0;
+	return NULL != stream ? ftell((FILE*)stream) : 0;
 }
 
 size_t file_write(const void* content, const size_t size_of_content_element,
 				  const size_t count_of_elements, void* stream)
 {
-	return fwrite(content, size_of_content_element, count_of_elements, stream);
+	return fwrite(content, size_of_content_element, count_of_elements, (FILE*)stream);
 }
 #if defined(_WIN32)
 uint8_t file_get_attributes_wchar_t(const wchar_t* path, unsigned long* attributes)
@@ -1841,9 +1841,9 @@ size_t file_read(void* content, const size_t size_of_content_element,
 	}
 
 #if __STDC_LIB_EXT1__ && defined(_MSC_VER)
-	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, stream);
+	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, (FILE*)stream);
 #else
-	return fread(content, size_of_content_element, count_of_elements, stream);
+	return fread(content, size_of_content_element, count_of_elements, (FILE*)stream);
 #endif
 }
 
@@ -2420,7 +2420,7 @@ uint8_t file_replace_with_same_length(
 				return 0;
 			}
 
-			if (length != (ptrdiff_t)fwrite(by_replacement, sizeof(uint8_t), length, stream))
+			if (length != (ptrdiff_t)fwrite(by_replacement, sizeof(uint8_t), length, (FILE*)stream))
 			{
 				return 0;
 			}
@@ -2485,7 +2485,7 @@ uint8_t file_replace(const uint8_t* path,
 	if (!buffer_resize(&input, size))
 	{
 		buffer_release(&input);
-		fclose(stream);
+		fclose((FILE*)stream);
 		return 0;
 	}
 

@@ -135,13 +135,6 @@ uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 						  struct buffer* output)
 {
-	static const uint8_t* entry_types_str[] =
-	{
-		(const uint8_t*)"directory",
-		(const uint8_t*)"file",
-		(const uint8_t*)"all"
-	};
-
 	if (UNKNOWN_DIR_FUNCTION <= function ||
 		get_current_directory == function ||
 		NULL == arguments ||
@@ -168,6 +161,13 @@ uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint
 				break;
 			}
 
+			static const uint8_t* entry_types_str[] =
+			{
+				(const uint8_t*)"directory",
+				(const uint8_t*)"file",
+				(const uint8_t*)"all"
+			};
+			/**/
 			const uint8_t entry_type = common_string_to_enum(
 										   values[1].start, values[1].finish, entry_types_str, UNKNOWN_ENTRY_TYPE);
 

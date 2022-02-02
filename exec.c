@@ -297,7 +297,8 @@ uint8_t exec_win32_with_redirect(
 					&numberOfBytesRead, 0) &&
 		   0 < numberOfBytesRead)
 	{
-		if (!echo(1, Default, file, Info, security_attributes.lpSecurityDescriptor, numberOfBytesRead, 0, verbose))
+		if (!echo(1, Default, file, Info, (const uint8_t*)(security_attributes.lpSecurityDescriptor),
+				  numberOfBytesRead, 0, verbose))
 		{
 			CloseHandle(hReadPipe);
 			return 0;

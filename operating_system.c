@@ -59,7 +59,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 
 	memset(os, 0, size);
 	struct OperatingSystem* operating_system = (struct OperatingSystem*)os;
-	operating_system->platform = platformID;
+	operating_system->platform = (enum PlatformID)platformID;
 #if defined(_WIN32)
 	operating_system->is_server = is_server;
 #endif
@@ -214,7 +214,7 @@ enum PlatformID operating_system_get_platform(const void* os)
 {
 	if (NULL == os)
 	{
-		return UINT8_MAX;
+		return (enum PlatformID)UINT8_MAX;
 	}
 
 	return ((const struct OperatingSystem*)os)->platform;
@@ -263,7 +263,7 @@ const uint8_t* operating_system_get_platform_name(const void* os)
 	};
 	/**/
 	const uint8_t count = COUNT_OF(IDs_str) - 1;
-	const uint8_t platformID = operating_system_get_platform(os);
+	const enum PlatformID platformID = operating_system_get_platform(os);
 
 	for (uint8_t i = 0; i < count; ++i)
 	{
@@ -288,7 +288,7 @@ uint8_t platform_is_macos()
 
 uint8_t platform_is_unix()
 {
-	const uint8_t platformID = operating_system_get_platform(environment_get_operating_system());
+	const enum PlatformID platformID = operating_system_get_platform(environment_get_operating_system());
 	return Unix == platformID || macOS == platformID;
 }
 

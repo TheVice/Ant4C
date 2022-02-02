@@ -843,7 +843,7 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	length = GetTempPathW(length, pathW);
 
 	if (!buffer_resize(temp_path, size) ||
-		!text_encoding_UTF16LE_to_UTF8(pathW, pathW + length, temp_path))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)pathW, (const uint16_t*)(pathW + length), temp_path))
 	{
 		return 0;
 	}
@@ -1071,7 +1071,7 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 	const wchar_t* finish = pathW + length;
 	file_system_set_position_after_pre_root_wchar_t(&start);
 	return buffer_resize(path, size) &&
-		   text_encoding_UTF16LE_to_UTF8(start, finish, path);
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, path);
 #else
 
 	for (;;)
@@ -1128,7 +1128,7 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 		}
 
 		if (!buffer_resize(path, size) ||
-			!text_encoding_UTF16LE_to_UTF8(pathW, pathW + real_size, path))
+			!text_encoding_UTF16LE_to_UTF8((const uint16_t*)pathW, (const uint16_t*)(pathW + real_size), path))
 		{
 			return 0;
 		}
@@ -1367,7 +1367,8 @@ uint8_t cygpath_get_dos_path(
 	/**/
 	return returned_count &&
 		   buffer_resize(path, size) &&
-		   text_encoding_UTF16LE_to_UTF8(short_path, short_path + returned_count, path);
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)short_path, (const uint16_t*)(short_path + returned_count),
+										 path);
 #else
 	return 0;
 #endif

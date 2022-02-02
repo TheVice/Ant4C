@@ -1,5 +1,6 @@
 name: CMake
 
+# on: [push, pull_request]
 on:
   push:
     branches:
@@ -25,26 +26,73 @@ on:
 
 jobs:
   build:
+    name: >-
+      ${{ github.ref_name }}
+      ${{ matrix.os }}
+      ${{ matrix.compiler }}
+      ${{ matrix.optimized && 'release' || 'debug' }}
+      ${{ matrix.target_platform }}
+
     strategy:
+      fail-fast: false
       matrix:
-        include:
-        - os: macos-latest
-          BUILD_TYPE: Debug
-
-        - os: macos-latest
-          BUILD_TYPE: Release
-
-        - os: ubuntu-latest
-          BUILD_TYPE: Debug
+        compiler: [clang, gcc, msvc, mingw]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        optimized: [true, false]
+        target_platform: [x64, Win32]
+        exclude:
 
         - os: ubuntu-latest
-          BUILD_TYPE: Release
+          compiler: clang
+        - os: ubuntu-latest
+          compiler: msvc
+        - os: ubuntu-latest
+          compiler: mingw
+        - os: ubuntu-latest
+          target_platform: Win32
+
+        - os: macos-latest
+          compiler: gcc
+        - os: macos-latest
+          compiler: msvc
+        - os: macos-latest
+          compiler: mingw
+        - os: macos-latest
+          target_platform: Win32
 
         - os: windows-latest
-          TargetPlatform: x64
-
+          compiler: clang
         - os: windows-latest
-          TargetPlatform: Win32
+          compiler: gcc
+
+        - compiler: mingw
+          target_platform: Win32
+
+    env:
+      CMAKE_BUILD_DIR: >-
+        ${{ format(
+            startsWith('windows', matrix.os) && '{0}\build' || '{0}/build',
+            github.workspace) }}
+      CMAKE_BUILD_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
+      CMAKE_TARGET_PLATFORM: >-
+        ${{ format(
+            'msvc' == matrix.compiler && '-A {0}' || '',
+            matrix.target_platform) }}
+      EXECUTABLE_EXTENSION: ${{ startsWith('windows', matrix.os) && '.exe' || '' }}
+      BINARY_PATH: >-
+        ${{ format(
+            'msvc' == matrix.compiler && '{0}\build\{1}\' || '{0}/build/',
+            github.workspace,
+            matrix.optimized && 'Release' || 'Debug') }}
+      TESTS_XML: >-
+        ${{ format(
+            startsWith('windows', matrix.os) && '{0}\tests.xml' || '{0}/tests.xml',
+            github.workspace) }}
+      GENERATOR: ${{ 'mingw' == matrix.compiler && '-G "MinGW Makefiles"' || '' }}
+      LIBRARY_BINARY_DIR: >-
+        ${{ format(
+            startsWith('windows', matrix.os) && '{0}\{1}' || '{0}/{1}',
+            github.workspace, matrix.os) }}
 
     runs-on: ${{ matrix.os }}
 
@@ -93,211 +141,54 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - name: Create Build Environment (Windows)
-      if: ${{ 'Windows' == runner.os }}
-      run: cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{ env.CMAKE_BUILD_DIR }}
 
-    - name: Create Build Environment (Unix like)
-      if: ${{ 'Windows' != runner.os }}
-      run: cmake -E make_directory ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+    - name: Create project files
+      run: >-
+        cmake ${{ env.CMAKE_TARGET_PLATFORM }} ${{ env.GENERATOR }}
+        -S ${{ github.workspace }} -B ${{ env.CMAKE_BUILD_DIR }}
+        -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
 
-    - name: Create Build Environment (MinGW)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      run: |
-        cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
-        cmake -E make_directory ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
-
-    - name: Create project files (Windows)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      # run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
-      run: cmake ${{ github.workspace }} -A ${{ matrix.TargetPlatform }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
-
-    - name: Create project files (Unix like)
-      if: ${{ 'Windows' != runner.os }}
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-      # run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DGTEST_PATH="/tmp/googletest/googletest-release-1.8.1" -DPUGIXML_PATH="/tmp/pugixml/pugixml-1.9"
-      run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.BUILD_TYPE }} -DLIBRARY_BINARY_DIR=${{ github.workspace }}/${{ matrix.os }}
-
-    - name: Create project files (MinGW Debug)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
-      # run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
-      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Debug" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
-
-    - name: Create project files (MinGW Release)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
-      # run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DGTEST_PATH="$env:TEMP\googletest\googletest-release-1.8.1" -DPUGIXML_PATH="$env:TEMP\pugixml\pugixml-1.9"
-      run: cmake ${{ github.workspace }} -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="Release" -DLIBRARY_BINARY_DIR=${{ github.workspace }}\${{ matrix.os }}
-
-    - name: Build (Unix like)
-      if: ${{ 'Windows' != runner.os }}
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-      run: cmake --build . --config ${{ matrix.BUILD_TYPE }}
-
-    - name: Build Debug
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: cmake --build . --config Debug
-
-    - name: Build Release
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: cmake --build . --config Release
-
-    - name: Build (MinGW Debug)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
-      run: cmake --build . --config Debug
-
-    - name: Build (MinGW Release)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
-      run: cmake --build . --config Release
+    - name: Build
+      run: >-
+        cmake --build ${{ env.CMAKE_BUILD_DIR }}
+        --config ${{ env.CMAKE_BUILD_TYPE }}
 
     - name: Run main application
-      if: ${{ 'Windows' != runner.os }}
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
-      run: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c
-
-    - name: Run main application (Debug)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c.exe
-
-    - name: Run main application (Release)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c.exe
-
-    - name: Run main application (MinGW Debug)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
-      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c.exe
-
-    - name: Run main application (MinGW Release)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
-      run: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c.exe
-
-    - name: Run tests (Debug)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: |
-        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c_tests.exe")
-        {
-          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\ant4c_tests.exe")
-          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\" -Recurse
-        }
-
-    - name: Run tests (Release)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: |
-        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe")
-        {
-          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\ant4c_tests.exe")
-          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\" -Recurse
-        }
-
-    - name: Run tests_ant4c.net.framework.module (Debug)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: |
-        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_ant4c.net.framework.module.exe")
-        {
-          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_ant4c.net.framework.module.exe
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\tests_ant4c.net.framework.module.exe")
-          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Debug\" -Recurse
-        }
-
-    - name: Run tests_ant4c.net.framework.module (Release)
-      if: ${{ 'Windows' == runner.os }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-      run: |
-        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_ant4c.net.framework.module.exe")
-        {
-          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_ant4c.net.framework.module.exe
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\tests_ant4c.net.framework.module.exe")
-          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\Release\" -Recurse
-        }
+      run: ${{ env.BINARY_PATH }}ant4c${{ env.EXECUTABLE_EXTENSION }}
 
     - name: Run tests
-      if: ${{ 'Windows' != runner.os }}
       shell: pwsh
-      working-directory: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+      working-directory: ${{ env.BINARY_PATH }}
       run: |
-        if (Test-Path -Path "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests")
+        if (Test-Path -Path "${{ env.BINARY_PATH }}ant4c_tests${{ env.EXECUTABLE_EXTENSION }}")
         {
-          ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests --tests_xml=${{ github.workspace }}/tests.xml --tests_exec_app=${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/tests_exec_app --tests_base_directory=${{ github.workspace }}
+          ${{ env.BINARY_PATH }}ant4c_tests${{ env.EXECUTABLE_EXTENSION }} --tests_xml=${{ env.TESTS_XML }} --tests_exec_app=${{ env.BINARY_PATH }}tests_exec_app${{ env.EXECUTABLE_EXTENSION }} --tests_base_directory=${{ github.workspace }}
         }
         else
         {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}/ant4c_tests")
-          Get-ChildItem -Path "${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}" -Recurse
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ env.BINARY_PATH }}ant4c_tests${{ env.EXECUTABLE_EXTENSION }}")
+          Get-ChildItem -Path "${{ env.BINARY_PATH }}" -Recurse
         }
 
-    - name: Run tests (MinGW Debug)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug
+    - name: Run tests_ant4c.net.framework.module
+      if: ${{ 'msvc' == matrix.compiler }}
+      working-directory: ${{ env.CMAKE_BUILD_DIR }}
       run: |
-        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c_tests.exe")
+        if (Test-Path -Path "${{ env.BINARY_PATH }}tests_ant4c.net.framework.module${{ env.EXECUTABLE_EXTENSION }}")
         {
-          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
+          ${{ env.BINARY_PATH }}tests_ant4c.net.framework.module${{ env.EXECUTABLE_EXTENSION }} --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ env.BINARY_PATH }}tests_exec_app${{ env.EXECUTABLE_EXTENSION }} --tests_base_directory=${{ github.workspace }}
         }
         else
         {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\ant4c_tests.exe")
-          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Debug\" -Recurse
-        }
-
-    - name: Run tests (MinGW Release)
-      if: ${{ 'Windows' == runner.os && 'x64' == matrix.TargetPlatform }}
-      working-directory: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release
-      run: |
-        if (Test-Path -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c_tests.exe")
-        {
-          ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c_tests.exe --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\tests_exec_app.exe --tests_base_directory=${{ github.workspace }}
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\ant4c_tests.exe")
-          Get-ChildItem -Path "${{ github.workspace }}\build-${{ matrix.TargetPlatform }}\MinGW-Release\" -Recurse
+          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ env.BINARY_PATH }}tests_ant4c.net.framework.module${{ env.EXECUTABLE_EXTENSION }}")
+          Get-ChildItem -Path "${{ env.BINARY_PATH }}" -Recurse
         }
 
     - name: Upload binaries
-      if: ${{ 'Windows' == runner.os }}
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.3.1
       with:
-        # Artifact name
-        name: ${{ matrix.os }}-${{ matrix.TargetPlatform }}
-
-        # A file, directory or wildcard pattern that describes what to upload
-        path: ${{ github.workspace }}\build-${{ matrix.TargetPlatform }}
-
-        # Duration after which artifact will expire in days. 0 means using default retention.
-        # Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
-        retention-days: 1
-
-    - name: Upload binaries
-      if: ${{ 'Windows' != runner.os }}
-      uses: actions/upload-artifact@v2.2.3
-      with:
-        name: ${{ matrix.os }}-${{ matrix.BUILD_TYPE }}
-        path: ${{ github.workspace }}/build-${{ matrix.BUILD_TYPE }}
+        name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
+        path: ${{ env.BINARY_PATH }}
         retention-days: 1

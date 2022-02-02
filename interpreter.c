@@ -1504,23 +1504,27 @@ uint8_t interpreter_evaluate_task(
 
 	if (range_is_null_or_empty(task_name))
 	{
-		listener_task_started(NULL, 0, the_project, the_target, task_name, UNKNOWN_TASK, the_module, verbose);
+		listener_task_started(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name,
+							  UNKNOWN_TASK, (const uint8_t*)the_module, verbose);
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, UNKNOWN_TASK, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name,
+							   UNKNOWN_TASK, (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
 
 	ptrdiff_t task_id = interpreter_get_task(task_name->start, task_name->finish);
-	listener_task_started(NULL, 0, the_project, the_target, task_name, task_id, the_module, verbose);
+	listener_task_started(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+						  (const uint8_t*)the_module, verbose);
 	const uint8_t* attributes_start = task_name->finish;
 
 	if (range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+							   (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
@@ -1540,7 +1544,8 @@ uint8_t interpreter_evaluate_task(
 			buffer_release_inner_buffers(&task_arguments);
 			project_on_failure(the_project, the_target, &task_arguments, verbose);
 			buffer_release(&task_arguments);
-			listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+			listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+								   (const uint8_t*)the_module, 0, verbose);
 			/**/
 			return 0;
 		}
@@ -1557,7 +1562,8 @@ uint8_t interpreter_evaluate_task(
 			buffer_release_inner_buffers(&task_arguments);
 			project_on_failure(the_project, the_target, &task_arguments, verbose);
 			buffer_release(&task_arguments);
-			listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+			listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+								   (const uint8_t*)the_module, 0, verbose);
 			/**/
 			return 0;
 		}
@@ -1578,7 +1584,8 @@ uint8_t interpreter_evaluate_task(
 		}
 
 		listener_task_finished(
-			NULL, 0, the_project, the_target, task_name, task_id, NULL, task_attributes_count, verbose);
+			NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id, NULL,
+			task_attributes_count, verbose);
 		return task_attributes_count;
 	}
 
@@ -1589,7 +1596,8 @@ uint8_t interpreter_evaluate_task(
 		buffer_release_inner_buffers(&task_arguments);
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+							   (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
@@ -1598,7 +1606,8 @@ uint8_t interpreter_evaluate_task(
 	{
 		buffer_release_with_inner_buffers(&task_arguments);
 		listener_task_finished(
-			NULL, 0, the_project, the_target, task_name, task_id, NULL, task_attributes_count, verbose);
+			NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id, NULL,
+			task_attributes_count, verbose);
 		/**/
 		return task_attributes_count;
 	}
@@ -1613,7 +1622,8 @@ uint8_t interpreter_evaluate_task(
 		buffer_release_inner_buffers(&task_arguments);
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+							   (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
@@ -1645,7 +1655,8 @@ uint8_t interpreter_evaluate_task(
 			}
 
 			listener_task_finished(
-				NULL, 0, the_project, the_target, task_name, task_id, the_module, task_attributes_count, verbose);
+				NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+				(const uint8_t*)the_module, task_attributes_count, verbose);
 			return task_attributes_count;
 		}
 	}
@@ -2119,7 +2130,8 @@ uint8_t interpreter_evaluate_task(
 	}
 
 	listener_task_finished(
-		NULL, 0, the_project, the_target, task_name, task_id, the_module, task_attributes_count, verbose);
+		NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+		(const uint8_t*)the_module, task_attributes_count, verbose);
 	return task_attributes_count;
 }
 

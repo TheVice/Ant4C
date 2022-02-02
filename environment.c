@@ -139,7 +139,8 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 			++finishW;
 		}
 
-		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(startW, finishW, path);
+		const uint8_t returned = text_encoding_UTF16LE_to_UTF8((const uint16_t*)startW, (const uint16_t*)finishW,
+								 path);
 		CoTaskMemFree(startW);
 		return returned;
 	}
@@ -208,7 +209,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		return 0;
 	}
 
-	return text_encoding_UTF16LE_to_UTF8(startW, finishW, path);
+	return text_encoding_UTF16LE_to_UTF8((const uint16_t*)startW, (const uint16_t*)finishW, path);
 }
 
 #else
@@ -350,7 +351,7 @@ uint8_t environment_get_machine_name(struct buffer* name)
 	}
 
 	return buffer_resize(name, size) &&
-		   text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name);
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)nameW, (const uint16_t*)(nameW + max_size), name);
 }
 
 #else
@@ -568,7 +569,7 @@ uint8_t environment_get_user_name(struct buffer* name)
 	}
 
 	return buffer_resize(name, size) &&
-		   text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name) &&
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)nameW, (const uint16_t*)(nameW + max_size), name) &&
 		   buffer_resize(name, buffer_size(name) - 1);
 }
 
@@ -670,7 +671,8 @@ uint8_t environment_get_variable(
 	}
 
 	return buffer_resize(variable, size) &&
-		   text_encoding_UTF16LE_to_UTF8(variable_value, variable_value + variable_value_size, variable);
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)variable_value,
+										 (const uint16_t*)(variable_value + variable_value_size), variable);
 }
 
 #else

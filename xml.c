@@ -127,16 +127,9 @@ const uint8_t* xml_get_tag_finish_pos(
 		}
 		else if (characters[QUOTE_POSITION] == char_set)
 		{
-			start = pos;
-
-			if (!start)
-			{
-				return NULL;
-			}
-
 			static const uint8_t* that = &characters[QUOTE_POSITION];
 			start = string_find_any_symbol_like_or_not_like_that(
-						start, finish, that, that + 1, 1, 1);
+						pos, finish, that, that + 1, 1, 1);
 
 			if (start == finish)
 			{
