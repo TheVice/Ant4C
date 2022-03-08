@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -540,7 +540,7 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose)
 uint8_t project_load_and_evaluate_target(
 	void* the_project, const struct range* build_file,
 	const struct range* current_directory,
-	const struct buffer* arguments, uint8_t project_help,
+	uint8_t project_help,
 	uint16_t encoding, uint8_t verbose)
 {
 	listener_project_started(build_file ? build_file->start : NULL, (const uint8_t*)the_project, verbose);
@@ -564,18 +564,17 @@ uint8_t project_load_and_evaluate_target(
 
 	if (!project_help)
 	{
-		struct buffer target_name_;
-		SET_NULL_TO_BUFFER(target_name_);
+		int index = 0;
 
-		if (argument_parser_get_target(arguments, &target_name_, 0))
+		if (NULL != argument_parser_get_target(index))
 		{
-			int index = 0;
-			const struct range* target_name = NULL;
+			const uint8_t* target_name_start;
 
-			while (NULL != (target_name = argument_parser_get_target(arguments, &target_name_, index++)))
+			while (NULL != (target_name_start = argument_parser_get_target(index++)))
 			{
+				const uint8_t* target_name_finish = target_name_start + common_count_bytes_until(target_name_start, 0);
 				is_loaded = target_evaluate_by_name(
-								the_project, target_name->start, target_name->finish, verbose);
+								the_project, target_name_start, target_name_finish, verbose);
 
 				if (!is_loaded)
 				{
@@ -589,12 +588,16 @@ uint8_t project_load_and_evaluate_target(
 			is_loaded = project_evaluate_default_target(the_project, verbose);
 		}
 
+		struct buffer argument_value;
+
+		SET_NULL_TO_BUFFER(argument_value);
+
 		if (is_loaded)
 		{
-			is_loaded = project_on_success(the_project, NULL, &target_name_, verbose);
+			is_loaded = project_on_success(the_project, NULL, &argument_value, verbose);
 		}
 
-		buffer_release(&target_name_);
+		buffer_release(&argument_value);
 	}
 
 	listener_project_finished(build_file->start, (const uint8_t*)the_project, is_loaded, verbose);
@@ -742,16 +745,14 @@ uint8_t project_on_failure(
 }
 
 uint8_t project_get_build_files_from_directory(
-	struct buffer* command_arguments, struct buffer* argument_value,
 	struct buffer* directory, uint8_t verbose)
 {
-	if (NULL == command_arguments ||
-		NULL == argument_value ||
-		NULL == directory)
+	if (NULL == directory)
 	{
 		return 0;
 	}
 
+	(void)verbose;/*TODO:*/
 	static const uint8_t* file_extension = (const uint8_t*)"*.build\0";
 	const ptrdiff_t directory_path_length = buffer_size(directory);
 
@@ -760,30 +761,31 @@ uint8_t project_get_build_files_from_directory(
 		return 0;
 	}
 
-	if (!buffer_resize(argument_value, 0))
-	{
-		return 0;
-	}
+	struct buffer files;
 
-	if (directory_enumerate_file_system_entries(directory, 1, 0, argument_value, 1) &&
-		buffer_size(argument_value))
+	SET_NULL_TO_BUFFER(files);
+
+	if (directory_enumerate_file_system_entries(directory, 1, 0, &files, 1) &&
+		buffer_size(&files))
 	{
 		static const uint8_t zero_symbol = '\0';
 		static const uint8_t* f_argument = (const uint8_t*)"\" /f:\"";
 		/**/
 		const ptrdiff_t index = buffer_size(directory);
-		const uint8_t* start = buffer_data(argument_value, 0);
-		const uint8_t* finish = start + buffer_size(argument_value);
+		const uint8_t* start = buffer_data(&files, 0);
+		const uint8_t* finish = start + buffer_size(&files);
 
 		if (!buffer_append(directory, f_argument + 2, 4) ||
 			!string_replace(start, finish, &zero_symbol, &zero_symbol + 1, f_argument, f_argument + 6, directory))
 		{
+			buffer_release(&files);
 			return 0;
 		}
 
 		if (!buffer_resize(directory, buffer_size(directory) - 5) ||
 			!buffer_push_back(directory, 0))
 		{
+			buffer_release(&files);
 			return 0;
 		}
 
@@ -792,17 +794,21 @@ uint8_t project_get_build_files_from_directory(
 		start = buffer_data(directory, index);
 		finish = buffer_data(directory, 0) + buffer_size(directory);
 
-		if (!buffer_resize(argument_value, 0) ||
-			!argument_from_char((const char*)start, (const char*)finish, argument_value, &argc, &argv))
+		if (!buffer_resize(&files, 0) ||
+			!argument_from_char((const char*)start, (const char*)finish, &files, &argc, &argv))
 		{
+			buffer_release(&files);
 			return 0;
 		}
 
-		if (!argument_parser_char(0, argc, argv, command_arguments, verbose))
+		if (!argument_parser_char(0, argc, argv))
 		{
+			buffer_release(&files);
 			return 0;
 		}
 	}
+
+	buffer_release(&files);
 
 	if (!buffer_resize(directory, directory_path_length) ||
 		!buffer_push_back(directory, 0))

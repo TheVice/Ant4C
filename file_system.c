@@ -591,7 +591,7 @@ uint8_t directory_create(const uint8_t* path)
 
 	wchar_t* path_start = buffer_wchar_t_data(&pathW, 0);
 	/**/
-	const wchar_t* start = buffer_wchar_t_data(&pathW, 0);
+	const wchar_t* start = path_start;
 	const wchar_t* finish = (const wchar_t*)(buffer_data(&pathW, 0) + buffer_size(&pathW));
 	/**/
 	file_system_set_position_after_pre_root_wchar_t(&start);

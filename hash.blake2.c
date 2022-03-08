@@ -43,6 +43,27 @@ static const uint64_t IV[] =
 	(VB) = (VB) ^ (VC);									\
 	(VB) = ROTATE_RIGHT_UINT64_T((VB), 63);
 
+uint8_t hash_algorithm_uint8_t_array_to_uint64_t_array(
+	const uint8_t* input, uint8_t input_size, uint64_t* output)
+{
+	if (NULL == input ||
+		0 != (input_size % 8) ||
+		NULL == output)
+	{
+		return 0;
+	}
+
+	for (uint8_t i = 0, j = 0; i < input_size; i += 8, ++j)
+	{
+		if (!hash_algorithm_uint8_t_array_to_uint64_t(input + i, input + i + 8, output + j))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 uint8_t BLAKE2b_compress(uint64_t* h, const uint64_t* chunk, const uint64_t* t, uint8_t isLastBlock)
 {
 	static const uint8_t SIGMA[10][16] =
@@ -136,13 +157,15 @@ uint8_t BLAKE2b_core(const uint8_t* start, const uint8_t* finish, ptrdiff_t* byt
 
 	uint64_t t[2];
 	t[1] = 0;/*NOTE: using of t[1] not implemented.*/
+	uint64_t start_uint64_t[16];
 
 	while (start < finish)
 	{
 		(*bytes_compressed) += 128;
 		t[0] = (*bytes_compressed);
 
-		if (!BLAKE2b_compress(output, (const uint64_t*)start, t, 0))
+		if (!hash_algorithm_uint8_t_array_to_uint64_t_array(start, 128, start_uint64_t) ||
+			!BLAKE2b_compress(output, start_uint64_t, t, 0))
 		{
 			return 0;
 		}
@@ -190,7 +213,14 @@ uint8_t BLAKE2b_final(const uint8_t* start, ptrdiff_t* bytes_compressed, uint8_t
 		memset(chunk + bytes_remaining, 0, 128 - bytes_remaining);
 	}
 
-	return BLAKE2b_compress(output, (const uint64_t*)chunk, t, 1);
+	uint64_t chunk_uint64_t[16];
+
+	if (!hash_algorithm_uint8_t_array_to_uint64_t_array(chunk, 128, chunk_uint64_t))
+	{
+		return 0;
+	}
+
+	return BLAKE2b_compress(output, chunk_uint64_t, t, 1);
 }
 
 uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,

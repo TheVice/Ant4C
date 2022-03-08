@@ -203,13 +203,13 @@ uint8_t datetime_parse(
 	}
 
 	uint8_t step = 0;
-	uint8_t* ptr[6];
-	ptr[0] = day;
-	ptr[1] = month;
-	ptr[2] = NULL;
-	ptr[3] = hour;
-	ptr[4] = minute;
-	ptr[5] = second;
+	uint8_t* input[6];
+	input[0] = day;
+	input[1] = month;
+	input[2] = NULL;
+	input[3] = hour;
+	input[4] = minute;
+	input[5] = second;
 
 	while (input_start != input_finish && step < 6)
 	{
@@ -229,7 +229,7 @@ uint8_t datetime_parse(
 		}
 		else
 		{
-			*ptr[step] = (uint8_t)value;
+			*input[step] = (uint8_t)value;
 		}
 
 		++step;
@@ -256,7 +256,7 @@ uint8_t datetime_parse_buffer(struct buffer* input_output)
 		return 0;
 	}
 
-	const uint8_t* ptr = buffer_data(input_output, 0);
+	const uint8_t* input = buffer_data(input_output, 0);
 	uint32_t* year = (uint32_t*)buffer_data(input_output, size);
 	uint8_t* month = (uint8_t*)buffer_data(input_output, size + sizeof(uint32_t));
 	uint8_t* day = month + sizeof(uint8_t);
@@ -264,12 +264,22 @@ uint8_t datetime_parse_buffer(struct buffer* input_output)
 	uint8_t* minute = hour + sizeof(uint8_t);
 	uint8_t* second = minute + sizeof(uint8_t);
 
-	if (!datetime_parse(ptr, ptr + size, year, month, day, hour, minute, second))
+	if (!datetime_parse(input, input + size, year, month, day, hour, minute, second))
 	{
 		return 0;
 	}
 
-	*((int64_t*)year) = datetime_encode(*year, *month, *day, *hour, *minute, *second);
+	const int64_t year_ = datetime_encode(*year, *month, *day, *hour, *minute, *second);
+#if __STDC_LIB_EXT1__
+
+	if (0 != memcpy_s(year, sizeof(int64_t), &year_, sizeof(int64_t)))
+	{
+		return 0;
+	}
+
+#else
+	memcpy(year, &year_, sizeof(int64_t));
+#endif
 	return buffer_resize(input_output, size + sizeof(int64_t));
 }
 
@@ -280,7 +290,7 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 		return 0;
 	}
 
-	uint8_t* ptr = output;
+	uint8_t* output_finish = output;
 
 	for (uint8_t i = 0; i < 6; ++i)
 	{
@@ -290,13 +300,13 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 		{
 			if (inputs[i] < 10)
 			{
-				*ptr = zero;
-				++ptr;
+				*output_finish = zero;
+				++output_finish;
 			}
 		}
 
-		uint8_t* a = ptr;
-		uint8_t* b = ptr + 21;
+		uint8_t* a = output_finish;
+		uint8_t* b = output_finish + 21;
 		/**/
 		const uint8_t* c = uint64_to_string_to_byte_array(inputs[i], a, b, 21);
 		const uint8_t* d = c + 21;
@@ -326,16 +336,16 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 			*a = ' ';
 			++a;
 		}
-		else if (2 < i && 5 != i)
+		else if (5 != i)
 		{
 			*a = ':';
 			++a;
 		}
 
-		ptr = a;
+		output_finish = a;
 	}
 
-	return (uint8_t)(ptr - output);
+	return (uint8_t)(output_finish - output);
 }
 
 uint8_t datetime_to_string(

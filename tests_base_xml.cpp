@@ -1,13 +1,14 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
 #include "tests_base_xml.h"
 
 extern "C" {
+#include "argument_parser.h"
 #include "buffer.h"
 #include "conversion.h"
 #include "echo.h"
@@ -331,6 +332,12 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 uint8_t properties_free(buffer* properties)
 {
 	property_release(properties);
+	return 0;
+}
+
+uint8_t argument_parser_free()
+{
+	argument_parser_release();
 	return 0;
 }
 

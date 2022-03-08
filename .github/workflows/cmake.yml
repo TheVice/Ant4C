@@ -71,14 +71,19 @@ jobs:
     env:
       CMAKE_BUILD_DIR: >-
         ${{ format(
-            startsWith('windows', matrix.os) && '{0}\build' || '{0}/build',
+            startsWith(matrix.os, 'windows') && '{0}\build' || '{0}/build',
             github.workspace) }}
-      CMAKE_BUILD_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
+      CMAKE_GENERATOR: ${{ 'mingw' == matrix.compiler && '-G "MinGW Makefiles"' || '' }}
+      CMAKE_BUILD_TYPE: >-
+        ${{ format(
+            'msvc' == matrix.compiler && '' || '-DCMAKE_BUILD_TYPE={0}',
+            (matrix.optimized && 'Release' || 'Debug')) }}
+      CMAKE_CONFIG_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
       CMAKE_TARGET_PLATFORM: >-
         ${{ format(
             'msvc' == matrix.compiler && '-A {0}' || '',
             matrix.target_platform) }}
-      EXECUTABLE_EXTENSION: ${{ startsWith('windows', matrix.os) && '.exe' || '' }}
+      EXECUTABLE_EXTENSION: ${{ startsWith(matrix.os, 'windows') && '.exe' || '' }}
       BINARY_PATH: >-
         ${{ format(
             'msvc' == matrix.compiler && '{0}\build\{1}\' || '{0}/build/',
@@ -86,52 +91,16 @@ jobs:
             matrix.optimized && 'Release' || 'Debug') }}
       TESTS_XML: >-
         ${{ format(
-            startsWith('windows', matrix.os) && '{0}\tests.xml' || '{0}/tests.xml',
+            startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
             github.workspace) }}
-      GENERATOR: ${{ 'mingw' == matrix.compiler && '-G "MinGW Makefiles"' || '' }}
       LIBRARY_BINARY_DIR: >-
         ${{ format(
-            startsWith('windows', matrix.os) && '{0}\{1}' || '{0}/{1}',
+            startsWith(matrix.os, 'windows') && '{0}\{1}' || '{0}/{1}',
             github.workspace, matrix.os) }}
 
     runs-on: ${{ matrix.os }}
 
     steps:
-
-    # - name: Download and unpack Google Test
-    #   if: ${{ 'Windows' == runner.os }}
-    #   run: |
-    #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
-    #     (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\googletest.tar.gz")
-    #     mkdir "$env:TEMP\googletest"
-    #     tar -xzf "$env:TEMP\googletest.tar.gz" -C "$env:TEMP\googletest"
-
-    # - name: Download and unpack pugixml
-    #   if: ${{ 'Windows' == runner.os }}
-    #   run: |
-    #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
-    #     (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\pugixml.tar.gz")
-    #     mkdir "$env:TEMP\pugixml"
-    #     tar -xzf "$env:TEMP\pugixml.tar.gz" -C "$env:TEMP\pugixml"
-
-    # - name: Download and unpack Google Test
-    #   if: ${{ 'Windows' != runner.os }}
-    #   shell: pwsh
-    #   run: |
-    #     $url = "https://github.com/google/googletest/archive/refs/tags/release-1.8.1.tar.gz"
-    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/googletest.tar.gz")
-    #     mkdir "/tmp/googletest"
-    #     tar -xzf "/tmp/googletest.tar.gz" -C "/tmp/googletest"
-
-    # - name: Download and unpack pugixml
-    #   if: ${{ 'Windows' != runner.os }}
-    #   shell: pwsh
-    #   run: |
-    #     $url = "https://github.com/zeux/pugixml/releases/download/v1.9/pugixml-1.9.tar.gz"
-    #     (New-Object System.Net.WebClient).DownloadFile($url, "/tmp/pugixml.tar.gz")
-    #     mkdir "/tmp/pugixml"
-    #     tar -xzf "/tmp/pugixml.tar.gz" -C "/tmp/pugixml"
-
     - name: Checkout
       uses: actions/checkout@v2
 
@@ -141,19 +110,20 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{ env.CMAKE_BUILD_DIR }}
-
     - name: Create project files
       run: >-
-        cmake ${{ env.CMAKE_TARGET_PLATFORM }} ${{ env.GENERATOR }}
+        cmake ${{ env.CMAKE_TARGET_PLATFORM }} ${{ env.CMAKE_GENERATOR }} ${{ env.CMAKE_BUILD_TYPE }}
         -S ${{ github.workspace }} -B ${{ env.CMAKE_BUILD_DIR }}
         -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v1
 
     - name: Build
       run: >-
         cmake --build ${{ env.CMAKE_BUILD_DIR }}
-        --config ${{ env.CMAKE_BUILD_TYPE }}
+        --config ${{ env.CMAKE_CONFIG_TYPE }}
+        --parallel ${{ steps.cpu-cores.outputs.count }}
 
     - name: Run main application
       run: ${{ env.BINARY_PATH }}ant4c${{ env.EXECUTABLE_EXTENSION }}
@@ -186,9 +156,19 @@ jobs:
           Get-ChildItem -Path "${{ env.BINARY_PATH }}" -Recurse
         }
 
+    - name: Compress files with zstd
+      shell: pwsh
+      run: |
+        $paths = Get-ChildItem -File -Path ${{ env.BINARY_PATH }}
+        ForEach ($path in $paths)
+        {
+          $outputPath = [System.String]::Format("{0}.zst", $path.FullName)
+          & "zstd" --ultra -22 $path.FullName -o $outputPath
+        }
+
     - name: Upload binaries
       uses: actions/upload-artifact@v2.3.1
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
-        path: ${{ env.BINARY_PATH }}
+        path: ${{ env.BINARY_PATH }}/*.zst
         retention-days: 1

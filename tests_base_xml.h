@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -54,6 +54,7 @@ void property_load_from_node(const pugi::xml_node& property,
 							 uint8_t& verbose);
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties);
 uint8_t properties_free(buffer* properties);
+uint8_t argument_parser_free();
 
 void add_slash(std::string& path);
 std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);

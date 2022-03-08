@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -732,69 +732,61 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	ASSERT_TRUE(buffer_resize(&directory, size)) <<
 			buffer_free(&directory);
 	//
-	buffer argument_value;
-	SET_NULL_TO_BUFFER(argument_value);
+	ASSERT_TRUE(argument_parser_init()) <<
+										buffer_free(&directory) << argument_parser_free();
 	//
-	buffer command_arguments;
-	SET_NULL_TO_BUFFER(command_arguments);
-	//
-	ASSERT_TRUE(project_get_build_files_from_directory(
-					&command_arguments, &argument_value, &directory, verbose)) <<
-							buffer_free(&directory) << buffer_free(&argument_value) <<
-							properties_free(&command_arguments);
+	ASSERT_TRUE(project_get_build_files_from_directory(&directory, verbose)) <<
+			buffer_free(&directory) << argument_parser_free();
 	//
 	ASSERT_EQ(size + 1, buffer_size(&directory)) <<
-			buffer_free(&directory) << buffer_free(&argument_value) <<
-			properties_free(&command_arguments);
+			buffer_free(&directory) << argument_parser_free();
 	//
 	ASSERT_EQ(0, *buffer_data(&directory, size)) <<
-			buffer_free(&directory) << buffer_free(&argument_value) <<
-			properties_free(&command_arguments);
+			buffer_free(&directory) << argument_parser_free();
 	//
 	ASSERT_TRUE(buffer_resize(&directory, size)) <<
-			buffer_free(&directory) << buffer_free(&argument_value) <<
-			properties_free(&command_arguments);
+			buffer_free(&directory) << argument_parser_free();
 	//
 	ASSERT_EQ(expected_current_directory, buffer_to_string(&directory)) <<
-			buffer_free(&directory) << buffer_free(&argument_value) <<
-			properties_free(&command_arguments);
+			buffer_free(&directory) << argument_parser_free();
 	//
 	i = 0;
-	std::string build_file;
+	const uint8_t* build_file;
 
-	while (!(build_file = range_to_string(argument_parser_get_build_file(&command_arguments, &argument_value,
-										  i++))).empty())
+	while (nullptr != (build_file = argument_parser_get_build_file(i++)))
 	{
+		const std::string build_file_str(reinterpret_cast<const char*>(build_file));
 		const auto fonded_path = std::find_if(expected_files.begin(),
-											  expected_files.end(), [&build_file](const std::string & expected_path)
+											  expected_files.end(), [&build_file_str](const std::string & expected_path)
 		{
-			return build_file == expected_path;
+			return build_file_str == expected_path;
 		});
 		//
 		ASSERT_NE(fonded_path, expected_files.end()) <<
-				build_file << std::endl <<
-				buffer_free(&directory) << buffer_free(&argument_value) <<
-				properties_free(&command_arguments);
+				build_file_str << std::endl <<
+				buffer_free(&directory) <<
+				argument_parser_free();
 		//
 		expected_files.erase(fonded_path);
 	}
 
-	ASSERT_TRUE(expected_files.empty()) << expected_files.size() << std::endl << i << std::endl <<
-										buffer_free(&directory) << buffer_free(&argument_value) <<
-										properties_free(&command_arguments);
+	ASSERT_TRUE(expected_files.empty()) <<
+										expected_files.size() << std::endl <<
+										i << std::endl <<
+										buffer_free(&directory) <<
+										argument_parser_free();
 	//
-	ASSERT_EQ(nullptr, argument_parser_get_build_file(&command_arguments, &argument_value, i - 1)) <<
+	ASSERT_EQ(nullptr, argument_parser_get_build_file(i - 1)) <<
 			i << std::endl <<
-			buffer_free(&directory) << buffer_free(&argument_value) <<
-			properties_free(&command_arguments);
-	ASSERT_EQ(nullptr, argument_parser_get_build_file(&command_arguments, &argument_value, i)) <<
+			buffer_free(&directory) <<
+			argument_parser_free();
+	ASSERT_EQ(nullptr, argument_parser_get_build_file(i)) <<
 			i << std::endl <<
-			buffer_free(&directory) << buffer_free(&argument_value) <<
-			properties_free(&command_arguments);
+			buffer_free(&directory) <<
+			argument_parser_free();
 	//
 	buffer_release(&directory);
-	buffer_release(&argument_value);
-	property_release(&command_arguments);
+	argument_parser_release();
 	//
 	ASSERT_TRUE(directory_delete(reinterpret_cast<const uint8_t*>(expected_current_directory.c_str()))) <<
 			expected_current_directory;

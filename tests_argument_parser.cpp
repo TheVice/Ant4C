@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -133,150 +133,99 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 	return 1;
 }
 #endif
-#define ARGUMENT_PARSER_AT_ALL(INPUT, VERBOSE_PARSER, ARGUMENT_PARSER, I)															\
-	\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+#define ARGUMENT_PARSER_AT_ALL(INPUT, ARGUMENT_PARSER, I)																			\
+	/**/																															\
+	ASSERT_TRUE(argument_parser_init()) <<																							\
+										(INPUT) << std::endl <<																		\
+										argument_parser_free() <<																	\
+										buffer_free(&property_value);																\
+	/**/																															\
+	ASSERT_TRUE(buffer_resize(&property_value, 0)) <<																				\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_TRUE(string_to_command_arguments((INPUT), &argument_value, &argc, &argv)) <<												\
+	ASSERT_TRUE(string_to_command_arguments((INPUT), &property_value, &argc, &argv)) <<												\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	verbose = (VERBOSE_PARSER)(0, argc, argv);																						\
-	/**/																															\
-	const auto returned = (ARGUMENT_PARSER)(0, argc, argv, &command_arguments, verbose);											\
+	const auto returned = (ARGUMENT_PARSER)(0, argc, argv);																			\
 	ASSERT_EQ(expected_return, returned) <<																							\
 										 (INPUT) << std::endl <<																	\
-										 buffer_free(&argument_value) <<															\
-										 properties_free(&command_arguments) <<														\
+										 argument_parser_free() <<																	\
 										 buffer_free(&property_value);																\
 	/**/																															\
-	(I) = 0;																														\
-	\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_TRUE(buffer_resize(&property_value, 0)) <<																				\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_build_files.empty(), nullptr == argument_parser_get_build_file(&command_arguments, &argument_value, (I))) <<	\
+	verbose = argument_parser_get_verbose();																						\
+	(I) = 0;																														\
+	/**/																															\
+	ASSERT_EQ(expected_build_files.empty(), nullptr == argument_parser_get_build_file((I))) <<										\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
-	\
+	/**/																															\
 	for (const auto& build_file : expected_build_files)																				\
 	{																																\
-		ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																			\
-				(INPUT) << std::endl <<																								\
-				buffer_free(&argument_value) <<																						\
-				properties_free(&command_arguments) <<																				\
+		const auto returned_build_file = argument_parser_get_build_file((I)++);														\
+		const std::string returned_build_file_str(																					\
+				nullptr == returned_build_file ? "" : reinterpret_cast<const char*>(returned_build_file));							\
+		ASSERT_EQ(std::string(build_file.node().child_value()), returned_build_file_str) <<											\
+				(INPUT) << std::endl << (I) - 1 << std::endl <<																		\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
-		/**/																														\
-		const auto returned_build_file =  argument_parser_get_build_file(&command_arguments, &argument_value, (I)++);				\
-		ASSERT_EQ(std::string(build_file.node().child_value()),																		\
-				  range_to_string(returned_build_file)) <<																			\
-						  (INPUT) << std::endl << (I) - 1 << std::endl <<															\
-						  buffer_free(&argument_value) <<																			\
-						  properties_free(&command_arguments) <<																	\
-						  buffer_free(&property_value);																				\
 	}																																\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
 	/**/																															\
 	(I) = 0;																														\
-	\
-	ASSERT_EQ(expected_targets.empty(), nullptr == argument_parser_get_target(&command_arguments, &argument_value, I)) <<			\
+	/**/																															\
+	ASSERT_EQ(expected_targets.empty(), nullptr == argument_parser_get_target(I)) <<												\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
-	\
+	/**/																															\
 	for (const auto& target : expected_targets)																						\
 	{																																\
-		const auto returned_target = argument_parser_get_target(&command_arguments, &argument_value, (I)++);						\
-		ASSERT_EQ(std::string(target.node().child_value()),																			\
-				  range_to_string(returned_target)) <<																				\
-						  (INPUT) << std::endl << (I) - 1 << std::endl <<															\
-						  buffer_free(&argument_value) <<																			\
-						  properties_free(&command_arguments) <<																	\
-						  buffer_free(&property_value);																				\
+		const auto returned_target = argument_parser_get_target((I)++);																\
+		const std::string returned_target_str(nullptr == returned_target ? "" : reinterpret_cast<const char*>(returned_target));	\
+		ASSERT_EQ(std::string(target.node().child_value()), returned_target_str) <<													\
+				(INPUT) << std::endl << (I) - 1 << std::endl <<																		\
+				argument_parser_free() <<																							\
+				buffer_free(&property_value);																						\
 	}																																\
-	\
 	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_EQ(expected_pause, argument_parser_get_pause()) <<																		\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_pause, argument_parser_get_pause(&command_arguments, &argument_value))  <<									\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
 	ASSERT_EQ(expected_verbose, verbose) <<																							\
 										 (INPUT) << std::endl <<																	\
-										 buffer_free(&argument_value) <<															\
-										 properties_free(&command_arguments) <<														\
+										 argument_parser_free() <<																	\
 										 buffer_free(&property_value);																\
 	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_EQ(expected_debug, argument_parser_get_debug()) <<																		\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_debug, argument_parser_get_debug(&command_arguments, &argument_value))  <<									\
+	ASSERT_EQ(expected_quiet, argument_parser_get_quiet()) <<																		\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_EQ(expected_indent, argument_parser_get_indent()) <<																		\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_quiet, argument_parser_get_quiet(&command_arguments, &argument_value))  <<									\
+	const struct buffer* properties = argument_parser_get_properties();																\
+	ASSERT_EQ(expected_properties.empty(), 0 == buffer_size(properties)) <<															\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_indent, argument_parser_get_indent(&command_arguments, &argument_value)) <<									\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_properties.empty(), 0 == argument_parser_get_properties(&command_arguments, &argument_value, verbose)) <<	\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
 	for (const auto& expected_property : expected_properties)																		\
@@ -287,147 +236,90 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 		const uint8_t expected_readonly = expected_property.node().attribute("readonly").as_bool();									\
 		/**/																														\
 		void* the_property;																											\
-		ASSERT_TRUE(property_exists(&argument_value,																				\
+		ASSERT_TRUE(property_exists(properties,																						\
 									reinterpret_cast<const uint8_t*>(name.c_str()),													\
 									static_cast<uint8_t>(name.size()), &the_property)) <<											\
 											(INPUT) << std::endl <<																	\
-											properties_free(&argument_value) <<														\
-											properties_free(&command_arguments) <<													\
+											argument_parser_free() <<																\
 											buffer_free(&property_value);															\
 		/**/																														\
 		ASSERT_TRUE(buffer_resize(&property_value, 0)) <<																			\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 		/**/																														\
 		ASSERT_TRUE(property_get_by_pointer(the_property, &property_value)) <<														\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 		ASSERT_EQ(value, buffer_to_string(&property_value)) <<																		\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 		/**/																														\
 		uint8_t returned_dynamic;																									\
 		ASSERT_TRUE(property_is_dynamic(the_property, &returned_dynamic)) <<														\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 		ASSERT_EQ(expected_dynamic, returned_dynamic) <<																			\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 		/**/																														\
 		uint8_t returned_readonly;																									\
 		ASSERT_TRUE(property_is_readonly(the_property, &returned_readonly)) <<														\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 		ASSERT_EQ(expected_readonly, returned_readonly) <<																			\
 				(INPUT) << std::endl <<																								\
-				properties_free(&argument_value) <<																					\
-				properties_free(&command_arguments) <<																				\
+				argument_parser_free() <<																							\
 				buffer_free(&property_value);																						\
 	}																																\
 	/**/																															\
-	property_release_inner(&argument_value);																						\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	const auto log_file = argument_parser_get_log_file();																			\
+	const std::string log_file_str(nullptr == log_file ? "" : reinterpret_cast<const char*>(log_file));								\
+	ASSERT_EQ(expected_log_file.empty(), nullptr == log_file) <<																	\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	const auto log_file = argument_parser_get_log_file(&command_arguments, &argument_value);										\
-	ASSERT_EQ(expected_log_file.empty(), nullptr == log_file)  <<																	\
+	ASSERT_EQ(expected_log_file, log_file_str) <<																					\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_log_file, range_to_string(log_file))  <<																		\
+	ASSERT_EQ(expected_project_help, argument_parser_get_project_help()) <<															\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_EQ(expected_no_logo, argument_parser_get_no_logo()) <<																	\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_project_help, argument_parser_get_project_help(&command_arguments, &argument_value))  <<						\
+	ASSERT_EQ(expected_help, argument_parser_get_program_help()) <<																	\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_EQ(expected_encoding, argument_parser_get_encoding()) <<																	\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_EQ(expected_no_logo, argument_parser_get_no_logo(&command_arguments, &argument_value))  <<								\
+	const auto path_to_listener = argument_parser_get_listener();																	\
+	const std::string path_to_listener_str(nullptr == path_to_listener ? "" : reinterpret_cast<const char*>(path_to_listener));		\
+	ASSERT_EQ(expected_listener, path_to_listener_str) <<																			\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
+	ASSERT_EQ(expected_module_priority, argument_parser_get_module_priority()) <<													\
 			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_help, argument_parser_get_program_help(&command_arguments, &argument_value))  <<								\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_encoding, argument_parser_get_encoding(&command_arguments, &argument_value))  <<								\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_listener, range_to_string(argument_parser_get_listener(&command_arguments, &argument_value))) <<				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_TRUE(buffer_resize(&argument_value, 0)) <<																				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
-			buffer_free(&property_value);																							\
-	/**/																															\
-	ASSERT_EQ(expected_module_priority, argument_parser_get_module_priority(&command_arguments, &argument_value)) <<				\
-			(INPUT) << std::endl <<																									\
-			buffer_free(&argument_value) <<																							\
-			properties_free(&command_arguments) <<																					\
+			argument_parser_free() <<																								\
 			buffer_free(&property_value);
 
 static const std::map<std::string, std::uint16_t> encodings =
@@ -524,12 +416,14 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 			argv.push_back(&argument[0]);
 		}
 
-		auto returned =
-			argument_parser_get_verbose_char(i, argc, argv.data());
+		ASSERT_TRUE(argument_parser_init()) << argument_parser_free();
+		ASSERT_TRUE(argument_parser_char(i, argc, argv.data())) << argument_parser_free();
+		auto returned = argument_parser_get_verbose();
 		ASSERT_EQ(expected_return, returned)
 				<< i << std::endl
 				<< static_cast<int>(expected_return) << std::endl
-				<< all_arguments(arguments) << std::endl;
+				<< all_arguments(arguments) << std::endl
+				<< argument_parser_free() << std::endl;
 #if defined(_WIN32)
 		argumentsW.clear();
 		//
@@ -554,25 +448,22 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 			argvW.push_back(&argument[0]);
 		}
 
-		returned =
-			argument_parser_get_verbose_wchar_t(i, argc, argvW.data());
+		ASSERT_TRUE(argument_parser_init()) << argument_parser_free();
+		ASSERT_TRUE(argument_parser_wchar_t(i, argc, argvW.data())) << argument_parser_free();
+		returned = argument_parser_get_verbose();
 		ASSERT_EQ(expected_return, returned)
 				<< i << std::endl
 				<< static_cast<int>(expected_return) << std::endl
-				<< all_arguments(argumentsW) << std::endl;
+				<< all_arguments(argumentsW) << std::endl
+				<< argument_parser_free() << std::endl;
 #endif
+		argument_parser_release();
 		--node_count;
 	}
 }
 
 TEST_F(TestArgumentParser, argument_parser_at_all)
 {
-	buffer command_arguments;
-	SET_NULL_TO_BUFFER(command_arguments);
-	//
-	buffer argument_value;
-	SET_NULL_TO_BUFFER(argument_value);
-	//
 	buffer property_value;
 	SET_NULL_TO_BUFFER(property_value);
 
@@ -640,40 +531,26 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 		input_in_a_range = string_to_range(module_priority_str);
 		const auto expected_module_priority =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
-
-		for (uint8_t step = 0; step < 2; ++step)
+		//
+		int i = 0;
+		int argc = 0;
 		{
-			if (!step)
-			{
-				int i = 0;
-				int argc = 0;
-				char** argv = nullptr;
-				ARGUMENT_PARSER_AT_ALL(input, argument_parser_get_verbose_char, argument_parser_char, i);
-			}
-
-#if defined(_WIN32)
-			else
-			{
-				int i = 0;
-				int argc = 0;
-				wchar_t** argv = nullptr;
-				ARGUMENT_PARSER_AT_ALL(input, argument_parser_get_verbose_wchar_t, argument_parser_wchar_t, i);
-			}
-
-#endif
-			property_release_inner(&command_arguments);
-			ASSERT_TRUE(buffer_resize(&command_arguments, 0)) <<
-					buffer_free(&argument_value) <<
-					buffer_free(&command_arguments) <<
-					buffer_free(&property_value);
+			char** argv = nullptr;
+			ARGUMENT_PARSER_AT_ALL(input, argument_parser_char, i);
 		}
-
+#if defined(_WIN32)
+		i = 0;
+		argc = 0;
+		{
+			wchar_t** argv = nullptr;
+			ARGUMENT_PARSER_AT_ALL(input, argument_parser_wchar_t, i);
+		}
+#endif
 		--node_count;
 	}
 
-	buffer_release(&argument_value);
-	buffer_release(&command_arguments);
 	buffer_release(&property_value);
+	argument_parser_release();
 }
 
 TEST_F(TestArgumentParser, argument_append_arguments)

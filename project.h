@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -86,7 +86,7 @@ uint8_t project_evaluate_default_target(void* the_project, uint8_t verbose);
 uint8_t project_load_and_evaluate_target(
 	void* the_project, const struct range* build_file,
 	const struct range* current_directory,
-	const struct buffer* arguments, uint8_t project_help,
+	uint8_t project_help,
 	uint16_t encoding, uint8_t verbose);
 void project_clear(void* the_project);
 void project_unload(void* the_project);
@@ -103,7 +103,6 @@ uint8_t project_on_failure(
 	void* the_project, const void* the_target, struct buffer* argument_value,
 	uint8_t verbose);
 uint8_t project_get_build_files_from_directory(
-	struct buffer* command_arguments, struct buffer* argument_value,
 	struct buffer* directory, uint8_t verbose);
 
 uint8_t project_set_listener_project_name(

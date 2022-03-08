@@ -39,7 +39,7 @@
 static const uint8_t w = 64;
 
 #define TWO_DIMENSION_TO_ONE_INDEX(X, Y, Y_MAX)	\
-	(X) * (Y_MAX) + Y
+	(X) * (Y_MAX) + (Y)
 
 #define ROT(X, N, W)	\
 	(((X) << ((N) % (W))) | ((X) >> ((W) - ((N) % (W)))))

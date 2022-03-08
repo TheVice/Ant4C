@@ -566,7 +566,7 @@ If function used at the message they will be interpreted and replaced with resul
 | Argument name | Type | Default value | Description
 
 | append | bool | *false* | If echo output to the file, will add message to the end of it. Ignored if no file used.
-| encoding | <<encoding_type,Encoding>> | UTF8 | Set <<encoding_type, encoding>> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <<UTF8_encoding_member,UTF8>> if encoding non <<Default_encoding_member,Default>> and <<ASCII_encoding_member,ASCII>>.
+| encoding | <<encoding_type,Encoding>> | UTF8 | Set <<encoding_type, encoding>> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <<UTF-8_encoding_member,UTF-8>> if encoding non <<Default_encoding_member,Default>> and <<ASCII_encoding_member,ASCII>>.
 | file | file | N/A | Path to the output file. If no path set standard output or standard error output will be used, depend on level value.
 | level | <<level_type,Level>> | Info | Ignored, except None value, if file used.
 | message | string | N/A | Message to echo. For huge message child value of echo tag recommended to use.
@@ -575,14 +575,14 @@ If function used at the message they will be interpreted and replaced with resul
 [[encoding_type]]
 ==== Encoding
 
-Internally program evaluate all string as encoded in UTF8, except some of system calls on Windows platform where converting to UTF16LE used.
+Internally program evaluate all string as encoded in UTF-8, except some of system calls on Windows platform where converting to UTF-16LE used.
 
 |===
 | Encoding name. | Description
 
 | [[ASCII_encoding_member]]ASCII | Text encoded by ASCII codes. At <<loadfile_task, loadfile task>> can be specify one of ASCII extension.
 | UTF7 | RESERVED. Encoding represent UNICODE string using only 7-bit values.
-| [[UTF8_encoding_member]]UTF8 | UNICODE string encoded with 8-bit values.
+| [[UTF-8_encoding_member]]UTF8 | UNICODE string encoded with 8-bit values.
 | BigEndianUnicode .2+^.^| UNICODE string encoded with 16-bit values in big-endian ordering.
 | UTF16BE
 | Unicode .2+^.^| UNICODE string encoded with 16-bit values in little-endian ordering.
@@ -702,7 +702,7 @@ Tasks can be store directly inside element or inside 'do' sub element.
 
 | *item* ^| item .5+^.^| N/A | Type of iterator of the loop that should be provided. Can be one of the following: "Folder", "File", "Line" or "String". .2+^.^| Yes
 | *property* .3+^.^| string | Property that will be used to store value of loop variable. Attempt to use read only property will fail the task.
-| delim | UTF8 chars that should be use as delimiter between loop's item. If any chars not set, used zero char (''\0''). .3+^.^| No
+| delim | UTF-8 chars that should be use as delimiter between loop's item. If any chars not set, used zero char (''\0''). .3+^.^| No
 | in | The source of the items. For 'Folder' and 'File' this is path to folder, for line path to file and for string - another string.
 | trim ^| trim | How we should trim, or even trim, loop item before present it to the tasks at the item. Can be one of the following: "Both", "End", "None", or "Start".
 |===
@@ -775,7 +775,7 @@ According to read all content of file into property, make sure that first one no
 
 | *file* | file | Path to the file content that should be loaded into the property. .2+^.^| Yes
 | *property* | string | Property that will be used to store content of the file. Attempt to use read only property will fail the task.
-| encoding | <<encoding_type,Encoding>> | Expected encoding of the input file. Will be used while converting file to the UTF8. Task support <<program_options,extension list of encoding>>. File with UTF based byte order mark can be recognized. ^| No
+| encoding | <<encoding_type,Encoding>> | Expected encoding of the input file. Will be used while converting file to the UTF-8. Task support <<program_options,extension list of encoding>>. File with UTF based byte order mark can be recognized. ^| No
 |===
 
 ==== Sample using
@@ -786,7 +786,7 @@ According to read all content of file into property, make sure that first one no
   <property name="file" value="1.txt" />
   <property name="content" value="" />
   <loadfile file="${file}" property="content" if="${math::less(file::get-length(file), '1073741824')}" />
-  <echo>Count of UTF8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.</echo>
+  <echo>Count of UTF-8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.</echo>
 </project>
 ----
 
@@ -957,9 +957,9 @@ General information and different between versions of program in property aspect
 
 ==== Name of property
 
-* Can contain any valid UTF8 letters, digits, under scope characters, dash and dot characters.
-* Should start from UTF8 letter or under scope symbol and end with letter, digit or an under scope symbol.
-* Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF8 chars with 3 bytes per char that mean 85 chars for the name.
+* Can contain any valid UTF-8 letters, digits, under scope characters, dash and dot characters.
+* Should start from UTF-8 letter or under scope symbol and end with letter, digit or an under scope symbol.
+* Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF-8 chars with 3 bytes per char that mean 85 chars for the name.
 
 ==== Sample using
 
@@ -3157,7 +3157,7 @@ Return *true* if value of property for read only access. Fail if property not ex
 
 === String unit
 
-All strings operated at this unit at the UTF8 encoding.
+All strings operated at this unit at the UTF-8 encoding.
 
 NOTE: Prior to the version *2020.04* string was ASCII - one character per byte.
 

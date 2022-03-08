@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -18,6 +18,7 @@ extern "C" {
 
 uint8_t TestArgumentParser::get_properties(buffer* properties, uint8_t verbose)
 {
+	(void)verbose;
 	static std::string empty("");
 
 	if (!properties)
@@ -34,20 +35,20 @@ uint8_t TestArgumentParser::get_properties(buffer* properties, uint8_t verbose)
 		argv[i] = args[i].empty() ? &empty[0] : &(args[i][0]);
 	}
 
-	buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
-
-	if (!argument_parser_char(0, argc, argv.data(), &arguments, verbose))
+	if (!argument_parser_init() ||
+		!argument_parser_char(0, argc, argv.data()))
 	{
-		property_release(&arguments);
+		argument_parser_release();
 		return 0;
 	}
 
-	if (!argument_parser_get_properties(&arguments, properties, verbose))
+	const auto* properties_ = argument_parser_get_properties();
+
+	if (!buffer_append_data_from_buffer(properties, properties_))
 	{
-		property_release(properties);
+		argument_parser_release();
 	}
 
-	property_release(&arguments);
+	argument_parser_release();
 	return 1;
 }
