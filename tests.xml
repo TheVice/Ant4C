@@ -6658,6 +6658,26 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       ]]></content>
       <return>1</return>
     </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property name="A" value="${A}" dynamic="true" />
+        <property name="A" value="${A}" />
+      </project>
+      ]]></content>
+      <return />
+      <target_return>1</target_return>
+    </project_load_from_content>
+    <project_load_from_content>
+      <content><![CDATA[
+      <project>
+        <property name="A" value="A" />
+        <property name="A" value="${A}A" />
+      </project>
+      ]]></content>
+      <return>1</return>
+      <property name="A" value="AA" />
+    </project_load_from_content>
     <project_load_from_build_file>
       <file path="Chapter2/HelloWorld.build" crc32="50ba1555" />
       <return>1</return>

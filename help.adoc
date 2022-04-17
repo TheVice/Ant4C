@@ -1261,9 +1261,9 @@ If string contain more data - after digital part they will be skip.
 | <<timespan-from_days,timespan::from-days>> | Create timespan from days.
 | <<timespan-from_hours,timespan::from-hours>> | Create timespan from hours.
 | <<timespan-from_milliseconds,timespan::from-milliseconds>> | Create timespan from milliseconds.
-| <<timespan-from_minutes,timespan::from-minutes>> | Create timespan from minutes days.
-| <<timespan-from_seconds,timespan::from-seconds>> | Create timespan from seconds days.
-| <<timespan-from_ticks,timespan::from-ticks>> | Create timespan from ticks days.
+| <<timespan-from_minutes,timespan::from-minutes>> | Create timespan from minutes.
+| <<timespan-from_seconds,timespan::from-seconds>> | Create timespan from seconds.
+| <<timespan-from_ticks,timespan::from-ticks>> | Create timespan from ticks.
 | <<timespan-get_days,timespan::get-days>> | Get days from timespan.
 | <<timespan-get_hours,timespan::get-hours>> | Get hours from timespan.
 | <<timespan-get_minutes,timespan::get-minutes>> | Get minutes from timespan.
@@ -1291,7 +1291,7 @@ Second one is the requested 'format'. All possibilities of formats can be found 
 In general recent versions of compilers support formats described at the next references:
 
 * http://www.cplusplus.com/reference/ctime/strftime/[<ctime> -> strftime]
-* https://en.cppreference.com/w/c/chrono/strftime/[Date and time utilities -> strftime]
+* https://en.cppreference.com/w/c/chrono/strftime[Date and time utilities -> strftime]
 
 See sample using with some of that formats.
 
@@ -1537,7 +1537,7 @@ Get count of clock ticks.
 
 ----
 <echo>
-  ${datetime::now-ticks()}
+  ${datetime::ticks()}
 </echo>
 ----
 

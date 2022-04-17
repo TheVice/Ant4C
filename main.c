@@ -71,7 +71,7 @@
 	"\t-encoding: - set encoding of input file.\n"																				\
 	"\t-D: - define property. For example -D:\"property name\"=\"property value\".\n"											\
 	"\t-projecthelp - show description of project and target(s).\n"																\
-	"\t-nologo - do not display program version, license and copyright information.\n"											\
+	"\t-nologo - do not display program version, license, copyright information and STATUS of completed script.\n"				\
 	"\t-listener: - set path to the module with listener.\n"																	\
 	"\t-modulepriority - first try to evaluate tasks and functions from modules than from core of the library.\n"				\
 	"\t-debug - display message with Debug level.\n"																			\
@@ -381,8 +381,12 @@ int main(int argc, char** argv)
 
 	buffer_release(&current_directory);
 	argc = 0 < argc;
-	argc = print_status(argc) ? argc : 0;
-	/**/
+
+	if (!argument_parser_get_no_logo())
+	{
+		argc = print_status(argc) ? argc : 0;
+	}
+
 	file_flush(file_stream);
 	file_close(file_stream);
 	/**/

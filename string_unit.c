@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -421,7 +421,7 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 
 	while (NULL != input_start && to_be_replaced_length <= input_finish - input_start)
 	{
-		if (memcmp(input_start, to_be_replaced_start, to_be_replaced_length))
+		if (0 != memcmp(input_start, to_be_replaced_start, to_be_replaced_length))
 		{
 			input_start = string_enumerate(input_start, input_finish, NULL);
 			continue;

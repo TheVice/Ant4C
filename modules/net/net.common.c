@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -83,7 +83,7 @@ uint8_t get_exists_functions(
 
 	const uint8_t* finish = functions;
 
-	while (memcmp(finish, double_zero, 2))
+	while (0 != memcmp(finish, double_zero, 2))
 	{
 		++finish;
 	}

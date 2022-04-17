@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -126,7 +126,8 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 		code_in_a_range = string_to_range(code);
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const auto returned = interpreter_evaluate_code(nullptr, nullptr, &code_in_a_range, &output, verbose);
+		const auto returned = interpreter_evaluate_code(
+								  nullptr, nullptr, nullptr, &code_in_a_range, &output, verbose);
 		ASSERT_EQ(expected_return, returned) << "'" << code << "'" << std::endl << buffer_free(&output);
 		//
 		const auto current_output(buffer_to_string(&output));

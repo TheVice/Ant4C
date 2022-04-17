@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -149,7 +149,8 @@ TEST(TestEnvironment_, environment_get_folder_path)
 		{
 			const auto size = buffer_size(&path);
 			const auto code(string_to_range(expected_result[i]));
-			ASSERT_TRUE(interpreter_evaluate_code(nullptr, nullptr, &code, &path, verbose))
+			ASSERT_TRUE(interpreter_evaluate_code(
+							nullptr, nullptr, nullptr, &code, &path, verbose))
 					<< "'" << expected_result[i] << "'" << std::endl
 					<< buffer_free(&path);
 			//

@@ -478,9 +478,15 @@
       name="return_of_main"
       value="${hostfxr::main('', 'build', file, /p:TargetFramework=netcoreapp${host_version}, '/p:Configuration=Release')}" /-->
 
+    <property name="TargetFrameworks" />
+    <property
+      name="TargetFrameworks"
+      value="/p:TargetFrameworks=netcoreapp${host_version}"
+      if="${version::greater(host_version, '5.9')}" />
+
     <exec
       program="${program}"
-      commandline="build ${file} /p:TargetFramework=netcoreapp${host_version} /p:Configuration=Release" />
+      commandline="build ${file} /p:TargetFramework=netcoreapp${host_version} /p:Configuration=Release ${TargetFrameworks}" />
 
     <property name="program_to_run" value="source.dll" />
   </target>

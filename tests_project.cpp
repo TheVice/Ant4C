@@ -202,7 +202,8 @@ TEST_F(TestProject, project_load_from_content)
 			ASSERT_TRUE(buffer_resize(&output, 0))
 					<< buffer_free(&output);
 			input_in_a_range = string_to_range(expected_base_directory);
-			ASSERT_TRUE(interpreter_evaluate_code(nullptr, nullptr, &input_in_a_range, &output, verbose))
+			ASSERT_TRUE(interpreter_evaluate_code(
+							nullptr, nullptr, nullptr, &input_in_a_range, &output, verbose))
 					<< buffer_free(&output);
 			expected_base_directory = buffer_to_string(&output);
 		}

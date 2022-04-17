@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -188,7 +188,7 @@ uint8_t file_system_get_position_after_pre_root(
 
 	while (NULL != pos && pre_root_path_length <= path_finish - pos)
 	{
-		if (memcmp(pos, pre_root_path, pre_root_path_length))
+		if (0 != memcmp(pos, pre_root_path, pre_root_path_length))
 		{
 			pos = string_enumerate(pos, path_finish, NULL);
 			continue;
@@ -2407,7 +2407,7 @@ uint8_t file_replace_with_same_length(
 
 		while (NULL != start && length <= finish - start)
 		{
-			if (memcmp(start, to_be_replaced, length))
+			if (0 != memcmp(start, to_be_replaced, length))
 			{
 				start = string_enumerate(start, finish, NULL);
 				continue;

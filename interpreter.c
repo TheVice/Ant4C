@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -139,7 +139,7 @@ uint8_t interpreter_disassemble_function(
 
 	while (name_space->finish + NAME_SPACE_BORDER_LENGTH <= function->finish)
 	{
-		if (memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
+		if (0 != memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
 		{
 			name_space->finish = string_enumerate(name_space->finish, function->finish, NULL);
 			continue;
@@ -263,7 +263,7 @@ uint8_t interpreter_evaluate_argument_area(
 
 		while (pos_with_index + NAME_SPACE_BORDER_LENGTH <= argument_area->finish)
 		{
-			if (memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
+			if (0 != memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
 			{
 				pos_with_index = string_enumerate(pos_with_index, argument_area->finish, NULL);
 				continue;
@@ -333,7 +333,8 @@ uint8_t interpreter_actualize_property_value(
 	BUFFER_TO_RANGE(code, &code_in_buffer);
 
 	if (code.start < code.finish &&
-		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
+		!interpreter_evaluate_code(the_project, the_target,
+								   the_property, &code, output, verbose))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -819,8 +820,10 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 	return values_count;
 }
 
-uint8_t interpreter_evaluate_code(const void* the_project, const void* the_target,
-								  const struct range* code, struct buffer* output, uint8_t verbose)
+uint8_t interpreter_evaluate_code(
+	const void* the_project, const void* the_target,
+	const void* the_current_property, const struct range* code,
+	struct buffer* output, uint8_t verbose)
 {
 	if (range_is_null_or_empty(code) || NULL == output)
 	{
@@ -837,7 +840,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 
 	for (function.start = code->start; function.start + CALL_OF_EXPRESSION_START_LENGTH <= code->finish;)
 	{
-		if (memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
+		if (0 != memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
 		{
 			function.start = string_enumerate(function.start, code->finish, NULL);
 			continue;
@@ -894,6 +897,13 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 				(uint8_t)range_size(&function), &the_property, verbose))
 		{
 			if (!property_get_by_pointer(the_property, &return_of_function))
+			{
+				buffer_release(&return_of_function);
+				return 0;
+			}
+
+			if (NULL != the_current_property &&
+				the_current_property == the_property)
 			{
 				buffer_release(&return_of_function);
 				return 0;
@@ -1079,10 +1089,11 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 	return 1;
 }
 
-uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, const void* the_target,
-		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
-		const uint8_t** attributes, const uint8_t* attributes_lengths,
-		uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose)
+uint8_t interpreter_get_arguments_from_xml_tag_record(
+	const void* the_project, const void* the_target,
+	const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
+	const uint8_t** attributes, const uint8_t* attributes_lengths,
+	uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose)
 {
 	struct buffer attribute_value;
 	SET_NULL_TO_BUFFER(attribute_value);
@@ -1111,7 +1122,7 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, c
 
 		if (!buffer_resize(argument, 0) ||
 			((code.start < code.finish) &&
-			 !interpreter_evaluate_code(the_project, the_target, &code, argument, verbose)))
+			 !interpreter_evaluate_code(the_project, the_target, NULL, &code, argument, verbose)))
 		{
 			buffer_release(&attribute_value);
 			return 0;
@@ -1144,7 +1155,7 @@ uint8_t interpreter_get_xml_element_value(
 	BUFFER_TO_RANGE(code, &value);
 
 	if (!range_is_null_or_empty(&code) &&
-		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
+		!interpreter_evaluate_code(the_project, the_target, NULL, &code, output, verbose))
 	{
 		buffer_release(&value);
 		return 0;
@@ -1285,7 +1296,7 @@ uint8_t interpreter_get_environments(
 		{
 			BUFFER_TO_RANGE(name, &attribute_value);
 
-			if (!interpreter_evaluate_code(the_project, the_target, &name, environments, verbose))
+			if (!interpreter_evaluate_code(the_project, the_target, NULL, &name, environments, verbose))
 			{
 				buffer_release(&attribute_value);
 				buffer_release(&elements);
