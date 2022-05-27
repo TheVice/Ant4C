@@ -286,6 +286,8 @@ TEST_F(TestProperty, property_task)
 	//
 	buffer properties;
 	SET_NULL_TO_BUFFER(properties);
+	//
+	uint8_t verbose = 0;
 
 	for (const auto& node : nodes)
 	{

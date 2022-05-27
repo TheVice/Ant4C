@@ -18,7 +18,17 @@ extern "C" {
 
 class TestInterpreter : public TestsBaseXml
 {
+protected:
+	uint8_t verbose;
+
+	TestInterpreter();
 };
+
+TestInterpreter::TestInterpreter()
+	: TestsBaseXml(),
+	  verbose()
+{
+}
 
 TEST_F(TestInterpreter, interpreter_disassemble_function)
 {

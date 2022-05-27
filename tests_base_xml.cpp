@@ -455,6 +455,28 @@ std::string get_path_to_directory_with_source(uint8_t* result)
 	return path_to_source;
 }
 
+std::string join_path(const std::string& path, const std::string& child_path)
+{
+	buffer tmp;
+	SET_NULL_TO_BUFFER(tmp);
+	//
+	const auto path_(string_to_range(path));
+	const auto child_path_(string_to_range(child_path));
+
+	if (!path_combine(
+			path_.start, path_.finish,
+			child_path_.start, child_path_.finish, &tmp))
+	{
+		buffer_release(&tmp);
+		return "";
+	}
+
+	const auto output(buffer_to_string(&tmp));
+	buffer_release(&tmp);
+	//
+	return output;
+}
+
 static bool starts_with_(const std::string& input, const std::string& value)
 {
 	return value.size() <= input.size() && value == input.substr(0, value.size());
@@ -462,9 +484,10 @@ static bool starts_with_(const std::string& input, const std::string& value)
 
 std::string TestsBaseXml::tests_xml;
 pugi::xml_document TestsBaseXml::document;
-std::map<std::string, std::string*> TestsBaseXml::predefine_arguments;
+bool TestsBaseXml::loaded = false;
+std::map<std::string, std::string*> TestsBase::predefine_arguments;
 
-bool TestsBaseXml::parse_input_arguments()
+bool TestsBase::parse_input_arguments()
 {
 	const auto args = ::testing::internal::GetArgvs();
 
@@ -513,6 +536,25 @@ bool TestsBaseXml::parse_input_arguments()
 	return true;
 }
 
+TestsBase::TestsBase()
+{
+}
+
+void TestsBase::SetUp()
+{
+	const auto result = parse_input_arguments();
+	assert(result);
+	ASSERT_TRUE(result);
+}
+
+void TestsBase::TearDown()
+{
+}
+
+TestsBase::~TestsBase()
+{
+}
+
 void TestsBaseXml::load_nodes()
 {
 	const auto* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
@@ -536,28 +578,26 @@ bool TestsBaseXml::load_document(pugi::xml_document& doc, const std::string& xml
 }
 
 TestsBaseXml::TestsBaseXml() :
+	TestsBase(),
 	nodes(),
-	node_count(0),
-	verbose(0)
+	node_count(0)
 {
 	predefine_arguments.insert(std::make_pair("--tests_xml=", &tests_xml));
 }
 
 void TestsBaseXml::SetUp()
 {
-	if (tests_xml.empty())
+	TestsBase::SetUp();
+
+	if (!loaded)
 	{
-		auto result = parse_input_arguments();
-		assert(result);
-		ASSERT_TRUE(result);
+		loaded = tests_xml.empty();
+		assert(!loaded);
+		ASSERT_FALSE(loaded);
 		//
-		result = tests_xml.empty();
-		assert(!result);
-		ASSERT_FALSE(result);
-		//
-		result = load_document(document, tests_xml);
-		assert(result);
-		ASSERT_TRUE(result) << tests_xml << std::endl;
+		loaded = load_document(document, tests_xml);
+		assert(loaded);
+		ASSERT_TRUE(loaded) << tests_xml << std::endl;
 	}
 
 	load_nodes();

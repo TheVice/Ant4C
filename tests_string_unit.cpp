@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -444,7 +444,7 @@ TEST_F(TestStringUnit, string_replace)
 		ASSERT_TRUE(buffer_push_back(&output, 0)) << buffer_free(&output);
 		//
 		returned = echo(0, Default, buffer_data(&output, 0), Info,
-						input_in_a_range.start, range_size(&input_in_a_range), 0, verbose);
+						input_in_a_range.start, range_size(&input_in_a_range), 0, 0);
 		//
 		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(&output);
 		//
@@ -454,7 +454,7 @@ TEST_F(TestStringUnit, string_replace)
 		//
 		ASSERT_EQ(expected_return, returned) << tmp_path << std::endl << buffer_free(&output);
 		//
-		returned = load_file_to_buffer(buffer_data(&output, 0), Default, &output, verbose);
+		returned = load_file_to_buffer(buffer_data(&output, 0), Default, &output, 0);
 		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(&output);
 		ASSERT_EQ(expected_output, buffer_to_string(&output)) << tmp_path << std::endl << buffer_free(&output);
 		//

@@ -51,9 +51,12 @@ class TestProject : public TestsBaseXml
 protected:
 	static std::string tests_base_directory;
 
+	uint8_t verbose;
+
 protected:
 	TestProject() :
-		TestsBaseXml()
+		TestsBaseXml(),
+		verbose()
 	{
 		predefine_arguments.insert(std::make_pair("--tests_base_directory=", &tests_base_directory));
 	}
@@ -563,8 +566,7 @@ TEST_F(TestProject, project_load_from_build_file)
 						static_cast<uint8_t>(tests_base_property.size()),
 						reinterpret_cast<const uint8_t*>(tests_base_directory.c_str()),
 						static_cast<ptrdiff_t>(tests_base_directory.size()),
-						0, 0, 1,
-						verbose))
+						0, 0, 1, verbose))
 				<< path << std::endl
 				<< buffer_free(&tmp) << project_free(the_project);
 		//
@@ -581,8 +583,7 @@ TEST_F(TestProject, project_load_from_build_file)
 							static_cast<uint8_t>(property_name.size()),
 							reinterpret_cast<const uint8_t*>(property_value.c_str()),
 							static_cast<ptrdiff_t>(property_value.size()),
-							0, 0, 1,
-							verbose))
+							0, 0, 1, verbose))
 					<< path << std::endl
 					<< property_name << std::endl
 					<< property_value << std::endl

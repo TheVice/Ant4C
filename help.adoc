@@ -1838,8 +1838,8 @@ Convert time span representation to the string.
 | <<environment-get_operating_system,get-operating-system>> | Get name of operation system.
 | <<environment-get_user_name,get-user-name>> | Get name of user.
 | <<environment-get_variable,get-variable>> | Get value of environment variable.
-| <<environment-is64bit_operating_system,is64bit-operating-system>> | Is operation system x86-64.
-| <<environment-is64bit_process,is64bit-process>> | Is current process x86-64.
+| <<environment-is64bit_operating_system,is64bit-operating-system>> | Is operation system run on 64-bit computer architecture.
+| <<environment-is64bit_process,is64bit-process>> | Is current process run on 64-bit computer architecture.
 | <<environment-newline,newline>> | Get new line string.
 | <<environment-processor_count,processor-count>> | Get count of processor's cores.
 | <<environment-variable_exists,variable-exists>> | Check is variable exists.
@@ -1967,14 +1967,14 @@ Get value of environment variable.
 
 *bool* 'environment::is64bit-operating-system'()
 
-Return *true* on x86-64 operation systems.
+Return *true* if operation systems run on 64-bit computer architecture.
 
 [[environment-is64bit_process]]
 ==== is64bit-process
 
 *bool* 'environment::is64bit-process'()
 
-Return true if process is x86-64.
+Return *true* if process run on 64-bit computer architecture.
 
 [[environment-newline]]
 ==== newline

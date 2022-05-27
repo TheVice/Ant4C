@@ -215,15 +215,21 @@ int main(int argc, char** argv)
 
 	void* file_stream = NULL;
 
-	const uint8_t* log_file = argument_parser_get_log_file();
-
 	struct range path_in_a_range;
 
-	path_in_a_range.start = log_file;
+	const uint8_t* log_file = argument_parser_get_log_file();
 
-	path_in_a_range.finish = log_file + common_count_bytes_until(log_file, 0);
+	if (NULL != log_file)
+	{
+		path_in_a_range.start = log_file;
+		path_in_a_range.finish = log_file + common_count_bytes_until(log_file, 0);
+	}
+	else
+	{
+		path_in_a_range.start = path_in_a_range.finish = NULL;
+	}
 
-	if (NULL != log_file &&
+	if (path_in_a_range.start < path_in_a_range.finish &&
 		!program_set_log_file(&path_in_a_range, &current_directory_in_a_range, &the_project, &file_stream))
 	{
 		buffer_release(&the_project);
@@ -280,10 +286,18 @@ int main(int argc, char** argv)
 
 	void* listener_object = NULL;
 	const uint8_t* listener = argument_parser_get_listener();
-	path_in_a_range.start = listener;
-	path_in_a_range.finish = listener + common_count_bytes_until(log_file, 0);
 
-	if (NULL != listener &&
+	if (NULL != listener)
+	{
+		path_in_a_range.start = listener;
+		path_in_a_range.finish = listener + common_count_bytes_until(listener, 0);
+	}
+	else
+	{
+		path_in_a_range.start = path_in_a_range.finish = NULL;
+	}
+
+	if (path_in_a_range.start < path_in_a_range.finish &&
 		!program_set_listener(&path_in_a_range, &current_directory_in_a_range, &the_project, &listener_object))
 	{
 		if (!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener '", 10, 0, 0) ||

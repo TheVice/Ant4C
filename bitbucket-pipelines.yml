@@ -9,12 +9,11 @@ pipelines:
           name: Build Debug
           script:
             - apt update && apt -y install libgtest-dev libpugixml-dev cmake
-            - cmake -E make_directory build_Debug
+
+            - cmake -S . -B build_Debug -DCMAKE_BUILD_TYPE=Debug
+            - cmake --build build_Debug --config Debug --parallel $(nproc)
 
             - cd build_Debug
-            - cmake .. -DCMAKE_BUILD_TYPE=Debug
-            - cmake --build . --config Debug --parallel $(nproc)
-
             - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
             - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=..; fi
             - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
@@ -26,12 +25,11 @@ pipelines:
           name: Build Release
           script:
             - apt update && apt -y install libgtest-dev libpugixml-dev cmake
-            - cmake -E make_directory build_Release
+
+            - cmake -S . -B build_Release -DCMAKE_BUILD_TYPE=Release
+            - cmake --build build_Release --config Release --parallel $(nproc)
 
             - cd build_Release
-            - cmake .. -DCMAKE_BUILD_TYPE=Release
-            - cmake --build . --config Release --parallel $(nproc)
-
             - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
             - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=..; fi
             - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi

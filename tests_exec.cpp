@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -113,7 +113,8 @@ TestExec::TestExec() :
 	time_out(),
 	expected_return(),
 	result_property_value(),
-	allow_output_to_console()
+	allow_output_to_console(),
+	verbose()
 {
 	predefine_arguments.insert(std::make_pair("--tests_exec_app=", &tests_exec_app));
 }

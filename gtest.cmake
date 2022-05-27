@@ -4,6 +4,7 @@ if(DEFINED LIBRARY_BINARY_DIR)
 
   if(CMAKE_VERSION VERSION_EQUAL 3.19 OR CMAKE_VERSION VERSION_GREATER 3.19)
     file(REAL_PATH "${LIBRARY_BINARY_DIR}/../googletest/include" gtest_Path)
+    file(REAL_PATH "${LIBRARY_BINARY_DIR}" LIBRARY_BINARY_DIR)
   else()
     set(gtest_Path "${LIBRARY_BINARY_DIR}/../googletest/include")
   endif()

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -49,6 +49,8 @@ protected:
 	int32_t result_property_value;
 
 	uint8_t allow_output_to_console;
+
+	uint8_t verbose;
 
 protected:
 	static std::string get_path_to_directory_with_image(buffer* tmp, uint8_t* result);

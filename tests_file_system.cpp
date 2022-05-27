@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -108,6 +108,8 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 	//
 	buffer file_tree;
 	SET_NULL_TO_BUFFER(file_tree);
+	//
+	uint8_t verbose = 0;
 
 	for (const auto& node : nodes)
 	{
@@ -574,7 +576,7 @@ TEST_F(TestFileSystem, file_read_lines)
 						 reinterpret_cast<const uint8_t*>(input.c_str()),
 						 static_cast<ptrdiff_t>(input.size()),
 						 0,
-						 verbose)) << buffer_free(&tmp);
+						 0)) << buffer_free(&tmp);
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
 		ASSERT_TRUE(file_read_lines(reinterpret_cast<const uint8_t*>(ptr), &tmp)) << buffer_free(&tmp);

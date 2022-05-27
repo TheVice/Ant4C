@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -52,6 +52,7 @@ static const uint8_t* all_functions =
 	"is-function-exists\0" \
 	"close\0" \
 	"get-available-sdks\0" \
+	"get-dotnet-environment-info\0" \
 	"get-native-search-directories\0" \
 	"get-runtime-delegate\0" \
 	"get-runtime-properties\0" \
@@ -118,7 +119,7 @@ static const uint8_t* all_functions =
 	"is-assembly\0" \
 	"\0";
 
-#define COUNT_OF_ALL_FUNCTIONS 1213
+#define COUNT_OF_ALL_FUNCTIONS 1241
 
 enum ant4c_net_module_
 {
@@ -132,6 +133,7 @@ enum ant4c_net_module_
 	/**/
 	host_fxr_close_,
 	host_fxr_get_available_sdks_,
+	host_fxr_get_dotnet_environment_info_,
 	host_fxr_get_native_search_directories_,
 	host_fxr_get_runtime_delegate_,
 	host_fxr_get_runtime_properties_,
@@ -380,7 +382,8 @@ uint8_t evaluate_function(
 			}
 
 			is_host_fxr_object_initialized = host_fx_resolver_init(
-												 values[0], values_lengths[0], &output_data, host_fxr_object, sizeof(host_fxr_object));
+												 values[0], values_lengths[0],
+												 &output_data, host_fxr_object, sizeof(host_fxr_object));
 
 			if (!buffer_resize(&output_data, 0) ||
 				!bool_to_string(is_host_fxr_object_initialized, &output_data))
@@ -423,14 +426,25 @@ uint8_t evaluate_function(
 
 			if (values_count)
 			{
-				values_count = hostfxr_get_available_sdks(ptr_to_host_fxr_object, values[0], values_lengths[0], &output_data);
+				values_count = hostfxr_get_available_sdks(
+								   ptr_to_host_fxr_object, values[0], values_lengths[0], &output_data);
 			}
 			else
 			{
-				values_count = hostfxr_get_available_sdks(ptr_to_host_fxr_object, NULL, 0, &output_data);
+				values_count = hostfxr_get_available_sdks(
+								   ptr_to_host_fxr_object, NULL, 0, &output_data);
 			}
 
 			if (!values_count)
+			{
+				return 0;
+			}
+
+			break;
+
+		case host_fxr_get_dotnet_environment_info_:
+			if (!hostfxr_get_dotnet_environment_information(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -447,8 +461,8 @@ uint8_t evaluate_function(
 			break;
 
 		case host_fxr_get_runtime_delegate_:
-			if (!hostfxr_get_runtime_delegate(ptr_to_host_fxr_object,
-											  values, values_lengths, values_count, &output_data))
+			if (!hostfxr_get_runtime_delegate(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -456,8 +470,8 @@ uint8_t evaluate_function(
 			break;
 
 		case host_fxr_get_runtime_properties_:
-			if (!hostfxr_get_runtime_properties(ptr_to_host_fxr_object,
-												values, values_lengths, values_count, &output_data))
+			if (!hostfxr_get_runtime_properties(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -465,8 +479,8 @@ uint8_t evaluate_function(
 			break;
 
 		case host_fxr_get_runtime_property_value_:
-			if (!hostfxr_get_runtime_property_value(ptr_to_host_fxr_object,
-													values, values_lengths, values_count, &output_data))
+			if (!hostfxr_get_runtime_property_value(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -474,8 +488,8 @@ uint8_t evaluate_function(
 			break;
 
 		case host_fxr_initialize_for_dotnet_command_line_:
-			if (!hostfxr_initialize_for_dotnet_command_line(ptr_to_host_fxr_object,
-					values, values_lengths, values_count, &output_data))
+			if (!hostfxr_initialize_for_dotnet_command_line(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -483,8 +497,8 @@ uint8_t evaluate_function(
 			break;
 
 		case host_fxr_initialize_for_runtime_config_:
-			if (!hostfxr_initialize_for_runtime_config(ptr_to_host_fxr_object,
-					values, values_lengths, values_count, &output_data))
+			if (!hostfxr_initialize_for_runtime_config(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -492,8 +506,8 @@ uint8_t evaluate_function(
 			break;
 
 		case host_fxr_main_:
-			if (!hostfxr_main(ptr_to_host_fxr_object,
-							  values, values_lengths, values_count, &output_data))
+			if (!hostfxr_main(
+					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
 			{
 				return 0;
 			}
@@ -542,7 +556,8 @@ uint8_t evaluate_function(
 
 		case host_fxr_run_app_:
 			if (1 != values_count ||
-				!hostfxr_run_app(ptr_to_host_fxr_object, values[0], (uint8_t)values_lengths[0], &output_data))
+				!hostfxr_run_app(
+					ptr_to_host_fxr_object, values[0], (uint8_t)values_lengths[0], &output_data))
 			{
 				return 0;
 			}

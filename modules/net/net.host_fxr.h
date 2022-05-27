@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -79,6 +79,10 @@ uint8_t hostfxr_set_error_writer(
 	const uint8_t* error_writer_file_name, uint16_t error_writer_file_name_length,
 	struct buffer* output);
 uint8_t hostfxr_set_runtime_property_value(
+	const void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output);
+uint8_t hostfxr_get_dotnet_environment_information(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 	struct buffer* output);

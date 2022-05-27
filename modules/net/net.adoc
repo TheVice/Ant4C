@@ -1,6 +1,6 @@
 = ant4c.net.module(1)
 The Vice
-v2020.09.202107
+vYYYY.MM.DD
 :doctype: manpage
 :manmanual: ANT4C.NET.MODULE
 :mansource: ANT4C.NET.MODULE
@@ -13,7 +13,10 @@ ant4c.net.module - module for Ant4C program that allow to work with hosting laye
 [[history]]
 == History
 
-* *v2020.09.202107* +
+* *vYYYY.MM.DD*
+** Added function '<<hostfxr-get-dotnet-environment-info,hostfxr::get-dotnet-environment-info>>'.
+
+* *v2020.09.202107*
 ** Added name spaces:
 *** 'corehost'
 *** 'corehost-context-contract'
@@ -400,13 +403,13 @@ ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so"
 |===
 | Script function | Host version | Description
 
-| <<hostfxr-main,main>> ^| 1.0+ | API access to the dotnet tool.
-| <<hostfxr-resolve-sdk,resolve-sdk>> ^| 2.0+ | Get path to the SDK. If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred to use.
-| <<hostfxr-get-available-sdks,get-available-sdks>> .4+^.^| 2.1+ | Get available SDKs at current environment.
+| <<hostfxr-main,main>> ^| 1.0 and above | API access to the dotnet tool.
+| <<hostfxr-resolve-sdk,resolve-sdk>> ^| 2.0  and above | Get path to the SDK. If host support - function <<hostfxr-resolve-sdk2,resolve-sdk2>> preferred to use.
+| <<hostfxr-get-available-sdks,get-available-sdks>> .4+^.^| 2.1 and above | Get available SDKs at current environment.
 | <<hostfxr-get-native-search-directories,get-native-search-directories>> | Get list of directories that will be used while resolving dependency for assembly.
 | <<hostfxr-main-startupinfo,main-startupinfo>> | API access to the dotnet tool. Addition parameter can be put.
 | <<hostfxr-resolve-sdk2,resolve-sdk2>> | Get path to the SDK.
-| <<hostfxr-close,close>> .9+^.^| 3.0+ | Close early opened context.
+| <<hostfxr-close,close>> .9+^.^| 3.0 and above | Close early opened context.
 | <<hostfxr-get-runtime-delegate,get-runtime-delegate>> | Get pointer to the delegate of function from the assembly.
 | <<hostfxr-get-runtime-properties,get-runtime-properties>> | Get properties of runtime.
 | <<hostfxr-get-runtime-property-value,get-runtime-property-value>> | Get value of runtime property.
@@ -415,7 +418,8 @@ ant4c /f:sample.build -D:path_to_hostfxr="...libhostfxr.so"
 | <<hostfxr-run-app,run-app>> | Run application by opened context.
 | <<hostfxr-set-error-writer,set-error-writer>> | Set error writer of resolver.
 | <<hostfxr-set-runtime-property-value,set-runtime-property-value>> | Set value of runtime property.
-| <<hostfxr-main-bundle-startupinfo,main-bundle-startupinfo>> ^| 5.0+ | Same as <<hostfxr-main-startupinfo,main-startupinfo>> plus offset of bundle header can be provided.
+| <<hostfxr-main-bundle-startupinfo,main-bundle-startupinfo>> ^| 5.0 and above | Same as <<hostfxr-main-startupinfo,main-startupinfo>> plus offset of bundle header can be provided.
+| <<hostfxr-get-dotnet-environment-info,get-dotnet-environment-info>> ^| 6.0 | Get information of the dotnet environment.
 |===
 
 WARNING: Functions from this table can be used only after function <<hostfxr-initialize,initialize>> return *true*.
@@ -914,6 +918,14 @@ Description of host fx parameters can be found in the documentation of resolver.
 WARNING: There is a known issue at the parsing of 'header_offset' argument. +
 If put non empty string - parse result of value is undefined. +
 Affected for *v2020.09** versions.
+
+[[hostfxr-get-dotnet-environment-info]]
+==== get-dotnet-environment-info
+
+*string* 'hostfxr::get-dotnet-environment-info'(*path* dotnet_root)
+
+Get information of the dotnet environment. +
+If function failed - error code will be returned.
 
 === Functions for access host via host policy layer.
 

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -656,7 +656,7 @@ TEST_F(TestHashAlgorithm, file_get_checksum)
 			//
 			ASSERT_LT(input_length, 31745) << buffer_free(&output);
 			//
-			ASSERT_TRUE(echo(0, Default, path, Info, input, input_length, 0, verbose)) << buffer_free(&output);
+			ASSERT_TRUE(echo(0, Default, path, Info, input, input_length, 0, 0)) << buffer_free(&output);
 			//
 			ASSERT_TRUE(buffer_resize(&output, size)) << buffer_free(&output);
 			ASSERT_TRUE(file_get_checksum(path, &algorithm_in_a_range, &algorithm_parameter,

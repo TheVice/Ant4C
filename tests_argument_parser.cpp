@@ -161,7 +161,7 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 			argument_parser_free() <<																								\
 			buffer_free(&property_value);																							\
 	/**/																															\
-	verbose = argument_parser_get_verbose();																						\
+	const auto verbose = argument_parser_get_verbose();																				\
 	(I) = 0;																														\
 	/**/																															\
 	ASSERT_EQ(expected_build_files.empty(), nullptr == argument_parser_get_build_file((I))) <<										\

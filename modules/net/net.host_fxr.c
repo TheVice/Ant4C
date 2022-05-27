@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -1119,6 +1119,214 @@ uint8_t hostfxr_set_runtime_property_value(
 
 	if (!buffer_resize(output, 0) ||
 		!int_to_string(result, output))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+void calling_convention hostfxr_dotnet_environment_information_function(
+	const struct hostfxr_dotnet_environment_information* information, void* result_context)
+{
+	if (NULL == information ||
+		NULL == result_context)
+	{
+		return;
+	}
+
+	struct buffer* output = (struct buffer*)result_context;
+
+	if (!buffer_resize(output, 0))
+	{
+		return;
+	}
+
+	if (!buffer_append_char(output, "hostfxr_version: ", 17))
+	{
+		return;
+	}
+
+	size_t result;
+#if defined(_WIN32)
+	result = wcslen(information->hostfxr_version);
+
+	if (!text_encoding_UTF16LE_to_UTF8(
+			information->hostfxr_version, information->hostfxr_version + result, output))
+#else
+	result = common_count_bytes_until(information->hostfxr_version, 0);
+
+	if (!buffer_append(output, information->hostfxr_version, (ptrdiff_t)result))
+#endif
+	{
+		return;
+	}
+
+	if (!buffer_append_char(output, "\nhostfxr_commit_hash: ", 22))
+	{
+		return;
+	}
+
+#if defined(_WIN32)
+	result = wcslen(information->hostfxr_commit_hash);
+
+	if (!text_encoding_UTF16LE_to_UTF8(
+			information->hostfxr_commit_hash, information->hostfxr_commit_hash + result, output))
+#else
+	result = common_count_bytes_until(information->hostfxr_commit_hash, 0);
+
+	if (!buffer_append(output, information->hostfxr_commit_hash, (ptrdiff_t)result))
+#endif
+	{
+		return;
+	}
+
+	for (size_t i = 0; i < information->sdk_count; ++i)
+	{
+		if (!buffer_append_char(output, "\n\tversion: ", 11))
+		{
+			return;
+		}
+
+#if defined(_WIN32)
+		result = wcslen(information->sdks[i].version);
+
+		if (!text_encoding_UTF16LE_to_UTF8(
+				information->sdks[i].version, information->sdks[i].version + result, output))
+#else
+		result = common_count_bytes_until(information->sdks[i].version, 0);
+
+		if (!buffer_append(output, information->sdks[i].version, (ptrdiff_t)result))
+#endif
+		{
+			return;
+		}
+
+		if (!buffer_append_char(output, "\n\tpath: ", 8))
+		{
+			return;
+		}
+
+#if defined(_WIN32)
+		result = wcslen(information->sdks[i].path);
+
+		if (!text_encoding_UTF16LE_to_UTF8(
+				information->sdks[i].path, information->sdks[i].path + result, output))
+#else
+		result = common_count_bytes_until(information->sdks[i].path, 0);
+
+		if (!buffer_append(output, information->sdks[i].path, (ptrdiff_t)result))
+#endif
+		{
+			return;
+		}
+	}
+
+	if (!buffer_push_back(output, '\n'))
+	{
+		return;
+	}
+
+	for (size_t i = 0; i < information->framework_count; ++i)
+	{
+		if (!buffer_append_char(output, "\n\tname: ", 8))
+		{
+			return;
+		}
+
+#if defined(_WIN32)
+		result = wcslen(information->frameworks[i].name);
+
+		if (!text_encoding_UTF16LE_to_UTF8(
+				information->frameworks[i].name,
+				information->frameworks[i].name + result, output))
+#else
+		result = common_count_bytes_until(information->frameworks[i].name, 0);
+
+		if (!buffer_append(output, information->frameworks[i].name, (ptrdiff_t)result))
+#endif
+		{
+			return;
+		}
+
+		if (!buffer_append_char(output, "\n\tversion: ", 11))
+		{
+			return;
+		}
+
+#if defined(_WIN32)
+		result = wcslen(information->frameworks[i].version);
+
+		if (!text_encoding_UTF16LE_to_UTF8(
+				information->frameworks[i].version, information->frameworks[i].version + result, output))
+#else
+		result = common_count_bytes_until(information->frameworks[i].version, 0);
+
+		if (!buffer_append(output, information->frameworks[i].version, (ptrdiff_t)result))
+#endif
+		{
+			return;
+		}
+
+		if (!buffer_append_char(output, "\n\tpath: ", 8))
+		{
+			return;
+		}
+
+#if defined(_WIN32)
+		result = wcslen(information->frameworks[i].path);
+
+		if (!text_encoding_UTF16LE_to_UTF8(
+				information->frameworks[i].path, information->frameworks[i].path + result, output))
+#else
+		result = common_count_bytes_until(information->frameworks[i].path, 0);
+
+		if (!buffer_append(output, information->frameworks[i].path, (ptrdiff_t)result))
+#endif
+		{
+			return;
+		}
+	}
+}
+
+uint8_t hostfxr_get_dotnet_environment_information(
+	const void* ptr_to_host_fxr_object,
+	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
+	struct buffer* output)
+{
+	if (!ptr_to_host_fxr_object ||
+		!values ||
+		!values_lengths ||
+		1 != values_count ||
+		!output)
+	{
+		return 0;
+	}
+
+	if (!buffer_resize(output, 0))
+	{
+		return 0;
+	}
+
+#if defined(_WIN32)
+
+	if (!text_encoding_UTF8_to_UTF16LE(values[0], values[0] + values_lengths[0], output) ||
+		!buffer_push_back_uint16(output, 0))
+#else
+	if (!buffer_append(output, values[0], values_lengths[0]) ||
+		!buffer_push_back(output, 0))
+#endif
+	{
+		return 0;
+	}
+
+	const type_of_element* dotnet_root = (const type_of_element*)buffer_data(output, 0);
+	const int32_t result = host_fxr_get_dotnet_environment_information(ptr_to_host_fxr_object, dotnet_root,
+						   hostfxr_dotnet_environment_information_function, output);
+
+	if (0 != result &&
+		(!buffer_resize(output, 0) ||
+		 !int_to_string(result, output)))
 	{
 		return 0;
 	}
