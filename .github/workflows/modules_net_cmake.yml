@@ -346,13 +346,13 @@ jobs:
         echo "unset core_host_initialize" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
 
-    - name: Run Docker (dotnet_sdk_6_0-focal)
+    - name: Run Docker (dotnet_sdk_6_0)
       if: ${{ 'Linux' == runner.os }}
-      run: docker run --name dotnet_sdk_6_0-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:6.0 sh +xe /home/run.sh
+      run: docker run --name dotnet_sdk_6_0 --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:6.0 sh +xe /home/run.sh
 
-    - name: Run Docker (dotnet_sdk_3_1-focal)
+    - name: Run Docker (dotnet_sdk_3_1)
       if: ${{ 'Linux' == runner.os }}
-      run: docker run --name dotnet_sdk_3_1-focal --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:3.1-focal sh +xe /home/run.sh
+      run: docker run --name dotnet_sdk_3_1 --volume "${{ github.workspace }}":/home mcr.microsoft.com/dotnet/sdk:3.1-focal sh +xe /home/run.sh
 
     - name: Upload binaries (Unix like)
       if: ${{ 'Windows' != runner.os }}
@@ -393,21 +393,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Setup .NET Core SDK
-      uses: actions/setup-dotnet@v1.8.1
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v2
       with:
-        # Optional SDK version to use. If not provided, will install global.json version when available. Examples: 3.1, 3.1.x
         dotnet-version: ${{ matrix.host_version }}
-        # Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword
-        # source-url: # optional
-        # Optional OWNER for using packages from GitHub Package Registry organizations/users other than the current repository's owner. Only used if a GPR URL is also provided in source-url
-        # owner: # optional
-        # Optional NuGet.config location, if your NuGet.config isn't located in the root of the repo.
-        # config-file: # optional
-        # Whether prerelease versions should be matched with non-exact versions (for example 5.0.0-preview.6 being matched by 5, 5.0, 5.x or 5.0.x). Defaults to false if not provided.
-        # include-prerelease: # optional
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: ${{ matrix.os }}
 

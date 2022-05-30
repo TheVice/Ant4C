@@ -179,6 +179,12 @@ protected:
 		paths.push_back("modules/net/libant4c.net.module.dylib");
 #endif
 	}
+
+	virtual void SetUp() override
+	{
+		TestsBaseXml::SetUp();
+		TestModule::SetUp();
+	}
 };
 
 std::string TestModule::current_directory;
@@ -190,15 +196,15 @@ TEST_F(TestNetModule, functions)
 		for (const auto& code : node.node().select_nodes("code"))
 		{
 			std::string code_str = "<property name=\"code\" value=\"";
-			const std::string code_command(code.node().child_value());
-			code_str += code_command;
+			const std::string command(code.node().child_value());
+			code_str += command;
 			code_str += "\" />";
-			const auto code_in_range(string_to_range(code_str));
+			const auto code_in_a_range(string_to_range(code_str));
 			//
 			ASSERT_TRUE(
 				project_load_from_content(
-					code_in_range.start, code_in_range.finish, &the_project, 0, 0))
-					<< code_command;
+					code_in_a_range.start, code_in_a_range.finish, &the_project, 0, 0))
+					<< command;
 		}
 
 		--node_count;
@@ -683,8 +689,19 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main)
 	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
 	ASSERT_TRUE(buffer_push_back(&the_output, 0));
 	//
-	ASSERT_STREQ("0", buffer_char_data(&the_output, 0));
+	command = "net::result-to-string('";
+	command += buffer_char_data(&the_output, 0);
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"));
 	std::cout << "[       OK ]" << std::endl;
 }
 
@@ -729,7 +746,21 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
 #ifdef WIN32
 		ASSERT_TRUE(directory_exists(buffer_data(&the_output, 0)));
 #else
-		ASSERT_STREQ("0", buffer_char_data(&the_output, 0));
+		command = "net::result-to-string('";
+		command += buffer_char_data(&the_output, 0);
+		command += "')";
+		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
+		//
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		//
+		std::cout << "[       OK ]" << std::endl;
+		//
+		ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"));
+		std::cout << "[       OK ]" << std::endl;
+		//
 		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
 		std::cout << "[       OK ]" << std::endl;
@@ -803,8 +834,6 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk2)
 		}
 
 #else
-		std::cerr << "[Warning]: function do not return valid data." << std::endl;
-		//
 		command = "net::result-to-string('";
 		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		command += buffer_char_data(&the_output, 0);
@@ -818,6 +847,8 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk2)
 		//
 		std::cerr << buffer_char_data(&the_output, 0) << std::endl;
 		std::cerr << "[       OK ]" << std::endl;
+		//
+		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
 		std::cout << "[       OK ]" << std::endl;
 	}
@@ -1115,7 +1146,6 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main_startupinfo)
 		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		//
 		command = "net::result-to-string('";
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		command += buffer_char_data(&the_output, 0);
 		command += "')";
 		function = string_to_range(command);

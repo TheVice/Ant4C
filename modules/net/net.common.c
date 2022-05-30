@@ -70,6 +70,7 @@ uint8_t get_exists_functions(
 	const is_function_exists_type is_function_exists,
 	struct buffer* output)
 {
+#define COUNT_OF_FUNCTION 32
 	static const uint8_t* double_zero = (const uint8_t*)"\0\0";
 
 	if (!ptr_to_object ||
@@ -89,8 +90,8 @@ uint8_t get_exists_functions(
 	}
 
 	uint8_t i = 0;
-	uint8_t function_exists[16];
-	const uint8_t* functions_names[16];
+	uint8_t function_exists[COUNT_OF_FUNCTION];
+	const uint8_t* functions_names[COUNT_OF_FUNCTION];
 	memset(function_exists, 0, sizeof(function_exists));
 
 	do
@@ -118,7 +119,7 @@ uint8_t get_exists_functions(
 	}
 	while (finish !=
 		   (functions = string_find_any_symbol_like_or_not_like_that(
-							functions, finish, double_zero, double_zero + 1, 1, 1)) && i < 16);
+							functions, finish, double_zero, double_zero + 1, 1, 1)) && i < COUNT_OF_FUNCTION);
 
 	if (!buffer_resize(output, 0))
 	{

@@ -4391,7 +4391,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
       <code>${corehost-initialize-request::set-config-values('1', '23', '456')}</code>
     </functions>
   </TestNetModule>
-  <TestNetModuleEx>
+  <TestNetModuleViaBuildFile>
     <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}" />
     <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
       <target>net_result-to-string</target>
@@ -4474,7 +4474,7 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_build_file if="${environment::variable-exists('core_host_initialize')}">
       <target>core_host_initialize</target>
     </project_load_from_build_file>
-  </TestNetModuleEx>
+  </TestNetModuleViaBuildFile>
   <TestPath>
     <path_change_extension>
       <input></input>

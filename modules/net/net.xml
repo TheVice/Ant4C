@@ -2,7 +2,7 @@
 <!--
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  -->
 <project name="ant4c.net.module" default="net_result-to-string">
@@ -311,7 +311,11 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_version -> '${host_version}'</echo>
 
-    <property name="expected_functions" value="main resolve-sdk" />
+    <property name="expected_functions" value="main" />
+
+    <if test="${version::greater(host_version, '1.9')}">
+      <property name="expected_functions" value="${expected_functions} resolve-sdk" />
+    </if>
 
     <if test="${version::greater(host_version, '2.0')}">
       <property name="expected_functions" value="${expected_functions} get-available-sdks" />
@@ -334,6 +338,10 @@
 
     <if test="${version::greater(host_version, '4.9')}">
       <property name="expected_functions" value="${expected_functions} main-bundle-startupinfo" />
+    </if>
+
+    <if test="${version::greater(host_version, '5.9')}">
+      <property name="expected_functions" value="${expected_functions} get-dotnet-environment-info" />
     </if>
 
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
