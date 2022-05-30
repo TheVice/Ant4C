@@ -5,7 +5,7 @@
  *
  */
 
-#include "tests_argument_parser.h"
+#include "tests_base_xml.h"
 
 extern "C" {
 #include "argument_parser.h"
@@ -24,6 +24,10 @@ extern "C" {
 #include <ostream>
 #include <utility>
 #include <algorithm>
+
+class TestArgumentParser : public TestsBaseXml
+{
+};
 
 uint8_t string_to_command_arguments(const std::string& input, buffer* output, int* argc, char*** argv)
 {

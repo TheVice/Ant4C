@@ -9,30 +9,33 @@
 
 extern "C" {
 #include "argument_parser.h"
-#include "buffer.h"
 #include "property.h"
 };
 
-#include <vector>
-#include <string>
+#include <gtest/gtest.h>
 
-uint8_t TestArgumentParser::get_properties(buffer* properties, uint8_t verbose)
+int GlobalArgumentParser::argc = 0;
+std::string GlobalArgumentParser::empty("");
+std::vector<char*> GlobalArgumentParser::argv;
+std::vector<std::string> GlobalArgumentParser::args;
+
+uint8_t GlobalArgumentParser::get_properties(void* the_project, uint8_t verbose)
 {
-	(void)verbose;
-	static std::string empty("");
-
-	if (!properties)
+	if (!the_project)
 	{
 		return 0;
 	}
 
-	auto args = ::testing::internal::GetArgvs();
-	const auto argc = static_cast<int>(args.size());
-	std::vector<char*> argv(argc);
-
-	for (auto i = 0; i < argc; ++i)
+	if (argc < 1)
 	{
-		argv[i] = args[i].empty() ? &empty[0] : &(args[i][0]);
+		args = ::testing::internal::GetArgvs();
+		argc = static_cast<int>(args.size());
+		argv.resize(argc);
+
+		for (auto i = 0; i < argc; ++i)
+		{
+			argv[i] = args[i].empty() ? &empty[0] : &(args[i][0]);
+		}
 	}
 
 	if (!argument_parser_init() ||
@@ -42,11 +45,12 @@ uint8_t TestArgumentParser::get_properties(buffer* properties, uint8_t verbose)
 		return 0;
 	}
 
-	const auto* properties_ = argument_parser_get_properties();
+	const auto* properties = argument_parser_get_properties();
 
-	if (!buffer_append_data_from_buffer(properties, properties_))
+	if (!property_add_at_project(the_project, properties, verbose))
 	{
 		argument_parser_release();
+		return 0;
 	}
 
 	argument_parser_release();

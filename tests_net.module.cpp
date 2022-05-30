@@ -211,36 +211,12 @@ TEST_F(TestNetModule, functions)
 	}
 }
 
-class GlobalPropertiesHolder
-{
-protected:
-	buffer global_properties;
-
-	GlobalPropertiesHolder() : global_properties()
-	{
-		SET_NULL_TO_BUFFER(global_properties);
-	}
-
-	virtual void SetUp()
-	{
-		if (!buffer_size(&global_properties))
-		{
-			ASSERT_TRUE(TestArgumentParser::get_properties(&global_properties, 0)) << properties_free(&global_properties);
-		}
-	}
-
-	~GlobalPropertiesHolder()
-	{
-		property_release(&global_properties);
-	}
-};
-
-class TestNetModuleViaBuildFile : public TestNetModule, public GlobalPropertiesHolder
+class TestNetModuleViaBuildFile : public TestNetModule
 {
 protected:
 	static std::string path_to_build_file;
 
-	TestNetModuleViaBuildFile() : TestNetModule(), GlobalPropertiesHolder()
+	TestNetModuleViaBuildFile() : TestNetModule()
 	{
 		predefine_arguments.insert(std::make_pair("--build_file=", &path_to_build_file));
 	}
@@ -248,7 +224,6 @@ protected:
 	virtual void SetUp() override
 	{
 		TestsBaseXml::SetUp();
-		GlobalPropertiesHolder::SetUp();
 
 		if (path_to_build_file.empty())
 		{
@@ -316,7 +291,7 @@ TEST_F(TestNetModuleViaBuildFile, project_load_from_build_file)
 				<< current_directory << std::endl
 				<< target_name << std::endl;
 		//
-		ASSERT_TRUE(property_add_at_project(&the_project, &global_properties, 0))
+		ASSERT_TRUE(GlobalArgumentParser::get_properties(&the_project, 0))
 				<< path_to_module << std::endl
 				<< path_to_build_file << std::endl
 				<< current_directory << std::endl
@@ -348,6 +323,7 @@ TEST_F(TestNetModuleViaBuildFile, project_load_from_build_file)
 		}
 
 		std::cout << "[       OK ]" << std::endl;
+		//
 		--node_count;
 	}
 }
