@@ -477,7 +477,7 @@ std::string join_path(const std::string& path, const std::string& child_path)
 	return output;
 }
 
-static bool starts_with_(const std::string& input, const std::string& value)
+bool starts_with_(const std::string& input, const std::string& value)
 {
 	return value.size() <= input.size() && value == input.substr(0, value.size());
 }

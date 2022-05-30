@@ -60,43 +60,46 @@ protected:
 
 	std::string get_path_to_module(const std::string& base_directory, size_t& size)
 	{
-		auto path = base_directory;
-		add_slash(path);
-		size = path.size();
+		size = base_directory.size();
 
 		for (const auto& sub_path : paths)
 		{
 #if defined(_MSC_VER)
-			auto sub_path_in_range(string_to_range(sub_path));
-			auto start = sub_path_in_range.start;
+			auto sub_path_in_a_range(string_to_range(sub_path));
+			auto start = sub_path_in_a_range.start;
 
 			if (!path_get_file_name(
-					&sub_path_in_range.start,
-					sub_path_in_range.finish))
+					&sub_path_in_a_range.start, sub_path_in_a_range.finish))
 			{
 				return "";
 			}
 
-			path += range_to_string(start, sub_path_in_range.start);
+			auto path = join_path(base_directory, range_to_string(start, sub_path_in_a_range.start));
 #ifndef NDEBUG
-			path += "Debug\\";
+			path = join_path(path, "Debug");
 #else
-			path += "Release\\";
+			path = join_path(path, "Release");
 #endif
-			path += range_to_string(sub_path_in_range);
+			path = join_path(path, range_to_string(sub_path_in_a_range));
 #else
-			path += sub_path;
+			auto path = join_path(base_directory, sub_path);
 #endif
 
 			if (file_exists(reinterpret_cast<const uint8_t*>(path.c_str())))
 			{
-				break;
+				auto position = std::find(path.cbegin() + size, path.cend(), PATH_DELIMITER);
+				//
+				position = std::find_if(position, path.cend(), [](const char& ch)
+				{
+					return PATH_DELIMITER != ch;
+				});
+				//
+				size = std::distance(path.cbegin(), position);
+				return path;
 			}
-
-			path.resize(size);
 		}
 
-		return path;
+		return base_directory;
 	}
 
 	TestModule() :
@@ -132,7 +135,9 @@ protected:
 		//
 		pugi::xml_document load_tasks;
 		auto node = load_tasks.append_child("loadtasks");
+		//
 		ASSERT_FALSE(node.empty()) << project_free(&the_project);
+		//
 		auto attribute = node.append_attribute("module");
 		ASSERT_FALSE(attribute.empty()) << project_free(&the_project);
 		ASSERT_TRUE(attribute.set_value(path_to_module.c_str())) << project_free(&the_project);
@@ -140,11 +145,11 @@ protected:
 		std::ostringstream string_stream;
 		load_tasks.print(string_stream);
 		const auto code = string_stream.str();
-		const auto code_in_range(string_to_range(code));
+		const auto code_in_a_range(string_to_range(code));
 		//
 		ASSERT_TRUE(
 			project_load_from_content(
-				code_in_range.start, code_in_range.finish, &the_project, 0, 0))
+				code_in_a_range.start, code_in_a_range.finish, &the_project, 0, 0))
 				<< project_free(&the_project);
 	}
 
@@ -185,7 +190,7 @@ TEST_F(TestNetModule, functions)
 		for (const auto& code : node.node().select_nodes("code"))
 		{
 			std::string code_str = "<property name=\"code\" value=\"";
-			const auto code_command(std::string(code.node().child_value()));
+			const std::string code_command(code.node().child_value());
 			code_str += code_command;
 			code_str += "\" />";
 			const auto code_in_range(string_to_range(code_str));
@@ -349,13 +354,189 @@ static bool ends_with_(const std::string& input, const std::string& value)
 class TestNetModuleWithParameters : public TestsBase, public TestModule, public testing::Test
 {
 protected:
-	static std::list<std::string> hostfxr_files;
 	static std::string dotnet_root;
 	static std::string dotnet_executable;
+	//static uint8_t host_version[VERSION_SIZE];
+	//static uint8_t host_versions[10][VERSION_SIZE];
+	static std::list<std::string> hostfxr_files;
+	static const std::string True;
+
+	range function;
+	std::string command;
+	buffer the_output;
+	uint8_t verbose;
+
+	/*static void GetHostVersion(struct buffer* tmp)
+	{
+		range function;
+		std::string command;
+		//
+		ASSERT_TRUE(path_get_temp_file_name(tmp)) << buffer_free(tmp);
+		//
+		command = "exec";
+		command += " program=\"";
+		command += dotnet_executable;
+		command += "\" commandline=\"--version\"";
+		command += " output=\"";
+		command += buffer_char_data(tmp, 0);
+		command += "\"";
+		command += " />";
+		//
+		function = string_to_range(command);
+		function.finish = function.start + 4;
+		//
+		ASSERT_TRUE(interpreter_evaluate_task(
+						nullptr, nullptr,
+						&function, function.start + command.size(),
+						nullptr, 0, 0))
+				<< buffer_free(tmp);
+		//
+		std::ifstream file(buffer_char_data(tmp, 0));
+		ASSERT_TRUE(file.is_open()) << buffer_free(tmp);
+		//
+		command.clear();
+		std::copy(std::istreambuf_iterator<char>(file),
+				  std::istreambuf_iterator<char>(), std::back_inserter(command));
+		//
+		file.close();
+		//
+		function = string_to_range(command);
+		ASSERT_TRUE(version_parse(function.start, function.finish, host_version))
+				<< buffer_free(tmp);
+		//
+		static const char* versions[] = { "7", "6", "5", "3.1", "3", "2.2", "2.1", "2", "1.1", "1" };
+
+		for (uint8_t i = 0, count = COUNT_OF(versions); i < count; ++i)
+		{
+			command = versions[i];
+			function = string_to_range(command);
+			//
+			ASSERT_TRUE(version_parse(function.start, function.finish, host_versions[i]))
+					<< buffer_free(tmp);
+		}
+
+		ASSERT_TRUE(buffer_resize(tmp, 0)) << buffer_free(tmp);
+	}*/
+
+	static void FillHostFxrFiles()
+	{
+		buffer path;
+		SET_NULL_TO_BUFFER(path);
+		//
+		//GetHostVersion(&path);
+		//
+		ASSERT_TRUE(string_to_buffer(dotnet_root, &path)) << buffer_free(&path);
+#if defined(_WIN32)
+		static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("\\host\\fxr\0");
+#else
+		static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("/host/fxr\0");
+#endif
+		ASSERT_TRUE(
+			path_combine_in_place(
+				&path, buffer_size(&path), sub_path, sub_path + 10)) << buffer_free(&path);
+		//
+		buffer output;
+		SET_NULL_TO_BUFFER(output);
+		//
+		ASSERT_TRUE(directory_enumerate_file_system_entries(&path, 1, 1, &output, 0))
+				<< buffer_free(&path) << buffer_free(&output);
+		//
+		buffer_release(&path);
+		auto output_in_a_string = buffer_to_string(&output);
+		buffer_release(&output);
+		//
+		auto position = output_in_a_string.cbegin();
+		auto prev_position = position;
+
+		while (position < output_in_a_string.cend())
+		{
+			position = std::find(position, output_in_a_string.cend(), '\0');
+			const std::string path_to_hostfxr(prev_position, position);
+#if defined(_WIN32)
+			static const std::string file_name("hostfxr.dll");
+#elif (defined(__APPLE__) && defined(__MACH__))
+			static const std::string file_name("libhostfxr.dylib");
+#else
+			static const std::string file_name("libhostfxr.so");
+#endif
+
+			if (ends_with_(path_to_hostfxr, file_name))
+			{
+				hostfxr_files.push_back(path_to_hostfxr);
+			}
+
+			position = std::find_if(position, output_in_a_string.cend(), [](const char& c)
+			{
+				return '\0' != c;
+			});
+			//
+			prev_position = position;
+		}
+
+		hostfxr_files.sort([](const std::string & path1, const std::string & path2)
+		{
+			auto path_1(string_to_range(path1));
+			auto path_2(string_to_range(path2));
+
+			if (!path_get_directory_name(path_1.start, &path_1.finish))
+			{
+				return false;
+			}
+
+			if (!path_get_directory_name(path_2.start, &path_2.finish))
+			{
+				return false;
+			}
+
+			ptrdiff_t index_1, index_2;
+
+			if (-1 == (index_1 = string_last_index_of(path_1.start, path_1.finish, &PATH_DELIMITER, &PATH_DELIMITER + 1)))
+			{
+				return false;
+			}
+
+			if (-1 == (index_2 = string_last_index_of(path_2.start, path_2.finish, &PATH_DELIMITER, &PATH_DELIMITER + 1)))
+			{
+				return false;
+			}
+
+			if (!string_substring(path_1.start, path_1.finish, index_1, -1, &path_1))
+			{
+				return false;
+			}
+
+			if (!string_substring(path_2.start, path_2.finish, index_2, -1, &path_2))
+			{
+				return false;
+			}
+
+			uint8_t version_1[VERSION_SIZE];
+			uint8_t version_2[VERSION_SIZE];
+
+			if (!version_parse(path_1.start, path_1.finish, version_1))
+			{
+				return false;
+			}
+
+			if (!version_parse(path_2.start, path_2.finish, version_2))
+			{
+				return false;
+			}
+
+			return 0 < version_greater(version_1, version_2);
+		});
+	}
 
 protected:
-	TestNetModuleWithParameters() : TestsBase(), TestModule()
+	TestNetModuleWithParameters() :
+		TestsBase(),
+		TestModule(),
+		function(),
+		command(),
+		the_output(),
+		verbose(0)
 	{
+		SET_NULL_TO_BUFFER(the_output);
 #if defined(_WIN32)
 		paths.push_back("modules\\net\\ant4c.net.module.dll");
 		paths.push_back("modules\\net\\libant4c.net.module.dll");
@@ -373,115 +554,6 @@ protected:
 		//
 		ASSERT_FALSE(dotnet_root.empty());
 
-		if (hostfxr_files.empty())
-		{
-			buffer path;
-			SET_NULL_TO_BUFFER(path);
-			//
-			ASSERT_TRUE(string_to_buffer(dotnet_root, &path)) << buffer_free(&path);
-#if defined(_WIN32)
-			static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("\\host\\fxr\0");
-#else
-			static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("/host/fxr\0");
-#endif
-			ASSERT_TRUE(
-				path_combine_in_place(
-					&path, buffer_size(&path), sub_path, sub_path + 10)) << buffer_free(&path);
-			//
-			buffer output;
-			SET_NULL_TO_BUFFER(output);
-			//
-			ASSERT_TRUE(directory_enumerate_file_system_entries(&path, 1, 1, &output, 0))
-					<< buffer_free(&path) << buffer_free(&output);
-			//
-			buffer_release(&path);
-			auto output_in_a_string = buffer_to_string(&output);
-			buffer_release(&output);
-			//
-			auto position = output_in_a_string.cbegin();
-			auto prev_position = position;
-
-			while (position < output_in_a_string.cend())
-			{
-				position = std::find(position, output_in_a_string.cend(), '\0');
-				const auto path_to_hostfxr(std::string(prev_position, position));
-#if defined(_WIN32)
-				static const std::string file_name("hostfxr.dll");
-#elif (defined(__APPLE__) && defined(__MACH__))
-				static const std::string file_name("libhostfxr.dylib");
-#else
-				static const std::string file_name("libhostfxr.so");
-#endif
-
-				if (ends_with_(path_to_hostfxr, file_name))
-				{
-					hostfxr_files.push_back(path_to_hostfxr);
-				}
-
-				position = std::find_if(position, output_in_a_string.cend(), [](const char& c)
-				{
-					return '\0' != c;
-				});
-				//
-				prev_position = position;
-			}
-
-			hostfxr_files.sort([](const std::string & path1, const std::string & path2)
-			{
-				auto p1(string_to_range(path1));
-				auto p2(string_to_range(path2));
-
-				if (!path_get_directory_name(p1.start, &p1.finish))
-				{
-					return false;
-				}
-
-				if (!path_get_directory_name(p2.start, &p2.finish))
-				{
-					return false;
-				}
-
-				ptrdiff_t i1, i2;
-
-				if (-1 == (i1 = string_last_index_of(p1.start, p1.finish, &PATH_DELIMITER, &PATH_DELIMITER + 1)))
-				{
-					return false;
-				}
-
-				if (-1 == (i2 = string_last_index_of(p2.start, p2.finish, &PATH_DELIMITER, &PATH_DELIMITER + 1)))
-				{
-					return false;
-				}
-
-				if (!string_substring(p1.start, p1.finish, i1, -1, &p1))
-				{
-					return false;
-				}
-
-				if (!string_substring(p2.start, p2.finish, i2, -1, &p2))
-				{
-					return false;
-				}
-
-				uint8_t v1[VERSION_SIZE];
-				uint8_t v2[VERSION_SIZE];
-
-				if (!version_parse(p1.start, p1.finish, v1))
-				{
-					return false;
-				}
-
-				if (!version_parse(p2.start, p2.finish, v2))
-				{
-					return false;
-				}
-
-				return 0 < version_greater(v1, v2);
-			});
-		}
-
-		ASSERT_FALSE(hostfxr_files.empty());
-
 		if (dotnet_executable.empty())
 		{
 #if defined(_WIN32)
@@ -490,315 +562,410 @@ protected:
 			dotnet_executable = join_path(dotnet_root, "dotnet");
 #endif
 		}
+
+		if (hostfxr_files.empty())
+		{
+			FillHostFxrFiles();
+		}
+
+		ASSERT_FALSE(hostfxr_files.empty());
+	}
+
+	~TestNetModuleWithParameters()
+	{
+		buffer_release(&the_output);
 	}
 };
 
-std::list<std::string> TestNetModuleWithParameters::hostfxr_files;
 std::string TestNetModuleWithParameters::dotnet_root;
 std::string TestNetModuleWithParameters::dotnet_executable;
+//uint8_t TestNetModuleWithParameters::host_version[VERSION_SIZE];
+//uint8_t TestNetModuleWithParameters::host_versions[10][VERSION_SIZE];
+std::list<std::string> TestNetModuleWithParameters::hostfxr_files;
+const std::string TestNetModuleWithParameters::True("True");
 
-TEST_F(TestNetModuleWithParameters, hostfxr)
+/*TEST_F(TestNetModuleWithParameters, hostfxr_initialize)
 {
-	static const std::string True("True");
-	//
-	buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
-	//
-	ASSERT_TRUE(common_get_attributes_and_arguments_for_task(
-					nullptr, nullptr, 3,
-					nullptr, nullptr, nullptr, &arguments))
-			<< buffer_free_with_inner_buffers(&arguments);
-	//
-	auto the_module = buffer_buffer_data(&arguments, 2);
-	ASSERT_TRUE(string_to_buffer(path_to_module, the_module))
-			<< buffer_free_with_inner_buffers(&arguments);
-	ASSERT_TRUE(buffer_push_back(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments);
-	//
-	buffer project;
-	SET_NULL_TO_BUFFER(project);
-	ASSERT_TRUE(project_new(&project))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	//
-	uint8_t verbose = 0;
-	ASSERT_TRUE(load_tasks_evaluate_task(&project, nullptr, &arguments, verbose))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	//TODO: for (const auto& hostfxr : hostfxr_files)
 	const auto hostfxr = *(hostfxr_files.cbegin());
-	//
-	range function;
-	std::string command;
 	//
 	command = "hostfxr::initialize('";
 	command += hostfxr;
 	command += "')";
 	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(buffer_push_back(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
 	//
-	ASSERT_STREQ(True.c_str(), buffer_char_data(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	std::cout << "[       OK ]" << std::endl;
+}*/
+
+TEST_F(TestNetModuleWithParameters, hostfxr_functions)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
 	//
 	command = "hostfxr::functions()";
 	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(buffer_push_back(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
 	//
-	ASSERT_LT(0, buffer_size(the_module))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	ASSERT_LT(0, buffer_size(&the_output));
+	//
+	std::cout << "[       OK ]" << std::endl;
 	//
 	command = "hostfxr::functions(',')";
 	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
 	//
-	ASSERT_LT(0, buffer_size(the_module))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	ASSERT_LT(0, buffer_size(&the_output));
 	//
-	std::list<std::string>::const_iterator result;
-	std::list<std::string> functions;
-	functions.push_back("");
-	command = buffer_to_string(the_module);
-	//
-	std::for_each(command.cbegin(), command.cend(), [&functions](const char& c)
-	{
-		if (',' == c)
-		{
-			functions.push_back("");
-		}
-		else
-		{
-			functions.rbegin()->push_back(c);
-		}
-	});
+	std::cout << "[       OK ]" << std::endl;
+}
 
-	for (const auto& fun : functions)
-	{
-		command = "hostfxr::is-function-exists('";
-		command += fun;
-		command += "')";
-		function = string_to_range(command);
-		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(buffer_push_back(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		//
-		ASSERT_STREQ(True.c_str(), buffer_char_data(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	}
-
-	result = std::find(functions.begin(), functions.end(), "main");
-	ASSERT_NE(functions.end(), result)
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+TEST_F(TestNetModuleWithParameters, hostfxr_main)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "main";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	//
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	std::cout << "[       OK ]" << std::endl;
+	//
 	command = "hostfxr::main(";
 	command += "'" + dotnet_executable + "', '--version'";
 	command += ")";
 	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-	ASSERT_TRUE(buffer_push_back(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
 	//
-	ASSERT_STREQ("0", buffer_char_data(the_module, 0))
-			<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-#if defined(__GNUC__) && __GNUC__ <= 5
-	{
-		auto result_ = functions.begin();
-		std::advance(result_, std::distance(functions.cbegin(), result));
-		functions.erase(result_);
-	}
-#else
-	functions.erase(result);
-#endif
-	result = std::find(functions.begin(), functions.end(), "resolve-sdk");
+	ASSERT_STREQ("0", buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+}
 
-	if (functions.end() != result)
+TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "resolve-sdk";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	//
+	std::cout << "[       OK ]" << std::endl;
+
+	if (True == buffer_to_string(&the_output))
 	{
 		command = "hostfxr::resolve-sdk('', '')";
 		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(buffer_push_back(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		//
-		ASSERT_LT(2, buffer_size(the_module))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
 #ifdef WIN32
-		ASSERT_TRUE(directory_exists(buffer_data(the_module, 0)))
-				<< std::endl << buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-#endif
-#if defined(__GNUC__) && __GNUC__ <= 5
-		auto result_ = functions.begin();
-		std::advance(result_, std::distance(functions.cbegin(), result));
-		functions.erase(result_);
+		ASSERT_TRUE(directory_exists(buffer_data(&the_output, 0)));
 #else
-		functions.erase(result);
+		ASSERT_STREQ("0", buffer_char_data(&the_output, 0));
+		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
+		std::cout << "[       OK ]" << std::endl;
 	}
+	else
+	{
+		std::cerr <<
+				  "[Warning]: current version of host do not support 'hostfxr::resolve-sdk' function." << std::endl;
+	}
+}
 
-	result = std::find(functions.begin(), functions.end(), "resolve-sdk2");
+TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk2)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "resolve-sdk2";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	//
+	std::cout << "[       OK ]" << std::endl;
 
-	if (functions.end() != result)
+	if (True == buffer_to_string(&the_output))
 	{
 		command = "hostfxr::resolve-sdk2('', '', '1')";
 		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
 		//
-		ASSERT_LT(2, buffer_size(the_module))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_LT(2, buffer_size(&the_output));
 #ifdef WIN32
-		command = buffer_to_string(the_module);
+		command = buffer_to_string(&the_output);
 		auto prev_position = command.cbegin();
 		auto position = prev_position;
 
 		while (prev_position < (position = std::find(position, command.cend(), '\0')))
 		{
-			auto path(std::string(prev_position, position));
-			auto pos = path.find(' ');
-			ASSERT_NE(std::string::npos, pos)
-					<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-			pos++;
-			path = path.substr(pos);
+			std::string path(prev_position, position);
+			auto position_ = path.find(' ');
+			ASSERT_NE(std::string::npos, position_);
+			position_++;
+			path = path.substr(position_);
 			//
-			ASSERT_TRUE(directory_exists(reinterpret_cast<const uint8_t*>(path.c_str())))
-					<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+			ASSERT_TRUE(directory_exists(reinterpret_cast<const uint8_t*>(path.c_str())));
 			//
-			position = std::find_if(position, command.cend(), [](const char& c)
+			position = std::find_if(position, command.cend(), [](const char& ch)
 			{
-				return '\0' != c;
+				return '\0' != ch;
 			});
 			//
 			prev_position = position;
 		}
 
-#endif
-#if defined(__GNUC__) && __GNUC__ <= 5
-		auto result_ = functions.begin();
-		std::advance(result_, std::distance(functions.cbegin(), result));
-		functions.erase(result_);
 #else
-		functions.erase(result);
+		std::cerr << "[Warning]: function do not return valid data." << std::endl;
+		//
+		command = "net::result-to-string('";
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		command += buffer_char_data(&the_output, 0);
+		command += "')";
+		function = string_to_range(command);
+		std::cerr << "[ RUN      ]" << " " << command << std::endl;
+		//
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		//
+		std::cerr << buffer_char_data(&the_output, 0) << std::endl;
+		std::cerr << "[       OK ]" << std::endl;
 #endif
+		std::cout << "[       OK ]" << std::endl;
 	}
+	else
+	{
+		std::cerr <<
+				  "[Warning]: current version of host do not support 'hostfxr::resolve-sdk2' function." << std::endl;
+	}
+}
 
-	result = std::find(functions.begin(), functions.end(), "get-available-sdks");
+TEST_F(TestNetModuleWithParameters, hostfxr_get_available_sdks)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "get-available-sdks";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	//
+	std::cout << "[       OK ]" << std::endl;
 
-	if (functions.end() != result)
+	if (True == buffer_to_string(&the_output))
 	{
 		command = "hostfxr::get-available-sdks()";
 		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
 		//
-		ASSERT_LT(2, buffer_size(the_module))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
 #ifdef WIN32
-		command = buffer_to_string(the_module);
+		command = buffer_to_string(&the_output);
 		auto prev_position = command.cbegin();
 		auto position = prev_position;
 
 		while (prev_position < (position = std::find(position, command.cend(), '\0')))
 		{
-			auto path(std::string(prev_position, position));
+			std::string path(prev_position, position);
 			//
-			ASSERT_TRUE(directory_exists(reinterpret_cast<const uint8_t*>(path.c_str())))
-					<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+			ASSERT_TRUE(directory_exists(reinterpret_cast<const uint8_t*>(path.c_str())));
 			//
-			position = std::find_if(position, command.cend(), [](const char& c)
+			position = std::find_if(position, command.cend(), [](const char& ch)
 			{
-				return '\0' != c;
+				return '\0' != ch;
 			});
 			//
 			prev_position = position;
 		}
 
-#endif
-#if defined(__GNUC__) && __GNUC__ <= 5
-		auto result_ = functions.begin();
-		std::advance(result_, std::distance(functions.cbegin(), result));
-		functions.erase(result_);
 #else
-		functions.erase(result);
+		ASSERT_EQ(0, buffer_size(&the_output));
+		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
+		std::cout << "[       OK ]" << std::endl;
 	}
-
-	result = std::find(functions.begin(), functions.end(), "get-native-search-directories");
-
-	if (functions.end() != result)
+	else
 	{
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(path_get_temp_file_name(the_module))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(buffer_push_back(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		std::cerr <<
+				  "[Warning]: current version of host do not support 'hostfxr::get-available-sdks' function." << std::endl;
+	}
+}
 
-		if (file_exists(buffer_data(the_module, 0)))
+TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "get-native-search-directories";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	//
+	std::cout << "[       OK ]" << std::endl;
+
+	if (True == buffer_to_string(&the_output))
+	{
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(path_get_temp_file_name(&the_output));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+
+		if (file_exists(buffer_data(&the_output, 0)))
 		{
-			ASSERT_TRUE(file_delete(buffer_data(the_module, 0)))
-					<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+			ASSERT_TRUE(file_delete(buffer_data(&the_output, 0)));
 		}
 
-		ASSERT_TRUE(directory_create(buffer_data(the_module, 0)))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(directory_create(buffer_data(&the_output, 0)));
 		//
 		command = "exec";
 		command += " program=\"";
 		command += dotnet_executable;
 		command += "\" commandline=\"new console\"";
 		command += " workingdir=\"";
-		command += buffer_char_data(the_module, 0);
+		command += buffer_char_data(&the_output, 0);
 		command += "\"";
-		command += "/>";
+		command += " />";
 		//
 		function = string_to_range(command);
 		function.finish = function.start + 4;
+		std::cout << "[ RUN      ]" << " <" << command << std::endl;
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
-						&project, nullptr,
+						&the_project, nullptr,
 						&function, function.start + command.size(),
-						nullptr, 0, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+						nullptr, 0, verbose));
 		//
+		std::cout << "[       OK ]" << std::endl;
 		command = "exec";
 		command += " program=\"";
 		command += dotnet_executable;
 		command += "\" commandline=\"build\"";
 		command += " workingdir=\"";
-		command += buffer_char_data(the_module, 0);
+		command += buffer_char_data(&the_output, 0);
 		command += "\"";
 		//
-		ASSERT_TRUE(buffer_resize(the_module, buffer_size(the_module) - 1))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, buffer_size(&the_output) - 1));
 		//
 #if defined(_WIN32)
 		static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("\\1.txt");
@@ -807,31 +974,29 @@ TEST_F(TestNetModuleWithParameters, hostfxr)
 #endif
 		ASSERT_TRUE(
 			path_combine_in_place(
-				the_module, buffer_size(the_module),
-				sub_path, sub_path + 6))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+				&the_output, buffer_size(&the_output),
+				sub_path, sub_path + 6));
 		//
-		ASSERT_TRUE(buffer_push_back(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		//
 		command += " output=\"";
-		command += buffer_char_data(the_module, 0);
+		command += buffer_char_data(&the_output, 0);
 		command += "\"";
-		command += "/>";
+		command += " />";
 		//
 		function = string_to_range(command);
 		function.finish = function.start + 4;
+		std::cout << "[ RUN      ]" << " <" << command << std::endl;
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
-						&project, nullptr,
+						&the_project, nullptr,
 						&function, function.start + command.size(),
-						nullptr, 0, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+						nullptr, 0, verbose));
 		//
-		std::ifstream file(buffer_char_data(the_module, 0));
+		std::cout << "[       OK ]" << std::endl;
+		std::ifstream file(buffer_char_data(&the_output, 0));
 		//
-		ASSERT_TRUE(file.is_open())
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(file.is_open());
 		//
 		command.clear();
 		std::copy(std::istreambuf_iterator<char>(file),
@@ -840,33 +1005,28 @@ TEST_F(TestNetModuleWithParameters, hostfxr)
 		file.close();
 		//
 		auto index = command.find(" -> ");
-		ASSERT_NE(std::string::npos, index)
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_NE(std::string::npos, index);
 		command = command.substr(index + 4);
 		//
 		index = command.find('\n');
-		ASSERT_NE(std::string::npos, index)
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_NE(std::string::npos, index);
 		command = command.substr(0, index);
 		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(string_to_buffer(command, the_module))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(buffer_push_back(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(string_to_buffer(command, &the_output));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		//
 		command = "hostfxr::get-native-search-directories('exec', '";
-		command += buffer_char_data(the_module, 0);
+		command += buffer_char_data(&the_output, 0);
 		command += "')";
 		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
 #ifdef WIN32
-		command = buffer_to_string(the_module);
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		//
+		command = buffer_to_string(&the_output);
 		auto prev_position = command.cbegin();
 		auto position = prev_position;
 
@@ -874,59 +1034,184 @@ TEST_F(TestNetModuleWithParameters, hostfxr)
 		{
 			std::string path(prev_position, position);
 			//
-			auto position_ = std::find_if(command.rbegin(), command.rend(), [](const char& c)
+			auto position_ = std::find_if(command.rbegin(), command.rend(), [](const char& ch)
 			{
-				return '\\' != c && ';' != c;
+				return PATH_DELIMITER != ch && ';' != ch;
 			});
 			//
 			path.resize(command.rend() - position_);
 			//
-			ASSERT_TRUE(directory_exists(reinterpret_cast<const uint8_t*>(path.c_str())))
-					<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+			ASSERT_TRUE(directory_exists(reinterpret_cast<const uint8_t*>(path.c_str())));
 			//
-			position = std::find_if(position, command.cend(), [](const char& c)
+			position = std::find_if(position, command.cend(), [](const char& ch)
 			{
-				return ';' != c;
+				return ';' != ch;
 			});
 			//
 			prev_position = position;
 		}
 
-#endif
-#if defined(__GNUC__) && __GNUC__ <= 5
-		auto result_ = functions.begin();
-		std::advance(result_, std::distance(functions.cbegin(), result));
-		functions.erase(result_);
 #else
-		functions.erase(result);
+		ASSERT_FALSE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
+		std::cout << "[       OK ]" << std::endl;
 	}
+	else
+	{
+		std::cerr <<
+				  "[Warning]: current version of host do not support 'hostfxr::get-native-search-directories' function." <<
+				  std::endl;
+	}
+}
 
-	result = std::find(functions.begin(), functions.end(), "get-dotnet-environment-info");
+TEST_F(TestNetModuleWithParameters, hostfxr_main_startupinfo)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "main-startupinfo";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	//
+	std::cout << "[       OK ]" << std::endl;
 
-	if (functions.end() != result)
+	if (True == buffer_to_string(&the_output))
+	{
+		command = "hostfxr::main-startupinfo('";
+		command += dotnet_executable;
+		command += "', '', '";
+#ifdef WIN32
+		command += "dotnet.dll";
+		//#elif (defined(__APPLE__) && defined(__MACH__))
+#else
+		command += "libdotnet.so";
+#endif
+		command += "', '";
+		command += dotnet_executable;
+		command += "', '--info')";
+		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
+		//
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		//
+		command = "net::result-to-string('";
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		command += buffer_char_data(&the_output, 0);
+		command += "')";
+		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
+		//
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		//
+		std::cout << "[       OK ]" << std::endl;
+		//
+		ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"));
+		std::cout << "[       OK ]" << std::endl;
+	}
+	else
+	{
+		std::cerr <<
+				  "[Warning]: current version of host do not support 'hostfxr::main-startupinfo' function." <<
+				  std::endl;
+	}
+}
+/*close
+get-runtime-delegate
+get-runtime-properties
+get-runtime-property-value
+initialize-for-dotnet-command-line
+initialize-for-runtime-config
+run-app
+set-error-writer
+set-runtime-property-value
+main-bundle-startupinfo*/
+TEST_F(TestNetModuleWithParameters, hostfxr_get_dotnet_environment_info)
+{
+	const auto hostfxr = *(hostfxr_files.cbegin());
+	//
+	command = "hostfxr::initialize('";
+	command += hostfxr;
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	//
+	std::cout << "[       OK ]" << std::endl;
+	//
+	command = "hostfxr::is-function-exists('";
+	command += "get-dotnet-environment-info";
+	command += "')";
+	function = string_to_range(command);
+	std::cout << "[ RUN      ]" << " " << command << std::endl;
+	//
+	ASSERT_TRUE(buffer_resize(&the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	//
+	std::cout << "[       OK ]" << std::endl;
+
+	if (True == buffer_to_string(&the_output))
 	{
 		command = "hostfxr::get-dotnet-environment-info('";
 		command += dotnet_root;
 		command += "')";
 		function = string_to_range(command);
+		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(the_module, 0))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-		ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
 		//
-		ASSERT_LT(0, buffer_size(the_module))
-				<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
-#if defined(__GNUC__) && __GNUC__ <= 5
-		auto result_ = functions.begin();
-		std::advance(result_, std::distance(functions.cbegin(), result));
-		functions.erase(result_);
-#else
-		functions.erase(result);
-#endif
+		ASSERT_LT(0, buffer_size(&the_output));
+		//
+		std::cout << "[       OK ]" << std::endl;
 	}
-
-	project_unload(&project);
-	buffer_release_with_inner_buffers(&arguments);
+	else
+	{
+		std::cerr <<
+				  "[Warning]: current version of host do not support 'hostfxr::get-dotnet-environment-info' function." <<
+				  std::endl;
+	}
 }
+
+#if 0
+{
+	//if (True == )
+	//command = "hostpolicy::initialize('";
+	//command += std::to_string(369365249);
+	//command += "')";
+	//function = string_to_range(command);
+	////
+	//ASSERT_TRUE(buffer_resize(the_module, 0))
+	//	<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	//ASSERT_TRUE(interpreter_evaluate_function(&project, nullptr, &function, the_module, verbose))
+	//	<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	//ASSERT_TRUE(buffer_push_back(the_module, 0))
+	//	<< buffer_free_with_inner_buffers(&arguments) << project_free(&project);
+	//
+}
+#endif

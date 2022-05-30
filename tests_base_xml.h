@@ -66,6 +66,7 @@ uint8_t select_nodes_by_condition(
 	const pugi::xpath_node_set& all_nodes, std::list<pugi::xpath_node>& nodes, buffer* tmp);
 std::string get_path_to_directory_with_source(uint8_t* result);
 std::string join_path(const std::string& path, const std::string& child_path);
+bool starts_with_(const std::string& input, const std::string& value);
 
 extern std::wstring char_to_wchar_t(const std::string& input);
 

@@ -36,6 +36,7 @@ jobs:
 
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
         - os: macos-latest
@@ -47,7 +48,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Fetch prebuild of third-party libraries
       run: git fetch origin ${{ matrix.os }}
@@ -243,7 +244,6 @@ jobs:
         export core_host_initialize=""
         ${{ github.workspace }}/build-modules-net/tests_net.module --tests_xml=${{ github.workspace }}/tests.xml --build_file=${{ github.workspace }}/modules/net/net.xml -D:DOTNET_ROOT=$DOTNET_ROOT --gtest_filter=TestNetModuleViaBuildFile*
 
-    # TODO: TestNetModuleWithParameters
     - name: Create script for container (Linux)
       if: ${{ 'Linux' == runner.os }}
       run: |
@@ -252,6 +252,10 @@ jobs:
         echo "ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime" >> ${{ github.workspace }}/run.sh
         echo "echo Etc/UTC > /etc/timezone" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
+        #
+        echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --dotnet_root=/usr/share/dotnet/ --gtest_filter=TestNetModuleWithParameters*" >> ${{ github.workspace }}/run.sh
+        echo >> ${{ github.workspace }}/run.sh
+        #
         echo "cd /home/build-modules-net/; /home/build-modules-net/tests_net.module --tests_xml=/home/tests.xml --build_file=/home/modules/net/net.xml --gtest_filter=TestNetModuleViaBuildFile*" >> ${{ github.workspace }}/run.sh
         echo >> ${{ github.workspace }}/run.sh
         echo "export test_hostfxr_=\"\"" >> ${{ github.workspace }}/run.sh
@@ -352,7 +356,7 @@ jobs:
 
     - name: Upload binaries (Unix like)
       if: ${{ 'Windows' != runner.os }}
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}
         path: |
@@ -363,7 +367,7 @@ jobs:
 
     - name: Upload binaries (Windows)
       if: ${{ 'Windows' == runner.os }}
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}
         path: |
@@ -628,7 +632,7 @@ jobs:
         ${{ github.workspace }}\build-modules-net-MinGW\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml -D:DOTNET_ROOT="$env:DOTNET_ROOT" --gtest_filter=TestNetModuleViaBuildFile*
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}
         path: |
