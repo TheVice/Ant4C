@@ -843,6 +843,95 @@
       <output>/tmp/my_program</output>
       <return>1</return>
     </exec_get_program_full_path>
+    <interpreter_get_environments>
+      <program />
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="a" value="1" />
+          <variable name="b c" value="2" />
+          <variable name="d e" value="3 4" />
+          <variable name="f" value="5 6" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>a=1</expected_variable>
+      <expected_variable>"b c"=2</expected_variable>
+      <expected_variable>"d e"="3 4"</expected_variable>
+      <expected_variable>f="5 6"</expected_variable>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <program><![CDATA[
+        <property name="test" value="a" />
+      ]]></program>
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="${test}" value="1" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>a=1</expected_variable>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <program />
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="a" />
+          <variable name="b" value="2" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>a=""</expected_variable>
+      <expected_variable>b=2</expected_variable>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable />
+        </environment>
+      </exec>
+      ]]></exec_node>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable value="a" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <program />
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="a" />
+        </environment>
+        <environment>
+          <variable name="b" value="2" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>a=""</expected_variable>
+      <expected_variable>b=2</expected_variable>
+    </interpreter_get_environments>
   </TestExec>
   <TestFileSystem>
     <directory_enumerate_file_system_entries>

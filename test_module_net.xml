@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<project default="run">
+  <property
+    overwrite="false"
+    name="TESTS_XML"
+    value="${path::combine(directory::get-current-directory(), 'tests.xml')}" />
+  <property
+    overwrite="false"
+    name="NET_XML"
+    value="${path::combine(directory::get-current-directory(),
+             path::combine('modules', path::combine('net', 'net.xml')))}" />
+
+  <choose unless="${property::exists('DOTNET_ROOT')}">
+    <when test="${platform::is-unix()}">
+      <property name="DOTNET_ROOT" value="/usr/share/dotnet" />
+    </when>
+
+    <when test="${platform::is-windows()}">
+      <property
+        name="DOTNET_ROOT"
+        value="${string::quote(environment::get-folder-path('ProgramFiles')\dotnet)}" />
+    </when>
+  </choose>
+
+  <echo level="Debug">TESTS_XML -> '${TESTS_XML}'</echo>
+  <echo level="Debug">NET_XML -> '${NET_XML}'</echo>
+
+  <target name="get-build-dir">
+    <property
+      overwrite="false"
+      name="BUILD_DIR"
+      value="${path::combine(directory::get-current-directory(), 'build')}" />
+
+    <if test="${platform::is-windows()}">
+      <property
+        if="${property::exists('compiler')}"
+        name="BUILD_DIR"
+        value="${path::combine(BUILD_DIR, compiler)}" />
+      <property
+        if="${property::exists('TargetPlatform')}"
+        name="BUILD_DIR"
+        value="${path::combine(BUILD_DIR, TargetPlatform)}" />
+    </if>
+
+    <choose if="${property::exists('optimized')}">
+      <when test="${optimized}">
+        <property
+          name="BUILD_DIR" value="${path::combine(BUILD_DIR, 'Release')}" />
+      </when>
+      <otherwise>
+        <property
+          name="BUILD_DIR" value="${path::combine(BUILD_DIR, 'Debug')}" />
+      </otherwise>
+    </choose>
+
+    <echo level="Debug">BUILD_DIR -> '${BUILD_DIR}'</echo>
+
+    <property
+      name="executable"
+      value="${path::combine(BUILD_DIR, 'tests_net.module')}" />
+    <property
+      if="${platform::is-windows()}"
+      name="executable"
+      value="${executable}.exe" />
+
+    <echo level="Debug">executable -> '${executable}'</echo>
+  </target>
+
+  <target name="run">
+    <call
+      unless="${target::has-executed('get-build-dir')}"
+      target="get-build-dir" />
+    <exec
+      unless="${platform::is-windows()}"
+      program="chmod"
+      commandline="+x ${string::quote(executable)}" />
+    <exec
+      program="${executable}"
+      commandline="--tests_xml=${string::quote(TESTS_XML)} --build_file=${string::quote(NET_XML)} --dotnet_root=${DOTNET_ROOT} -D:DOTNET_ROOT=${DOTNET_ROOT}" />
+
+    <property
+      name="tests"
+      value="hostfxr_resolve_sdk;hostfxr_get_available_sdks;hostfxr_get_native_search_directories;hostfxr_resolve_sdk2;test_hostfxr_initialize_for_dotnet_command_line;test_hostfxr_initialize_for_runtime_config;test_hostfxr_run_app;test_hostfxr_get_runtime_properties;test_hostfxr_get_runtime_property_value;test_hostfxr_set_runtime_property_value;test_hostfxr_get_runtime_delegate;test_hostfxr_set_error_writer;test_hostfxr_main_bundle_startupinfo;test_file_is_assembly;core_host_main;core_host_main_with_output_buffer;core_host_initialize;" />
+
+    <foreach item="String" in="${tests}" delim=";" property="test">
+      <echo level="Info">test -> '${test}'</echo>
+      <exec
+        program="${executable}"
+        commandline="--tests_xml=${string::quote(TESTS_XML)} --build_file=${string::quote(NET_XML)} --dotnet_root=${DOTNET_ROOT} -D:DOTNET_ROOT=${DOTNET_ROOT} --gtest_filter=TestNetModuleViaBuildFile*">
+        <environment>
+          <variable name="test_hostfxr_" value="1" />
+          <variable name="${test}" value="1" />
+        </environment>
+      </exec>
+    </foreach>
+  </target>
+</project>

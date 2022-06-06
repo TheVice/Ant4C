@@ -15,6 +15,7 @@ extern "C" {
 #include "exec.h"
 #include "file_system.h"
 #include "interpreter.h"
+#include "interpreter.exec.h"
 #include "path.h"
 #include "project.h"
 #include "property.h"
@@ -794,4 +795,93 @@ TEST_F(TestExec, exec_get_program_full_path)
 
 	buffer_release(&tmp);
 	buffer_release(&path_to_the_program);
+}
+
+TEST_F(TestExec, interpreter_get_environments)
+{
+	buffer variables;
+	SET_NULL_TO_BUFFER(variables);
+	//
+	buffer the_project;
+	SET_NULL_TO_BUFFER(the_project);
+	//
+	ASSERT_TRUE(project_new(&the_project))
+			<< buffer_free(&variables)
+			<< project_free(&the_project);
+
+	for (const auto& node : nodes)
+	{
+		ASSERT_TRUE(buffer_resize(&variables, 0))
+				<< buffer_free(&variables)
+				<< project_free(&the_project);
+		//
+		project_clear(&the_project);
+		//
+		program_str = node.node().select_node("program").node().child_value();
+
+		if (!program_str.empty())
+		{
+			program = string_to_range(program_str);
+			//
+			ASSERT_TRUE(project_load_from_content(
+							program.start, program.finish,
+							&the_project, 0, verbose))
+					<< buffer_free(&variables)
+					<< project_free(&the_project);
+		}
+
+		program_str = node.node().select_node("exec_node").node().child_value();
+		program = string_to_range(program_str);
+		//
+		auto position = program_str.find("<exec");
+		ASSERT_NE(std::string::npos, position)
+				<< buffer_free(&variables)
+				<< project_free(&the_project);
+		position += 5;
+		//
+		auto attributes_finish = program.start + position;
+		//
+		base_dir_str = node.node().select_node("return").node().child_value();
+		base_dir = string_to_range(base_dir_str);
+		spawn = static_cast<uint8_t>(int_parse(base_dir.start, base_dir.finish));
+		//
+		ASSERT_EQ(spawn,
+				  interpreter_get_environments(
+					  &the_project, nullptr,
+					  attributes_finish, program.finish,
+					  &variables, verbose))
+				<< '\"' << program_str << '\"' << std::endl
+				<< buffer_free(&variables)
+				<< project_free(&the_project);
+
+		if (spawn)
+		{
+			auto returned_variables = buffer_to_string(&variables);
+			const auto sub_nodes = node.node().select_nodes("expected_variable");
+
+			for (const auto& sub_node : sub_nodes)
+			{
+				const std::string expected_variable(sub_node.node().child_value());
+				position = returned_variables.find(expected_variable);
+				//
+				ASSERT_NE(std::string::npos, position)
+						<< '\"' << returned_variables << '\"' << std::endl
+						<< '\"' << expected_variable << '\"' << std::endl
+						<< buffer_free(&variables)
+						<< project_free(&the_project);
+				//
+				returned_variables = returned_variables.replace(position, expected_variable.size() + 1, "");
+			}
+
+			ASSERT_TRUE(returned_variables.empty())
+					<< '\"' << returned_variables << '\"' << std::endl
+					<< buffer_free(&variables)
+					<< project_free(&the_project);
+		}
+
+		--node_count;
+	}
+
+	project_unload(&the_project);
+	buffer_release(&variables);
 }
