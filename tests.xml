@@ -932,6 +932,51 @@
       <expected_variable>a=""</expected_variable>
       <expected_variable>b=2</expected_variable>
     </interpreter_get_environments>
+    <interpreter_get_environments>
+      <program />
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="a" />
+        </environment>
+        <environment>
+          <variable name="b" value="2" if="false" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>a=""</expected_variable>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <program />
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="a" unless="true" />
+        </environment>
+        <environment>
+          <variable name="b" value="2" if="true" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>b=2</expected_variable>
+    </interpreter_get_environments>
+    <interpreter_get_environments>
+      <program />
+      <exec_node><![CDATA[
+      <exec>
+        <environment>
+          <variable name="a" unless="false" />
+        </environment>
+        <environment>
+          <variable name="b" value="2" if="false" />
+        </environment>
+      </exec>
+      ]]></exec_node>
+      <return>1</return>
+      <expected_variable>a=""</expected_variable>
+    </interpreter_get_environments>
   </TestExec>
   <TestFileSystem>
     <directory_enumerate_file_system_entries>

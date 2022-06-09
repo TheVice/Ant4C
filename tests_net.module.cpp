@@ -342,6 +342,7 @@ protected:
 	//static uint8_t host_versions[10][VERSION_SIZE];
 	static std::list<std::string> hostfxr_files;
 	static const std::string True;
+	static const std::string Exec;
 
 	range function;
 	std::string command;
@@ -355,7 +356,7 @@ protected:
 		//
 		ASSERT_TRUE(path_get_temp_file_name(tmp)) << buffer_free(tmp);
 		//
-		command = "exec";
+		command = Exec;
 		command += " program=\"";
 		command += dotnet_executable;
 		command += "\" commandline=\"--version\"";
@@ -365,7 +366,7 @@ protected:
 		command += " />";
 		//
 		function = string_to_range(command);
-		function.finish = function.start + 4;
+		function.finish = function.start + Exec.size();
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
 						nullptr, nullptr,
@@ -565,6 +566,7 @@ std::string TestNetModuleWithParameters::dotnet_executable;
 //uint8_t TestNetModuleWithParameters::host_versions[10][VERSION_SIZE];
 std::list<std::string> TestNetModuleWithParameters::hostfxr_files;
 const std::string TestNetModuleWithParameters::True("True");
+const std::string TestNetModuleWithParameters::Exec("exec");
 
 /*TEST_F(TestNetModuleWithParameters, hostfxr_initialize)
 {
@@ -945,7 +947,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
 
 		ASSERT_TRUE(directory_create(buffer_data(&the_output, 0)));
 		//
-		command = "exec";
+		command = Exec;
 		command += " program=\"";
 		command += dotnet_executable;
 		command += "\" commandline=\"new console\"";
@@ -955,7 +957,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
 		command += " />";
 		//
 		function = string_to_range(command);
-		function.finish = function.start + 4;
+		function.finish = function.start + Exec.size();
 		std::cout << "[ RUN      ]" << " <" << command << std::endl;
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
@@ -964,7 +966,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
 						nullptr, 0, verbose));
 		//
 		std::cout << "[       OK ]" << std::endl;
-		command = "exec";
+		command = Exec;
 		command += " program=\"";
 		command += dotnet_executable;
 		command += "\" commandline=\"build\"";
@@ -992,7 +994,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
 		command += " />";
 		//
 		function = string_to_range(command);
-		function.finish = function.start + 4;
+		function.finish = function.start + Exec.size();
 		std::cout << "[ RUN      ]" << " <" << command << std::endl;
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
@@ -1011,9 +1013,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
 		//
 		file.close();
 		//
-		auto index = command.find(" -> ");
+		static const std::string arrow(" -> ");
+		auto index = command.find(arrow);
 		ASSERT_NE(std::string::npos, index);
-		command = command.substr(index + 4);
+		command = command.substr(index + arrow.size());
 		//
 		index = command.find('\n');
 		ASSERT_NE(std::string::npos, index);

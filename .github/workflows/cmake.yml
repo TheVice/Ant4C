@@ -112,9 +112,14 @@ jobs:
 
     - name: Create project files
       run: >-
-        cmake ${{ env.CMAKE_TARGET_PLATFORM }} ${{ env.CMAKE_GENERATOR }} ${{ env.CMAKE_BUILD_TYPE }}
-        -S ${{ github.workspace }} -B ${{ env.CMAKE_BUILD_DIR }}
+        cmake
+        ${{ env.CMAKE_TARGET_PLATFORM }}
+        ${{ env.CMAKE_GENERATOR }}
+        ${{ env.CMAKE_BUILD_TYPE }}
+        -S ${{ github.workspace }}
+        -B ${{ env.CMAKE_BUILD_DIR }}
         -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+        -DPROGRAM_VERSION="${{ github.event.repository.updated_at }}"
 
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1

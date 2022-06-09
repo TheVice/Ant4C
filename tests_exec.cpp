@@ -335,9 +335,9 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 {
 	static const std::string exec_str("exec");
 	//
-	std::vector<std::pair<std::string*, void**>> input_properties;
-	input_properties.push_back(std::make_pair(&pid_property_str, &pid_property));
-	input_properties.push_back(std::make_pair(&result_property_str, &result_property));
+	std::pair<std::string*, void**> input_properties[2];
+	input_properties[0] = std::make_pair(&pid_property_str, &pid_property);
+	input_properties[1] = std::make_pair(&result_property_str, &result_property);
 	//
 	buffer the_project;
 	SET_NULL_TO_BUFFER(the_project);

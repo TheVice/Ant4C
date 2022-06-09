@@ -90,6 +90,10 @@
         <environment>
           <variable name="test_hostfxr_" value="1" />
           <variable name="${test}" value="1" />
+          <variable
+            name="DOTNET_CLI_HOME"
+            value="${environment::get-variable('HOME')}"
+            if="${environment::variable-exists('HOME')}" />
         </environment>
       </exec>
     </foreach>

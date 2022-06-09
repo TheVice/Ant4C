@@ -283,9 +283,9 @@ All tasks have next non mandatory parameters.
 | Argument name | Type | Default value | Description
 
 | failonerror .4+^.^| bool | true | If value of this parameter evaluated to the *false*, task non stop interpreting of script even if task was failed.
-| if | true | If value of this parameter evaluated to the *false*, task will be skip.
-| unless | false | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
-| verbose | false | RESERVED. If this parameter set to *true* task logging addition details.
+| if | *true* | If value of this parameter evaluated to the *false*, task will be skip.
+| unless .2+^.^| *false* | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
+| verbose | RESERVED. If this parameter set to *true* task logging addition details.
 |===
 
 Order of reading is next - first 'if', than 'unless', 'failonerror' and 'verbose'. Value of 'failonerror' ignored here, so if something wrong happens while reading common parameters - task will failed even if value of fail on error requested opposite.
@@ -644,20 +644,46 @@ the message too.</echo>
 This element also have sub element named '<variable>' +
 that represent the variable that should be using at by program to execute. +
 If no environment set, program got same environment that ant4c have. +
+Otherwise only variable(s) at the this element will be used.
 
-.Parameter of 'environment' element of 'exec' task.
+.Parameter of 'variable' element.
 |===
 | Argument name | Type | Default value | Description | Mandatory
 
 | name .2+^.^| string .2+^.^| N/A | Name of environment variable. | Yes
-| value | Value of environment variable. | No
+| value | Value of environment variable. .3+^.^| No
+| if .2+^.^| bool | *true* | If value of this parameter evaluated to the *false*, task will be skip.
+| unless | *false* | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
 |===
+
+Processing order of 'if' and 'unless' parameters same like at <<common_parameters,other tasks>>.
 
 ==== Sample using
 
 ----
+<exec
+  program="${property::get-value('cmake')}"
+  commandline="${property::get-value('cmake_arguments')}" />
+----
+
+----
 <exec program="${property::get-value('cmake')}"
-    commandline="${property::get-value('cmake_arguments')}" />
+  commandline="-S ${string::quote(property::get-value('source'))} -B ${string::quote(property::get-value('build'))}">
+  <environment>
+    <variable name="CMAKE_BUILD_TYPE" value="Debug" />
+  </environment>
+</exec>
+----
+
+----
+<exec program="${property::get-value('cmake')}">
+  <environment>
+    <variable
+      name="PATH"
+      value="${environment::get-variable('PATH')}"
+      if="${environment::variable-exists('PATH')}" />
+  </environment>
+</exec>
 ----
 
 [[fail_task]]

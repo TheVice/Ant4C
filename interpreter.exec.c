@@ -14,6 +14,11 @@
 #include "string_unit.h"
 #include "xml.h"
 
+/*#define NAME_POSITION			0*/
+#define VALUE_POSITION			1
+
+#define COUNT					(VALUE_POSITION + 1)
+
 uint8_t interpreter_get_environments_value(
 	const void* the_project,
 	const void* the_target,
@@ -29,7 +34,6 @@ uint8_t interpreter_get_environments_value(
 	};
 	/**/
 	static const uint8_t name_and_value_lengths[] = { 4, 5 };
-	static const uint8_t count_of_attributes = 2;
 
 	if (range_in_parts_is_null_or_empty(start_of_attributes, finish_of_attributes))
 	{
@@ -42,7 +46,7 @@ uint8_t interpreter_get_environments_value(
 	}
 
 	if (!common_get_attributes_and_arguments_for_task(
-			NULL, NULL, count_of_attributes,
+			NULL, NULL, COUNT,
 			NULL, NULL, NULL, attributes))
 	{
 		return 0;
@@ -50,7 +54,7 @@ uint8_t interpreter_get_environments_value(
 
 	if (!interpreter_get_arguments_from_xml_tag_record(
 			the_project, the_target, start_of_attributes, finish_of_attributes,
-			name_and_value, name_and_value_lengths, 0, count_of_attributes, attributes, verbose))
+			name_and_value, name_and_value_lengths, 0, COUNT, attributes, verbose))
 	{
 		return 0;
 	}
@@ -99,9 +103,10 @@ uint8_t interpreter_get_environments(
 	while (NULL != (env_ptr = buffer_range_data(&elements, elements_count++)))
 	{
 		static const uint8_t* env_name = (const uint8_t*)"environment";
+		static const uint8_t env_name_length = 11;
 		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
 
-		if (!string_equal(env_ptr->start, tag_name_finish, env_name, env_name + 11))
+		if (!string_equal(env_ptr->start, tag_name_finish, env_name, env_name + env_name_length))
 		{
 			continue;
 		}
@@ -131,6 +136,24 @@ uint8_t interpreter_get_environments(
 				continue;
 			}
 
+			uint8_t skip;
+
+			if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
+					the_project, the_target,
+					tag_name_finish, env_ptr->finish,
+					&skip, &attribute_value, verbose))
+			{
+				buffer_release(&sub_elements);
+				buffer_release_with_inner_buffers(&attribute_value);
+				buffer_release(&elements);
+				return 0;
+			}
+
+			if (skip)
+			{
+				continue;
+			}
+
 			if (!interpreter_get_environments_value(
 					the_project, the_target,
 					tag_name_finish, env_ptr->finish,
@@ -142,7 +165,7 @@ uint8_t interpreter_get_environments(
 				return 0;
 			}
 
-			for (uint8_t i = 0; i < 2; ++i)
+			for (uint8_t i = 0; i < COUNT; ++i)
 			{
 				const struct buffer* name_value = buffer_buffer_data(&attribute_value, i);
 
@@ -154,7 +177,7 @@ uint8_t interpreter_get_environments(
 					return 0;
 				}
 
-				if (i < 1 && !buffer_size(name_value))
+				if (i < VALUE_POSITION && !buffer_size(name_value))
 				{
 					buffer_release(&sub_elements);
 					buffer_release_with_inner_buffers(&attribute_value);
@@ -192,7 +215,7 @@ uint8_t interpreter_get_environments(
 					}
 				}
 
-				if (i < 1)
+				if (i < VALUE_POSITION)
 				{
 					static const uint8_t equal_symbol = '=';
 
