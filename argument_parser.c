@@ -28,19 +28,19 @@ static const uint8_t zero_symbol = '\0';
 struct Parameters
 {
 	struct buffer build_file;
-	uint8_t debug;
-	uint16_t encoding;
-	uint8_t indent;
 	struct buffer listener;
 	struct buffer log_file;
+	struct buffer properties;
+	struct buffer target;
+	uint16_t encoding;
+	uint8_t debug;
+	uint8_t indent;
 	uint8_t module_priority;
 	uint8_t no_logo;
 	uint8_t pause;
 	uint8_t program_help;
 	uint8_t project_help;
-	struct buffer properties;
 	uint8_t quiet;
-	struct buffer target;
 	uint8_t verbose;
 };
 

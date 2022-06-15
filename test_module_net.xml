@@ -76,7 +76,11 @@
       commandline="+x ${string::quote(executable)}" />
     <exec
       program="${executable}"
+      resultproperty="resultproperty"
       commandline="--tests_xml=${string::quote(TESTS_XML)} --build_file=${string::quote(NET_XML)} --dotnet_root=${DOTNET_ROOT} -D:DOTNET_ROOT=${DOTNET_ROOT}" />
+    <fail
+      unless="${string::equal('0', resultproperty)}"
+      message="Execute return non zero value - '${resultproperty}'." />
 
     <property
       name="tests"
@@ -86,6 +90,7 @@
       <echo level="Info">test -> '${test}'</echo>
       <exec
         program="${executable}"
+        resultproperty="resultproperty"
         commandline="--tests_xml=${string::quote(TESTS_XML)} --build_file=${string::quote(NET_XML)} --dotnet_root=${DOTNET_ROOT} -D:DOTNET_ROOT=${DOTNET_ROOT} --gtest_filter=TestNetModuleViaBuildFile*">
         <environment>
           <variable name="test_hostfxr_" value="1" />
@@ -94,8 +99,27 @@
             name="DOTNET_CLI_HOME"
             value="${environment::get-variable('HOME')}"
             if="${environment::variable-exists('HOME')}" />
+          <variable
+            name="DOTNET_CLI_HOME"
+            value="${environment::get-variable('USERPROFILE')}"
+            if="${environment::variable-exists('USERPROFILE')}" />
+          <variable
+            name="TMP"
+            value="${environment::get-variable('TMP')}"
+            if="${environment::variable-exists('TMP')}" />
+          <variable
+            name="TEMP"
+            value="${environment::get-variable('TEMP')}"
+            if="${environment::variable-exists('TEMP')}" />
+          <variable
+            name="USERPROFILE"
+            value="${environment::get-variable('USERPROFILE')}"
+            if="${environment::variable-exists('USERPROFILE')}" />
         </environment>
       </exec>
+      <fail
+        unless="${string::equal('0', resultproperty)}"
+        message="Execute return non zero value - '${resultproperty}'." />
     </foreach>
   </target>
 </project>

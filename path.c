@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -655,7 +655,47 @@ uint8_t path_get_path_root(
 	return 0;
 #endif
 }
+#if defined(_MSC_VER)
+uint8_t path_get_temp_file_name_wchar_t(struct buffer* temp_file_name)
+{
+	if (NULL == temp_file_name)
+	{
+		return 0;
+	}
 
+	const ptrdiff_t size = buffer_size(temp_file_name);
+
+	if (!buffer_append(temp_file_name, NULL, 4 * L_tmpnam_s + sizeof(uint32_t)))
+	{
+		return 0;
+	}
+
+	wchar_t* temp_file_path_wchar_t = (wchar_t*)buffer_data(temp_file_name, size + sizeof(uint32_t));
+
+	if (0 != _wtmpnam_s(temp_file_path_wchar_t, L_tmpnam_s))
+	{
+		return 0;
+	}
+
+	const wchar_t* temp_file_path_wchar_t_finish = temp_file_path_wchar_t + wcslen(temp_file_path_wchar_t);
+
+	if (!buffer_resize(temp_file_name, size) ||
+		!text_encoding_UTF16LE_to_UTF8(temp_file_path_wchar_t, temp_file_path_wchar_t_finish, temp_file_name))
+	{
+		return 0;
+	}
+
+	const ptrdiff_t length = buffer_size(temp_file_name);
+
+	if (!buffer_push_back(temp_file_name, 0) ||
+		!buffer_resize(temp_file_name, length))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+#endif
 uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 {
 	if (NULL == temp_file_name)
@@ -811,6 +851,12 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 
 uint8_t path_get_temp_path(struct buffer* temp_path)
 {
+#if defined(NTDDI_VERSION) && defined(NTDDI_WIN10_FE) && (NTDDI_VERSION >= NTDDI_WIN10_FE)
+#define GET_TEMP_PATH GetTempPath2W
+#else
+#define GET_TEMP_PATH GetTempPathW
+#endif
+
 	if (NULL == temp_path)
 	{
 		return 0;
@@ -819,13 +865,13 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	const ptrdiff_t size = buffer_size(temp_path);
 #if defined(_WIN32)
 
-	if (!buffer_append(temp_path, NULL, 6 * FILENAME_MAX + sizeof(uint32_t)))
+	if (!buffer_append(temp_path, NULL, (ptrdiff_t)4 * FILENAME_MAX + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	wchar_t* pathW = (wchar_t*)buffer_data(temp_path, size);
-	DWORD length = GetTempPathW(sizeof(wchar_t), pathW);
+	wchar_t* pathW = (wchar_t*)buffer_data(temp_path, size + sizeof(uint32_t));
+	DWORD length = GET_TEMP_PATH(sizeof(wchar_t), pathW);
 
 	if (length < sizeof(wchar_t) + 1)
 	{
@@ -833,14 +879,13 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	}
 
 	if (!buffer_resize(temp_path, size) ||
-		!buffer_append(temp_path, NULL, (ptrdiff_t)6 * length + sizeof(uint32_t)))
+		!buffer_append(temp_path, NULL, (ptrdiff_t)4 * length + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	pathW = (wchar_t*)buffer_data(temp_path,
-								  buffer_size(temp_path) - sizeof(uint32_t) - sizeof(uint16_t) * length - sizeof(uint16_t));
-	length = GetTempPathW(length, pathW);
+	pathW = (wchar_t*)buffer_data(temp_path, size + sizeof(uint32_t));
+	length = GET_TEMP_PATH(length, pathW);
 
 	if (!buffer_resize(temp_path, size) ||
 		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)pathW, (const uint16_t*)(pathW + length), temp_path))

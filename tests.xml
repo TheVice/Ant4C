@@ -7775,6 +7775,7 @@ Approximate round trip times in milli-seconds:
     <string_starts_with input="AB" value="CD" return="false" />
     <string_starts_with input="AB" value="AB" return="true" />
     <string_starts_with input="ABCD" value="AB" return="true" />
+    <string_starts_with input="C:\WINDOWS\xd18.0" value="C:\WINDOWS\d" return="false" />
     <string_substring>
       <input></input>
       <index></index>
@@ -10117,6 +10118,11 @@ Approximate round trip times in milli-seconds:
     </string_quote>
     <string_quote>
       <input>a b c</input>
+      <return>1</return>
+      <output>"a b c"</output>
+    </string_quote>
+    <string_quote>
+      <input>"a b c"</input>
       <return>1</return>
       <output>"a b c"</output>
     </string_quote>

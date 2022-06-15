@@ -1,5 +1,6 @@
 name: modules_net_CMake
 
+# on: [push, pull_request]
 on:
   push:
     branches:
@@ -385,10 +386,10 @@ jobs:
       matrix:
         include:
         - os: windows-latest
-          host_version: 6.0
+          host_version: "6.0"
 
         - os: windows-latest
-          host_version: 3.1
+          host_version: "3.1"
 
     runs-on: ${{ matrix.os }}
 
@@ -404,7 +405,7 @@ jobs:
 
     - name: Run TestNetModuleWithParameters (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}
-      run: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml --dotnet_root=$DOTNET_ROOT --gtest_filter=TestNetModuleWithParameters*
+      run: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}\Release\tests_net.module.exe --tests_xml=${{ github.workspace }}\tests.xml --build_file=${{ github.workspace }}\modules\net\net.xml --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleWithParameters*
 
     - name: Run Tests (Windows)
       working-directory: ${{ github.workspace }}\build-modules-net-${{ env.TargetPlatform }}

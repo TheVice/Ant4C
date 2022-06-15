@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -49,6 +49,9 @@ uint8_t path_get_full_path(
 	struct buffer* full_path);
 uint8_t path_get_path_root(
 	const uint8_t* path_start, const uint8_t** path_finish);
+#if defined(_MSC_VER)
+uint8_t path_get_temp_file_name_wchar_t(struct buffer* temp_file_name);
+#endif
 uint8_t path_get_temp_file_name(struct buffer* temp_file_name);
 uint8_t path_get_temp_path(struct buffer* temp_path);
 uint8_t path_has_extension(

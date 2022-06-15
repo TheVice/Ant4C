@@ -32,10 +32,14 @@ ant4c (YYYY.MM)
     from 'any' list will not be compared with symbols from input string.
   * Allowed to build at Apple macOS environment.
   * Added 'platform::is-macos' function.
+  * Function string::quote will not add quote symbols if input string
+    already have it at the start or/and at the finish.
   * Fixed setting environment parameters in the 'exec' task.
   * WIN32: fixed using at 'echo' task for scenario when output stream
     redirected to the file by capability of operation system -
     for example: 'ant4c.exe > 1.txt'.
+  * WIN32: fixed issue while reading small, less than 2 symbols, values
+    of environment variables values.
 
  -- TheVice <TheVice>  DAY, DD MM YYYY HH:MM:SS +/-..
 

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -643,7 +643,7 @@ uint8_t environment_get_variable(
 	/**/
 	buffer_release(&l_variable);
 
-	if (variable_value_size < 2)
+	if (!variable_value_size)
 	{
 		return 0;
 	}
@@ -665,7 +665,7 @@ uint8_t environment_get_variable(
 	variable_value_size = GetEnvironmentVariableW(
 							  variable_name, variable_value, variable_value_size);
 
-	if (variable_value_size < 2)
+	if (!variable_value_size)
 	{
 		return 0;
 	}
