@@ -1007,6 +1007,77 @@ TEST_F(TestTextEncoding, text_encoding_encode_UTF16)
 	buffer_release(&output);
 }
 
+uint16_t fill_uint16_t(uint16_t max, uint16_t* result)
+{
+	if (nullptr == result)
+	{
+		return max;
+	}
+
+	for (uint16_t i = 0, j = 0; i < max; ++i)
+	{
+		if (127 < j)
+		{
+			j = 0;
+		}
+
+		result[i] = static_cast<uint16_t>(j++);
+	}
+
+	return max;
+}
+
+TEST(TestTextEncoding_, text_encoding_UTF16LE_to_UTF8)
+{
+	buffer output;
+	SET_NULL_TO_BUFFER(output);
+
+	for (uint16_t i = 1, count = UINT8_MAX + 1; i < count; ++i)
+	{
+		ASSERT_TRUE(buffer_resize(&output, 0))
+				<< buffer_free(&output);
+		//
+		const auto length = fill_uint16_t(i, nullptr);
+		const auto size = buffer_size(&output);
+		//
+		ASSERT_TRUE(buffer_append(
+						&output, nullptr, static_cast<ptrdiff_t>(4) * length + sizeof(uint32_t)))
+				<< buffer_free(&output);
+		//
+		uint16_t* dataW = reinterpret_cast<uint16_t*>(buffer_data(
+							  &output,
+							  buffer_size(&output) - sizeof(uint32_t) - sizeof(uint16_t) * length));
+		ASSERT_NE(nullptr, dataW) << buffer_free(&output);
+		//
+		ASSERT_EQ(length, fill_uint16_t(length, dataW))
+				<< buffer_free(&output);
+		//
+		const auto startW = reinterpret_cast<const uint16_t*>(dataW);
+		const auto finishW = reinterpret_cast<const uint16_t*>(dataW) + length;
+		//
+		ASSERT_TRUE(buffer_resize(&output, size))
+				<< buffer_free(&output);
+		ASSERT_TRUE(text_encoding_UTF16LE_to_UTF8(startW, finishW, &output))
+				<< buffer_free(&output);
+		//
+		const auto data = buffer_data(&output, size);
+
+		for (uint16_t a = 0, b = 0; a < length; ++a)
+		{
+			if (127 < b)
+			{
+				b = 0;
+			}
+
+			ASSERT_EQ(b++, data[a])
+					<< a << std::endl
+					<< buffer_free(&output);
+		}
+
+		buffer_release(&output);
+	}
+}
+
 /*
 text_encoding_UTF8_to_UTF16BE
 text_encoding_UTF16BE_to_UTF8

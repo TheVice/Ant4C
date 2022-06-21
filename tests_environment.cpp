@@ -275,10 +275,10 @@ TEST(TestEnvironment_, environment_get_user_name)
 
 	if (expected_user_name != user_name)
 	{
-		std::cout << "Could not get username via environment variable." << std::endl;
-		std::cout << "Comparing will not be provided." << std::endl;
-		std::cout << "User name: '" << user_name << "'." << std::endl;
-		std::cout << "Expected user name: '" << expected_user_name << "'." << std::endl;
+		std::cerr << "Could not get username via environment variable." << std::endl;
+		std::cerr << "Comparing will not be provided." << std::endl;
+		std::cerr << "User name: '" << user_name << "'." << std::endl;
+		std::cerr << "Expected user name: '" << expected_user_name << "'." << std::endl;
 	}
 }
 

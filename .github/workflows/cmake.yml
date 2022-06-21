@@ -89,20 +89,20 @@ jobs:
             'msvc' == matrix.compiler && '{0}\build\{1}\' || '{0}/build/',
             github.workspace,
             matrix.optimized && 'Release' || 'Debug') }}
-      TESTS_XML: >-
-        ${{ format(
-            startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
-            github.workspace) }}
       LIBRARY_BINARY_DIR: >-
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\{1}' || '{0}/{1}',
             github.workspace, matrix.os) }}
+      TESTS_XML: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
+            github.workspace) }}
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Fetch prebuild of third-party libraries
       run: git fetch origin ${{ matrix.os }}
@@ -123,10 +123,12 @@ jobs:
 
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
+      id: cpu-cores
 
     - name: Build
       run: >-
-        cmake --build ${{ env.CMAKE_BUILD_DIR }}
+        cmake
+        --build ${{ env.CMAKE_BUILD_DIR }}
         --config ${{ env.CMAKE_CONFIG_TYPE }}
         --parallel ${{ steps.cpu-cores.outputs.count }}
 
@@ -172,8 +174,9 @@ jobs:
         }
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v2.3.1
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
-        path: ${{ env.BINARY_PATH }}/*.zst
         retention-days: 1
+        path: ${{ env.BINARY_PATH }}/*.zst
+

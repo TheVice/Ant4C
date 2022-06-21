@@ -655,47 +655,7 @@ uint8_t path_get_path_root(
 	return 0;
 #endif
 }
-#if defined(_MSC_VER)
-uint8_t path_get_temp_file_name_wchar_t(struct buffer* temp_file_name)
-{
-	if (NULL == temp_file_name)
-	{
-		return 0;
-	}
 
-	const ptrdiff_t size = buffer_size(temp_file_name);
-
-	if (!buffer_append(temp_file_name, NULL, 4 * L_tmpnam_s + sizeof(uint32_t)))
-	{
-		return 0;
-	}
-
-	wchar_t* temp_file_path_wchar_t = (wchar_t*)buffer_data(temp_file_name, size + sizeof(uint32_t));
-
-	if (0 != _wtmpnam_s(temp_file_path_wchar_t, L_tmpnam_s))
-	{
-		return 0;
-	}
-
-	const wchar_t* temp_file_path_wchar_t_finish = temp_file_path_wchar_t + wcslen(temp_file_path_wchar_t);
-
-	if (!buffer_resize(temp_file_name, size) ||
-		!text_encoding_UTF16LE_to_UTF8(temp_file_path_wchar_t, temp_file_path_wchar_t_finish, temp_file_name))
-	{
-		return 0;
-	}
-
-	const ptrdiff_t length = buffer_size(temp_file_name);
-
-	if (!buffer_push_back(temp_file_name, 0) ||
-		!buffer_resize(temp_file_name, length))
-	{
-		return 0;
-	}
-
-	return 1;
-}
-#endif
 uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 {
 	if (NULL == temp_file_name)
@@ -884,19 +844,34 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 		return 0;
 	}
 
-	pathW = (wchar_t*)buffer_data(temp_path, size + sizeof(uint32_t));
+	pathW = (wchar_t*)buffer_data(temp_path,
+								  buffer_size(temp_path) - sizeof(uint32_t) - sizeof(wchar_t) * length);
+	const wchar_t* finishW = pathW + length;
 	length = GET_TEMP_PATH(length, pathW);
+	wchar_t* startW = pathW + length;
+
+	if (finishW < startW)
+	{
+		return 0;
+	}
+
+	while (startW < finishW)
+	{
+		*startW = 0;
+		++startW;
+	}
 
 	if (!buffer_resize(temp_path, size) ||
-		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)pathW, (const uint16_t*)(pathW + length), temp_path))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)pathW, (const uint16_t*)finishW, temp_path))
 	{
 		return 0;
 	}
 
 #else
 	static const uint8_t* tmp_dir = (const uint8_t*)"TMPDIR";
+#define TMP_DIR_SIZE 6
 
-	if (environment_get_variable(tmp_dir, tmp_dir + 6, temp_path))
+	if (environment_get_variable(tmp_dir, tmp_dir + TMP_DIR_SIZE, temp_path))
 	{
 #endif
 	const uint8_t* path_start = buffer_data(temp_path, size);
@@ -1084,7 +1059,7 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 	const ptrdiff_t size = buffer_size(path);
 #if defined(_WIN32)
 
-	if (!buffer_append(path, NULL, 6 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
+	if (!buffer_append(path, NULL, (ptrdiff_t)4 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
@@ -1097,26 +1072,65 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 		return 0;
 	}
 
+	++length;
+
 	if (!buffer_resize(path, size) ||
-		!buffer_append(path, NULL, (ptrdiff_t)6 * (length + (ptrdiff_t)1) + sizeof(uint32_t)))
+		!buffer_append(path, NULL, (ptrdiff_t)4 * length + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
 	pathW = (wchar_t*)buffer_data(path,
-								  buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * length - sizeof(wchar_t));
-	length = GetCurrentDirectoryW(length + 1, pathW);
+								  buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * length);
+	const wchar_t* finishW = pathW + length;
+	length = GetCurrentDirectoryW(length, pathW);
 
 	if (length < 2)
 	{
 		return 0;
 	}
 
-	const wchar_t* start = pathW;
-	const wchar_t* finish = pathW + length;
-	file_system_set_position_after_pre_root_wchar_t(&start);
-	return buffer_resize(path, size) &&
-		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, path);
+	wchar_t* startW = pathW + length;
+
+	if (finishW < startW)
+	{
+		return 0;
+	}
+
+	while (startW < finishW)
+	{
+		*startW = 0;
+		++startW;
+	}
+
+	if (!buffer_resize(path, size) ||
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)pathW, (const uint16_t*)finishW, path))
+	{
+		return 0;
+	}
+
+	struct range path_in_a_range;
+
+	BUFFER_TO_RANGE(path_in_a_range, path);
+
+	uint8_t* start = buffer_data(path, size);
+
+	path_in_a_range.start = start;
+
+	if (!string_trim_end(&path_in_a_range))
+	{
+		return 0;
+	}
+
+	length = (DWORD)range_size(&path_in_a_range);
+
+	if (2 == file_system_get_position_after_pre_root(&path_in_a_range.start, path_in_a_range.finish))
+	{
+		length = (DWORD)range_size(&path_in_a_range);
+		MEM_CPY(start, path_in_a_range.start, (ptrdiff_t)length);
+	}
+
+	return buffer_resize(path, size + length);
 #else
 
 	for (;;)
@@ -1156,11 +1170,15 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 	const ptrdiff_t size = buffer_size(path);
 #if defined(_WIN32)
 
-	while (buffer_append(path, NULL, sizeof(wchar_t) * FILENAME_MAX + sizeof(uint32_t)))
+	while (buffer_append(path, NULL, (ptrdiff_t)4 * FILENAME_MAX + sizeof(uint32_t)))
 	{
-		wchar_t* pathW = (wchar_t*)buffer_data(path, size + sizeof(uint32_t));
-		const ptrdiff_t expected_size = (buffer_size(path) - size) / sizeof(wchar_t) - sizeof(uint32_t);
-		const DWORD real_size = GetModuleFileNameW(NULL, pathW, (DWORD)expected_size);
+		const ptrdiff_t expected_size =
+			(buffer_size(path) - size) / sizeof(wchar_t) - sizeof(uint32_t);
+		wchar_t* pathW =
+			(wchar_t*)buffer_data(
+				path, buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * expected_size);
+		const DWORD real_size =
+			GetModuleFileNameW(NULL, pathW, (DWORD)expected_size);
 
 		if (!real_size)
 		{
@@ -1397,18 +1415,18 @@ uint8_t cygpath_get_dos_path(
 		return 0;
 	}
 
-	const ptrdiff_t count = path_finish - path_start;
+	const ptrdiff_t count = (path_finish - path_start) + 1;
 
-	if (!buffer_append(path, NULL, 6 * (count + 1) + sizeof(uint32_t)))
+	if (!buffer_append(path, NULL, (ptrdiff_t)4 * count + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
 	const wchar_t* long_path = (const wchar_t*)buffer_data(path, size);
 	wchar_t* short_path = (wchar_t*)buffer_data(path,
-						  buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * count - sizeof(wchar_t));
+						  buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * count);
 	/**/
-	const DWORD returned_count = GetShortPathNameW(long_path, short_path, (DWORD)(count + 1));
+	const DWORD returned_count = GetShortPathNameW(long_path, short_path, (DWORD)count);
 	/**/
 	return returned_count &&
 		   buffer_resize(path, size) &&
