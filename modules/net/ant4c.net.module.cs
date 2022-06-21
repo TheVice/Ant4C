@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -17,6 +17,11 @@ namespace Ant4C.Net.Module
         public static bool IsAssembly(string path, out bool is_assembly)
         {
             is_assembly = false;
+
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
 
             try
             {
@@ -48,14 +53,19 @@ namespace Ant4C.Net.Module
         }
 
         public delegate byte FileUnit_IsAssemblyDelegate(FileUnit_IsAssembly_Argument argument);
+
         public static byte FileUnit_IsAssembly(FileUnit_IsAssembly_Argument argument)
         {
-            bool is_assembly;
-            var path_str = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            var path = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? Marshal.PtrToStringUni(argument.path)
                 : Marshal.PtrToStringUTF8(argument.path);
 
-            if (FileUnit.IsAssembly(path_str, out is_assembly))
+            if (string.IsNullOrEmpty(path))
+            {
+                return 2;
+            }
+
+            if (FileUnit.IsAssembly(path, out bool is_assembly))
             {
                 return is_assembly ? (byte)1 : (byte)0;
             }

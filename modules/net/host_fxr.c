@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -167,6 +167,10 @@ typedef error_writer_type(calling_convention* hostfxr_set_error_writer_type)(
 	error_writer_type writer);
 typedef int32_t(calling_convention* hostfxr_set_runtime_property_value_type)(
 	const void* context, const type_of_element* name, const type_of_element* value);
+typedef int32_t(calling_convention* hostfxr_get_dotnet_environment_information_type)(
+	const type_of_element* dotnet_root, void* reserved,
+	hostfxr_get_dotnet_environment_information_result_type result,
+	void* result_context);
 
 struct host_fxr
 {
@@ -188,6 +192,7 @@ struct host_fxr
 	hostfxr_run_app_type hostfxr_run_app;
 	hostfxr_set_error_writer_type hostfxr_set_error_writer;
 	hostfxr_set_runtime_property_value_type hostfxr_set_runtime_property_value;
+	hostfxr_get_dotnet_environment_information_type hostfxr_get_dotnet_environment_information;
 };
 
 enum host_fxr_functions
@@ -197,7 +202,8 @@ enum host_fxr_functions
 	hostfxr_get_runtime_property_value_, hostfxr_initialize_for_dotnet_command_line_,
 	hostfxr_initialize_for_runtime_config_, hostfxr_main_, hostfxr_main_bundle_startupinfo_,
 	hostfxr_main_startupinfo_, hostfxr_resolve_sdk_, hostfxr_resolve_sdk2_, hostfxr_run_app_,
-	hostfxr_set_error_writer_, hostfxr_set_runtime_property_value_
+	hostfxr_set_error_writer_, hostfxr_set_runtime_property_value_,
+	hostfxr_get_dotnet_environment_information_
 };
 
 static const uint8_t* host_fxr_functions_string[] =
@@ -217,7 +223,8 @@ static const uint8_t* host_fxr_functions_string[] =
 	(const uint8_t*)"hostfxr_resolve_sdk2",
 	(const uint8_t*)"hostfxr_run_app",
 	(const uint8_t*)"hostfxr_set_error_writer",
-	(const uint8_t*)"hostfxr_set_runtime_property_value"
+	(const uint8_t*)"hostfxr_set_runtime_property_value",
+	(const uint8_t*)"hostfxr_get_dotnet_environment_info"
 };
 
 uint8_t host_fx_resolver_load(
@@ -339,6 +346,11 @@ uint8_t host_fx_resolver_load(
 				ptr_to_host_fxr_object_->hostfxr_set_runtime_property_value =
 					(hostfxr_set_runtime_property_value_type)address;
 				break;
+
+			case hostfxr_get_dotnet_environment_information_:
+				ptr_to_host_fxr_object_->hostfxr_get_dotnet_environment_information =
+					(hostfxr_get_dotnet_environment_information_type)address;
+				break;
 #if defined(_MSC_VER) && (_MSC_VER < 1910)
 #pragma warning(default: 4055)
 #endif
@@ -386,7 +398,8 @@ uint8_t host_fx_resolver_is_function_exists(
 		20,
 		15,
 		24,
-		34
+		34,
+		35
 	};
 
 	if (!ptr_to_host_fxr_object ||
@@ -401,7 +414,7 @@ uint8_t host_fx_resolver_is_function_exists(
 	for (uint8_t i = 0, count = COUNT_OF(host_fxr_functions_string); i < count; ++i)
 	{
 		if (host_fxr_functions_lengths[i] != function_name_length ||
-			memcmp(host_fxr_functions_string[i], function_name, function_name_length))
+			0 != memcmp(host_fxr_functions_string[i], function_name, function_name_length))
 		{
 			continue;
 		}
@@ -455,6 +468,9 @@ uint8_t host_fx_resolver_is_function_exists(
 
 			case hostfxr_set_runtime_property_value_:
 				return NULL != ptr_to_host_fxr_object_->hostfxr_set_runtime_property_value;
+
+			case hostfxr_get_dotnet_environment_information_:
+				return NULL != ptr_to_host_fxr_object_->hostfxr_get_dotnet_environment_information;
 
 			default:
 				break;
@@ -832,6 +848,22 @@ int32_t host_fxr_set_runtime_property_value(
 	{
 		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_set_runtime_property_value(
 				   context, name, value);
+	}
+
+	return -1;
+}
+
+int32_t host_fxr_get_dotnet_environment_information(
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* dotnet_root,
+	hostfxr_get_dotnet_environment_information_result_type result,
+	void* result_context)
+{
+	if (ptr_to_host_fxr_object &&
+		((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_dotnet_environment_information)
+	{
+		return ((const struct host_fxr*)ptr_to_host_fxr_object)->hostfxr_get_dotnet_environment_information(
+				   dotnet_root, NULL, result, result_context);
 	}
 
 	return -1;

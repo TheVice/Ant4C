@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -272,7 +272,7 @@ uint8_t property_set_by_pointer(void* the_property,
 		switch (type_of_value)
 		{
 			case property_value_is_byte_array:
-				if (!buffer_append(&prop->value, value, value_length))
+				if (!buffer_append(&prop->value, (const uint8_t*)value, value_length))
 				{
 					return 0;
 				}
@@ -524,7 +524,7 @@ uint8_t property_add_at_project(void* the_project, const struct buffer* properti
 		const void* value = size ? buffer_data(&prop->value, 0) : (const void*)prop;
 
 		if (!project_property_set_value(the_project, prop->name, prop->name_length,
-										value, size, prop->dynamic, over_write,
+										(const uint8_t*)value, size, prop->dynamic, over_write,
 										prop->read_only, verbose))
 		{
 			return 0;

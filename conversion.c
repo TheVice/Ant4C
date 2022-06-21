@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -474,6 +474,12 @@ uint8_t uint64_to_string(uint64_t input, struct buffer* output)
 	uint8_t* b = a + 21;
 	/**/
 	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, 21);
+
+	if (!result_start)
+	{
+		return 0;
+	}
+
 	const uint8_t* result_finish = result_start + 21;
 	result_start = string_find_any_symbol_like_or_not_like_that(
 					   result_start, result_finish, &zero, &zero + 1, 0, 1);

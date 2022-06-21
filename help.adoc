@@ -5,7 +5,8 @@
 [[history]]
 == History
 
-* *v2020.09*
+* *vYYYY.MM*
+* https://github.com/TheVice/Ant4C/releases/tag/v2020.09[v2020.09]
 * https://github.com/TheVice/Ant4C/releases/tag/v2020.05[v2020.05]
 * https://github.com/TheVice/Ant4C/releases/tag/v2020.04[v2020.04]
 * https://github.com/TheVice/Ant4C/releases/tag/v2019.10.21[v2019.10.21]
@@ -274,9 +275,9 @@ All tasks have next non mandatory parameters.
 | Argument name | Type | Default value | Description
 
 | failonerror .4+^.^| bool | true | If value of this parameter evaluated to the *false*, task non stop interpreting of script even if task was failed.
-| if | true | If value of this parameter evaluated to the *false*, task will be skip.
-| unless | false | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
-| verbose | false | RESERVED. If this parameter set to *true* task logging addition details.
+| if | *true* | If value of this parameter evaluated to the *false*, task will be skip.
+| unless .2+^.^| *false* | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
+| verbose | RESERVED. If this parameter set to *true* task logging addition details.
 |===
 
 Order of reading is next - first 'if', than 'unless', 'failonerror' and 'verbose'. Value of 'failonerror' ignored here, so if something wrong happens while reading common parameters - task will failed even if value of fail on error requested opposite.
@@ -557,7 +558,7 @@ If function used at the message they will be interpreted and replaced with resul
 | Argument name | Type | Default value | Description
 
 | append | bool | *false* | If echo output to the file, will add message to the end of it. Ignored if no file used.
-| encoding | <<encoding_type,Encoding>> | UTF8 | Set <<encoding_type, encoding>> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <<UTF8_encoding_member,UTF8>> if encoding non <<Default_encoding_member,Default>> and <<ASCII_encoding_member,ASCII>>.
+| encoding | <<encoding_type,Encoding>> | UTF8 | Set <<encoding_type, encoding>> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <<UTF-8_encoding_member,UTF-8>> if encoding non <<Default_encoding_member,Default>> and <<ASCII_encoding_member,ASCII>>.
 | file | file | N/A | Path to the output file. If no path set standard output or standard error output will be used, depend on level value.
 | level | <<level_type,Level>> | Info | Ignored, except None value, if file used.
 | message | string | N/A | Message to echo. For huge message child value of echo tag recommended to use.
@@ -566,14 +567,14 @@ If function used at the message they will be interpreted and replaced with resul
 [[encoding_type]]
 ==== Encoding
 
-Internally program evaluate all string as encoded in UTF8, except some of system calls on Windows platform where converting to UTF16LE used.
+Internally program evaluate all string as encoded in UTF-8, except some of system calls on Windows platform where converting to UTF-16LE used.
 
 |===
 | Encoding name. | Description
 
 | [[ASCII_encoding_member]]ASCII | Text encoded by ASCII codes. At <<loadfile_task, loadfile task>> can be specify one of ASCII extension.
 | UTF7 | RESERVED. Encoding represent UNICODE string using only 7-bit values.
-| [[UTF8_encoding_member]]UTF8 | UNICODE string encoded with 8-bit values.
+| [[UTF-8_encoding_member]]UTF8 | UNICODE string encoded with 8-bit values.
 | BigEndianUnicode .2+^.^| UNICODE string encoded with 16-bit values in big-endian ordering.
 | UTF16BE
 | Unicode .2+^.^| UNICODE string encoded with 16-bit values in little-endian ordering.
@@ -635,20 +636,46 @@ the message too.</echo>
 This element also have sub element named '<variable>' +
 that represent the variable that should be using at by program to execute. +
 If no environment set, program got same environment that ant4c have. +
+Otherwise only variable(s) at the this element will be used.
 
-.Parameter of 'environment' element of 'exec' task.
+.Parameter of 'variable' element.
 |===
 | Argument name | Type | Default value | Description | Mandatory
 
 | name .2+^.^| string .2+^.^| N/A | Name of environment variable. | Yes
-| value | Value of environment variable. | No
+| value | Value of environment variable. .3+^.^| No
+| if .2+^.^| bool | *true* | If value of this parameter evaluated to the *false*, task will be skip.
+| unless | *false* | Opposite of 'if' attribute. If value of this parameter evaluated to the *true*, task will be skip.
 |===
+
+Processing order of 'if' and 'unless' parameters same like at <<common_parameters,other tasks>>.
 
 ==== Sample using
 
 ----
+<exec
+  program="${property::get-value('cmake')}"
+  commandline="${property::get-value('cmake_arguments')}" />
+----
+
+----
 <exec program="${property::get-value('cmake')}"
-    commandline="${property::get-value('cmake_arguments')}" />
+  commandline="-S ${string::quote(property::get-value('source'))} -B ${string::quote(property::get-value('build'))}">
+  <environment>
+    <variable name="CMAKE_BUILD_TYPE" value="Debug" />
+  </environment>
+</exec>
+----
+
+----
+<exec program="${property::get-value('cmake')}">
+  <environment>
+    <variable
+      name="PATH"
+      value="${environment::get-variable('PATH')}"
+      if="${environment::variable-exists('PATH')}" />
+  </environment>
+</exec>
 ----
 
 [[fail_task]]
@@ -693,7 +720,7 @@ Tasks can be store directly inside element or inside 'do' sub element.
 
 | *item* ^| item .5+^.^| N/A | Type of iterator of the loop that should be provided. Can be one of the following: "Folder", "File", "Line" or "String". .2+^.^| Yes
 | *property* .3+^.^| string | Property that will be used to store value of loop variable. Attempt to use read only property will fail the task.
-| delim | UTF8 chars that should be use as delimiter between loop's item. If any chars not set, used zero char (''\0''). .3+^.^| No
+| delim | UTF-8 chars that should be use as delimiter between loop's item. If any chars not set, used zero char (''\0''). .3+^.^| No
 | in | The source of the items. For 'Folder' and 'File' this is path to folder, for line path to file and for string - another string.
 | trim ^| trim | How we should trim, or even trim, loop item before present it to the tasks at the item. Can be one of the following: "Both", "End", "None", or "Start".
 |===
@@ -766,7 +793,7 @@ According to read all content of file into property, make sure that first one no
 
 | *file* | file | Path to the file content that should be loaded into the property. .2+^.^| Yes
 | *property* | string | Property that will be used to store content of the file. Attempt to use read only property will fail the task.
-| encoding | <<encoding_type,Encoding>> | Expected encoding of the input file. Will be used while converting file to the UTF8. Task support <<program_options,extension list of encoding>>. File with UTF based byte order mark can be recognized. ^| No
+| encoding | <<encoding_type,Encoding>> | Expected encoding of the input file. Will be used while converting file to the UTF-8. Task support <<program_options,extension list of encoding>>. File with UTF based byte order mark can be recognized. ^| No
 |===
 
 ==== Sample using
@@ -777,7 +804,7 @@ According to read all content of file into property, make sure that first one no
   <property name="file" value="1.txt" />
   <property name="content" value="" />
   <loadfile file="${file}" property="content" if="${math::less(file::get-length(file), '1073741824')}" />
-  <echo>Count of UTF8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.</echo>
+  <echo>Count of UTF-8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.</echo>
 </project>
 ----
 
@@ -948,9 +975,9 @@ General information and different between versions of program in property aspect
 
 ==== Name of property
 
-* Can contain any valid UTF8 letters, digits, under scope characters, dash and dot characters.
-* Should start from UTF8 letter or under scope symbol and end with letter, digit or an under scope symbol.
-* Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF8 chars with 3 bytes per char that mean 85 chars for the name.
+* Can contain any valid UTF-8 letters, digits, under scope characters, dash and dot characters.
+* Should start from UTF-8 letter or under scope symbol and end with letter, digit or an under scope symbol.
+* Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF-8 chars with 3 bytes per char that mean 85 chars for the name.
 
 ==== Sample using
 
@@ -1252,9 +1279,9 @@ If string contain more data - after digital part they will be skip.
 | <<timespan-from_days,timespan::from-days>> | Create timespan from days.
 | <<timespan-from_hours,timespan::from-hours>> | Create timespan from hours.
 | <<timespan-from_milliseconds,timespan::from-milliseconds>> | Create timespan from milliseconds.
-| <<timespan-from_minutes,timespan::from-minutes>> | Create timespan from minutes days.
-| <<timespan-from_seconds,timespan::from-seconds>> | Create timespan from seconds days.
-| <<timespan-from_ticks,timespan::from-ticks>> | Create timespan from ticks days.
+| <<timespan-from_minutes,timespan::from-minutes>> | Create timespan from minutes.
+| <<timespan-from_seconds,timespan::from-seconds>> | Create timespan from seconds.
+| <<timespan-from_ticks,timespan::from-ticks>> | Create timespan from ticks.
 | <<timespan-get_days,timespan::get-days>> | Get days from timespan.
 | <<timespan-get_hours,timespan::get-hours>> | Get hours from timespan.
 | <<timespan-get_minutes,timespan::get-minutes>> | Get minutes from timespan.
@@ -1282,7 +1309,7 @@ Second one is the requested 'format'. All possibilities of formats can be found 
 In general recent versions of compilers support formats described at the next references:
 
 * http://www.cplusplus.com/reference/ctime/strftime/[<ctime> -> strftime]
-* https://en.cppreference.com/w/c/chrono/strftime/[Date and time utilities -> strftime]
+* https://en.cppreference.com/w/c/chrono/strftime[Date and time utilities -> strftime]
 
 See sample using with some of that formats.
 
@@ -1528,7 +1555,7 @@ Get count of clock ticks.
 
 ----
 <echo>
-  ${datetime::now-ticks()}
+  ${datetime::ticks()}
 </echo>
 ----
 
@@ -1829,8 +1856,8 @@ Convert time span representation to the string.
 | <<environment-get_operating_system,get-operating-system>> | Get name of operation system.
 | <<environment-get_user_name,get-user-name>> | Get name of user.
 | <<environment-get_variable,get-variable>> | Get value of environment variable.
-| <<environment-is64bit_operating_system,is64bit-operating-system>> | Is operation system x86-64.
-| <<environment-is64bit_process,is64bit-process>> | Is current process x86-64.
+| <<environment-is64bit_operating_system,is64bit-operating-system>> | Is operation system run on 64-bit computer architecture.
+| <<environment-is64bit_process,is64bit-process>> | Is current process run on 64-bit computer architecture.
 | <<environment-newline,newline>> | Get new line string.
 | <<environment-processor_count,processor-count>> | Get count of processor's cores.
 | <<environment-variable_exists,variable-exists>> | Check is variable exists.
@@ -1958,14 +1985,14 @@ Get value of environment variable.
 
 *bool* 'environment::is64bit-operating-system'()
 
-Return *true* on x86-64 operation systems.
+Return *true* if operation systems run on 64-bit computer architecture.
 
 [[environment-is64bit_process]]
 ==== is64bit-process
 
 *bool* 'environment::is64bit-process'()
 
-Return true if process is x86-64.
+Return *true* if process run on 64-bit computer architecture.
 
 [[environment-newline]]
 ==== newline
@@ -3148,7 +3175,7 @@ Return *true* if value of property for read only access. Fail if property not ex
 
 === String unit
 
-All strings operated at this unit at the UTF8 encoding.
+All strings operated at this unit at the UTF-8 encoding.
 
 NOTE: Prior to the version *2020.04* string was ASCII - one character per byte.
 

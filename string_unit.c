@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -421,7 +421,7 @@ uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 
 	while (NULL != input_start && to_be_replaced_length <= input_finish - input_start)
 	{
-		if (memcmp(input_start, to_be_replaced_start, to_be_replaced_length))
+		if (0 != memcmp(input_start, to_be_replaced_start, to_be_replaced_length))
 		{
 			input_start = string_enumerate(input_start, input_finish, NULL);
 			continue;
@@ -1033,18 +1033,37 @@ uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
 		return 0;
 	}
 
-	if (!buffer_push_back(output, quote_symbols[0]))
+	if (range_in_parts_is_null_or_empty(input_start, input_finish))
+	{
+		for (uint8_t i = 0; i < 2; ++i)
+		{
+			if (!buffer_push_back(output, quote_symbols[0]))
+			{
+				return 0;
+			}
+		}
+
+		return 1;
+	}
+
+	if (!string_starts_with(input_start, input_finish, &quote_symbols[0], &quote_symbols[0] + 1) &&
+		!buffer_push_back(output, quote_symbols[0]))
 	{
 		return 0;
 	}
 
-	if (!range_in_parts_is_null_or_empty(input_start, input_finish) &&
-		!buffer_append(output, input_start, input_finish - input_start))
+	if (!buffer_append(output, input_start, input_finish - input_start))
 	{
 		return 0;
 	}
 
-	return buffer_push_back(output, quote_symbols[0]);
+	if (!string_ends_with(input_start, input_finish, &quote_symbols[0], &quote_symbols[0] + 1) &&
+		!buffer_push_back(output, quote_symbols[0]))
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 uint8_t string_un_quote(struct range* input_output)

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -14,7 +14,7 @@
 #if defined(_WIN32)
 #define OPERATING_SYSTEM_SIZE UINT8_MAX
 #else
-#define OPERATING_SYSTEM_SIZE sizeof(struct utsname) + INT8_MAX
+#define OPERATING_SYSTEM_SIZE (sizeof(struct utsname) + INT8_MAX)
 #endif
 
 enum PlatformID

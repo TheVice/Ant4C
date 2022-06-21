@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -442,7 +442,7 @@ uint16_t load_file_get_encoding(struct buffer* encoding_name)
 
 	if (result < 3)
 	{
-		return 0 == result ? BigEndianUnicode : (1 == result ? Unicode : Default);
+		return (uint16_t)(0 == result ? BigEndianUnicode : (1 == result ? Unicode : Default));
 	}
 
 	result = common_string_to_enum(start, finish, code_pages, COUNT_OF(code_pages));

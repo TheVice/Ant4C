@@ -134,7 +134,7 @@ build_with_MSVC:
 
         if (Test-Path -Path "$ant4c")
         {
-          & $ant4c --gtest_output="xml:$CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-tests_net.framework.module-$TargetPlatform.xml"
+          & $ant4c
 
           if ($LastExitCode -ne 0)
           {
@@ -161,7 +161,7 @@ build_with_MSVC:
       - $CI_PROJECT_DIR\build-$TargetPlatform
     when: always
     reports:
-      junit: $CI_PROJECT_DIR\build-$TargetPlatform\*.xml
+      junit: $CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-$TargetPlatform.xml
 
   cache:
     key: windows-build-cache
@@ -268,7 +268,7 @@ build_with_MinGW:
       - $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE
     when: always
     reports:
-      junit: $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\*.xml
+      junit: $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE.xml
 
   cache:
     key: windows-build-cache
@@ -308,4 +308,4 @@ build_on_unix_like:
     when: always
     reports:
       junit: report.xml
-      junit: $CI_PROJECT_DIR/build-$BUILD_TYPE/*.xml
+      junit: $CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml

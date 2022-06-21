@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -127,7 +127,8 @@ uint8_t interpreter_evaluate_function(
 	const struct range* function, struct buffer* output, uint8_t verbose);
 uint8_t interpreter_evaluate_code(
 	const void* the_project, const void* the_target,
-	const struct range* code, struct buffer* output, uint8_t verbose);
+	const void* the_current_property, const struct range* code,
+	struct buffer* output, uint8_t verbose);
 uint8_t interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 	const void* the_project, const void* the_target,
 	const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,

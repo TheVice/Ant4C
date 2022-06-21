@@ -2,7 +2,7 @@
 <!--
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  -->
 <project name="ant4c.net.module" default="net_result-to-string">
@@ -68,6 +68,7 @@
   </choose>
 
   <property name="project_file" value="ant4c.net.module.csproj" overwrite="false" />
+  <property name="project_source_file" value="ant4c.net.module.cs" overwrite="false" />
   <property name="folder_with_program_to_run"
             value="${path::combine(project::get-base-directory(), path::combine('bin', 'Release'))}"
             overwrite="false" />
@@ -110,10 +111,13 @@
     <loadtasks module="${path_to_module}" if="${property::exists('path_to_module')}" />
   </target>
 
-  <target name="should_we_skip" unless="${target::has-executed('should_we_skip')}">
-    <property name="skip" value="${platform::is-unix()}" overwrite="false" />
-    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}skip -> '${skip}'</echo>
-  </target>
+  <target name="should_we_skip" />
+
+  <property
+    name="skip"
+    readonly="true"
+    overwrite="false"
+    value="${platform::is-unix()}" />
 
   <!-- nethost::get-hostfxr-path -->
   <target name="nethost_get-hostfxr-path" depends="load_tasks">
@@ -311,7 +315,11 @@
 
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}host_version -> '${host_version}'</echo>
 
-    <property name="expected_functions" value="main resolve-sdk" />
+    <property name="expected_functions" value="main" />
+
+    <if test="${version::greater(host_version, '1.9')}">
+      <property name="expected_functions" value="${expected_functions} resolve-sdk" />
+    </if>
 
     <if test="${version::greater(host_version, '2.0')}">
       <property name="expected_functions" value="${expected_functions} get-available-sdks" />
@@ -336,6 +344,10 @@
       <property name="expected_functions" value="${expected_functions} main-bundle-startupinfo" />
     </if>
 
+    <if test="${version::greater(host_version, '5.9')}">
+      <property name="expected_functions" value="${expected_functions} get-dotnet-environment-info" />
+    </if>
+
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
@@ -353,6 +365,9 @@
       message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'host_version' required to run this target." />
 
     <choose>
+      <when test="${version::less('5.9', host_version)}">
+        <property name="host_version" value="6.0" />
+      </when>
       <when test="${version::less('3.0', host_version)}">
         <property name="host_version" value="3.1" />
       </when>
@@ -407,88 +422,301 @@
     <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
   </target>
 
-  <target name="build-assembly" depends="hostfxr_initialize">
+  <target name="get-temp-directory-name">
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+    <property
+      name="path"
+      value="${path::get-temp-file-name()}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path -> ${path}</echo>
+
+    <delete file="${path}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path -> ${path}</echo>
+
+    <mkdir dir="${path}" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path -> ${path}</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+  </target>
+
+  <target name="new-temp-project">
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+
     <fail
-      unless="${property::exists('host_version')}"
-      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'host_version' required to run this target." />
+      unless="${property::exists('file')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'file' required to run this target." />
+    <fail
+      unless="${property::exists('template_name')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'template_name' required to run this target." />
 
-    <property name="Exe" />
-
-    <if test="${version::greater('3.1', host_version)}">
-      <property name="Exe" value="/p:OutputType=Exe" />
-    </if>
-
-    <property name="project"
-              value="${path::combine(project::get-base-directory(), project_file)}" overwrite="false" />
-
-    <property name="host_version"
-              value="/p:TargetFramework=netcoreapp${host_version}" />
-
-    <!--property
-      name="return_of_main"
-      value="${hostfxr::main('', 'build', project, host_version, '/p:Configuration=Release', ${Exe})}" /-->
+    <call target="get-temp-directory-name" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path -> ${path}</echo>
 
     <exec
       program="${program}"
-      commandline="build ${project} ${host_version} /p:Configuration=Release ${Exe}" />
+      commandline="new ${template_name} --name ${file}"
+      workingdir="${path}" />
 
-    <property name="program_to_run" value="ant4c.net.module.clr.dll" />
+    <property
+      name="path"
+      value="${path::combine(path, file)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file -> ${file}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path -> ${path}</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+  </target>
+
+  <target name="get-path-to-assembly-from-build-log">
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+    <fail
+      unless="${property::exists('file')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'file' required to run this target." />
+    <fail
+      if="${property::is-readonly('file')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'file' should not be readonly." />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file -> ${file}</echo>
+    <loadfile file="${file}" property="code" />
+
+    <property name="file" value="${string::index-of(code, ' -> ')}" />
+
+    <fail
+      if="${string::equal('-1', file)}"
+      message="index should not be '-1'. ' -> ' is not found." />
+
+    <property
+      name="file" value="${math::truncate(math::addition(file, '4'))}" />
+    <property
+      name="file" value="${string::substring(code, file)}" />
+
+    <property
+      name="code" value="${string::index-of-any(file, '&#13;&#10;')}" />
+
+    <fail
+      if="${string::equal('-1', code)}"
+      message="index should not be '-1'. New line is not exists." />
+
+    <property
+      name="file" value="${string::trim(string::substring(file, '0', code))}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file -> ${file}</echo>
+
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+  </target>
+
+  <target name="build-assembly">
+    <property name="pad_level" value="${math::addition(pad_level, '1')}" />
+
+    <call target="get-temp-directory-name" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path -> ${path}</echo>
+
+    <foreach item="String" in="${project_source_file};${project_file}" delim=";" property="source">
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}source -> ${source}</echo>
+      <property
+        name="project"
+        value="${path::combine(project::get-base-directory(), source)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}project -> ${project}</echo>
+      <property
+        name="file"
+        value="${path::combine(path, source)}" />
+      <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file -> ${file}</echo>
+      <copy file="${project}" tofile="${file}" />
+    </foreach>
+
+    <loadfile
+      file="${file}" property="code" />
+
+    <call target="get-host_fx_resolver_file_name"/>
+    <call target="get-host_version" />
+
+    <property
+      if="${version::greater(host_version, '3.0')}"
+      name="project_code"
+      value="
+       &lt;TargetFramework&gt;netcoreapp3.1&lt;/TargetFramework&gt;
+       &lt;/PropertyGroup&gt;" />
+
+    <property
+      if="${version::greater(host_version, '5.9')}"
+      name="project_code"
+      value="
+       &lt;TargetFramework&gt;net6.0&lt;/TargetFramework&gt;
+       &lt;/PropertyGroup&gt;" />
+
+    <property
+      name="code"
+      value="${string::replace(code, '&lt;/PropertyGroup&gt;', property::get-value('project_code'))}" />
+
+    <echo file="${file}" message="${code}" />
+
+    <property
+      name="project"
+      value="${file}" />
+    <property
+      name="file"
+      value="${path::combine(path, '1.txt')}" />
+
+    <exec
+      output="${file}"
+      program="${program}"
+      commandline="build ${project} /p:Configuration=Release" />
+
+    <call target="get-path-to-assembly-from-build-log" />
+
+    <property name="program_to_run" value="${file}" />
+
+    <property name="pad_level" value="${math::subtraction(pad_level, '1')}" />
+  </target>
+
+  <target name="build-assembly2">
+    <fail
+      unless="${property::exists('project_file')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'project_file' required to run this target." />
+    <fail
+      unless="${property::exists('program')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'program' required to run this target." />
+
+    <property
+      name="template_name"
+      value="classlib" />
+    <property
+      name="file"
+      value="${path::get-file-name-without-extension(project_file)}" />
+
+    <call target="new-temp-project" />
+
+    <property
+      name="project"
+      overwrite="false"
+      value="${path::combine(project::get-base-directory(), project_file)}" />
+
+    <property
+      name="file"
+      value="${path::combine(path, project_file)}" />
+    <loadfile
+      file="${file}" property="code" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file -> ${file}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}code -> ${code}</echo>
+
+    <loadfile
+      file="${project}" property="project_code" />
+
+    <property name="index" value="${string::index-of(project_code, '&lt;PropertyGroup&gt;')}" />
+
+    <fail
+      if="${string::equal('-1', index)}"
+      message="index should not be '-1'. PropertyGroup tag was not found." />
+
+    <property name="project_code" value="&lt;/PropertyGroup&gt;${environment::newline()}  ${string::substring(project_code, index)}" />
+
+    <property name="index" value="${string::last-index-of(project_code, '&lt;/ItemGroup&gt;')}" />
+
+    <fail
+      if="${string::equal('-1', index)}"
+      message="index should not be '-1'. PropertyGroup tag was not found." />
+
+    <property
+      name="index" value="${math::truncate(math::addition(index, '12'))}" />
+
+    <property name="project_code" value="${string::substring(project_code, '0', index)}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}project -> ${project}</echo>
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}project_code -> ${project_code}</echo>
+
+    <property
+      name="code"
+      value="${string::replace(code, '&lt;/PropertyGroup&gt;', property::get-value('project_code'))}" />
+
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}code -> ${code}</echo>
+
+    <echo file="${file}" message="${code}" />
+
+    <property name="project" value="${path::combine(project::get-base-directory(), path::get-file-name-without-extension(project_file))}" />
+    <property name="project" value="${project}.cs" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}project -> ${project}</echo>
+
+    <property name="file" value="${path::combine(path, path::get-file-name-without-extension(project_file))}" />
+    <property name="file" value="${file}.cs" />
+    <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}file -> ${file}</echo>
+
+    <copy file="${project}" tofile="${file}" />
+
+    <property
+      name="file"
+      value="${path::get-temp-file-name()}" />
+
+    <exec
+      program="${program}"
+      commandline="build ${path} /p:Configuration=Release"
+      output="${file}" />
+
+    <call target="get-path-to-assembly-from-build-log" />
+
+    <property name="program_to_run" value="${file}" />
   </target>
 
   <target name="get-path-to-assembly">
     <fail
       unless="${property::exists('host_version')}"
       message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'host_version' required to run this target." />
-
     <fail
       unless="${property::exists('program_to_run')}"
       message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'program_to_run' required to run this target." />
-
     <property
       name="path_to_assembly"
       value="netcoreapp${host_version}" />
-
     <property
       name="path_to_assembly"
+      unless="${path::is-path-rooted(program_to_run)}"
       value="${path::combine(folder_with_program_to_run, path::combine(path_to_assembly, program_to_run))}" />
+    <property
+      name="path_to_assembly"
+      if="${path::is-path-rooted(program_to_run)}"
+      value="${program_to_run}" />
     <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}path_to_assembly -> ${path_to_assembly}</echo>
   </target>
 
   <target name="build-sample-assembly">
     <fail
-      unless="${property::exists('host_version')}"
-      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'host_version' required to run this target." />
+      unless="${property::exists('program')}"
+      message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}property 'program' required to run this target." />
 
-    <property name="code" value="using System;${environment::newline()}" />
-    <property name="code" value="${code}namespace Sample { class Program { static void Main(string[] args) { foreach (var argument in args) { Console.WriteLine(argument); } } } }" />
-    <property name="code_crc32" value="${hash::bytes-to-string(hash::crc32(code))}" />
-
-    <property name="file" value="${path::combine(project::get-base-directory(), 'source.cs')}" />
-    <echo file="${file}" unless="${file::exists(file)}" message="${code}" />
-    <echo file="${file}" unless="${string::equal(code_crc32, file::get-checksum(file, 'crc32'))}" message="${code}" />
-
-    <property name="code" value="&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;>&lt;PropertyGroup>&lt;OutputType>Exe&lt;/OutputType>&lt;/PropertyGroup>&lt;ItemGroup>&lt;Compile Remove=&quot;*.*&quot; />&lt;Compile Remove=&quot;**/*.*&quot; />&lt;Compile Include=&quot;source.cs&quot; />&lt;/ItemGroup>&lt;/Project>" />
-    <property name="code_crc32" value="${hash::bytes-to-string(hash::crc32(code))}" />
-
-    <property name="file" value="${path::combine(project::get-base-directory(), 'source.csproj')}" />
-    <echo file="${file}" unless="${file::exists(file)}" message="${code}" />
-    <echo file="${file}" unless="${string::equal(code_crc32, file::get-checksum(file, 'crc32'))}" message="${code}" />
-
-    <!--property
-      name="return_of_main"
-      value="${hostfxr::main('', 'build', file, /p:TargetFramework=netcoreapp${host_version}, '/p:Configuration=Release')}" /-->
-
-    <property name="TargetFrameworks" />
     <property
-      name="TargetFrameworks"
-      value="/p:TargetFrameworks=netcoreapp${host_version}"
-      if="${version::greater(host_version, '5.9')}" />
+      name="template_name"
+      value="console" />
+    <property
+      name="file"
+      value="source" />
+
+    <call target="new-temp-project" />
+
+    <property
+      name="code"
+      value="using System;${environment::newline()}" />
+    <property
+      name="code"
+      value="${code}namespace Sample { class Program { static void Main(string[] args) { foreach (var argument in args) { Console.WriteLine(argument); } } } }" />
+
+    <property
+      name="file"
+      value="${path::combine(path, 'Program.cs')}" />
+
+    <echo file="${file}" message="${code}" />
+
+    <property
+      name="file"
+      value="${path::combine(path, '1.txt')}" />
 
     <exec
       program="${program}"
-      commandline="build ${file} /p:TargetFramework=netcoreapp${host_version} /p:Configuration=Release ${TargetFrameworks}" />
+      commandline="build /p:Configuration=Release"
+      workingdir="${path}"
+      output="${file}" />
 
-    <property name="program_to_run" value="source.dll" />
+    <call target="get-path-to-assembly-from-build-log" />
+
+    <property name="program_to_run" value="${file}" />
   </target>
 
   <!-- hostfxr::main -->
@@ -520,8 +748,6 @@
 
     <property name="resolve-sdk" value="${hostfxr::resolve-sdk('', '')}" />
 
-    <call target="should_we_skip" />
-
     <if test="${skip}">
       <fail unless="${string::equal('0', resolve-sdk)}"
             message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}at current environment expected that 'resolve-sdk' should return '0', instead it '${resolve-sdk}' ${net::result-to-string(resolve-sdk)}" />
@@ -546,8 +772,6 @@
       message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}current version of host do not have function 'get-available-sdks'." />
 
     <property name="available-sdks" value="${hostfxr::get-available-sdks()}" />
-
-    <call target="should_we_skip" />
 
     <if test="${skip}">
       <fail unless="${string::empty(available-sdks)}"
@@ -586,8 +810,6 @@
 
     <if test="${file::exists(path_to_assembly)}">
       <echo level="Debug">${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}program -> ${path_to_assembly}</echo>
-
-      <call target="should_we_skip" />
 
       <if test="${string::equal(bool::parse('false'), skip)}">
         <property
@@ -657,8 +879,6 @@
     <property name="dis_allow_pre_release" value="1" />
     <property name="resolve-sdk2" value="${hostfxr::resolve-sdk2('', '', dis_allow_pre_release)}" />
 
-    <call target="should_we_skip" />
-
     <if test="${skip}">
       <property name="SdkResolverResolveFailure" value="-2147450725" />
 
@@ -718,7 +938,7 @@
   </target>
 
   <!-- hostfxr::initialize-for-dotnet-command-line -->
-  <target name="hostfxr_initialize-for-dotnet-command-line" depends="build-assembly" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
+  <target name="hostfxr_initialize-for-dotnet-command-line" depends="build-assembly,hostfxr_initialize" if="${hostfxr::is-function-exists('initialize-for-dotnet-command-line')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-host_version" />
@@ -753,7 +973,7 @@
   </target>
 
   <!-- hostfxr::initialize-for-runtime-config -->
-  <target name="hostfxr_initialize-for-runtime-config" depends="build-assembly" if="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
+  <target name="hostfxr_initialize-for-runtime-config" depends="build-assembly,hostfxr_initialize" if="${hostfxr::is-function-exists('initialize-for-runtime-config')}">
     <property name="pad_level" value="${math::addition(pad_level, '1')}" />
 
     <call target="get-host_version" />
@@ -768,6 +988,11 @@
     <if test="${string::equal(bool::parse('false'), property::exists('path_to_json_config'))}">
       <property name="tfm" value="netcoreapp3.1" />
       <property name="framework_version" value="3.1.0" />
+
+      <if test="${version::greater(host_version, '5.9')}">
+        <property name="tfm" value="net6.0" />
+        <property name="framework_version" value="6.0" />
+      </if>
 
       <property name="content" />
 
@@ -989,14 +1214,18 @@
         name="return_of_main_startupinfo"
         value="${hostfxr::main-bundle-startupinfo('', '', '', header_offset, 'exec', path_to_assembly, '1', '2', '3', '4')}" />
 
-      <call target="should_we_skip" />
-
       <if test="${string::equal(bool::parse('false'), skip))}">
         <property name="NON_SUCCESS" value="${math::less(return_of_main_startupinfo, '0')}" />
         <property name="NON_SUCCESS" value="${math::greater(return_of_main_startupinfo, '2')}" unless="${NON_SUCCESS}" />
 
+        <call target="get-host_version" />
+        <if test="${version::less(host_version, '6.0')}">
         <fail if="${NON_SUCCESS}"
               message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}hostfxr::main-bundle-startupinfo(...) should return success result, instead returned ${return_of_main_startupinfo} ${net::result-to-string(return_of_main_startupinfo)}" />
+        </if>
+        <if test="${version::greater(host_version, '5.9')}">
+          <echo level="Warning">Checking on this version '${host_version}' of host will be skip.</echo>
+        </if>
       </if>
 
       <if test="${skip}">
@@ -1481,8 +1710,6 @@
     <fail if="${NON_SUCCESS}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::run-app should return success result, instead returned ${is_initialized} ${net::result-to-string(is_initialized)}" />
 
-    <call target="should_we_skip" />
-
     <property name="is_initialized" value="${corehost-context-contract::get-runtime-delegate('net_hdt_com_activation')}" />
     <fail unless="${string::starts-with(is_initialized, ' ')}"
           message="${target::get-current-target()}:${string::pad-left('', pad_level, '&#09;')}corehost-context-contract::get-runtime-delegate with 'net_hdt_com_activation' argument return ${is_initialized}." />
@@ -1551,8 +1778,6 @@
       <call target="build-assembly" />
       <call target="get-host_version" />
       <call target="get-path-to-assembly" />
-
-      <call target="should_we_skip" />
 
       <property name="is_assembly" unless="${skip}" value="${file::is-assembly(path_to_file, path_to_assembly)}" />
       <property name="is_assembly" if="${skip}" value="${bool::parse('true')}" />
@@ -1689,8 +1914,6 @@
     <property name="error_writer" value="${int::parse(error_writer)}" />
 
     <property name="path_to_file_for_error_writer" value="${file::get-length(path_to_assembly)}" />
-
-    <call target="should_we_skip" />
 
     <if test="${string::equal(bool::parse('false'), skip))}">
       <fail if="${string::equal('0', error_writer)}"

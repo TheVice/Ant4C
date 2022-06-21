@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2020.09</Version>
+    <Version>2020.09.2022</Version>
     <Title>Ant4C.Net.Module.CLR</Title>
     <Product>Ant4C.Net.Module.CLR</Product>
-    <Copyright>Copyright © 2021 TheVice</Copyright>
+    <Copyright>Copyright © 2021 - 2022 TheVice</Copyright>
     <Description>CLR side for Ant4C.Net.Module</Description>
     <AssemblyName>ant4c.net.module.clr</AssemblyName>
 

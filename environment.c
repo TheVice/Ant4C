@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -139,7 +139,8 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 			++finishW;
 		}
 
-		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(startW, finishW, path);
+		const uint8_t returned = text_encoding_UTF16LE_to_UTF8(
+									 (const uint16_t*)startW, (const uint16_t*)finishW, path);
 		CoTaskMemFree(startW);
 		return returned;
 	}
@@ -183,13 +184,13 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 	const ptrdiff_t size = buffer_size(path);
 
-	if (!buffer_append(path, NULL, 6 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
+	if (!buffer_append(path, NULL, (ptrdiff_t)4 * (FILENAME_MAX + 1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
 	startW = (wchar_t*)buffer_data(path,
-								   buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * FILENAME_MAX - sizeof(wchar_t));
+								   buffer_size(path) - sizeof(uint32_t) - sizeof(wchar_t) * (FILENAME_MAX + 1));
 
 	if (S_OK != fnSHGetFolderPathW(NULL, folderCSIDLs[folder], NULL, SHGFP_TYPE_DEFAULT, startW))
 	{
@@ -203,12 +204,8 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 		++finishW;
 	}
 
-	if (!buffer_resize(path, size))
-	{
-		return 0;
-	}
-
-	return text_encoding_UTF16LE_to_UTF8(startW, finishW, path);
+	return buffer_resize(path, size) &&
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)startW, (const uint16_t*)finishW, path);
 }
 
 #else
@@ -334,23 +331,35 @@ uint8_t environment_get_machine_name(struct buffer* name)
 	}
 
 	const ptrdiff_t size = buffer_size(name);
-	DWORD max_size = 6 * (MAX_COMPUTERNAME_LENGTH + 1) + sizeof(uint32_t);
+	DWORD max_size = (DWORD)4 * (MAX_COMPUTERNAME_LENGTH + 1) + sizeof(uint32_t);
 
 	if (!buffer_append(name, NULL, max_size))
 	{
 		return 0;
 	}
 
-	wchar_t* nameW = (wchar_t*)buffer_data(name,
-										   buffer_size(name) - sizeof(uint32_t) - sizeof(uint16_t) * MAX_COMPUTERNAME_LENGTH - sizeof(uint16_t));
+	wchar_t* nameW = (wchar_t*)buffer_data(
+						 name, buffer_size(name) - sizeof(uint32_t) - sizeof(wchar_t) * (MAX_COMPUTERNAME_LENGTH + 1));
+	max_size = MAX_COMPUTERNAME_LENGTH + 1;
 
 	if (!GetComputerNameW(nameW, &max_size))
 	{
 		return 0;
 	}
 
-	return buffer_resize(name, size) &&
-		   text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name);
+	if (max_size < (MAX_COMPUTERNAME_LENGTH + 1))
+	{
+		wmemset(nameW + max_size, 0, MAX_COMPUTERNAME_LENGTH + 1 - max_size);
+	}
+
+	if (!buffer_resize(name, size) ||
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)nameW, (const uint16_t*)(nameW + MAX_COMPUTERNAME_LENGTH + 1),
+									   name))
+	{
+		return 0;
+	}
+
+	return buffer_resize(name, size + max_size);
 }
 
 #else
@@ -552,24 +561,35 @@ uint8_t environment_get_user_name(struct buffer* name)
 	}
 
 	const ptrdiff_t size = buffer_size(name);
-	DWORD max_size = 6 * (UNLEN + 1) + sizeof(uint32_t);
+	DWORD max_size = (DWORD)4 * (UNLEN + 1) + sizeof(uint32_t);
 
 	if (!buffer_append(name, NULL, max_size))
 	{
 		return 0;
 	}
 
-	wchar_t* nameW = (wchar_t*)buffer_data(name,
-										   buffer_size(name) - sizeof(uint32_t) - sizeof(uint16_t) * UNLEN - sizeof(uint16_t));
+	wchar_t* nameW = (wchar_t*)buffer_data(
+						 name, buffer_size(name) - sizeof(uint32_t) - sizeof(wchar_t) * (UNLEN + 1));
+	max_size = UNLEN + 1;
 
 	if (!GetUserNameW(nameW, &max_size))
 	{
 		return 0;
 	}
 
-	return buffer_resize(name, size) &&
-		   text_encoding_UTF16LE_to_UTF8(nameW, nameW + max_size, name) &&
-		   buffer_resize(name, buffer_size(name) - 1);
+	if (max_size < (UNLEN + 1))
+	{
+		wmemset(nameW + max_size, 0, UNLEN + 1 - max_size);
+	}
+
+	if (!buffer_resize(name, size) ||
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)nameW, (const uint16_t*)(nameW + UNLEN + 1),
+									   name))
+	{
+		return 0;
+	}
+
+	return buffer_resize(name, size + max_size - 1);
 }
 
 #else
@@ -626,7 +646,7 @@ uint8_t environment_get_variable(
 		return 0;
 	}
 
-	const ptrdiff_t size_ = buffer_size(variable);
+	const ptrdiff_t size_with_name = buffer_size(variable);
 
 	if (!buffer_push_back_uint16(variable, 0))
 	{
@@ -635,14 +655,14 @@ uint8_t environment_get_variable(
 	}
 
 	const wchar_t* variable_name = (const wchar_t*)buffer_data(variable, size);
-	wchar_t* variable_value = (wchar_t*)buffer_data(variable, size_);
+	wchar_t* variable_value = (wchar_t*)buffer_data(variable, size_with_name);
 	/**/
 	DWORD variable_value_size = GetEnvironmentVariableW(
 									variable_name, variable_value, 1);
 	/**/
 	buffer_release(&l_variable);
 
-	if (variable_value_size < 2)
+	if (!variable_value_size)
 	{
 		return 0;
 	}
@@ -652,7 +672,7 @@ uint8_t environment_get_variable(
 		return 1;
 	}
 
-	if (!buffer_append(variable, NULL, sizeof(uint32_t) + (ptrdiff_t)6 * (variable_value_size + (ptrdiff_t)1)))
+	if (!buffer_append(variable, NULL, (ptrdiff_t)6 * (variable_value_size + (ptrdiff_t)1) + sizeof(uint32_t)))
 	{
 		return 0;
 	}
@@ -664,13 +684,14 @@ uint8_t environment_get_variable(
 	variable_value_size = GetEnvironmentVariableW(
 							  variable_name, variable_value, variable_value_size);
 
-	if (variable_value_size < 2)
+	if (!variable_value_size)
 	{
 		return 0;
 	}
 
 	return buffer_resize(variable, size) &&
-		   text_encoding_UTF16LE_to_UTF8(variable_value, variable_value + variable_value_size, variable);
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)variable_value,
+										 (const uint16_t*)(variable_value + variable_value_size), variable);
 }
 
 #else

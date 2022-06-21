@@ -1,11 +1,12 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
 #include "argument_parser.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
@@ -16,234 +17,276 @@
 #include "string_unit.h"
 #include "text_encoding.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 static const uint8_t equal_symbol = '=';
 static const uint8_t quote_symbol = '"';
 static const uint8_t space_symbol = ' ';
 static const uint8_t zero_symbol = '\0';
-static const uint8_t plus = '+';
-static const uint8_t minus = '-';
 
-static const uint8_t* properties_names[] =
+struct Parameters
 {
-	(const uint8_t*)"target",
-	(const uint8_t*)"D",
-	(const uint8_t*)"indent",
-	/**/
-	(const uint8_t*)"f",
-	(const uint8_t*)"buildfile",
-	/**/
-	(const uint8_t*)"l",
-	(const uint8_t*)"logfile",
-	/**/
-	(const uint8_t*)"pause",
-	(const uint8_t*)"debug",
-	/**/
-	(const uint8_t*)"q",
-	(const uint8_t*)"quiet",
-	/**/
-	(const uint8_t*)"h",
-	(const uint8_t*)"help",
-	/**/
-	(const uint8_t*)"projecthelp",
-	(const uint8_t*)"nologo",
-	(const uint8_t*)"encoding",
-	(const uint8_t*)"listener",
-	(const uint8_t*)"modulepriority"
+	struct buffer build_file;
+	struct buffer listener;
+	struct buffer log_file;
+	struct buffer properties;
+	struct buffer target;
+	uint16_t encoding;
+	uint8_t debug;
+	uint8_t indent;
+	uint8_t module_priority;
+	uint8_t no_logo;
+	uint8_t pause;
+	uint8_t program_help;
+	uint8_t project_help;
+	uint8_t quiet;
+	uint8_t verbose;
 };
 
-static const uint8_t properties_names_lengths[] =
+static struct Parameters parameters_;
+static uint8_t is_init = 0;
+
+static const uint8_t* arguments_0[] =
 {
-	6, 1, 6,
+	(const uint8_t*)"-debug",
+	(const uint8_t*)"-h",
+	(const uint8_t*)"-help",
+	(const uint8_t*)"-modulepriority",
+	(const uint8_t*)"-nologo",
+	(const uint8_t*)"-pause",
+	(const uint8_t*)"-projecthelp",
+	(const uint8_t*)"-q",
+	(const uint8_t*)"-quiet",
+	(const uint8_t*)"-verbose",
+	(const uint8_t*)"-v",
 	/**/
-	1, 9,
+	(const uint8_t*)"-debug+",
+	(const uint8_t*)"-h+",
+	(const uint8_t*)"-help+",
+	(const uint8_t*)"-modulepriority+",
+	(const uint8_t*)"-nologo+",
+	(const uint8_t*)"-pause+",
+	(const uint8_t*)"-projecthelp+",
+	(const uint8_t*)"-q+",
+	(const uint8_t*)"-quiet+",
+	(const uint8_t*)"-verbose+",
+	(const uint8_t*)"-v+",
 	/**/
-	1, 7,
-	/**/
-	5, 5,
-	/**/
-	1, 5,
-	/**/
-	1, 4,
-	/**/
-	11, 6, 8, 8, 14
+	(const uint8_t*)"-debug-",
+	(const uint8_t*)"-h-",
+	(const uint8_t*)"-help-",
+	(const uint8_t*)"-modulepriority-",
+	(const uint8_t*)"-nologo-",
+	(const uint8_t*)"-pause-",
+	(const uint8_t*)"-projecthelp-",
+	(const uint8_t*)"-q-",
+	(const uint8_t*)"-quiet-",
+	(const uint8_t*)"-verbose-",
+	(const uint8_t*)"-v-",
 };
 
-#define TARGET_POSITION					0
-#define PROPERTY_POSITION				1
-#define INDENT_POSITION					2
+typedef void(*P_0)(struct Parameters* parameters);
 
-#define BUILD_FILES_POSITION_1			3
-#define BUILD_FILES_POSITION_2			4
-
-#define LOG_FILE_POSITION_1				5
-#define LOG_FILE_POSITION_2				6
-
-#define PAUSE_POSITION					7
-#define DEBUG_POSITION					8
-
-#define QUIET_POSITION_1				9
-#define QUIET_POSITION_2				10
-
-#define HELP_POSITION_1					11
-#define HELP_POSITION_2					12
-
-#define PROJECT_HELP_POSITION			13
-#define NO_LOGO_POSITION				14
-#define ENCODING_POSITION				15
-#define LISTENER_POSITION				16
-#define MODULE_PRIORITY_POSITION		17
-
-#define PROPERTIES_COUNT	(MODULE_PRIORITY_POSITION + 1)
-
-uint8_t argument_parser_get_verbose_char(int i, int argc, char** argv)
+void set_debug(struct Parameters* parameters)
 {
-	uint8_t verbose = 0;
-
-	if (NULL == argv)
-	{
-		return verbose;
-	}
-
-	for (; i < argc; ++i)
-	{
-		const uint8_t* start = (const uint8_t*)argv[i];
-		const uint8_t* finish =
-			start + common_count_bytes_until(start, 0);
-		const ptrdiff_t length = string_get_length(start, finish);
-
-		if (!length)
-		{
-			continue;
-		}
-
-		static const uint8_t* verbose_str[] =
-		{
-			(const uint8_t*)"-verbose",
-			(const uint8_t*)"-v"
-		};
-		/**/
-		static const uint8_t verbose_lengths[] = { 8, 2 };
-
-		for (uint8_t j = 0; j < 2;)
-		{
-			if (string_starts_with(
-					start, finish,
-					verbose_str[j], verbose_str[j] + verbose_lengths[j]))
-			{
-				if (length == verbose_lengths[j])
-				{
-					verbose = 1;
-					break;
-				}
-
-				if (length == verbose_lengths[j] + 1)
-				{
-					struct range char_set_in_a_range;
-
-					if (!string_substring(
-							start, finish, length - 1, 1,
-							&char_set_in_a_range))
-					{
-						break;
-					}
-
-					uint32_t char_set;
-					char_set_in_a_range.start = string_enumerate(
-													char_set_in_a_range.start,
-													char_set_in_a_range.finish, &char_set);
-
-					if (char_set_in_a_range.start != char_set_in_a_range.finish)
-					{
-						break;
-					}
-
-					if (plus == char_set)
-					{
-						verbose = 1;
-						break;
-					}
-					else if (minus == char_set)
-					{
-						verbose = 0;
-						break;
-					}
-				}
-			}
-
-			++j;
-		}
-	}
-
-	return verbose;
+	parameters->debug = 1;
 }
-#if defined(_WIN32)
-uint8_t argument_parser_get_verbose_wchar_t(int i, int argc, wchar_t** argv)
+
+void unset_debug(struct Parameters* parameters)
 {
-	uint8_t verbose = 0;
-
-	if (NULL == argv)
-	{
-		return verbose;
-	}
-
-	for (; i < argc; ++i)
-	{
-		if (!argv[i])
-		{
-			continue;
-		}
-
-		const size_t length = wcslen(argv[i]);
-
-		if (!length ||
-			L'-' != argv[i][0])
-		{
-			continue;
-		}
-
-		static const wchar_t* verbose_str[] =
-		{
-			L"-verbose",
-			L"-v"
-		};
-		/**/
-		static const uint8_t verbose_lengths[] = { 8, 2 };
-
-		for (uint8_t j = 0; j < 2;)
-		{
-			if (verbose_lengths[j] <= length &&
-				0 == wmemcmp(argv[i], verbose_str[j], verbose_lengths[j]))
-			{
-				if ((uint8_t)length == verbose_lengths[j])
-				{
-					verbose = 1;
-					break;
-				}
-
-				if ((uint8_t)length == verbose_lengths[j] + 1)
-				{
-					const wchar_t ch = argv[i][length - 1];
-
-					if (L'+' == ch)
-					{
-						verbose = 1;
-						break;
-					}
-					else if (L'-' == ch)
-					{
-						verbose = 0;
-						break;
-					}
-				}
-			}
-
-			++j;
-		}
-	}
-
-	return verbose;
+	parameters->debug = 0;
 }
-#endif
+
+void set_help(struct Parameters* parameters)
+{
+	parameters->program_help = 1;
+}
+
+void unset_help(struct Parameters* parameters)
+{
+	parameters->program_help = 0;
+}
+
+void set_modulepriority(struct Parameters* parameters)
+{
+	parameters->module_priority = 1;
+}
+
+void unset_modulepriority(struct Parameters* parameters)
+{
+	parameters->module_priority = 0;
+}
+
+void set_nologo(struct Parameters* parameters)
+{
+	parameters->no_logo = 1;
+}
+
+void unset_nologo(struct Parameters* parameters)
+{
+	parameters->no_logo = 0;
+}
+
+void set_pause(struct Parameters* parameters)
+{
+	parameters->pause = 1;
+}
+
+void unset_pause(struct Parameters* parameters)
+{
+	parameters->pause = 0;
+}
+
+void set_projecthelp(struct Parameters* parameters)
+{
+	parameters->project_help = 1;
+}
+
+void unset_projecthelp(struct Parameters* parameters)
+{
+	parameters->project_help = 0;
+}
+
+void set_quiet(struct Parameters* parameters)
+{
+	parameters->quiet = 1;
+}
+
+void unset_quiet(struct Parameters* parameters)
+{
+	parameters->quiet = 0;
+}
+
+void set_verbose(struct Parameters* parameters)
+{
+	parameters->verbose = 1;
+}
+
+void unset_verbose(struct Parameters* parameters)
+{
+	parameters->verbose = 0;
+}
+
+static const P_0 functions_0[] =
+{
+	set_debug,
+	set_help,
+	set_help,
+	set_modulepriority,
+	set_nologo,
+	set_pause,
+	set_projecthelp,
+	set_quiet,
+	set_quiet,
+	set_verbose,
+	set_verbose,
+	/**/
+	set_debug,
+	set_help,
+	set_help,
+	set_modulepriority,
+	set_nologo,
+	set_pause,
+	set_projecthelp,
+	set_quiet,
+	set_quiet,
+	set_verbose,
+	set_verbose,
+	/**/
+	unset_debug,
+	unset_help,
+	unset_help,
+	unset_modulepriority,
+	unset_nologo,
+	unset_pause,
+	unset_projecthelp,
+	unset_quiet,
+	unset_quiet,
+	unset_verbose,
+	unset_verbose,
+};
+
+static const uint8_t* arguments_1[] =
+{
+	(const uint8_t*)"-buildfile:",
+	(const uint8_t*)"-D:",
+	(const uint8_t*)"-encoding:",
+	(const uint8_t*)"/f:",
+	(const uint8_t*)"-indent:",
+	(const uint8_t*)"-l:",
+	(const uint8_t*)"-listener:",
+	(const uint8_t*)"-logfile:",
+};
+
+typedef uint8_t(*P_1)(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length);
+
+uint8_t set_buildfile(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length)
+{
+	return buffer_append_char(&(parameters->build_file), argument + i, length - i) &&
+		   buffer_push_back(&(parameters->build_file), zero_symbol);
+}
+
+uint8_t argument_parser_argument_to_property(
+	const uint8_t* input_start, const uint8_t* input_finish,
+	struct buffer* properties, uint8_t verbose);
+
+uint8_t set_properties(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length)
+{
+	return argument_parser_argument_to_property(
+			   (const uint8_t*)(argument + i), (const uint8_t*)(argument + length),
+			   &(parameters->properties), parameters->verbose);
+}
+
+uint8_t set_encoding(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length)
+{
+	struct buffer encoding_name;
+	SET_NULL_TO_BUFFER(encoding_name);
+
+	if (!buffer_append_char(&encoding_name, argument + i, length - i))
+	{
+		buffer_release(&encoding_name);
+		return 0;
+	}
+
+	parameters->encoding = load_file_get_encoding(&encoding_name);
+	buffer_release(&encoding_name);
+	return 1;
+}
+
+uint8_t set_indent(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length)
+{
+	parameters->indent = (uint8_t)math_abs(int_parse((const uint8_t*)(argument + i),
+										   (const uint8_t*)(argument + length)));
+	return 1;
+}
+
+uint8_t set_listener(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length)
+{
+	return buffer_resize(&(parameters->listener), 0) &&
+		   buffer_append_char(&(parameters->listener), argument + i, length - i) &&
+		   buffer_push_back(&(parameters->listener), zero_symbol);
+}
+
+uint8_t set_logfile(struct Parameters* parameters, const char* argument, ptrdiff_t i, ptrdiff_t length)
+{
+	return buffer_resize(&(parameters->log_file), 0) &&
+		   buffer_append_char(&(parameters->log_file), argument + i, length - i) &&
+		   buffer_push_back(&(parameters->log_file), zero_symbol);
+}
+
+static const P_1 functions_1[] =
+{
+	set_buildfile,
+	set_properties,
+	set_encoding,
+	set_buildfile,
+	set_indent,
+	set_logfile,
+	set_listener,
+	set_logfile,
+};
+
 uint8_t argument_get_key_and_value(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	struct range* key, struct range* value)
@@ -285,21 +328,20 @@ uint8_t argument_get_key_and_value(
 		   value->start <= value->finish;
 }
 
-uint8_t argument_parser_buffer_to_properties(
-	const struct buffer* input, struct buffer* properties, uint8_t verbose)
+uint8_t argument_parser_argument_to_property(
+	const uint8_t* input_start, const uint8_t* input_finish,
+	struct buffer* properties, uint8_t verbose)
 {
-	const uint8_t* start = buffer_data(input, 0);
-	const uint8_t* finish = start + buffer_size(input);
-	const uint8_t* pos = start;
+	const uint8_t* pos = input_start;
 
-	while ((start = string_find_any_symbol_like_or_not_like_that(
-						start, finish,
-						&zero_symbol, &zero_symbol + 1, 1, 1)) < finish)
+	while (pos < (input_start = string_find_any_symbol_like_or_not_like_that(
+									input_start, input_finish,
+									&zero_symbol, &zero_symbol + 1, 1, 1)))
 	{
 		struct range key;
 		struct range value;
 
-		if (!argument_get_key_and_value(pos, start, &key, &value))
+		if (!argument_get_key_and_value(pos, input_start, &key, &value))
 		{
 			return 0;
 		}
@@ -314,292 +356,111 @@ uint8_t argument_parser_buffer_to_properties(
 			return 0;
 		}
 
-		start = string_find_any_symbol_like_or_not_like_that(
-					start, finish, &zero_symbol, &zero_symbol + 1, 0, 1);
-		pos = start;
+		input_start = string_find_any_symbol_like_or_not_like_that(
+						  input_start, input_finish, &zero_symbol, &zero_symbol + 1, 0, 1);
+		pos = input_start;
 	}
 
 	return 1;
 }
 
-uint8_t argument_parser_append_property(
-	struct buffer* properties_,
-	const uint8_t* name, uint8_t name_length,
-	struct buffer* argument_value, uint8_t append_property_value,
-	uint8_t verbose)
-{
-	void* the_property;
-	ptrdiff_t size = buffer_size(argument_value);
-
-	if (size)
-	{
-		if (!buffer_push_back(argument_value, 0))
-		{
-			return 0;
-		}
-
-		++size;
-	}
-
-	if (!property_exists(properties_, name, name_length, &the_property))
-	{
-		return property_set_by_name(
-				   properties_, name, name_length,
-				   size ? buffer_data(argument_value, 0) : (const uint8_t*)&size,
-				   size, property_value_is_byte_array, 0, 0, 0, verbose);
-	}
-
-	size = buffer_size(argument_value);
-
-	if (!property_get_by_pointer(the_property, argument_value))
-	{
-		return 0;
-	}
-
-	ptrdiff_t new_size = buffer_size(argument_value);
-
-	if (append_property_value && size < new_size)
-	{
-		if (!buffer_push_back(argument_value, 0))
-		{
-			return 0;
-		}
-
-		++new_size;
-
-		if (!buffer_append(argument_value, NULL, size))
-		{
-			return 0;
-		}
-
-		const uint8_t* src = buffer_data(argument_value, 0);
-		uint8_t* dst = buffer_data(argument_value, new_size);
-		MEM_CPY(dst, src, size);
-		/**/
-		dst = buffer_data(argument_value, 0);
-		src = buffer_data(argument_value, size);
-		MEM_CPY(dst, src, new_size - size);
-		/**/
-		src = buffer_data(argument_value, new_size);
-		dst = buffer_data(argument_value, new_size - size);
-		MEM_CPY(dst, src, size);
-
-		if (!buffer_resize(argument_value, new_size))
-		{
-			return 0;
-		}
-	}
-
-	size = buffer_size(argument_value);
-	return property_set_by_pointer(
-			   the_property,
-			   size ? buffer_data(argument_value, 0) : (const uint8_t*)&size,
-			   size, property_value_is_byte_array, 0, 0, verbose);
-}
-
-uint8_t argument_parser_char(int i, int argc, char** argv,
-							 struct buffer* arguments, uint8_t verbose)
+uint8_t argument_parser_char_(int i, int argc, char** argv, struct Parameters* parameters)
 {
 	if ((i < argc && NULL == argv) ||
-		NULL == arguments)
+		NULL == parameters)
 	{
 		return 0;
 	}
 
-	struct buffer argument_value;
-
-	SET_NULL_TO_BUFFER(argument_value);
+	if (!is_init &&
+		!argument_parser_init())
+	{
+		return 0;
+	}
 
 	for (; i < argc; ++i)
 	{
-		if (!argv[i])
+		if (NULL == argv[i])
 		{
 			continue;
 		}
 
-		const uint8_t* start = (const uint8_t*)argv[i];
-		const uint8_t* finish =
-			start + common_count_bytes_until(start, 0);
-		const ptrdiff_t length = string_get_length(start, finish);
+		const ptrdiff_t length = common_count_bytes_until((const uint8_t*)(argv[i]), 0);
 
-		if (!length)
+		if (length < 1)
 		{
 			continue;
 		}
 
-		uint32_t char_set;
+		uint8_t pass = 0;
 
-		if (NULL == (start = string_enumerate(start, finish, &char_set)))
+		for (uint8_t j = 0, count = sizeof(arguments_0) / sizeof(*arguments_0); j < count; ++j)
 		{
-			continue;
-		}
+			const ptrdiff_t argument_length = common_count_bytes_until(arguments_0[j], 0);
 
-		if ('@' == char_set)
-		{
-			continue;
-		}
-
-		if (!buffer_resize(&argument_value, 0))
-		{
-			buffer_release(&argument_value);
-			return 0;
-		}
-
-		if (1 < length && (minus == char_set || '/' == char_set))
-		{
-			static const uint8_t colon_mark = ':';
-			/**/
-			const uint8_t* middle =
-				string_find_any_symbol_like_or_not_like_that(
-					start, finish, &colon_mark, &colon_mark + 1, 1, 1);
-
-			if (middle != finish)
+			if (length == argument_length &&
+				0 == memcmp(argv[i], arguments_0[j], length))
 			{
-				middle = string_find_any_symbol_like_or_not_like_that(
-							 middle, finish,
-							 &colon_mark, &colon_mark + 1, 0, 1);
-
-				if (middle == finish)
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
-
-				const ptrdiff_t value_length = finish - middle;
-
-				if (!buffer_append(&argument_value, middle, value_length))
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
-
-				middle = string_find_any_symbol_like_or_not_like_that(
-							 middle, start, &colon_mark, &colon_mark + 1,
-							 1, -1);
-				ptrdiff_t name_length = middle - start;
-
-				if (UINT8_MAX < name_length)
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
-
-				uint8_t property_number = common_string_to_enum(
-											  start, middle, properties_names + 1,
-											  PROPERTIES_COUNT - 1);
-
-				if (PROPERTIES_COUNT - 1 == property_number)
-				{
-					continue;
-				}
-
-				property_number = (BUILD_FILES_POSITION_1 - 1 == property_number ||
-								   BUILD_FILES_POSITION_2 - 1 == property_number);
-
-				if (property_number)
-				{
-					start = properties_names[BUILD_FILES_POSITION_1];
-					name_length = properties_names_lengths[BUILD_FILES_POSITION_1];
-				}
-
-				if (!argument_parser_append_property(
-						arguments, start, (uint8_t)name_length,
-						&argument_value, property_number, verbose))
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
+				(functions_0[j])(parameters);
+				pass = 1;
+				break;
 			}
-			else
-			{
-				if (UINT8_MAX < length)
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
+		}
 
-				struct range char_set_in_a_range;
-
-				if (!string_substring(
-						(const uint8_t*)argv[i], finish, length - 1, 1,
-						&char_set_in_a_range))
-				{
-					continue;
-				}
-
-				char_set_in_a_range.start =
-					string_enumerate(char_set_in_a_range.start, char_set_in_a_range.finish, &char_set);
-
-				if (char_set_in_a_range.start != char_set_in_a_range.finish)
-				{
-					continue;
-				}
-
-				if (!bool_to_string(minus == char_set ? 0 : 1, &argument_value))
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
-
-				ptrdiff_t length_ = string_get_length(start, finish);
-
-				if (minus == char_set || plus == char_set)
-				{
-					--length_;
-				}
-
-				if (!string_substring(start, finish, 0, length_, &char_set_in_a_range))
-				{
-					continue;
-				}
-
-				if (PROPERTIES_COUNT - 1 == common_string_to_enum(
-						start, char_set_in_a_range.finish,
-						properties_names + 1, PROPERTIES_COUNT - 1))
-				{
-					continue;
-				}
-
-				if (!argument_parser_append_property(
-						arguments, start,
-						(uint8_t)(char_set_in_a_range.finish - start),
-						&argument_value, 0, verbose))
-				{
-					buffer_release(&argument_value);
-					return 0;
-				}
-			}
-
+		if (pass)
+		{
 			continue;
 		}
 
-		start = (const uint8_t*)argv[i];
-
-		if (!buffer_append(&argument_value, start, finish - start))
+		for (uint8_t j = 0, count = sizeof(arguments_1) / sizeof(*arguments_1); j < count; ++j)
 		{
-			buffer_release(&argument_value);
-			return 0;
+			const ptrdiff_t argument_length = common_count_bytes_until(arguments_1[j], 0);
+
+			if (string_starts_with(
+					(const uint8_t*)(argv[i]), (const uint8_t*)(argv[i] + length),
+					arguments_1[j], arguments_1[j] + argument_length))
+			{
+				if (length <= argument_length ||
+					!(functions_1[j])(parameters, argv[i], argument_length, length))
+				{
+					return 0;
+				}
+
+				pass = 1;
+				break;
+			}
 		}
 
-		if (!argument_parser_append_property(
-				arguments, properties_names[TARGET_POSITION],
-				properties_names_lengths[TARGET_POSITION],
-				&argument_value, 1, verbose))
+		if (pass)
 		{
-			buffer_release(&argument_value);
+			continue;
+		}
+
+		if (string_starts_with(
+				(const uint8_t*)(argv[i]), (const uint8_t*)(argv[i] + length),
+				arguments_1[0], arguments_1[0] + 1))
+		{
+			continue;
+		}
+
+		if (!buffer_append_char(&(parameters->target), argv[i], length) ||
+			!buffer_push_back(&(parameters->target), zero_symbol))
+		{
 			return 0;
 		}
 	}
 
-	buffer_release(&argument_value);
 	return 1;
 }
-#if defined(_WIN32)
-uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv,
-								struct buffer* arguments, uint8_t verbose)
+
+uint8_t argument_parser_char(int i, int argc, char** argv)
 {
-	if ((i < argc && NULL == argv) ||
-		NULL == arguments)
+	return argument_parser_char_(i, argc, argv, &parameters_);
+}
+#if defined(_WIN32)
+uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv)
+{
+	if (i < argc && NULL == argv)
 	{
 		return 0;
 	}
@@ -625,9 +486,22 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv,
 
 	for (; i < argc; ++i)
 	{
+		if (NULL == argv[i])
+		{
+			continue;
+		}
+
 		const size_t length = wcslen(argv[i]);
 
-		if (!text_encoding_UTF16LE_to_UTF8(argv[i], argv[i] + length, &argumentA) ||
+		if (0 == length)
+		{
+			continue;
+		}
+
+		if (!text_encoding_UTF16LE_to_UTF8(
+				(const uint16_t*)(argv[i]),
+				(const uint16_t*)(argv[i] + length),
+				&argumentA) ||
 			!buffer_push_back(&argumentA, 0))
 		{
 			buffer_release(&argumentA);
@@ -660,7 +534,7 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv,
 
 	char** argvA = (char**)buffer_data(&argumentA, 0);
 
-	if (!argument_parser_char(0, argcA, argvA, arguments, verbose))
+	if (!argument_parser_char(0, argcA, argvA))
 	{
 		buffer_release(&argumentA);
 		return 0;
@@ -670,6 +544,57 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv,
 	return 1;
 }
 #endif
+uint8_t argument_parser_init()
+{
+	if (!is_init)
+	{
+		memset(&parameters_, 0, sizeof(struct Parameters));
+		is_init = 1;
+	}
+	else
+	{
+		if (!buffer_resize(&(parameters_.build_file), 0))
+		{
+			return 0;
+		}
+
+		if (!buffer_resize(&(parameters_.listener), 0))
+		{
+			return 0;
+		}
+
+		if (!buffer_resize(&(parameters_.log_file), 0))
+		{
+			return 0;
+		}
+
+		if (!buffer_resize(&(parameters_.target), 0))
+		{
+			return 0;
+		}
+
+		property_release_inner(&(parameters_.properties));
+
+		if (!buffer_resize(&(parameters_.properties), 0))
+		{
+			return 0;
+		}
+	}
+
+	parameters_.debug = 0;
+	parameters_.encoding = UTF8;
+	parameters_.indent = 0;
+	parameters_.module_priority = 0;
+	parameters_.no_logo = 0;
+	parameters_.pause = 0;
+	parameters_.program_help = 0;
+	parameters_.project_help = 0;
+	parameters_.quiet = 0;
+	parameters_.verbose = 0;
+	/**/
+	return 1;
+}
+
 uint8_t argument_assign_un_quote(const uint8_t* pos, const uint8_t* input_start,
 								 struct buffer* output)
 {
@@ -851,7 +776,7 @@ uint8_t argument_from_char(const char* input_start, const char* input_finish,
 }
 
 const uint8_t* argument_parser_get_null_terminated_by_index(
-	struct buffer* argument_value, int index, int* current_i)
+	struct buffer* argument_value, int index)
 {
 	int i = 0;
 	const uint8_t* start = buffer_data(argument_value, 0);
@@ -865,206 +790,92 @@ const uint8_t* argument_parser_get_null_terminated_by_index(
 					start, finish, &zero_symbol, &zero_symbol + 1, 1, 1);
 	}
 
-	if (NULL != current_i)
-	{
-		*current_i = i;
-	}
-
 	return finish != start ? start : NULL;
 }
 
-const struct range* argument_parser_get_value_by_index(
-	const struct buffer* arguments, uint8_t a, uint8_t b, struct buffer* argument_value, int index)
+uint8_t argument_parser_get_debug()
 {
-	int i = 0;
-	const uint8_t* ptr = NULL;
+	return parameters_.debug;
+}
 
-	for (uint8_t j = a; j < b + 1; ++j)
+uint8_t argument_parser_get_indent()
+{
+	return parameters_.indent;
+}
+
+uint8_t argument_parser_get_module_priority()
+{
+	return parameters_.module_priority;
+}
+
+uint8_t argument_parser_get_no_logo()
+{
+	return parameters_.no_logo;
+}
+
+uint8_t argument_parser_get_pause()
+{
+	return parameters_.pause;
+}
+
+uint8_t argument_parser_get_program_help()
+{
+	return parameters_.program_help;
+}
+
+uint8_t argument_parser_get_project_help()
+{
+	return parameters_.project_help;
+}
+
+uint8_t argument_parser_get_quiet()
+{
+	return parameters_.quiet;
+}
+
+uint8_t argument_parser_get_verbose()
+{
+	return parameters_.verbose;
+}
+
+uint16_t argument_parser_get_encoding()
+{
+	return parameters_.encoding;
+}
+
+const struct buffer* argument_parser_get_properties()
+{
+	return &(parameters_.properties);
+}
+
+const uint8_t* argument_parser_get_build_file(int index)
+{
+	return argument_parser_get_null_terminated_by_index(&(parameters_.build_file), index);
+}
+
+const uint8_t* argument_parser_get_log_file()
+{
+	return buffer_data(&(parameters_.log_file), 0);
+}
+
+const uint8_t* argument_parser_get_target(int index)
+{
+	return argument_parser_get_null_terminated_by_index(&(parameters_.target), index);
+}
+
+const uint8_t* argument_parser_get_listener()
+{
+	return buffer_data(&(parameters_.listener), 0);
+}
+
+void argument_parser_release()
+{
+	if (is_init)
 	{
-		index -= i;
-		void* the_property;
-
-		if (property_exists(arguments, properties_names[j], properties_names_lengths[j], &the_property))
-		{
-			if (buffer_resize(argument_value, 0) &&
-				property_get_by_pointer(the_property, argument_value))
-			{
-				if (NULL != (ptr = argument_parser_get_null_terminated_by_index(argument_value, index, &i)))
-				{
-					break;
-				}
-			}
-		}
+		buffer_release(&(parameters_.build_file));
+		buffer_release(&(parameters_.listener));
+		buffer_release(&(parameters_.log_file));
+		buffer_release(&(parameters_.target));
+		property_release(&(parameters_.properties));
 	}
-
-	struct range* result = NULL;
-
-	if (NULL != ptr)
-	{
-		index = (int)(ptr - buffer_data(argument_value, 0));
-		const ptrdiff_t size = buffer_size(argument_value);
-
-		if (!buffer_append_range(argument_value, NULL, 1))
-		{
-			return 0;
-		}
-
-		result = (struct range*)buffer_data(argument_value, size);
-		/**/
-		const uint8_t* finish = (const uint8_t*)result;
-		const ptrdiff_t length = string_get_length(
-									 buffer_data(argument_value, 0), finish);
-
-		if (!string_substring(
-				buffer_data(argument_value, 0), finish, 0, length - 1, result))
-		{
-			return 0;
-		}
-
-		result->start = buffer_data(argument_value, index);
-		result->finish = string_find_any_symbol_like_or_not_like_that(
-							 result->start, result->finish,
-							 &zero_symbol, &zero_symbol + 1, 1, 1);
-	}
-
-	return result;
-}
-
-uint8_t argument_parser_get_bool_value(
-	const struct buffer* arguments, uint8_t a, uint8_t b, struct buffer* argument_value)
-{
-	const struct range* result = argument_parser_get_value_by_index(
-									 arguments, a, b, argument_value, 0);
-	const ptrdiff_t size = range_size(result);
-
-	if (result && buffer_resize(argument_value, size))
-	{
-		const uint8_t* value = buffer_data(argument_value, 0);
-
-		if (!bool_parse(value, value + size, &a))
-		{
-			return 0;
-		}
-
-		return a;
-	}
-
-	return 0;
-}
-
-uint8_t argument_parser_get_debug(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, DEBUG_POSITION, DEBUG_POSITION, argument_value);
-}
-
-uint16_t argument_parser_get_encoding(const struct buffer* arguments, struct buffer* argument_value)
-{
-	const struct range* result = argument_parser_get_value_by_index(arguments,
-								 ENCODING_POSITION, ENCODING_POSITION, argument_value, 0);
-
-	if (!result || !buffer_resize(argument_value, range_size(result)))
-	{
-		return UTF8;
-	}
-
-	return load_file_get_encoding(argument_value);
-}
-
-uint8_t argument_parser_get_program_help(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, HELP_POSITION_1, HELP_POSITION_2, argument_value);
-}
-
-uint8_t argument_parser_get_indent(const struct buffer* arguments, struct buffer* argument_value)
-{
-	const struct range* result = argument_parser_get_value_by_index(arguments,
-								 INDENT_POSITION, INDENT_POSITION, argument_value, 0);
-
-	if (result)
-	{
-		return (uint8_t)math_abs(int_parse(result->start, result->finish));
-	}
-
-	return 0;
-}
-
-uint8_t argument_parser_get_no_logo(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, NO_LOGO_POSITION, NO_LOGO_POSITION, argument_value);
-}
-
-uint8_t argument_parser_get_pause(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, PAUSE_POSITION, PAUSE_POSITION, argument_value);
-}
-
-uint8_t argument_parser_get_project_help(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, PROJECT_HELP_POSITION, PROJECT_HELP_POSITION,
-										  argument_value);
-}
-
-uint8_t argument_parser_get_module_priority(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, MODULE_PRIORITY_POSITION, MODULE_PRIORITY_POSITION,
-										  argument_value);
-}
-
-uint8_t argument_parser_get_quiet(const struct buffer* arguments, struct buffer* argument_value)
-{
-	return argument_parser_get_bool_value(arguments, QUIET_POSITION_1, QUIET_POSITION_2, argument_value);
-}
-
-uint8_t argument_parser_get_properties(const struct buffer* arguments, struct buffer* properties,
-									   uint8_t verbose)
-{
-	void* the_property;
-
-	if (property_exists(arguments, properties_names[PROPERTY_POSITION],
-						properties_names_lengths[PROPERTY_POSITION],
-						&the_property))
-	{
-		struct buffer argument_value;
-		SET_NULL_TO_BUFFER(argument_value);
-
-		if (!property_get_by_pointer(the_property, &argument_value) ||
-			!argument_parser_buffer_to_properties(&argument_value, properties, verbose))
-		{
-			buffer_release(&argument_value);
-			return 0;
-		}
-
-		buffer_release(&argument_value);
-		return 1;
-	}
-
-	return 0;
-}
-
-const struct range* argument_parser_get_build_file(const struct buffer* arguments,
-		struct buffer* argument_value, int index)
-{
-	return argument_parser_get_value_by_index(
-			   arguments, BUILD_FILES_POSITION_1, BUILD_FILES_POSITION_1, argument_value, index);
-}
-
-const struct range* argument_parser_get_log_file(const struct buffer* arguments,
-		struct buffer* argument_value)
-{
-	return argument_parser_get_value_by_index(
-			   arguments, LOG_FILE_POSITION_1, LOG_FILE_POSITION_2, argument_value, 0);
-}
-
-const struct range* argument_parser_get_target(const struct buffer* arguments,
-		struct buffer* argument_value, int index)
-{
-	return argument_parser_get_value_by_index(
-			   arguments, TARGET_POSITION, TARGET_POSITION, argument_value, index);
-}
-
-const struct range* argument_parser_get_listener(const struct buffer* arguments,
-		struct buffer* argument_value)
-{
-	return argument_parser_get_value_by_index(
-			   arguments, LISTENER_POSITION, LISTENER_POSITION, argument_value, 0);
 }

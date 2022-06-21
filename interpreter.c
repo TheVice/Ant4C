@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -20,6 +20,7 @@
 #include "for_each.h"
 #include "hash.h"
 #include "if_task.h"
+#include "interpreter.exec.h"
 #include "interpreter.file_system.h"
 #include "interpreter.string_unit.h"
 #include "listener.h"
@@ -139,7 +140,7 @@ uint8_t interpreter_disassemble_function(
 
 	while (name_space->finish + NAME_SPACE_BORDER_LENGTH <= function->finish)
 	{
-		if (memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
+		if (0 != memcmp(name_space->finish, name_space_border, NAME_SPACE_BORDER_LENGTH))
 		{
 			name_space->finish = string_enumerate(name_space->finish, function->finish, NULL);
 			continue;
@@ -263,7 +264,7 @@ uint8_t interpreter_evaluate_argument_area(
 
 		while (pos_with_index + NAME_SPACE_BORDER_LENGTH <= argument_area->finish)
 		{
-			if (memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
+			if (0 != memcmp(pos_with_index, name_space_border, NAME_SPACE_BORDER_LENGTH))
 			{
 				pos_with_index = string_enumerate(pos_with_index, argument_area->finish, NULL);
 				continue;
@@ -333,7 +334,8 @@ uint8_t interpreter_actualize_property_value(
 	BUFFER_TO_RANGE(code, &code_in_buffer);
 
 	if (code.start < code.finish &&
-		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
+		!interpreter_evaluate_code(the_project, the_target,
+								   the_property, &code, output, verbose))
 	{
 		buffer_release(&code_in_buffer);
 		return 0;
@@ -819,8 +821,10 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 	return values_count;
 }
 
-uint8_t interpreter_evaluate_code(const void* the_project, const void* the_target,
-								  const struct range* code, struct buffer* output, uint8_t verbose)
+uint8_t interpreter_evaluate_code(
+	const void* the_project, const void* the_target,
+	const void* the_current_property, const struct range* code,
+	struct buffer* output, uint8_t verbose)
 {
 	if (range_is_null_or_empty(code) || NULL == output)
 	{
@@ -837,7 +841,7 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 
 	for (function.start = code->start; function.start + CALL_OF_EXPRESSION_START_LENGTH <= code->finish;)
 	{
-		if (memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
+		if (0 != memcmp(function.start, call_of_expression_start, CALL_OF_EXPRESSION_START_LENGTH))
 		{
 			function.start = string_enumerate(function.start, code->finish, NULL);
 			continue;
@@ -894,6 +898,13 @@ uint8_t interpreter_evaluate_code(const void* the_project, const void* the_targe
 				(uint8_t)range_size(&function), &the_property, verbose))
 		{
 			if (!property_get_by_pointer(the_property, &return_of_function))
+			{
+				buffer_release(&return_of_function);
+				return 0;
+			}
+
+			if (NULL != the_current_property &&
+				the_current_property == the_property)
 			{
 				buffer_release(&return_of_function);
 				return 0;
@@ -1079,10 +1090,11 @@ uint8_t interpreter_get_xml_tag_attribute_values(
 	return 1;
 }
 
-uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, const void* the_target,
-		const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
-		const uint8_t** attributes, const uint8_t* attributes_lengths,
-		uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose)
+uint8_t interpreter_get_arguments_from_xml_tag_record(
+	const void* the_project, const void* the_target,
+	const uint8_t* start_of_attributes, const uint8_t* finish_of_attributes,
+	const uint8_t** attributes, const uint8_t* attributes_lengths,
+	uint8_t index, uint8_t attributes_count, struct buffer* output, uint8_t verbose)
 {
 	struct buffer attribute_value;
 	SET_NULL_TO_BUFFER(attribute_value);
@@ -1111,7 +1123,7 @@ uint8_t interpreter_get_arguments_from_xml_tag_record(const void* the_project, c
 
 		if (!buffer_resize(argument, 0) ||
 			((code.start < code.finish) &&
-			 !interpreter_evaluate_code(the_project, the_target, &code, argument, verbose)))
+			 !interpreter_evaluate_code(the_project, the_target, NULL, &code, argument, verbose)))
 		{
 			buffer_release(&attribute_value);
 			return 0;
@@ -1144,189 +1156,13 @@ uint8_t interpreter_get_xml_element_value(
 	BUFFER_TO_RANGE(code, &value);
 
 	if (!range_is_null_or_empty(&code) &&
-		!interpreter_evaluate_code(the_project, the_target, &code, output, verbose))
+		!interpreter_evaluate_code(the_project, the_target, NULL, &code, output, verbose))
 	{
 		buffer_release(&value);
 		return 0;
 	}
 
 	buffer_release(&value);
-	return 1;
-}
-
-uint8_t interpreter_get_environments(
-	const void* the_project,
-	const void* the_target,
-	const uint8_t* attributes_finish,
-	const uint8_t* element_finish,
-	struct buffer* environments,
-	uint8_t verbose)
-{
-	if (range_in_parts_is_null_or_empty(attributes_finish, element_finish) ||
-		NULL == environments)
-	{
-		return 0;
-	}
-
-	struct buffer elements;
-
-	SET_NULL_TO_BUFFER(elements);
-
-	if (!buffer_resize(&elements, 0))
-	{
-		buffer_release(&elements);
-		return 0;
-	}
-
-	uint16_t count = xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, &elements);
-
-	if (!count)
-	{
-		buffer_release(&elements);
-		return 1;
-	}
-
-	count = 0;
-	struct range* env_ptr;
-
-	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
-	{
-		static const uint8_t* env_name = (const uint8_t*)"environment";
-		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
-
-		if (string_equal(env_ptr->start, tag_name_finish, env_name, env_name + 11))
-		{
-			break;
-		}
-	}
-
-	if (NULL == env_ptr)
-	{
-		buffer_release(&elements);
-		return 1;
-	}
-
-	struct range name = *env_ptr;
-
-	if (!buffer_resize(&elements, 0))
-	{
-		buffer_release(&elements);
-		return 0;
-	}
-
-	count = xml_get_sub_nodes_elements(name.start, name.finish, NULL, &elements);
-
-	if (!count)
-	{
-		buffer_release(&elements);
-		return 1;
-	}
-
-	count = 0;
-	/**/
-	struct buffer attribute_value;
-	SET_NULL_TO_BUFFER(attribute_value);
-
-	while (NULL != (env_ptr = buffer_range_data(&elements, count++)))
-	{
-		static const uint8_t zero_symbol = '\0';
-		static const uint8_t equal_symbol = '=';
-		static const uint8_t* var_name = (const uint8_t*)"variable";
-		static const uint8_t* name_str = (const uint8_t*)"name";
-		static const uint8_t* value_str = (const uint8_t*)"value";
-		/**/
-		const uint8_t* tag_name_finish = xml_get_tag_name(env_ptr->start, env_ptr->finish);
-
-		if (!string_equal(env_ptr->start, tag_name_finish, var_name, var_name + 8))
-		{
-			continue;
-		}
-
-		if (!buffer_resize(&attribute_value, 0) ||
-			!xml_get_attribute_value(env_ptr->start, env_ptr->finish, name_str, 4, &attribute_value) ||
-			!buffer_size(&attribute_value))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-
-		BUFFER_TO_RANGE(name, &attribute_value);
-		uint8_t contains = string_contains(name.start, name.finish, &space_and_tab[0], &space_and_tab[0] + 1);
-
-		if (contains)
-		{
-			if (!string_quote(name.start, name.finish, environments))
-			{
-				buffer_release(&attribute_value);
-				buffer_release(&elements);
-				return 0;
-			}
-		}
-		else
-		{
-			if (!buffer_append_data_from_range(environments, &name))
-			{
-				buffer_release(&attribute_value);
-				buffer_release(&elements);
-				return 0;
-			}
-		}
-
-		if (!buffer_push_back(environments, equal_symbol) ||
-			!buffer_resize(&attribute_value, 0))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-
-		if (xml_get_attribute_value(env_ptr->start, env_ptr->finish, value_str, 5, &attribute_value))
-		{
-			BUFFER_TO_RANGE(name, &attribute_value);
-
-			if (!interpreter_evaluate_code(the_project, the_target, &name, environments, verbose))
-			{
-				buffer_release(&attribute_value);
-				buffer_release(&elements);
-			}
-
-#if 0
-			contains = string_contains(name.start, name.finish, &space_and_tab[0], &space_and_tab[0] + 1);
-
-			if (contains)
-			{
-				if (!string_quote(name.start, name.finish, environments))
-				{
-					buffer_release(&attribute_value);
-					buffer_release(&elements);
-					return 0;
-				}
-			}
-			else
-			{
-				if (!buffer_append_data_from_range(environments, &name))
-				{
-					buffer_release(&attribute_value);
-					buffer_release(&elements);
-					return 0;
-				}
-			}
-
-#endif
-		}
-
-		if (!buffer_push_back(environments, zero_symbol))
-		{
-			buffer_release(&attribute_value);
-			buffer_release(&elements);
-			return 0;
-		}
-	}
-
-	buffer_release(&attribute_value);
-	buffer_release(&elements);
-	/**/
 	return 1;
 }
 
@@ -1504,23 +1340,27 @@ uint8_t interpreter_evaluate_task(
 
 	if (range_is_null_or_empty(task_name))
 	{
-		listener_task_started(NULL, 0, the_project, the_target, task_name, UNKNOWN_TASK, the_module, verbose);
+		listener_task_started(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name,
+							  UNKNOWN_TASK, (const uint8_t*)the_module, verbose);
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, UNKNOWN_TASK, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name,
+							   UNKNOWN_TASK, (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
 
 	ptrdiff_t task_id = interpreter_get_task(task_name->start, task_name->finish);
-	listener_task_started(NULL, 0, the_project, the_target, task_name, task_id, the_module, verbose);
+	listener_task_started(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+						  (const uint8_t*)the_module, verbose);
 	const uint8_t* attributes_start = task_name->finish;
 
 	if (range_in_parts_is_null_or_empty(attributes_start, element_finish))
 	{
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+							   (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
@@ -1540,7 +1380,8 @@ uint8_t interpreter_evaluate_task(
 			buffer_release_inner_buffers(&task_arguments);
 			project_on_failure(the_project, the_target, &task_arguments, verbose);
 			buffer_release(&task_arguments);
-			listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+			listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+								   (const uint8_t*)the_module, 0, verbose);
 			/**/
 			return 0;
 		}
@@ -1557,7 +1398,8 @@ uint8_t interpreter_evaluate_task(
 			buffer_release_inner_buffers(&task_arguments);
 			project_on_failure(the_project, the_target, &task_arguments, verbose);
 			buffer_release(&task_arguments);
-			listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+			listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+								   (const uint8_t*)the_module, 0, verbose);
 			/**/
 			return 0;
 		}
@@ -1578,7 +1420,8 @@ uint8_t interpreter_evaluate_task(
 		}
 
 		listener_task_finished(
-			NULL, 0, the_project, the_target, task_name, task_id, NULL, task_attributes_count, verbose);
+			NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id, NULL,
+			task_attributes_count, verbose);
 		return task_attributes_count;
 	}
 
@@ -1589,7 +1432,8 @@ uint8_t interpreter_evaluate_task(
 		buffer_release_inner_buffers(&task_arguments);
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+							   (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
@@ -1598,7 +1442,8 @@ uint8_t interpreter_evaluate_task(
 	{
 		buffer_release_with_inner_buffers(&task_arguments);
 		listener_task_finished(
-			NULL, 0, the_project, the_target, task_name, task_id, NULL, task_attributes_count, verbose);
+			NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id, NULL,
+			task_attributes_count, verbose);
 		/**/
 		return task_attributes_count;
 	}
@@ -1613,7 +1458,8 @@ uint8_t interpreter_evaluate_task(
 		buffer_release_inner_buffers(&task_arguments);
 		project_on_failure(the_project, the_target, &task_arguments, verbose);
 		buffer_release(&task_arguments);
-		listener_task_finished(NULL, 0, the_project, the_target, task_name, task_id, the_module, 0, verbose);
+		listener_task_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+							   (const uint8_t*)the_module, 0, verbose);
 		/**/
 		return 0;
 	}
@@ -1645,7 +1491,8 @@ uint8_t interpreter_evaluate_task(
 			}
 
 			listener_task_finished(
-				NULL, 0, the_project, the_target, task_name, task_id, the_module, task_attributes_count, verbose);
+				NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+				(const uint8_t*)the_module, task_attributes_count, verbose);
 			return task_attributes_count;
 		}
 	}
@@ -2119,7 +1966,8 @@ uint8_t interpreter_evaluate_task(
 	}
 
 	listener_task_finished(
-		NULL, 0, the_project, the_target, task_name, task_id, the_module, task_attributes_count, verbose);
+		NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, task_name, task_id,
+		(const uint8_t*)the_module, task_attributes_count, verbose);
 	return task_attributes_count;
 }
 

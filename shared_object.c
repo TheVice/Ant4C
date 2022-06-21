@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
@@ -91,9 +91,9 @@ void* shared_object_get_procedure_address(void* object, const uint8_t* procedure
 #if defined(_WIN32)
 #if defined(_MSC_VER) && (_MSC_VER < 1910)
 #pragma warning(suppress: 4054)
-	return (void*)GetProcAddress(object, (const char*)procedure_name);
+	return (void*)GetProcAddress((HMODULE)object, (const char*)procedure_name);
 #else
-	return (void*)GetProcAddress(object, (const char*)procedure_name);
+	return (void*)GetProcAddress((HMODULE)object, (const char*)procedure_name);
 #endif
 #else
 	return dlsym(object, (const char*)procedure_name);

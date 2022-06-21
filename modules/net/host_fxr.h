@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -52,6 +52,36 @@ typedef int32_t(delegate_calling_convention* hostfxr_delegate_function_type)(
 	void** the_delegate);
 typedef void(calling_convention* hostfxr_resolve_sdk2_result_type)(
 	int32_t key, const type_of_element* value);
+
+struct hostfxr_dotnet_environment_sdk_information
+{
+	size_t size;
+	const type_of_element* version;
+	const type_of_element* path;
+};
+
+struct hostfxr_dotnet_environment_framework_information
+{
+	size_t size;
+	const type_of_element* name;
+	const type_of_element* version;
+	const type_of_element* path;
+};
+
+struct hostfxr_dotnet_environment_information
+{
+	size_t size;
+	const type_of_element* hostfxr_version;
+	const type_of_element* hostfxr_commit_hash;
+	size_t sdk_count;
+	const struct hostfxr_dotnet_environment_sdk_information* sdks;
+	size_t framework_count;
+	const struct hostfxr_dotnet_environment_framework_information* frameworks;
+};
+
+typedef void(calling_convention* hostfxr_get_dotnet_environment_information_result_type)(
+	const struct hostfxr_dotnet_environment_information* information,
+	void* result_context);
 
 int32_t host_fxr_close(
 	const void* ptr_to_host_fxr_object,
@@ -149,5 +179,10 @@ int32_t host_fxr_set_runtime_property_value(
 	const void* context,
 	const type_of_element* name,
 	const type_of_element* value);
+int32_t host_fxr_get_dotnet_environment_information(
+	const void* ptr_to_host_fxr_object,
+	const type_of_element* dotnet_root,
+	hostfxr_get_dotnet_environment_information_result_type result,
+	void* result_context);
 
 #endif
