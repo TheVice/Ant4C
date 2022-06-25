@@ -45,7 +45,7 @@ uint8_t GlobalArgumentParser::get_properties(void* the_project, uint8_t verbose)
 		return 0;
 	}
 
-	const auto* properties = argument_parser_get_properties();
+	const auto properties = argument_parser_get_properties();
 
 	if (!property_add_at_project(the_project, properties, verbose))
 	{

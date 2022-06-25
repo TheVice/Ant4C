@@ -145,19 +145,21 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
+		//
 		const std::string return_str(
-			node.node().select_node("return").node().child_value());
+			the_node.select_node("return").node().child_value());
 		auto input_in_a_range = string_to_range(return_str);
 		const std::string input(
-			node.node().select_node("input").node().child_value());
+			the_node.select_node("input").node().child_value());
 		const auto expected_return =
 			static_cast<uint8_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string BLAKE2b_160(node.node().select_node("BLAKE2b_160").node().child_value());
-		const std::string BLAKE2b_256(node.node().select_node("BLAKE2b_256").node().child_value());
-		const std::string BLAKE2b_384(node.node().select_node("BLAKE2b_384").node().child_value());
-		const std::string BLAKE2b_512(node.node().select_node("BLAKE2b_512").node().child_value());
+		const std::string BLAKE2b_160(the_node.select_node("BLAKE2b_160").node().child_value());
+		const std::string BLAKE2b_256(the_node.select_node("BLAKE2b_256").node().child_value());
+		const std::string BLAKE2b_384(the_node.select_node("BLAKE2b_384").node().child_value());
+		const std::string BLAKE2b_512(the_node.select_node("BLAKE2b_512").node().child_value());
 		//
 		const std::string* outputs[] =
 		{
@@ -165,7 +167,7 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 			&BLAKE2b_384, &BLAKE2b_512
 		};
 
-		for (uint8_t i = 0; i < 4; ++i)
+		for (uint8_t i = 0, count = COUNT_OF(outputs); i < count; ++i)
 		{
 			if (outputs[i]->empty())
 			{
@@ -256,13 +258,15 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 	SET_NULL_TO_BUFFER(output);
 	ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
 	//
-	const auto* start = buffer_data(&output, 0);
+	const auto start = buffer_data(&output, 0);
 	//
 	ASSERT_NE(nullptr, start) << buffer_free(&input) << buffer_free(&output);
 
 	for (const auto& node : nodes)
 	{
-		const std::string input_str(node.node().select_node("input").node().child_value());
+		const auto the_node = node.node();
+		//
+		const std::string input_str(the_node.select_node("input").node().child_value());
 		auto input_in_a_range = string_to_range(input_str);
 		const auto input_length =
 			static_cast<uint16_t>(
@@ -270,7 +274,7 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 		//
 		ASSERT_LT(input_length, 31745) << buffer_free(&input) << buffer_free(&output);
 		//
-		const std::string hash_length_str(node.node().select_node("hash_length").node().child_value());
+		const std::string hash_length_str(the_node.select_node("hash_length").node().child_value());
 		input_in_a_range = string_to_range(hash_length_str);
 		const auto hash_length =
 			static_cast<uint16_t>(
@@ -282,7 +286,7 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 		auto returned = hash_algorithm_blake3(ptr, ptr + input_length, hash_length, &output);
 		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
 		//
-		const auto* finish = buffer_data(&output, 0) + buffer_size(&output);
+		const auto finish = buffer_data(&output, 0) + buffer_size(&output);
 		ASSERT_NE(nullptr, finish) << buffer_free(&input) << buffer_free(&output);
 		ASSERT_LT(start, finish) << buffer_free(&input) << buffer_free(&output);
 		//
@@ -323,44 +327,46 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 
 TEST_F(TestHashAlgorithm, crc32)
 {
-	static const std::string empty(8, '0');
+	static const std::string empty(sizeof(uint64_t), '0');
 	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
 
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
+		const auto the_node = node.node();
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string input(the_node.select_node("input").node().child_value());
+		//
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto input_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string decreasing(node.node().select_node("decreasing").node().child_value());
-		const std::string increasing(node.node().select_node("increasing").node().child_value());
+		const std::string decreasing(the_node.select_node("decreasing").node().child_value());
+		const std::string increasing(the_node.select_node("increasing").node().child_value());
 		//
 		const std::string* outputs[] =
 		{
 			&decreasing, &increasing
 		};
 
-		for (uint8_t i = 0; i < 2; ++i)
+		for (uint8_t i = 0, count = COUNT_OF(outputs); i < count; ++i)
 		{
 			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
-			uint32_t digit_output = 0;
+			ASSERT_TRUE(buffer_append(&output, NULL, UINT8_MAX)) << buffer_free(&output);
+			auto digit_output = buffer_data(&output, UINT8_MAX - sizeof(uint32_t));
 			//
-			auto returned = hash_algorithm_crc32(input_in_a_range.start, input_in_a_range.finish, &digit_output, i);
+			auto returned = hash_algorithm_crc32(input_in_a_range.start, input_in_a_range.finish, digit_output, i);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
 												 static_cast<int>(i) << std::endl << buffer_free(&output);
 			//
-			returned = hash_algorithm_bytes_to_string(
-						   reinterpret_cast<const uint8_t*>(&digit_output),
-						   reinterpret_cast<const uint8_t*>((&digit_output) + 1), &output);
+			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+			returned = hash_algorithm_bytes_to_string(digit_output, digit_output + sizeof(uint32_t), &output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&output);
 			const auto str_output(buffer_to_string(&output));
 
@@ -408,28 +414,30 @@ TEST_F(TestHashAlgorithm, Keccak)
 
 	for (const auto& node : nodes)
 	{
-		const std::string input_str(node.node().select_node("input").node().child_value());
+		const auto the_node = node.node();
+		//
+		const std::string input_str(the_node.select_node("input").node().child_value());
 		auto input_in_a_range = string_to_range(input_str);
 		const auto input_length =
 			static_cast<uint16_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		ASSERT_LT(input_length, 31745) << buffer_free(&input) << buffer_free(&output);
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		input_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string Keccak_224(node.node().select_node("Keccak_224").node().child_value());
-		const std::string Keccak_256(node.node().select_node("Keccak_256").node().child_value());
-		const std::string Keccak_384(node.node().select_node("Keccak_384").node().child_value());
-		const std::string Keccak_512(node.node().select_node("Keccak_512").node().child_value());
+		const std::string Keccak_224(the_node.select_node("Keccak_224").node().child_value());
+		const std::string Keccak_256(the_node.select_node("Keccak_256").node().child_value());
+		const std::string Keccak_384(the_node.select_node("Keccak_384").node().child_value());
+		const std::string Keccak_512(the_node.select_node("Keccak_512").node().child_value());
 		//
-		const std::string SHA3_224(node.node().select_node("SHA3_224").node().child_value());
-		const std::string SHA3_256(node.node().select_node("SHA3_256").node().child_value());
-		const std::string SHA3_384(node.node().select_node("SHA3_384").node().child_value());
-		const std::string SHA3_512(node.node().select_node("SHA3_512").node().child_value());
+		const std::string SHA3_224(the_node.select_node("SHA3_224").node().child_value());
+		const std::string SHA3_256(the_node.select_node("SHA3_256").node().child_value());
+		const std::string SHA3_384(the_node.select_node("SHA3_384").node().child_value());
+		const std::string SHA3_512(the_node.select_node("SHA3_512").node().child_value());
 		//
 		const std::string* expected_result[] =
 		{
@@ -437,7 +445,7 @@ TEST_F(TestHashAlgorithm, Keccak)
 			&SHA3_224, &SHA3_256, &SHA3_384, &SHA3_512
 		};
 
-		for (uint8_t i = 0; i < 8; ++i)
+		for (uint8_t i = 0, count = COUNT_OF(expected_result); i < count; ++i)
 		{
 			if (expected_result[i]->empty())
 			{
@@ -486,22 +494,24 @@ TEST_F(TestHashAlgorithm, sha3)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
+		//
 		const auto input(get_data_from_nodes(node, "input"));
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto input_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string Keccak_224(node.node().select_node("Keccak_224").node().child_value());
-		const std::string Keccak_256(node.node().select_node("Keccak_256").node().child_value());
-		const std::string Keccak_384(node.node().select_node("Keccak_384").node().child_value());
-		const std::string Keccak_512(node.node().select_node("Keccak_512").node().child_value());
+		const std::string Keccak_224(the_node.select_node("Keccak_224").node().child_value());
+		const std::string Keccak_256(the_node.select_node("Keccak_256").node().child_value());
+		const std::string Keccak_384(the_node.select_node("Keccak_384").node().child_value());
+		const std::string Keccak_512(the_node.select_node("Keccak_512").node().child_value());
 		//
-		const std::string SHA3_224(node.node().select_node("SHA3_224").node().child_value());
-		const std::string SHA3_256(node.node().select_node("SHA3_256").node().child_value());
-		const std::string SHA3_384(node.node().select_node("SHA3_384").node().child_value());
-		const std::string SHA3_512(node.node().select_node("SHA3_512").node().child_value());
+		const std::string SHA3_224(the_node.select_node("SHA3_224").node().child_value());
+		const std::string SHA3_256(the_node.select_node("SHA3_256").node().child_value());
+		const std::string SHA3_384(the_node.select_node("SHA3_384").node().child_value());
+		const std::string SHA3_512(the_node.select_node("SHA3_512").node().child_value());
 		//
 		const std::string* expected_result[] =
 		{
@@ -509,7 +519,7 @@ TEST_F(TestHashAlgorithm, sha3)
 			&SHA3_224, &SHA3_256, &SHA3_384, &SHA3_512
 		};
 
-		for (uint8_t i = 0; i < 8; ++i)
+		for (uint8_t i = 0, count = COUNT_OF(expected_result); i < count; ++i)
 		{
 			if (expected_result[i]->empty())
 			{
@@ -564,12 +574,14 @@ TEST_F(TestHashAlgorithm, xxHash)
 
 	for (const auto& node : nodes)
 	{
-		const auto length = node.node().attribute("length").as_ullong();
-		ASSERT_LT(length, input.size()) << node_count;
+		const auto the_node = node.node();
 		//
-		const std::string algorithm(node.node().attribute("algorithm").as_string());
-		const auto seed = node.node().attribute("seed").as_ullong();
-		const auto expected_return = node.node().attribute("return").as_ullong();
+		const auto length = the_node.attribute("length").as_ullong();
+		ASSERT_LT(length, input.size()) << std::to_string(node_count);
+		//
+		const std::string algorithm(the_node.attribute("algorithm").as_string());
+		const auto seed = the_node.attribute("seed").as_ullong();
+		const auto expected_return = the_node.attribute("return").as_ullong();
 		//
 		auto input_in_a_range = string_to_range(input);
 		input_in_a_range.finish = input_in_a_range.start + length;
@@ -579,10 +591,10 @@ TEST_F(TestHashAlgorithm, xxHash)
 		if (algorithms[0] == algorithm)
 		{
 			ASSERT_LE(length, UINT32_MAX) <<
-										  node_count << std::endl << algorithm << std::endl <<
+										  std::to_string(node_count) << std::endl << algorithm << std::endl <<
 										  seed << std::endl << length << std::endl << expected_return;
 			ASSERT_LE(seed, UINT32_MAX) <<
-										node_count << std::endl << algorithm << std::endl <<
+										std::to_string(node_count) << std::endl << algorithm << std::endl <<
 										seed << std::endl << length << std::endl << expected_return;
 			//
 			uint32_t result = 0;
@@ -591,7 +603,7 @@ TEST_F(TestHashAlgorithm, xxHash)
 							input_in_a_range.finish,
 							static_cast<uint32_t>(seed),
 							&result)) <<
-									  node_count << std::endl << algorithm << std::endl <<
+									  std::to_string(node_count) << std::endl << algorithm << std::endl <<
 									  seed << std::endl << length << std::endl << expected_return;
 			returned = result;
 		}
@@ -603,13 +615,13 @@ TEST_F(TestHashAlgorithm, xxHash)
 							input_in_a_range.finish,
 							seed,
 							&result)) <<
-									  node_count << std::endl << algorithm << std::endl <<
+									  std::to_string(node_count) << std::endl << algorithm << std::endl <<
 									  seed << std::endl << length << std::endl << expected_return;
 			returned = result;
 		}
 
 		ASSERT_EQ(expected_return, returned) <<
-											 node_count << std::endl <<
+											 std::to_string(node_count) << std::endl <<
 											 algorithm << std::endl <<
 											 seed << std::endl << length;
 		//
@@ -629,12 +641,14 @@ TEST_F(TestHashAlgorithm, file_get_checksum)
 	ASSERT_TRUE(buffer_push_back(&output, 0)) << buffer_free(&output);
 	const auto size = buffer_size(&output);
 	//
-	const auto* input = buffer_data(&output, 0);
-	const auto* path = buffer_data(&output, 31744);
+	const auto input = buffer_data(&output, 0);
+	const auto path = buffer_data(&output, 31744);
 
 	for (const auto& node : nodes)
 	{
-		for (const auto& algorithm_node : node.node())
+		const auto the_node = node.node();
+
+		for (const auto& algorithm_node : the_node)
 		{
 			const std::string algorithm(algorithm_node.name());
 			auto algorithm_in_a_range(string_to_range(algorithm));

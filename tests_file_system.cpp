@@ -46,22 +46,27 @@ uint8_t get_crc32_of(const int64_t input, buffer* output)
 		return 0;
 	}
 
-	auto ptr = reinterpret_cast<const uint8_t*>(&input);
-	auto out = reinterpret_cast<uint32_t*>(buffer_data(output, buffer_size(output) - sizeof(uint32_t)));
+	auto ptr = reinterpret_cast<const uint64_t*>(&input);
+	auto in_ = buffer_data(output, size);
 
-	if (!hash_algorithm_crc32(ptr, ptr + sizeof(int64_t), out, 1))
+	if (!hash_algorithm_uint64_t_array_to_uint8_t_array(ptr, ptr + 1, in_))
 	{
 		return 0;
 	}
 
-	ptr = reinterpret_cast<const uint8_t*>(out);
+	auto out = buffer_data(output, buffer_size(output) - sizeof(uint32_t));
+
+	if (!hash_algorithm_crc32(in_, in_ + sizeof(int64_t), out, 1))
+	{
+		return 0;
+	}
 
 	if (!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
-	return hash_algorithm_bytes_to_string(ptr, ptr + sizeof(uint32_t), output);
+	return hash_algorithm_bytes_to_string(out, out + sizeof(uint32_t), output);
 }
 
 TEST(TestFileSystem_, directory_create_and_delete)
@@ -113,7 +118,8 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 
 	for (const auto& node : nodes)
 	{
-		const auto code_node = node.node().select_node("code").node();
+		const auto the_node = node.node();
+		const auto code_node = the_node.select_node("code").node();
 		//
 		std::string code(code_node.child_value());
 		const std::string property_name(code_node.attribute("input").as_string());
@@ -130,7 +136,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		ASSERT_TRUE(returned)
 				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 
-		for (const auto& output : node.node().select_nodes("output"))
+		for (const auto& output : the_node.select_nodes("output"))
 		{
 			returned = buffer_resize(&property_value, 0);
 			ASSERT_TRUE(returned)
@@ -149,12 +155,13 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 			ASSERT_TRUE(returned)
 					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			//
-			const std::string entry_type_str(output.node().attribute("entry_type").as_string());
+			const auto the_output_node = output.node();
+			const std::string entry_type_str(the_output_node.attribute("entry_type").as_string());
 			ASSERT_TRUE(entry_types.count(entry_type_str))
 					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
 			const auto entry_type = entry_types.at(entry_type_str);
 			//
-			const uint8_t recurse = output.node().attribute("recurse").as_bool();
+			const uint8_t recurse = the_output_node.attribute("recurse").as_bool();
 			//
 			returned = buffer_resize(&file_tree, 0);
 			ASSERT_TRUE(returned)
@@ -169,7 +176,7 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 			const auto returned_paths(buffer_to_string(&file_tree));
 			const auto returned_output = string_to_range(returned_paths);
 
-			for (auto& entry : output.node())
+			for (auto& entry : the_output_node)
 			{
 				const std::string entry_str(entry.child_value());
 				//
@@ -274,8 +281,9 @@ TEST_F(TestFileSystem, directory_exists)
 {
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto the_node = node.node();
+		const std::string input(the_node.select_node("input").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
@@ -534,8 +542,9 @@ TEST_F(TestFileSystem, file_exists)
 {
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto the_node = node.node();
+		const std::string input(the_node.select_node("input").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
@@ -558,8 +567,9 @@ TEST_F(TestFileSystem, file_read_lines)
 
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
-		const std::string output_str(node.node().select_node("output").node().child_value());
+		const auto the_node = node.node();
+		const std::string input(the_node.select_node("input").node().child_value());
+		const std::string output_str(the_node.select_node("output").node().child_value());
 		const auto output_in_a_range(string_to_range(output_str));
 		const auto expected_output =
 			static_cast<uint16_t>(int_parse(output_in_a_range.start, output_in_a_range.finish));

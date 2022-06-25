@@ -157,52 +157,57 @@ void TestExec::SetUp()
 
 void TestExec::load_input_data(const pugi::xpath_node& node)
 {
-	environment_variables_str = std::string(node.node().select_node("append").node().child_value());
+	load_input_data(node.node());
+}
+
+void TestExec::load_input_data(const pugi::xml_node& node)
+{
+	environment_variables_str = std::string(node.select_node("append").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	append = static_cast<uint8_t>(int_parse(environment_variables.start, environment_variables.finish));
 	//
-	program_str = std::string(node.node().select_node("program").node().child_value());
+	program_str = std::string(node.select_node("program").node().child_value());
 	program = program_str.empty() ? string_to_range(tests_exec_app) : string_to_range(program_str);
 	//
-	base_dir_str = std::string(node.node().select_node("base_dir").node().child_value());
+	base_dir_str = std::string(node.select_node("base_dir").node().child_value());
 	base_dir = string_to_range(base_dir_str);
 	//
-	command_line_str = std::string(node.node().select_node("command_line").node().child_value());
+	command_line_str = std::string(node.select_node("command_line").node().child_value());
 	command_line = string_to_range(command_line_str);
 	//
-	pid_property_str = std::string(node.node().select_node("pid_property").node().child_value());
+	pid_property_str = std::string(node.select_node("pid_property").node().child_value());
 	pid_property = nullptr;
 	//
-	result_property_str = std::string(node.node().select_node("result_property").node().child_value());
+	result_property_str = std::string(node.select_node("result_property").node().child_value());
 	result_property = nullptr;
 	//
-	working_dir_str = std::string(node.node().select_node("working_dir").node().child_value());
+	working_dir_str = std::string(node.select_node("working_dir").node().child_value());
 	working_dir = string_to_range(working_dir_str);
 	//
-	environment_variables_str = std::string(node.node().select_node("spawn").node().child_value());
+	environment_variables_str = std::string(node.select_node("spawn").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	spawn = static_cast<uint8_t>(int_parse(environment_variables.start, environment_variables.finish));
 	//
-	environment_variables_str = std::string(node.node().select_node("time_out").node().child_value());
+	environment_variables_str = std::string(node.select_node("time_out").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	time_out = int_parse(environment_variables.start, environment_variables.finish);
 	//
-	environment_variables_str = std::string(node.node().select_node("verbose").node().child_value());
+	environment_variables_str = std::string(node.select_node("verbose").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	verbose = static_cast<uint8_t>(int_parse(environment_variables.start, environment_variables.finish));
 	//
-	environment_variables_str = std::string(node.node().select_node("return").node().child_value());
+	environment_variables_str = std::string(node.select_node("return").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	expected_return = static_cast<uint8_t>(
 						  int_parse(environment_variables.start, environment_variables.finish));
 	//
 	environment_variables_str = std::string(
-									node.node().select_node("result_property_value").node().child_value());
+									node.select_node("result_property_value").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 	result_property_value = int_parse(environment_variables.start, environment_variables.finish);
 	//
 	environment_variables_str = std::string(
-									node.node().select_node("environment_variables").node().child_value());
+									node.select_node("environment_variables").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 }
 
@@ -351,7 +356,7 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 	for (const auto& node : nodes)
 	{
-		load_input_data(node);
+		load_input_data(node.node());
 
 		if (!range_is_null_or_empty(&working_dir) &&
 			!directory_exists(working_dir.start))
@@ -652,8 +657,9 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 			ASSERT_NE(nullptr, argv[0]) << buffer_free(&temp_file_name) << project_free(&the_project);
 			ASSERT_EQ(nullptr, argv[1]) << buffer_free(&temp_file_name) << project_free(&the_project);
 			//
-			ASSERT_TRUE(compare_paths_with_delimiter_independ(arguments[0].node().child_value(), argv[0]))
-					<< "Path 1 - \"" << arguments[0].node().child_value() << "\"" << std::endl
+			const auto argument_value = arguments[0].node().child_value();
+			ASSERT_TRUE(compare_paths_with_delimiter_independ(argument_value, argv[0]))
+					<< "Path 1 - \"" << argument_value << "\"" << std::endl
 					<< "Path 2 - \"" << argv[0] << "\"" << std::endl
 					<< buffer_free(&temp_file_name) << project_free(&the_project);
 		}
@@ -675,18 +681,19 @@ TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 
 			for (const auto& argument : arguments)
 			{
+				const auto argument_value = argument.node().child_value();
 				ASSERT_NE(nullptr, argv[argc]) << buffer_free(&temp_file_name) << project_free(&the_project);
 
 				if (!argc)
 				{
-					ASSERT_TRUE(compare_paths_with_delimiter_independ(argument.node().child_value(), argv[argc]))
-							<< "Path 1 - \"" << argument.node().child_value() << "\"" << std::endl
+					ASSERT_TRUE(compare_paths_with_delimiter_independ(argument_value, argv[argc]))
+							<< "Path 1 - \"" << argument_value << "\"" << std::endl
 							<< "Path 2 - \"" << argv[argc] << "\"" << std::endl
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 				else
 				{
-					ASSERT_STREQ(argument.node().child_value(), argv[argc])
+					ASSERT_STREQ(argument_value, argv[argc])
 							<< buffer_free(&temp_file_name) << project_free(&the_project);
 				}
 
@@ -750,15 +757,17 @@ TEST_F(TestExec, exec_get_program_full_path)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
+		//
 		ASSERT_TRUE(buffer_resize(&path_to_the_program, 0)) << buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		//
-		program_str = node.node().select_node("return").node().child_value();
+		program_str = the_node.select_node("return").node().child_value();
 		program = string_to_range(program_str);
 		expected_return = static_cast<uint8_t>(int_parse(program.start, program.finish));
 		//
-		program_str = node.node().select_node("program").node().child_value();
-		base_dir_str = node.node().select_node("base_dir").node().child_value();
+		program_str = the_node.select_node("program").node().child_value();
+		base_dir_str = the_node.select_node("base_dir").node().child_value();
 		base_dir = string_to_range(base_dir_str);
 		//
 		ASSERT_TRUE(string_to_buffer(program_str, &path_to_the_program))
@@ -777,7 +786,7 @@ TEST_F(TestExec, exec_get_program_full_path)
 											 program_str << std::endl << base_dir_str << std::endl <<
 											 buffer_free(&path_to_the_program) << buffer_free(&tmp);
 		//
-		const std::string expected_path_to_the_program(node.node().select_node("output").node().child_value());
+		const std::string expected_path_to_the_program(the_node.select_node("output").node().child_value());
 		auto returned_path_to_the_program(buffer_to_string(&path_to_the_program));
 		//
 		const auto pos = returned_path_to_the_program.find('\0');
@@ -811,13 +820,15 @@ TEST_F(TestExec, interpreter_get_environments)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
+		//
 		ASSERT_TRUE(buffer_resize(&variables, 0))
 				<< buffer_free(&variables)
 				<< project_free(&the_project);
 		//
 		project_clear(&the_project);
 		//
-		program_str = node.node().select_node("program").node().child_value();
+		program_str = the_node.select_node("program").node().child_value();
 
 		if (!program_str.empty())
 		{
@@ -830,7 +841,7 @@ TEST_F(TestExec, interpreter_get_environments)
 					<< project_free(&the_project);
 		}
 
-		program_str = node.node().select_node("exec_node").node().child_value();
+		program_str = the_node.select_node("exec_node").node().child_value();
 		program = string_to_range(program_str);
 		//
 		auto position = program_str.find("<exec");
@@ -841,7 +852,7 @@ TEST_F(TestExec, interpreter_get_environments)
 		//
 		auto attributes_finish = program.start + position;
 		//
-		base_dir_str = node.node().select_node("return").node().child_value();
+		base_dir_str = the_node.select_node("return").node().child_value();
 		base_dir = string_to_range(base_dir_str);
 		spawn = static_cast<uint8_t>(int_parse(base_dir.start, base_dir.finish));
 		//
@@ -857,7 +868,7 @@ TEST_F(TestExec, interpreter_get_environments)
 		if (spawn)
 		{
 			auto returned_variables = buffer_to_string(&variables);
-			const auto sub_nodes = node.node().select_nodes("expected_variable");
+			const auto sub_nodes = the_node.select_nodes("expected_variable");
 
 			for (const auto& sub_node : sub_nodes)
 			{

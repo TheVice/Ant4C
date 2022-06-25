@@ -89,6 +89,7 @@ set(
   "${CMAKE_SOURCE_DIR}/interpreter.environment.c"
   "${CMAKE_SOURCE_DIR}/interpreter.exec.c"
   "${CMAKE_SOURCE_DIR}/interpreter.file_system.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.hash.c"
   "${CMAKE_SOURCE_DIR}/interpreter.operating_system.c"
   "${CMAKE_SOURCE_DIR}/interpreter.path.c"
   "${CMAKE_SOURCE_DIR}/interpreter.sleep_unit.c"

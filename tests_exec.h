@@ -61,4 +61,5 @@ protected:
 	virtual void SetUp() override;
 
 	void load_input_data(const pugi::xpath_node& node);
+	void load_input_data(const pugi::xml_node& node);
 };

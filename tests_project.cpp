@@ -58,7 +58,7 @@ protected:
 		TestsBaseXml(),
 		verbose()
 	{
-		predefine_arguments.insert(std::make_pair("--tests_base_directory=", &tests_base_directory));
+		predefine_arguments.emplace(std::make_pair("--tests_base_directory=", &tests_base_directory));
 	}
 
 	virtual void SetUp() override
@@ -84,6 +84,7 @@ TEST_F(TestProject, project_property_set_value)
 {
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
 		const auto code(get_data_from_nodes(node, "code"));
 		//
 		const auto code_in_a_range = string_to_range(code);
@@ -98,8 +99,10 @@ TEST_F(TestProject, project_property_set_value)
 		ASSERT_NE(code.empty(), project_load_from_content(
 					  code_in_a_range.start, code_in_a_range.finish, the_project, 0, verbose)) << project_free(the_project);
 
-		for (const auto& property : node.node().select_nodes("property"))
+		for (const auto& the_property_ : the_node.select_nodes("property"))
 		{
+			void* the_property = nullptr;
+			//
 			std::string property_name;
 			std::string property_value;
 			uint8_t dynamic = 0;
@@ -108,12 +111,14 @@ TEST_F(TestProject, project_property_set_value)
 			uint8_t fail_on_error = 0;
 			uint8_t property_verbose = 0;
 			//
-			property_load_from_node(property.node(), property_name, property_value, dynamic,
+			const auto property_node = the_property_.node();
+			//
+			property_load_from_node(property_node, property_name, property_value, dynamic,
 									over_write, read_only, fail_on_error, property_verbose);
 			//
 			property_verbose = MAX(verbose, property_verbose);
 			//
-			const std::string return_str(property.node().select_node("return").node().child_value());
+			const std::string return_str(property_node.select_node("return").node().child_value());
 			auto input_in_a_range = string_to_range(return_str);
 			const auto expected_return =
 				static_cast<uint8_t>(
@@ -128,7 +133,6 @@ TEST_F(TestProject, project_property_set_value)
 			//
 			ASSERT_EQ(expected_return, returned) << project_free(the_project);
 			//
-			void* the_property = nullptr;
 			returned = project_property_exists(
 						   the_project,
 						   reinterpret_cast<const uint8_t*>(property_name.c_str()),
@@ -166,23 +170,25 @@ TEST_F(TestProject, project_load_from_content)
 	{
 		std::cout << "[ RUN      ]" << std::endl;
 		//
-		const std::string content(node.node().select_node("content").node().child_value());
+		const auto the_node = node.node();
+		//
+		const std::string content(the_node.select_node("content").node().child_value());
 		//
 		const std::string project_help_str(
-			node.node().select_node("project_help").node().child_value());
+			the_node.select_node("project_help").node().child_value());
 		auto input_in_a_range = string_to_range(project_help_str);
 		const auto project_help =
 			static_cast<uint8_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		input_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
 		auto expected_target_return = expected_return;
-		const auto target_return_node = node.node().select_node("target_return").node();
+		const auto target_return_node = the_node.select_node("target_return").node();
 
 		if (!target_return_node.empty())
 		{
@@ -193,12 +199,12 @@ TEST_F(TestProject, project_load_from_content)
 					int_parse(input_in_a_range.start, input_in_a_range.finish));
 		}
 
-		const std::string expected_name(node.node().select_node("name").node().child_value());
-		const std::string expected_default_target(node.node().select_node("default").node().child_value());
-		const std::string target_to_run(node.node().select_node("target_to_run").node().child_value());
+		const std::string expected_name(the_node.select_node("name").node().child_value());
+		const std::string expected_default_target(the_node.select_node("default").node().child_value());
+		const std::string target_to_run(the_node.select_node("target_to_run").node().child_value());
 		const auto expected_default_target_in_a_range(string_to_range(expected_default_target));
 		//
-		std::string expected_base_directory(node.node().select_node("base_directory").node().child_value());
+		std::string expected_base_directory(the_node.select_node("base_directory").node().child_value());
 
 		if (!expected_base_directory.empty())
 		{
@@ -211,8 +217,8 @@ TEST_F(TestProject, project_load_from_content)
 			expected_base_directory = buffer_to_string(&output);
 		}
 
-		const auto properties = node.node().select_nodes("property");
-		const auto targets = node.node().select_nodes("target");
+		const auto properties = the_node.select_nodes("property");
+		const auto targets = the_node.select_nodes("target");
 		//
 		input_in_a_range = string_to_range(content);
 		ASSERT_EQ(content.empty(), range_is_null_or_empty(&input_in_a_range))
@@ -287,10 +293,11 @@ TEST_F(TestProject, project_load_from_content)
 					<< expected_default_target;
 		}
 
-		for (const auto& property_node : properties)
+		for (const auto& the_property_ : properties)
 		{
 			void* the_project_property = nullptr;
-			const std::string property_name(property_node.node().attribute("name").as_string());
+			const auto property_node = the_property_.node();
+			const std::string property_name(property_node.attribute("name").as_string());
 			//
 			ASSERT_TRUE(project_property_exists(
 							the_project,
@@ -301,9 +308,9 @@ TEST_F(TestProject, project_load_from_content)
 					<< buffer_free(&output)
 					<< project_free(the_project);
 			//
-			const uint8_t expected_is_dynamic = property_node.node().attribute("dynamic").as_bool();
-			const uint8_t expected_is_read_only = property_node.node().attribute("readonly").as_bool();
-			const std::string expected_property_value(property_node.node().attribute("value").as_string());
+			const uint8_t expected_is_dynamic = property_node.attribute("dynamic").as_bool();
+			const uint8_t expected_is_read_only = property_node.attribute("readonly").as_bool();
+			const std::string expected_property_value(property_node.attribute("value").as_string());
 			//
 			uint8_t is_dynamic = 0;
 			uint8_t is_read_only = 0;
@@ -412,9 +419,10 @@ TEST_F(TestProject, project_load_from_build_file)
 
 	for (const auto& node : nodes)
 	{
-		const auto file_node = node.node().select_node("file");
+		const auto the_node = node.node();
+		const auto file_node = the_node.select_node("file").node();
 
-		if (file_node.node().empty())
+		if (file_node.empty())
 		{
 			std::cerr << "[Warning]: skip test case, no input data." << std::endl;
 			//
@@ -422,7 +430,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			continue;
 		}
 
-		std::string path(file_node.node().attribute("path").as_string());
+		std::string path(file_node.attribute("path").as_string());
 		auto path_in_a_range = string_to_range(path);
 		//
 		ASSERT_TRUE(buffer_resize(&tmp, 0))
@@ -451,7 +459,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		for (const auto& hash : hashes)
 		{
 			const std::string expected_hash_value(
-				file_node.node().attribute(hash.c_str()).as_string());
+				file_node.attribute(hash.c_str()).as_string());
 
 			if (expected_hash_value.empty())
 			{
@@ -459,7 +467,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			}
 
 			const auto algorithm = string_to_range(hash);
-			const std::string algorithm_parameter_str(file_node.node().attribute("algorithm_parameter").as_string());
+			const std::string algorithm_parameter_str(file_node.attribute("algorithm_parameter").as_string());
 			const auto algorithm_parameter = string_to_range(algorithm_parameter_str);
 			//
 			ASSERT_TRUE(buffer_resize(&tmp, 0))
@@ -489,7 +497,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			continue;
 		}
 
-		const auto content = node.node().select_nodes("content");
+		const auto content = the_node.select_nodes("content");
 
 		if (!content.empty())
 		{
@@ -497,7 +505,8 @@ TEST_F(TestProject, project_load_from_build_file)
 
 			for (const auto& line : content)
 			{
-				const auto line_number = static_cast<uint16_t>(line.node().attribute("line").as_uint());
+				const auto line_node = line.node();
+				const auto line_number = static_cast<uint16_t>(line_node.attribute("line").as_uint());
 
 				if (0 == line_number)
 				{
@@ -506,11 +515,11 @@ TEST_F(TestProject, project_load_from_build_file)
 
 				if (new_content.count(line_number))
 				{
-					new_content[line_number] = line.node().child_value();
+					new_content[line_number] = line_node.child_value();
 				}
 				else
 				{
-					new_content.insert(std::make_pair(line_number, std::string(line.node().child_value())));
+					new_content.emplace(std::make_pair(line_number, std::string(line_node.child_value())));
 				}
 			}
 
@@ -533,7 +542,7 @@ TEST_F(TestProject, project_load_from_build_file)
 					path.append(reinterpret_cast<const char*>(ptr->start), range_size(ptr));
 				}
 
-				path.push_back('\n');
+				path += '\n';
 			}
 
 			ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
@@ -548,7 +557,7 @@ TEST_F(TestProject, project_load_from_build_file)
 			path = buffer_to_string(&tmp);
 		}
 
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		path_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(
@@ -570,12 +579,14 @@ TEST_F(TestProject, project_load_from_build_file)
 				<< path << std::endl
 				<< buffer_free(&tmp) << project_free(the_project);
 		//
-		const auto properties = node.node().select_nodes("property");
+		const auto properties = the_node.select_nodes("property");
 
-		for (const auto& property_node : properties)
+		for (const auto& the_property : properties)
 		{
-			const std::string property_name(property_node.node().attribute("name").as_string());
-			const std::string property_value(property_node.node().attribute("value").as_string());
+			const auto property_node = the_property.node();
+			//
+			const std::string property_name(property_node.attribute("name").as_string());
+			const std::string property_value(property_node.attribute("value").as_string());
 			//
 			ASSERT_TRUE(project_property_set_value(
 							the_project,
@@ -590,7 +601,7 @@ TEST_F(TestProject, project_load_from_build_file)
 					<< buffer_free(&tmp) << project_free(the_project);
 		}
 
-		const std::string project_help_str(node.node().select_node("project_help").node().child_value());
+		const std::string project_help_str(the_node.select_node("project_help").node().child_value());
 		path_in_a_range = string_to_range(project_help_str);
 		const auto project_help =
 			static_cast<uint8_t>(
@@ -615,7 +626,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		ASSERT_TRUE(buffer_size(&tmp)) << path << buffer_free(&tmp) << project_free(the_project);
 		//
 		auto expected_target_return = expected_return;
-		const auto target_return_node = node.node().select_node("target_return").node();
+		const auto target_return_node = the_node.select_node("target_return").node();
 
 		if (!target_return_node.empty())
 		{
@@ -626,7 +637,7 @@ TEST_F(TestProject, project_load_from_build_file)
 					int_parse(path_in_a_range.start, path_in_a_range.finish));
 		}
 
-		const std::string target_to_run(node.node().select_node("target_to_run").node().child_value());
+		const std::string target_to_run(the_node.select_node("target_to_run").node().child_value());
 
 		if (target_to_run.empty())
 		{
@@ -668,16 +679,14 @@ TEST(TestProject_, project_get_build_files_from_directory)
 			buffer_free(&directory);
 	//
 	const auto now = datetime_now();
-	uint32_t hash = 0;
+	uint8_t hash[sizeof(uint64_t)];
 	//
 	ASSERT_TRUE(hash_algorithm_crc32(
 					reinterpret_cast<const uint8_t*>(&now),
-					reinterpret_cast<const uint8_t*>(&now) + sizeof(now), &hash, 1)) <<
+					reinterpret_cast<const uint8_t*>(&now) + sizeof(now), hash, 1)) <<
 							buffer_free(&directory);
-	ASSERT_TRUE(hash_algorithm_bytes_to_string(
-					reinterpret_cast<const uint8_t*>(&hash),
-					reinterpret_cast<const uint8_t*>(&hash) + sizeof(hash), &directory)) <<
-							buffer_free(&directory);
+	ASSERT_TRUE(hash_algorithm_bytes_to_string(hash, hash + sizeof(hash), &directory)) <<
+			buffer_free(&directory);
 	//
 	const auto size = buffer_size(&directory);
 	const auto expected_current_directory(buffer_to_string(&directory));
@@ -690,15 +699,16 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	//
 	int i = 0;
 	//
-	std::vector<std::string> expected_files(5);
+#define COUNT_OF_FILE 5
+	std::vector<std::string> expected_files(COUNT_OF_FILE);
 	expected_files.clear();
 
-	for (i = 0; i < 5; ++i)
+	for (i = 0; i < COUNT_OF_FILE; ++i)
 	{
 		const auto start = buffer_data(&directory, 0);
 		const auto finish = start + buffer_size(&directory);
 		//
-		ASSERT_TRUE(hash_algorithm_crc32(start, finish, &hash, 1));
+		ASSERT_TRUE(hash_algorithm_crc32(start, finish, hash, 1));
 		//
 		ASSERT_TRUE(buffer_resize(&directory, size)) <<
 				buffer_free(&directory);
@@ -707,11 +717,8 @@ TEST(TestProject_, project_get_build_files_from_directory)
 		//
 		const auto minimal_size = buffer_size(&directory);
 		//
-		ASSERT_TRUE(hash_algorithm_bytes_to_string(
-						reinterpret_cast<const uint8_t*>(&hash),
-						reinterpret_cast<const uint8_t*>(&hash) + sizeof(hash),
-						&directory)) <<
-									 buffer_free(&directory);
+		ASSERT_TRUE(hash_algorithm_bytes_to_string(hash, hash + sizeof(hash), &directory)) <<
+				buffer_free(&directory);
 		//
 		const auto new_size = buffer_size(&directory) - i;
 		//
@@ -728,7 +735,7 @@ TEST(TestProject_, project_get_build_files_from_directory)
 		ASSERT_TRUE(file_create(path)) <<
 									   buffer_free(&directory);
 		//
-		expected_files.push_back(std::string(reinterpret_cast<const char*>(path), buffer_size(&directory) - 1));
+		expected_files.emplace_back(std::string(reinterpret_cast<const char*>(path), buffer_size(&directory) - 1));
 	}
 
 	ASSERT_TRUE(buffer_resize(&directory, size)) <<
@@ -758,22 +765,27 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	while (nullptr != (build_file = argument_parser_get_build_file(i++)))
 	{
 		const std::string build_file_str(reinterpret_cast<const char*>(build_file));
-		const auto fonded_path = std::find_if(expected_files.begin(),
-											  expected_files.end(), [&build_file_str](const std::string & expected_path)
+		const auto fonded_path = std::find_if(expected_files.cbegin(),
+											  expected_files.cend(), [&build_file_str](const std::string & expected_path)
 		{
 			return build_file_str == expected_path;
 		});
 		//
-		ASSERT_NE(fonded_path, expected_files.end()) <<
+		ASSERT_NE(fonded_path, expected_files.cend()) <<
 				build_file_str << std::endl <<
 				buffer_free(&directory) <<
 				argument_parser_free();
-		//
+#if defined(__GNUC__) && __GNUC__ <= 5
+		auto fonded_path_ = expected_files.begin();
+		std::advance(fonded_path_, std::distance(expected_files.cbegin(), fonded_path));
+		expected_files.erase(fonded_path_);
+#else
 		expected_files.erase(fonded_path);
+#endif
 	}
 
 	ASSERT_TRUE(expected_files.empty()) <<
-										expected_files.size() << std::endl <<
+										std::to_string(expected_files.size()) << std::endl <<
 										i << std::endl <<
 										buffer_free(&directory) <<
 										argument_parser_free();
@@ -817,7 +829,9 @@ TEST_F(TestProgram, program_get_properties)
 
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
+		const auto the_node = node.node();
+		//
+		const std::string input(the_node.select_node("input").node().child_value());
 		const auto input_in_a_range(string_to_range(input));
 		//
 		ASSERT_TRUE(xml_get_sub_nodes_elements(
@@ -836,10 +850,11 @@ TEST_F(TestProgram, program_get_properties)
 				<< properties_free(&properties)
 				<< project_free(the_project);
 
-		for (const auto& property_node : node.node().select_nodes("properties/property"))
+		for (const auto& the_property_ : the_node.select_nodes("properties/property"))
 		{
 			void* the_property = nullptr;
-			const std::string property_name(property_node.node().attribute("name").as_string());
+			const auto property_node = the_property_.node();
+			const std::string property_name(property_node.attribute("name").as_string());
 			//
 			ASSERT_TRUE(property_exists(
 							&properties,
@@ -851,8 +866,8 @@ TEST_F(TestProgram, program_get_properties)
 					<< properties_free(&properties)
 					<< project_free(the_project);
 			//
-			const uint8_t expected_is_dynamic = property_node.node().attribute("dynamic").as_bool();
-			const uint8_t expected_is_read_only = property_node.node().attribute("readonly").as_bool();
+			const uint8_t expected_is_dynamic = property_node.attribute("dynamic").as_bool();
+			const uint8_t expected_is_read_only = property_node.attribute("readonly").as_bool();
 			//
 			uint8_t is_dynamic = 0;
 			uint8_t is_read_only = 0;
