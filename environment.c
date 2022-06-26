@@ -123,7 +123,12 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 #endif
 	typedef HRESULT(WINAPI * LPFN_SHGETKNOWNFOLDERPATH)(REFKNOWNFOLDERID, DWORD, HANDLE, PWSTR*);
 	LPFN_SHGETKNOWNFOLDERPATH fnSHGetKnownFolderPath = NULL;
+#if defined(__GNUC__) && 11 <= __GNUC__
+	fnSHGetKnownFolderPath = (LPFN_SHGETKNOWNFOLDERPATH)(void*)GetProcAddress(
+								 shell32Module, "SHGetKnownFolderPath");
+#else
 	fnSHGetKnownFolderPath = (LPFN_SHGETKNOWNFOLDERPATH)GetProcAddress(shell32Module, "SHGetKnownFolderPath");
+#endif
 
 	if (NULL == fnSHGetKnownFolderPath)
 	{
