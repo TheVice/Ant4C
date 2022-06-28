@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 struct buffer;
+struct range;
 
 uint8_t datetime_format_to_string(
 	int64_t input, const uint8_t* format, struct buffer* output);
@@ -18,7 +19,7 @@ uint8_t datetime_parse(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	uint32_t* year, uint8_t* month, uint8_t* day,
 	uint8_t* hour, uint8_t* minute, uint8_t* second);
-uint8_t datetime_parse_buffer(struct buffer* input_output);
+uint8_t datetime_parse_range(const struct range* input, int64_t* output);
 uint8_t datetime_to_string(
 	uint32_t year, uint8_t month, uint8_t day,
 	uint8_t hour, uint8_t minute, uint8_t second,

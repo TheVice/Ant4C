@@ -84,7 +84,6 @@ TEST_F(TestProject, project_property_set_value)
 {
 	for (const auto& node : nodes)
 	{
-		const auto the_node = node.node();
 		const auto code(get_data_from_nodes(node, "code"));
 		//
 		const auto code_in_a_range = string_to_range(code);
@@ -99,7 +98,7 @@ TEST_F(TestProject, project_property_set_value)
 		ASSERT_NE(code.empty(), project_load_from_content(
 					  code_in_a_range.start, code_in_a_range.finish, the_project, 0, verbose)) << project_free(the_project);
 
-		for (const auto& the_property_ : the_node.select_nodes("property"))
+		for (const auto& the_property_ : node.node().select_nodes("property"))
 		{
 			void* the_property = nullptr;
 			//

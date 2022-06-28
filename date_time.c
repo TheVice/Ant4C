@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -242,45 +242,28 @@ uint8_t datetime_parse(
 	return (0 < *day && *day < 32 && 1 < *month && *month < 31 && *hour < 24 && *minute < 60 && *second < 60);
 }
 
-uint8_t datetime_parse_buffer(struct buffer* input_output)
+uint8_t datetime_parse_range(const struct range* input, int64_t* output)
 {
-	const ptrdiff_t size = buffer_size(input_output);
-
-	if (!size)
+	if (range_is_null_or_empty(input) ||
+		!output)
 	{
 		return 0;
 	}
 
-	if (!buffer_append(input_output, NULL, sizeof(uint32_t) + 5 * sizeof(uint8_t)))
+	uint32_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+
+	if (!datetime_parse(input->start, input->finish, &year, &month, &day, &hour, &minute, &second))
 	{
 		return 0;
 	}
 
-	const uint8_t* input = buffer_data(input_output, 0);
-	uint32_t* year = (uint32_t*)buffer_data(input_output, size);
-	uint8_t* month = (uint8_t*)buffer_data(input_output, size + sizeof(uint32_t));
-	uint8_t* day = month + sizeof(uint8_t);
-	uint8_t* hour = day + sizeof(uint8_t);
-	uint8_t* minute = hour + sizeof(uint8_t);
-	uint8_t* second = minute + sizeof(uint8_t);
-
-	if (!datetime_parse(input, input + size, year, month, day, hour, minute, second))
-	{
-		return 0;
-	}
-
-	const int64_t year_ = datetime_encode(*year, *month, *day, *hour, *minute, *second);
-#if __STDC_LIB_EXT1__
-
-	if (0 != memcpy_s(year, sizeof(int64_t), &year_, sizeof(int64_t)))
-	{
-		return 0;
-	}
-
-#else
-	memcpy(year, &year_, sizeof(int64_t));
-#endif
-	return buffer_resize(input_output, size + sizeof(int64_t));
+	*output = datetime_encode(year, month, day, hour, minute, second);
+	return 1;
 }
 
 uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
@@ -704,7 +687,7 @@ int64_t timespan_from_seconds(double input)
 
 int64_t timespan_from_ticks(int64_t ticks)
 {
-	if (ticks < CLOCKS_PER_SEC)
+	if (ticks < (int64_t)CLOCKS_PER_SEC)
 	{
 		return 0;
 	}

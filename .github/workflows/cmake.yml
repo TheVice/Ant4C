@@ -86,7 +86,8 @@ jobs:
       EXECUTABLE_EXTENSION: ${{ startsWith(matrix.os, 'windows') && '.exe' || '' }}
       BINARY_PATH: >-
         ${{ format(
-            'msvc' == matrix.compiler && '{0}\build\{1}\' || '{0}/build/',
+              ('msvc' == matrix.compiler && '{0}\build\{1}\') ||
+              (startsWith(matrix.os, 'windows') && '{0}\build\' || '{0}/build/'),
             github.workspace,
             matrix.optimized && 'Release' || 'Debug') }}
       LIBRARY_BINARY_DIR: >-
@@ -134,6 +135,48 @@ jobs:
 
     - name: Run main application
       run: ${{ env.BINARY_PATH }}ant4c${{ env.EXECUTABLE_EXTENSION }}
+
+    - name: Add libraries to the folder with application that was made with MinGW
+      if: ${{ 'mingw' == matrix.compiler }}
+      run: |
+        $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\cpp.exe"
+        if(Test-Path -Path $path)
+        {
+          $argument = "--version"
+          $source = "$env:TEMP\1.txt"
+          Start-Process -FilePath $path -ArgumentList $argument -NoNewWindow -Wait -RedirectStandardOutput $source
+          $source = [System.IO.File]::ReadAllLines($source)[0]
+          $argument = $source.LastIndexOf(" ")
+          $argument++
+          $source = $source.Substring($argument)
+          $ver = [System.Version]::Parse($source)
+          if([System.Version]::Parse("9.0") -le $ver)
+          {
+            Write-Warning -Message "Patch will be apply."
+            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libstdc++-6.dll"
+            if(Test-Path -Path $path)
+            {
+              cp $path ${{ env.BINARY_PATH }}
+            }
+            else
+            {
+              Write-Warning -Message $path
+            }
+            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libgcc_s_seh-1.dll"
+            if(Test-Path -Path $path)
+            {
+              cp $path ${{ env.BINARY_PATH }}
+            }
+            else
+            {
+              Write-Warning -Message $path
+            }
+          }
+          else
+          {
+            Write-Host "Nothing to do."
+          }
+        }
 
     - name: Run tests
       shell: pwsh
