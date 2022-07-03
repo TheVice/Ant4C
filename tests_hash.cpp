@@ -142,6 +142,7 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 	//
 	buffer output;
 	SET_NULL_TO_BUFFER(output);
+	uint64_t output_[16];
 
 	for (const auto& node : nodes)
 	{
@@ -202,9 +203,7 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 			//
 			ptrdiff_t bytes_compressed = 0;
 			//
-			ASSERT_TRUE(buffer_resize(&output, 128)) << buffer_free(&output);
-			ASSERT_TRUE(BLAKE2b_init(
-							hash_sizes[i], reinterpret_cast<uint64_t*>(buffer_data(&output, 0)))) << buffer_free(&output);
+			ASSERT_TRUE(BLAKE2b_init(hash_sizes[i], output_)) << buffer_free(&output);
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
@@ -215,7 +214,7 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 				//
 				ASSERT_TRUE(BLAKE2b_core(
 								input_in_a_range.start, input_in_a_range.start + bytes_to_compress,
-								&bytes_compressed, reinterpret_cast<uint64_t*>(buffer_data(&output, 0)))) << buffer_free(&output);
+								&bytes_compressed, output_)) << buffer_free(&output);
 				//
 				input_in_a_range.start += bytes_to_compress;
 			}
@@ -223,12 +222,13 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 			ASSERT_TRUE(BLAKE2b_final(
 							input_in_a_range.start, &bytes_compressed,
 							static_cast<uint8_t>(range_size(&input_in_a_range)),
-							reinterpret_cast<uint64_t*>(buffer_data(&output, 0)))) << buffer_free(&output);
+							output_)) << buffer_free(&output);
 			//
 			ASSERT_EQ(bytes_compressed, static_cast<ptrdiff_t>(input.size())) << buffer_free(&output);
 			ASSERT_TRUE(buffer_resize(&output, hash_sizes[i])) << buffer_free(&output);
 			//
-			input_in_a_range = buffer_to_range(&output);
+			input_in_a_range.start = reinterpret_cast<const uint8_t*>(output_);
+			input_in_a_range.finish = input_in_a_range.start + hash_sizes[i];
 			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, &output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
 												 static_cast<int>(i) << buffer_free(&output);
@@ -297,7 +297,7 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 		//
 		std::string returned_hash(reinterpret_cast<const char*>(finish), buffer_size(&output) - size);
 		//
-		const auto length = hash_length / 4;
+		const auto length = hash_length / sizeof(uint32_t);
 		ASSERT_EQ(expected_output.substr(0, length), returned_hash) << buffer_free(&input) << buffer_free(&output);
 
 		if (0 == input_length)
@@ -531,7 +531,7 @@ TEST_F(TestHashAlgorithm, sha3)
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
 			//
-			auto returned = (Keccak_functions[i < 4 ? 0 : 1])(input_in_a_range.start, input_in_a_range.finish,
+			auto returned = (Keccak_functions[i < (count / 2) ? 0 : 1])(input_in_a_range.start, input_in_a_range.finish,
 							hash_lengths[i], &output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
 												 static_cast<int>(i) << buffer_free(&output);

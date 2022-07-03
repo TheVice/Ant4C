@@ -57,3 +57,49 @@ macro(get_compiler_version)
     endif()
   endif()
 endmacro()
+
+macro(append_to_flags_from_outside)
+  if(CMAKE_VERSION VERSION_LESS 3.0)
+    if(DEFINED ENV{CFLAGS})
+      list(APPEND CMAKE_C_FLAGS $ENV{CFLAGS})
+    endif()
+
+    if(DEFINED ENV{CPPFLAGS})
+      list(APPEND CMAKE_CXX_FLAGS $ENV{CPPFLAGS})
+    endif()
+
+    if(DEFINED ENV{CXXFLAGS})
+      list(APPEND CMAKE_CXX_FLAGS $ENV{CXXFLAGS})
+    endif()
+
+    if(DEFINED ENV{LDFLAGS})
+      list(APPEND LINK_FLAGS $ENV{LDFLAGS})
+    endif()
+
+    if(DEFINED CFLAGS)
+      list(APPEND CMAKE_C_FLAGS ${CFLAGS})
+    endif()
+
+    if(DEFINED CPPFLAGS)
+      list(APPEND CMAKE_CXX_FLAGS ${CPPFLAGS})
+    endif()
+
+    if(DEFINED CXXFLAGS)
+      list(APPEND CMAKE_CXX_FLAGS ${CXXFLAGS})
+    endif()
+
+    if(DEFINED LDFLAGS)
+      list(APPEND LINK_FLAGS ${LDFLAGS})
+    endif()
+
+    string(REPLACE ";" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REPLACE ";" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REPLACE ";" "" LINK_FLAGS "${LINK_FLAGS}")
+  endif()
+endmacro()
+
+macro(set_position_independent_code)
+  if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  endif()
+endmacro()

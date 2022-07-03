@@ -250,12 +250,12 @@ uint8_t datetime_parse_range(const struct range* input, int64_t* output)
 		return 0;
 	}
 
-	uint32_t year;
-	uint8_t month;
-	uint8_t day;
-	uint8_t hour;
-	uint8_t minute;
-	uint8_t second;
+	uint32_t year = 0;
+	uint8_t month = 0;
+	uint8_t day = 0;
+	uint8_t hour = 0;
+	uint8_t minute = 0;
+	uint8_t second = 0;
 
 	if (!datetime_parse(input->start, input->finish, &year, &month, &day, &hour, &minute, &second))
 	{

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -27,15 +27,16 @@ TEST_F(TestConversion, bool_parse)
 {
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
+		const auto the_node = node.node();
+		const std::string input(the_node.select_node("input").node().child_value());
 		//
-		const std::string output_str(node.node().select_node("output").node().child_value());
+		const std::string output_str(the_node.select_node("output").node().child_value());
 		const auto output_in_a_range(string_to_range(output_str));
 		const auto expected_output =
 			static_cast<uint8_t>(int_parse(
 									 output_in_a_range.start, output_in_a_range.finish));
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(
@@ -61,14 +62,15 @@ TEST_F(TestConversion, bool_to_string)
 
 	for (const auto& node : nodes)
 	{
-		const std::string input_str(node.node().select_node("input").node().child_value());
+		const auto the_node = node.node();
+		const std::string input_str(the_node.select_node("input").node().child_value());
 		const auto input_in_a_range(string_to_range(input_str));
 		const auto input =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string expected_output(node.node().select_node("output").node().child_value());
+		const std::string expected_output(the_node.select_node("output").node().child_value());
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));

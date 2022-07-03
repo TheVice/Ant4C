@@ -192,20 +192,6 @@ jobs:
           Get-ChildItem -Path "${{ env.BINARY_PATH }}" -Recurse
         }
 
-    - name: Run tests_ant4c.net.framework.module
-      if: ${{ 'msvc' == matrix.compiler }}
-      working-directory: ${{ env.CMAKE_BUILD_DIR }}
-      run: |
-        if (Test-Path -Path "${{ env.BINARY_PATH }}tests_ant4c.net.framework.module${{ env.EXECUTABLE_EXTENSION }}")
-        {
-          ${{ env.BINARY_PATH }}tests_ant4c.net.framework.module${{ env.EXECUTABLE_EXTENSION }} --tests_xml=${{ github.workspace }}\tests.xml --tests_exec_app=${{ env.BINARY_PATH }}tests_exec_app${{ env.EXECUTABLE_EXTENSION }} --tests_base_directory=${{ github.workspace }}
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ env.BINARY_PATH }}tests_ant4c.net.framework.module${{ env.EXECUTABLE_EXTENSION }}")
-          Get-ChildItem -Path "${{ env.BINARY_PATH }}" -Recurse
-        }
-
     - name: Compress files with zstd
       shell: pwsh
       run: |
@@ -222,4 +208,3 @@ jobs:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
         retention-days: 1
         path: ${{ env.BINARY_PATH }}/*.zst
-

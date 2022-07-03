@@ -103,18 +103,6 @@
             name="DOTNET_CLI_HOME"
             value="${environment::get-variable('USERPROFILE')}"
             if="${environment::variable-exists('USERPROFILE')}" />
-          <variable
-            name="TMP"
-            value="${environment::get-variable('TMP')}"
-            if="${environment::variable-exists('TMP')}" />
-          <variable
-            name="TEMP"
-            value="${environment::get-variable('TEMP')}"
-            if="${environment::variable-exists('TEMP')}" />
-          <variable
-            name="USERPROFILE"
-            value="${environment::get-variable('USERPROFILE')}"
-            if="${environment::variable-exists('USERPROFILE')}" />
         </environment>
       </exec>
       <fail
