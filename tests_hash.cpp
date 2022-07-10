@@ -280,7 +280,7 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 			static_cast<uint16_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const auto expected_output(get_data_from_nodes(node, "output"));
+		const auto expected_output(get_data_from_nodes(the_node, "output"));
 		//
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
 		auto returned = hash_algorithm_blake3(ptr, ptr + input_length, hash_length, &output);
@@ -496,7 +496,7 @@ TEST_F(TestHashAlgorithm, sha3)
 	{
 		const auto the_node = node.node();
 		//
-		const auto input(get_data_from_nodes(node, "input"));
+		const auto input(get_data_from_nodes(the_node, "input"));
 		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto input_in_a_range = string_to_range(return_str);
 		const auto expected_return =

@@ -43,14 +43,14 @@ uint8_t buffer_resize_and_free_inner_buffers(buffer* storage);
 uint8_t buffer_free_with_inner_buffers(buffer* storage);
 
 std::string get_data_from_nodes(
-	const pugi::xpath_node& parent_node, const std::string& name_of_nodes);
+	const pugi::xml_node& parent_node, const std::string& name_of_nodes);
 
 uint8_t project_free(void* the_project);
 
 std::string property_to_string(const void* the_property, buffer* value);
 
 void property_load_from_node(
-	const pugi::xml_node& property,
+	const pugi::xml_node& property_in_a_xml,
 	std::string& name, std::string& value,
 	uint8_t& dynamic, uint8_t& over_write,
 	uint8_t& read_only, uint8_t& fail_on_error,

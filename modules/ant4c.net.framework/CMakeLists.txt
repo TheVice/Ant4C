@@ -81,11 +81,10 @@ if(MSVC)
   target_compile_options(tests_ant4c.net.framework.module PRIVATE /W4 /WX)
 
   target_link_libraries(tests_ant4c.net.framework.module
-    Ant4C::framework_gate
+    Ant4C::ant4c.net.framework.module
     tests_base
   )
 
-  add_dependencies(tests_ant4c.net.framework.module
-    Ant4C::ant4c.net.framework.module
-  )
+else()
+  message(FATAL_ERROR "This module can be build only by MSVC compiler.")
 endif()

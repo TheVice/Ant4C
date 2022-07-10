@@ -234,10 +234,11 @@ uint8_t string_to_command_arguments(const std::string& input, buffer* output, in
 	/**/																															\
 	for (const auto& expected_property : expected_properties)																		\
 	{																																\
-		const std::string name(expected_property.node().attribute("name").as_string());												\
-		const std::string value(expected_property.node().attribute("value").as_string());											\
-		const uint8_t expected_dynamic = expected_property.node().attribute("dynamic").as_bool();									\
-		const uint8_t expected_readonly = expected_property.node().attribute("readonly").as_bool();									\
+		const auto the_expected_property = expected_property.node();																\
+		const std::string name(the_expected_property.attribute("name").as_string());												\
+		const std::string value(the_expected_property.attribute("value").as_string());												\
+		const uint8_t expected_dynamic = the_expected_property.attribute("dynamic").as_bool();										\
+		const uint8_t expected_readonly = the_expected_property.attribute("readonly").as_bool();									\
 		/**/																														\
 		void* the_property;																											\
 		ASSERT_TRUE(property_exists(properties,																						\
@@ -383,13 +384,14 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
 		const std::string i_str(
-			node.node().select_node("i").node().child_value());
+			the_node.select_node("i").node().child_value());
 		const auto i_in_a_range(string_to_range(i_str));
 		const auto i = int_parse(i_in_a_range.start, i_in_a_range.finish);
 		//
 		const std::string return_str(
-			node.node().select_node("return").node().child_value());
+			the_node.select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
 		const auto expected_return =
 			static_cast<uint8_t>(
@@ -397,7 +399,7 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 		//
 		arguments.clear();
 		//
-		const auto arguments_ = node.node().select_nodes("argument");
+		const auto arguments_ = the_node.select_nodes("argument");
 		std::transform(
 			arguments_.begin(), arguments_.end(),
 			std::back_inserter(arguments),
@@ -473,65 +475,66 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 
 	for (const auto& node : nodes)
 	{
-		const auto input(get_data_from_nodes(node, "input"));
+		const auto the_node = node.node();
+		const auto input(get_data_from_nodes(the_node, "input"));
 		const auto expected_build_files =
-			node.node().select_nodes("build_file");
+			the_node.select_nodes("build_file");
 		//
-		const std::string debug_str(node.node().select_node("debug").node().child_value());
+		const std::string debug_str(the_node.select_node("debug").node().child_value());
 		auto input_in_a_range = string_to_range(debug_str);
 		const auto expected_debug =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string help_str(node.node().select_node("help").node().child_value());
+		const std::string help_str(the_node.select_node("help").node().child_value());
 		input_in_a_range = string_to_range(help_str);
 		const auto expected_help =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string indent_str(node.node().select_node("indent").node().child_value());
+		const std::string indent_str(the_node.select_node("indent").node().child_value());
 		input_in_a_range = string_to_range(indent_str);
 		const auto expected_indent =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string no_logo_str(node.node().select_node("no_logo").node().child_value());
+		const std::string no_logo_str(the_node.select_node("no_logo").node().child_value());
 		input_in_a_range = string_to_range(no_logo_str);
 		const auto expected_no_logo =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string pause_str(node.node().select_node("pause").node().child_value());
+		const std::string pause_str(the_node.select_node("pause").node().child_value());
 		input_in_a_range = string_to_range(pause_str);
 		const auto expected_pause =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string project_help_str(node.node().select_node("project_help").node().child_value());
+		const std::string project_help_str(the_node.select_node("project_help").node().child_value());
 		input_in_a_range = string_to_range(project_help_str);
 		const auto expected_project_help =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string quiet_str(node.node().select_node("quiet").node().child_value());
+		const std::string quiet_str(the_node.select_node("quiet").node().child_value());
 		input_in_a_range = string_to_range(quiet_str);
 		const auto expected_quiet =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		input_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string verbose_str(node.node().select_node("verbose").node().child_value());
+		const std::string verbose_str(the_node.select_node("verbose").node().child_value());
 		input_in_a_range = string_to_range(verbose_str);
 		const auto expected_verbose =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const auto expected_properties = node.node().select_nodes("properties/property");
-		const auto expected_targets = node.node().select_nodes("target");
-		const std::string expected_log_file(node.node().select_node("log_file").node().child_value());
-		const std::string expected_encoding_str(node.node().select_node("encoding").node().child_value());
+		const auto expected_properties = the_node.select_nodes("properties/property");
+		const auto expected_targets = the_node.select_nodes("target");
+		const std::string expected_log_file(the_node.select_node("log_file").node().child_value());
+		const std::string expected_encoding_str(the_node.select_node("encoding").node().child_value());
 		const auto expected_encoding =
 			encodings.count(expected_encoding_str) ?
 			encodings.at(expected_encoding_str) : (expected_encoding_str.empty() ? UTF8 : FILE_ENCODING_UNKNOWN);
-		const std::string expected_listener(node.node().select_node("listener").node().child_value());
+		const std::string expected_listener(the_node.select_node("listener").node().child_value());
 		//
-		const std::string module_priority_str(node.node().select_node("module_priority").node().child_value());
+		const std::string module_priority_str(the_node.select_node("module_priority").node().child_value());
 		input_in_a_range = string_to_range(module_priority_str);
 		const auto expected_module_priority =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
@@ -564,14 +567,15 @@ TEST_F(TestArgumentParser, argument_append_arguments)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
 		ASSERT_TRUE(buffer_resize(&command_arguments, 0)) << buffer_free(&command_arguments);
 		//
-		const auto arguments = node.node().select_nodes("input");
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const auto arguments = the_node.select_nodes("input");
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		const auto return_in_a_range(string_to_range(return_str));
 		const auto expected_return = static_cast<uint8_t>(
 										 int_parse(return_in_a_range.start, return_in_a_range.finish));
-		std::string expected_output(node.node().select_node("output").node().child_value());
+		std::string expected_output(the_node.select_node("output").node().child_value());
 		size_t pos;
 
 		while (std::string::npos != (pos = expected_output.find("0x0")))

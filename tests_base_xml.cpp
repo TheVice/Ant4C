@@ -240,11 +240,12 @@ uint8_t is_this_node_pass_by_if_condition(
 	return 1;
 }
 
-std::string get_data_from_nodes(const pugi::xpath_node& parent_node, const std::string& name_of_nodes)
+std::string get_data_from_nodes(const pugi::xml_node& parent_node, const std::string& name_of_nodes)
 {
 	std::string output;
+	const auto nodes = parent_node.select_nodes(name_of_nodes.c_str());
 
-	for (const auto& node : parent_node.node().select_nodes(name_of_nodes.c_str()))
+	for (const auto& node : nodes)
 	{
 		output.append(node.node().child_value());
 	}
@@ -264,26 +265,28 @@ std::string property_to_string(const void* the_property, buffer* value)
 		   buffer_to_string(value) : std::string();
 }
 
-void property_load_from_node(const pugi::xml_node& property,
+void property_load_from_node(const pugi::xml_node& property_in_a_xml,
 							 std::string& name, std::string& value,
 							 uint8_t& dynamic, uint8_t& over_write,
 							 uint8_t& read_only, uint8_t& fail_on_error,
 							 uint8_t& verbose)
 {
-	name = property.attribute("name").as_string();
-	value = property.attribute("value").as_string();
-	dynamic = property.attribute("dynamic").as_bool();
-	const auto over_write_attribute = property.attribute("overwrite");
+	name = property_in_a_xml.attribute("name").as_string();
+	value = property_in_a_xml.attribute("value").as_string();
+	dynamic = property_in_a_xml.attribute("dynamic").as_bool();
+	const auto over_write_attribute = property_in_a_xml.attribute("overwrite");
 	over_write = nullptr == over_write_attribute ? 1 : over_write_attribute.as_bool();
-	read_only = property.attribute("readonly").as_bool();
-	const auto fail_on_error_attribute = property.attribute("failonerror");
+	read_only = property_in_a_xml.attribute("readonly").as_bool();
+	const auto fail_on_error_attribute = property_in_a_xml.attribute("failonerror");
 	fail_on_error = nullptr == fail_on_error_attribute ? 1 : fail_on_error_attribute.as_bool();
-	verbose = property.attribute("verbose").as_bool();
+	verbose = property_in_a_xml.attribute("verbose").as_bool();
 }
 
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties)
 {
-	for (const auto& property : node.node().select_nodes(path))
+	const auto nodes = node.node().select_nodes(path);
+
+	for (const auto& property_in_a_node : nodes)
 	{
 		std::string name;
 		std::string value;
@@ -293,7 +296,7 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 		uint8_t fail_on_error = 0;
 		uint8_t verbose = 0;
 		//
-		property_load_from_node(property.node(), name, value, dynamic,
+		property_load_from_node(property_in_a_node.node(), name, value, dynamic,
 								over_write, read_only, fail_on_error, verbose);
 
 		if (name.empty())
@@ -582,7 +585,7 @@ TestsBaseXml::TestsBaseXml() :
 	nodes(),
 	node_count(0)
 {
-	predefine_arguments.insert(std::make_pair("--tests_xml=", &tests_xml));
+	predefine_arguments.emplace(std::make_pair("--tests_xml=", &tests_xml));
 }
 
 void TestsBaseXml::SetUp()

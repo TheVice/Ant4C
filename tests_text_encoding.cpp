@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -287,21 +287,22 @@ TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
 		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 		//
-		const auto input_hex(get_data_from_nodes(node, "input"));
+		const auto input_hex(get_data_from_nodes(the_node, "input"));
 		input.clear();
 		string_hex_parse(input_hex.c_str(), input);
 		//
 		const std::string code_page_str(
-			node.node().select_node("code_page").node().child_value());
+			the_node.select_node("code_page").node().child_value());
 		const auto code_page_in_a_range(string_to_range(code_page_str));
 		//
 		auto code_page =
 			static_cast<uint16_t>(int_parse(
 									  code_page_in_a_range.start, code_page_in_a_range.finish));
 		//
-		const auto output_hex(get_data_from_nodes(node, "output"));
+		const auto output_hex(get_data_from_nodes(the_node, "output"));
 		expected_output.clear();
 		string_hex_parse(output_hex.c_str(), expected_output);
 		//
@@ -833,21 +834,24 @@ TEST_F(TestTextEncoding, text_encoding_UTF8_to_code_page)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
 		input_utf16le.resize(0);
-		const auto input_hex(get_data_from_nodes(node, "input"));
+		const auto input_hex(get_data_from_nodes(the_node, "input"));
 		string_hex_parse(input_hex.c_str(), input_utf16le);
 		//
 		ASSERT_TRUE(buffer_resize(&input, 0)) << buffer_free(&output) << buffer_free(&input);
 		ASSERT_TRUE(
 			text_encoding_UTF16LE_to_UTF8(input_utf16le.data(), input_utf16le.data() + input_utf16le.size(), &input))
 				<< buffer_free(&output) << buffer_free(&input);
-		ASSERT_FALSE(node.node().select_node("output").node().empty())
+		ASSERT_FALSE(the_node.select_node("output").node().empty())
 				<< buffer_free(&output) << buffer_free(&input);
+		const auto output_nodes = the_node.select_nodes("output");
 
-		for (const auto& output_node : node.node().select_nodes("output"))
+		for (const auto& output_node : output_nodes)
 		{
-			const auto code_page = static_cast<uint16_t>(output_node.node().attribute("code").as_int());
-			auto expected_return = output_node.node().attribute("return").as_int();
+			const auto the_output_node = output_node.node();
+			const auto code_page = static_cast<uint16_t>(the_output_node.attribute("code").as_int());
+			auto expected_return = the_output_node.attribute("return").as_int();
 			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output) << buffer_free(&input);
 			//
 			ASSERT_EQ(expected_return,
@@ -857,7 +861,7 @@ TEST_F(TestTextEncoding, text_encoding_UTF8_to_code_page)
 						  code_page, &output)) << buffer_free(&output) << buffer_free(&input);
 			//
 			input_utf16le.resize(0);
-			string_hex_parse(output_node.node().child_value(), input_utf16le);
+			string_hex_parse(the_output_node.child_value(), input_utf16le);
 			//
 			ASSERT_EQ(static_cast<ptrdiff_t>(input_utf16le.size()), buffer_size(&output))
 					<< buffer_free(&output) << buffer_free(&input);
@@ -891,17 +895,20 @@ TEST_F(TestTextEncoding, text_encoding_UTF8_from_code_page)
 
 	for (const auto& node : nodes)
 	{
+		const auto the_node = node.node();
 		input_ascii.resize(0);
-		const auto input_hex(get_data_from_nodes(node, "input"));
+		const auto input_hex(get_data_from_nodes(the_node, "input"));
 		string_hex_parse(input_hex.c_str(), input_ascii);
 		//
-		ASSERT_FALSE(node.node().select_node("output").node().empty())
+		ASSERT_FALSE(the_node.select_node("output").node().empty())
 				<< buffer_free(&output);
+		const auto output_nodes = the_node.select_nodes("output");
 
-		for (const auto& output_node : node.node().select_nodes("output"))
+		for (const auto& output_node : output_nodes)
 		{
-			const auto code_page = static_cast<uint16_t>(output_node.node().attribute("code").as_int());
-			auto expected_return = output_node.node().attribute("return").as_int();
+			const auto the_output_node = output_node.node();
+			const auto code_page = static_cast<uint16_t>(the_output_node.attribute("code").as_int());
+			auto expected_return = the_output_node.attribute("return").as_int();
 			//
 			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
 			ASSERT_EQ(expected_return,
@@ -909,7 +916,7 @@ TEST_F(TestTextEncoding, text_encoding_UTF8_from_code_page)
 							  input_ascii.data() + input_ascii.size(), code_page, &output)) << buffer_free(&output);
 			//
 			expected_output.clear();
-			string_hex_parse(output_node.node().child_value(), expected_output);
+			string_hex_parse(the_output_node.child_value(), expected_output);
 			//
 			ASSERT_EQ(static_cast<ptrdiff_t>(expected_output.size()), buffer_size(&output))
 					<< "Code page: " << code_page << std::endl
@@ -945,16 +952,17 @@ TEST_F(TestTextEncoding, text_encoding_encode_UTF16)
 
 	for (const auto& node : nodes)
 	{
-		const std::string expected_size_str(node.node().select_node("expected_size").node().child_value());
+		const auto the_node = node.node();
+		const std::string expected_size_str(the_node.select_node("expected_size").node().child_value());
 		auto input_in_a_range = string_to_range(expected_size_str);
 		const auto expected_size =
 			static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string endian_str(node.node().select_node("endian").node().child_value());
+		const std::string endian_str(the_node.select_node("endian").node().child_value());
 		input_in_a_range = string_to_range(endian_str);
 		const auto endian = static_cast<uint8_t>(int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		const std::string input(node.node().select_node("input").node().child_value());
+		const std::string input(the_node.select_node("input").node().child_value());
 		input_in_a_range = string_to_range(input);
 		input_digit = static_cast<uint32_t>(uint64_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
@@ -973,7 +981,7 @@ TEST_F(TestTextEncoding, text_encoding_encode_UTF16)
 				<< static_cast<uint32_t>(endian) << std::endl
 				<< buffer_free(&output);
 		//
-		const auto expected_outputs = node.node().select_nodes("output");
+		const auto expected_outputs = the_node.select_nodes("output");
 		ASSERT_EQ(expected_size / sizeof(uint16_t), expected_outputs.size())
 				<< input << std::endl
 				<< static_cast<uint32_t>(endian) << std::endl
@@ -1021,7 +1029,7 @@ uint16_t fill_uint16_t(uint16_t max, uint16_t* result)
 			j = 0;
 		}
 
-		result[i] = static_cast<uint16_t>(j++);
+		result[i] = j++;
 	}
 
 	return max;

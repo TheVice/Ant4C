@@ -65,103 +65,95 @@ build_with_MSVC:
     git fetch origin windows-latest
     git checkout origin/windows-latest -- .
 
-    $build_directory = Join-Path -ChildPath "build-${env:TargetPlatform}" -Path "${env:CI_PROJECT_DIR}"
-    cmake -E make_directory $build_directory
+    $build_directory = Join-Path -ChildPath "build-msvc-$env:TargetPlatform" -Path "$env:CI_PROJECT_DIR"
+
+    cmake -S $env:CI_PROJECT_DIR -B $build_directory -A $env:TargetPlatform -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DPROGRAM_VERSION=$env:CI_COMMIT_TIMESTAMP
 
     if ($LastExitCode -ne 0)
     {
-      $arguments = "CMake exit code is not equal to the '0' when it create folder. Instead it - {0}." -f $LastExitCode
-      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-    }
-
-    cd "$build_directory"
-    cmake "${env:CI_PROJECT_DIR}" -A ${env:TargetPlatform} -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}"\windows-latest
-
-    if ($LastExitCode -ne 0)
-    {
-      $arguments = "CMake exit code is not equal to the '0' when it create project. Instead it - {0}." -f $LastExitCode
-      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+      $message = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $LastExitCode
+      throw (New-Object -TypeName System.Exception -ArgumentList $message)
     }
 
     $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
 
     ForEach ($build_type in ("Debug", "Release"))
     {
-      cmake --build . --config $build_type --parallel ${env:NUMBER_OF_PROCESSORS}
+      cmake --build $build_directory --config $build_type --parallel $env:NUMBER_OF_PROCESSORS
 
       if ($LastExitCode -ne 0)
       {
-        $arguments = "CMake exit code is not equal to the '0' when build the project. Instead it - {0}." -f $LastExitCode
-        throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+        $message = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $LastExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $message)
       }
 
-      $build_directory_with_build_type = Join-Path -ChildPath $build_type -Path $build_directory
+      cd $build_directory
 
-      if (Test-Path -Path $build_directory_with_build_type)
+      $ant4c = Join-Path -ChildPath "$build_type\ant4c.exe" -Path $build_directory
+      & "$ant4c"
+
+      if ($LastExitCode -ne 0)
       {
-        Write-Output -InputObject "Build type: $build_type"
-        $ant4c = Join-Path -ChildPath "ant4c.exe" -Path "$build_directory_with_build_type"
+        $message = "Exit code of $ant4c is not equal to the '0' instead it - {0}." -f $LastExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $message)
+      }
 
-        & $ant4c
+      $ant4c_tests = Join-Path -ChildPath "$build_type\ant4c_tests.exe" -Path $build_directory
+
+      if (Test-Path -Path "$ant4c_tests")
+      {
+        $tests_exec_app_exe = Join-Path -ChildPath "$build_type\tests_exec_app.exe" -Path $build_directory
+
+        if (-not(Test-Path -Path "$tests_exec_app_exe"))
+        {
+          Get-ChildItem -Path $build_directory -Recurse
+          $message = "File '{0}' not exists. Tests will not run." -f $tests_exec_app_exe
+          throw (New-Object -TypeName System.Exception -ArgumentList $message)
+        }
+
+        $test_output = "$CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc-$TargetPlatform-$build_type.xml"
+        & "$ant4c_tests" --tests_xml=$tests_xml --tests_exec_app=$tests_exec_app_exe --tests_base_directory=${env:CI_PROJECT_DIR} --gtest_output=""xml:$test_output""
 
         if ($LastExitCode -ne 0)
         {
-          $arguments = "Exit code of 'Ant4C' is not equal to the '0'. Instead it - {0}." -f $LastExitCode
-          throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-        }
-
-        $ant4c = Join-Path -ChildPath "ant4c_tests.exe" -Path "$build_directory_with_build_type"
-        $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path "$build_directory_with_build_type"
-
-        if (Test-Path -Path "$ant4c")
-        {
-          & $ant4c --tests_xml=$tests_xml --tests_exec_app=$tests_exec_app_exe --tests_base_directory=${env:CI_PROJECT_DIR} --gtest_output="xml:$CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-$TargetPlatform.xml"
-
-          if ($LastExitCode -ne 0)
-          {
-            $arguments = "{1} returned {0} when '0' expected." -f $LastExitCode, "tests_exec_app.exe"
-            throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-          }
-        }
-        else
-        {
-          $message = "File '{0}' not exists. Tests will not run." -f $ant4c
-          Write-Warning -Message $message
-          Get-ChildItem -Path $build_directory -Recurse
-        }
-
-        $ant4c = Join-Path -ChildPath "tests_ant4c.net.framework.module.exe" -Path "$build_directory_with_build_type"
-
-        if (Test-Path -Path "$ant4c")
-        {
-          & $ant4c
-
-          if ($LastExitCode -ne 0)
-          {
-            $arguments = "{1} returned {0} when '0' expected." -f $LastExitCode, "tests_ant4c.net.framework.module.exe"
-            throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-          }
-        }
-        else
-        {
-          $message = "File '{0}' not exists. Tests will not run." -f $ant4c
-          Write-Warning -Message $message
-          Get-ChildItem -Path $build_directory -Recurse
+          $message = "Exit code of $ant4c_tests is not equal to the '0' instead it - {0}." -f $LastExitCode
+          throw (New-Object -TypeName System.Exception -ArgumentList $message)
         }
       }
       else
       {
-        $message = "Directory '{0}' is not exists." -f $build_directory_with_build_type
+        $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
         Write-Warning -Message $message
+        Get-ChildItem -Path $build_directory -Recurse
+      }
+
+      $ant4c_tests = Join-Path -ChildPath "$build_type\tests_ant4c.net.framework.module.exe" -Path $build_directory
+
+      if (Test-Path -Path "$ant4c_tests")
+      {
+        $test_output = "$CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc-net.framework.module-$TargetPlatform-$build_type.xml"
+        & "$ant4c_tests" --gtest_output=""xml:$test_output""
+
+        if ($LastExitCode -ne 0)
+        {
+          $message = "Exit code of $ant4c_tests is not equal to the '0' instead it - {0}." -f $LastExitCode
+          throw (New-Object -TypeName System.Exception -ArgumentList $message)
+        }
+      }
+      else
+      {
+        $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
+        Write-Warning -Message $message
+        Get-ChildItem -Path $build_directory -Recurse
       }
     }
 
   artifacts:
     paths:
-      - $CI_PROJECT_DIR\build-$TargetPlatform
+      - $CI_PROJECT_DIR\build-msvc-$TargetPlatform
     when: always
     reports:
-      junit: $CI_PROJECT_DIR\build-$TargetPlatform\report-msvc-$TargetPlatform.xml
+      junit: $CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc*.xml
 
   cache:
     key: windows-build-cache
@@ -195,72 +187,71 @@ build_with_MinGW:
     git fetch origin windows-latest
     git checkout origin/windows-latest -- .
 
+    $paths = "$env:PATH"
     [string[]]$mingw_makes = @()
     $mingw_makes += Get-ChildItem -File -Include mingw32-make.exe -Path $env:ProgramFiles\*\bin\*.* -Recurse
+    $make_number = 0
 
-    $directory_path = Split-Path -Path $mingw_makes[0] -Parent
-    $env:PATH="$env:PATH;$directory_path"
-
-    $build_directory = Join-Path -ChildPath "build-MinGW-${env:BUILD_TYPE}" -Path "${env:CI_PROJECT_DIR}"
-    $arguments = "-E make_directory {0}" -f $build_directory
-    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-
-    if ($process.ExitCode -ne 0)
+    foreach($mingw_make in $mingw_makes)
     {
-      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
-      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-    }
+      $directory_path = Split-Path -Path $mingw_make -Parent
+      $env:PATH = "$paths;$directory_path"
 
-    cd "$build_directory"
+      $build_directory = Join-Path -ChildPath "build-MinGW-${env:BUILD_TYPE}\$make_number" -Path "${env:CI_PROJECT_DIR}"
 
-    $arguments = "{0} -G {2} -DCMAKE_BUILD_TYPE={1} -DLIBRARY_BINARY_DIR={0}\windows-latest" -f ${env:CI_PROJECT_DIR}, ${env:BUILD_TYPE}, '"MinGW Makefiles"'
-    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-
-    if ($process.ExitCode -ne 0)
-    {
-      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
-      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-    }
-
-    $arguments = "--build . --config ${env:BUILD_TYPE} --parallel $env:NUMBER_OF_PROCESSORS"
-    $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-
-    if ($process.ExitCode -ne 0)
-    {
-      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
-      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-    }
-
-    $ant4c = Join-Path -ChildPath "ant4c.exe" -Path $build_directory
-    $process = Start-Process -FilePath "$ant4c" -NoNewWindow -Wait -PassThru
-
-    if ($process.ExitCode -ne 0)
-    {
-      $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
-      throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
-    }
-
-    $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
-    $ant4c_tests = Join-Path -ChildPath "ant4c_tests.exe" -Path $build_directory
-
-    if (Test-Path -Path "$ant4c_tests")
-    {
-      $test_output = "$CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE.xml"
-      $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path $build_directory
-      $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2} --gtest_output=""xml:{3}""" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}, $test_output
-      $process = Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+      $arguments = "-S {0} -B {1} -G {2} -DCMAKE_BUILD_TYPE={3} -DLIBRARY_BINARY_DIR={0}\windows-latest -DPROGRAM_VERSION={4}" -f ${env:CI_PROJECT_DIR}, $build_directory, '"MinGW Makefiles"', ${env:BUILD_TYPE}, ${env:CI_COMMIT_TIMESTAMP}
+      $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
 
       if ($process.ExitCode -ne 0)
       {
-        $arguments = "Exit code is not equal to the '0' instead it - {0}." -f $process.ExitCode
+        $arguments = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $process.ExitCode
         throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
       }
-    }
-    else
-    {
-      $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
-      Write-Warning -Message $message
-      Get-ChildItem -Path $build_directory -Recurse
+
+      $arguments = "--build {0} --config ${env:BUILD_TYPE} --parallel $env:NUMBER_OF_PROCESSORS" -f $build_directory
+      $process = Start-Process -FilePath "$cmake" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+      if ($process.ExitCode -ne 0)
+      {
+        $arguments = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $process.ExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+      }
+
+      cd $build_directory
+
+      $ant4c = Join-Path -ChildPath "ant4c.exe" -Path $build_directory
+      $process = Start-Process -FilePath "$ant4c" -NoNewWindow -Wait -PassThru
+
+      if ($process.ExitCode -ne 0)
+      {
+        $arguments = "Exit code of $ant4c is not equal to the '0' instead it - {0}." -f $process.ExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+      }
+
+      $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
+      $ant4c_tests = Join-Path -ChildPath "ant4c_tests.exe" -Path $build_directory
+
+      if (Test-Path -Path "$ant4c_tests")
+      {
+        $test_output = "$CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE-$make_number.xml"
+        $tests_exec_app_exe = Join-Path -ChildPath "tests_exec_app.exe" -Path $build_directory
+        $arguments = "--tests_xml={0} --tests_exec_app={1} --tests_base_directory={2} --gtest_output=""xml:{3}""" -f $tests_xml, $tests_exec_app_exe, ${env:CI_PROJECT_DIR}, $test_output
+        $process = Start-Process -FilePath "$ant4c_tests" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+        if ($process.ExitCode -ne 0)
+        {
+          $arguments = "Exit code of $ant4c_tests is not equal to the '0' instead it - {0}." -f $process.ExitCode
+          throw (New-Object -TypeName System.Exception -ArgumentList $arguments)
+        }
+      }
+      else
+      {
+        $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
+        Write-Warning -Message $message
+        Get-ChildItem -Path $build_directory -Recurse
+      }
+
+      $make_number = $make_number + 1
     }
 
   artifacts:
@@ -268,7 +259,7 @@ build_with_MinGW:
       - $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE
     when: always
     reports:
-      junit: $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE.xml
+      junit: $CI_PROJECT_DIR\build-MinGW-$BUILD_TYPE\report-MinGW-$BUILD_TYPE*.xml
 
   cache:
     key: windows-build-cache
@@ -285,19 +276,17 @@ build_on_unix_like:
       - BUILD_TYPE: [ Debug, Release ]
 
   script: |
-    cmake -E make_directory $CI_PROJECT_DIR/build-$BUILD_TYPE
-    cd $CI_PROJECT_DIR/build-$BUILD_TYPE
-
     if [ -n "$( echo $CI_RUNNER_TAGS | sed -n '/ubuntu/p')" ]; then
       git fetch origin ubuntu-latest
       git checkout origin/ubuntu-latest -- :\(top\)
-      cmake $CI_PROJECT_DIR -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DLIBRARY_BINARY_DIR=$CI_PROJECT_DIR/ubuntu-latest
+      cmake -S $CI_PROJECT_DIR -B $CI_PROJECT_DIR/build-$BUILD_TYPE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DLIBRARY_BINARY_DIR=$CI_PROJECT_DIR/ubuntu-latest -DPROGRAM_VERSION=$CI_COMMIT_TIMESTAMP
     else
-      cmake $CI_PROJECT_DIR -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      cmake -S $CI_PROJECT_DIR -B $CI_PROJECT_DIR/build-$BUILD_TYPE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPROGRAM_VERSION=$CI_COMMIT_TIMESTAMP
     fi
 
-    cmake --build . --config $BUILD_TYPE
+    cmake --build $CI_PROJECT_DIR/build-$BUILD_TYPE --config $BUILD_TYPE
 
+    cd $CI_PROJECT_DIR/build-$BUILD_TYPE
     if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c; fi
     if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests --tests_xml=$CI_PROJECT_DIR/tests.xml --tests_exec_app=$CI_PROJECT_DIR/build-$BUILD_TYPE/tests_exec_app --tests_base_directory=$CI_PROJECT_DIR --gtest_output="xml:$CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml"; fi
     if [ ! -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then echo "File '"$CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
@@ -307,5 +296,4 @@ build_on_unix_like:
       - $CI_PROJECT_DIR/build-$BUILD_TYPE
     when: always
     reports:
-      junit: report.xml
       junit: $CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml

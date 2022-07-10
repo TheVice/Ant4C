@@ -34,12 +34,14 @@ TEST_F(TestInterpreter, interpreter_disassemble_function)
 {
 	for (const auto& node : nodes)
 	{
-		const std::string input(node.node().select_node("input").node().child_value());
-		const std::string expected_name_space(node.node().select_node("name_space").node().child_value());
-		const std::string expected_name(node.node().select_node("name").node().child_value());
-		const std::string expected_arguments_area(node.node().select_node("arguments_area").node().child_value());
+		const auto the_node = node.node();
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string input(the_node.select_node("input").node().child_value());
+		const std::string expected_name_space(the_node.select_node("name_space").node().child_value());
+		const std::string expected_name(the_node.select_node("name").node().child_value());
+		const std::string expected_arguments_area(the_node.select_node("arguments_area").node().child_value());
+		//
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto input_in_a_range = string_to_range(return_str);
 		//
 		const auto expected_return =
@@ -76,10 +78,12 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 
 	for (const auto& node : nodes)
 	{
-		const std::string arguments(node.node().select_node("arguments").node().child_value());
-		auto expected_outputs = node.node().select_nodes("output");
+		const auto the_node = node.node();
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string arguments(the_node.select_node("arguments").node().child_value());
+		auto expected_outputs = the_node.select_nodes("output");
+		//
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto arguments_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(arguments_in_a_range.start, arguments_in_a_range.finish));
@@ -125,10 +129,12 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 
 	for (const auto& node : nodes)
 	{
-		const std::string code(get_data_from_nodes(node, "code"));
-		const auto expected_output(get_data_from_nodes(node, ("output")));
+		const auto the_node = node.node();
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string code(get_data_from_nodes(the_node, "code"));
+		const auto expected_output(get_data_from_nodes(the_node, "output"));
+		//
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto code_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(code_in_a_range.start, code_in_a_range.finish));
@@ -155,16 +161,18 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 {
 	for (const auto& node : nodes)
 	{
-		const std::string code(node.node().select_node("code").node().child_value());
+		const auto the_node = node.node();
+		//
+		const std::string code(the_node.select_node("code").node().child_value());
 		ASSERT_FALSE(code.empty());
 		//
-		auto doc = pugi::xml_document();
+		pugi::xml_document doc;
 		const auto result = doc.load_string(code.c_str());
 		ASSERT_EQ(pugi::xml_parse_status::status_ok, result.status) << code;
 		//
 		const std::string task_name(doc.first_child().name());
 		//
-		const std::string return_str(node.node().select_node("return").node().child_value());
+		const std::string return_str(the_node.select_node("return").node().child_value());
 		auto code_in_a_range = string_to_range(return_str);
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(code_in_a_range.start, code_in_a_range.finish));
@@ -172,7 +180,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		buffer the_project;
 		SET_NULL_TO_BUFFER(the_project);
 
-		if (node.node().attribute("project").as_bool())
+		if (the_node.attribute("project").as_bool())
 		{
 			ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
 		}
