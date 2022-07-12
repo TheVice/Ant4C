@@ -76,6 +76,7 @@ build_with_MSVC:
     }
 
     $tests_xml = Join-Path -ChildPath "tests.xml" -Path "${env:CI_PROJECT_DIR}"
+    cd $build_directory
 
     ForEach ($build_type in ("Debug", "Release"))
     {
@@ -86,8 +87,6 @@ build_with_MSVC:
         $message = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $LastExitCode
         throw (New-Object -TypeName System.Exception -ArgumentList $message)
       }
-
-      cd $build_directory
 
       $ant4c = Join-Path -ChildPath "$build_type\ant4c.exe" -Path $build_directory
       & "$ant4c"
@@ -113,26 +112,6 @@ build_with_MSVC:
 
         $test_output = "$CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc-$TargetPlatform-$build_type.xml"
         & "$ant4c_tests" --tests_xml=$tests_xml --tests_exec_app=$tests_exec_app_exe --tests_base_directory=${env:CI_PROJECT_DIR} --gtest_output=""xml:$test_output""
-
-        if ($LastExitCode -ne 0)
-        {
-          $message = "Exit code of $ant4c_tests is not equal to the '0' instead it - {0}." -f $LastExitCode
-          throw (New-Object -TypeName System.Exception -ArgumentList $message)
-        }
-      }
-      else
-      {
-        $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
-        Write-Warning -Message $message
-        Get-ChildItem -Path $build_directory -Recurse
-      }
-
-      $ant4c_tests = Join-Path -ChildPath "$build_type\tests_ant4c.net.framework.module.exe" -Path $build_directory
-
-      if (Test-Path -Path "$ant4c_tests")
-      {
-        $test_output = "$CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc-net.framework.module-$TargetPlatform-$build_type.xml"
-        & "$ant4c_tests" --gtest_output=""xml:$test_output""
 
         if ($LastExitCode -ne 0)
         {
@@ -297,3 +276,110 @@ build_on_unix_like:
     when: always
     reports:
       junit: $CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml
+
+ant4c.net.framework.module:
+
+  needs: [ find_cmake, build_with_MSVC ]
+
+  rules:
+    - changes:
+        - modules/ant4c.net.framework/**/*
+
+  tags:
+    - windows
+
+  parallel:
+    matrix:
+      - TargetPlatform: [ x64, Win32 ]
+
+  script: |
+    if (-not(Test-Path -Path .\cmake.env))
+    {
+      throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find .\cmake.env.")
+    }
+
+    $cmake = Get-Content -Path .\cmake.env -Raw
+
+    if (-not(Test-Path -Path $cmake))
+    {
+      throw (New-Object -TypeName System.IO.FileNotFoundException -ArgumentList "Could not find cmake at the location '$cmake'.")
+    }
+
+    Set-Alias -Name cmake -Value $cmake
+
+    git fetch origin windows-latest
+    git checkout origin/windows-latest -- .
+
+    $build_directory = Join-Path -ChildPath "build-msvc-$env:TargetPlatform" -Path "$env:CI_PROJECT_DIR"
+    $redist_directory = Join-Path -ChildPath "Redist" -Path "$build_directory"
+
+    cmake -S $env:CI_PROJECT_DIR -B $build_directory -A $env:TargetPlatform -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DPROGRAM_VERSION=$env:CI_COMMIT_TIMESTAMP -DCMAKE_INSTALL_PREFIX="$redist_directory"
+
+    if ($LastExitCode -ne 0)
+    {
+      $message = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $LastExitCode
+      throw (New-Object -TypeName System.Exception -ArgumentList $message)
+    }
+
+    ForEach ($build_type in ("Debug", "Release"))
+    {
+      cmake --build $build_directory --config $build_type --parallel $env:NUMBER_OF_PROCESSORS --target install
+
+      if ($LastExitCode -ne 0)
+      {
+        $message = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $LastExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $message)
+      }
+
+      $destination = "{0}_{1}" -f $redist_directory, $build_type
+      Move-Item -Path $redist_directory -Destination $destination
+    }
+
+    Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+
+    $source_directory = Join-Path -ChildPath "modules\ant4c.net.framework" -Path "$env:CI_PROJECT_DIR"
+    cmake -S "$source_directory" -B $build_directory -A $env:TargetPlatform -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$destination"
+    cd $build_directory
+
+    ForEach ($build_type in ("Debug", "Release"))
+    {
+      cmake --build $build_directory --config $build_type --parallel $env:NUMBER_OF_PROCESSORS
+
+      if ($LastExitCode -ne 0)
+      {
+        $message = "Exit code of $cmake is not equal to the '0' instead it - {0}." -f $LastExitCode
+        throw (New-Object -TypeName System.Exception -ArgumentList $message)
+      }
+
+      $ant4c_tests = Join-Path -ChildPath "$build_type\tests_ant4c.net.framework.module.exe" -Path $build_directory
+
+      if (Test-Path -Path "$ant4c_tests")
+      {
+        $test_output = "$CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc-net.framework.module-$TargetPlatform-$build_type.xml"
+        & "$ant4c_tests" --gtest_output=""xml:$test_output""
+
+        if ($LastExitCode -ne 0)
+        {
+          $message = "Exit code of $ant4c_tests is not equal to the '0' instead it - {0}." -f $LastExitCode
+          throw (New-Object -TypeName System.Exception -ArgumentList $message)
+        }
+      }
+      else
+      {
+        $message = "File '{0}' not exists. Tests will not run." -f $ant4c_tests
+        Write-Warning -Message $message
+        Get-ChildItem -Path $build_directory -Recurse
+      }
+    }
+
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR\build-msvc-$TargetPlatform
+    when: always
+    reports:
+      junit: $CI_PROJECT_DIR\build-msvc-$TargetPlatform\report-msvc*.xml
+
+  cache:
+    key: windows-build-cache
+    paths:
+    - cmake.env

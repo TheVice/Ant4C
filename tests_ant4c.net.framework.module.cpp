@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
@@ -323,11 +323,11 @@ TEST(TestLoadTasks_, ant4c_net_framework_module)
 	ASSERT_TRUE(path_get_directory_for_current_process(&path)) << buffer_free(&path);
 #ifndef NDEBUG
 	static const uint8_t* sub_path_to_module = reinterpret_cast<const uint8_t*>(
-				"modules\\ant4c.net.framework\\Debug\\ant4c.net.framework.module.dll");
+				"Debug\\ant4c.net.framework.module.dll");
 	static const uint8_t sub_path_to_module_length = 64;
 #else
 	static const uint8_t* sub_path_to_module = reinterpret_cast<const uint8_t*>(
-				"modules\\ant4c.net.framework\\Release\\ant4c.net.framework.module.dll");
+				"Release\\ant4c.net.framework.module.dll");
 	static const uint8_t sub_path_to_module_length = 66;
 #endif
 	ASSERT_TRUE(path_combine_in_place(

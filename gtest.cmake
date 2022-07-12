@@ -46,7 +46,6 @@ else()
 
   if(${GTest_FOUND})
     if(CMAKE_VERSION VERSION_EQUAL 3.20 OR CMAKE_VERSION VERSION_GREATER 3.20)
-    else()
       add_library(gtest INTERFACE)
       target_link_libraries(gtest INTERFACE GTest::GTest)
     endif()
@@ -64,7 +63,7 @@ else()
 
     set(BUILD_GMOCK OFF)
     set(INSTALL_GTEST OFF)
-    set(gtest_force_shared_crt ON) # CACHE BOOL "" FORCE)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     add_subdirectory(${gtest_Path} ${CMAKE_BINARY_DIR}/googletest)
 
     if(NOT MSVC)

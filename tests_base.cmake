@@ -1,21 +1,21 @@
 
-include("${CMAKE_SOURCE_DIR}/gtest.cmake")
-include("${CMAKE_SOURCE_DIR}/pugixml.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/gtest.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/pugixml.cmake")
 
 # tests_base
 
 set(TESTS_BASE_HEADERS
-  "${CMAKE_SOURCE_DIR}/tests_base_xml.h"
-  "${CMAKE_SOURCE_DIR}/tests_argument_parser.h")
+  "${CMAKE_CURRENT_LIST_DIR}/tests_base_xml.h"
+  "${CMAKE_CURRENT_LIST_DIR}/tests_argument_parser.h")
 
 add_library(tests_base STATIC
-  "${CMAKE_SOURCE_DIR}/tests.cmake"
-  "${CMAKE_SOURCE_DIR}/gtest.cmake"
-  "${CMAKE_SOURCE_DIR}/pugixml.cmake"
-  "${CMAKE_SOURCE_DIR}/tests_base.cmake"
-  "${CMAKE_SOURCE_DIR}/tests_base_xml.cpp"
-  "${CMAKE_SOURCE_DIR}/text_encoding.cpp"
-  "${CMAKE_SOURCE_DIR}/tests_argument_parser.get_properties.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/tests.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/gtest.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/pugixml.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/tests_base.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/tests_base_xml.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/text_encoding.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/tests_argument_parser.get_properties.cpp"
   ${TESTS_BASE_HEADERS})
 
 target_compile_options(tests_base PRIVATE
