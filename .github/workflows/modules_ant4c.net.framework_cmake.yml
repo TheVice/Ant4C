@@ -74,8 +74,8 @@ jobs:
             github.workspace, 'modules', 'ant4c.net.framework') }}
       EXECUTABLE: >-
         ${{ format(
-            startsWith(matrix.os, 'windows') && '{0}\{1}\{2}' || '{0}/{1}/{2}',
-              github.workspace,
+            startsWith(matrix.os, 'windows') && '{0}\{1}\{2}\{3}' || '{0}/{1}/{2}/{3}',
+              github.workspace, 'build',
               (matrix.optimized && 'Release' || 'Debug'),
               'tests_ant4c.net.framework.module.exe') }}
 
@@ -127,6 +127,7 @@ jobs:
         -S ${{ env.MODULE_SOURCE_DIRECTORY }}
         -B ${{ env.CMAKE_BUILD_DIR }}
         -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+        -DANT4C_PATH=${{ env.CMAKE_INSTALL_PREFIX }}
 
     - name: Build module
       run: >-
