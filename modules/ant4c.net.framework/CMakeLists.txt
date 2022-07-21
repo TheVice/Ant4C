@@ -34,13 +34,17 @@ if(MSVC)
   target_compile_options(framework_gate PRIVATE /W4)
   target_link_libraries(framework_gate PUBLIC Ant4C::ant4c)
 
+  if(NOT DEFINED NETFXSDK)
+    set(NETFXSDK "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8")
+  endif()
+
   if(MSVC_VERSION VERSION_LESS 1910)
-    target_include_directories(framework_gate PUBLIC SYSTEM "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8/Include/um")
+    target_include_directories(framework_gate PUBLIC SYSTEM "${NETFXSDK}/Include/um")
 
     if(CMAKE_CL_64)
-      target_link_directories(framework_gate INTERFACE SYSTEM "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8/Lib/um/x64")
+      target_link_directories(framework_gate INTERFACE SYSTEM "${NETFXSDK}/Lib/um/x64")
     else()
-      target_link_directories(framework_gate INTERFACE SYSTEM "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.8/Lib/um/x86")
+      target_link_directories(framework_gate INTERFACE SYSTEM "${NETFXSDK}/Lib/um/x86")
     endif()
   endif()
 

@@ -172,11 +172,11 @@ protected:
 	TestNetModule() : TestsBaseXml(), TestModule()
 	{
 #if defined(_WIN32)
-		paths.push_back("modules\\net\\ant4c.net.module.dll");
-		paths.push_back("modules\\net\\libant4c.net.module.dll");
+		paths.push_back("ant4c.net.module.dll");
+		paths.push_back("libant4c.net.module.dll");
 #else
-		paths.push_back("modules/net/libant4c.net.module.so");
-		paths.push_back("modules/net/libant4c.net.module.dylib");
+		paths.push_back("libant4c.net.module.so");
+		paths.push_back("libant4c.net.module.dylib");
 #endif
 	}
 
@@ -521,11 +521,11 @@ protected:
 	{
 		SET_NULL_TO_BUFFER(the_output);
 #if defined(_WIN32)
-		paths.push_back("modules\\net\\ant4c.net.module.dll");
-		paths.push_back("modules\\net\\libant4c.net.module.dll");
+		paths.push_back("ant4c.net.module.dll");
+		paths.push_back("libant4c.net.module.dll");
 #else
-		paths.push_back("modules/net/libant4c.net.module.so");
-		paths.push_back("modules/net/libant4c.net.module.dylib");
+		paths.push_back("libant4c.net.module.so");
+		paths.push_back("libant4c.net.module.dylib");
 #endif
 		predefine_arguments.insert(std::make_pair("--dotnet_root=", &dotnet_root));
 	}

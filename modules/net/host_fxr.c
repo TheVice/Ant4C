@@ -21,6 +21,9 @@
 
 #if defined(_WIN32)
 extern void* shared_object_load_wchar_t(const wchar_t* path);
+#define net_host_calling_convention __stdcall
+#else
+#define net_host_calling_convention
 #endif
 
 struct _paths
@@ -42,7 +45,8 @@ static struct _paths paths;
 		(PARAMETERS) = (const void*)&(PARAMETERS_OBJECT);										\
 	}
 
-typedef int32_t(*get_hostfxr_path_type)(type_of_element* output, size_t* output_size, const void* parameters);
+typedef int32_t(net_host_calling_convention* get_hostfxr_path_type)(
+	type_of_element* output, size_t* output_size, const void* parameters);
 
 uint8_t net_host_load(const type_of_element* path_to_net_host_library,
 					  const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root,
@@ -482,6 +486,8 @@ uint8_t host_fx_resolver_is_function_exists(
 
 uint8_t int_to_hex_and_byte_representation(int32_t code, struct buffer* output)
 {
+#define CODE_IN_STR_LENGTH 32
+
 	if (!output)
 	{
 		return 0;
@@ -489,18 +495,18 @@ uint8_t int_to_hex_and_byte_representation(int32_t code, struct buffer* output)
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, 32))
+	if (!buffer_append(output, NULL, CODE_IN_STR_LENGTH))
 	{
 		return 0;
 	}
 
-	char* ptr = (char*)buffer_data(output, size);
+	char* out = (char*)buffer_data(output, size);
 #if __STDC_LIB_EXT1__
-	code = sprintf_s(ptr, 32, "0x%x %i %i", code, code, code & 0xFF);
+	code = sprintf_s(out, CODE_IN_STR_LENGTH, "0x%x %i %i", code, code, code & 0xFF);
 #else
-	code = sprintf(ptr, "0x%x %i %i", code, code, code & 0xFF);
+	code = sprintf(out, "0x%x %i %i", code, code, code & 0xFF);
 #endif
-	return buffer_resize(output, size + code);
+	return buffer_resize(output, size + (ptrdiff_t)code);
 }
 
 uint8_t result_code_to_string(int32_t code, struct buffer* output)

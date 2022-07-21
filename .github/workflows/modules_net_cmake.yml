@@ -117,7 +117,7 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - name: Create project files
+    - name: Create project files (main project)
       run: >-
         cmake
         ${{ env.CMAKE_TARGET_PLATFORM }}
@@ -127,10 +127,33 @@ jobs:
         -B ${{ env.CMAKE_BUILD_DIR }}
         -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
         -DPROGRAM_VERSION="${{ github.event.repository.updated_at }}"
+        -DCMAKE_INSTALL_PREFIX=${{ env.CMAKE_BUILD_DIR }}/Redist
 
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
+
+    - name: Install redist
+      run: >-
+        cmake
+        --build ${{ env.CMAKE_BUILD_DIR }}
+        --config ${{ env.CMAKE_CONFIG_TYPE }}
+        --parallel ${{ steps.cpu-cores.outputs.count }}
+        --target install
+
+    - name: Deal with CMakeCache.txt
+      run: mv ${{ env.CMAKE_BUILD_DIR }}/CMakeCache.txt ${{ env.CMAKE_BUILD_DIR }}/CMakeCache.txt_
+
+    - name: Create project files (module)
+      run: >-
+        cmake
+        ${{ env.CMAKE_TARGET_PLATFORM }}
+        ${{ env.CMAKE_GENERATOR }}
+        ${{ env.CMAKE_BUILD_TYPE }}
+        -S ${{ github.workspace }}
+        -B ${{ env.CMAKE_BUILD_DIR }}
+        -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+        -DANT4C_PATH=${{ env.CMAKE_BUILD_DIR }}/Redist
 
     - name: Build
       run: >-
@@ -138,7 +161,6 @@ jobs:
         --build ${{ env.CMAKE_BUILD_DIR }}
         --config ${{ env.CMAKE_CONFIG_TYPE }}
         --parallel ${{ steps.cpu-cores.outputs.count }}
-        --target tests_net.module
 
     - name: Compress files with zstd
       shell: pwsh

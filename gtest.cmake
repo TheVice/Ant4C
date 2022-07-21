@@ -2,12 +2,8 @@
 if(DEFINED LIBRARY_BINARY_DIR)
   add_library(gtest INTERFACE)
 
-  if(CMAKE_VERSION VERSION_EQUAL 3.19 OR CMAKE_VERSION VERSION_GREATER 3.19)
-    file(REAL_PATH "${LIBRARY_BINARY_DIR}/../googletest/include" gtest_Path)
-    file(REAL_PATH "${LIBRARY_BINARY_DIR}" LIBRARY_BINARY_DIR)
-  else()
-    set(gtest_Path "${LIBRARY_BINARY_DIR}/../googletest/include")
-  endif()
+  file(TO_CMAKE_PATH "${LIBRARY_BINARY_DIR}/../googletest/include" gtest_Path)
+  file(TO_CMAKE_PATH "${LIBRARY_BINARY_DIR}" LIBRARY_BINARY_DIR)
 
   if(NOT IS_DIRECTORY "${gtest_Path}")
     message(FATAL_ERROR "gtest_Path '${gtest_Path}' is not a directory.")

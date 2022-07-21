@@ -2,12 +2,8 @@
 if(DEFINED LIBRARY_BINARY_DIR)
   add_library(pugixml INTERFACE)
 
-  if(CMAKE_VERSION VERSION_EQUAL 3.19 OR CMAKE_VERSION VERSION_GREATER 3.19)
-    file(REAL_PATH "${LIBRARY_BINARY_DIR}/../pugixml/src" pugixml_DIR)
-    file(REAL_PATH "${LIBRARY_BINARY_DIR}" LIBRARY_BINARY_DIR)
-  else()
-    set(pugixml_DIR "${LIBRARY_BINARY_DIR}/../pugixml/src")
-  endif()
+  file(TO_CMAKE_PATH "${LIBRARY_BINARY_DIR}/../pugixml/src" pugixml_DIR)
+  file(TO_CMAKE_PATH "${LIBRARY_BINARY_DIR}" LIBRARY_BINARY_DIR)
 
   if(NOT IS_DIRECTORY "${pugixml_DIR}")
     message(FATAL_ERROR "pugixml_DIR '${pugixml_DIR}' is not a directory.")

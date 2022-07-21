@@ -229,7 +229,7 @@ endif()
 
 install(
   TARGETS ant4c ant4c_app
-  EXPORT Ant4CTargets
+  EXPORT ant4cTargets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -238,41 +238,41 @@ install(
 )
 
 install(
-  EXPORT Ant4CTargets
-  FILE Ant4CTargets.cmake
+  EXPORT ant4cTargets
+  FILE ant4cTargets.cmake
   NAMESPACE Ant4C::
-  DESTINATION lib/cmake/Ant4C
+  DESTINATION lib/cmake/ant4c
 )
 
 file(
-  GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfig.cmake"
+  GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
   CONTENT
 "include(CMakeFindDependencyMacro)
-if(NOT MSVC)
-  find_dependency(dl)
-  find_dependency(m)
+if((NOT MSVC) AND (NOT MINGW))
+  #find_dependency(dl)
+  #find_dependency(m)
 endif()
-include(\"\${CMAKE_CURRENT_LIST_DIR}/Ant4CTargets.cmake\")"
+include(\"\${CMAKE_CURRENT_LIST_DIR}/ant4cTargets.cmake\")"
 )
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfig.cmake"
-  DESTINATION lib/cmake/Ant4C
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
+  DESTINATION lib/cmake/ant4c
 )
 
 if(DEFINED PROGRAM_VERSION)
   include(CMakePackageConfigHelpers)
 
   write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
     VERSION ${PROGRAM_VERSION}
     COMPATIBILITY SameMajorVersion
   )
 
   install(
     FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfigVersion.cmake"
-    DESTINATION lib/cmake/Ant4C
+    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
+    DESTINATION lib/cmake/ant4c
   )
 endif()
 

@@ -1,38 +1,120 @@
-
-image: gcc:latest
-
 pipelines:
   default:
     - parallel:
 
       - step:
-          name: Build Debug
+          name: Alpine
+          image: alpine:latest
           script:
-            - apt update && apt -y install libgtest-dev libpugixml-dev cmake
+            - apk update
+            - apk add alpine-sdk cmake gtest-dev pugixml-dev
+
+            - mkdir test-results
 
             - cmake -S . -B build_Debug -DCMAKE_BUILD_TYPE=Debug
             - cmake --build build_Debug --config Debug --parallel $(nproc)
 
             - cd build_Debug
             - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
-            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=..; fi
+            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Debug.xml"; fi
             - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
 
-          artifacts:
-            - build_Debug/*
-
-      - step:
-          name: Build Release
-          script:
-            - apt update && apt -y install libgtest-dev libpugixml-dev cmake
+            - cd ..
 
             - cmake -S . -B build_Release -DCMAKE_BUILD_TYPE=Release
             - cmake --build build_Release --config Release --parallel $(nproc)
 
             - cd build_Release
             - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
-            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=..; fi
+            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Release.xml"; fi
             - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
 
           artifacts:
-            - build_Release/*
+            - build*/*
+
+      - step:
+          name: gcc-latest
+          image: gcc:latest
+          script:
+            - apt update && apt -y install libgtest-dev libpugixml-dev cmake
+
+            - mkdir test-results
+
+            - cmake -S . -B build_Debug -DCMAKE_BUILD_TYPE=Debug
+            - cmake --build build_Debug --config Debug --parallel $(nproc)
+
+            - cd build_Debug
+            - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
+            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Debug.xml"; fi
+            - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
+
+            - cd ..
+
+            - cmake -S . -B build_Release -DCMAKE_BUILD_TYPE=Release
+            - cmake --build build_Release --config Release --parallel $(nproc)
+
+            - cd build_Release
+            - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
+            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Release.xml"; fi
+            - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
+
+          artifacts:
+            - build*/*
+
+      - step:
+          name: dotnet_sdk_6.0-jammy
+          image: mcr.microsoft.com/dotnet/sdk:6.0-jammy
+          script:
+            - apt update && apt -y install libgtest-dev libpugixml-dev cmake make gcc g++
+
+            - dotnet_root=/usr/share/dotnet
+            - tests_xml=$PWD/tests.xml
+            - source_directory=$PWD/modules/net
+            - build_file=$source_directory/net.xml
+
+            - mkdir test-results
+
+            - build_directory=$PWD/build_Debug
+            - redist_directory=$build_directory/Redist
+
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$redist_directory
+            - cmake --build $build_directory --config Debug --parallel $(nproc)
+            - cmake --build $build_directory --config Debug --parallel $(nproc) --target install
+
+            - mv $build_directory/CMakeCache.txt $build_directory/CMakeCache.txt_
+
+            - cmake -S $source_directory -B $build_directory -DCMAKE_BUILD_TYPE=Debug -DANT4C_PATH=$redist_directory
+            - cmake --build $build_directory --config Debug --parallel $(nproc)
+
+            - cd $build_directory
+
+            # export COREHOST_TRACE="1"
+            - test_output=../test-results/report-net.module-Debug.xml
+            # export COREHOST_TRACEFILE="$test_output.txt"
+
+            - ./tests_ant4c.net.module --tests_xml="$tests_xml" --build_file="$build_file" --dotnet_root="$dotnet_root" --gtest_output=""xml:$test_output""
+
+            - cd ..
+
+            - build_directory=$PWD/build_Release
+            - redist_directory=$build_directory/Redist
+
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$redist_directory
+            - cmake --build $build_directory --config Release --parallel $(nproc)
+            - cmake --build $build_directory --config Release --parallel $(nproc) --target install
+
+            - mv $build_directory/CMakeCache.txt $build_directory/CMakeCache.txt_
+
+            - cmake -S $source_directory -B $build_directory -DCMAKE_BUILD_TYPE=Release -DANT4C_PATH=$redist_directory
+            - cmake --build $build_directory --config Release --parallel $(nproc)
+
+            - cd $build_directory
+
+            # export COREHOST_TRACE="1"
+            - test_output=../test-results/report-net.module-Release.xml
+            # export COREHOST_TRACEFILE="$test_output.txt"
+
+            - ./tests_ant4c.net.module --tests_xml="$tests_xml" --build_file="$build_file" --dotnet_root="$dotnet_root" --gtest_output=""xml:$test_output""
+
+          artifacts:
+            - build*/*
