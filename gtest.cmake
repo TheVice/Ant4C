@@ -55,7 +55,7 @@ else()
       message(FATAL_ERROR "GTEST_PATH not set. Please check it at https://github.com/google/googletest/releases")
     endif()
 
-    set(BUILD_GMOCK OFF)
+    set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
     set(INSTALL_GTEST OFF)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     add_subdirectory(${gtest_Path} ${CMAKE_BINARY_DIR}/googletest)

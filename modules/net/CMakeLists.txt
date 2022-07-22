@@ -91,7 +91,8 @@ include("${CMAKE_SOURCE_DIR}/../../tests_base.cmake")
 
 # tests_ant4c.net.module
 add_executable(tests_ant4c.net.module
-  "${CMAKE_SOURCE_DIR}/../../tests_net.module.cpp")
+  "${CMAKE_SOURCE_DIR}/../../tests_net.module.cpp"
+  "${CMAKE_SOURCE_DIR}/net.xml")
 
 target_compile_options(tests_ant4c.net.module PRIVATE
   $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
@@ -101,6 +102,23 @@ target_compile_options(tests_ant4c.net.module PRIVATE
 target_link_libraries(tests_ant4c.net.module
   Ant4C::net_gate
   tests_base)
+
+if(NOT MSVC)
+  if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
+  target_compile_features(tests_ant4c.net.module
+    PRIVATE
+    cxx_std_11
+  )
+  else()
+  set_property(TARGET tests_ant4c.net.module PROPERTY CXX_STANDARD 11)
+  endif()
+endif()
+
+add_custom_command(TARGET tests_ant4c.net.module POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/../../tests.xml")
+
+add_custom_command(TARGET tests_ant4c.net.module POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Path to build_file is - ${CMAKE_SOURCE_DIR}/net.xml")
 
 add_dependencies(tests_ant4c.net.module
   Ant4C::ant4c.net.module)
