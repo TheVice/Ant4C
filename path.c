@@ -55,10 +55,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef L_tmpnam_s
-#define L_tmpnam_s L_tmpnam
-#endif
-
 static const uint8_t point = '.';
 #if defined(_WIN32)
 static const uint8_t colon_mark = ':';
@@ -655,7 +651,24 @@ uint8_t path_get_path_root(
 	return 0;
 #endif
 }
+#if defined(_WIN32)
+DWORD path_get_temp_path_wchar_t(DWORD length, wchar_t* temp_path)
+{
+#if defined(NTDDI_VERSION) && defined(NTDDI_WIN10_FE) && (NTDDI_VERSION >= NTDDI_WIN10_FE)
+#define GET_TEMP_PATH GetTempPath2W
+#else
+#define GET_TEMP_PATH GetTempPathW
+#endif
 
+	if (length < 1 || !temp_path)
+	{
+		wchar_t pathW[2];
+		return GET_TEMP_PATH(sizeof(wchar_t), pathW);
+	}
+
+	return GET_TEMP_PATH(length, temp_path);
+}
+#endif
 uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 {
 	if (NULL == temp_file_name)
@@ -683,140 +696,49 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 	close(fd);
 	return buffer_resize(temp_file_name, buffer_size(temp_file_name) - 1);
 #else
+	DWORD length = path_get_temp_path_wchar_t(0, NULL);
 
-	if (!buffer_append_char(temp_file_name, NULL, L_tmpnam_s))
+	if (length < sizeof(wchar_t) + 1)
 	{
 		return 0;
 	}
 
-	uint8_t* temp_file_path = buffer_data(temp_file_name, size);
-#if __STDC_LIB_EXT1__
+	length += FILENAME_MAX;
 
-	if (0 != tmpnam_s((char*)temp_file_path, L_tmpnam_s))
+	if (!buffer_append(temp_file_name, NULL, (ptrdiff_t)4 * length + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-#else
-	tmpnam((char*)temp_file_path);
-#endif
-	ptrdiff_t length = common_count_bytes_until(temp_file_path, 0);
-	const uint8_t* temp_file_path_finish = temp_file_path + length;
+	wchar_t* path_name = (wchar_t*)buffer_data(temp_file_name,
+						 buffer_size(temp_file_name) - sizeof(uint32_t) - sizeof(wchar_t) * length);
+	wchar_t* temp_file_name_ = (wchar_t*)buffer_data(temp_file_name,
+							   buffer_size(temp_file_name) - sizeof(uint32_t) - sizeof(wchar_t) * (FILENAME_MAX + 1));
+	length = path_get_temp_path_wchar_t(length, path_name);
 
-	if (length < 1)
+	if (length < sizeof(wchar_t) + 1)
 	{
 		return 0;
 	}
 
-	if (string_ends_with(
-			temp_file_path, temp_file_path_finish,
-			&point, &point + 1))
-	{
-		uint32_t char_set;
-		const uint8_t* pos = string_find_any_symbol_like_or_not_like_that(
-								 temp_file_path_finish, temp_file_path,
-								 &point, &point + 1, 0, -1);
+	wchar_t* prefix_string = L"file";
+	static const UINT unique = 0;
 
-		if (pos == temp_file_path)
-		{
-			return 0;
-		}
-
-		if (!string_enumerate(pos, temp_file_path_finish, &char_set))
-		{
-			return 0;
-		}
-
-		if (PATH_DELIMITER == char_set)
-		{
-			return 0;
-		}
-
-		pos = string_enumerate(pos, temp_file_path_finish, NULL);
-
-		if (NULL == pos)
-		{
-			return 0;
-		}
-
-		length = pos - temp_file_path;
-	}
-
-	uint8_t is_path_rooted;
-
-	if (!path_is_path_rooted(temp_file_path, temp_file_path + length, &is_path_rooted))
+	if (unique == GetTempFileNameW(path_name, prefix_string, unique, temp_file_name_))
 	{
 		return 0;
 	}
 
-	if (is_path_rooted)
-	{
-		if (!buffer_resize(temp_file_name, size + length) ||
-			!buffer_push_back(temp_file_name, 0))
-		{
-			return 0;
-		}
-
-		return buffer_resize(temp_file_name, size + length);
-	}
-
-	const ptrdiff_t temp_path_start = buffer_size(temp_file_name);
-
-	if (!path_get_temp_path(temp_file_name))
-	{
-		return 0;
-	}
-
-	const ptrdiff_t temp_path_finish = buffer_size(temp_file_name);
-
-	if (!buffer_append(temp_file_name, NULL, (ptrdiff_t)2 + temp_path_finish - size))
-	{
-		return 0;
-	}
-
-	const uint8_t* temp_path = buffer_data(temp_file_name, temp_path_start);
-	const uint8_t* temp_path_ = buffer_data(temp_file_name, temp_path_finish);
-	temp_file_path = buffer_data(temp_file_name, size);
-
-	if (!buffer_resize(temp_file_name, temp_path_finish) ||
-		!path_combine(
-			temp_path, temp_path_,
-			temp_file_path, temp_file_path + length,
-			temp_file_name))
-	{
-		return 0;
-	}
-
-	length = buffer_size(temp_file_name) - temp_path_finish;
-#if __STDC_LIB_EXT1__
-
-	if (0 != memcpy_s(temp_file_path, length, temp_path_, length))
-	{
-		return 0;
-	}
-
-#else
-	memcpy(temp_file_path, temp_path_, length);
-#endif
-
-	if (!buffer_resize(temp_file_name, size + length) ||
-		!buffer_push_back(temp_file_name, 0))
-	{
-		return 0;
-	}
-
-	return buffer_resize(temp_file_name, size + length);
+	path_name = temp_file_name_ + wcslen(temp_file_name_) + 1;
+	/**/
+	return buffer_resize(temp_file_name, size) &&
+		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)temp_file_name_, (const uint16_t*)path_name, temp_file_name) &&
+		   buffer_resize(temp_file_name, buffer_size(temp_file_name) - 1);
 #endif
 }
 
 uint8_t path_get_temp_path(struct buffer* temp_path)
 {
-#if defined(NTDDI_VERSION) && defined(NTDDI_WIN10_FE) && (NTDDI_VERSION >= NTDDI_WIN10_FE)
-#define GET_TEMP_PATH GetTempPath2W
-#else
-#define GET_TEMP_PATH GetTempPathW
-#endif
-
 	if (NULL == temp_path)
 	{
 		return 0;
@@ -824,30 +746,22 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 
 	const ptrdiff_t size = buffer_size(temp_path);
 #if defined(_WIN32)
-
-	if (!buffer_append(temp_path, NULL, (ptrdiff_t)4 * FILENAME_MAX + sizeof(uint32_t)))
-	{
-		return 0;
-	}
-
-	wchar_t* pathW = (wchar_t*)buffer_data(temp_path, size + sizeof(uint32_t));
-	DWORD length = GET_TEMP_PATH(sizeof(wchar_t), pathW);
+	DWORD length = path_get_temp_path_wchar_t(0, NULL);
 
 	if (length < sizeof(wchar_t) + 1)
 	{
 		return 0;
 	}
 
-	if (!buffer_resize(temp_path, size) ||
-		!buffer_append(temp_path, NULL, (ptrdiff_t)4 * length + sizeof(uint32_t)))
+	if (!buffer_append(temp_path, NULL, (ptrdiff_t)4 * length + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	pathW = (wchar_t*)buffer_data(temp_path,
-								  buffer_size(temp_path) - sizeof(uint32_t) - sizeof(wchar_t) * length);
+	wchar_t* pathW = (wchar_t*)buffer_data(temp_path,
+										   buffer_size(temp_path) - sizeof(uint32_t) - sizeof(wchar_t) * length);
 	const wchar_t* finishW = pathW + length;
-	length = GET_TEMP_PATH(length, pathW);
+	length = path_get_temp_path_wchar_t(length, pathW);
 	wchar_t* startW = pathW + length;
 
 	if (finishW < startW)

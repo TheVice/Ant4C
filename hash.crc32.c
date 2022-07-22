@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2020, 2022 TheVice
  *
  */
 
@@ -16,18 +16,12 @@
 
 #include <stddef.h>
 
-uint8_t hash_algorithm_crc32_init(uint32_t* output)
+uint8_t hash_algorithm_crc32_init(uint8_t* output)
 {
-	if (NULL == output)
-	{
-		return 0;
-	}
-
-	(*output) = UINT32_MAX;
-	return 1;
+	return hash_algorithm_uint32_t_to_uint8_t_array(UINT32_MAX, output);
 }
 
-uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, uint32_t* output)
+uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, uint8_t* output)
 {
 	if (NULL == start ||
 		NULL == finish ||
@@ -104,32 +98,48 @@ uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, u
 		0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 		0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 	};
+	/**/
+	uint32_t out;
+
+	if (!hash_algorithm_uint8_t_array_to_uint32_t(output, output + sizeof(uint32_t), &out))
+	{
+		return 0;
+	}
 
 	for (; start < finish; ++start)
 	{
-		const uint8_t index = ((*output) ^ (*start)) & 0xFF;
-		(*output) = ((*output) >> 8) ^ table[index];
+		out = (out >> sizeof(uint64_t)) ^ table[((out ^ (*start)) & 0xFF)];
 	}
 
-	return 1;
+	return hash_algorithm_uint32_t_to_uint8_t_array(out, output);
 }
 
-uint8_t hash_algorithm_crc32_final(uint32_t* output, uint8_t order)
+uint8_t hash_algorithm_crc32_final(uint8_t* output, uint8_t order)
 {
 	if (NULL == output)
 	{
 		return 0;
 	}
 
-	(*output) = (*output) ^ UINT32_MAX;
+	uint32_t out;
 
-	if (!order && 0 < (*output))
+	if (!hash_algorithm_uint8_t_array_to_uint32_t(output, output + sizeof(uint32_t), &out))
 	{
-		uint8_t* ptr = (uint8_t*)output;
+		return 0;
+	}
 
-		for (uint8_t i = 0, count = sizeof(uint32_t) / 2, max = sizeof(uint32_t) - 1; i < count; ++i)
+	out ^= UINT32_MAX;
+
+	if (!hash_algorithm_uint32_t_to_uint8_t_array(out, output))
+	{
+		return 0;
+	}
+
+	if (!order && 0 < out)
+	{
+		for (uint8_t i = 0, count = sizeof(uint16_t), max = sizeof(uint32_t) - 1; i < count; ++i)
 		{
-			XCHG(ptr[i], ptr[max - i]);
+			XCHG(output[i], output[max - i]);
 		}
 	}
 
@@ -137,7 +147,7 @@ uint8_t hash_algorithm_crc32_final(uint32_t* output, uint8_t order)
 }
 
 uint8_t hash_algorithm_crc32(
-	const uint8_t* start, const uint8_t* finish, uint32_t* output, uint8_t order)
+	const uint8_t* start, const uint8_t* finish, uint8_t* output, uint8_t order)
 {
 	if (!hash_algorithm_crc32_init(output))
 	{

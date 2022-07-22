@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -624,20 +624,14 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 
 	if (buffer_size(date_time_in_buffer))
 	{
-		if (!datetime_parse_buffer(date_time_in_buffer))
+		struct range date_time_in_a_range;
+		date_time_in_a_range.start = buffer_data(date_time_in_buffer, 0);
+		date_time_in_a_range.finish = date_time_in_a_range.start + buffer_size(date_time_in_buffer);
+
+		if (!datetime_parse_range(&date_time_in_a_range, &seconds))
 		{
 			return 0;
 		}
-
-		seconds = buffer_size(date_time_in_buffer);
-		seconds -= sizeof(int64_t);
-
-		if (seconds < 1)
-		{
-			return 0;
-		}
-
-		seconds = *(const int64_t*)buffer_data(date_time_in_buffer, (ptrdiff_t)seconds);
 	}
 	else if (buffer_size(millis_in_buffer))
 	{

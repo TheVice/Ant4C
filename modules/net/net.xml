@@ -47,6 +47,9 @@
       </when>
       <when test="${platform::is-windows()}">
         <property name="net_host_folder"
+                  value="${path::combine(net_host_folder, 'Microsoft.NETCore.App.Host.win-x86')}" />
+        <property if="${environment::is64bit-process()}"
+                  name="net_host_folder"
                   value="${path::combine(net_host_folder, 'Microsoft.NETCore.App.Host.win-x64')}" />
       </when>
     </choose>
@@ -62,7 +65,9 @@
       <property name="nethost_file_name" value="libnethost.so" overwrite="false" />
     </when>
     <when test="${platform::is-windows()}">
-      <property name="sub_folder" value="runtimes\win-x64\native" overwrite="false" />
+      <property name="sub_folder" value="runtimes\win-x64\native"
+                if="${environment::is64bit-process()}" overwrite="false" />
+      <property name="sub_folder" value="runtimes\win-x86\native" overwrite="false" />
       <property name="nethost_file_name" value="nethost.dll" overwrite="false" />
     </when>
   </choose>

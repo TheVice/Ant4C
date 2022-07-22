@@ -8,47 +8,8 @@ project("Ant4C")
 
 include("${CMAKE_SOURCE_DIR}/common.cmake")
 
-if(CMAKE_VERSION VERSION_LESS 3.0)
-if(DEFINED ENV{CFLAGS})
-  list(APPEND CMAKE_C_FLAGS $ENV{CFLAGS})
-endif()
-
-if(DEFINED ENV{CPPFLAGS})
-  list(APPEND CMAKE_CXX_FLAGS $ENV{CPPFLAGS})
-endif()
-
-if(DEFINED ENV{CXXFLAGS})
-  list(APPEND CMAKE_CXX_FLAGS $ENV{CXXFLAGS})
-endif()
-
-if(DEFINED ENV{LDFLAGS})
-  list(APPEND LINK_FLAGS $ENV{LDFLAGS})
-endif()
-
-if(DEFINED CFLAGS)
-  list(APPEND CMAKE_C_FLAGS ${CFLAGS})
-endif()
-
-if(DEFINED CPPFLAGS)
-  list(APPEND CMAKE_CXX_FLAGS ${CPPFLAGS})
-endif()
-
-if(DEFINED CXXFLAGS)
-  list(APPEND CMAKE_CXX_FLAGS ${CXXFLAGS})
-endif()
-
-if(DEFINED LDFLAGS)
-  list(APPEND LINK_FLAGS ${LDFLAGS})
-endif()
-
-string(REPLACE ";" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-string(REPLACE ";" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-string(REPLACE ";" "" LINK_FLAGS "${LINK_FLAGS}")
-endif()
-
-if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
+append_to_flags_from_outside()
+set_position_independent_code()
 
 find_library(DL_LIB dl)
 find_library(M_LIB m)
@@ -89,6 +50,7 @@ set(
   "${CMAKE_SOURCE_DIR}/interpreter.environment.c"
   "${CMAKE_SOURCE_DIR}/interpreter.exec.c"
   "${CMAKE_SOURCE_DIR}/interpreter.file_system.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.hash.c"
   "${CMAKE_SOURCE_DIR}/interpreter.operating_system.c"
   "${CMAKE_SOURCE_DIR}/interpreter.path.c"
   "${CMAKE_SOURCE_DIR}/interpreter.sleep_unit.c"
@@ -180,9 +142,9 @@ target_link_libraries(ant4c INTERFACE ${DL_LIB} ${M_LIB})
 add_library(Ant4C::ant4c ALIAS ant4c)
 
 # ant4c_shared
-
+if(BUILD_SHARED)
 add_library(ant4c_shared SHARED ${ANT4C_SOURCES} ${ANT4C_HEADERS})
-#set_target_properties(ant4c_shared PROPERTIES PUBLIC_HEADER ${ANT4C_HEADERS})
+# set_target_properties(ant4c_shared PROPERTIES PUBLIC_HEADER ${ANT4C_HEADERS})
 
 set_property(TARGET ant4c_shared APPEND PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/ant4c_shared")
 set_property(TARGET ant4c_shared APPEND PROPERTY LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/ant4c_shared")
@@ -209,7 +171,7 @@ target_link_libraries(ant4c_shared
 )
 
 add_library(Ant4C::ant4c_shared ALIAS ant4c_shared)
-
+endif()
 # ant4c_app
 
 add_executable(
@@ -244,16 +206,16 @@ target_compile_options(ant4c_app PRIVATE
 
 add_executable(Ant4C::ant4c_app ALIAS ant4c_app)
 
-# Set program version
+# Set ant4c version
 
 if(DEFINED PROGRAM_VERSION)
   get_compiler_version()
   target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
   target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
-  target_compile_definitions(ant4c_shared PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
+  # target_compile_definitions(ant4c_shared PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
 endif()
 
-# install
+# Install ant4c
 
 if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
   set(CMAKE_INSTALL_LIBDIR lib)
@@ -266,8 +228,8 @@ if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
 endif()
 
 install(
-  TARGETS ant4c ant4c_shared ant4c_app
-  EXPORT Ant4CTargets
+  TARGETS ant4c ant4c_app
+  EXPORT ant4cTargets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -276,54 +238,45 @@ install(
 )
 
 install(
-  EXPORT Ant4CTargets
-  FILE Ant4CTargets.cmake
+  EXPORT ant4cTargets
+  FILE ant4cTargets.cmake
   NAMESPACE Ant4C::
-  DESTINATION lib/cmake/Ant4C
+  DESTINATION lib/cmake/ant4c
 )
 
 file(
-  GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfig.cmake"
+  GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
   CONTENT
 "include(CMakeFindDependencyMacro)
-if(NOT MSVC)
-find_dependency(dl)
-find_dependency(m)
+if((NOT MSVC) AND (NOT MINGW))
+  #find_dependency(dl)
+  #find_dependency(m)
 endif()
-include(\"\${CMAKE_CURRENT_LIST_DIR}/Ant4CTargets.cmake\")"
+include(\"\${CMAKE_CURRENT_LIST_DIR}/ant4cTargets.cmake\")"
 )
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfig.cmake"
-  DESTINATION lib/cmake/Ant4C
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
+  DESTINATION lib/cmake/ant4c
 )
 
 if(DEFINED PROGRAM_VERSION)
   include(CMakePackageConfigHelpers)
 
   write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
     VERSION ${PROGRAM_VERSION}
     COMPATIBILITY SameMajorVersion
   )
 
   install(
     FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/Ant4CConfigVersion.cmake"
-    DESTINATION lib/cmake/Ant4C
+    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
+    DESTINATION lib/cmake/ant4c
   )
 endif()
 
-# Modules
-
-add_subdirectory("${CMAKE_SOURCE_DIR}/modules/ant4c.net.framework")
-
-if(DEFINED USE_BOOST)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/modules/dns")
-  add_subdirectory("${CMAKE_SOURCE_DIR}/modules/regex")
-endif()
-
-add_subdirectory("${CMAKE_SOURCE_DIR}/modules/net")
+# Example module
 
 include("${CMAKE_SOURCE_DIR}/modules/example.cmake")
 

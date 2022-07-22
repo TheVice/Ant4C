@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -18,12 +18,11 @@
 static struct buffer pool;
 static uint8_t is_pool_init = 0;
 
+#define CAPACITY_TYPE ptrdiff_t
 #if defined(_WIN64) || defined(__amd64) || defined(__x86_64)
-#define CAPACITY_TYPE uint32_t
-static const uint32_t maximum_capacity = (uint32_t)(INT32_MAX) + (uint32_t)1;
+static const CAPACITY_TYPE maximum_capacity = (CAPACITY_TYPE)(INT32_MAX) + 1;
 #else
-#define CAPACITY_TYPE int32_t
-static const int32_t maximum_capacity = 1073741824;
+static const CAPACITY_TYPE maximum_capacity = 1073741824;
 #endif
 
 CAPACITY_TYPE get_capacity(ptrdiff_t size)

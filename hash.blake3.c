@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
@@ -135,7 +135,7 @@ uint8_t BLAKE3_compress_XOF(uint32_t* h, const uint32_t* m, const uint32_t* t, u
 	return 1;
 }
 
-uint8_t BLAKE3_hash_input(uint8_t d, const uint8_t* input, const uint32_t* t, uint8_t* h)
+uint8_t BLAKE3_hash_input(uint8_t d, const uint32_t* m, const uint32_t* t, uint32_t* h)
 {
 #if __STDC_LIB_EXT1__
 
@@ -157,14 +157,13 @@ uint8_t BLAKE3_hash_input(uint8_t d, const uint8_t* input, const uint32_t* t, ui
 			domain_flags |= CHUNK_END;
 		}
 
-		if (!BLAKE3_compress_XOF((uint32_t*)h, (const uint32_t*)input, t, BLAKE3_BLOCK_LENGTH, domain_flags,
-								 NULL))
+		if (!BLAKE3_compress_XOF(h, m, t, BLAKE3_BLOCK_LENGTH, domain_flags, NULL))
 		{
 			return 0;
 		}
 
-		input += BLAKE3_BLOCK_LENGTH;
-		count_of_blocks -= 1;
+		m += BLAKE3_BLOCK_LENGTH / sizeof(uint32_t);
+		--count_of_blocks;
 		domain_flags = d;
 	}
 
@@ -172,16 +171,23 @@ uint8_t BLAKE3_hash_input(uint8_t d, const uint8_t* input, const uint32_t* t, ui
 }
 
 uint8_t BLAKE3_hash_inputs(uint8_t d, const uint8_t** inputs, uint8_t count_of_inputs, const uint32_t* t,
-						   uint8_t* output)
+						   uint32_t* h)
 {
 	uint64_t index = 0;
 	uint32_t counter[2];
 	counter[0] = t[0];
 	counter[1] = t[1];
+	uint32_t m[BLAKE3_CHUNK_LENGTH / sizeof(uint32_t)];
 
 	while (0 < count_of_inputs)
 	{
-		if (!BLAKE3_hash_input(d, inputs[index], counter, output + index * BLAKE3_OUTPUT_LENGTH))
+		if (!hash_algorithm_uint8_t_array_to_uint32_t_array(inputs[index], BLAKE3_CHUNK_LENGTH, m))
+		{
+			return 0;
+		}
+
+		if (!BLAKE3_hash_input(d, m, counter,
+							   h + index * (BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t))))
 		{
 			return 0;
 		}
@@ -261,21 +267,28 @@ uint8_t BLAKE3_update_chunk_data(
 				return 0;
 			}
 
-			(*compressed) += 1;
-			(*l) = 0;
+			*compressed += 1;
+			*l = 0;
 			memset(m, 0, BLAKE3_BLOCK_LENGTH);
 		}
 	}
 
+	uint32_t m_[BLAKE3_BLOCK_LENGTH / sizeof(uint32_t)];
+
 	while (BLAKE3_BLOCK_LENGTH < length)
 	{
-		if (!BLAKE3_compress_XOF(h, (const uint32_t*)(input + index), t, BLAKE3_BLOCK_LENGTH,
+		if (!hash_algorithm_uint8_t_array_to_uint32_t_array(input + index, BLAKE3_BLOCK_LENGTH, m_))
+		{
+			return 0;
+		}
+
+		if (!BLAKE3_compress_XOF(h, m_, t, BLAKE3_BLOCK_LENGTH,
 								 d | (0 < (*compressed) ? 0 : CHUNK_START), NULL))
 		{
 			return 0;
 		}
 
-		(*compressed) += 1;
+		*compressed += 1;
 		index += BLAKE3_BLOCK_LENGTH;
 		length -= BLAKE3_BLOCK_LENGTH;
 	}
@@ -327,14 +340,21 @@ uint8_t population_count(const uint8_t* input, uint8_t size)
 
 uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t d)
 {
-	const uint8_t population = population_count((const uint8_t*)t, sizeof(uint32_t));
-	/*uint32_t* h = (uint32_t*)(stack + ((BLAKE3_STACK_LENGTH - 1) * BLAKE3_OUTPUT_LENGTH));*/
+	uint8_t t_[sizeof(uint32_t)];
+
+	if (!hash_algorithm_uint32_t_to_uint8_t_array(t[0], t_))
+	{
+		return 0;
+	}
+
+	const uint8_t population = population_count(t_, sizeof(uint32_t));
 	uint32_t h[BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)];
+	uint32_t m[BLAKE3_BLOCK_LENGTH / sizeof(uint32_t)];
 
 	while ((*stack_length) > population)
 	{
 		static const uint32_t local_t[] = { 0, 0 };
-		uint32_t* m = (uint32_t*)(stack + ((uint64_t)((*stack_length) - 2) * BLAKE3_OUTPUT_LENGTH));
+		uint8_t* stack_ptr = stack + ((uint64_t)((*stack_length) - 2) * BLAKE3_OUTPUT_LENGTH);
 #if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
@@ -346,6 +366,11 @@ uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t 
 		memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
 #endif
 
+		if (!hash_algorithm_uint8_t_array_to_uint32_t_array(stack_ptr, BLAKE3_BLOCK_LENGTH, m))
+		{
+			return 0;
+		}
+
 		if (!BLAKE3_compress_XOF(h, m, local_t, BLAKE3_BLOCK_LENGTH, d | PARENT, NULL))
 		{
 			return 0;
@@ -353,13 +378,13 @@ uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t 
 
 #if __STDC_LIB_EXT1__
 
-		if (0 != memcpy_s(m, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
+		if (0 != memcpy_s(stack_ptr, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
 		{
 			return 0;
 		}
 
 #else
-		memcpy(m, h, BLAKE3_OUTPUT_LENGTH);
+		memcpy(stack_ptr, h, BLAKE3_OUTPUT_LENGTH);
 #endif
 		--(*stack_length);
 	}
@@ -388,57 +413,11 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 
 		length -= to_process;
 		return 0 == length;
-#if 0
-
-		/*NOTE: Requested test case for commented code, if such even exists.*/
-		if (0 == length)
-		{
-			return 1;
-		}
-
-		input += to_process;
-		const uint8_t domain_flags = d | (0 < (*compressed) ? 0 : CHUNK_START) | CHUNK_END;
-
-		if (!BLAKE3_compress(h, m, t, (*l), domain_flags, NULL))
-		{
-			return 0;
-		}
-
-		if (!MERGE(stack, stack_length, t, d))
-		{
-			return 0;
-		}
-
-		if ((BLAKE3_STACK_LENGTH) == *stack_length)
-		{
-			return 0;
-		}
-
-#if __STDC_LIB_EXT1__
-		PUSH_CHUNK_TO_STACK_SEC(h, stack, *stack_length);
-#else
-		PUSH_CHUNK_TO_STACK(h, stack, *stack_length);
-#endif
-#if __STDC_LIB_EXT1__
-
-		if (0 != memcpy_s(h, BLAKE3_OUTPUT_LENGTH, IV, BLAKE3_OUTPUT_LENGTH))
-		{
-			return 0;
-		}
-
-#else
-		memcpy(h, IV, BLAKE3_OUTPUT_LENGTH);
-#endif
-		t[0] += 1;
-		(*compressed) = 0;
-		memset(m, 0, BLAKE3_BLOCK_LENGTH);
-		(*l) = 0;
-#endif
 	}
 
 	uint8_t number_of_chunks = 0;
 	const uint8_t* chunks[BLAKE3_MAXIMUM_CHUNKS_COUNT];
-	uint8_t output[BLAKE3_OUTPUT_LENGTH * BLAKE3_MAXIMUM_CHUNKS_COUNT];
+	uint32_t output[(BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)) * BLAKE3_MAXIMUM_CHUNKS_COUNT];
 
 	while (BLAKE3_CHUNK_LENGTH <= length)
 	{
@@ -468,9 +447,9 @@ uint8_t BLAKE3_core(const uint8_t* input, uint64_t length, uint32_t* m, uint8_t*
 			}
 
 #if __STDC_LIB_EXT1__
-			PUSH_CHUNK_TO_STACK_SEC(output + index * BLAKE3_OUTPUT_LENGTH, stack, *stack_length);
+			PUSH_CHUNK_TO_STACK_SEC(output + index * (BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)), stack, *stack_length);
 #else
-			PUSH_CHUNK_TO_STACK(output + index * BLAKE3_OUTPUT_LENGTH, stack, *stack_length);
+			PUSH_CHUNK_TO_STACK(output + index * (BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)), stack, *stack_length);
 #endif
 			t[0] += 1;
 		}
@@ -503,21 +482,27 @@ uint8_t BLAKE3_get_bytes_from_root_chunk(
 		return 0;
 	}
 
-	uint8_t index = 0;
+	uint32_t output_[16];
+	uint8_t* out_ = output;
 	uint32_t chunk_counter[2];
 	chunk_counter[0] = chunk_counter[1] = 0;
 
 	while (0 < hash_length)
 	{
-		if (!BLAKE3_compress_XOF(h, m, chunk_counter, l, d, (uint32_t*)(output + index)))
+		if (!BLAKE3_compress_XOF(h, m, chunk_counter, l, d, output_))
 		{
 			return 0;
 		}
 
-		const uint8_t processed = BLAKE3_BLOCK_LENGTH < hash_length ? BLAKE3_BLOCK_LENGTH : hash_length;
-		index += processed;
-		hash_length -= processed;
+		hash_length -= BLAKE3_BLOCK_LENGTH < hash_length ? BLAKE3_BLOCK_LENGTH : hash_length;
 		chunk_counter[0] += 1;
+
+		if (!hash_algorithm_uint32_t_array_to_uint8_t_array(output_, output_ + 16, out_))
+		{
+			return 0;
+		}
+
+		out_ += sizeof(output_);
 	}
 
 	return 1;
@@ -558,42 +543,44 @@ uint8_t BLAKE3_final(const uint8_t* stack, uint8_t stack_length,
 		t[0] = t[1] = 0;
 	}
 
+	uint32_t block[BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t)];
+
 	while (0 < stack_length)
 	{
 		--stack_length;
-		uint8_t block[BLAKE3_BLOCK_LENGTH];
 #if __STDC_LIB_EXT1__
 
-		if (0 != memcpy_s(block, BLAKE3_OUTPUT_LENGTH,
-						  stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH))
-		{
-			return 0;
-		}
-
-		if (0 != memcpy_s(block + BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
+		if (0 != memcpy_s(block, BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH))
 		{
 			return 0;
 		}
 
 #else
-		memcpy(block, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH);
-		memcpy(block + BLAKE3_OUTPUT_LENGTH, h, BLAKE3_OUTPUT_LENGTH);
+		memcpy(block, h, BLAKE3_OUTPUT_LENGTH);
 #endif
 
-		if (!BLAKE3_compress_XOF((uint32_t*)(block + BLAKE3_OUTPUT_LENGTH), m, t, l, domain_flags, NULL))
+		if (!BLAKE3_compress_XOF(block, m, t, l, domain_flags, NULL))
 		{
 			return 0;
 		}
 
 #if __STDC_LIB_EXT1__
 
-		if (0 != memcpy_s(m, BLAKE3_BLOCK_LENGTH, block, BLAKE3_BLOCK_LENGTH))
+		if (0 != memcpy_s(m, BLAKE3_OUTPUT_LENGTH, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH,
+						  BLAKE3_OUTPUT_LENGTH))
+		{
+			return 0;
+		}
+
+		if (0 != memcpy_s(m + BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t), BLAKE3_OUTPUT_LENGTH, block,
+						  BLAKE3_OUTPUT_LENGTH))
 		{
 			return 0;
 		}
 
 #else
-		memcpy(m, block, BLAKE3_BLOCK_LENGTH);
+		memcpy(m, stack + (uint64_t)stack_length * BLAKE3_OUTPUT_LENGTH, BLAKE3_OUTPUT_LENGTH);
+		memcpy(m + BLAKE3_OUTPUT_LENGTH / sizeof(uint32_t), block, BLAKE3_OUTPUT_LENGTH);
 #endif
 		domain_flags = d | PARENT;
 		l = BLAKE3_BLOCK_LENGTH;

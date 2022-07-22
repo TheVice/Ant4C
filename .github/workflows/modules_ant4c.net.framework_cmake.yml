@@ -1,0 +1,161 @@
+name: modules_ant4c.net.framework_CMake
+
+# on: [push, pull_request]
+on:
+  push:
+    branches:
+    - develop
+
+    paths:
+    - 'tests_ant4c.net.framework.module.cpp'
+    - 'tests.cmake'
+    - 'modules/ant4c.net.framework/*.c'
+    - 'modules/ant4c.net.framework/*.cs'
+    - 'modules/ant4c.net.framework/*.csproj'
+    - 'modules/ant4c.net.framework/*.h'
+    - 'modules/ant4c.net.framework/*.xml'
+    - 'modules/ant4c.net.framework/CMakeLists.txt'
+
+  pull_request:
+    branches:
+    - develop
+
+    paths:
+    - 'tests_ant4c.net.framework.module.cpp'
+    - 'tests.cmake'
+    - 'modules/ant4c.net.framework/*.c'
+    - 'modules/ant4c.net.framework/*.cs'
+    - 'modules/ant4c.net.framework/*.csproj'
+    - 'modules/ant4c.net.framework/*.h'
+    - 'modules/ant4c.net.framework/*.xml'
+    - 'modules/ant4c.net.framework/CMakeLists.txt'
+
+jobs:
+  build:
+    name: >-
+      ${{ github.ref_name }}
+      ${{ matrix.os }}
+      ${{ matrix.compiler }}
+      ${{ matrix.optimized && 'release' || 'debug' }}
+      ${{ matrix.target_platform }}
+
+    strategy:
+      matrix:
+        compiler: [msvc]
+        os: [windows-latest]
+        optimized: [true, false]
+        target_platform: [x64, Win32]
+
+    env:
+      CMAKE_BUILD_DIR: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\build' || '{0}/build',
+            github.workspace) }}
+      CMAKE_BUILD_TYPE: >-
+        ${{ format(
+            'msvc' == matrix.compiler && '' || '-DCMAKE_BUILD_TYPE={0}',
+            (matrix.optimized && 'Release' || 'Debug')) }}
+      CMAKE_CONFIG_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
+      CMAKE_TARGET_PLATFORM: >-
+        ${{ format(
+            'msvc' == matrix.compiler && '-A {0}' || '',
+            matrix.target_platform) }}
+      LIBRARY_BINARY_DIR: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\{1}' || '{0}/{1}',
+            github.workspace, matrix.os) }}
+      CMAKE_INSTALL_PREFIX: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\{1}' || '{0}/{1}',
+            github.workspace, 'Redist') }}
+      MODULE_SOURCE_DIRECTORY: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\{1}\{2}' || '{0}/{1}/{2}',
+            github.workspace, 'modules', 'ant4c.net.framework') }}
+      EXECUTABLE: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\{1}\{2}\{3}' || '{0}/{1}/{2}/{3}',
+              github.workspace, 'build',
+              (matrix.optimized && 'Release' || 'Debug'),
+              'tests_ant4c.net.framework.module.exe') }}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Fetch prebuild of third-party libraries
+      run: git fetch origin ${{ matrix.os }}
+
+    - name: Checkout third-party libraries
+      run: git checkout origin/${{ matrix.os }} -- .
+
+    - name: Create project files
+      run: >-
+        cmake
+        ${{ env.CMAKE_TARGET_PLATFORM }}
+        ${{ env.CMAKE_GENERATOR }}
+        ${{ env.CMAKE_BUILD_TYPE }}
+        -S ${{ github.workspace }}
+        -B ${{ env.CMAKE_BUILD_DIR }}
+        -DCMAKE_INSTALL_PREFIX=${{ env.CMAKE_INSTALL_PREFIX }}
+        -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+        -DPROGRAM_VERSION="${{ github.event.repository.updated_at }}"
+
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v1
+      id: cpu-cores
+
+    - name: Install redist
+      run: >-
+        cmake
+        --build ${{ env.CMAKE_BUILD_DIR }}
+        --config ${{ env.CMAKE_CONFIG_TYPE }}
+        --parallel ${{ steps.cpu-cores.outputs.count }}
+        --target install
+
+    - name: Move CMakeCache
+      run: mv "${{ env.CMAKE_BUILD_DIR }}\CMakeCache.txt" "${{ env.CMAKE_BUILD_DIR }}\CMakeCache.txt_"
+
+    - name: Create module project files
+      run: >-
+        cmake
+        ${{ env.CMAKE_TARGET_PLATFORM }}
+        ${{ env.CMAKE_GENERATOR }}
+        ${{ env.CMAKE_BUILD_TYPE }}
+        -S ${{ env.MODULE_SOURCE_DIRECTORY }}
+        -B ${{ env.CMAKE_BUILD_DIR }}
+        -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+        -DANT4C_PATH=${{ env.CMAKE_INSTALL_PREFIX }}
+
+    - name: Build module
+      run: >-
+        cmake
+        --build ${{ env.CMAKE_BUILD_DIR }}
+        --config ${{ env.CMAKE_CONFIG_TYPE }}
+        --parallel ${{ steps.cpu-cores.outputs.count }}
+
+    - name: Run tests
+      working-directory: ${{ env.CMAKE_BUILD_DIR }}
+      run: ${{ env.EXECUTABLE }}
+
+    - name: Compress files with zstd
+      shell: pwsh
+      run: |
+        $paths = Get-ChildItem -Recurse -File -Path ${{ env.CMAKE_BUILD_DIR }}
+        ForEach ($path in $paths)
+        {
+          $outputPath = [System.String]::Format("{0}.zst", $path.FullName)
+          & "zstd" --ultra -22 $path.FullName -o $outputPath
+        }
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
+        retention-days: 1
+        path: |
+          ${{ github.workspace }}/modules/ant4c.net.framework/*.csproj
+          ${{ github.workspace }}/modules/ant4c.net.framework/*.cs
+          ${{ env.CMAKE_BUILD_DIR }}/**/*.zst

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -25,7 +25,9 @@ uint8_t conversion_get_function(
 		(const uint8_t*)"to-string"
 	};
 	/**/
-	return common_string_to_enum(name_start, name_finish, conversion_str, UNKNOWN_CONVERSION);
+	return common_string_to_enum(
+			   name_start, name_finish,
+			   conversion_str, UNKNOWN_CONVERSION);
 }
 
 
@@ -52,16 +54,12 @@ uint8_t bool_exec_function(
 	{
 		case parse:
 		case to_string:
-		{
-			uint8_t bool_value = 0;
-
-			if (!bool_parse(argument.start, argument.finish, &bool_value))
+			if (!bool_parse(argument.start, argument.finish, &function))
 			{
 				break;
 			}
 
-			return bool_to_string(bool_value, output);
-		}
+			return bool_to_string(function, output);
 
 		case UNKNOWN_CONVERSION:
 		default:
@@ -70,6 +68,13 @@ uint8_t bool_exec_function(
 
 	return 0;
 }
+
+enum conversion_name_space
+{
+	double_functions, int_functions,
+	long_functions, int64_functions,
+	UNKNOWN_FUNCTIONS
+};
 
 uint8_t conversion_exec_function(
 	uint8_t name_space, uint8_t function,
@@ -94,23 +99,26 @@ uint8_t conversion_exec_function(
 	{
 		case parse:
 		case to_string:
-			if (1 == name_space)
+			switch (name_space)
 			{
-				return double_to_string(double_parse(argument.start), output);
-			}
-			else if (2 == name_space)
-			{
-				return int_to_string(int_parse(argument.start, argument.finish), output);
-			}
+				case double_functions:
+					return double_to_string(double_parse(argument.start), output);
 
+				case int_functions:
+					return int_to_string(int_parse(argument.start, argument.finish), output);
+
+				case long_functions:
 #if !defined(_WIN32)
-			else if (3 == name_space)
-			{
-				return long_to_string(long_parse(argument.start, argument.finish), output);
-			}
-
+					return long_to_string(long_parse(argument.start, argument.finish), output);
 #endif
-			return int64_to_string(int64_parse(argument.start, argument.finish), output);
+
+				case int64_functions:
+					return int64_to_string(int64_parse(argument.start, argument.finish), output);
+
+				case UNKNOWN_FUNCTIONS:
+				default:
+					break;
+			}
 
 		case UNKNOWN_CONVERSION:
 		default:
@@ -124,26 +132,26 @@ uint8_t double_exec_function(
 	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 	struct buffer* output)
 {
-	return conversion_exec_function(1, function, arguments, arguments_count, output);
+	return conversion_exec_function(double_functions, function, arguments, arguments_count, output);
 }
 
 uint8_t int_exec_function(
 	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 	struct buffer* output)
 {
-	return conversion_exec_function(2, function, arguments, arguments_count, output);
+	return conversion_exec_function(int_functions, function, arguments, arguments_count, output);
 }
 
 uint8_t long_exec_function(
 	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 	struct buffer* output)
 {
-	return conversion_exec_function(3, function, arguments, arguments_count, output);
+	return conversion_exec_function(long_functions, function, arguments, arguments_count, output);
 }
 
 uint8_t int64_exec_function(
 	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
 	struct buffer* output)
 {
-	return conversion_exec_function(4, function, arguments, arguments_count, output);
+	return conversion_exec_function(int64_functions, function, arguments, arguments_count, output);
 }

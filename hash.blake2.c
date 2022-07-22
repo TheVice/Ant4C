@@ -43,27 +43,6 @@ static const uint64_t IV[] =
 	(VB) = (VB) ^ (VC);									\
 	(VB) = ROTATE_RIGHT_UINT64_T((VB), 63);
 
-uint8_t hash_algorithm_uint8_t_array_to_uint64_t_array(
-	const uint8_t* input, uint8_t input_size, uint64_t* output)
-{
-	if (NULL == input ||
-		0 != (input_size % 8) ||
-		NULL == output)
-	{
-		return 0;
-	}
-
-	for (uint8_t i = 0, j = 0; i < input_size; i += 8, ++j)
-	{
-		if (!hash_algorithm_uint8_t_array_to_uint64_t(input + i, input + i + 8, output + j))
-		{
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 uint8_t BLAKE2b_compress(uint64_t* h, const uint64_t* chunk, const uint64_t* t, uint8_t isLastBlock)
 {
 	static const uint8_t SIGMA[10][16] =
@@ -91,7 +70,7 @@ uint8_t BLAKE2b_compress(uint64_t* h, const uint64_t* chunk, const uint64_t* t, 
 
 	for (uint8_t i = 0; i < 16; ++i)
 	{
-		V[i] = (i < 8) ? h[i] : IV[i - 8];
+		V[i] = (i < sizeof(uint64_t)) ? h[i] : IV[i - sizeof(uint64_t)];
 	}
 
 	V[12] = V[12] ^ t[0]; /*Lo*/
@@ -115,7 +94,7 @@ uint8_t BLAKE2b_compress(uint64_t* h, const uint64_t* chunk, const uint64_t* t, 
 		BLAKE2b_MIX(V[3], V[4], V[9], V[14], chunk[S[14]], chunk[S[15]]);
 	}
 
-	for (uint8_t i = 0, j = 8; i < 8; ++i, ++j)
+	for (uint8_t i = 0, j = sizeof(uint64_t); i < sizeof(uint64_t); ++i, ++j)
 	{
 		h[i] = h[i] ^ V[i];
 		h[i] = h[i] ^ V[j];
@@ -131,7 +110,7 @@ uint8_t BLAKE2b_init(uint8_t hash_length, uint64_t* output)
 		return 0;
 	}
 
-	for (uint8_t i = 1; i < 8; ++i)
+	for (uint8_t i = 1; i < sizeof(uint64_t); ++i)
 	{
 		output[i] = IV[i];
 	}
@@ -161,8 +140,8 @@ uint8_t BLAKE2b_core(const uint8_t* start, const uint8_t* finish, ptrdiff_t* byt
 
 	while (start < finish)
 	{
-		(*bytes_compressed) += 128;
-		t[0] = (*bytes_compressed);
+		*bytes_compressed += 128;
+		t[0] = *bytes_compressed;
 
 		if (!hash_algorithm_uint8_t_array_to_uint64_t_array(start, 128, start_uint64_t) ||
 			!BLAKE2b_compress(output, start_uint64_t, t, 0))
@@ -203,10 +182,10 @@ uint8_t BLAKE2b_final(const uint8_t* start, ptrdiff_t* bytes_compressed, uint8_t
 #else
 		memcpy(chunk, start, bytes_remaining);
 #endif
-		(*bytes_compressed) += bytes_remaining;
+		*bytes_compressed += bytes_remaining;
 	}
 
-	t[0] = (*bytes_compressed);
+	t[0] = *bytes_compressed;
 
 	if (128 != bytes_remaining)
 	{
@@ -254,18 +233,33 @@ uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,
 	return BLAKE2b_final(start, &bytes_compressed, (uint8_t)(finish - start), output);
 }
 
-uint8_t hash_algorithm_blake2b(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
-							   struct buffer* output)
+uint8_t hash_algorithm_blake2b(
+	const uint8_t* start, const uint8_t* finish,
+	uint16_t hash_length, struct buffer* output)
 {
-	if (hash_length < 8 || 1024 < hash_length)
+	uint64_t out[16];
+
+	if (hash_length < sizeof(uint64_t) ||
+		1024 < hash_length ||
+		NULL == output)
 	{
 		return 0;
 	}
 
-	hash_length = hash_length / 8;
-	/**/
-	return buffer_append(output, NULL, UINT8_MAX) &&
-		   BLAKE2b(start, finish, (uint8_t)hash_length,
-				   (uint64_t*)(buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
-		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
+	const ptrdiff_t size = buffer_size(output);
+
+	if (!buffer_append(output, NULL, 128))
+	{
+		return 0;
+	}
+
+	hash_length /= sizeof(uint64_t);
+
+	if (!BLAKE2b(start, finish, (uint8_t)hash_length, out))
+	{
+		return 0;
+	}
+
+	return hash_algorithm_uint64_t_array_to_uint8_t_array(out, out + 16, buffer_data(output, size)) &&
+		   buffer_resize(output, buffer_size(output) - (128 - hash_length));
 }

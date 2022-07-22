@@ -117,7 +117,7 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - name: Create project files
+    - name: Create project files (main project)
       run: >-
         cmake
         ${{ env.CMAKE_TARGET_PLATFORM }}
@@ -127,10 +127,33 @@ jobs:
         -B ${{ env.CMAKE_BUILD_DIR }}
         -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
         -DPROGRAM_VERSION="${{ github.event.repository.updated_at }}"
+        -DCMAKE_INSTALL_PREFIX=${{ env.CMAKE_BUILD_DIR }}/Redist
 
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
+
+    - name: Install redist
+      run: >-
+        cmake
+        --build ${{ env.CMAKE_BUILD_DIR }}
+        --config ${{ env.CMAKE_CONFIG_TYPE }}
+        --parallel ${{ steps.cpu-cores.outputs.count }}
+        --target install
+
+    - name: Deal with CMakeCache.txt
+      run: mv ${{ env.CMAKE_BUILD_DIR }}/CMakeCache.txt ${{ env.CMAKE_BUILD_DIR }}/CMakeCache.txt_
+
+    - name: Create project files (module)
+      run: >-
+        cmake
+        ${{ env.CMAKE_TARGET_PLATFORM }}
+        ${{ env.CMAKE_GENERATOR }}
+        ${{ env.CMAKE_BUILD_TYPE }}
+        -S ${{ github.workspace }}/modules/net
+        -B ${{ env.CMAKE_BUILD_DIR }}
+        -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
+        -DANT4C_PATH=${{ env.CMAKE_BUILD_DIR }}/Redist
 
     - name: Build
       run: >-
@@ -138,7 +161,6 @@ jobs:
         --build ${{ env.CMAKE_BUILD_DIR }}
         --config ${{ env.CMAKE_CONFIG_TYPE }}
         --parallel ${{ steps.cpu-cores.outputs.count }}
-        --target tests_net.module
 
     - name: Compress files with zstd
       shell: pwsh
@@ -230,7 +252,7 @@ jobs:
                 ( '& {0}\build\{1}' )
               ) ||
               ( '{0}/build/{1}' ),
-            github.workspace, 'tests_net.module') }}
+            github.workspace, 'tests_ant4c.net.module') }}
       TESTS_XML: >-
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
@@ -239,7 +261,6 @@ jobs:
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\modules\net\net.xml' || '{0}/modules/net/net.xml',
             github.workspace) }}
-      # TARGET: ${{ startsWith(matrix.os, 'windows') && '& .\tests_net.module.exe' || 'tests_net.module' }}
 
     runs-on: ${{ matrix.os }}
 
@@ -266,6 +287,48 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: ${{ matrix.host_version }}
+
+    - name: Add libraries to the folder with application that was made with MinGW
+      if: ${{ 'mingw' == matrix.compiler }}
+      run: |
+        $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\cpp.exe"
+        if(Test-Path -Path $path)
+        {
+          $argument = "--version"
+          $source = "$env:TEMP\1.txt"
+          Start-Process -FilePath $path -ArgumentList $argument -NoNewWindow -Wait -RedirectStandardOutput $source
+          $source = [System.IO.File]::ReadAllLines($source)[0]
+          $argument = $source.LastIndexOf(" ")
+          $argument++
+          $source = $source.Substring($argument)
+          $ver = [System.Version]::Parse($source)
+          if([System.Version]::Parse("9.0") -le $ver)
+          {
+            Write-Warning -Message "Patch will be apply."
+            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libstdc++-6.dll"
+            if(Test-Path -Path $path)
+            {
+              cp $path ${{ env.BINARY_PATH }}
+            }
+            else
+            {
+              Write-Warning -Message $path
+            }
+            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libgcc_s_seh-1.dll"
+            if(Test-Path -Path $path)
+            {
+              cp $path ${{ env.BINARY_PATH }}
+            }
+            else
+            {
+              Write-Warning -Message $path
+            }
+          }
+          else
+          {
+            Write-Host "Nothing to do."
+          }
+        }
 
     - name: Run Tests
       working-directory: ${{ env.BINARY_PATH }}
