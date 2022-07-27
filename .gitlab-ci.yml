@@ -360,7 +360,23 @@ ant4c.net.framework.module:
     $redist_directory = Join-Path -ChildPath "Redist_Release" -Path "$build_directory"
     $source_directory = Join-Path -ChildPath "modules\ant4c.net.framework" -Path "$env:CI_PROJECT_DIR"
 
-    Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $file_CMakeCache = Join-Path -Path $build_directory -ChildPath "CMakeCache.txt"
+    $file_stream = [System.IO.File]::OpenRead($file_CMakeCache)
+    $file_hash_sum = [System.BitConverter]::ToString($sha256.ComputeHash($file_stream)).Replace("-", "")
+    $file_stream.Dispose()
+    $file_hash_sum = $file_hash_sum.ToLower()
+    $destination = Join-Path -Path $build_directory -ChildPath $file_hash_sum
+
+    if (Test-Path -Path $destination)
+    {
+      Remove-Item -Path $destination -Force
+    }
+    else
+    {
+      Move-Item -Path $file_CMakeCache -Destination $destination
+    }
+
     cd $build_directory
     cmake "$source_directory" -A "${env:TargetPlatform}" -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$redist_directory" -DNETFXSDK="$NETFXSDK"
 
@@ -444,7 +460,23 @@ ant4c.net.module_MSVC:
     $redist_directory = Join-Path -ChildPath "Redist_Release" -Path "$build_directory"
     $source_directory = Join-Path -ChildPath "modules\net" -Path "$env:CI_PROJECT_DIR"
 
-    Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $file_CMakeCache = Join-Path -Path $build_directory -ChildPath "CMakeCache.txt"
+    $file_stream = [System.IO.File]::OpenRead($file_CMakeCache)
+    $file_hash_sum = [System.BitConverter]::ToString($sha256.ComputeHash($file_stream)).Replace("-", "")
+    $file_stream.Dispose()
+    $file_hash_sum = $file_hash_sum.ToLower()
+    $destination = Join-Path -Path $build_directory -ChildPath $file_hash_sum
+
+    if (Test-Path -Path $destination)
+    {
+      Remove-Item -Path $destination -Force
+    }
+    else
+    {
+      Move-Item -Path $file_CMakeCache -Destination $destination
+    }
+
     cd $build_directory
     cmake "$source_directory" -A "${env:TargetPlatform}" -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$redist_directory"
 
@@ -601,7 +633,23 @@ ant4c.net.module_MinGW:
       $build_directory = Join-Path -ChildPath "build-MinGW-${env:BUILD_TYPE}\$make_number" -Path "${env:CI_PROJECT_DIR}"
       $redist_directory = Join-Path -ChildPath "Redist" -Path "$build_directory"
 
-      Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+      $sha256 = [System.Security.Cryptography.SHA256]::Create()
+      $file_CMakeCache = Join-Path -Path $build_directory -ChildPath "CMakeCache.txt"
+      $file_stream = [System.IO.File]::OpenRead($file_CMakeCache)
+      $file_hash_sum = [System.BitConverter]::ToString($sha256.ComputeHash($file_stream)).Replace("-", "")
+      $file_stream.Dispose()
+      $file_hash_sum = $file_hash_sum.ToLower()
+      $destination = Join-Path -Path $build_directory -ChildPath $file_hash_sum
+
+      if (Test-Path -Path $destination)
+      {
+        Remove-Item -Path $destination -Force
+      }
+      else
+      {
+        Move-Item -Path $file_CMakeCache -Destination $destination
+      }
+
       cd $build_directory
 
       cmake "$source_directory" -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="${env:BUILD_TYPE}" -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$redist_directory"
@@ -697,8 +745,11 @@ ant4c.net.module_unix_like:
         BUILD_TYPE: [ Debug, Release ]
 
   script: |
-    mv $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_
+    if [ -f "$CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_" ]; then
+      rm $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_
+    fi
 
+    mv $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_
     source_directory=$CI_PROJECT_DIR/modules/net
     build_directory=$CI_PROJECT_DIR/build-$BUILD_TYPE
     redist_directory=$CI_PROJECT_DIR/build-$BUILD_TYPE/Redist

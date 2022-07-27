@@ -703,7 +703,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 		return 0;
 	}
 
-	length += FILENAME_MAX;
+	length += FILENAME_MAX + 1;
 
 	if (!buffer_append(temp_file_name, NULL, (ptrdiff_t)4 * length + sizeof(uint32_t)))
 	{
