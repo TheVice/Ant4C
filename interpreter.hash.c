@@ -331,7 +331,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 			static const uint8_t m_size = 16 * sizeof(uint32_t);
 
 			if (!buffer_append(output, NULL,
-							   (ptrdiff_t)4096 + h_size + m_size + 1024))
+							   (ptrdiff_t)4096 + h_size + m_size + 1900))
 			{
 				break;
 			}
@@ -340,7 +340,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 			uint32_t* m = (uint32_t*)buffer_data(output, size + 4096 + h_size);
 			uint8_t* stack = buffer_data(output, size + 4096 + h_size + m_size);
 
-			if (!BLAKE3_init(h, 8, m, 16, 1024))
+			if (!BLAKE3_init(h, 8, m, 16, 1900))
 			{
 				break;
 			}

@@ -5,10 +5,24 @@
 2)to pdf:
 * asciidoc -b docbook <file_name>.adoc
 * a2x -f pdf <file_name>.xml
+3)to manpage:
+* asciidoc -b docbook <file_name>.adoc
+* a2x --doctype manpage --format manpage <file_name>.xml
 ////
 
-= Ant4C Help
+//= Ant4C Help
+= ant4c(1)
+The Vice
+v2020.09
+:doctype: manpage
+:manmanual: ANT4C
+:mansource: ANT4C
+:man-linkstyle: pass:[blue R < >]
 :toc:
+
+== Name
+
+ant4c - execute xml based scripts.
 
 [[history]]
 == History

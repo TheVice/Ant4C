@@ -1,4 +1,3 @@
-
 # tests_exec_app
 
 add_executable(tests_exec_app
@@ -55,10 +54,7 @@ target_compile_options(ant4c_tests PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
-target_link_libraries(ant4c_tests
-  Ant4C::ant4c
-  tests_base
-)
+target_link_libraries(ant4c_tests Ant4C::ant4c tests_base)
 
 if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
@@ -77,6 +73,13 @@ add_custom_command(TARGET ant4c_tests POST_BUILD
 add_custom_command(TARGET ant4c_tests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "Path to tests_exec_app is - $<TARGET_FILE:tests_exec_app>")
 
-add_dependencies(ant4c_tests
-  tests_exec_app
+add_dependencies(ant4c_tests tests_exec_app)
+
+add_test(
+  NAME ant4c_tests
+  COMMAND "$<TARGET_FILE:ant4c_tests>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/tests.xml
+    --tests_exec_app=$<TARGET_FILE:tests_exec_app>
+    --tests_base_directory=.
+    --gtest_output=xml:${CMAKE_SOURCE_DIR}/report.xml
 )

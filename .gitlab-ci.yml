@@ -360,7 +360,23 @@ ant4c.net.framework.module:
     $redist_directory = Join-Path -ChildPath "Redist_Release" -Path "$build_directory"
     $source_directory = Join-Path -ChildPath "modules\ant4c.net.framework" -Path "$env:CI_PROJECT_DIR"
 
-    Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $file_CMakeCache = Join-Path -Path $build_directory -ChildPath "CMakeCache.txt"
+    $file_stream = [System.IO.File]::OpenRead($file_CMakeCache)
+    $file_hash_sum = [System.BitConverter]::ToString($sha256.ComputeHash($file_stream)).Replace("-", "")
+    $file_stream.Dispose()
+    $file_hash_sum = $file_hash_sum.ToLower()
+    $destination = Join-Path -Path $build_directory -ChildPath $file_hash_sum
+
+    if (Test-Path -Path $destination)
+    {
+      Remove-Item -Path $destination -Force
+    }
+    else
+    {
+      Move-Item -Path $file_CMakeCache -Destination $destination
+    }
+
     cd $build_directory
     cmake "$source_directory" -A "${env:TargetPlatform}" -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$redist_directory" -DNETFXSDK="$NETFXSDK"
 
@@ -444,7 +460,23 @@ ant4c.net.module_MSVC:
     $redist_directory = Join-Path -ChildPath "Redist_Release" -Path "$build_directory"
     $source_directory = Join-Path -ChildPath "modules\net" -Path "$env:CI_PROJECT_DIR"
 
-    Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $file_CMakeCache = Join-Path -Path $build_directory -ChildPath "CMakeCache.txt"
+    $file_stream = [System.IO.File]::OpenRead($file_CMakeCache)
+    $file_hash_sum = [System.BitConverter]::ToString($sha256.ComputeHash($file_stream)).Replace("-", "")
+    $file_stream.Dispose()
+    $file_hash_sum = $file_hash_sum.ToLower()
+    $destination = Join-Path -Path $build_directory -ChildPath $file_hash_sum
+
+    if (Test-Path -Path $destination)
+    {
+      Remove-Item -Path $destination -Force
+    }
+    else
+    {
+      Move-Item -Path $file_CMakeCache -Destination $destination
+    }
+
     cd $build_directory
     cmake "$source_directory" -A "${env:TargetPlatform}" -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$redist_directory"
 
@@ -601,7 +633,23 @@ ant4c.net.module_MinGW:
       $build_directory = Join-Path -ChildPath "build-MinGW-${env:BUILD_TYPE}\$make_number" -Path "${env:CI_PROJECT_DIR}"
       $redist_directory = Join-Path -ChildPath "Redist" -Path "$build_directory"
 
-      Move-Item -Path "$build_directory\CMakeCache.txt" -Destination "$build_directory\CMakeCache.txt_"
+      $sha256 = [System.Security.Cryptography.SHA256]::Create()
+      $file_CMakeCache = Join-Path -Path $build_directory -ChildPath "CMakeCache.txt"
+      $file_stream = [System.IO.File]::OpenRead($file_CMakeCache)
+      $file_hash_sum = [System.BitConverter]::ToString($sha256.ComputeHash($file_stream)).Replace("-", "")
+      $file_stream.Dispose()
+      $file_hash_sum = $file_hash_sum.ToLower()
+      $destination = Join-Path -Path $build_directory -ChildPath $file_hash_sum
+
+      if (Test-Path -Path $destination)
+      {
+        Remove-Item -Path $destination -Force
+      }
+      else
+      {
+        Move-Item -Path $file_CMakeCache -Destination $destination
+      }
+
       cd $build_directory
 
       cmake "$source_directory" -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="${env:BUILD_TYPE}" -DLIBRARY_BINARY_DIR="${env:CI_PROJECT_DIR}\windows-latest" -DANT4C_PATH="$redist_directory"
@@ -697,8 +745,11 @@ ant4c.net.module_unix_like:
         BUILD_TYPE: [ Debug, Release ]
 
   script: |
-    mv $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_
+    if [ -f "$CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_" ]; then
+      rm $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_
+    fi
 
+    mv $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt $CI_PROJECT_DIR/build-$BUILD_TYPE/CMakeCache.txt_
     source_directory=$CI_PROJECT_DIR/modules/net
     build_directory=$CI_PROJECT_DIR/build-$BUILD_TYPE
     redist_directory=$CI_PROJECT_DIR/build-$BUILD_TYPE/Redist
@@ -753,3 +804,83 @@ ant4c.net.module_unix_like:
     when: always
     reports:
       junit: $CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml
+
+create_docs:
+
+  # rules:
+    # - changes:
+        # - help.adoc
+        # - modules/ant4c.net.framework/ant4c.net.framework.adoc
+        # - modules/dns/dns.adoc
+        # - modules/net/net.adoc
+        # - modules/regex/regex.adoc
+
+  tags:
+    - unix-like
+    - asciidoc
+
+  script: |
+    asciidoc $CI_PROJECT_DIR/help.adoc
+    asciidoc -b docbook $CI_PROJECT_DIR/help.adoc
+    a2x --doctype manpage --format manpage $CI_PROJECT_DIR/help.xml
+    gzip -f -n --best $CI_PROJECT_DIR/ant4c.1
+
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/*.html
+      - $CI_PROJECT_DIR/*.gz
+      - $CI_PROJECT_DIR/**/*.html
+      - $CI_PROJECT_DIR/**/*.gz
+
+create_rpm:
+
+  needs: [ create_docs ]
+
+  tags:
+    - unix-like
+    - rpm
+
+  script: |
+    rpmdev-setuptree
+
+    VERSION=2020.09
+    mkdir v$VERSION
+
+    cp *.c v$VERSION
+    cp *.cmake v$VERSION
+    cp *.cpp v$VERSION
+    cp *.h v$VERSION
+    cp CHANGELOG v$VERSION
+    cp CMakeLists.txt v$VERSION
+    cp help.adoc v$VERSION
+    cp LICENSE v$VERSION
+    cp MD5SUMS v$VERSION
+    cp README.md v$VERSION
+    cp SHA3-224SUMS v$VERSION
+    cp tests.xml v$VERSION
+    cp ant4c.1.gz v$VERSION
+    cp help.html v$VERSION
+    mkdir -p v$VERSION/modules
+    cp modules/example.cmake v$VERSION/modules
+    cp modules/example.c v$VERSION/modules
+    cp modules/example.h v$VERSION/modules
+
+    tar cvfz v$VERSION.tar.gz v$VERSION
+
+    cp rpm/ant4c.spec ~/rpmbuild/SPECS/
+    rpmlint ~/rpmbuild/SPECS/ant4c.spec
+
+    cp v$VERSION.tar.gz ~/rpmbuild/SOURCES/
+    rpmbuild -ba -v ~/rpmbuild/SPECS/ant4c.spec
+
+    cp ~/rpmbuild/SRPMS/ant4c-*.rpm .
+    cp ~/rpmbuild/RPMS/x86_64/ant4c-*.rpm .
+    cp ~/rpmbuild/BUILD/v$VERSION/report.xml .
+
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/*.rpm
+      - $CI_PROJECT_DIR/report.xml
+    when: always
+    reports:
+      junit: $CI_PROJECT_DIR/report.xml

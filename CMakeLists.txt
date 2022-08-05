@@ -215,34 +215,32 @@ if(DEFINED PROGRAM_VERSION)
   # target_compile_definitions(ant4c_shared PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
 endif()
 
+# Listener
+
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
+
 # Install ant4c
 
-if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-  set(CMAKE_INSTALL_LIBDIR lib)
-endif()
-if(NOT DEFINED CMAKE_INSTALL_BINDIR)
-  set(CMAKE_INSTALL_BINDIR bin)
-endif()
-if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
-  set(CMAKE_INSTALL_INCLUDEDIR include)
-endif()
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(cmake_package_name ant4c)
+set(cmake_files_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${cmake_package_name}")
+set(config_file "${CMAKE_CURRENT_BINARY_DIR}/${cmake_package_name}Config.cmake")
 
 install(
-  TARGETS ant4c ant4c_app
+  TARGETS ant4c ant4c_app default_listener
   EXPORT ant4cTargets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ant4c
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ant4c)
 
 install(
   EXPORT ant4cTargets
-  FILE ant4cTargets.cmake
   NAMESPACE Ant4C::
-  DESTINATION lib/cmake/ant4c
-)
+  DESTINATION ${cmake_files_install_dir})
 
 file(
   GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
@@ -255,34 +253,21 @@ endif()
 include(\"\${CMAKE_CURRENT_LIST_DIR}/ant4cTargets.cmake\")"
 )
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
-  DESTINATION lib/cmake/ant4c
-)
+install(FILES ${config_file} DESTINATION ${cmake_files_install_dir})
 
 if(DEFINED PROGRAM_VERSION)
-  include(CMakePackageConfigHelpers)
-
+  set(
+    version_file "${CMAKE_CURRENT_BINARY_DIR}/${cmake_package_name}ConfigVersion.cmake")
   write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
-    VERSION ${PROGRAM_VERSION}
-    COMPATIBILITY SameMajorVersion
-  )
-
+    ${version_file} VERSION ${PROGRAM_VERSION} COMPATIBILITY AnyNewerVersion)
   install(
-    FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
-    DESTINATION lib/cmake/ant4c
-  )
+    FILES ${version_file} ${config_file}
+    DESTINATION ${cmake_files_install_dir})
 endif()
 
 # Example module
 
 include("${CMAKE_SOURCE_DIR}/modules/example.cmake")
-
-# Listener
-
-include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 
 # Tests
 

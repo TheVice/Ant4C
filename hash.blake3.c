@@ -31,7 +31,7 @@ enum BLAKE3_DOMAIN_FLAGS
 	KEYED_HASH = 16, DERIVE_KEY_CONTEXT = 32, DERIVE_KEY_MATERIAL = 64*/
 };
 
-#define BLAKE3_STACK_LENGTH (uint8_t)32
+#define BLAKE3_STACK_LENGTH (uint8_t)59
 #define BLAKE3_BLOCK_LENGTH (uint8_t)(16 * sizeof(uint32_t))
 #define BLAKE3_CHUNK_LENGTH (uint16_t)1024
 #define BLAKE3_OUTPUT_LENGTH (uint8_t)(8 * sizeof(uint32_t))
@@ -482,14 +482,13 @@ uint8_t BLAKE3_get_bytes_from_root_chunk(
 		return 0;
 	}
 
-	uint32_t output_[16];
-	uint8_t* out_ = output;
 	uint32_t chunk_counter[2];
+	uint32_t output_in_uint32_t[16];
 	chunk_counter[0] = chunk_counter[1] = 0;
 
 	while (0 < hash_length)
 	{
-		if (!BLAKE3_compress_XOF(h, m, chunk_counter, l, d, output_))
+		if (!BLAKE3_compress_XOF(h, m, chunk_counter, l, d, output_in_uint32_t))
 		{
 			return 0;
 		}
@@ -497,12 +496,12 @@ uint8_t BLAKE3_get_bytes_from_root_chunk(
 		hash_length -= BLAKE3_BLOCK_LENGTH < hash_length ? BLAKE3_BLOCK_LENGTH : hash_length;
 		chunk_counter[0] += 1;
 
-		if (!hash_algorithm_uint32_t_array_to_uint8_t_array(output_, output_ + 16, out_))
+		if (!hash_algorithm_uint32_t_array_to_uint8_t_array(output_in_uint32_t, output_in_uint32_t + 16, output))
 		{
 			return 0;
 		}
 
-		out_ += sizeof(output_);
+		output += sizeof(output_in_uint32_t);
 	}
 
 	return 1;
@@ -665,7 +664,7 @@ uint8_t hash_algorithm_blake3(const uint8_t* start, const uint8_t* finish, uint1
 		return 0;
 	}
 
-	hash_length = hash_length / 8;
+	hash_length /= 8;
 	/**/
 	return buffer_append(output, NULL, UINT8_MAX) &&
 		   BLAKE3(start, finish, (uint8_t)hash_length, (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&

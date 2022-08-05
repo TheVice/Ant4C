@@ -2,6 +2,8 @@
 include("${CMAKE_CURRENT_LIST_DIR}/gtest.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/pugixml.cmake")
 
+enable_testing()
+
 # tests_base
 
 set(TESTS_BASE_HEADERS
@@ -60,58 +62,5 @@ endif()
 
 # Install tests_base
 if(INSTALL_TESTS_BASE)
-if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-  set(CMAKE_INSTALL_LIBDIR lib)
-endif()
-if(NOT DEFINED CMAKE_INSTALL_BINDIR)
-  set(CMAKE_INSTALL_BINDIR bin)
-endif()
-if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
-  set(CMAKE_INSTALL_INCLUDEDIR include)
-endif()
-
-install(
-  TARGETS tests_base gtest pugixml
-  EXPORT TestsBaseTargets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-install(
-  EXPORT TestsBaseTargets
-  FILE TestsBaseTargets.cmake
-  NAMESPACE TestsBase::
-  DESTINATION lib/cmake/TestsBase)
-
-file(
-  GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/TestsBaseConfig.cmake"
-  CONTENT
-"include(CMakeFindDependencyMacro)
-if(NOT MSVC)
-  find_dependency(dl)
-  find_dependency(m)
-endif()
-include(\"\${CMAKE_CURRENT_LIST_DIR}/TestsBaseTargets.cmake\")")
-
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TestsBaseConfig.cmake" DESTINATION lib/cmake/TestsBase)
-
-get_target_property(gtest_include_directories gtest INCLUDE_DIRECTORIES)
-install(DIRECTORY "${gtest_include_directories}" DESTINATION ${CMAKE_INSTALL_PREFIX} FILES_MATCHING PATTERN "*.h")
-
-if(DEFINED PROGRAM_VERSION)
-  include(CMakePackageConfigHelpers)
-
-  write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/TestsBaseConfigVersion.cmake"
-    VERSION ${PROGRAM_VERSION}
-    COMPATIBILITY SameMajorVersion)
-
-  install(
-    FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/TestsBaseConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/TestsBaseConfigVersion.cmake"
-    DESTINATION lib/cmake/TestsBase)
-endif()
+#TODO:
 endif()
