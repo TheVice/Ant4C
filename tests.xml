@@ -4526,86 +4526,86 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     </functions>
   </TestNetModule>
   <TestNetModuleViaBuildFile>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}" />
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}" />
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>net_result-to-string</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostfxr_functions</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostfxr_is-function-exists</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostfxr_main</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('hostfxr_resolve_sdk')}">
+    <project_load_from_build_file if="${property::exists('hostfxr_resolve_sdk')}">
       <target>hostfxr_resolve-sdk</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('hostfxr_get_available_sdks')}">
+    <project_load_from_build_file if="${property::exists('hostfxr_get_available_sdks')}">
       <target>hostfxr_get-available-sdks</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('hostfxr_get_native_search_directories')}">
+    <project_load_from_build_file if="${property::exists('hostfxr_get_native_search_directories')}">
       <target>hostfxr_get-native-search-directories</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostfxr_main-startupinfo</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('hostfxr_resolve_sdk2')}">
+    <project_load_from_build_file if="${property::exists('hostfxr_resolve_sdk2')}">
       <target>hostfxr_resolve-sdk2</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_initialize_for_dotnet_command_line')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_initialize_for_dotnet_command_line')}">
       <target>test_hostfxr_initialize-for-dotnet-command-line</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_initialize_for_runtime_config')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_initialize_for_runtime_config')}">
       <target>test_hostfxr_initialize-for-runtime-config</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_run_app')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_run_app')}">
       <target>hostfxr_run-app</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_get_runtime_properties')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_get_runtime_properties')}">
       <target>test_hostfxr_get-runtime-properties</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_get_runtime_property_value')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_get_runtime_property_value')}">
       <target>test_hostfxr_get-runtime-property-value</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_set_runtime_property_value')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_set_runtime_property_value')}">
       <target>test_hostfxr_set-runtime-property-value</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_get_runtime_delegate')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_get_runtime_delegate')}">
       <target>test_hostfxr_get-runtime-delegate</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_set_error_writer')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_set_error_writer')}">
       <target>test_hostfxr_set-error-writer</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_hostfxr_main_bundle_startupinfo')}">
+    <project_load_from_build_file if="${property::exists('test_hostfxr_main_bundle_startupinfo')}">
       <target>hostfxr_main-bundle-startupinfo</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>nethost_get-hostfxr-path</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('test_file_is_assembly')}">
+    <project_load_from_build_file if="${property::exists('test_file_is_assembly')}">
       <target>test_file_is-assembly</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostpolicy_functions</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostpolicy_is-function-exists</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('core_host_main')}">
+    <project_load_from_build_file if="${property::exists('core_host_main')}">
       <target>core_host_main</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('core_host_main_with_output_buffer')}">
+    <project_load_from_build_file if="${property::exists('core_host_main_with_output_buffer')}">
       <target>core_host_main_with_output_buffer</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>core_host_resolve-component-dependencies</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${environment::variable-exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>core_host_set-error-writer</target>
     </project_load_from_build_file>
-    <project_load_from_build_file if="${environment::variable-exists('core_host_initialize')}">
+    <project_load_from_build_file if="${property::exists('core_host_initialize')}">
       <target>core_host_initialize</target>
     </project_load_from_build_file>
   </TestNetModuleViaBuildFile>

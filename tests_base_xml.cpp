@@ -187,7 +187,8 @@ uint8_t buffer_free_with_inner_buffers(buffer* storage)
 }
 
 uint8_t is_this_node_pass_by_if_condition(
-	const pugi::xpath_node& node, buffer* tmp, uint8_t* condition, uint8_t verbose)
+	const void* the_project, const pugi::xpath_node& node,
+	buffer* tmp, uint8_t* condition, uint8_t verbose)
 {
 	if (nullptr == tmp || nullptr == condition)
 	{
@@ -222,7 +223,7 @@ uint8_t is_this_node_pass_by_if_condition(
 
 		const auto code = string_to_range(node_attributes);
 		verbose = interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
-					  nullptr, nullptr, code.start, code.finish, condition, tmp, verbose);
+					  the_project, nullptr, code.start, code.finish, condition, tmp, verbose);
 		buffer_release_inner_buffers(tmp);
 
 		if (!verbose)
@@ -400,7 +401,7 @@ std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
 }
 
 uint8_t select_nodes_by_condition(
-	const pugi::xpath_node_set& all_nodes,
+	const void* the_project, const pugi::xpath_node_set& all_nodes,
 	std::list<pugi::xpath_node>& nodes, buffer* tmp)
 {
 	if (!tmp)
@@ -414,7 +415,7 @@ uint8_t select_nodes_by_condition(
 	{
 		const uint8_t verbose = node.node().attribute("verbose").as_bool();
 
-		if (!is_this_node_pass_by_if_condition(node, tmp, &condition, verbose))
+		if (!is_this_node_pass_by_if_condition(the_project, node, tmp, &condition, verbose))
 		{
 			return 0;
 		}
@@ -558,18 +559,21 @@ TestsBase::~TestsBase()
 {
 }
 
-void TestsBaseXml::load_nodes()
+void TestsBaseXml::load_nodes(const void* the_project)
 {
 	const auto* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
 	const auto test_path = std::string("Tests") + "/" + test_info->test_case_name() + "/" + test_info->name();
 	const auto all_nodes = document.select_nodes(pugi::xpath_query(test_path.c_str()));
+	//
 	nodes.clear();
 	//
 	struct buffer tmp;
 	SET_NULL_TO_BUFFER(tmp);
 	//
-	ASSERT_TRUE(select_nodes_by_condition(all_nodes, nodes, &tmp))
+	ASSERT_TRUE(select_nodes_by_condition(the_project, all_nodes, nodes, &tmp))
 			<< test_path << std::endl << buffer_free(&tmp);
+	//
+	node_count = nodes.size();
 	//
 	buffer_release(&tmp);
 }
@@ -603,8 +607,7 @@ void TestsBaseXml::SetUp()
 		ASSERT_TRUE(loaded) << tests_xml << std::endl;
 	}
 
-	load_nodes();
-	node_count = nodes.size();
+	load_nodes(nullptr);
 	ASSERT_NE(0u, node_count) << "Test has no any case(s)." << std::endl;
 }
 

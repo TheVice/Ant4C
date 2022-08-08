@@ -63,7 +63,8 @@ uint8_t argument_parser_free();
 void add_slash(std::string& path);
 std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);
 uint8_t select_nodes_by_condition(
-	const pugi::xpath_node_set& all_nodes, std::list<pugi::xpath_node>& nodes, buffer* tmp);
+	const void* the_project, const pugi::xpath_node_set& all_nodes,
+	std::list<pugi::xpath_node>& nodes, buffer* tmp);
 std::string get_path_to_directory_with_source(uint8_t* result);
 std::string join_path(const std::string& path, const std::string& child_path);
 bool starts_with_(const std::string& input, const std::string& value);
@@ -103,8 +104,8 @@ protected:
 		pugi::xml_document& doc, const std::string& xml_file,
 		unsigned int options = pugi::parse_default | pugi::parse_ws_pcdata_single);
 
-private:
-	void load_nodes();
+protected:
+	void load_nodes(const void* the_project);
 
 protected:
 	TestsBaseXml();

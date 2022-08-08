@@ -192,7 +192,6 @@ jobs:
       ${{ matrix.compiler }}
       ${{ matrix.optimized && 'release' || 'debug' }}
       ${{ matrix.target_platform }}
-      ${{ matrix.host_version }}
 
     strategy:
       matrix:
@@ -200,8 +199,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
-        host_version: [ "3.1", "6.0" ]
-
         optimized: [true]
         target_platform: [x64]
 
@@ -233,17 +230,13 @@ jobs:
         - compiler: mingw
           target_platform: Win32
 
-        - os: ubuntu-latest
-          host_version: "6.0"
-        - os: macos-latest
-          host_version: "6.0"
-
     env:
       BINARY_PATH: >-
         ${{ format(
             startsWith(matrix.os, 'windows') &&
             '{0}\build' || '{0}/build',
             github.workspace) }}
+      CMAKE_CONFIG_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
       EXECUTABLE: >-
         ${{ format(
             startsWith(matrix.os, 'windows') &&
@@ -253,14 +246,6 @@ jobs:
               ) ||
               ( '{0}/build/{1}' ),
             github.workspace, 'tests_ant4c.net.module') }}
-      TESTS_XML: >-
-        ${{ format(
-            startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
-            github.workspace) }}
-      NET_XML: >-
-        ${{ format(
-            startsWith(matrix.os, 'windows') && '{0}\modules\net\net.xml' || '{0}/modules/net/net.xml',
-            github.workspace) }}
 
     runs-on: ${{ matrix.os }}
 
@@ -282,11 +267,6 @@ jobs:
       if: ${{ 'Windows' != runner.os }}
       run: >-
         chmod +x ${{ env.EXECUTABLE }}
-
-    - name: Setup dotnet
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: ${{ matrix.host_version }}
 
     - name: Add libraries to the folder with application that was made with MinGW
       if: ${{ 'mingw' == matrix.compiler }}
@@ -331,115 +311,4 @@ jobs:
         }
 
     - name: Run Tests
-      working-directory: ${{ env.BINARY_PATH }}
-      run: >-
-        ${{ env.EXECUTABLE }}
-        --tests_xml=${{ env.TESTS_XML }}
-        --build_file=${{ env.NET_XML }}
-        -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}"
-        --dotnet_root="${{ env.DOTNET_ROOT }}"
-        --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_initialize_for_dotnet_command_line
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_initialize_for_dotnet_command_line="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_initialize_for_runtime_config
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_initialize_for_runtime_config="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_run_app
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_run_app="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_get_runtime_properties
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_get_runtime_properties="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_get_runtime_property_value
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_get_runtime_property_value="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_set_runtime_property_value
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_set_runtime_property_value="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_get_runtime_delegate
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_get_runtime_delegate="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_set_error_writer
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_set_error_writer="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_hostfxr_main_bundle_startupinfo
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_hostfxr_main_bundle_startupinfo="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: test_file_is_assembly
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:test_file_is_assembly="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: core_host_main
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:core_host_main="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: core_host_main_with_output_buffer
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:core_host_main_with_output_buffer="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
-
-    - name: core_host_initialize
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        $env:test_hostfxr_="1"
-        $env:core_host_initialize="1"
-        ${{ env.EXECUTABLE }} --tests_xml=${{ env.TESTS_XML }} --build_file=${{ env.NET_XML }} -D:DOTNET_ROOT="${{ env.DOTNET_ROOT }}" --dotnet_root="${{ env.DOTNET_ROOT }}" --gtest_filter=TestNetModuleViaBuildFile*
+      run: ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.BINARY_PATH }}

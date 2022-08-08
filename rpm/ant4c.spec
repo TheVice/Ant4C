@@ -19,9 +19,9 @@ Ant4C is the program that interprets XML based scenarios.
 There are tasks and name spaces with functions that
 can be used for writing scripts.
 
-%package     -n ant4c-devel
+%package     -n %{name}-devel
 Summary:        Development files for %{name}
-%description -n ant4c-devel
+%description -n %{name}-devel
 This package contains library of the %{name}.
 
 %prep
@@ -41,55 +41,16 @@ install -m 0644 %{name}.1.gz %{buildroot}/%{_mandir}/man1/%{name}.1.gz
 
 %files
 %license LICENSE
-%{_bindir}/ant4c
+%{_bindir}/%{name}
 %{_libdir}/libdefault_listener.so
 %{_mandir}/man1/%{name}.1.gz
 %doc help.html
 
-%files -n ant4c-devel
-%{_includedir}/%{name}/argument_parser.h
-%{_includedir}/%{name}/buffer.h
-%{_includedir}/%{name}/choose_task.h
-%{_includedir}/%{name}/common.h
-%{_includedir}/%{name}/conversion.h
-%{_includedir}/%{name}/copy_move.h
-%{_includedir}/%{name}/date_time.h
-%{_includedir}/%{name}/echo.h
-%{_includedir}/%{name}/environment.h
-%{_includedir}/%{name}/exec.h
-%{_includedir}/%{name}/fail_task.h
-%{_includedir}/%{name}/file_system.h
-%{_includedir}/%{name}/for_each.h
-%{_includedir}/%{name}/hash.h
-%{_includedir}/%{name}/if_task.h
-%{_includedir}/%{name}/interpreter.exec.h
-%{_includedir}/%{name}/interpreter.file_system.h
-%{_includedir}/%{name}/interpreter.h
-%{_includedir}/%{name}/interpreter.string_unit.h
-%{_includedir}/%{name}/listener.h
-%{_includedir}/%{name}/load_file.h
-%{_includedir}/%{name}/load_tasks.h
-%{_includedir}/%{name}/math_unit.h
-%{_includedir}/%{name}/operating_system.h
-%{_includedir}/%{name}/path.h
-%{_includedir}/%{name}/project.h
-%{_includedir}/%{name}/property.h
-%{_includedir}/%{name}/range.h
-%{_includedir}/%{name}/shared_object.h
-%{_includedir}/%{name}/sleep_unit.h
-%{_includedir}/%{name}/stdc_secure_api.h
-%{_includedir}/%{name}/string_unit.h
-%{_includedir}/%{name}/target.h
-%{_includedir}/%{name}/task.h
-%{_includedir}/%{name}/text_encoding.h
-%{_includedir}/%{name}/try_catch.h
-%{_includedir}/%{name}/version.h
-%{_includedir}/%{name}/xml.h
-%{_libdir}/cmake/ant4c/ant4cConfig.cmake
-%{_libdir}/cmake/ant4c/ant4cTargets-noconfig.cmake
-%{_libdir}/cmake/ant4c/ant4cTargets.cmake
-%{_libdir}/cmake/ant4c/ant4cConfigVersion.cmake
-%{_libdir}/libant4c.a
+%files -n %{name}-devel
+%license LICENSE
+%{_includedir}/%{name}/
+%{_libdir}/cmake/%{name}/
+%{_libdir}/lib%{name}.a
 
 %changelog
 * Mon Sep 14 2020 TheVice <TheVice> - 2020.09-1

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -190,7 +190,9 @@ TEST_F(TestPath, path_get_full_path)
 	for (const auto& node : nodes)
 	{
 		std::list<pugi::xpath_node> expected_full_path;
-		ASSERT_TRUE(select_nodes_by_condition(node.node().select_nodes("full_path"), expected_full_path, &full_path))
+		ASSERT_TRUE(select_nodes_by_condition(
+						nullptr, node.node().select_nodes("full_path"),
+						expected_full_path, &full_path))
 				<< buffer_free(&full_path);
 		ASSERT_EQ(1ull, expected_full_path.size());
 		//

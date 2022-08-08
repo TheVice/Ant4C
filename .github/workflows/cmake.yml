@@ -94,10 +94,6 @@ jobs:
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\{1}' || '{0}/{1}',
             github.workspace, matrix.os) }}
-      TESTS_XML: >-
-        ${{ format(
-            startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
-            github.workspace) }}
 
     runs-on: ${{ matrix.os }}
 
@@ -179,18 +175,7 @@ jobs:
         }
 
     - name: Run tests
-      shell: pwsh
-      working-directory: ${{ env.BINARY_PATH }}
-      run: |
-        if (Test-Path -Path "${{ env.BINARY_PATH }}ant4c_tests${{ env.EXECUTABLE_EXTENSION }}")
-        {
-          ${{ env.BINARY_PATH }}ant4c_tests${{ env.EXECUTABLE_EXTENSION }} --tests_xml=${{ env.TESTS_XML }} --tests_exec_app=${{ env.BINARY_PATH }}tests_exec_app${{ env.EXECUTABLE_EXTENSION }} --tests_base_directory=${{ github.workspace }}
-        }
-        else
-        {
-          Write-Warning -Message ("File '{0}' not exists. Tests will not run." -f "${{ env.BINARY_PATH }}ant4c_tests${{ env.EXECUTABLE_EXTENSION }}")
-          Get-ChildItem -Path "${{ env.BINARY_PATH }}" -Recurse
-        }
+      run: ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.CMAKE_BUILD_DIR }}
 
     - name: Compress files with zstd
       shell: pwsh

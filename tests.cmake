@@ -14,8 +14,7 @@ if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(tests_exec_app
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -60,8 +59,7 @@ if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
   target_compile_features(ant4c_tests
     PRIVATE
-    cxx_std_11
-  )
+    cxx_std_11)
   else()
   set_property(TARGET ant4c_tests PROPERTY CXX_STANDARD 11)
   endif()
@@ -81,5 +79,5 @@ add_test(
     --tests_xml=${CMAKE_SOURCE_DIR}/tests.xml
     --tests_exec_app=$<TARGET_FILE:tests_exec_app>
     --tests_base_directory=.
-    --gtest_output=xml:${CMAKE_SOURCE_DIR}/report.xml
+    --gtest_output=xml:$<TARGET_FILE_DIR:ant4c_tests>/ant4c_tests-report.xml
 )

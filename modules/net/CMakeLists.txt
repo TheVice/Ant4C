@@ -122,4 +122,245 @@ add_custom_command(TARGET tests_ant4c.net.module POST_BUILD
 
 add_dependencies(tests_ant4c.net.module
   Ant4C::ant4c.net.module)
+
+if(WIN32)
+  if((MINGW) OR (CMAKE_CL_64))
+    set(dotnet_root "$ENV{ProgramFiles}\\dotnet")
+  else()
+    set(dotnet_root "$ENV{ProgramFiles(x86)}\\dotnet")
+  endif()
+else()
+  set(dotnet_root "/usr/share/dotnet")
+endif()
+
+add_test(
+  NAME tests_ant4c.net.module
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_hostfxr_resolve_sdk
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:hostfxr_resolve_sdk="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_hostfxr_resolve_sdk-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_hostfxr_get_available_sdks
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:hostfxr_get_available_sdks="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_hostfxr_get_available_sdks-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_hostfxr_get_native_search_directories
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:hostfxr_get_native_search_directories="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_hostfxr_get_native_search_directories-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_hostfxr_resolve_sdk2
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:hostfxr_resolve_sdk2="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_hostfxr_resolve_sdk2-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_initialize_for_dotnet_command_line
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_initialize_for_dotnet_command_line="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_initialize_for_dotnet_command_line-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_initialize_for_runtime_config
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_initialize_for_runtime_config="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_initialize_for_runtime_config-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_run_app
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_run_app="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_run_app-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_get_runtime_properties
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_get_runtime_properties="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_get_runtime_properties-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_get_runtime_property_value
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_get_runtime_property_value="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_get_runtime_property_value-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_set_runtime_property_value
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_set_runtime_property_value="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_set_runtime_property_value-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_get_runtime_delegate
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_get_runtime_delegate="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_get_runtime_delegate-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_set_error_writer
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_set_error_writer="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_set_error_writer-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_hostfxr_main_bundle_startupinfo
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_hostfxr_main_bundle_startupinfo="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_hostfxr_main_bundle_startupinfo-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_test_file_is_assembly
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:test_file_is_assembly="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_test_file_is_assembly-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_core_host_main
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:core_host_main="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_core_host_main-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_core_host_main_with_output_buffer
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:core_host_main_with_output_buffer="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_core_host_main_with_output_buffer-report.xml
+)
+
+add_test(
+  NAME tests_ant4c.net.module_core_host_initialize
+  COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
+    --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
+    --build_file=${CMAKE_SOURCE_DIR}/net.xml
+    --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
+    -D:test_hostfxr_="1"
+    -D:core_host_initialize="1"
+    --gtest_filter=TestNetModuleViaBuildFile*
+    --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_core_host_initialize-report.xml
+)
+
 endif()

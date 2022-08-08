@@ -122,13 +122,15 @@ set(ANT4C_HEADERS
 
 add_library(ant4c STATIC ${ANT4C_SOURCES} ${ANT4C_HEADERS})
 set_target_properties(ant4c PROPERTIES PUBLIC_HEADER "${ANT4C_HEADERS}")
+target_include_directories(ant4c SYSTEM INTERFACE
+  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
+)
 
 if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -154,8 +156,7 @@ if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c_shared
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -193,8 +194,7 @@ if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c_app
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -234,8 +234,8 @@ install(
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ant4c
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ant4c)
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${cmake_package_name}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${cmake_package_name})
 
 install(
   EXPORT ant4cTargets

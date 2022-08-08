@@ -218,7 +218,7 @@ protected:
 
 	TestNetModuleViaBuildFile() : TestNetModule()
 	{
-		predefine_arguments.insert(std::make_pair("--build_file=", &path_to_build_file));
+		predefine_arguments.emplace(std::make_pair("--build_file=", &path_to_build_file));
 	}
 
 	virtual void SetUp() override
@@ -256,6 +256,13 @@ protected:
 				<< path_to_module << std::endl
 				<< current_directory << std::endl
 				<< project_free(&the_project);
+		//
+		ASSERT_TRUE(GlobalArgumentParser::get_properties(&the_project, 0))
+				<< path_to_module << std::endl
+				<< current_directory << std::endl
+				<< project_free(&the_project);
+		//
+		load_nodes(&the_project);
 	}
 };
 
@@ -527,7 +534,7 @@ protected:
 		paths.push_back("libant4c.net.module.so");
 		paths.push_back("libant4c.net.module.dylib");
 #endif
-		predefine_arguments.insert(std::make_pair("--dotnet_root=", &dotnet_root));
+		predefine_arguments.emplace(std::make_pair("--dotnet_root=", &dotnet_root));
 	}
 
 	virtual void SetUp() override
