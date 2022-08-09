@@ -33,6 +33,20 @@ extern "C" {
 #endif
 #endif
 
+#ifdef DOTNET_RUNTIME_ISSUE_43036
+#ifndef _WIN32
+
+#include <thread>
+
+void bypass(void (*some_function)())
+{
+	std::thread some_thread(some_function);
+	some_thread.join();
+}
+
+#endif
+#endif
+
 #if defined(_MSC_VER)
 int main_(int argc, char** argv)
 {

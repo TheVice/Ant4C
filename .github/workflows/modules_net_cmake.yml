@@ -100,10 +100,16 @@ jobs:
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\tests.xml' || '{0}/tests.xml',
             github.workspace) }}
+      SOURCE_DIRECTORY: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\modules\net' || '{0}/modules/net',
+            github.workspace) }}
       NET_XML: >-
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\modules\net\net.xml' || '{0}/modules/net/net.xml',
             github.workspace) }}
+      FORCE_USE_PTHREAD:
+        ${{ startsWith(matrix.os, 'windows') && '' || '-DDOTNET_RUNTIME_ISSUE_43036=1' }}
 
     runs-on: ${{ matrix.os }}
 
@@ -150,7 +156,8 @@ jobs:
         ${{ env.CMAKE_TARGET_PLATFORM }}
         ${{ env.CMAKE_GENERATOR }}
         ${{ env.CMAKE_BUILD_TYPE }}
-        -S ${{ github.workspace }}/modules/net
+        ${{ env.FORCE_USE_PTHREAD }}
+        -S ${{ env.SOURCE_DIRECTORY }}
         -B ${{ env.CMAKE_BUILD_DIR }}
         -DLIBRARY_BINARY_DIR=${{ env.LIBRARY_BINARY_DIR }}
         -DANT4C_PATH=${{ env.CMAKE_BUILD_DIR }}/Redist
@@ -192,13 +199,16 @@ jobs:
       ${{ matrix.compiler }}
       ${{ matrix.optimized && 'release' || 'debug' }}
       ${{ matrix.target_platform }}
+      host-version - ${{ matrix.host_version }}
 
     strategy:
       matrix:
         compiler: [clang, gcc, msvc, mingw]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
+        host_version: [ "6.0" ]
+
         optimized: [true]
         target_platform: [x64]
 
@@ -231,12 +241,11 @@ jobs:
           target_platform: Win32
 
     env:
-      BINARY_PATH: >-
+      CMAKE_BUILD_DIR: >-
         ${{ format(
             startsWith(matrix.os, 'windows') &&
             '{0}\build' || '{0}/build',
             github.workspace) }}
-      CMAKE_CONFIG_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
       EXECUTABLE: >-
         ${{ format(
             startsWith(matrix.os, 'windows') &&
@@ -246,10 +255,24 @@ jobs:
               ) ||
               ( '{0}/build/{1}' ),
             github.workspace, 'tests_ant4c.net.module') }}
+      CMAKE_CONFIG_TYPE: ${{ matrix.optimized && 'Release' || 'Debug' }}
+      SOURCE_DIRECTORY: >-
+        ${{ format(
+            startsWith(matrix.os, 'windows') && '{0}\modules\net' || '{0}/modules/net',
+            github.workspace) }}
 
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Fetch prebuild of third-party libraries
+      run: git fetch origin ${{ matrix.os }}
+
+    - name: Checkout third-party libraries
+      run: git checkout origin/${{ matrix.os }} -- .
+
     - uses: actions/download-artifact@v3
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
@@ -267,6 +290,11 @@ jobs:
       if: ${{ 'Windows' != runner.os }}
       run: >-
         chmod +x ${{ env.EXECUTABLE }}
+
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: ${{ matrix.host_version }}
 
     - name: Add libraries to the folder with application that was made with MinGW
       if: ${{ 'mingw' == matrix.compiler }}
@@ -288,7 +316,7 @@ jobs:
             $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libstdc++-6.dll"
             if(Test-Path -Path $path)
             {
-              cp $path ${{ env.BINARY_PATH }}
+              cp $path ${{ env.CMAKE_BUILD_DIR }}
             }
             else
             {
@@ -297,7 +325,7 @@ jobs:
             $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libgcc_s_seh-1.dll"
             if(Test-Path -Path $path)
             {
-              cp $path ${{ env.BINARY_PATH }}
+              cp $path ${{ env.CMAKE_BUILD_DIR }}
             }
             else
             {
@@ -310,5 +338,24 @@ jobs:
           }
         }
 
+    - name: CMake - set path to the dotnet
+      run: >-
+        cmake
+        -S ${{ env.SOURCE_DIRECTORY }}
+        -B ${{ env.CMAKE_BUILD_DIR }}
+        -Ddotnet_root="${{ env.DOTNET_ROOT }}"
+
     - name: Run Tests
-      run: ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.BINARY_PATH }}
+      run: >-
+        ctest
+        --build-config ${{ env.CMAKE_CONFIG_TYPE }}
+        --test-dir ${{ env.CMAKE_BUILD_DIR }}
+        --output-on-failure
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}-host-version-${{ matrix.host_version }}
+        retention-days: 1
+        path: |
+          ${{ github.workspace }}/**/*-report.xml

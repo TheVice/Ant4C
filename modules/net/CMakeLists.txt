@@ -15,32 +15,38 @@ set_position_independent_code()
 find_package(ant4c PATHS "${ANT4C_PATH}" REQUIRED)
 
 # net_gate
-add_library(net_gate
+set(NET_GATE_SOURCES
   "${CMAKE_SOURCE_DIR}/arguments.c"
-  "${CMAKE_SOURCE_DIR}/arguments.h"
   "${CMAKE_SOURCE_DIR}/core_host_context_contract.c"
-  "${CMAKE_SOURCE_DIR}/core_host_context_contract.h"
   "${CMAKE_SOURCE_DIR}/core_host_initialize_request.c"
-  "${CMAKE_SOURCE_DIR}/core_host_initialize_request.h"
   "${CMAKE_SOURCE_DIR}/error_writer.c"
-  "${CMAKE_SOURCE_DIR}/error_writer.h"
   "${CMAKE_SOURCE_DIR}/host_fxr.c"
-  "${CMAKE_SOURCE_DIR}/host_fxr.h"
   "${CMAKE_SOURCE_DIR}/host_interface.c"
-  "${CMAKE_SOURCE_DIR}/host_interface.h"
   "${CMAKE_SOURCE_DIR}/host_policy.c"
-  "${CMAKE_SOURCE_DIR}/host_policy.h"
   "${CMAKE_SOURCE_DIR}/net.common.c"
-  "${CMAKE_SOURCE_DIR}/net.common.h"
   "${CMAKE_SOURCE_DIR}/net.file.c"
-  "${CMAKE_SOURCE_DIR}/net.file.h"
   "${CMAKE_SOURCE_DIR}/net.host.c"
-  "${CMAKE_SOURCE_DIR}/net.host.h"
   "${CMAKE_SOURCE_DIR}/net.host_fxr.c"
-  "${CMAKE_SOURCE_DIR}/net.host_fxr.h"
   "${CMAKE_SOURCE_DIR}/net.host_policy.c"
+)
+
+set(NET_GATE_HEADERS
+  "${CMAKE_SOURCE_DIR}/arguments.h"
+  "${CMAKE_SOURCE_DIR}/core_host_context_contract.h"
+  "${CMAKE_SOURCE_DIR}/core_host_initialize_request.h"
+  "${CMAKE_SOURCE_DIR}/error_writer.h"
+  "${CMAKE_SOURCE_DIR}/host_fxr.h"
+  "${CMAKE_SOURCE_DIR}/host_interface.h"
+  "${CMAKE_SOURCE_DIR}/host_policy.h"
+  "${CMAKE_SOURCE_DIR}/net.common.h"
+  "${CMAKE_SOURCE_DIR}/net.file.h"
+  "${CMAKE_SOURCE_DIR}/net.host.h"
+  "${CMAKE_SOURCE_DIR}/net.host_fxr.h"
   "${CMAKE_SOURCE_DIR}/net.host_policy.h"
-  "${CMAKE_SOURCE_DIR}/net_delegate.h")
+  "${CMAKE_SOURCE_DIR}/net_delegate.h"
+)
+
+add_library(net_gate STATIC ${NET_GATE_SOURCES} ${NET_GATE_HEADERS})
 
 if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
@@ -53,7 +59,8 @@ endif()
 target_compile_options(net_gate PRIVATE
   $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
   $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>)
+  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
+)
 
 target_link_libraries(net_gate Ant4C::ant4c)
 
@@ -63,7 +70,8 @@ add_library(ant4c.net.module SHARED
   "${CMAKE_CURRENT_SOURCE_DIR}/ant4c.net.module.csproj"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.adoc"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.c"
-  "${CMAKE_CURRENT_SOURCE_DIR}/net.h")
+  "${CMAKE_CURRENT_SOURCE_DIR}/net.h"
+)
 
 target_link_libraries(ant4c.net.module net_gate)
 
@@ -78,7 +86,8 @@ endif()
 target_compile_options(ant4c.net.module PRIVATE
   $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
   $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>)
+  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
+)
 
 add_library(Ant4C::net_gate ALIAS net_gate)
 add_library(Ant4C::ant4c.net.module ALIAS ant4c.net.module)
@@ -92,16 +101,19 @@ include("${CMAKE_SOURCE_DIR}/../../tests_base.cmake")
 # tests_ant4c.net.module
 add_executable(tests_ant4c.net.module
   "${CMAKE_SOURCE_DIR}/../../tests_net.module.cpp"
-  "${CMAKE_SOURCE_DIR}/net.xml")
+  "${CMAKE_SOURCE_DIR}/net.xml"
+)
 
 target_compile_options(tests_ant4c.net.module PRIVATE
   $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
   $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>)
+  $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
+)
 
 target_link_libraries(tests_ant4c.net.module
   Ant4C::net_gate
-  tests_base)
+  tests_base
+)
 
 if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_CXX_COMPILE_FEATURES};" MATCHES ";cxx_std_11;")
@@ -115,22 +127,31 @@ if(NOT MSVC)
 endif()
 
 add_custom_command(TARGET tests_ant4c.net.module POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/../../tests.xml")
+  COMMAND ${CMAKE_COMMAND} -E echo "Path to tests.xml is - ${CMAKE_SOURCE_DIR}/../../tests.xml"
+)
 
 add_custom_command(TARGET tests_ant4c.net.module POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E echo "Path to build_file is - ${CMAKE_SOURCE_DIR}/net.xml")
+  COMMAND ${CMAKE_COMMAND} -E echo "Path to build_file is - ${CMAKE_SOURCE_DIR}/net.xml"
+)
 
 add_dependencies(tests_ant4c.net.module
-  Ant4C::ant4c.net.module)
+  Ant4C::ant4c.net.module
+)
 
-if(WIN32)
-  if((MINGW) OR (CMAKE_CL_64))
-    set(dotnet_root "$ENV{ProgramFiles}\\dotnet")
+if(NOT DEFINED dotnet_root)
+  if(WIN32)
+    if((MINGW) OR (CMAKE_CL_64))
+      set(dotnet_root "$ENV{ProgramFiles}\\dotnet")
+    else()
+      set(dotnet_root "$ENV{ProgramFiles(x86)}\\dotnet")
+    endif()
   else()
-    set(dotnet_root "$ENV{ProgramFiles(x86)}\\dotnet")
+    set(dotnet_root "/usr/share/dotnet")
   endif()
 else()
-  set(dotnet_root "/usr/share/dotnet")
+  if(DEFINED ENV{DOTNET_ROOT})
+    set(dotnet_root "$ENV{DOTNET_ROOT}")
+  endif()
 endif()
 
 add_test(
@@ -139,9 +160,10 @@ add_test(
     --tests_xml=${CMAKE_SOURCE_DIR}/../../tests.xml
     --build_file=${CMAKE_SOURCE_DIR}/net.xml
     --dotnet_root=${dotnet_root}
+    -D:DOTNET_ROOT=${dotnet_root}
     --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module-report.xml
 )
-
+if(ALLOW_ALL_TEST)
 add_test(
   NAME tests_ant4c.net.module_hostfxr_resolve_sdk
   COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"
@@ -193,7 +215,7 @@ add_test(
     --gtest_filter=TestNetModuleViaBuildFile*
     --gtest_output=xml:$<TARGET_FILE_DIR:tests_ant4c.net.module>/tests_ant4c.net.module_hostfxr_resolve_sdk2-report.xml
 )
-
+endif()
 add_test(
   NAME tests_ant4c.net.module_test_hostfxr_initialize_for_dotnet_command_line
   COMMAND "$<TARGET_FILE:tests_ant4c.net.module>"

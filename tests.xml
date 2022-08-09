@@ -4536,7 +4536,8 @@ Hello! Do you know that last-index-of('ABAB', 'B') is ${string::last-index-of('A
     <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
       <target>hostfxr_is-function-exists</target>
     </project_load_from_build_file>
-    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}">
+    <project_load_from_build_file unless="${property::exists('test_hostfxr_')}"
+      if="${string::equal(bool::parse('false'), platform::is-macos())}">
       <target>hostfxr_main</target>
     </project_load_from_build_file>
     <project_load_from_build_file if="${property::exists('hostfxr_resolve_sdk')}">

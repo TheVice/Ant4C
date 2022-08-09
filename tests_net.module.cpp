@@ -690,7 +690,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main)
 	std::cout << "[       OK ]" << std::endl;
 }
 
-TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
+TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk)
 {
 	const auto hostfxr = *(hostfxr_files.cbegin());
 	//
@@ -701,7 +701,8 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
 	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+		<< command << std::endl;
 	ASSERT_TRUE(buffer_push_back(&the_output, 0));
 	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
 	//
@@ -714,7 +715,8 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
 	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+		<< command << std::endl;
 	//
 	std::cout << "[       OK ]" << std::endl;
 
@@ -725,11 +727,13 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
 		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+			<< command << std::endl;
 		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		//
 #ifdef WIN32
-		ASSERT_TRUE(directory_exists(buffer_data(&the_output, 0)));
+		ASSERT_TRUE(directory_exists(buffer_data(&the_output, 0)))
+			<< buffer_to_string(&the_output) << std::endl;
 #else
 		command = "net::result-to-string('";
 		command += buffer_char_data(&the_output, 0);
@@ -738,12 +742,14 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
 		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+			<< command << std::endl;
 		ASSERT_TRUE(buffer_push_back(&the_output, 0));
 		//
 		std::cout << "[       OK ]" << std::endl;
 		//
-		ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"));
+		ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"))
+			<< buffer_to_string(&the_output) << std::endl;
 		std::cout << "[       OK ]" << std::endl;
 		//
 		std::cerr << "[Warning]: function do not return valid data." << std::endl;
@@ -757,7 +763,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk)
 	}
 }
 
-TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk2)
+TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk2)
 {
 	const auto hostfxr = *(hostfxr_files.cbegin());
 	//
@@ -844,7 +850,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_resolve_sdk2)
 	}
 }
 
-TEST_F(TestNetModuleWithParameters, hostfxr_get_available_sdks)
+TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_available_sdks)
 {
 	const auto hostfxr = *(hostfxr_files.cbegin());
 	//
@@ -913,7 +919,7 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_available_sdks)
 	}
 }
 
-TEST_F(TestNetModuleWithParameters, hostfxr_get_native_search_directories)
+TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directories)
 {
 	const auto hostfxr = *(hostfxr_files.cbegin());
 	//
