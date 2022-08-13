@@ -7,73 +7,174 @@ pipelines:
           image: alpine:latest
           script:
             - apk update
-            - apk add alpine-sdk cmake gtest-dev pugixml-dev
+            - apk add alpine-sdk cmake gtest-dev pugixml-dev zstd
 
-            - mkdir test-results
+            - build_directory=$PWD/build_Debug
 
-            - cmake -S . -B build_Debug -DCMAKE_BUILD_TYPE=Debug
-            - cmake --build build_Debug --config Debug --parallel $(nproc)
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Debug
+            - cmake --build $build_directory --config Debug --parallel $(nproc)
 
-            - cd build_Debug
-            - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
-            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Debug.xml"; fi
-            - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
+            - if [ -f "$build_directory/ant4c" ]; then $build_directory/ant4c -help; fi
 
+            - cd $build_directory
+            - ctest --build-config Debug --test-dir $build_directory --output-on-failure
             - cd ..
+            - if [ ! -d "$PWD/test-results/Debug" ]; then mkdir -p $PWD/test-results/Debug; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Debug
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
 
-            - cmake -S . -B build_Release -DCMAKE_BUILD_TYPE=Release
-            - cmake --build build_Release --config Release --parallel $(nproc)
+            - build_directory=$PWD/build_Release
 
-            - cd build_Release
-            - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
-            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Release.xml"; fi
-            - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Release
+            - cmake --build $build_directory --config Release --parallel $(nproc)
+
+            - if [ -f "$build_directory/ant4c" ]; then $build_directory/ant4c -help; fi
+
+            - cd $build_directory
+            - ctest --build-config Release --test-dir $build_directory --output-on-failure
+            - cd ..
+            - if [ ! -d "$PWD/test-results/Release" ]; then mkdir -p $PWD/test-results/Release; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Release
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
 
           artifacts:
-            - build*/*
+            - build*/*.zst
 
+  custom:
+
+    Arch:
+      - step:
+          name: Arch Linux
+          image: archlinux:base-devel
+          caches:
+            - archlinuxcachepacman
+          script:
+            - pacman-key --init
+            - pacman -Syyu --noconfirm cmake pugixml gtest
+
+            - build_directory=$PWD/build_Debug
+
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Debug
+            - cmake --build $build_directory --config Debug --parallel $(nproc)
+
+            - if [ -f "$build_directory/ant4c" ]; then $build_directory/ant4c -help; fi
+
+            - ctest --build-config Debug --test-dir $build_directory --output-on-failure
+            - if [ ! -d "$PWD/test-results/Debug" ]; then mkdir -p $PWD/test-results/Debug; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Debug
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
+
+            - build_directory=$PWD/build_Release
+
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Release
+            - cmake --build $build_directory --config Release --parallel $(nproc)
+
+            - if [ -f "$build_directory/ant4c" ]; then $build_directory/ant4c -help; fi
+
+            - ctest --build-config Release --test-dir $build_directory --output-on-failure
+            - if [ ! -d "$PWD/test-results/Release" ]; then mkdir -p $PWD/test-results/Release; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Release
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
+
+          artifacts:
+            - build*/*.zst
+
+
+    gcc:
       - step:
           name: gcc-latest
           image: gcc:latest
           script:
-            - apt update && apt -y install libgtest-dev libpugixml-dev cmake
+            - apt update && apt -y install libgtest-dev libpugixml-dev cmake zstd
+
+            - build_directory=$PWD/build_Debug
+
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Debug
+            - cmake --build $build_directory --config Debug --parallel $(nproc)
+
+            - if [ -f "$build_directory/ant4c" ]; then $build_directory/ant4c -help; fi
+
+            - cd $build_directory
+            - ctest --build-config Debug --test-dir $build_directory --output-on-failure
+            - cd ..
+            - if [ ! -d "$PWD/test-results/Debug" ]; then mkdir -p $PWD/test-results/Debug; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Debug
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
+
+            - build_directory=$PWD/build_Release
+
+            - cmake -S $PWD -B $build_directory -DCMAKE_BUILD_TYPE=Release
+            - cmake --build $build_directory --config Release --parallel $(nproc)
+
+            - if [ -f "$build_directory/ant4c" ]; then $build_directory/ant4c -help; fi
+
+            - cd $build_directory
+            - ctest --build-config Release --test-dir $build_directory --output-on-failure
+            - cd ..
+            - if [ ! -d "$PWD/test-results/Release" ]; then mkdir -p $PWD/test-results/Release; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Release
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
+
+          artifacts:
+            - build*/*.zst
+
+    Mageia:
+      - step:
+          name: Mageia
+          image: mageia:8
+          script:
+            - dnf update -y
+            - dnf install rpmdevtools cmake gtest-devel pugixml-devel -y
+            - rpmdev-setuptree
+
+            - cat rpm/ant4c.spec | sed "s/%{_mandir}\/man1\/%{name}.1.gz/%{_mandir}\/man1\/%{name}.1.xz/" > ~/rpmbuild/SPECS/ant4c.spec
+            - rpmlint ~/rpmbuild/SPECS/ant4c.spec
+
+            - VERSION=2020.09
+            - mkdir v$VERSION
+
+            - cp *.c v$VERSION
+            - cp *.cmake v$VERSION
+            - cp *.cpp v$VERSION
+            - cp *.h v$VERSION
+            - cp CHANGELOG v$VERSION
+            - cp CMakeLists.txt v$VERSION
+            - cp help.adoc v$VERSION
+            - cp LICENSE v$VERSION
+            - cp MD5SUMS v$VERSION
+            - cp README.md v$VERSION
+            - cp SHA3-224SUMS v$VERSION
+            - cp tests.xml v$VERSION
+            - cp ant4c.1.gz v$VERSION
+            - cp help.html v$VERSION
+            - mkdir -p v$VERSION/modules
+            - cp modules/example.cmake v$VERSION/modules
+            - cp modules/example.c v$VERSION/modules
+            - cp modules/example.h v$VERSION/modules
+
+            - tar cvfz v$VERSION.tar.gz v$VERSION
+            - cp v$VERSION.tar.gz ~/rpmbuild/SOURCES/
+
+            - rpmbuild -ba -v ~/rpmbuild/SPECS/ant4c.spec
+
+            - mkdir build
+            - cp ~/rpmbuild/SRPMS/ant4c-*.rpm build/
+            - cp ~/rpmbuild/RPMS/x86_64/ant4c-*.rpm build/
 
             - mkdir test-results
-
-            - cmake -S . -B build_Debug -DCMAKE_BUILD_TYPE=Debug
-            - cmake --build build_Debug --config Debug --parallel $(nproc)
-
-            - cd build_Debug
-            - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
-            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Debug.xml"; fi
-            - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
-
-            - cd ..
-
-            - cmake -S . -B build_Release -DCMAKE_BUILD_TYPE=Release
-            - cmake --build build_Release --config Release --parallel $(nproc)
-
-            - cd build_Release
-            - if [ -f $PWD/ant4c ]; then $PWD/ant4c; fi
-            - if [ -f $PWD/ant4c_tests ]; then $PWD/ant4c_tests --tests_xml=../tests.xml --tests_exec_app=$PWD/tests_exec_app --tests_base_directory=.. --gtest_output="xml:../test-results/report-Release.xml"; fi
-            - if [ ! -f $PWD/ant4c_tests ]; then echo "File '"$PWD/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
+            - cp ~/rpmbuild/BUILD/v$VERSION/**/ant4c_tests-report.xml test-results/
 
           artifacts:
             - build*/*
 
+    dotnet_sdk_6:
       - step:
           name: dotnet_sdk_6.0-jammy
           image: mcr.microsoft.com/dotnet/sdk:6.0-jammy
           script:
-            - apt update && apt -y install libgtest-dev libpugixml-dev cmake make gcc g++
+            - apt update && apt -y install libgtest-dev libpugixml-dev cmake make gcc g++ zstd
 
-            - dotnet_root=/usr/share/dotnet
-            - tests_xml=$PWD/tests.xml
             - source_directory=$PWD/modules/net
-            - build_file=$source_directory/net.xml
-
-            - mkdir test-results
-
             - build_directory=$PWD/build_Debug
             - redist_directory=$build_directory/Redist
 
@@ -81,20 +182,19 @@ pipelines:
             - cmake --build $build_directory --config Debug --parallel $(nproc)
             - cmake --build $build_directory --config Debug --parallel $(nproc) --target install
 
+            - if [ -f "$build_directory/CMakeCache.txt_" ]; then rm $build_directory/CMakeCache.txt_; fi
             - mv $build_directory/CMakeCache.txt $build_directory/CMakeCache.txt_
 
             - cmake -S $source_directory -B $build_directory -DCMAKE_BUILD_TYPE=Debug -DANT4C_PATH=$redist_directory
             - cmake --build $build_directory --config Debug --parallel $(nproc)
 
-            - cd $build_directory
-
             # export COREHOST_TRACE="1"
-            - test_output=../test-results/report-net.module-Debug.xml
             # export COREHOST_TRACEFILE="$test_output.txt"
 
-            - ./tests_ant4c.net.module --tests_xml="$tests_xml" --build_file="$build_file" --dotnet_root="$dotnet_root" --gtest_output=""xml:$test_output""
-
-            - cd ..
+            - ctest --build-config Debug --test-dir $build_directory --output-on-failure
+            - if [ ! -d "$PWD/test-results/Debug" ]; then mkdir -p $PWD/test-results/Debug; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Debug
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
 
             - build_directory=$PWD/build_Release
             - redist_directory=$build_directory/Redist
@@ -103,6 +203,7 @@ pipelines:
             - cmake --build $build_directory --config Release --parallel $(nproc)
             - cmake --build $build_directory --config Release --parallel $(nproc) --target install
 
+            - if [ -f "$build_directory/CMakeCache.txt_" ]; then rm $build_directory/CMakeCache.txt_; fi
             - mv $build_directory/CMakeCache.txt $build_directory/CMakeCache.txt_
 
             - cmake -S $source_directory -B $build_directory -DCMAKE_BUILD_TYPE=Release -DANT4C_PATH=$redist_directory
@@ -111,10 +212,66 @@ pipelines:
             - cd $build_directory
 
             # export COREHOST_TRACE="1"
-            - test_output=../test-results/report-net.module-Release.xml
             # export COREHOST_TRACEFILE="$test_output.txt"
 
-            - ./tests_ant4c.net.module --tests_xml="$tests_xml" --build_file="$build_file" --dotnet_root="$dotnet_root" --gtest_output=""xml:$test_output""
+            - ctest --build-config Release --test-dir $build_directory --output-on-failure
+            - if [ ! -d "$PWD/test-results/Release" ]; then mkdir -p $PWD/test-results/Release; fi
+            - cp $build_directory/*-report.xml $PWD/test-results/Release
+            - for i in $build_directory/*; do if [ -f "$i" ]; then zstd --ultra -22 $i -o $i.zst -f; fi; done
+
+          artifacts:
+            - build*/*.zst
+
+    openSUSE:
+      - step:
+          name: openSUSE
+          image: opensuse/leap:15
+          # image: opensuse/tumbleweed
+          script:
+            # - zypper update -y
+            - zypper install -y rpmdevtools rpmlint tar gzip rpm-build cmake gcc-c++ gtest pugixml-devel
+            - rpmdev-setuptree
+
+            - cat rpm/ant4c.spec | sed "s/gtest-devel/gtest/" > ~/rpmbuild/SPECS/ant4c.spec
+            - rpmlint ~/rpmbuild/SPECS/ant4c.spec
+
+            - VERSION=2020.09
+            - mkdir v$VERSION
+
+            - cp *.c v$VERSION
+            - cp *.cmake v$VERSION
+            - cp *.cpp v$VERSION
+            - cp *.h v$VERSION
+            - cp CHANGELOG v$VERSION
+            - cp CMakeLists.txt v$VERSION
+            - cp help.adoc v$VERSION
+            - cp LICENSE v$VERSION
+            - cp MD5SUMS v$VERSION
+            - cp README.md v$VERSION
+            - cp SHA3-224SUMS v$VERSION
+            - cp tests.xml v$VERSION
+            - cp ant4c.1.gz v$VERSION
+            - cp help.html v$VERSION
+            - mkdir -p v$VERSION/modules
+            - cp modules/example.cmake v$VERSION/modules
+            - cp modules/example.c v$VERSION/modules
+            - cp modules/example.h v$VERSION/modules
+
+            - tar cvfz v$VERSION.tar.gz v$VERSION
+            - cp v$VERSION.tar.gz ~/rpmbuild/SOURCES/
+
+            - rpmbuild -ba -v ~/rpmbuild/SPECS/ant4c.spec
+
+            - mkdir build
+            - cp ~/rpmbuild/SRPMS/ant4c-*.rpm build/
+            - cp ~/rpmbuild/RPMS/x86_64/ant4c-*.rpm build/
+
+            - mkdir test-results
+            - cp ~/rpmbuild/BUILD/v$VERSION/**/ant4c_tests-report.xml test-results/
 
           artifacts:
             - build*/*
+
+definitions:
+  caches:
+    archlinuxcachepacman: /var/cache/pacman

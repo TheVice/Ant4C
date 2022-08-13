@@ -7,7 +7,7 @@ Release:        1%{?dist}
 
 License:        MIT
 URL:            https://github.com/TheVice/%{name}
-Source0:        https://github.com/TheVice/%{name}/archive/v%{version}.tar.gz
+Source0:        file:///v%{version}.tar.gz
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
 BuildRequires:  cmake

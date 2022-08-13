@@ -175,7 +175,11 @@ jobs:
         }
 
     - name: Run tests
-      run: ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.CMAKE_BUILD_DIR }}
+      run: >-
+        ctest
+        --build-config ${{ env.CMAKE_CONFIG_TYPE }}
+        --test-dir ${{ env.CMAKE_BUILD_DIR }}
+        --output-on-failure
 
     - name: Compress files with zstd
       shell: pwsh

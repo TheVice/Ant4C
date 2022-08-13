@@ -1,0 +1,38 @@
+31,32c31,32
+< %cmake -DPROGRAM_VERSION="%{version}"
+< %cmake_build
+---
+> %cmake -DPROGRAM_VERSION="%{version}" -DCMAKE_INSTALL_PREFIX=%{buildroot}
+> cmake --build $(pwd) --parallel $(nproc)
+35c35,36
+< %cmake_install
+---
+> cmake --install $(pwd)/build
+> 
+38a40,57
+> mkdir -p %{buildroot}/%{_bindir}
+> install -m 0755 %{buildroot}/bin/%{name} %{buildroot}/%{_bindir}/%{name}
+> 
+> mkdir -p %{buildroot}/%{_libdir}
+> install -m 0644 %{buildroot}/lib64/libdefault_listener.so %{buildroot}/%{_libdir}/libdefault_listener.so
+> install -m 0644 %{buildroot}/lib64/libant4c.a %{buildroot}/%{_libdir}/libant4c.a
+> 
+> mkdir -p %{buildroot}/%{_includedir}/%{name}
+> install -m 0644 %{buildroot}/include/%{name}/* %{buildroot}/%{_includedir}/%{name}/
+> 
+> mkdir -p %{buildroot}/%{_libdir}/cmake/%{name}
+> install -m 0644 %{buildroot}/lib64/cmake/%{name}/* %{buildroot}/%{_libdir}/cmake/%{name}/
+> 
+> rm -rf %{buildroot}/bin
+> rm -rf %{buildroot}/include
+> rm -rf %{buildroot}/lib64
+> rm -rf %{buildroot}/usr/lib
+> 
+40c59
+< %ctest
+---
+> ctest --test-dir $(pwd)/build
+46c65
+< %{_mandir}/man1/%{name}.1.gz
+---
+> %{_mandir}/man1/%{name}.1.zst

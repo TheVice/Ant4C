@@ -788,10 +788,15 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	if (environment_get_variable(tmp_dir, tmp_dir + TMP_DIR_SIZE, temp_path))
 	{
 #endif
+	static const uint8_t zero = 0;
 	const uint8_t* path_start = buffer_data(temp_path, size);
-	const uint8_t* path_finish = buffer_data(temp_path, 0) + buffer_size(temp_path);
+	const uint8_t* path_finish =
+		string_find_any_symbol_like_or_not_like_that(
+			path_start, buffer_data(temp_path, 0) + buffer_size(temp_path),
+			&zero, &zero + 1, 1, 1);
 
-	if (!path_get_directory_name(path_start, &path_finish))
+	if (string_ends_with(path_start, path_finish, &PATH_DELIMITER, &PATH_DELIMITER + 1) &&
+		!path_get_directory_name(path_start, &path_finish))
 	{
 		return 0;
 	}

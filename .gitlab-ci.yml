@@ -114,7 +114,7 @@ build_with_MSVC:
         throw (New-Object -TypeName System.Exception -ArgumentList $message)
       }
 
-      ctest --build-config $build_type --test-dir $build_directory
+      ctest --build-config $build_type --test-dir $build_directory --output-on-failure
 
       if ($LastExitCode -ne 0)
       {
@@ -218,7 +218,7 @@ build_with_MinGW:
         throw (New-Object -TypeName System.Exception -ArgumentList $message)
       }
 
-      ctest --build-config $build_type --test-dir $build_directory
+      ctest --build-config $build_type --test-dir $build_directory --output-on-failure
 
       if ($LastExitCode -ne 0)
       {
@@ -265,7 +265,7 @@ build_on_unix_like:
     cmake --build $CI_PROJECT_DIR/build-$BUILD_TYPE --config $BUILD_TYPE --target install
 
     if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c; fi
-    ctest --build-config $BUILD_TYPE --test-dir $CI_PROJECT_DIR/build-$BUILD_TYPE
+    ctest --build-config $BUILD_TYPE --test-dir $CI_PROJECT_DIR/build-$BUILD_TYPE --output-on-failure
     # if [ -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests --tests_xml=$CI_PROJECT_DIR/tests.xml --tests_exec_app=$CI_PROJECT_DIR/build-$BUILD_TYPE/tests_exec_app --tests_base_directory=$CI_PROJECT_DIR --gtest_output="xml:$CI_PROJECT_DIR/build-$BUILD_TYPE/report-$BUILD_TYPE.xml"; fi
     # if [ ! -f $CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests ]; then echo "File '"$CI_PROJECT_DIR/build-$BUILD_TYPE/ant4c_tests"' not exists. Tests will not run." ; ls -lah ; fi
 
@@ -462,7 +462,7 @@ ant4c.net.module_MSVC:
       }
 
       # $env:COREHOST_TRACEFILE="$test_output.txt"
-      ctest --build-config $build_type --test-dir $build_directory
+      ctest --build-config $build_type --test-dir $build_directory --output-on-failure
 
       if (($TargetPlatform -eq "Win32") -and ($build_type -eq "Debug"))
       {
@@ -582,11 +582,11 @@ ant4c.net.module_MinGW:
       }
 
       # $env:COREHOST_TRACEFILE="$test_output.txt"
-      ctest --build-config $BUILD_TYPE --test-dir $build_directory
+      ctest --build-config $BUILD_TYPE --test-dir $build_directory --output-on-failure
 
       if ($LastExitCode -ne 0)
       {
-        $message = "Exit code of $ant4c_tests is not equal to the '0' instead it - {0}." -f $LastExitCode
+        $message = "Exit code of $ctest is not equal to the '0' instead it - {0}." -f $LastExitCode
         throw (New-Object -TypeName System.Exception -ArgumentList $message)
       }
 
@@ -690,6 +690,29 @@ create_rpm:
   script: |
     rpmdev-setuptree
 
+    cp rpm/ant4c.spec ~/rpmbuild/SPECS/
+
+    id=$(cat /etc/os-release | grep "^ID=")
+
+    if [ "ID=\"opensuse-leap\"" = "$id" ]; then
+      cat rpm/ant4c.spec | sed "s/BuildRequires:  gtest-devel/BuildRequires:  gtest/" > ~/rpmbuild/SPECS/ant4c.spec
+    fi
+
+    if [ "ID=mageia" = "$id" ]; then
+      cat rpm/ant4c.spec | sed "s/%{_mandir}\/man1\/%{name}.1.gz/%{_mandir}\/man1\/%{name}.1.xz/" > ~/rpmbuild/SPECS/ant4c.spec
+    fi
+
+    if [ "ID=\"openmandriva\"" = "$id" ]; then
+      patch rpm/ant4c.spec rpm/ant4c.spec.patch
+      # cat rpm/ant4c.spec | sed "s/gcc-c++/clang/" > ~/rpmbuild/SPECS/ant4c.spec
+      cp rpm/ant4c.spec ~/rpmbuild/SPECS
+      cat tests.cmake | sed "s|$<TARGET_FILE_DIR:ant4c_tests>|$CI_PROJECT_DIR|" > tests.cmake_
+      rm tests.cmake
+      mv tests.cmake_ tests.cmake
+    fi
+
+    rpmlint ~/rpmbuild/SPECS/ant4c.spec
+
     VERSION=2020.09
     mkdir v$VERSION
 
@@ -714,15 +737,17 @@ create_rpm:
 
     tar cvfz v$VERSION.tar.gz v$VERSION
 
-    cp rpm/ant4c.spec ~/rpmbuild/SPECS/
-    rpmlint ~/rpmbuild/SPECS/ant4c.spec
-
     cp v$VERSION.tar.gz ~/rpmbuild/SOURCES/
     rpmbuild -ba -v ~/rpmbuild/SPECS/ant4c.spec
 
     cp ~/rpmbuild/SRPMS/ant4c-*.rpm .
     cp ~/rpmbuild/RPMS/x86_64/ant4c-*.rpm .
-    cp ~/rpmbuild/BUILD/v$VERSION/**/ant4c_tests-report.xml .
+
+    if [ "ID=\"openmandriva\"" = "$id" ]; then
+      echo ""
+    else
+      cp ~/rpmbuild/BUILD/v$VERSION/**/ant4c_tests-report.xml .
+    fi
 
   artifacts:
     paths:
