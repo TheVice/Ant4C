@@ -9,27 +9,28 @@ jobs:
       ${{ matrix.os }}
       ${{ matrix.compiler }}
       ${{ matrix.optimized && 'release' || 'debug' }}
-      ${{ matrix.patch && 'First patch apply' || 'no first patch' }}
-      ${{ matrix.patch_2 && 'Second patch apply' || 'no second patch' }}
+
+      # ${{ matrix.patch && 'First patch apply' || 'no first patch' }}
+      # ${{ matrix.patch_2 && 'Second patch apply' || 'no second patch' }}
 
     strategy:
       fail-fast: false
       matrix:
         compiler: [mingw]
-        os: [windows-2019, windows-2022]
+        os: [windows-2022]
         optimized: [true, false]
         target_platform: [x64]
-        patch: [true, false]
-        patch_2: [true, false]
-        exclude:
-        - os: windows-2019
-          patch: true
+        # patch: [true, false]
+        # patch_2: [true, false]
+        # exclude:
+        # - os: windows-2019
+        #   patch: true
 
-        - os: windows-2019
-          patch_2: true
+        # - os: windows-2019
+        #   patch_2: true
 
-        - patch: true
-          patch_2: true
+        # - patch: true
+        #   patch_2: true
 
     env:
       CMAKE_BUILD_DIR: >-
@@ -57,6 +58,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: Adding path to a bin directory of MinGW
+      if: ${{ 'mingw' == matrix.compiler }}
+      run: echo "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;" >> $GITHUB_PATH
+
     - name: Checkout
       uses: actions/checkout@v3
 
@@ -75,70 +80,84 @@ jobs:
         --build ${{ env.CMAKE_BUILD_DIR }}
         --config ${{ env.CMAKE_CONFIG_TYPE }}
 
-    - name: Add libraries to the folder with application that was made with MinGW
-      if: ${{ 'mingw' == matrix.compiler && matrix.patch }}
-      shell: pwsh
-      run: |
-        $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\cpp.exe"
-        if(Test-Path -Path $path)
-        {
-          $argument = "--version"
-          $source = "$env:TEMP\1.txt"
-          Start-Process -FilePath $path -ArgumentList $argument -NoNewWindow -Wait -RedirectStandardOutput $source
-          $source = [System.IO.File]::ReadAllLines($source)[0]
-          $argument = $source.LastIndexOf(" ")
-          $argument++
-          $source = $source.Substring($argument)
-          $ver = [System.Version]::Parse($source)
-          if([System.Version]::Parse("9.0") -le $ver)
-          {
-            Write-Warning -Message "Patch will be apply."
-            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libstdc++-6.dll"
-            if(Test-Path -Path $path)
-            {
-              cp $path ${{ env.BINARY_PATH }}
-            }
-            else
-            {
-              Write-Warning -Message $path
-            }
-            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libgcc_s_seh-1.dll"
-            if(Test-Path -Path $path)
-            {
-              cp $path ${{ env.BINARY_PATH }}
-            }
-            else
-            {
-              Write-Warning -Message $path
-            }
-          }
-          else
-          {
-            Write-Host "Nothing to do."
-          }
-        }
-
     - name: Run main application
       if: ${{ 'mingw' == matrix.compiler }}
       shell: pwsh
       run: |
+        Write-Host $env:Path
         $app = "${{ env.BINARY_PATH }}main${{ env.EXECUTABLE_EXTENSION }}"
         $process = Start-Process -FilePath "$app" -NoNewWindow -Wait -PassThru
         if ($process.ExitCode -ne 0)
         {
-          $path = "First attempt to start application failed. Exit code of application '$app' is not equal to the '0', instead it - '{0}'." -f $process.ExitCode
-          Write-Warning $path
-          if (${{ matrix.patch_2 }})
-          {
-            $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;"
-            $path += [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
-            $env:Path = $path
-          }
-          $process = Start-Process -FilePath "$app" -NoNewWindow -Wait -PassThru
-          if ($process.ExitCode -ne 0)
-          {
-            $app = "Second attempt failed. Exit code of application '$app' is not equal to the '0', instead it - '{0}'." -f $process.ExitCode
-            throw (New-Object -TypeName System.Exception -ArgumentList $app)
-          }
+          $app = "Exit code of application '$app' is not equal to the '0', instead it - '{0}'." -f $process.ExitCode
+          throw (New-Object -TypeName System.Exception -ArgumentList $app)
         }
         Write-Host "The application '$app' is success started."
+
+    # - name: Add libraries to the folder with application that was made with MinGW
+    #   if: ${{ 'mingw' == matrix.compiler && matrix.patch }}
+    #   shell: pwsh
+    #   run: |
+    #     $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\cpp.exe"
+    #     if(Test-Path -Path $path)
+    #     {
+    #       $argument = "--version"
+    #       $source = "$env:TEMP\1.txt"
+    #       Start-Process -FilePath $path -ArgumentList $argument -NoNewWindow -Wait -RedirectStandardOutput $source
+    #       $source = [System.IO.File]::ReadAllLines($source)[0]
+    #       $argument = $source.LastIndexOf(" ")
+    #       $argument++
+    #       $source = $source.Substring($argument)
+    #       $ver = [System.Version]::Parse($source)
+    #       if([System.Version]::Parse("9.0") -le $ver)
+    #       {
+    #         Write-Warning -Message "Patch will be apply."
+    #         $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libstdc++-6.dll"
+    #         if(Test-Path -Path $path)
+    #         {
+    #           cp $path ${{ env.BINARY_PATH }}
+    #         }
+    #         else
+    #         {
+    #           Write-Warning -Message $path
+    #         }
+    #         $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\libgcc_s_seh-1.dll"
+    #         if(Test-Path -Path $path)
+    #         {
+    #           cp $path ${{ env.BINARY_PATH }}
+    #         }
+    #         else
+    #         {
+    #           Write-Warning -Message $path
+    #         }
+    #       }
+    #       else
+    #       {
+    #         Write-Host "Nothing to do."
+    #       }
+    #     }
+
+    # - name: Run main application
+    #   if: ${{ 'mingw' == matrix.compiler }}
+    #   shell: pwsh
+    #   run: |
+    #     $app = "${{ env.BINARY_PATH }}main${{ env.EXECUTABLE_EXTENSION }}"
+    #     $process = Start-Process -FilePath "$app" -NoNewWindow -Wait -PassThru
+    #     if ($process.ExitCode -ne 0)
+    #     {
+    #       $path = "First attempt to start application failed. Exit code of application '$app' is not equal to the '0', instead it - '{0}'." -f $process.ExitCode
+    #       Write-Warning $path
+    #       if (${{ matrix.patch_2 }})
+    #       {
+    #         $path = "C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;"
+    #         $path += [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+    #         $env:Path = $path
+    #       }
+    #       $process = Start-Process -FilePath "$app" -NoNewWindow -Wait -PassThru
+    #       if ($process.ExitCode -ne 0)
+    #       {
+    #         $app = "Second attempt failed. Exit code of application '$app' is not equal to the '0', instead it - '{0}'." -f $process.ExitCode
+    #         throw (New-Object -TypeName System.Exception -ArgumentList $app)
+    #       }
+    #     }
+    #     Write-Host "The application '$app' is success started."
