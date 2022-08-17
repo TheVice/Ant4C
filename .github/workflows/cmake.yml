@@ -84,22 +84,7 @@ jobs:
       if: ${{ 'mingw' == matrix.compiler }}
       shell: pwsh
       run: |
-        $paths = $Env:PATH.Split(';')
-        $paths_ = ""
-        ForEach($path in $paths)
-        {
-          $path_ = $path.ToLower()
-          If (($path_ -clike "c:\strawberry*") -or
-          	  ($path_ -clike "c:\program files\git\mingw64*") -or
-          	  ($path_ -clike "c:\programdata*"))
-          {
-          }
-          Else
-          {
-            $paths_ += $path + ";"
-          }
-        }
-        $Env:PATH = $paths_
+        $Env:PATH="C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;"
         Write-Host $Env:PATH
         $app = "${{ env.BINARY_PATH }}main${{ env.EXECUTABLE_EXTENSION }}"
         $process = Start-Process -FilePath "$app" -NoNewWindow -Wait -PassThru
