@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 #if defined(_WIN32)
@@ -30,10 +29,10 @@ uint8_t common_string_to_enum(
 	const uint8_t** reference_strings, uint8_t max_enum_value);
 
 uint8_t common_append_string_to_buffer(
-	const uint8_t* input, struct buffer* output);
+	const uint8_t* input, void* output);
 
 uint8_t common_get_arguments(
-	const struct buffer* boxed_arguments,
+	const void* boxed_arguments,
 	uint8_t arguments_count, struct range* arguments, uint8_t terminate);
 
 uint8_t common_get_attributes_and_arguments_for_task(
@@ -43,7 +42,7 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes,
 	const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count,
-	struct buffer* task_arguments);
+	void* task_arguments);
 
 void common_set_output_stream(void* stream);
 void common_set_error_output_stream(void* stream);

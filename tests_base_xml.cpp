@@ -117,7 +117,7 @@ GTEST_API_ int wmain(int argc, wchar_t** argv)
 	return main_(argc, argvA);
 }
 #endif
-std::string buffer_to_string(const buffer* input)
+std::string buffer_to_string(const void* input)
 {
 	std::string output((nullptr != input && 0 < buffer_size(input)) ? buffer_size(input) : 0, '\0');
 	output.clear();
@@ -130,15 +130,15 @@ std::string buffer_to_string(const buffer* input)
 	return output;
 }
 
-range buffer_to_range(const buffer* input)
+range buffer_to_range(const void* input)
 {
 	range output;
-	output.start = buffer_data(input, 0);
+	output.start = reinterpret_cast<const uint8_t*>(buffer_data(input, 0));
 	output.finish = output.start + buffer_size(input);
 	return output;
 }
 
-uint8_t string_to_buffer(const std::string& input, buffer* output)
+uint8_t string_to_buffer(const std::string& input, void* output)
 {
 	return nullptr != output && buffer_append_char(output, input.empty() ? nullptr : input.c_str(), input.size());
 }
@@ -182,27 +182,27 @@ void null_range_to_empty(range& input)
 	}
 }
 
-uint8_t buffer_free(buffer* input)
+uint8_t buffer_free(void* input)
 {
 	buffer_release(input);
 	return 0;
 }
 
-uint8_t buffer_resize_and_free_inner_buffers(buffer* storage)
+uint8_t buffer_resize_and_free_inner_buffers(void* storage)
 {
 	buffer_release_inner_buffers(storage);
 	return buffer_resize(storage, 0);
 }
 
-uint8_t buffer_free_with_inner_buffers(buffer* storage)
+uint8_t buffer_free_with_inner_buffers(void* storage)
 {
 	buffer_release_with_inner_buffers(storage);
 	return 0;
 }
-
+#if 0
 uint8_t is_this_node_pass_by_if_condition(
 	const void* the_project, const pugi::xpath_node& node,
-	buffer* tmp, uint8_t* condition, uint8_t verbose)
+	void* tmp, uint8_t* condition, uint8_t verbose)
 {
 	if (nullptr == tmp || nullptr == condition)
 	{
@@ -254,7 +254,7 @@ uint8_t is_this_node_pass_by_if_condition(
 
 	return 1;
 }
-
+#endif
 std::string get_data_from_nodes(const pugi::xml_node& parent_node, const std::string& name_of_nodes)
 {
 	std::string output;
@@ -267,19 +267,19 @@ std::string get_data_from_nodes(const pugi::xml_node& parent_node, const std::st
 
 	return output;
 }
-
+#if 0
 uint8_t project_free(void* the_project)
 {
 	project_unload(the_project);
 	return 0;
 }
 
-std::string property_to_string(const void* the_property, buffer* value)
+std::string property_to_string(const void* the_property, void* value)
 {
 	return buffer_resize(value, 0) && property_get_by_pointer(the_property, value) ?
 		   buffer_to_string(value) : std::string();
 }
-
+#endif
 void property_load_from_node(const pugi::xml_node& property_in_a_xml,
 							 std::string& name, std::string& value,
 							 uint8_t& dynamic, uint8_t& over_write,
@@ -296,8 +296,8 @@ void property_load_from_node(const pugi::xml_node& property_in_a_xml,
 	fail_on_error = nullptr == fail_on_error_attribute ? 1 : fail_on_error_attribute.as_bool();
 	verbose = property_in_a_xml.attribute("verbose").as_bool();
 }
-
-uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, buffer* properties)
+#if 0
+uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, void* properties)
 {
 	const auto nodes = node.node().select_nodes(path);
 
@@ -347,7 +347,7 @@ uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path
 	return 1;
 }
 
-uint8_t properties_free(buffer* properties)
+uint8_t properties_free(void* properties)
 {
 	property_release(properties);
 	return 0;
@@ -358,7 +358,7 @@ uint8_t argument_parser_free()
 	argument_parser_release();
 	return 0;
 }
-
+#endif
 void add_slash(std::string& path)
 {
 	if (path.empty())
@@ -382,8 +382,8 @@ void add_slash(std::string& path)
 
 #endif
 }
-
-std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
+#if 0
+std::string get_directory_for_current_process(void* tmp, uint8_t* result)
 {
 	static std::string current_directory;
 
@@ -416,7 +416,7 @@ std::string get_directory_for_current_process(buffer* tmp, uint8_t* result)
 
 uint8_t select_nodes_by_condition(
 	const void* the_project, const pugi::xpath_node_set& all_nodes,
-	std::list<pugi::xpath_node>& nodes, buffer* tmp)
+	std::list<pugi::xpath_node>& nodes, void* tmp)
 {
 	if (!tmp)
 	{
@@ -475,26 +475,32 @@ std::string get_path_to_directory_with_source(uint8_t* result)
 
 std::string join_path(const std::string& path, const std::string& child_path)
 {
-	buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
-	//
+	std::string tmp_buffer;
+	tmp_buffer.resize(buffer_size_of());
+	auto tmp = reinterpret_cast<void*>(&tmp_buffer[0]);
+
+	if (!buffer_init(tmp, buffer_size_of()))
+	{
+		return "";
+	}
+
 	const auto path_(string_to_range(path));
 	const auto child_path_(string_to_range(child_path));
 
 	if (!path_combine(
 			path_.start, path_.finish,
-			child_path_.start, child_path_.finish, &tmp))
+			child_path_.start, child_path_.finish, tmp))
 	{
-		buffer_release(&tmp);
+		buffer_release(tmp);
 		return "";
 	}
 
-	const auto output(buffer_to_string(&tmp));
-	buffer_release(&tmp);
+	const auto output(buffer_to_string(tmp));
+	buffer_release(tmp);
 	//
 	return output;
 }
-
+#endif
 bool starts_with_(const std::string& input, const std::string& value)
 {
 	return value.size() <= input.size() && value == input.substr(0, value.size());
@@ -581,15 +587,27 @@ void TestsBaseXml::load_nodes(const void* the_project)
 	//
 	nodes.clear();
 	//
-	struct buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
+	std::string tmp_buffer;
+	tmp_buffer.resize(buffer_size_of());
+	auto tmp = reinterpret_cast<void*>(&tmp_buffer[0]);
 	//
-	ASSERT_TRUE(select_nodes_by_condition(the_project, all_nodes, nodes, &tmp))
-			<< test_path << std::endl << buffer_free(&tmp);
+	ASSERT_TRUE(buffer_init(tmp, buffer_size_of()));
 	//
+#if 0
+	ASSERT_TRUE(select_nodes_by_condition(the_project, all_nodes, nodes, tmp))
+			<< test_path << std::endl << buffer_free(tmp);
+#else
+	(void)the_project;
+
+	for (const auto& node : all_nodes)
+	{
+		nodes.push_back(node);
+	}
+
+#endif
 	node_count = nodes.size();
 	//
-	buffer_release(&tmp);
+	buffer_release(tmp);
 }
 
 bool TestsBaseXml::load_document(pugi::xml_document& doc, const std::string& xml_file, unsigned int options)

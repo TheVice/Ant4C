@@ -57,8 +57,9 @@ TEST_F(TestConversion, bool_parse)
 
 TEST_F(TestConversion, bool_to_string)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -75,16 +76,16 @@ TEST_F(TestConversion, bool_to_string)
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		const auto returned = bool_to_string(input, &output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		const auto returned = bool_to_string(input, output);
 		//
-		ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
+		ASSERT_EQ(expected_return, returned) << buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output)) << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST(TestConversion_, double_parse)
@@ -116,20 +117,21 @@ TEST(TestConversion_, double_to_string)
 {
 	static const double input[] = { -1, 0, 1, DBL_MIN, DBL_MAX, -DBL_MAX, 3.1415926535897931, 2.7182818284590451 };
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&output, 0)) << input[i] << std::endl <<
-											   buffer_free(&output);
-		ASSERT_TRUE(double_to_string(input[i], &output)) << input[i] << std::endl <<
-				buffer_free(&output);
-		ASSERT_LT(0, buffer_size(&output)) << input[i] << std::endl <<
-										   buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << input[i] << std::endl <<
+											  buffer_free(output);
+		ASSERT_TRUE(double_to_string(input[i], output)) << input[i] << std::endl <<
+				buffer_free(output);
+		ASSERT_LT(0, buffer_size(output)) << input[i] << std::endl <<
+										  buffer_free(output);
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST(TestConversion_, int_parse)
@@ -156,17 +158,18 @@ TEST(TestConversion_, int_to_string)
 	static const int32_t input[] = { -1, 0, 1, INT32_MAX, INT32_MIN };
 	static const char* expected_output[] = { "-1", "0", "1", "2147483647", "-2147483648" };
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(int_to_string(input[i], &output)) << buffer_free(&output);
-		ASSERT_STREQ(expected_output[i], buffer_to_string(&output).c_str()) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		ASSERT_TRUE(int_to_string(input[i], output)) << buffer_free(output);
+		ASSERT_STREQ(expected_output[i], buffer_to_string(output).c_str()) << buffer_free(output);
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST(TestConversion_, long_parse)
@@ -219,22 +222,23 @@ TEST(TestConversion_, long_to_string)
 #endif
 	};
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
 #if !defined(_WIN32)
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(long_to_string(input[i], &output)) << buffer_free(&output);
-		ASSERT_STREQ(expected_output[i], buffer_to_string(&output).c_str()) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		ASSERT_TRUE(long_to_string(input[i], output)) << buffer_free(output);
+		ASSERT_STREQ(expected_output[i], buffer_to_string(output).c_str()) << buffer_free(output);
 #endif
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(int64_to_string(input[i], &output)) << buffer_free(&output);
-		ASSERT_STREQ(expected_output[i], buffer_to_string(&output).c_str()) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		ASSERT_TRUE(int64_to_string(input[i], output)) << buffer_free(output);
+		ASSERT_STREQ(expected_output[i], buffer_to_string(output).c_str()) << buffer_free(output);
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST(TestConversion_, uint64_parse)
@@ -291,32 +295,32 @@ TEST(TestConversion_, uint64_to_string)
 		"18446744073709551614", "18446744073709551613", "18446744073709551612", "18446744073709551611"
 	};
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(uint64_to_string(input[i], &output)) << buffer_free(&output);
-		ASSERT_STREQ(expected_output[i], buffer_to_string(&output).c_str()) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		ASSERT_TRUE(uint64_to_string(input[i], output)) << buffer_free(output);
+		ASSERT_STREQ(expected_output[i], buffer_to_string(output).c_str()) << buffer_free(output);
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST(TestConversion_, pointer_to_string_and_parse)
 {
-	buffer value;
-	SET_NULL_TO_BUFFER(value);
+	std::string value_buffer(buffer_size_of(), 0);
+	auto value = reinterpret_cast<void*>(&value_buffer[0]);
+	ASSERT_TRUE(buffer_init(value, buffer_size_of()));
 	//
-	const auto pointer_to_buffer = &value;
-	ASSERT_TRUE(pointer_to_string(pointer_to_buffer, pointer_to_buffer)) << buffer_free(pointer_to_buffer);
-	ASSERT_TRUE(buffer_push_back(pointer_to_buffer, 0)) << buffer_free(pointer_to_buffer);
+	ASSERT_TRUE(pointer_to_string(value, value)) << buffer_free(value);
+	ASSERT_TRUE(buffer_push_back(value, 0)) << buffer_free(value);
 	//
-	const auto returned_pointer = pointer_parse(buffer_data(pointer_to_buffer, 0));
-	const auto returned_pointer_to_buffer = reinterpret_cast<const buffer*>(returned_pointer);
+	const auto returned_pointer = pointer_parse(buffer_uint8_t_data(value, 0));
 	//
-	ASSERT_EQ(pointer_to_buffer, returned_pointer_to_buffer) << buffer_free(pointer_to_buffer);
+	ASSERT_EQ(value, returned_pointer) << buffer_free(value);
 	//
-	buffer_release(pointer_to_buffer);
+	buffer_release(value);
 }

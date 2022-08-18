@@ -23,12 +23,10 @@ extern "C" {
 
 #define DOUBLE_PARSE(A) double_parse(reinterpret_cast<const uint8_t*>(A))
 
-struct buffer;
+std::string buffer_to_string(const void* input);
+range buffer_to_range(const void* input);
 
-std::string buffer_to_string(const buffer* input);
-range buffer_to_range(const buffer* input);
-
-uint8_t string_to_buffer(const std::string& input, buffer* output);
+uint8_t string_to_buffer(const std::string& input, void* output);
 range string_to_range(const std::string& input);
 
 std::string range_to_string(
@@ -38,16 +36,16 @@ std::string range_to_string(const range* input);
 
 void null_range_to_empty(range& input);
 
-uint8_t buffer_free(buffer* input);
-uint8_t buffer_resize_and_free_inner_buffers(buffer* storage);
-uint8_t buffer_free_with_inner_buffers(buffer* storage);
+uint8_t buffer_free(void* input);
+uint8_t buffer_resize_and_free_inner_buffers(void* storage);
+uint8_t buffer_free_with_inner_buffers(void* storage);
 
 std::string get_data_from_nodes(
 	const pugi::xml_node& parent_node, const std::string& name_of_nodes);
 
-uint8_t project_free(void* the_project);
+/*uint8_t project_free(void* the_project);
 
-std::string property_to_string(const void* the_property, buffer* value);
+std::string property_to_string(const void* the_property, void* value);*/
 
 void property_load_from_node(
 	const pugi::xml_node& property_in_a_xml,
@@ -55,18 +53,18 @@ void property_load_from_node(
 	uint8_t& dynamic, uint8_t& over_write,
 	uint8_t& read_only, uint8_t& fail_on_error,
 	uint8_t& verbose);
-uint8_t properties_load_from_node(
-	const pugi::xpath_node& node, const char* path, buffer* properties);
-uint8_t properties_free(buffer* properties);
-uint8_t argument_parser_free();
+/*uint8_t properties_load_from_node(
+	const pugi::xpath_node& node, const char* path, void* properties);
+uint8_t properties_free(void* properties);
+uint8_t argument_parser_free();*/
 
 void add_slash(std::string& path);
-std::string get_directory_for_current_process(buffer* tmp, uint8_t* result);
+/*std::string get_directory_for_current_process(void* tmp, uint8_t* result);
 uint8_t select_nodes_by_condition(
 	const void* the_project, const pugi::xpath_node_set& all_nodes,
-	std::list<pugi::xpath_node>& nodes, buffer* tmp);
+	std::list<pugi::xpath_node>& nodes, void* tmp);
 std::string get_path_to_directory_with_source(uint8_t* result);
-std::string join_path(const std::string& path, const std::string& child_path);
+std::string join_path(const std::string& path, const std::string& child_path);*/
 bool starts_with_(const std::string& input, const std::string& value);
 
 extern std::wstring char_to_wchar_t(const std::string& input);

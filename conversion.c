@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -62,7 +62,7 @@ uint8_t bool_parse(
 	return 1;
 }
 
-uint8_t bool_to_string(uint8_t input, struct buffer* output)
+uint8_t bool_to_string(uint8_t input, void* output)
 {
 	if (!input)
 	{
@@ -163,7 +163,7 @@ double double_parse(const uint8_t* value)
 	return atof((const char*)value);
 }
 
-uint8_t double_to_string(double input, struct buffer* output)
+uint8_t double_to_string(double input, void* output)
 {
 #if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(input, 386, "%.16lf", output);
@@ -177,7 +177,7 @@ int32_t int_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	PARSE(input_start, input_finish, INT32_MAX, INT32_MIN, int32_t);
 }
 
-uint8_t int_to_string(int32_t input, struct buffer* output)
+uint8_t int_to_string(int32_t input, void* output)
 {
 	TO_STRING(input, output);
 }
@@ -187,7 +187,7 @@ long long_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	PARSE(input_start, input_finish, LONG_MAX, LONG_MIN, long);
 }
 
-uint8_t long_to_string(long input, struct buffer* output)
+uint8_t long_to_string(long input, void* output)
 {
 	TO_STRING(input, output);
 }
@@ -197,7 +197,7 @@ int64_t int64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	PARSE(input_start, input_finish, INT64_MAX, INT64_MIN, int64_t);
 }
 
-uint8_t int64_to_string(int64_t input, struct buffer* output)
+uint8_t int64_to_string(int64_t input, void* output)
 {
 	TO_STRING(input, output);
 }
@@ -461,7 +461,7 @@ const uint8_t* uint64_to_string_to_byte_array(uint64_t input, uint8_t* a, uint8_
 	return result_start;
 }
 
-uint8_t uint64_to_string(uint64_t input, struct buffer* output)
+uint8_t uint64_to_string(uint64_t input, void* output)
 {
 	const ptrdiff_t size = buffer_size(output);
 
@@ -510,7 +510,7 @@ void* pointer_parse(const uint8_t* value)
 	return (void*)(ptrdiff_t)strtoll((const char*)value, &ch, 16);
 }
 
-uint8_t pointer_to_string(const void* input, struct buffer* output)
+uint8_t pointer_to_string(const void* input, void* output)
 {
 #if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(input, 32, "%p", output);
@@ -533,7 +533,7 @@ uint8_t single_int_to_hex(uint8_t input)
 	return input;
 }
 
-uint8_t int_to_hex(uint8_t input, struct buffer* output)
+uint8_t int_to_hex(uint8_t input, void* output)
 {
 	const uint8_t rest = input % 16;
 

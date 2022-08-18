@@ -303,7 +303,7 @@ enum string_pad_side { string_pad_left_function = 0, string_pad_right_function }
 
 uint8_t string_pad(const uint8_t* input_start, const uint8_t* input_finish,
 				   const uint8_t* value_start, const uint8_t* value_finish,
-				   ptrdiff_t result_length, struct buffer* output, enum string_pad_side side)
+				   ptrdiff_t result_length, void* output, enum string_pad_side side)
 {
 	if (input_finish < input_start ||
 		range_in_parts_is_null_or_empty(value_start, value_finish) ||
@@ -376,7 +376,7 @@ uint8_t string_pad(const uint8_t* input_start, const uint8_t* input_finish,
 
 uint8_t string_pad_left(const uint8_t* input_start, const uint8_t* input_finish,
 						const uint8_t* value_start, const uint8_t* value_finish,
-						ptrdiff_t result_length, struct buffer* output)
+						ptrdiff_t result_length, void* output)
 {
 	return string_pad(input_start, input_finish, value_start, value_finish,
 					  result_length, output, string_pad_left_function);
@@ -384,7 +384,7 @@ uint8_t string_pad_left(const uint8_t* input_start, const uint8_t* input_finish,
 
 uint8_t string_pad_right(const uint8_t* input_start, const uint8_t* input_finish,
 						 const uint8_t* value_start, const uint8_t* value_finish,
-						 ptrdiff_t result_length, struct buffer* output)
+						 ptrdiff_t result_length, void* output)
 {
 	return string_pad(input_start, input_finish, value_start, value_finish,
 					  result_length, output, string_pad_right_function);
@@ -393,7 +393,7 @@ uint8_t string_pad_right(const uint8_t* input_start, const uint8_t* input_finish
 uint8_t string_replace(const uint8_t* input_start, const uint8_t* input_finish,
 					   const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
 					   const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
-					   struct buffer* output)
+					   void* output)
 {
 	if (NULL == input_start || NULL == input_finish ||
 		range_in_parts_is_null_or_empty(to_be_replaced_start, to_be_replaced_finish) ||
@@ -853,7 +853,7 @@ uint32_t string_to_case(uint32_t input, uint8_t required_case)
 }
 
 uint8_t string_transform_to_case(const uint8_t* input_start, const uint8_t* input_finish,
-								 struct buffer* output, uint8_t required_case)
+								 void* output, uint8_t required_case)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		NULL == output ||
@@ -891,12 +891,12 @@ uint8_t string_transform_to_case(const uint8_t* input_start, const uint8_t* inpu
 	return 1;
 }
 
-uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output)
+uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, void* output)
 {
 	return string_transform_to_case(input_start, input_finish, output, string_get_id_of_to_lower_function());
 }
 
-uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output)
+uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, void* output)
 {
 	return string_transform_to_case(input_start, input_finish, output, string_get_id_of_to_upper_function());
 }
@@ -1026,7 +1026,7 @@ uint8_t string_trim_start(struct range* input_output)
 }
 
 uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
-					 struct buffer* output)
+					 void* output)
 {
 	if (NULL == output)
 	{

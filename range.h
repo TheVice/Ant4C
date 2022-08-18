@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -10,8 +10,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-struct buffer;
 
 struct range
 {
@@ -25,15 +23,15 @@ uint8_t range_in_parts_is_null_or_empty(
 	const uint8_t* range_start, const uint8_t* range_finish);
 
 uint8_t buffer_append_data_from_range(
-	struct buffer* storage, const struct range* data);
+	void* storage, const struct range* data);
 
 uint8_t buffer_append_range(
-	struct buffer* ranges, const struct range* data, ptrdiff_t data_count);
+	void* ranges, const struct range* data, ptrdiff_t data_count);
 struct range* buffer_range_data(
-	const struct buffer* ranges, ptrdiff_t data_position);
+	const void* ranges, ptrdiff_t data_position);
 
-#define BUFFER_TO_RANGE(R, B)				\
-	(R).start = buffer_data((B), 0);		\
+#define BUFFER_TO_RANGE(R, B)						\
+	(R).start = (const uint8_t*)buffer_data((B), 0);\
 	(R).finish = (R).start + buffer_size(B);
 
 #endif

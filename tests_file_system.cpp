@@ -728,6 +728,30 @@ TEST(TestFileSystem_, file_up_to_date)
 	buffer_release(&paths);
 }
 
+/*TEST_F(TestFileSystem, file_replace)
+{
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		ASSERT_TRUE(path_get_temp_file_name(output)) << buffer_free(output);
+		//
+		const auto tmp_path(buffer_to_string(output));
+		ASSERT_TRUE(buffer_push_back(output, 0)) << buffer_free(output);
+		//
+		returned = echo(0, Default, buffer_data(output, 0), Info,
+						input_in_a_range.start, range_size(&input_in_a_range), 0, 0);
+		//
+		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(output);
+		//
+		returned = file_replace(buffer_data(output, 0),
+								to_be_replaced_in_a_range.start, to_be_replaced_in_a_range.finish,
+								by_replacement_in_a_range.start, by_replacement_in_a_range.finish);
+		//
+		ASSERT_EQ(expected_return, returned) << tmp_path << std::endl << buffer_free(output);
+		//
+		returned = load_file_to_buffer(buffer_data(output, 0), Default, output, 0);
+		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output)) << tmp_path << std::endl << buffer_free(output);
+}*/
+
 TEST(TestFileSystem_, file_set_attributes)
 {
 	buffer path;

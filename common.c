@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -105,7 +105,7 @@ uint8_t common_string_to_enum(
 }
 
 uint8_t common_append_string_to_buffer(
-	const uint8_t* input, struct buffer* output)
+	const uint8_t* input, void* output)
 {
 	if (NULL == input || NULL == output)
 	{
@@ -116,7 +116,7 @@ uint8_t common_append_string_to_buffer(
 }
 
 uint8_t common_get_arguments(
-	const struct buffer* boxed_arguments, uint8_t arguments_count,
+	const void* boxed_arguments, uint8_t arguments_count,
 	struct range* arguments, uint8_t terminate)
 {
 	if (NULL == arguments)
@@ -126,7 +126,7 @@ uint8_t common_get_arguments(
 
 	for (uint8_t i = 0; i < arguments_count; ++i)
 	{
-		struct buffer* argument = buffer_buffer_data(boxed_arguments, i);
+		void* argument = buffer_buffer_data(boxed_arguments, i);
 
 		if (argument)
 		{
@@ -166,7 +166,7 @@ uint8_t common_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes,
 	const uint8_t** task_attributes_lengths,
 	uint8_t* task_attributes_count,
-	struct buffer* task_arguments)
+	void* task_arguments)
 {
 	if (NULL == task_arguments)
 	{
@@ -198,8 +198,10 @@ uint8_t common_get_attributes_and_arguments_for_task(
 
 	for (uint8_t i = 0; i < input_task_attributes_count; ++i)
 	{
-		struct buffer* attribute = buffer_buffer_data(task_arguments, i);
-		SET_NULL_TO_BUFFER(*attribute);
+		if (!buffer_init(buffer_buffer_data(task_arguments, i), buffer_size_of()))
+		{
+			return 0;
+		}
 	}
 
 	return 1;

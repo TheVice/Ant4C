@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -165,7 +165,7 @@ void xchange_uint16_t_bytes(uint16_t* input)
 
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_get_BOM(
-	uint8_t encoding, struct buffer* output)
+	uint8_t encoding, void* output)
 {
 	if (NULL == output)
 	{
@@ -287,7 +287,7 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 
 uint8_t text_encoding_UTF_to_ASCII(
 	const uint8_t* data_start, const uint8_t* data_finish,
-	uint8_t encoding, struct buffer* output)
+	uint8_t encoding, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -376,7 +376,7 @@ uint8_t text_encoding_UTF_to_ASCII(
 
 uint8_t text_encoding_UTF_from_ASCII(
 	const uint8_t* data_start, const uint8_t* data_finish,
-	uint8_t encoding, struct buffer* output)
+	uint8_t encoding, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -425,7 +425,7 @@ uint8_t text_encoding_UTF_from_ASCII(
 #ifndef NO_COMMON_UNIT
 uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
-	uint16_t code_page, struct buffer* output)
+	uint16_t code_page, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -461,14 +461,14 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 				{
 					if ((max_ASCII_char + COUNT_OF(codes_874) - 1) < code)
 					{
-						if (!buffer_push_back_uint16(output, UTF16LE_UNKNOWN_CHAR))
+						if (!buffer_push_back_uint16_t(output, UTF16LE_UNKNOWN_CHAR))
 						{
 							return 0;
 						}
 					}
 					else
 					{
-						if (!buffer_push_back_uint16(output, codes_874[*data_start - min_non_ASCII_char]))
+						if (!buffer_push_back_uint16_t(output, codes_874[*data_start - min_non_ASCII_char]))
 						{
 							return 0;
 						}
@@ -534,7 +534,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 		if (max_ASCII_char < code)
 		{
-			if (!buffer_push_back_uint16(output, ptr[*data_start - min_non_ASCII_char]))
+			if (!buffer_push_back_uint16_t(output, ptr[*data_start - min_non_ASCII_char]))
 			{
 				return 0;
 			}
@@ -605,7 +605,7 @@ uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish,
-	struct buffer* output)
+	void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -716,7 +716,7 @@ uint8_t text_encoding_decode_UTF8_single(
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_decode_UTF8(
 	const uint8_t* data_start, const uint8_t* data_finish,
-	struct buffer* output)
+	void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -736,7 +736,7 @@ uint8_t text_encoding_decode_UTF8(
 
 	while (data_start < data_finish)
 	{
-		if (!buffer_push_back_uint32(output, 0))
+		if (!buffer_push_back_uint32_t(output, 0))
 		{
 			return 0;
 		}
@@ -818,7 +818,7 @@ uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF16(
 	const uint32_t* data_start, const uint32_t* data_finish,
-	uint8_t endian, struct buffer* output)
+	uint8_t endian, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -960,7 +960,7 @@ uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const u
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_decode_UTF16(
 	const uint16_t* data_start, const uint16_t* data_finish,
-	uint8_t endian, struct buffer* output)
+	uint8_t endian, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -982,7 +982,7 @@ uint8_t text_encoding_decode_UTF16(
 
 	while (data_start < data_finish)
 	{
-		if (!buffer_push_back_uint32(output, 0))
+		if (!buffer_push_back_uint32_t(output, 0))
 		{
 			return 0;
 		}
@@ -1041,7 +1041,7 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_UTF8_to_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
-	uint16_t code_page, struct buffer* output)
+	uint16_t code_page, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1110,7 +1110,7 @@ uint8_t text_encoding_UTF8_to_code_page(
 
 	while (data_start < data_finish)
 	{
-		if (!buffer_push_back_uint32(output, 0))
+		if (!buffer_push_back_uint32_t(output, 0))
 		{
 			return 0;
 		}
@@ -1176,7 +1176,7 @@ uint8_t text_encoding_UTF8_to_code_page(
 
 uint8_t text_encoding_UTF8_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
-	uint16_t code_page, struct buffer* output)
+	uint16_t code_page, void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1292,7 +1292,7 @@ uint8_t text_encoding_UTF8_from_code_page(
 }
 
 uint8_t text_encoding_UTF8_to_UTF16BE(const uint8_t* data_start, const uint8_t* data_finish,
-									  struct buffer* output)
+									  void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1339,7 +1339,7 @@ uint8_t text_encoding_UTF8_to_UTF16BE(const uint8_t* data_start, const uint8_t* 
 }
 
 uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* data_finish,
-									  struct buffer* output)
+									  void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1386,7 +1386,7 @@ uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* 
 }
 
 uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
-									  struct buffer* output)
+									  void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1433,7 +1433,7 @@ uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t
 }
 
 uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
-									  struct buffer* output)
+									  void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1480,7 +1480,7 @@ uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t
 }
 
 uint8_t text_encoding_UTF8_to_UTF32BE(const uint8_t* data_start, const uint8_t* data_finish,
-									  struct buffer* output)
+									  void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
@@ -1500,7 +1500,7 @@ uint8_t text_encoding_UTF8_to_UTF32BE(const uint8_t* data_start, const uint8_t* 
 
 	while (data_start < data_finish)
 	{
-		if (!buffer_push_back_uint32(output, 0))
+		if (!buffer_push_back_uint32_t(output, 0))
 		{
 			return 0;
 		}
@@ -1520,7 +1520,7 @@ uint8_t text_encoding_UTF8_to_UTF32BE(const uint8_t* data_start, const uint8_t* 
 }
 
 uint8_t text_encoding_UTF32BE_to_UTF8(const uint32_t* data_start, const uint32_t* data_finish,
-									  struct buffer* output)
+									  void* output)
 {
 	if (NULL == data_start ||
 		NULL == data_finish ||
