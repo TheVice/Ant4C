@@ -46,7 +46,7 @@ class TestEnvironment : public TestsBaseXml
 class TestOperatingSystem : public TestsBaseXml
 {
 };
-
+#if 0
 TEST(TestEnvironment_, environment_get_folder_path)
 {
 	static const uint8_t verbose = 0;
@@ -135,82 +135,85 @@ TEST(TestEnvironment_, environment_get_folder_path)
 		"${environment::get-variable('HOME')}"
 	};
 #endif
-	buffer path;
-	SET_NULL_TO_BUFFER(path);
+	std::string path_buffer(buffer_size_of(), 0);
+	auto path = reinterpret_cast<void*>(&path_buffer[0]);
+	ASSERT_TRUE(buffer_init(path, buffer_size_of()));
 
 	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
-		ASSERT_TRUE(environment_get_folder_path(input[i], &path))
+		ASSERT_TRUE(buffer_resize(path, 0)) << buffer_free(path);
+		ASSERT_TRUE(environment_get_folder_path(input[i], path))
 				<< static_cast<uint32_t>(i) << std::endl
-				<< buffer_free(&path);
+				<< buffer_free(path);
 
 		if (!expected_result[i].empty())
 		{
-			const auto size = buffer_size(&path);
+			const auto size = buffer_size(path);
 			const auto code(string_to_range(expected_result[i]));
 			ASSERT_TRUE(interpreter_evaluate_code(
-							nullptr, nullptr, nullptr, &code, &path, verbose))
+							nullptr, nullptr, nullptr, &code, path, verbose))
 					<< "'" << expected_result[i] << "'" << std::endl
-					<< buffer_free(&path);
+					<< buffer_free(path);
 			//
-			auto path_str(buffer_to_string(&path));
+			auto path_str(buffer_to_string(path));
 			ASSERT_FALSE(path_str.empty())
-					<< static_cast<uint32_t>(i) << std::endl << buffer_free(&path);
-			ASSERT_EQ(2 * size, buffer_size(&path))
+					<< static_cast<uint32_t>(i) << std::endl << buffer_free(path);
+			ASSERT_EQ(2 * size, buffer_size(path))
 					<< static_cast<uint32_t>(i) << std::endl
-					<< path_str << std::endl << buffer_free(&path);
+					<< path_str << std::endl << buffer_free(path);
 			//
-			ASSERT_TRUE(buffer_resize(&path, 0)) << buffer_free(&path);
+			ASSERT_TRUE(buffer_resize(path, 0)) << buffer_free(path);
 			const auto path_in_a_range(string_to_range(path_str));
-			ASSERT_TRUE(string_to_lower(path_in_a_range.start, path_in_a_range.finish, &path))
-					<< path_str << std::endl << buffer_free(&path);
-			path_str = buffer_to_string(&path);
+			ASSERT_TRUE(string_to_lower(path_in_a_range.start, path_in_a_range.finish, path))
+					<< path_str << std::endl << buffer_free(path);
+			path_str = buffer_to_string(path);
 			//
 			ASSERT_EQ(2 * size, static_cast<ptrdiff_t>(path_str.size()))
 					<< static_cast<uint32_t>(i) << std::endl
-					<< path_str << std::endl << buffer_free(&path);
+					<< path_str << std::endl << buffer_free(path);
 			ASSERT_EQ(path_str.substr(size), path_str.substr(0, size))
-					<< static_cast<uint32_t>(i) << std::endl << buffer_free(&path);
+					<< static_cast<uint32_t>(i) << std::endl << buffer_free(path);
 		}
 		else
 		{
-			const auto path_str(buffer_to_string(&path));
-			ASSERT_EQ(0, buffer_size(&path))
+			const auto path_str(buffer_to_string(path));
+			ASSERT_EQ(0, buffer_size(path))
 					<< static_cast<uint32_t>(i)
 					<< " '" << path_str << "'" << std::endl
-					<< buffer_free(&path);
+					<< buffer_free(path);
 		}
 	}
 
-	buffer_release(&path);
+	buffer_release(path);
 }
-
+#endif
 TEST(TestEnvironment_, environment_get_machine_name)
 {
 #if defined(_WIN32)
 	const std::string variable_name("COMPUTERNAME");
 #endif
-	buffer result;
-	SET_NULL_TO_BUFFER(result);
+	std::string result_buffer(buffer_size_of(), 0);
+	auto result = reinterpret_cast<void*>(&result_buffer[0]);
+	ASSERT_TRUE(buffer_init(result, buffer_size_of()));
 	//
-	ASSERT_TRUE(environment_get_machine_name(&result)) << buffer_free(&result);
+	ASSERT_TRUE(environment_get_machine_name(result)) << buffer_free(result);
 #if defined(_WIN32)
-	buffer expected_result;
-	SET_NULL_TO_BUFFER(expected_result);
+	std::string expected_result_buffer(buffer_size_of(), 0);
+	auto expected_result = reinterpret_cast<void*>(&expected_result_buffer[0]);
+	ASSERT_TRUE(buffer_init(expected_result, buffer_size_of()));
 	//
-	const auto returned(buffer_to_string(&result));
+	const auto returned(buffer_to_string(result));
 	const auto variable_name_in_a_range(string_to_range(variable_name));
 	ASSERT_TRUE(
-		environment_get_variable(variable_name_in_a_range.start, variable_name_in_a_range.finish, &expected_result))
+		environment_get_variable(variable_name_in_a_range.start, variable_name_in_a_range.finish, expected_result))
 			<< "Expected value for variable is '" << returned << "'" << std::endl
-			<< buffer_free(&expected_result) << buffer_free(&result);
-	const auto expected_return(buffer_to_string(&expected_result));
-	ASSERT_EQ(expected_return, returned) << buffer_free(&expected_result) << buffer_free(&result);
+			<< buffer_free(expected_result) << buffer_free(result);
+	const auto expected_return(buffer_to_string(expected_result));
+	ASSERT_EQ(expected_return, returned) << buffer_free(expected_result) << buffer_free(result);
 	//
-	buffer_release(&expected_result);
+	buffer_release(expected_result);
 #endif
-	buffer_release(&result);
+	buffer_release(result);
 }
 
 TEST(TestEnvironment_, environment_get_operating_system)
@@ -226,7 +229,7 @@ TEST(TestEnvironment_, environment_get_operating_system)
 #endif
 	ASSERT_LT(0, common_count_bytes_until(operating_system_to_string(os), 0));
 }
-
+#if 0
 TEST(TestEnvironment_, environment_get_user_name)
 {
 #if defined(_WIN32)
@@ -234,31 +237,32 @@ TEST(TestEnvironment_, environment_get_user_name)
 #else
 	const std::string names[] = { "LOGNAME", "HOME" };
 #endif
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 	//
-	ASSERT_TRUE(environment_get_user_name(&output)) << buffer_free(&output);
-	ASSERT_LT(0L, buffer_size(&output)) << buffer_free(&output);
-	const auto user_name(buffer_to_string(&output));
+	ASSERT_TRUE(environment_get_user_name(output)) << buffer_free(output);
+	ASSERT_LT(0L, buffer_size(output)) << buffer_free(output);
+	const auto user_name(buffer_to_string(output));
 
 	for (uint8_t i = 0, count = COUNT_OF(names); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&output, 0))
+		ASSERT_TRUE(buffer_resize(output, 0))
 				<< "'" << user_name << "'" << std::endl
-				<< buffer_free(&output);
+				<< buffer_free(output);
 		const auto name_in_a_range(string_to_range(names[i]));
 
-		if (environment_get_variable(name_in_a_range.start, name_in_a_range.finish, &output))
+		if (environment_get_variable(name_in_a_range.start, name_in_a_range.finish, output))
 		{
 			break;
 		}
 	}
 
-	ASSERT_LT(0L, buffer_size(&output))
+	ASSERT_LT(0L, buffer_size(output))
 			<< "'" << user_name << "'" << std::endl
-			<< buffer_free(&output);
+			<< buffer_free(output);
 	//
-	auto variable_value(buffer_to_range(&output));
+	auto variable_value(buffer_to_range(output));
 	auto expected_user_name = range_to_string(variable_value);
 
 	if (string_contains(variable_value.start, variable_value.finish, &PATH_DELIMITER, &PATH_DELIMITER))
@@ -267,11 +271,11 @@ TEST(TestEnvironment_, environment_get_user_name)
 			path_get_file_name(&variable_value.start, variable_value.finish))
 				<< "'" << user_name << "'" << std::endl
 				<< "'" << expected_user_name << "'" << std::endl
-				<< buffer_free(&output);
+				<< buffer_free(output);
 		expected_user_name = range_to_string(variable_value);
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 
 	if (expected_user_name != user_name)
 	{
@@ -281,19 +285,21 @@ TEST(TestEnvironment_, environment_get_user_name)
 		std::cerr << "Expected user name: '" << expected_user_name << "'." << std::endl;
 	}
 }
-
+#endif
 TEST(TestEnvironment_, environment_newline)
 {
-	buffer newline;
-	SET_NULL_TO_BUFFER(newline);
-	ASSERT_TRUE(environment_newline(&newline)) << buffer_free(&newline);
-	ASSERT_TRUE(buffer_push_back(&newline, '\0')) << buffer_free(&newline);
+	std::string newline_buffer(buffer_size_of(), 0);
+	auto newline = reinterpret_cast<void*>(&newline_buffer[0]);
+	ASSERT_TRUE(buffer_init(newline, buffer_size_of()));
+	//
+	ASSERT_TRUE(environment_newline(newline)) << buffer_free(newline);
+	ASSERT_TRUE(buffer_push_back(newline, '\0')) << buffer_free(newline);
 #if defined(_WIN32)
-	ASSERT_STREQ("\r\n", buffer_char_data(&newline, 0)) << buffer_free(&newline);
+	ASSERT_STREQ("\r\n", buffer_char_data(newline, 0)) << buffer_free(newline);
 #else
-	ASSERT_STREQ("\n", buffer_char_data(&newline, 0)) << buffer_free(&newline);
+	ASSERT_STREQ("\n", buffer_char_data(newline, 0)) << buffer_free(newline);
 #endif
-	buffer_release(&newline);
+	buffer_release(newline);
 }
 
 TEST(TestEnvironment_, environment_is64bit)
@@ -317,13 +323,14 @@ TEST(TestEnvironment_, environment_processor_count)
 
 TEST_F(TestEnvironment, environment_variable_exists)
 {
-	buffer variable;
-	SET_NULL_TO_BUFFER(variable);
+	std::string variable_buffer(buffer_size_of(), 0);
+	auto variable = reinterpret_cast<void*>(&variable_buffer[0]);
+	ASSERT_TRUE(buffer_init(variable, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
-		ASSERT_TRUE(buffer_resize(&variable, 0))
-				<< buffer_free(&variable);
+		ASSERT_TRUE(buffer_resize(variable, 0))
+				<< buffer_free(variable);
 		const auto variable_name = reinterpret_cast<const uint8_t*>(
 									   node.node().select_node("variable_name").node().child_value());
 		//
@@ -340,16 +347,16 @@ TEST_F(TestEnvironment, environment_variable_exists)
 		//
 		const auto returned = environment_variable_exists(variable_name, variable_name + variable_name_length);
 		ASSERT_EQ(expected_return, returned)
-				<< "'" << variable_name << "'" << std::endl << buffer_free(&variable);
+				<< "'" << variable_name << "'" << std::endl << buffer_free(variable);
 		//
 		ASSERT_EQ(expected_return, environment_get_variable(
-					  variable_name, variable_name + variable_name_length, &variable))
-				<< "'" << variable_name << "'" << std::endl << buffer_free(&variable);
+					  variable_name, variable_name + variable_name_length, variable))
+				<< "'" << variable_name << "'" << std::endl << buffer_free(variable);
 		//
 		--node_count;
 	}
 
-	buffer_release(&variable);
+	buffer_release(variable);
 }
 
 TEST_F(TestOperatingSystem, operating_system_init)

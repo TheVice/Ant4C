@@ -136,7 +136,7 @@ jobs:
     - name: Run tests (MinGW)
       if: ${{ 'mingw' == matrix.compiler }}
       run: |
-        $Env:PATH="C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;$Env:SystemRoot\system32;$Env:SystemRoot;$Env:SystemRoot\system32\Wbem;$Env:SystemRoot\system32\WindowsPowerShell\v1.0\;"
+        $Env:PATH="C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;$Env:SystemRoot\system32;$Env:SystemRoot;$Env:SystemRoot\system32\Wbem;$Env:SystemRoot\system32\WindowsPowerShell\v1.0\;$Env:ProgramFiles\CMake\bin;"
         ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.CMAKE_BUILD_DIR }} --output-on-failure
 
     - name: Run tests

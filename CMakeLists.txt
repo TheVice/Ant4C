@@ -36,7 +36,7 @@ set(
   # "${CMAKE_SOURCE_DIR}/copy_move.c"
   # "${CMAKE_SOURCE_DIR}/date_time.c"
   # "${CMAKE_SOURCE_DIR}/echo.c"
-  # "${CMAKE_SOURCE_DIR}/environment.c"
+  "${CMAKE_SOURCE_DIR}/environment.c"
   # "${CMAKE_SOURCE_DIR}/exec.c"
   # "${CMAKE_SOURCE_DIR}/fail_task.c"
   # "${CMAKE_SOURCE_DIR}/file_system.c"
@@ -65,7 +65,7 @@ set(
   # "${CMAKE_SOURCE_DIR}/load_file.c"
   # "${CMAKE_SOURCE_DIR}/load_tasks.c"
   # "${CMAKE_SOURCE_DIR}/math_unit.c"
-  # "${CMAKE_SOURCE_DIR}/operating_system.c"
+  "${CMAKE_SOURCE_DIR}/operating_system.c"
   # "${CMAKE_SOURCE_DIR}/path.c"
   # "${CMAKE_SOURCE_DIR}/project.c"
   # "${CMAKE_SOURCE_DIR}/property.c"
@@ -77,7 +77,7 @@ set(
   # "${CMAKE_SOURCE_DIR}/task.c"
   "${CMAKE_SOURCE_DIR}/text_encoding.c"
   # "${CMAKE_SOURCE_DIR}/try_catch.c"
-  # "${CMAKE_SOURCE_DIR}/version.c"
+  "${CMAKE_SOURCE_DIR}/version.c"
   # "${CMAKE_SOURCE_DIR}/xml.c"
 )
 
@@ -90,7 +90,7 @@ set(ANT4C_HEADERS
   # "${CMAKE_SOURCE_DIR}/copy_move.h"
   # "${CMAKE_SOURCE_DIR}/date_time.h"
   # "${CMAKE_SOURCE_DIR}/echo.h"
-  # "${CMAKE_SOURCE_DIR}/environment.h"
+  "${CMAKE_SOURCE_DIR}/environment.h"
   # "${CMAKE_SOURCE_DIR}/exec.h"
   # "${CMAKE_SOURCE_DIR}/fail_task.h"
   # "${CMAKE_SOURCE_DIR}/file_system.h"
@@ -105,7 +105,7 @@ set(ANT4C_HEADERS
   # "${CMAKE_SOURCE_DIR}/load_file.h"
   # "${CMAKE_SOURCE_DIR}/load_tasks.h"
   # "${CMAKE_SOURCE_DIR}/math_unit.h"
-  # "${CMAKE_SOURCE_DIR}/operating_system.h"
+  "${CMAKE_SOURCE_DIR}/operating_system.h"
   # "${CMAKE_SOURCE_DIR}/path.h"
   # "${CMAKE_SOURCE_DIR}/project.h"
   # "${CMAKE_SOURCE_DIR}/property.h"
@@ -118,7 +118,7 @@ set(ANT4C_HEADERS
   # "${CMAKE_SOURCE_DIR}/task.h"
   "${CMAKE_SOURCE_DIR}/text_encoding.h"
   # "${CMAKE_SOURCE_DIR}/try_catch.h"
-  # "${CMAKE_SOURCE_DIR}/version.h"
+  "${CMAKE_SOURCE_DIR}/version.h"
   # "${CMAKE_SOURCE_DIR}/xml.h"
 )
 

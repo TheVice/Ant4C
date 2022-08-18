@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -145,22 +145,24 @@ uint8_t version_to_byte_array(const void* version, uint8_t* output)
 	}
 
 	const struct version_* the_version = (const struct version_*)version;
-	const uint32_t* input[4];
+	const uint32_t* input[VERSION_SIZE / sizeof(uint32_t)];
 	input[0] = &the_version->major;
 	input[1] = &the_version->minor;
 	input[2] = &the_version->build;
 	input[3] = &the_version->revision;
 	uint8_t* ptr = output;
 
-	for (uint8_t i = 0; i < 4; ++i)
+	for (uint8_t i = 0, count = COUNT_OF(input); i < count; ++i)
 	{
+#define MAXIMUM_STR_LENGTH 21
 		static const uint8_t zero = '0';
 		/**/
 		uint8_t* a = ptr;
-		uint8_t* b = ptr + 21;
+		uint8_t* b = ptr + MAXIMUM_STR_LENGTH;
 		/**/
-		const uint8_t* start = uint64_to_string_to_byte_array(*input[i], a, b, 21);
-		const uint8_t* finish = start + 21;
+		const uint8_t* start =
+			uint64_to_string_to_byte_array(*input[i], a, b, MAXIMUM_STR_LENGTH);
+		const uint8_t* finish = start + MAXIMUM_STR_LENGTH;
 		/**/
 		start = string_find_any_symbol_like_or_not_like_that(
 					start, finish, &zero, &zero + 1, 0, 1);
@@ -183,7 +185,7 @@ uint8_t version_to_byte_array(const void* version, uint8_t* output)
 	return (uint8_t)(ptr - output - 1);
 }
 
-uint8_t version_to_string(const void* version, struct buffer* output)
+uint8_t version_to_string(const void* version, void* output)
 {
 	if (NULL == version || NULL == output)
 	{
@@ -197,7 +199,7 @@ uint8_t version_to_string(const void* version, struct buffer* output)
 		return 0;
 	}
 
-	uint8_t* str_version = buffer_data(output, size);
+	uint8_t* str_version = buffer_uint8_t_data(output, size);
 	return buffer_resize(output, size + version_to_byte_array(version, str_version));
 }
 

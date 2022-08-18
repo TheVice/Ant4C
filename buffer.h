@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define BUFFER_SIZE_OF 2 * sizeof(ptrdiff_t) + sizeof(void*)
+
 uint8_t buffer_size_of();
 
 uint8_t buffer_init(void* the_buffer, uint8_t size_of_buffer);

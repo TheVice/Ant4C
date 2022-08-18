@@ -29,7 +29,7 @@ add_executable(ant4c_tests
   # "${CMAKE_SOURCE_DIR}/tests_argument_parser.cpp"
   "${CMAKE_SOURCE_DIR}/tests_conversion.cpp"
   # "${CMAKE_SOURCE_DIR}/tests_date_time.cpp"
-  # "${CMAKE_SOURCE_DIR}/tests_environment.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_environment.cpp"
   # "${CMAKE_SOURCE_DIR}/tests_exec.cpp"
   # "${CMAKE_SOURCE_DIR}/tests_exec.h"
   # "${CMAKE_SOURCE_DIR}/tests_file_system.cpp"
@@ -43,7 +43,7 @@ add_executable(ant4c_tests
   # "${CMAKE_SOURCE_DIR}/tests_property.cpp"
   "${CMAKE_SOURCE_DIR}/tests_string_unit.cpp"
   "${CMAKE_SOURCE_DIR}/tests_text_encoding.cpp"
-  # "${CMAKE_SOURCE_DIR}/tests_version.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_version.cpp"
   # "${CMAKE_SOURCE_DIR}/tests_xml.cpp"
 )
 
