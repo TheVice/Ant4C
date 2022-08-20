@@ -10,14 +10,13 @@
 
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 uint8_t exec(
 	const void* the_project,
 	const void* the_target,
 	uint8_t append,
-	struct buffer* program,
+	void* program,
 	const struct range* base_dir,
 	const struct range* command_line,
 	const struct range* output_file,

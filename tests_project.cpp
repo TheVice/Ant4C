@@ -41,8 +41,8 @@ extern "C" {
 	extern uint8_t program_get_properties(
 		const void* the_project,
 		const void* the_target,
-		const buffer* properties_elements,
-		buffer* properties,
+		const void* properties_elements,
+		void* properties,
 		uint8_t is_root, uint8_t verbose);
 };
 
@@ -77,7 +77,7 @@ protected:
 		}
 	}
 };
-
+#if 0
 std::string TestProject::tests_base_directory;
 
 TEST_F(TestProject, project_property_set_value)
@@ -89,9 +89,9 @@ TEST_F(TestProject, project_property_set_value)
 		//
 		const auto code_in_a_range = string_to_range(code);
 		//
-		buffer project_;
-		SET_NULL_TO_BUFFER(project_);
-		void* the_project = &project_;
+		std::string the_project_buffer(buffer_size_of(), 0);
+		auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
+		ASSERT_TRUE(buffer_init(the_project, buffer_size_of()));
 		//
 		ASSERT_TRUE(project_new(the_project)) << project_free(the_project);
 		ASSERT_NE(nullptr, the_project) << project_free(the_project);
@@ -164,8 +164,9 @@ TEST_F(TestProject, project_property_set_value)
 
 TEST_F(TestProject, project_load_from_content)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -209,13 +210,13 @@ TEST_F(TestProject, project_load_from_content)
 
 		if (!expected_base_directory.empty())
 		{
-			ASSERT_TRUE(buffer_resize(&output, 0))
-					<< buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, 0))
+					<< buffer_free(output);
 			input_in_a_range = string_to_range(expected_base_directory);
 			ASSERT_TRUE(interpreter_evaluate_code(
-							nullptr, nullptr, nullptr, &input_in_a_range, &output, verbose))
-					<< buffer_free(&output);
-			expected_base_directory = buffer_to_string(&output);
+							nullptr, nullptr, nullptr, &input_in_a_range, output, verbose))
+					<< buffer_free(output);
+			expected_base_directory = buffer_to_string(output);
 		}
 
 		const auto properties = the_node.select_nodes("property");
@@ -223,24 +224,24 @@ TEST_F(TestProject, project_load_from_content)
 		//
 		input_in_a_range = string_to_range(content);
 		ASSERT_EQ(content.empty(), range_is_null_or_empty(&input_in_a_range))
-				<< buffer_free(&output);
+				<< buffer_free(output);
 		//
-		buffer project_;
-		SET_NULL_TO_BUFFER(project_);
-		void* the_project = &project_;
+		std::string the_project_buffer(buffer_size_of(), 0);
+		auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
+		ASSERT_TRUE(buffer_init(the_project, buffer_size_of())) << buffer_free(output);
 		//
 		ASSERT_TRUE(project_new(the_project))
-				<< buffer_free(&output) << project_free(the_project);
+				<< buffer_free(output) << project_free(the_project);
 		//
 		const auto returned = project_load_from_content(input_in_a_range.start, input_in_a_range.finish,
 							  the_project, project_help, verbose);
 		ASSERT_EQ(expected_return, returned)
-				<< content << std::endl << buffer_free(&output) << project_free(the_project);
+				<< content << std::endl << buffer_free(output) << project_free(the_project);
 
 		if (target_to_run.empty())
 		{
 			ASSERT_EQ(expected_target_return, project_evaluate_default_target(the_project, verbose))
-					<< content << std::endl << buffer_free(&output) << project_free(the_project);
+					<< content << std::endl << buffer_free(output) << project_free(the_project);
 		}
 		else
 		{
@@ -250,7 +251,7 @@ TEST_F(TestProject, project_load_from_content)
 						  target_to_run_in_a_range.start,
 						  target_to_run_in_a_range.finish,
 						  verbose))
-					<< content << std::endl << buffer_free(&output) << project_free(the_project);
+					<< content << std::endl << buffer_free(output) << project_free(the_project);
 		}
 
 		const void* the_property = nullptr;
@@ -258,28 +259,28 @@ TEST_F(TestProject, project_load_from_content)
 		if (!expected_base_directory.empty())
 		{
 			ASSERT_NE(content.empty(), project_get_base_directory(the_project, &the_property, verbose))
-					<< buffer_free(&output) << project_free(the_project);
+					<< buffer_free(output) << project_free(the_project);
 			//
-			const auto returned_base_directory(property_to_string(the_property, &output));
+			const auto returned_base_directory(property_to_string(the_property, output));
 			ASSERT_EQ(expected_base_directory, returned_base_directory)
-					<< buffer_free(&output) << project_free(the_project);
+					<< buffer_free(output) << project_free(the_project);
 		}
 
 		the_property = nullptr;
 		ASSERT_EQ(!expected_name.empty(), project_get_name(the_project, &the_property, verbose))
-				<< buffer_free(&output) << project_free(the_project);
+				<< buffer_free(output) << project_free(the_project);
 		//
-		const auto returned_name(property_to_string(the_property, &output));
+		const auto returned_name(property_to_string(the_property, output));
 		ASSERT_EQ(expected_name, returned_name)
-				<< buffer_free(&output) << project_free(the_project);
+				<< buffer_free(output) << project_free(the_project);
 		//
 		the_property = nullptr;
 		ASSERT_EQ(!expected_default_target.empty(), project_get_default_target(the_project, &the_property, verbose))
-				<< buffer_free(&output) << project_free(the_project);
+				<< buffer_free(output) << project_free(the_project);
 		//
-		const auto returned_default_target(property_to_string(the_property, &output));
+		const auto returned_default_target(property_to_string(the_property, output));
 		ASSERT_EQ(expected_default_target, returned_default_target)
-				<< buffer_free(&output) << project_free(the_project);
+				<< buffer_free(output) << project_free(the_project);
 		//
 		static const uint8_t asterisk = '*';
 
@@ -290,7 +291,7 @@ TEST_F(TestProject, project_load_from_content)
 						  the_project,
 						  expected_default_target_in_a_range.start,
 						  expected_default_target_in_a_range.finish, verbose))
-					<< buffer_free(&output) << project_free(the_project) << std::endl
+					<< buffer_free(output) << project_free(the_project) << std::endl
 					<< expected_default_target;
 		}
 
@@ -306,7 +307,7 @@ TEST_F(TestProject, project_load_from_content)
 							static_cast<uint8_t>(property_name.size()),
 							&the_project_property, verbose))
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
 			const uint8_t expected_is_dynamic = property_node.attribute("dynamic").as_bool();
@@ -318,37 +319,37 @@ TEST_F(TestProject, project_load_from_content)
 			//
 			ASSERT_TRUE(property_is_dynamic(the_project_property, &is_dynamic))
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
 			ASSERT_EQ(expected_is_dynamic, is_dynamic)
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
 			ASSERT_TRUE(property_is_readonly(the_project_property, &is_read_only))
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
 			ASSERT_EQ(expected_is_read_only, is_read_only)
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
-			ASSERT_TRUE(buffer_resize(&output, 0))
+			ASSERT_TRUE(buffer_resize(output, 0))
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
-			ASSERT_TRUE(property_get_by_pointer(the_project_property, &output))
+			ASSERT_TRUE(property_get_by_pointer(the_project_property, output))
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 			//
-			ASSERT_EQ(expected_property_value, buffer_to_string(&output))
+			ASSERT_EQ(expected_property_value, buffer_to_string(output))
 					<< property_name << std::endl
-					<< buffer_free(&output)
+					<< buffer_free(output)
 					<< project_free(the_project);
 		}
 
@@ -362,7 +363,7 @@ TEST_F(TestProject, project_load_from_content)
 							input_in_a_range.start,
 							input_in_a_range.finish,
 							verbose))
-					<< buffer_free(&output) << project_free(the_project) << std::endl
+					<< buffer_free(output) << project_free(the_project) << std::endl
 					<< "Target name - '" << target_name_str << "'." << std::endl;
 			//
 			void* target = nullptr;
@@ -372,7 +373,7 @@ TEST_F(TestProject, project_load_from_content)
 							input_in_a_range.finish,
 							&target,
 							verbose))
-					<< buffer_free(&output) << project_free(the_project) << std::endl
+					<< buffer_free(output) << project_free(the_project) << std::endl
 					<< "Target name - '" << target_name_str << "'." << std::endl;
 			//
 			uint16_t index = 0;
@@ -388,7 +389,7 @@ TEST_F(TestProject, project_load_from_content)
 								input_in_a_range.start,
 								input_in_a_range.finish,
 								verbose))
-						<< buffer_free(&output) << project_free(the_project) << std::endl
+						<< buffer_free(output) << project_free(the_project) << std::endl
 						<< "Target name - '" << target_name_str << "'." << std::endl;
 			}
 		}
@@ -401,7 +402,7 @@ TEST_F(TestProject, project_load_from_content)
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestProject, project_load_from_build_file)
@@ -415,8 +416,9 @@ TEST_F(TestProject, project_load_from_build_file)
 	static const std::string tests_base_property("tests_base_directory");
 	const auto current_path_in_a_range(string_to_range(tests_base_directory));
 	//
-	buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
+	std::string tmp_buffer(buffer_size_of(), 0);
+	auto tmp = reinterpret_cast<void*>(&tmp_buffer[0]);
+	ASSERT_TRUE(buffer_init(tmp, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -434,17 +436,17 @@ TEST_F(TestProject, project_load_from_build_file)
 		std::string path(file_node.attribute("path").as_string());
 		auto path_in_a_range = string_to_range(path);
 		//
-		ASSERT_TRUE(buffer_resize(&tmp, 0))
-				<< buffer_free(&tmp);
+		ASSERT_TRUE(buffer_resize(tmp, 0))
+				<< buffer_free(tmp);
 		ASSERT_TRUE(path_combine(
 						current_path_in_a_range.start,
 						current_path_in_a_range.finish,
 						path_in_a_range.start,
 						path_in_a_range.finish,
-						&tmp))
-				<< buffer_free(&tmp);
+						tmp))
+				<< buffer_free(tmp);
 		//
-		path = buffer_to_string(&tmp);
+		path = buffer_to_string(tmp);
 
 		if (!file_exists(reinterpret_cast<const uint8_t*>(path.c_str())))
 		{
@@ -471,18 +473,18 @@ TEST_F(TestProject, project_load_from_build_file)
 			const std::string algorithm_parameter_str(file_node.attribute("algorithm_parameter").as_string());
 			const auto algorithm_parameter = string_to_range(algorithm_parameter_str);
 			//
-			ASSERT_TRUE(buffer_resize(&tmp, 0))
-					<< buffer_free(&tmp);
+			ASSERT_TRUE(buffer_resize(tmp, 0))
+					<< buffer_free(tmp);
 			ASSERT_TRUE(file_get_checksum(
 							reinterpret_cast<const uint8_t*>(path.c_str()),
 							&algorithm,
 							&algorithm_parameter,
-							&tmp))
-					<< path << std::endl << buffer_free(&tmp);
+							tmp))
+					<< path << std::endl << buffer_free(tmp);
 			//
-			const std::string returned_hash(buffer_to_string(&tmp));
+			const std::string returned_hash(buffer_to_string(tmp));
 			ASSERT_EQ(expected_hash_value, returned_hash)
-					<< path << std::endl << buffer_free(&tmp);
+					<< path << std::endl << buffer_free(tmp);
 			//
 			hash_exists = true;
 			break;
@@ -524,14 +526,14 @@ TEST_F(TestProject, project_load_from_build_file)
 				}
 			}
 
-			ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-			ASSERT_TRUE(file_read_lines(reinterpret_cast<const uint8_t*>(path.c_str()), &tmp)) << buffer_free(&tmp);
+			ASSERT_TRUE(buffer_resize(tmp, 0)) << buffer_free(tmp);
+			ASSERT_TRUE(file_read_lines(reinterpret_cast<const uint8_t*>(path.c_str()), tmp)) << buffer_free(tmp);
 			//
 			path.clear();
 			uint16_t i = 0;
 			range* ptr = nullptr;
 
-			while (nullptr != (ptr = buffer_range_data(&tmp, i++)))
+			while (nullptr != (ptr = buffer_range_data(tmp, i++)))
 			{
 				if (new_content.count(i))
 				{
@@ -546,16 +548,16 @@ TEST_F(TestProject, project_load_from_build_file)
 				path += '\n';
 			}
 
-			ASSERT_TRUE(buffer_resize(&tmp, 0)) << buffer_free(&tmp);
-			ASSERT_TRUE(path_get_temp_file_name(&tmp)) << buffer_free(&tmp);
-			ASSERT_TRUE(buffer_push_back(&tmp, 0)) << buffer_free(&tmp);
+			ASSERT_TRUE(buffer_resize(tmp, 0)) << buffer_free(tmp);
+			ASSERT_TRUE(path_get_temp_file_name(tmp)) << buffer_free(tmp);
+			ASSERT_TRUE(buffer_push_back(tmp, 0)) << buffer_free(tmp);
 			//
-			ASSERT_TRUE(echo(0, Default, buffer_data(&tmp, 0), Info,
+			ASSERT_TRUE(echo(0, Default, buffer_uint8_t_data(tmp, 0), Info,
 							 reinterpret_cast<const uint8_t*>(path.c_str()),
 							 static_cast<ptrdiff_t>(path.size()),
-							 0, verbose)) << buffer_free(&tmp);
+							 0, verbose)) << buffer_free(tmp);
 			//
-			path = buffer_to_string(&tmp);
+			path = buffer_to_string(tmp);
 		}
 
 		const std::string return_str(the_node.select_node("return").node().child_value());
@@ -564,11 +566,11 @@ TEST_F(TestProject, project_load_from_build_file)
 			static_cast<uint8_t>(
 				int_parse(path_in_a_range.start, path_in_a_range.finish));
 		//
-		buffer project_;
-		SET_NULL_TO_BUFFER(project_);
-		void* the_project = &project_;
+		std::string the_project_buffer(buffer_size_of(), 0);
+		auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
+		ASSERT_TRUE(buffer_init(the_project, buffer_size_of()));
 		//
-		ASSERT_TRUE(project_new(the_project)) << buffer_free(&tmp) << project_free(the_project);
+		ASSERT_TRUE(project_new(the_project)) << buffer_free(tmp) << project_free(the_project);
 		//
 		ASSERT_TRUE(project_property_set_value(
 						the_project,
@@ -578,7 +580,7 @@ TEST_F(TestProject, project_load_from_build_file)
 						static_cast<ptrdiff_t>(tests_base_directory.size()),
 						0, 0, 1, verbose))
 				<< path << std::endl
-				<< buffer_free(&tmp) << project_free(the_project);
+				<< buffer_free(tmp) << project_free(the_project);
 		//
 		const auto properties = the_node.select_nodes("property");
 
@@ -599,7 +601,7 @@ TEST_F(TestProject, project_load_from_build_file)
 					<< path << std::endl
 					<< property_name << std::endl
 					<< property_value << std::endl
-					<< buffer_free(&tmp) << project_free(the_project);
+					<< buffer_free(tmp) << project_free(the_project);
 		}
 
 		const std::string project_help_str(the_node.select_node("project_help").node().child_value());
@@ -615,16 +617,16 @@ TEST_F(TestProject, project_load_from_build_file)
 							&path_in_a_range, &current_path_in_a_range,
 							Default, the_project, project_help, verbose);
 		ASSERT_EQ(expected_return, returned)
-				<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
+				<< path << std::endl << buffer_free(tmp) << project_free(the_project);
 		//
 		const void* the_property = nullptr;
 		ASSERT_TRUE(project_get_buildfile_path(the_project, &the_property, verbose))
-				<< path << buffer_free(&tmp) << project_free(the_project);
+				<< path << buffer_free(tmp) << project_free(the_project);
 		//
-		ASSERT_TRUE(buffer_resize(&tmp, 0)) << path << buffer_free(&tmp) << project_free(the_project);
-		ASSERT_TRUE(project_get_buildfile_uri(the_property, &tmp, verbose))
-				<< path << buffer_free(&tmp) << project_free(the_project);
-		ASSERT_TRUE(buffer_size(&tmp)) << path << buffer_free(&tmp) << project_free(the_project);
+		ASSERT_TRUE(buffer_resize(tmp, 0)) << path << buffer_free(tmp) << project_free(the_project);
+		ASSERT_TRUE(project_get_buildfile_uri(the_property, tmp, verbose))
+				<< path << buffer_free(tmp) << project_free(the_project);
+		ASSERT_TRUE(buffer_size(tmp)) << path << buffer_free(tmp) << project_free(the_project);
 		//
 		auto expected_target_return = expected_return;
 		const auto target_return_node = the_node.select_node("target_return").node();
@@ -644,7 +646,7 @@ TEST_F(TestProject, project_load_from_build_file)
 		{
 			returned = project_evaluate_default_target(the_project, verbose);
 			ASSERT_EQ(expected_target_return, returned)
-					<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
+					<< path << std::endl << buffer_free(tmp) << project_free(the_project);
 		}
 		else
 		{
@@ -655,7 +657,7 @@ TEST_F(TestProject, project_load_from_build_file)
 						   target_to_run_in_a_range.finish,
 						   verbose);
 			ASSERT_EQ(expected_target_return, returned)
-					<< path << std::endl << buffer_free(&tmp) << project_free(the_project);
+					<< path << std::endl << buffer_free(tmp) << project_free(the_project);
 		}
 
 		project_unload(the_project);
@@ -664,20 +666,21 @@ TEST_F(TestProject, project_load_from_build_file)
 		--node_count;
 	}
 
-	buffer_release(&tmp);
+	buffer_release(tmp);
 }
 
 TEST(TestProject_, project_get_build_files_from_directory)
 {
 	static const uint8_t verbose = 0;
 	//
-	buffer directory;
-	SET_NULL_TO_BUFFER(directory);
+	std::string directory_buffer(buffer_size_of(), 0);
+	auto directory = reinterpret_cast<void*>(&directory_buffer[0]);
+	ASSERT_TRUE(buffer_init(directory, buffer_size_of()));
 	//
-	ASSERT_TRUE(path_get_temp_path(&directory)) <<
-			buffer_free(&directory);
-	ASSERT_TRUE(buffer_push_back(&directory, PATH_DELIMITER)) <<
-			buffer_free(&directory);
+	ASSERT_TRUE(path_get_temp_path(directory)) <<
+			buffer_free(directory);
+	ASSERT_TRUE(buffer_push_back(directory, PATH_DELIMITER)) <<
+			buffer_free(directory);
 	//
 	const auto now = datetime_now();
 	uint8_t hash[sizeof(uint64_t)];
@@ -685,18 +688,18 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	ASSERT_TRUE(hash_algorithm_crc32(
 					reinterpret_cast<const uint8_t*>(&now),
 					reinterpret_cast<const uint8_t*>(&now) + sizeof(now), hash, 1)) <<
-							buffer_free(&directory);
-	ASSERT_TRUE(hash_algorithm_bytes_to_string(hash, hash + sizeof(hash), &directory)) <<
-			buffer_free(&directory);
+							buffer_free(directory);
+	ASSERT_TRUE(hash_algorithm_bytes_to_string(hash, hash + sizeof(hash), directory)) <<
+			buffer_free(directory);
 	//
-	const auto size = buffer_size(&directory);
-	const auto expected_current_directory(buffer_to_string(&directory));
+	const auto size = buffer_size(directory);
+	const auto expected_current_directory(buffer_to_string(directory));
 	//
-	ASSERT_TRUE(buffer_push_back(&directory, 0)) <<
-			buffer_free(&directory);
+	ASSERT_TRUE(buffer_push_back(directory, 0)) <<
+			buffer_free(directory);
 	//
-	ASSERT_TRUE(directory_create(buffer_data(&directory, 0))) <<
-			buffer_free(&directory);
+	ASSERT_TRUE(directory_create(buffer_uint8_t_data(directory, 0))) <<
+			buffer_free(directory);
 	//
 	int i = 0;
 	//
@@ -706,59 +709,59 @@ TEST(TestProject_, project_get_build_files_from_directory)
 
 	for (i = 0; i < COUNT_OF_FILE; ++i)
 	{
-		const auto start = buffer_data(&directory, 0);
-		const auto finish = start + buffer_size(&directory);
+		const auto start = buffer_uint8_t_data(directory, 0);
+		const auto finish = start + buffer_size(directory);
 		//
 		ASSERT_TRUE(hash_algorithm_crc32(start, finish, hash, 1));
 		//
-		ASSERT_TRUE(buffer_resize(&directory, size)) <<
-				buffer_free(&directory);
-		ASSERT_TRUE(buffer_push_back(&directory, PATH_DELIMITER)) <<
-				buffer_free(&directory);
+		ASSERT_TRUE(buffer_resize(directory, size)) <<
+				buffer_free(directory);
+		ASSERT_TRUE(buffer_push_back(directory, PATH_DELIMITER)) <<
+				buffer_free(directory);
 		//
-		const auto minimal_size = buffer_size(&directory);
+		const auto minimal_size = buffer_size(directory);
 		//
-		ASSERT_TRUE(hash_algorithm_bytes_to_string(hash, hash + sizeof(hash), &directory)) <<
-				buffer_free(&directory);
+		ASSERT_TRUE(hash_algorithm_bytes_to_string(hash, hash + sizeof(hash), directory)) <<
+				buffer_free(directory);
 		//
-		const auto new_size = buffer_size(&directory) - i;
+		const auto new_size = buffer_size(directory) - i;
 		//
 		ASSERT_LT(minimal_size, new_size) <<
-										  buffer_free(&directory);
+										  buffer_free(directory);
 		//
-		ASSERT_TRUE(buffer_resize(&directory, new_size)) <<
-				buffer_free(&directory);
-		ASSERT_TRUE(buffer_append_char(&directory, ".build\0", 7)) <<
-				buffer_free(&directory);
+		ASSERT_TRUE(buffer_resize(directory, new_size)) <<
+				buffer_free(directory);
+		ASSERT_TRUE(buffer_append_char(directory, ".build\0", 7)) <<
+				buffer_free(directory);
 		//
-		const auto path = buffer_data(&directory, 0);
+		const auto path = buffer_uint8_t_data(directory, 0);
 		//
 		ASSERT_TRUE(file_create(path)) <<
-									   buffer_free(&directory);
+									   buffer_free(directory);
 		//
-		expected_files.emplace_back(std::string(reinterpret_cast<const char*>(path), buffer_size(&directory) - 1));
+		expected_files.emplace_back(std::string(reinterpret_cast<const char*>(path), buffer_size(directory) - 1));
 	}
 
-	ASSERT_TRUE(buffer_resize(&directory, size)) <<
-			buffer_free(&directory);
+	ASSERT_TRUE(buffer_resize(directory, size)) <<
+			buffer_free(directory);
 	//
 	ASSERT_TRUE(argument_parser_init()) <<
-										buffer_free(&directory) << argument_parser_free();
+										buffer_free(directory) << argument_parser_free();
 	//
-	ASSERT_TRUE(project_get_build_files_from_directory(&directory, verbose)) <<
-			buffer_free(&directory) << argument_parser_free();
+	ASSERT_TRUE(project_get_build_files_from_directory(directory, verbose)) <<
+			buffer_free(directory) << argument_parser_free();
 	//
-	ASSERT_EQ(size + 1, buffer_size(&directory)) <<
-			buffer_free(&directory) << argument_parser_free();
+	ASSERT_EQ(size + 1, buffer_size(directory)) <<
+			buffer_free(directory) << argument_parser_free();
 	//
-	ASSERT_EQ(0, *buffer_data(&directory, size)) <<
-			buffer_free(&directory) << argument_parser_free();
+	ASSERT_EQ(0, *buffer_uint8_t_data(directory, size)) <<
+			buffer_free(directory) << argument_parser_free();
 	//
-	ASSERT_TRUE(buffer_resize(&directory, size)) <<
-			buffer_free(&directory) << argument_parser_free();
+	ASSERT_TRUE(buffer_resize(directory, size)) <<
+			buffer_free(directory) << argument_parser_free();
 	//
-	ASSERT_EQ(expected_current_directory, buffer_to_string(&directory)) <<
-			buffer_free(&directory) << argument_parser_free();
+	ASSERT_EQ(expected_current_directory, buffer_to_string(directory)) <<
+			buffer_free(directory) << argument_parser_free();
 	//
 	i = 0;
 	const uint8_t* build_file;
@@ -774,7 +777,7 @@ TEST(TestProject_, project_get_build_files_from_directory)
 		//
 		ASSERT_NE(fonded_path, expected_files.cend()) <<
 				build_file_str << std::endl <<
-				buffer_free(&directory) <<
+				buffer_free(directory) <<
 				argument_parser_free();
 #if defined(__GNUC__) && __GNUC__ <= 5
 		auto fonded_path_ = expected_files.begin();
@@ -788,19 +791,19 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	ASSERT_TRUE(expected_files.empty()) <<
 										std::to_string(expected_files.size()) << std::endl <<
 										i << std::endl <<
-										buffer_free(&directory) <<
+										buffer_free(directory) <<
 										argument_parser_free();
 	//
 	ASSERT_EQ(nullptr, argument_parser_get_build_file(i - 1)) <<
 			i << std::endl <<
-			buffer_free(&directory) <<
+			buffer_free(directory) <<
 			argument_parser_free();
 	ASSERT_EQ(nullptr, argument_parser_get_build_file(i)) <<
 			i << std::endl <<
-			buffer_free(&directory) <<
+			buffer_free(directory) <<
 			argument_parser_free();
 	//
-	buffer_release(&directory);
+	buffer_release(directory);
 	argument_parser_release();
 	//
 	ASSERT_TRUE(directory_delete(reinterpret_cast<const uint8_t*>(expected_current_directory.c_str()))) <<
@@ -813,19 +816,24 @@ class TestProgram : public TestsBaseXml
 
 TEST_F(TestProgram, program_get_properties)
 {
-	buffer properties_elements;
-	SET_NULL_TO_BUFFER(properties_elements);
+	std::string properties_elements_buffer(buffer_size_of(), 0);
+	auto properties_elements = reinterpret_cast<void*>(&properties_elements_buffer[0]);
+	ASSERT_TRUE(buffer_init(properties_elements, buffer_size_of()));
 	//
-	buffer properties;
-	SET_NULL_TO_BUFFER(properties);
+	std::string properties_buffer(buffer_size_of(), 0);
+	auto properties = reinterpret_cast<void*>(&properties_buffer[0]);
+	ASSERT_TRUE(buffer_init(properties, buffer_size_of()))
+			<< buffer_free(properties_elements);
 	//
-	buffer project_;
-	SET_NULL_TO_BUFFER(project_);
-	void* the_project = &project_;
+	std::string the_project_buffer(buffer_size_of(), 0);
+	auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
+	ASSERT_TRUE(buffer_init(the_project, buffer_size_of()))
+			<< buffer_free(properties_elements)
+			<< properties_free(properties);
 	//
 	ASSERT_TRUE(project_new(the_project))
-			<< buffer_free(&properties_elements)
-			<< properties_free(&properties)
+			<< buffer_free(properties_elements)
+			<< properties_free(properties)
 			<< project_free(the_project);
 
 	for (const auto& node : nodes)
@@ -836,19 +844,19 @@ TEST_F(TestProgram, program_get_properties)
 		const auto input_in_a_range(string_to_range(input));
 		//
 		ASSERT_TRUE(xml_get_sub_nodes_elements(
-						input_in_a_range.start, input_in_a_range.finish, nullptr, &properties_elements))
-				<< buffer_free(&properties_elements)
-				<< properties_free(&properties)
+						input_in_a_range.start, input_in_a_range.finish, nullptr, properties_elements))
+				<< buffer_free(properties_elements)
+				<< properties_free(properties)
 				<< project_free(the_project);
 		//
-		ASSERT_TRUE(program_get_properties(the_project, nullptr, &properties_elements, &properties, 1, 0))
-				<< buffer_free(&properties_elements)
-				<< properties_free(&properties)
+		ASSERT_TRUE(program_get_properties(the_project, nullptr, properties_elements, properties, 1, 0))
+				<< buffer_free(properties_elements)
+				<< properties_free(properties)
 				<< project_free(the_project);
 		//
-		ASSERT_TRUE(buffer_resize(&properties_elements, 0))
-				<< buffer_free(&properties_elements)
-				<< properties_free(&properties)
+		ASSERT_TRUE(buffer_resize(properties_elements, 0))
+				<< buffer_free(properties_elements)
+				<< properties_free(properties)
 				<< project_free(the_project);
 
 		for (const auto& the_property_ : the_node.select_nodes("properties/property"))
@@ -858,13 +866,13 @@ TEST_F(TestProgram, program_get_properties)
 			const std::string property_name(property_node.attribute("name").as_string());
 			//
 			ASSERT_TRUE(property_exists(
-							&properties,
+							properties,
 							reinterpret_cast<const uint8_t*>(property_name.c_str()),
 							static_cast<uint8_t>(property_name.size()),
 							&the_property))
 					<< property_name << std::endl
-					<< buffer_free(&properties_elements)
-					<< properties_free(&properties)
+					<< buffer_free(properties_elements)
+					<< properties_free(properties)
 					<< project_free(the_project);
 			//
 			const uint8_t expected_is_dynamic = property_node.attribute("dynamic").as_bool();
@@ -875,36 +883,37 @@ TEST_F(TestProgram, program_get_properties)
 			//
 			ASSERT_TRUE(property_is_dynamic(the_property, &is_dynamic))
 					<< property_name << std::endl
-					<< buffer_free(&properties_elements)
-					<< properties_free(&properties)
+					<< buffer_free(properties_elements)
+					<< properties_free(properties)
 					<< project_free(the_project);
 			//
 			ASSERT_EQ(expected_is_dynamic, is_dynamic)
 					<< property_name << std::endl
-					<< buffer_free(&properties_elements)
-					<< properties_free(&properties)
+					<< buffer_free(properties_elements)
+					<< properties_free(properties)
 					<< project_free(the_project);
 			//
 			ASSERT_TRUE(property_is_readonly(the_property, &is_read_only))
 					<< property_name << std::endl
-					<< buffer_free(&properties_elements)
-					<< properties_free(&properties)
+					<< buffer_free(properties_elements)
+					<< properties_free(properties)
 					<< project_free(the_project);
 			//
 			ASSERT_EQ(expected_is_read_only, is_read_only)
 					<< property_name << std::endl
-					<< buffer_free(&properties_elements)
-					<< properties_free(&properties)
+					<< buffer_free(properties_elements)
+					<< properties_free(properties)
 					<< project_free(the_project);
 		}
 
-		property_release_inner(&properties);
+		property_release_inner(properties);
 		project_clear(the_project);
 		//
 		--node_count;
 	}
 
-	buffer_release(&properties_elements);
-	property_release(&properties);
+	buffer_release(properties_elements);
+	property_release(properties);
 	project_unload(the_project);
 }
+#endif

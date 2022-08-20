@@ -273,13 +273,13 @@ uint8_t project_free(void* the_project)
 	project_unload(the_project);
 	return 0;
 }
-
+#endif
 std::string property_to_string(const void* the_property, void* value)
 {
 	return buffer_resize(value, 0) && property_get_by_pointer(the_property, value) ?
 		   buffer_to_string(value) : std::string();
 }
-#endif
+
 void property_load_from_node(const pugi::xml_node& property_in_a_xml,
 							 std::string& name, std::string& value,
 							 uint8_t& dynamic, uint8_t& over_write,
@@ -296,7 +296,7 @@ void property_load_from_node(const pugi::xml_node& property_in_a_xml,
 	fail_on_error = nullptr == fail_on_error_attribute ? 1 : fail_on_error_attribute.as_bool();
 	verbose = property_in_a_xml.attribute("verbose").as_bool();
 }
-#if 0
+
 uint8_t properties_load_from_node(const pugi::xpath_node& node, const char* path, void* properties)
 {
 	const auto nodes = node.node().select_nodes(path);
@@ -358,7 +358,7 @@ uint8_t argument_parser_free()
 	argument_parser_release();
 	return 0;
 }
-#endif
+
 void add_slash(std::string& path)
 {
 	if (path.empty())
@@ -382,13 +382,12 @@ void add_slash(std::string& path)
 
 #endif
 }
-#if 0
+
 std::string get_directory_for_current_process(void* tmp, uint8_t* result)
 {
 	static std::string current_directory;
 
-	if (!tmp ||
-		!result)
+	if (!tmp || !result)
 	{
 		if (result)
 		{
@@ -413,7 +412,7 @@ std::string get_directory_for_current_process(void* tmp, uint8_t* result)
 	*result = 1;
 	return current_directory;
 }
-
+#if 0
 uint8_t select_nodes_by_condition(
 	const void* the_project, const pugi::xpath_node_set& all_nodes,
 	std::list<pugi::xpath_node>& nodes, void* tmp)
@@ -444,7 +443,7 @@ uint8_t select_nodes_by_condition(
 
 	return !nodes.empty();
 }
-
+#endif
 std::string get_path_to_directory_with_source(uint8_t* result)
 {
 	static std::string path_to_source;
@@ -500,7 +499,7 @@ std::string join_path(const std::string& path, const std::string& child_path)
 	//
 	return output;
 }
-#endif
+
 bool starts_with_(const std::string& input, const std::string& value)
 {
 	return value.size() <= input.size() && value == input.substr(0, value.size());
