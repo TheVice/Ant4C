@@ -132,8 +132,8 @@ uint8_t dir_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 	return common_string_to_enum(name_start, name_finish, dir_function_str, UNKNOWN_DIR_FUNCTION);
 }
 
-uint8_t dir_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						  struct buffer* output)
+uint8_t dir_exec_function(uint8_t function, const void* arguments, uint8_t arguments_count,
+						  void* output)
 {
 	if (UNKNOWN_DIR_FUNCTION <= function ||
 		get_current_directory == function ||
@@ -250,8 +250,8 @@ uint8_t file_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 	return common_string_to_enum(name_start, name_finish, file_function_str, UNKNOWN_FILE_FUNCTION);
 }
 
-uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-						   struct buffer* output)
+uint8_t file_exec_function(uint8_t function, const void* arguments, uint8_t arguments_count,
+						   void* output)
 {
 	if (UNKNOWN_FILE_FUNCTION <= function ||
 		NULL == arguments ||
@@ -279,10 +279,12 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 		case file_exists_:
 			return 1 == arguments_count &&
 				   bool_to_string(file_exists(values[0].start), output);
+#if 0
 
 		case file_get_checksum_:
 			return (2 == arguments_count || 3 == arguments_count) &&
 				   file_get_checksum(values[0].start, &values[1], &values[2], output);
+#endif
 
 		case file_get_creation_time_:
 			return 1 == arguments_count &&
@@ -342,7 +344,7 @@ uint8_t file_exec_function(uint8_t function, const struct buffer* arguments, uin
 
 uint8_t attrib_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* attrib_attributes[] =
 	{
@@ -363,7 +365,7 @@ uint8_t attrib_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+uint8_t attrib_evaluate_task(void* task_arguments, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -372,7 +374,7 @@ uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		return 0;
 	}
 
-	struct buffer* file_path_in_a_buffer = buffer_buffer_data(task_arguments, ATTRIB_FILE_POSITION);
+	void* file_path_in_a_buffer = buffer_buffer_data(task_arguments, ATTRIB_FILE_POSITION);
 
 	if (buffer_size(file_path_in_a_buffer))
 	{
@@ -395,7 +397,7 @@ uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			continue;
 		}
 
-		const struct buffer* data = buffer_buffer_data(task_arguments, i);
+		const void* data = buffer_buffer_data(task_arguments, i);
 
 		if (NULL == data)
 		{
@@ -410,7 +412,7 @@ uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			continue;
 		}
 
-		const uint8_t* value = buffer_data(data, 0);
+		const uint8_t* value = buffer_uint8_t_data(data, 0);
 
 		if (!bool_parse(value, value + attributes[ATTRIB_FILE_POSITION], &(attributes[i])))
 		{
@@ -418,7 +420,7 @@ uint8_t attrib_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		}
 	}
 
-	return file_set_attributes(buffer_data(file_path_in_a_buffer, 0),
+	return file_set_attributes(buffer_uint8_t_data(file_path_in_a_buffer, 0),
 							   attributes[ATTRIB_ARCHIVE_POSITION], attributes[ATTRIB_HIDDEN_POSITION],
 							   attributes[ATTRIB_NORMAL_POSITION], attributes[ATTRIB_READ_ONLY_POSITION],
 							   attributes[ATTRIB_SYSTEM_POSITION]);
@@ -437,7 +439,7 @@ static const uint8_t delete_attributes_lengths[] = { 3, 4 };
 
 uint8_t delete_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	return common_get_attributes_and_arguments_for_task(
 			   delete_attributes, delete_attributes_lengths,
@@ -446,17 +448,15 @@ uint8_t delete_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+uint8_t delete_evaluate_task(void* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
 		return 0;
 	}
 
-	struct buffer* dir_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_DIR_POSITION);
-
-	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_FILE_POSITION);
-
+	void* dir_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_DIR_POSITION);
+	void* file_path_in_buffer = buffer_buffer_data(task_arguments, DELETE_FILE_POSITION);
 	const uint8_t* dir_ = NULL;
 
 	if (buffer_size(dir_path_in_buffer))
@@ -466,7 +466,7 @@ uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			return 0;
 		}
 
-		dir_ = buffer_data(dir_path_in_buffer, 0);
+		dir_ = buffer_uint8_t_data(dir_path_in_buffer, 0);
 
 		if (file_exists(dir_))
 		{
@@ -483,7 +483,7 @@ uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			return 0;
 		}
 
-		file = buffer_data(file_path_in_buffer, 0);
+		file = buffer_uint8_t_data(file_path_in_buffer, 0);
 
 		if (directory_exists(file))
 		{
@@ -517,7 +517,7 @@ uint8_t delete_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 
 uint8_t mkdir_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	return common_get_attributes_and_arguments_for_task(
 			   delete_attributes, delete_attributes_lengths, 1,
@@ -525,7 +525,7 @@ uint8_t mkdir_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+uint8_t mkdir_evaluate_task(void* task_arguments, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -534,7 +534,7 @@ uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		return 0;
 	}
 
-	struct buffer* dir_path_in_buffer = buffer_buffer_data(task_arguments, MKDIR_DIR_POSITION);
+	void* dir_path_in_buffer = buffer_buffer_data(task_arguments, MKDIR_DIR_POSITION);
 
 	if (!buffer_size(dir_path_in_buffer))
 	{
@@ -546,7 +546,7 @@ uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		return 0;
 	}
 
-	const uint8_t* dir_ = buffer_data(dir_path_in_buffer, 0);
+	const uint8_t* dir_ = buffer_uint8_t_data(dir_path_in_buffer, 0);
 
 	if (file_exists(dir_))
 	{
@@ -562,7 +562,7 @@ uint8_t mkdir_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 
 uint8_t touch_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* touch_attributes[] =
 	{
@@ -580,7 +580,7 @@ uint8_t touch_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+uint8_t touch_evaluate_task(void* task_arguments, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -589,7 +589,7 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		return 0;
 	}
 
-	struct buffer* file_path_in_buffer = buffer_buffer_data(task_arguments, TOUCH_FILE_POSITION);
+	void* file_path_in_buffer = buffer_buffer_data(task_arguments, TOUCH_FILE_POSITION);
 
 	if (!buffer_size(file_path_in_buffer))
 	{
@@ -597,18 +597,17 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 
 	if (!buffer_push_back(file_path_in_buffer, 0) ||
-		directory_exists(buffer_data(file_path_in_buffer, 0)))
+		directory_exists(buffer_uint8_t_data(file_path_in_buffer, 0)))
 	{
 		return 0;
 	}
 
-	struct buffer* date_time_in_buffer = buffer_buffer_data(task_arguments, TOUCH_DATE_TIME_POSITION);
+	void* date_time_in_buffer = buffer_buffer_data(task_arguments, TOUCH_DATE_TIME_POSITION);
+	void* millis_in_buffer = buffer_buffer_data(task_arguments, TOUCH_MILLIS_POSITION);
 
-	struct buffer* millis_in_buffer = buffer_buffer_data(task_arguments, TOUCH_MILLIS_POSITION);
-
-	if (!file_exists(buffer_data(file_path_in_buffer, 0)))
+	if (!file_exists(buffer_uint8_t_data(file_path_in_buffer, 0)))
 	{
-		if (!file_create(buffer_data(file_path_in_buffer, 0)))
+		if (!file_create(buffer_uint8_t_data(file_path_in_buffer, 0)))
 		{
 			return 0;
 		}
@@ -625,7 +624,7 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	if (buffer_size(date_time_in_buffer))
 	{
 		struct range date_time_in_a_range;
-		date_time_in_a_range.start = buffer_data(date_time_in_buffer, 0);
+		date_time_in_a_range.start = buffer_uint8_t_data(date_time_in_buffer, 0);
 		date_time_in_a_range.finish = date_time_in_a_range.start + buffer_size(date_time_in_buffer);
 
 		if (!datetime_parse_range(&date_time_in_a_range, &seconds))
@@ -635,7 +634,7 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 	}
 	else if (buffer_size(millis_in_buffer))
 	{
-		const uint8_t* start = buffer_data(millis_in_buffer, 0);
+		const uint8_t* start = buffer_uint8_t_data(millis_in_buffer, 0);
 		const uint8_t* finish = start + buffer_size(millis_in_buffer);
 		seconds = int64_parse(start, finish);
 		seconds = date_time_millisecond_to_second(seconds);
@@ -645,5 +644,5 @@ uint8_t touch_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 		seconds = datetime_now();
 	}
 
-	return file_set_last_write_time(buffer_data(file_path_in_buffer, 0), seconds);
+	return file_set_last_write_time(buffer_uint8_t_data(file_path_in_buffer, 0), seconds);
 }

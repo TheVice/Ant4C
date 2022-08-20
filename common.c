@@ -142,7 +142,7 @@ uint8_t common_get_arguments(
 					}
 				}
 
-				arguments[i].start = buffer_data(argument, 0);
+				arguments[i].start = buffer_uint8_t_data(argument, 0);
 				arguments[i].finish = arguments[i].start + size;
 			}
 			else

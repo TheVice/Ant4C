@@ -30,8 +30,8 @@ uint8_t buffer_append_range(
 struct range* buffer_range_data(
 	const void* ranges, ptrdiff_t data_position);
 
-#define BUFFER_TO_RANGE(R, B)						\
-	(R).start = (const uint8_t*)buffer_data((B), 0);\
+#define BUFFER_TO_RANGE(R, B)								\
+	(R).start = (const uint8_t*)buffer_uint8_t_data((B), 0);\
 	(R).finish = (R).start + buffer_size(B);
 
 #endif

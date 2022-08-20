@@ -10,11 +10,10 @@
 
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 uint8_t datetime_format_to_string(
-	int64_t input, const uint8_t* format, struct buffer* output);
+	int64_t input, const uint8_t* format, void* output);
 uint8_t datetime_parse(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	uint32_t* year, uint8_t* month, uint8_t* day,
@@ -23,7 +22,7 @@ uint8_t datetime_parse_range(const struct range* input, int64_t* output);
 uint8_t datetime_to_string(
 	uint32_t year, uint8_t month, uint8_t day,
 	uint8_t hour, uint8_t minute, uint8_t second,
-	struct buffer* output);
+	void* output);
 
 uint8_t datetime_get_day(int64_t input);
 uint8_t datetime_get_day_of_week(int64_t input);

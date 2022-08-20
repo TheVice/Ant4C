@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -14,20 +14,19 @@
 /*TODO: xmlpeek
 xmlpoke*/
 
-struct buffer;
 struct range;
 
 const uint8_t* xml_get_tag_finish_pos(
 	const uint8_t* start, const uint8_t* finish);
 uint16_t xml_get_sub_nodes_elements(
 	const uint8_t* start, const uint8_t* finish,
-	const struct range* sub_nodes_names, struct buffer* elements);
+	const struct range* sub_nodes_names, void* elements);
 const uint8_t* xml_get_tag_name(const uint8_t* start, const uint8_t* finish);
 uint8_t xml_get_attribute_value(
 	const uint8_t* start, const uint8_t* finish,
 	const uint8_t* attribute, ptrdiff_t attribute_length,
-	struct buffer* value);
+	void* value);
 uint8_t xml_get_element_value(
-	const uint8_t* start, const uint8_t* finish, struct buffer* value);
+	const uint8_t* start, const uint8_t* finish, void* value);
 
 #endif

@@ -89,7 +89,7 @@ uint8_t bool_to_string(uint8_t input, void* output)
 		return 0;												\
 	}															\
 	\
-	char* out = (char*)buffer_data((OUTPUT), size);
+	char* out = buffer_char_data((OUTPUT), size);
 
 #define DIGIT_TO_STRING(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)	\
 	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))			\
@@ -202,6 +202,8 @@ uint8_t int64_to_string(int64_t input, void* output)
 	TO_STRING(input, output);
 }
 
+#define MAXIMUM_STR_LENGTH 21
+
 uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish))
@@ -230,9 +232,9 @@ uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 					   input_start, input_finish,
 					   digits, digits + count_of_digits, 0, 1);
 	/**/
-	uint32_t output[21];
+	uint32_t output[MAXIMUM_STR_LENGTH];
 	uint32_t* out = output;
-	const uint32_t* out_finish = out + 21;
+	const uint32_t* out_finish = out + MAXIMUM_STR_LENGTH;
 
 	while (NULL != (input_start = string_enumerate(input_start, input_finish, out)))
 	{
@@ -470,17 +472,17 @@ uint8_t uint64_to_string(uint64_t input, void* output)
 		return 0;
 	}
 
-	uint8_t* a = buffer_data(output, size);
-	uint8_t* b = a + 21;
+	uint8_t* a = buffer_uint8_t_data(output, size);
+	uint8_t* b = a + MAXIMUM_STR_LENGTH;
 	/**/
-	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, 21);
+	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, MAXIMUM_STR_LENGTH);
 
 	if (!result_start)
 	{
 		return 0;
 	}
 
-	const uint8_t* result_finish = result_start + 21;
+	const uint8_t* result_finish = result_start + MAXIMUM_STR_LENGTH;
 	result_start = string_find_any_symbol_like_or_not_like_that(
 					   result_start, result_finish, &zero, &zero + 1, 0, 1);
 	/**/

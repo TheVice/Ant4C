@@ -66,7 +66,7 @@ static const uint8_t* upper_level = (const uint8_t*)"..";
 uint8_t path_change_extension(
 	const uint8_t* path_start, const uint8_t* path_finish,
 	const uint8_t* ext_start, const uint8_t* ext_finish,
-	struct buffer* path)
+	void* path)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish))
 	{
@@ -107,7 +107,7 @@ uint8_t path_change_extension(
 }
 
 uint8_t path_combine_in_place(
-	struct buffer* path1, const ptrdiff_t size,
+	void* path1, const ptrdiff_t size,
 	const uint8_t* path2_start, const uint8_t* path2_finish)
 {
 	if (NULL == path1 ||
@@ -135,16 +135,16 @@ uint8_t path_combine_in_place(
 	{
 #if defined(_WIN32)
 
-		if (!cygpath_get_windows_path(buffer_data(path1, size), buffer_data(path1, size) + new_size))
+		if (!cygpath_get_windows_path(buffer_uint8_t_data(path1, size), buffer_uint8_t_data(path1, size) + new_size))
 #else
-		if (!cygpath_get_unix_path(buffer_data(path1, size), buffer_data(path1, size) + new_size))
+		if (!cygpath_get_unix_path(buffer_uint8_t_data(path1, size), buffer_uint8_t_data(path1, size) + new_size))
 #endif
 		{
 			return 0;
 		}
 
 		if (!string_replace_double_char_with_single(
-				buffer_data(path1, size),
+				buffer_uint8_t_data(path1, size),
 				&new_size, &PATH_DELIMITER,
 				&PATH_DELIMITER + 1))
 		{
@@ -158,7 +158,7 @@ uint8_t path_combine_in_place(
 uint8_t path_combine(
 	const uint8_t* path1_start, const uint8_t* path1_finish,
 	const uint8_t* path2_start, const uint8_t* path2_finish,
-	struct buffer* output)
+	void* output)
 {
 	if (path1_finish < path1_start ||
 		path2_finish < path2_start ||
@@ -440,7 +440,7 @@ uint8_t path_is_start_valid(const uint8_t* start, const uint8_t* finish)
 uint8_t path_get_full_path(
 	const uint8_t* root_start, const uint8_t* root_finish,
 	const uint8_t* path_start, const uint8_t* path_finish,
-	struct buffer* full_path)
+	void* full_path)
 {
 	if (NULL == path_start ||
 		NULL == path_finish ||
@@ -669,7 +669,7 @@ DWORD path_get_temp_path_wchar_t(DWORD length, wchar_t* temp_path)
 	return GET_TEMP_PATH(length, temp_path);
 }
 #endif
-uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
+uint8_t path_get_temp_file_name(void* temp_file_name)
 {
 	if (NULL == temp_file_name)
 	{
@@ -737,7 +737,7 @@ uint8_t path_get_temp_file_name(struct buffer* temp_file_name)
 #endif
 }
 
-uint8_t path_get_temp_path(struct buffer* temp_path)
+uint8_t path_get_temp_path(void* temp_path)
 {
 	if (NULL == temp_path)
 	{
@@ -789,10 +789,10 @@ uint8_t path_get_temp_path(struct buffer* temp_path)
 	{
 #endif
 	static const uint8_t zero = 0;
-	const uint8_t* path_start = buffer_data(temp_path, size);
+	const uint8_t* path_start = buffer_uint8_t_data(temp_path, size);
 	const uint8_t* path_finish =
 		string_find_any_symbol_like_or_not_like_that(
-			path_start, buffer_data(temp_path, 0) + buffer_size(temp_path),
+			path_start, buffer_uint8_t_data(temp_path, 0) + buffer_size(temp_path),
 			&zero, &zero + 1, 1, 1);
 
 	if (string_ends_with(path_start, path_finish, &PATH_DELIMITER, &PATH_DELIMITER + 1) &&
@@ -968,7 +968,7 @@ uint8_t path_glob(
 	return 1;
 }
 
-uint8_t path_get_directory_for_current_process(struct buffer* path)
+uint8_t path_get_directory_for_current_process(void* path)
 {
 	if (NULL == path)
 	{
@@ -1079,7 +1079,7 @@ uint8_t path_get_directory_for_current_process(struct buffer* path)
 #endif
 }
 
-uint8_t path_get_directory_for_current_image(struct buffer* path)
+uint8_t path_get_directory_for_current_image(void* path)
 {
 	if (NULL == path)
 	{
@@ -1210,8 +1210,8 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 #else
 	/*NOTE: place for platforms not listed above.*/
 #endif
-	const uint8_t* path_start = buffer_data(path, size);
-	const uint8_t* path_finish = buffer_data(path, 0) + buffer_size(path);
+	const uint8_t* path_start = buffer_uint8_t_data(path, size);
+	const uint8_t* path_finish = buffer_uint8_t_data(path, 0) + buffer_size(path);
 
 	if (!path_get_directory_name(path_start, &path_finish))
 	{
@@ -1220,10 +1220,10 @@ uint8_t path_get_directory_for_current_image(struct buffer* path)
 
 	return buffer_resize(path, size + (path_finish - path_start));
 }
-
+#if 0
 const uint8_t* path_try_to_get_absolute_path(
 	const void* the_project, const void* the_target,
-	struct buffer* input, struct buffer* tmp, uint8_t verbose)
+	void* input, void* tmp, uint8_t verbose)
 {
 	const uint8_t* path_start = buffer_data(input, 0);
 	const uint8_t* path_finish = path_start + buffer_size(input);
@@ -1314,10 +1314,10 @@ const uint8_t* path_try_to_get_absolute_path(
 
 	return path_start;
 }
-
+#endif
 uint8_t cygpath_get_dos_path(
 	const uint8_t* path_start, const uint8_t* path_finish,
-	struct buffer* path)
+	void* path)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
 		NULL == path)
@@ -1329,7 +1329,7 @@ uint8_t cygpath_get_dos_path(
 	const ptrdiff_t size = buffer_size(path);
 
 	if (!text_encoding_UTF8_to_UTF16LE(path_start, path_finish, path) ||
-		!buffer_push_back_uint16(path, 0))
+		!buffer_push_back_uint16_t(path, 0))
 	{
 		return 0;
 	}

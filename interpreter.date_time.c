@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -48,8 +48,9 @@ uint8_t datetime_get_function(const uint8_t* name_start, const uint8_t* name_fin
 	return common_string_to_enum(name_start, name_finish, datetime_function_str, UNKNOWN_DATETIME_FUNCTION);
 }
 
-uint8_t datetime_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output)
+uint8_t datetime_exec_function(
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	if (UNKNOWN_DATETIME_FUNCTION <= function || !arguments || 2 < arguments_count || !output)
 	{
@@ -232,8 +233,9 @@ uint8_t timespan_get_function(const uint8_t* name_start, const uint8_t* name_fin
 	return common_string_to_enum(name_start, name_finish, timespan_function_str, UNKNOWN_TIMESPAN_FUNCTION);
 }
 
-uint8_t timespan_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							   struct buffer* output)
+uint8_t timespan_exec_function(
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	if (UNKNOWN_TIMESPAN_FUNCTION <= function || !arguments || 1 != arguments_count || !output)
 	{

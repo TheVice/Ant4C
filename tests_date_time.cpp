@@ -31,14 +31,15 @@ class TestDateTime : public TestsBaseXml
 
 TEST_F(TestDateTime, datetime_format_to_string)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
 		const auto the_node = node.node();
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
 		const auto year = INT_PARSE(the_node.select_node("year").node().child_value());
 		const auto month = static_cast<uint8_t>(INT_PARSE(the_node.select_node("month").node().child_value()));
@@ -58,7 +59,7 @@ TEST_F(TestDateTime, datetime_format_to_string)
 		const auto date_time = datetime_encode(year, month, day, hour, minute, second);
 		//
 		const auto returned = datetime_format_to_string(
-								  date_time, reinterpret_cast<const uint8_t*>(format.c_str()), &output);
+								  date_time, reinterpret_cast<const uint8_t*>(format.c_str()), output);
 		ASSERT_EQ(expected_return, returned) <<
 											 year << " " <<
 											 static_cast<int>(month) << " " <<
@@ -66,21 +67,21 @@ TEST_F(TestDateTime, datetime_format_to_string)
 											 static_cast<int>(hour) << " " <<
 											 static_cast<int>(minute) << " " <<
 											 static_cast<int>(second) << std::endl <<
-											 format << std::endl << buffer_free(&output);
+											 format << std::endl << buffer_free(output);
 		//
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) <<
+		ASSERT_EQ(expected_output, buffer_to_string(output)) <<
 				year << " " <<
 				static_cast<int>(month) << " " <<
 				static_cast<int>(day) << " " <<
 				static_cast<int>(hour) << " " <<
 				static_cast<int>(minute) << " " <<
 				static_cast<int>(second) << std::endl <<
-				format << std::endl << buffer_free(&output);
+				format << std::endl << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestDateTime, datetime_parse)
@@ -155,14 +156,15 @@ TEST_F(TestDateTime, datetime_parse)
 
 TEST_F(TestDateTime, datetime_to_string)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
 		const auto the_node = node.node();
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
 		const auto year = INT_PARSE(the_node.select_node("year").node().child_value());
 		const auto month = static_cast<uint8_t>(INT_PARSE(the_node.select_node("month").node().child_value()));
@@ -173,25 +175,25 @@ TEST_F(TestDateTime, datetime_to_string)
 		//
 		const std::string expected_output(the_node.select_node("output").node().child_value());
 		//
-		ASSERT_TRUE(datetime_to_string(year, month, day, hour, minute, second, &output)) <<
+		ASSERT_TRUE(datetime_to_string(year, month, day, hour, minute, second, output)) <<
 				year << " " <<
 				static_cast<int>(month) << " " <<
 				static_cast<int>(day) << " " <<
 				static_cast<int>(hour) << " " <<
 				static_cast<int>(minute) << " " <<
-				static_cast<int>(second) << std::endl << buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) <<
+				static_cast<int>(second) << std::endl << buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output)) <<
 				year << " " <<
 				static_cast<int>(month) << " " <<
 				static_cast<int>(day) << " " <<
 				static_cast<int>(hour) << " " <<
 				static_cast<int>(minute) << " " <<
-				static_cast<int>(second) << std::endl << buffer_free(&output);
+				static_cast<int>(second) << std::endl << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestDateTime, datetime_get_day)

@@ -157,7 +157,7 @@ uint8_t datetime_decode_to_tm(int64_t time, struct tm* tm_)
 }
 
 uint8_t datetime_format_to_string(
-	int64_t input, const uint8_t* format, struct buffer* output)
+	int64_t input, const uint8_t* format, void* output)
 {
 	struct tm tm_;
 
@@ -173,7 +173,7 @@ uint8_t datetime_format_to_string(
 		return 0;
 	}
 
-	char* output_ = (char*)buffer_data(output, size);
+	char* output_ = buffer_char_data(output, size);
 	tm_.tm_year -= 1900;
 	tm_.tm_mon -= 1;
 	/**/
@@ -288,11 +288,12 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 			}
 		}
 
+#define MAXIMUM_STR_LENGTH 21
 		uint8_t* a = output_finish;
-		uint8_t* b = output_finish + 21;
+		uint8_t* b = output_finish + MAXIMUM_STR_LENGTH;
 		/**/
-		const uint8_t* c = uint64_to_string_to_byte_array(inputs[i], a, b, 21);
-		const uint8_t* d = c + 21;
+		const uint8_t* c = uint64_to_string_to_byte_array(inputs[i], a, b, MAXIMUM_STR_LENGTH);
+		const uint8_t* d = c + MAXIMUM_STR_LENGTH;
 		/**/
 		c = string_find_any_symbol_like_or_not_like_that(
 				c, d, &zero, &zero + 1, 0, 1);
@@ -334,7 +335,7 @@ uint8_t datetime_to_char_array(const int* inputs, uint8_t* output)
 uint8_t datetime_to_string(
 	uint32_t year, uint8_t month, uint8_t day,
 	uint8_t hour, uint8_t minute, uint8_t second,
-	struct buffer* output)
+	void* output)
 {
 	if (year < 1970 || INT32_MAX < year ||
 		month < 1 || 12 < month ||
@@ -364,7 +365,7 @@ uint8_t datetime_to_string(
 #else
 	int inputs[] = { day, month, (int)year, hour, minute, second };
 #endif
-	uint8_t* output_ = buffer_data(output, size);
+	uint8_t* output_ = buffer_uint8_t_data(output, size);
 	return buffer_resize(output, size + datetime_to_char_array(inputs, output_));
 }
 

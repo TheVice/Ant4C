@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
@@ -24,29 +24,31 @@
 uint8_t choose_evaluate_task(
 	void* the_project, const void* the_target,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	if (!common_get_attributes_and_arguments_for_task(NULL, NULL, COUNT, NULL, NULL, NULL, task_arguments))
 	{
 		return 0;
 	}
 
-	struct buffer* elements = buffer_buffer_data(task_arguments, ELEMENTS_POSITION);
+	void* elements = buffer_buffer_data(task_arguments, ELEMENTS_POSITION);
 
-	SET_NULL_TO_BUFFER(*elements);
+	if (!buffer_init(elements, buffer_size_of()))
+	{
+		return 0;
+	}
 
-	struct buffer* attribute_value = buffer_buffer_data(task_arguments, ATTRIBUTE_POSITION);
+	void* attribute_value = buffer_buffer_data(task_arguments, ATTRIBUTE_POSITION);
 
-	SET_NULL_TO_BUFFER(*attribute_value);
+	if (!buffer_init(attribute_value, buffer_size_of()))
+	{
+		return 0;
+	}
 
 	static const uint8_t* tags = (const uint8_t*)"when\0otherwise\0";
-
 	struct range sub_nodes_names;
-
 	sub_nodes_names.start = tags;
-
 	sub_nodes_names.finish = sub_nodes_names.start + 15;
-
 	const uint16_t count = xml_get_sub_nodes_elements(
 							   attributes_finish, element_finish,
 							   &sub_nodes_names, elements);
@@ -63,9 +65,12 @@ uint8_t choose_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* test_value_in_buffer = buffer_buffer_data(attribute_value, 0);
+	void* test_value_in_buffer = buffer_buffer_data(attribute_value, 0);
 
-	SET_NULL_TO_BUFFER(*buffer_buffer_data(attribute_value, 0));
+	if (!buffer_init(test_value_in_buffer, buffer_size_of()))
+	{
+		return 0;
+	}
 
 	sub_nodes_names.finish = sub_nodes_names.start + 4;
 
@@ -92,7 +97,7 @@ uint8_t choose_evaluate_task(
 			return 0;
 		}
 
-		const uint8_t* value = buffer_data(test_value_in_buffer, 0);
+		const uint8_t* value = buffer_uint8_t_data(test_value_in_buffer, 0);
 		uint8_t test_value;
 
 		if (!bool_parse(value, value + buffer_size(test_value_in_buffer),

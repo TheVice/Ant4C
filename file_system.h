@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -15,26 +15,25 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 #if defined(_WIN32)
-uint8_t file_system_append_pre_root(struct buffer* path);
+uint8_t file_system_append_pre_root(void* path);
 uint8_t file_system_get_position_after_pre_root(
 	const uint8_t** path_start, const uint8_t* path_finish);
 void file_system_set_position_after_pre_root_wchar_t(const wchar_t** path);
 uint8_t file_system_path_in_range_to_pathW(
 	const uint8_t* path_start, const uint8_t* path_finish,
-	struct buffer* pathW);
-uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW);
+	void* pathW);
+uint8_t file_system_path_to_pathW(const uint8_t* path, void* pathW);
 #endif
 
 uint8_t directory_create(const uint8_t* path);
 uint8_t directory_delete(const uint8_t* path);
 
 uint8_t directory_enumerate_file_system_entries(
-	struct buffer* path, const uint8_t entry_type, const uint8_t recurse,
-	struct buffer* output, uint8_t fail_on_error);
+	void* path, const uint8_t entry_type, const uint8_t recurse,
+	void* output, uint8_t fail_on_error);
 
 #if defined(_WIN32)
 uint8_t directory_exists_wchar_t(const wchar_t* path);
@@ -46,7 +45,7 @@ int64_t directory_get_creation_time_utc(const uint8_t* path);
 
 uint8_t directory_get_current_directory(
 	const void* project, const void** the_property,
-	struct buffer* output, uint8_t verbose);
+	void* output, uint8_t verbose);
 #define directory_get_directory_root path_get_path_root
 
 int64_t directory_get_last_access_time(const uint8_t* path);
@@ -54,7 +53,7 @@ int64_t directory_get_last_access_time_utc(const uint8_t* path);
 int64_t directory_get_last_write_time(const uint8_t* path);
 int64_t directory_get_last_write_time_utc(const uint8_t* path);
 
-uint8_t directory_get_logical_drives(struct buffer* drives);
+uint8_t directory_get_logical_drives(void* drives);
 #define directory_get_parent_directory path_get_directory_name
 uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path);
 uint8_t directory_set_current_directory(const uint8_t* path);
@@ -92,9 +91,9 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output);
 
 size_t file_read(void* content, const size_t size_of_content_element,
 				 const size_t count_of_elements, void* stream);
-uint8_t file_read_all(const uint8_t* path, struct buffer* output);
-uint8_t file_read_lines(const uint8_t* path, struct buffer* output);
-uint8_t file_read_with_several_steps(void* stream, struct buffer* content);
+uint8_t file_read_all(const uint8_t* path, void* output);
+uint8_t file_read_lines(const uint8_t* path, void* output);
+uint8_t file_read_with_several_steps(void* stream, void* content);
 
 uint8_t file_replace(
 	const uint8_t* path,
@@ -120,14 +119,14 @@ uint8_t file_up_to_date(const uint8_t* src_file, const uint8_t* target_file);
 
 size_t file_write(const void* content, const size_t size_of_content_element,
 				  const size_t count_of_elements, void* stream);
-uint8_t file_write_all(const uint8_t* path, const struct buffer* content);
+uint8_t file_write_all(const uint8_t* path, const void* content);
 uint8_t file_write_with_encoding(
 	const struct range* data, uint16_t encoding, void* stream);
 uint8_t file_write_with_several_steps(
-	const struct buffer* content, void* stream);
+	const void* content, void* stream);
 
 uint8_t file_get_full_path(
 	const uint8_t* partial_path_start, const uint8_t* partial_path_finish,
-	struct buffer* full_path);
+	void* full_path);
 
 #endif
