@@ -494,7 +494,7 @@ uint8_t path_get_full_path(
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(full_path, size);
+	const uint8_t* start = buffer_uint8_t_data(full_path, size);
 	const uint8_t* finish = start + buffer_size(full_path);
 	const uint8_t* pos = start;
 
@@ -543,7 +543,7 @@ uint8_t path_get_full_path(
 				string_find_any_symbol_like_or_not_like_that(
 					pos, finish, &PATH_DELIMITER, &PATH_DELIMITER + 1, 0, 1);
 			/**/
-			uint8_t* dst = buffer_data(full_path, size + start_1 - start);
+			uint8_t* dst = buffer_uint8_t_data(full_path, size + start_1 - start);
 
 			for (; start_2 < finish; ++start_2, ++dst)
 			{
@@ -685,7 +685,7 @@ uint8_t path_get_temp_file_name(void* temp_file_name)
 		return 0;
 	}
 
-	char* temp_file_path = (char*)buffer_data(temp_file_name, size);
+	char* temp_file_path = buffer_char_data(temp_file_name, size);
 	int fd;
 
 	if (-1 == (fd = mkstemp(temp_file_path)))
@@ -1032,7 +1032,7 @@ uint8_t path_get_directory_for_current_process(void* path)
 
 	BUFFER_TO_RANGE(path_in_a_range, path);
 
-	uint8_t* start = buffer_data(path, size);
+	uint8_t* start = buffer_uint8_t_data(path, size);
 
 	path_in_a_range.start = start;
 
@@ -1059,7 +1059,7 @@ uint8_t path_get_directory_for_current_process(void* path)
 			return 0;
 		}
 
-		const uint8_t* path_ = buffer_data(path, size);
+		const uint8_t* path_ = buffer_uint8_t_data(path, size);
 		const ptrdiff_t length = buffer_size(path) - size;
 
 		if (!getcwd((char*)path_, (int)length))
@@ -1154,7 +1154,7 @@ uint8_t path_get_directory_for_current_image(void* path)
 	while (buffer_append(path, NULL, FILENAME_MAX))
 	{
 		size_t expected_size = (size_t)(buffer_size(path) - size);
-		uint8_t* ptr = buffer_data(path, size);
+		uint8_t* ptr = buffer_uint8_t_data(path, size);
 
 		if (0 == sysctl(mib, MIB_COUNT, ptr, &expected_size, NULL, 0))
 		{
@@ -1185,7 +1185,7 @@ uint8_t path_get_directory_for_current_image(void* path)
 
 	while (buffer_append(path, NULL, FILENAME_MAX))
 	{
-		uint8_t* ptr = buffer_data(path, size);
+		uint8_t* ptr = buffer_uint8_t_data(path, size);
 		const ptrdiff_t expected_size = buffer_size(path) - size;
 		const ptrdiff_t real_size = readlink(path_, (char*)ptr, expected_size);
 
@@ -1225,7 +1225,7 @@ const uint8_t* path_try_to_get_absolute_path(
 	const void* the_project, const void* the_target,
 	void* input, void* tmp, uint8_t verbose)
 {
-	const uint8_t* path_start = buffer_data(input, 0);
+	const uint8_t* path_start = buffer_uint8_t_data(input, 0);
 	const uint8_t* path_finish = path_start + buffer_size(input);
 	uint8_t is_path_rooted;
 
@@ -1247,7 +1247,7 @@ const uint8_t* path_try_to_get_absolute_path(
 			return NULL;
 		}
 
-		path_start = buffer_data(tmp, 0);
+		path_start = buffer_uint8_t_data(tmp, 0);
 
 		if (file_exists(path_start))
 		{
@@ -1256,7 +1256,7 @@ const uint8_t* path_try_to_get_absolute_path(
 
 		if (NULL != path_finish)
 		{
-			path_start = buffer_data(input, 0);
+			path_start = buffer_uint8_t_data(input, 0);
 			path_finish = path_start + buffer_size(input);
 
 			if (!buffer_resize(tmp, 0))
@@ -1275,7 +1275,7 @@ const uint8_t* path_try_to_get_absolute_path(
 				return NULL;
 			}
 
-			path_start = buffer_data(tmp, 0);
+			path_start = buffer_uint8_t_data(tmp, 0);
 
 			if (file_exists(path_start))
 			{
@@ -1285,7 +1285,7 @@ const uint8_t* path_try_to_get_absolute_path(
 
 		if (NULL != path_finish)
 		{
-			path_start = buffer_data(input, 0);
+			path_start = buffer_uint8_t_data(input, 0);
 			path_finish = path_start + buffer_size(input);
 
 			if (!buffer_resize(tmp, 0))
@@ -1295,7 +1295,7 @@ const uint8_t* path_try_to_get_absolute_path(
 
 			if (file_get_full_path(path_start, path_finish, tmp))
 			{
-				path_start = buffer_data(tmp, 0);
+				path_start = buffer_uint8_t_data(tmp, 0);
 				path_finish = NULL;
 			}
 		}
@@ -1307,7 +1307,7 @@ const uint8_t* path_try_to_get_absolute_path(
 				return NULL;
 			}
 
-			path_start = buffer_data(input, 0);
+			path_start = buffer_uint8_t_data(input, 0);
 			path_finish = NULL;
 		}
 	}

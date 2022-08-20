@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
@@ -11,6 +11,7 @@ extern "C" {
 #include "buffer.h"
 #include "common.h"
 #include "echo.h"
+#include "interpreter.load_file.h"
 #include "load_file.h"
 #include "path.h"
 #include "text_encoding.h"
@@ -55,18 +56,19 @@ TEST(TestLoadFile, load_file_to_buffer)
 	//
 	std::vector<uint8_t> file_content(33792, 0);
 	//
-	buffer path;
-	SET_NULL_TO_BUFFER(path);
+	std::string path_buffer(buffer_size_of(), 0);
+	auto path = reinterpret_cast<void*>(&path_buffer[0]);
+	ASSERT_TRUE(buffer_init(path, buffer_size_of()));
 	//
-	ASSERT_TRUE(path_get_temp_file_name(&path)) << buffer_free(&path);
-	const auto path_str(buffer_to_string(&path));
+	ASSERT_TRUE(path_get_temp_file_name(path)) << buffer_free(path);
+	const auto path_str(buffer_to_string(path));
 
 	for (uint8_t i = 0, count = COUNT_OF(encodings); i < count; ++i)
 	{
 		ASSERT_TRUE(echo(0, Default,
 						 reinterpret_cast<const uint8_t*>(path_str.c_str()), Info,
 						 byte_order_marks[i].data(), static_cast<ptrdiff_t>(byte_order_marks[i].size()), 0, 0))
-				<< buffer_free(&path);
+				<< buffer_free(path);
 		//
 		file_content.clear();
 
@@ -158,11 +160,11 @@ TEST(TestLoadFile, load_file_to_buffer)
 		ASSERT_TRUE(echo(1, Default,
 						 reinterpret_cast<const uint8_t*>(path_str.c_str()), Info, file_content.data(),
 						 static_cast<ptrdiff_t>(file_content.size()), 0, 0))
-				<< buffer_free(&path);
+				<< buffer_free(path);
 		//
-		ASSERT_TRUE(load_file_to_buffer(
-						reinterpret_cast<const uint8_t*>(path_str.c_str()), encodings[i], &path, 0))
-				<< buffer_free(&path);
+		ASSERT_TRUE(load_file(
+						reinterpret_cast<const uint8_t*>(path_str.c_str()), encodings[i], path, 0))
+				<< buffer_free(path);
 		//
 		file_content.clear();
 		file_content.assign(8192, ' ');
@@ -172,14 +174,14 @@ TEST(TestLoadFile, load_file_to_buffer)
 			file_content.push_back(j);
 		}
 
-		ASSERT_EQ(static_cast<ptrdiff_t>(file_content.size()), buffer_size(&path)) <<
-				static_cast<int>(i) << std::endl << buffer_free(&path);
+		ASSERT_EQ(static_cast<ptrdiff_t>(file_content.size()), buffer_size(path)) <<
+				static_cast<int>(i) << std::endl << buffer_free(path);
 		//
 		ASSERT_EQ(std::string(reinterpret_cast<const char*>(file_content.data()), file_content.size()),
-				  buffer_to_string(&path)) << static_cast<int>(i) << std::endl << buffer_free(&path);
+				  buffer_to_string(path)) << static_cast<int>(i) << std::endl << buffer_free(path);
 	}
 
-	buffer_release(&path);
+	buffer_release(path);
 }
 
 TEST(TestLoadFile, load_file_get_encoding)
@@ -260,17 +262,18 @@ TEST(TestLoadFile, load_file_get_encoding)
 		ISO_8859_13
 	};
 	//
-	buffer encoding;
-	SET_NULL_TO_BUFFER(encoding);
+	std::string encoding_buffer(buffer_size_of(), 0);
+	auto encoding = reinterpret_cast<void*>(&encoding_buffer[0]);
+	ASSERT_TRUE(buffer_init(encoding, buffer_size_of()));
 
 	for (uint8_t i = 0, count = COUNT_OF(expected_output); i < count; ++i)
 	{
-		ASSERT_TRUE(buffer_resize(&encoding, 0)) << buffer_free(&encoding);
-		ASSERT_TRUE(string_to_buffer(encodings[i], &encoding)) << buffer_free(&encoding);
-		ASSERT_EQ(expected_output[i], load_file_get_encoding(&encoding))
+		ASSERT_TRUE(buffer_resize(encoding, 0)) << buffer_free(encoding);
+		ASSERT_TRUE(string_to_buffer(encodings[i], encoding)) << buffer_free(encoding);
+		ASSERT_EQ(expected_output[i], load_file_get_encoding(encoding))
 				<< static_cast<int>(i) << std::endl
-				<< buffer_free(&encoding);
+				<< buffer_free(encoding);
 	}
 
-	buffer_release(&encoding);
+	buffer_release(encoding);
 }

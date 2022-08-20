@@ -1,14 +1,14 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
 #include "echo.h"
+
 #include "buffer.h"
 #include "common.h"
-#include "conversion.h"
 #include "file_system.h"
 #include "range.h"
 #include "string_unit.h"
@@ -21,30 +21,6 @@
 #if defined(_WIN32)
 #define REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(A) (Default != (A) && ASCII != (A))
 #endif
-
-#define ECHO_UNKNOWN_LEVEL (Warning + 1)
-
-static const uint8_t* echo_attributes[] =
-{
-	(const uint8_t*)"append",
-	(const uint8_t*)"encoding",
-	(const uint8_t*)"file",
-	(const uint8_t*)"level",
-	(const uint8_t*)"message"
-};
-
-static const uint8_t echo_attributes_lengths[] = { 6, 8, 4, 5, 7 };
-
-static const uint8_t* echo_levels[] =
-{
-	(const uint8_t*)"Debug",
-	(const uint8_t*)"Error",
-	(const uint8_t*)"Info",
-	(const uint8_t*)"None",
-	(const uint8_t*)"Verbose",
-	(const uint8_t*)"Warning",
-	(const uint8_t*)"NoLevel"
-};
 
 static uint8_t levels[] = { 0, 1, 1, 0, 0, 1 };
 
@@ -123,9 +99,9 @@ uint8_t echo_win32(HANDLE output, const uint16_t* message, uint16_t count_of_cha
 	return result1 && result2;
 }
 #endif
-uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
-			 uint8_t level, const uint8_t* message, ptrdiff_t message_length,
-			 uint8_t new_line, uint8_t verbose)
+uint8_t echo(
+	uint8_t append, uint8_t encoding, const uint8_t* file, uint8_t level,
+	const uint8_t* message, ptrdiff_t message_length, uint8_t new_line, uint8_t verbose)
 {
 	(void)verbose;/*TODO: */
 
@@ -171,19 +147,23 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 								 common_is_error_output_stream_standard();
 		}
 
-		struct buffer new_message;
+		uint8_t new_message_buffer[BUFFER_SIZE_OF];
+		void* new_message = (void*)new_message_buffer;
 
-		SET_NULL_TO_BUFFER(new_message);
+		if (!buffer_init(new_message, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
 
 		if (!file && is_output_standard && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
 		{
-			if (!text_encoding_UTF8_to_UTF16LE(message, message + message_length, &new_message))
+			if (!text_encoding_UTF8_to_UTF16LE(message, message + message_length, new_message))
 			{
 				return 0;
 			}
 
 			message_length = string_get_length(message, message + message_length);
-			message = buffer_data(&new_message, 0);
+			message = buffer_data(new_message, 0);
 			result = file_flush(file_stream);
 		}
 
@@ -211,7 +191,7 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 		}
 
 #if defined(_WIN32)
-		buffer_release(&new_message);
+		buffer_release(new_message);
 #endif
 	}
 
@@ -227,98 +207,4 @@ uint8_t echo(uint8_t append, uint8_t encoding, const uint8_t* file,
 
 	file_stream = NULL;
 	return result;
-}
-
-#define APPEND_POSITION			0
-#define ENCODING_POSITION		1
-#define FILE_POSITION			2
-#define LEVEL_POSITION			3
-#define MESSAGE_POSITION		4
-
-uint8_t echo_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
-{
-	return common_get_attributes_and_arguments_for_task(
-			   echo_attributes, echo_attributes_lengths,
-			   COUNT_OF(echo_attributes),
-			   task_attributes, task_attributes_lengths,
-			   task_attributes_count, task_arguments);
-}
-
-uint8_t echo_get_level(const uint8_t* level_start, const uint8_t* level_finish)
-{
-	return common_string_to_enum(level_start, level_finish, echo_levels, ECHO_UNKNOWN_LEVEL);
-}
-
-uint8_t echo_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
-{
-	if (NULL == task_arguments)
-	{
-		return 0;
-	}
-
-	const struct buffer* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
-	const struct buffer* encoding_in_a_buffer = buffer_buffer_data(task_arguments, ENCODING_POSITION);
-	struct buffer* file_path_in_a_buffer = buffer_buffer_data(task_arguments, FILE_POSITION);
-	const struct buffer* message_in_a_buffer = buffer_buffer_data(task_arguments, MESSAGE_POSITION);
-	/**/
-	uint8_t append = (uint8_t)buffer_size(append_in_a_buffer);
-	const uint8_t* value = buffer_data(append_in_a_buffer, 0);
-
-	if (append && !bool_parse(value, value + append, &append))
-	{
-		return 0;
-	}
-
-	uint8_t encoding = (uint8_t)buffer_size(encoding_in_a_buffer);
-
-	if (encoding)
-	{
-		value = buffer_data(encoding_in_a_buffer, 0);
-		encoding = text_encoding_get_one(value, value + encoding);
-	}
-	else
-	{
-		encoding = UTF8;
-	}
-
-	const uint8_t* file = NULL;
-
-	if (buffer_size(file_path_in_a_buffer))
-	{
-		if (!buffer_push_back(file_path_in_a_buffer, 0))
-		{
-			return 0;
-		}
-
-		file = buffer_data(file_path_in_a_buffer, 0);
-	}
-
-	uint8_t level = Info;
-
-	if (!file)
-	{
-		const struct buffer* level_in_a_buffer = buffer_buffer_data(task_arguments, LEVEL_POSITION);
-		level = (uint8_t)buffer_size(level_in_a_buffer);
-
-		if (level)
-		{
-			value = buffer_data(level_in_a_buffer, 0);
-			level = echo_get_level(value, value + level);
-		}
-		else
-		{
-			level = Info;
-		}
-	}
-
-	value = buffer_data(message_in_a_buffer, 0);
-	ptrdiff_t message_length = buffer_size(message_in_a_buffer);
-	/*if (message_length)
-	{
-		TODO: string_trim for 'NULL == file'.
-	}*/
-	uint8_t new_line = 1;
-	return echo(append, encoding, file, level, value, message_length, new_line, verbose);
 }
