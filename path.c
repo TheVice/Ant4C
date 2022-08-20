@@ -1122,7 +1122,7 @@ uint8_t path_get_directory_for_current_image(void* path)
 
 	while (buffer_append(path, NULL, FILENAME_MAX))
 	{
-		uint8_t* ptr = buffer_data(path, size);
+		uint8_t* ptr = buffer_uint8_t_data(path, size);
 		uint32_t expected_size = (uint32_t)(buffer_size(path) - size);
 
 		if (0 != _NSGetExecutablePath((char*)ptr, &expected_size))
@@ -1130,12 +1130,12 @@ uint8_t path_get_directory_for_current_image(void* path)
 			continue;
 		}
 
-		const uint8_t* finish = buffer_data(path, 0) + buffer_size(path);
+		const uint8_t* finish = buffer_uint8_t_data(path, 0) + buffer_size(path);
 		static const uint8_t zero = 0;
 		finish = string_find_any_symbol_like_or_not_like_that(
 					 ptr, finish, &zero, &zero + 1, 1, 1);
 
-		if (!buffer_resize(path, finish - buffer_data(path, 0)))
+		if (!buffer_resize(path, finish - buffer_uint8_t_data(path, 0)))
 		{
 			return 0;
 		}
