@@ -1,15 +1,17 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
 #include "copy_move.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
 #include "file_system.h"
+#include "interpreter.load_file.h"
 #include "load_file.h"
 #include "path.h"
 #include "project.h"
@@ -46,7 +48,7 @@ static const uint8_t copy_move_attributes_lengths[] = { 3, 4, 5, 6, 7, 9, 13, 14
 
 uint8_t copy_move_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	return common_get_attributes_and_arguments_for_task(
 			   copy_move_attributes, copy_move_attributes_lengths,
@@ -132,15 +134,15 @@ uint8_t copy_move_file(uint8_t task_id, const uint8_t* source,
 }
 
 uint8_t copy_move_read_over_write(
-	struct buffer* task_arguments, uint8_t* over_write, uint8_t verbose)
+	void* task_arguments, uint8_t* over_write, uint8_t verbose)
 {
-	struct buffer* over_write_in_a_buffer = buffer_buffer_data(
-			task_arguments, COPY_MOVE_OVER_WRITE);
+	void* over_write_in_a_buffer = buffer_buffer_data(
+									   task_arguments, COPY_MOVE_OVER_WRITE);
 	const uint8_t size = (uint8_t)buffer_size(over_write_in_a_buffer);
 
 	if (size)
 	{
-		const uint8_t* value = buffer_data(over_write_in_a_buffer, 0);
+		const uint8_t* value = buffer_uint8_t_data(over_write_in_a_buffer, 0);
 
 		if (!bool_parse(value, value + size, over_write) ||
 			!buffer_resize(over_write_in_a_buffer, 0))
@@ -154,7 +156,7 @@ uint8_t copy_move_read_over_write(
 }
 
 uint8_t copy_move_read_encodings(
-	struct buffer* task_arguments,
+	void* task_arguments,
 	uint16_t* input_encoding, uint8_t* output_encoding,
 	uint8_t verbose)
 {
@@ -165,9 +167,8 @@ uint8_t copy_move_read_encodings(
 		return 0;
 	}
 
-	struct buffer* input_encoding_in_a_buffer = buffer_buffer_data(
-				task_arguments, COPY_MOVE_INPUT_ENCODING);
-
+	void* input_encoding_in_a_buffer = buffer_buffer_data(
+										   task_arguments, COPY_MOVE_INPUT_ENCODING);
 	*input_encoding = (uint16_t)buffer_size(input_encoding_in_a_buffer);
 
 	if (*input_encoding)
@@ -184,13 +185,13 @@ uint8_t copy_move_read_encodings(
 		*input_encoding = Default;
 	}
 
-	const struct buffer* output_encoding_in_a_buffer = buffer_buffer_data(
+	const void* output_encoding_in_a_buffer = buffer_buffer_data(
 				task_arguments, COPY_MOVE_OUTPUT_ENCODING);
 	*output_encoding = (uint8_t)buffer_size(output_encoding_in_a_buffer);
 
 	if (*output_encoding)
 	{
-		const uint8_t* value = buffer_data(output_encoding_in_a_buffer, 0);
+		const uint8_t* value = buffer_uint8_t_data(output_encoding_in_a_buffer, 0);
 		*output_encoding = text_encoding_get_one(
 							   value, value + *output_encoding);
 
@@ -211,7 +212,7 @@ uint8_t copy_move_read_encodings(
 uint8_t copy_move_file_evaluate_task(
 	const struct range* source_file, uint8_t task_id,
 	uint16_t input_encoding, uint8_t output_encoding, uint8_t over_write,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	if (range_is_null_or_empty(source_file) ||
 		NULL == task_arguments)
@@ -222,7 +223,7 @@ uint8_t copy_move_file_evaluate_task(
 	const uint8_t* out_files[2];
 	out_files[0] = out_files[1] = NULL;
 	/**/
-	struct buffer* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
+	void* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
 
 	if (buffer_size(to_dir_in_a_buffer))
 	{
@@ -239,7 +240,7 @@ uint8_t copy_move_file_evaluate_task(
 			return 0;
 		}
 
-		out_files[0] = buffer_data(to_dir_in_a_buffer, 0);
+		out_files[0] = buffer_uint8_t_data(to_dir_in_a_buffer, 0);
 
 		if (string_equal(source_file->start, source_file->finish,
 						 out_files[0], out_files[0] + buffer_size(to_dir_in_a_buffer)))
@@ -248,7 +249,7 @@ uint8_t copy_move_file_evaluate_task(
 		}
 	}
 
-	struct buffer* to_file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_FILE);
+	void* to_file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_FILE);
 
 	if (buffer_size(to_file_in_a_buffer))
 	{
@@ -257,7 +258,7 @@ uint8_t copy_move_file_evaluate_task(
 			return 0;
 		}
 
-		out_files[1] = buffer_data(to_file_in_a_buffer, 0);
+		out_files[1] = buffer_uint8_t_data(to_file_in_a_buffer, 0);
 
 		if (string_equal(source_file->start, source_file->finish,
 						 out_files[1], out_files[1] + buffer_size(to_file_in_a_buffer)))
@@ -284,9 +285,9 @@ uint8_t copy_move_file_evaluate_task(
 }
 
 uint8_t copy_move_dir_evaluate_task(
-	struct buffer* dir_in_a_buffer, uint8_t task_id,
+	void* dir_in_a_buffer, uint8_t task_id,
 	uint16_t input_encoding, uint8_t output_encoding, uint8_t over_write,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	if (NULL == dir_in_a_buffer ||
 		NULL == task_arguments)
@@ -294,13 +295,12 @@ uint8_t copy_move_dir_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* flatten_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_FLATTEN);
-
+	void* flatten_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_FLATTEN);
 	uint8_t flatten = (uint8_t)buffer_size(flatten_in_a_buffer);
 
 	if (flatten)
 	{
-		const uint8_t* value = buffer_data(flatten_in_a_buffer, 0);
+		const uint8_t* value = buffer_uint8_t_data(flatten_in_a_buffer, 0);
 
 		if (!bool_parse(value, value + flatten, &flatten))
 		{
@@ -332,12 +332,12 @@ uint8_t copy_move_dir_evaluate_task(
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(flatten_in_a_buffer, 0);
+	const uint8_t* start = buffer_uint8_t_data(flatten_in_a_buffer, 0);
 	const uint8_t* finish = start + buffer_size(flatten_in_a_buffer);
 	/**/
 	static const uint8_t zero = '\0';
 	/**/
-	struct buffer* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
+	void* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
 	const ptrdiff_t to_dir_path_size = buffer_size(to_dir_in_a_buffer);
 
 	if (flatten)
@@ -359,7 +359,7 @@ uint8_t copy_move_dir_evaluate_task(
 				return 0;
 			}
 
-			file_name_start = buffer_data(to_dir_in_a_buffer, 0);
+			file_name_start = buffer_uint8_t_data(to_dir_in_a_buffer, 0);
 
 			if (!copy_move_file(
 					task_id, start, &file_name_start, 1,
@@ -408,7 +408,7 @@ uint8_t copy_move_dir_evaluate_task(
 		}
 
 		const uint8_t delimiter = *directory_name.finish;
-		uint8_t* ptr = buffer_data(to_dir_in_a_buffer, directory_name.finish - directory_name.start);
+		uint8_t* ptr = buffer_uint8_t_data(to_dir_in_a_buffer, directory_name.finish - directory_name.start);
 		*ptr = zero;
 
 		if (!directory_exists(directory_name.start) &&
@@ -436,14 +436,13 @@ uint8_t copy_move_dir_evaluate_task(
 		start = string_enumerate(pos, finish, NULL);
 	}
 
-	struct buffer* include_empty_dirs_in_a_buffer = buffer_buffer_data(
-				task_arguments, COPY_MOVE_INCLUDE_EMPTY_DIRS);
-
+	void* include_empty_dirs_in_a_buffer = buffer_buffer_data(
+			task_arguments, COPY_MOVE_INCLUDE_EMPTY_DIRS);
 	uint8_t include_empty_dirs = (uint8_t)buffer_size(include_empty_dirs_in_a_buffer);
 
 	if (include_empty_dirs)
 	{
-		const uint8_t* value = buffer_data(include_empty_dirs_in_a_buffer, 0);
+		const uint8_t* value = buffer_uint8_t_data(include_empty_dirs_in_a_buffer, 0);
 
 		if (!bool_parse(value, value + include_empty_dirs, &include_empty_dirs))
 		{
@@ -463,7 +462,7 @@ uint8_t copy_move_dir_evaluate_task(
 			return 0;
 		}
 
-		start = buffer_data(flatten_in_a_buffer, 0);
+		start = buffer_uint8_t_data(flatten_in_a_buffer, 0);
 		finish = start + buffer_size(flatten_in_a_buffer);
 
 		while (start < finish)
@@ -483,7 +482,7 @@ uint8_t copy_move_dir_evaluate_task(
 				return 0;
 			}
 
-			start = buffer_data(to_dir_in_a_buffer, 0);
+			start = buffer_uint8_t_data(to_dir_in_a_buffer, 0);
 
 			if (!directory_exists(start) &&
 				!directory_create(start))
@@ -505,7 +504,7 @@ uint8_t copy_move_dir_evaluate_task(
 
 uint8_t copy_move_evaluate_task(
 	const void* the_project, const void* the_target,
-	uint8_t task_id, struct buffer* task_arguments, uint8_t verbose)
+	uint8_t task_id, void* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -528,8 +527,7 @@ uint8_t copy_move_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
-
+	void* to_dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_DIR);
 	const ptrdiff_t to_dir_path_size = buffer_size(to_dir_in_a_buffer);
 
 	if (to_dir_path_size)
@@ -539,7 +537,7 @@ uint8_t copy_move_evaluate_task(
 			return 0;
 		}
 
-		const uint8_t* to_dir_path = buffer_data(to_dir_in_a_buffer, 0);
+		const uint8_t* to_dir_path = buffer_uint8_t_data(to_dir_in_a_buffer, 0);
 
 		if (!path_combine_in_place(to_dir_in_a_buffer, 0, NULL, NULL) ||
 			file_exists(to_dir_path))
@@ -559,14 +557,13 @@ uint8_t copy_move_evaluate_task(
 		}
 	}
 
-	struct buffer* dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_DIR);
-
+	void* dir_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_DIR);
 	const ptrdiff_t dir_in_a_buffer_size = buffer_size(dir_in_a_buffer);
 
 	if (dir_in_a_buffer_size)
 	{
 		if (!buffer_push_back(dir_in_a_buffer, 0) ||
-			!directory_exists(buffer_data(dir_in_a_buffer, 0)))
+			!directory_exists(buffer_uint8_t_data(dir_in_a_buffer, 0)))
 		{
 			return 0;
 		}
@@ -604,17 +601,17 @@ uint8_t copy_move_evaluate_task(
 		}
 	}
 
-	struct buffer* file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_FILE);
+	void* file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_FILE);
 
 	if (buffer_size(file_in_a_buffer))
 	{
 		if (!buffer_push_back(file_in_a_buffer, 0) ||
-			!file_exists(buffer_data(file_in_a_buffer, 0)))
+			!file_exists(buffer_uint8_t_data(file_in_a_buffer, 0)))
 		{
 			return 0;
 		}
 
-		const struct buffer* to_file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_FILE);
+		const void* to_file_in_a_buffer = buffer_buffer_data(task_arguments, COPY_MOVE_TO_FILE);
 		const ptrdiff_t to_file_path_size = buffer_size(to_file_in_a_buffer);
 
 		if (!to_dir_path_size &&
@@ -642,7 +639,7 @@ uint8_t copy_move_evaluate_task(
 
 uint8_t copy_evaluate_task(
 	const void* the_project, const void* the_target,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	return copy_move_evaluate_task(
 			   the_project, the_target,
@@ -651,7 +648,7 @@ uint8_t copy_evaluate_task(
 
 uint8_t move_evaluate_task(
 	const void* the_project, const void* the_target,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	return copy_move_evaluate_task(
 			   the_project, the_target,
