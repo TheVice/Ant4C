@@ -123,6 +123,7 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 	buffer_release_with_inner_buffers(output);
 }
 //interpreter_evaluate_function
+#if 0
 TEST_F(TestInterpreter, interpreter_evaluate_code)
 {
 	std::string output_buffer(buffer_size_of(), 0);
@@ -156,6 +157,7 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 
 	buffer_release(output);
 }
+#endif
 /*interpreter_is_xml_tag_should_be_skip_by_if_or_unless
 interpreter_get_arguments_from_xml_tag_record
 interpreter_get_task*/

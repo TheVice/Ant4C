@@ -35,7 +35,7 @@ add_executable(ant4c_tests
   "${CMAKE_SOURCE_DIR}/tests_exec.h"
   "${CMAKE_SOURCE_DIR}/tests_file_system.cpp"
   # "${CMAKE_SOURCE_DIR}/tests_hash.cpp"
-  # "${CMAKE_SOURCE_DIR}/tests_interpreter.cpp"
+  "${CMAKE_SOURCE_DIR}/tests_interpreter.cpp"
   "${CMAKE_SOURCE_DIR}/tests_load_file.cpp"
   # "${CMAKE_SOURCE_DIR}/tests_load_tasks.cpp"
   "${CMAKE_SOURCE_DIR}/tests_math_unit.cpp"

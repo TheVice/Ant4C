@@ -60,9 +60,9 @@ uint8_t argument_parser_free();
 
 void add_slash(std::string& path);
 std::string get_directory_for_current_process(void* tmp, uint8_t* result);
-/*uint8_t select_nodes_by_condition(
+uint8_t select_nodes_by_condition(
 	const void* the_project, const pugi::xpath_node_set& all_nodes,
-	std::list<pugi::xpath_node>& nodes, void* tmp);*/
+	std::list<pugi::xpath_node>& nodes, void* tmp);
 std::string get_path_to_directory_with_source(uint8_t* result);
 std::string join_path(const std::string& path, const std::string& child_path);
 bool starts_with_(const std::string& input, const std::string& value);

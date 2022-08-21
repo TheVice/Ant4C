@@ -59,7 +59,7 @@ TEST_F(TestPath, path_change_extension)
 
 	buffer_release(path);
 }
-#if 0
+
 TEST_F(TestPath, path_combine)
 {
 	std::string path_buffer(buffer_size_of(), 0);
@@ -114,7 +114,7 @@ TEST_F(TestPath, path_get_directory_name)
 		--node_count;
 	}
 }
-#endif
+
 TEST_F(TestPath, path_get_extension)
 {
 	for (const auto& node : nodes)
@@ -136,7 +136,7 @@ TEST_F(TestPath, path_get_extension)
 		--node_count;
 	}
 }
-#if 0
+
 TEST_F(TestPath, path_get_file_name)
 {
 	for (const auto& node : nodes)
@@ -158,7 +158,7 @@ TEST_F(TestPath, path_get_file_name)
 		--node_count;
 	}
 }
-#endif
+
 TEST_F(TestPath, path_get_file_name_without_extension)
 {
 	for (const auto& node : nodes)
@@ -183,7 +183,7 @@ TEST_F(TestPath, path_get_file_name_without_extension)
 		--node_count;
 	}
 }
-#if 0
+
 TEST_F(TestPath, path_get_full_path)
 {
 	std::string full_path_buffer(buffer_size_of(), 0);
@@ -229,7 +229,7 @@ TEST_F(TestPath, path_get_full_path)
 
 	buffer_release(full_path);
 }
-#endif
+
 TEST_F(TestPath, path_glob)
 {
 	for (const auto& node : nodes)
@@ -258,7 +258,7 @@ TEST(TestPath_, path_delimiter)
 	ASSERT_EQ(PATH_DELIMITER, path_posix_delimiter);
 #endif
 }
-#if 0
+
 TEST_F(TestPath, path_get_path_root)
 {
 	for (const auto& node : nodes)
@@ -283,7 +283,7 @@ TEST_F(TestPath, path_get_path_root)
 		--node_count;
 	}
 }
-#endif
+
 TEST(TestPath_, path_get_temp_file_name)
 {
 	std::string temp_file_name_buffer(buffer_size_of(), 0);
@@ -369,7 +369,7 @@ TEST_F(TestPath, path_has_extension)
 	ASSERT_FALSE(path_has_extension(nullptr, reinterpret_cast<const uint8_t*>(&node_count)));
 	ASSERT_FALSE(path_has_extension(reinterpret_cast<const uint8_t*>(&node_count), nullptr));
 }
-#if 0
+
 TEST_F(TestPath, path_is_path_rooted)
 {
 	for (const auto& node : nodes)
@@ -423,7 +423,7 @@ TEST(TestPath_, path_exec_function_get_full_path)
 	//
 	buffer_release(output);
 }
-#endif
+
 TEST(TestPath_, path_get_directory_for_current_process)
 {
 	std::string output_buffer(buffer_size_of(), 0);

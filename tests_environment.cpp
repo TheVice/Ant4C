@@ -46,7 +46,7 @@ class TestEnvironment : public TestsBaseXml
 class TestOperatingSystem : public TestsBaseXml
 {
 };
-#if 0
+
 TEST(TestEnvironment_, environment_get_folder_path)
 {
 	static const uint8_t verbose = 0;
@@ -186,7 +186,7 @@ TEST(TestEnvironment_, environment_get_folder_path)
 
 	buffer_release(path);
 }
-#endif
+
 TEST(TestEnvironment_, environment_get_machine_name)
 {
 #if defined(_WIN32)
@@ -229,7 +229,7 @@ TEST(TestEnvironment_, environment_get_operating_system)
 #endif
 	ASSERT_LT(0, common_count_bytes_until(operating_system_to_string(os), 0));
 }
-#if 0
+
 TEST(TestEnvironment_, environment_get_user_name)
 {
 #if defined(_WIN32)
@@ -285,7 +285,7 @@ TEST(TestEnvironment_, environment_get_user_name)
 		std::cerr << "Expected user name: '" << expected_user_name << "'." << std::endl;
 	}
 }
-#endif
+
 TEST(TestEnvironment_, environment_newline)
 {
 	std::string newline_buffer(buffer_size_of(), 0);

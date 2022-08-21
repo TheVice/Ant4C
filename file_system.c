@@ -1086,7 +1086,7 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 	return result;
 #endif
 }
-#if 0
+
 uint8_t directory_get_current_directory(const void* project, const void** the_property,
 										void* output, uint8_t verbose)
 {
@@ -1102,7 +1102,7 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 
 	return property_get_by_pointer(*the_property, output);
 }
-#endif
+
 int64_t directory_get_last_access_time(const uint8_t* path)
 {
 	return directory_get_last_access_time_utc(path) - (int64_t)60 * file_system_get_bias();

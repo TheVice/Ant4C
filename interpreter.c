@@ -565,6 +565,7 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 		return 0;
 	}
 
+#if 0
 	void* the_module = NULL;
 	const uint8_t* func = NULL;
 
@@ -581,6 +582,8 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 			return values_count;
 		}
 	}
+
+#endif
 
 	switch (interpreter_get_unit(name_space.start, name_space.finish))
 	{
@@ -638,12 +641,14 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 							   file_get_function(name.start, name.finish),
 							   values, values_count, return_of_function);
 			break;
+#if 0
 
 		case hash_unit:
 			values_count = hash_algorithm_exec_function(
 							   hash_algorithm_get_function(name.start, name.finish),
 							   values, values_count, return_of_function);
 			break;
+#endif
 
 		case int_unit:
 			values_count = int_exec_function(
@@ -820,9 +825,11 @@ uint8_t interpreter_evaluate_function(const void* the_project, const void* the_t
 				break;
 			}
 
+#if 0
 			func = project_get_function_from_module(the_project, &name_space, &name, &the_module, NULL);
 			values_count = load_tasks_evaluate_loaded_function(the_module, func, values, values_count,
 						   return_of_function, verbose);
+#endif
 			break;
 
 		default:
@@ -1495,6 +1502,7 @@ uint8_t interpreter_evaluate_task(
 	}
 
 	buffer_release_inner_buffers(task_arguments);
+#if 0
 	const uint8_t* pointer_to_the_task = NULL;
 
 	if (common_get_module_priority())
@@ -1526,6 +1534,8 @@ uint8_t interpreter_evaluate_task(
 			return task_attributes_count;
 		}
 	}
+
+#endif
 
 	switch (task_id)
 	{
@@ -1785,6 +1795,7 @@ uint8_t interpreter_evaluate_task(
 
 			task_attributes_count = load_file_evaluate_task(the_project, task_arguments, verbose);
 			break;
+#if 0
 
 		case loadtasks_task:
 			if (!load_tasks_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -1804,6 +1815,7 @@ uint8_t interpreter_evaluate_task(
 
 			task_attributes_count = load_tasks_evaluate_task(the_project, the_target, task_arguments, verbose);
 			break;
+#endif
 
 		case mkdir_task:
 			if (!mkdir_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -1960,6 +1972,7 @@ uint8_t interpreter_evaluate_task(
 		case xmlpoke_:
 			break;
 #endif
+#if 0
 
 		case UNKNOWN_TASK:
 			if (common_get_module_priority())
@@ -1974,6 +1987,7 @@ uint8_t interpreter_evaluate_task(
 										attributes_finish, element_finish,
 										task_arguments, the_module, pointer_to_the_task, verbose);
 			break;
+#endif
 
 		default:
 			break;

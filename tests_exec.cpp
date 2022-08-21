@@ -211,14 +211,14 @@ void TestExec::load_input_data(const pugi::xml_node& node)
 									node.select_node("environment_variables").node().child_value());
 	environment_variables = string_to_range(environment_variables_str);
 }
-#if 0
+
 static const uint8_t zero_symbol = '\0';
 static const uint8_t quote_symbol = '"';
 static const uint8_t equal_symbol = '=';
 static const uint8_t space_symbol = ' ';
 
 static uint8_t argument_get_keys_and_values(
-	const uint8_t* input_start, const uint8_t* input_finish, buffer* output)
+	const uint8_t* input_start, const uint8_t* input_finish, void* output)
 {
 	if (range_in_parts_is_null_or_empty(input_start, input_finish) ||
 		nullptr == output)
@@ -301,7 +301,7 @@ static uint8_t argument_get_keys_and_values(
 #endif
 	return 1;
 }
-#endif
+
 uint8_t compare_paths_with_delimiter_independ(const char* path_1, const char* path_2)
 {
 	if (nullptr == path_1 ||
@@ -336,7 +336,7 @@ uint8_t compare_paths_with_delimiter_independ(const char* path_1, const char* pa
 
 	return 1;
 }
-#if 0
+
 TEST_F(TestExec, exec_with_redirect_to_tmp_file)
 {
 	static const std::string exec_str("exec");
@@ -904,4 +904,3 @@ TEST_F(TestExec, interpreter_get_environments)
 	project_unload(the_project);
 	buffer_release(variables);
 }
-#endif

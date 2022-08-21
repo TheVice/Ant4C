@@ -199,7 +199,7 @@ uint8_t buffer_free_with_inner_buffers(void* storage)
 	buffer_release_with_inner_buffers(storage);
 	return 0;
 }
-#if 0
+
 uint8_t is_this_node_pass_by_if_condition(
 	const void* the_project, const pugi::xpath_node& node,
 	void* tmp, uint8_t* condition, uint8_t verbose)
@@ -254,7 +254,7 @@ uint8_t is_this_node_pass_by_if_condition(
 
 	return 1;
 }
-#endif
+
 std::string get_data_from_nodes(const pugi::xml_node& parent_node, const std::string& name_of_nodes)
 {
 	std::string output;
@@ -267,13 +267,13 @@ std::string get_data_from_nodes(const pugi::xml_node& parent_node, const std::st
 
 	return output;
 }
-#if 0
+
 uint8_t project_free(void* the_project)
 {
 	project_unload(the_project);
 	return 0;
 }
-#endif
+
 std::string property_to_string(const void* the_property, void* value)
 {
 	return buffer_resize(value, 0) && property_get_by_pointer(the_property, value) ?
@@ -412,7 +412,7 @@ std::string get_directory_for_current_process(void* tmp, uint8_t* result)
 	*result = 1;
 	return current_directory;
 }
-#if 0
+
 uint8_t select_nodes_by_condition(
 	const void* the_project, const pugi::xpath_node_set& all_nodes,
 	std::list<pugi::xpath_node>& nodes, void* tmp)
@@ -443,7 +443,7 @@ uint8_t select_nodes_by_condition(
 
 	return !nodes.empty();
 }
-#endif
+
 std::string get_path_to_directory_with_source(uint8_t* result)
 {
 	static std::string path_to_source;
@@ -592,18 +592,8 @@ void TestsBaseXml::load_nodes(const void* the_project)
 	//
 	ASSERT_TRUE(buffer_init(tmp, buffer_size_of()));
 	//
-#if 0
 	ASSERT_TRUE(select_nodes_by_condition(the_project, all_nodes, nodes, tmp))
 			<< test_path << std::endl << buffer_free(tmp);
-#else
-	(void)the_project;
-
-	for (const auto& node : all_nodes)
-	{
-		nodes.push_back(node);
-	}
-
-#endif
 	node_count = nodes.size();
 	//
 	buffer_release(tmp);

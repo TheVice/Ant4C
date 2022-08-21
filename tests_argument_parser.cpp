@@ -467,7 +467,7 @@ TEST_F(TestArgumentParser, argument_parser_get_verbose)
 		--node_count;
 	}
 }
-#if 0
+
 TEST_F(TestArgumentParser, argument_parser_at_all)
 {
 	std::string property_value_buffer(buffer_size_of(), 0);
@@ -560,7 +560,7 @@ TEST_F(TestArgumentParser, argument_parser_at_all)
 	buffer_release(property_value);
 	argument_parser_release();
 }
-#endif
+
 TEST_F(TestArgumentParser, argument_append_arguments)
 {
 	std::string command_arguments_buffer(buffer_size_of(), 0);

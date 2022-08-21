@@ -1220,7 +1220,7 @@ uint8_t path_get_directory_for_current_image(void* path)
 
 	return buffer_resize(path, size + (path_finish - path_start));
 }
-#if 0
+
 const uint8_t* path_try_to_get_absolute_path(
 	const void* the_project, const void* the_target,
 	void* input, void* tmp, uint8_t verbose)
@@ -1314,7 +1314,7 @@ const uint8_t* path_try_to_get_absolute_path(
 
 	return path_start;
 }
-#endif
+
 uint8_t cygpath_get_dos_path(
 	const uint8_t* path_start, const uint8_t* path_finish,
 	void* path)

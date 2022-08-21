@@ -95,7 +95,7 @@ TEST(TestProperty_, property_at_all)
 	buffer_release(output);
 	property_release(properties);
 }
-#if 0
+
 TEST(TestProperty_, property_get)
 {
 	std::string code("<property name=\"my\" value=\"${my}\" failonerror=\"false\" />");
@@ -120,7 +120,7 @@ TEST(TestProperty_, property_get)
 	//
 	project_unload(the_project);
 }
-#endif
+
 TEST(TestProperty_, property_set_by_pointer)
 {
 	static const auto property_name = reinterpret_cast<const uint8_t*>("A");
@@ -284,7 +284,7 @@ TEST(TestProperty_, property_set_by_pointer)
 	buffer_release(property_value);
 	property_release(properties);
 }
-#if 0
+
 TEST_F(TestProperty, property_task)
 {
 	static const std::string property_str("property");
@@ -307,13 +307,14 @@ TEST_F(TestProperty, property_task)
 			static_cast<uint8_t>(int_parse(return_in_a_range.start, return_in_a_range.finish));
 		const auto output_properties = node.node().select_nodes("output_properties/property");
 		//
-		buffer the_project;
-		SET_NULL_TO_BUFFER(the_project);
+		std::string the_project_buffer(buffer_size_of(), 0);
+		auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
+		ASSERT_TRUE(buffer_init(the_project, buffer_size_of()));
 		//
-		ASSERT_TRUE(project_new(&the_project)) << properties_free(properties) << project_free(&the_project);
+		ASSERT_TRUE(project_new(the_project)) << properties_free(properties) << project_free(the_project);
 		//
-		ASSERT_TRUE(property_add_at_project(&the_project, properties, verbose))
-				<< properties_free(properties) << project_free(&the_project);
+		ASSERT_TRUE(property_add_at_project(the_project, properties, verbose))
+				<< properties_free(properties) << project_free(the_project);
 		//
 		property_release(properties);
 
@@ -327,13 +328,13 @@ TEST_F(TestProperty, property_task)
 			task_in_a_range.finish = task_in_a_range.start + property_str.size();
 			//
 			const auto returned = interpreter_evaluate_task(
-									  &the_project, nullptr,
+									  the_project, nullptr,
 									  &task_in_a_range, record_in_a_range.finish,
 									  nullptr, 0, verbose);
 			//
 			ASSERT_EQ(expected_return, returned)
 					<< record << std::endl
-					<< properties_free(properties) << project_free(&the_project);
+					<< properties_free(properties) << project_free(the_project);
 		}
 
 		for (const auto& property : output_properties)
@@ -352,39 +353,38 @@ TEST_F(TestProperty, property_task)
 			const auto property_name = reinterpret_cast<const uint8_t*>(name.c_str());
 			const auto property_name_length = static_cast<uint8_t>(name.size());
 			//
-			ASSERT_TRUE(buffer_resize(properties, 0)) << buffer_free(properties) << project_free(&the_project);
+			ASSERT_TRUE(buffer_resize(properties, 0)) << buffer_free(properties) << project_free(the_project);
 			ASSERT_TRUE(project_property_get_by_name(
-							&the_project,
+							the_project,
 							property_name, property_name_length,
 							properties, verbose)) << name << std::endl <<
-												  buffer_free(properties) << project_free(&the_project);
+												  buffer_free(properties) << project_free(the_project);
 			ASSERT_EQ(expected_value, buffer_to_string(properties)) << buffer_free(properties);
-			ASSERT_TRUE(buffer_resize(properties, 0)) << buffer_free(properties) << project_free(&the_project);
+			ASSERT_TRUE(buffer_resize(properties, 0)) << buffer_free(properties) << project_free(the_project);
 			//
 			void* the_property = nullptr;
 			ASSERT_TRUE(project_property_exists(
-							&the_project,
+							the_project,
 							property_name, property_name_length,
 							&the_property, verbose)) << name << std::endl <<
-									buffer_free(properties) << project_free(&the_project);
+									buffer_free(properties) << project_free(the_project);
 			//
 			uint8_t returned_dynamic = 0;
 			ASSERT_TRUE(property_is_dynamic(the_property, &returned_dynamic)) << name << std::endl <<
-					buffer_free(properties) << project_free(&the_project);
+					buffer_free(properties) << project_free(the_project);
 			ASSERT_EQ(expected_dynamic, returned_dynamic) << name << std::endl <<
-					buffer_free(properties) << project_free(&the_project);
+					buffer_free(properties) << project_free(the_project);
 			//
 			uint8_t returned_read_only = 0;
 			ASSERT_TRUE(property_is_readonly(the_property, &returned_read_only)) << name << std::endl <<
-					buffer_free(properties) << project_free(&the_project);
+					buffer_free(properties) << project_free(the_project);
 			ASSERT_EQ(expected_read_only, returned_read_only) << name << std::endl <<
-					buffer_free(properties) << project_free(&the_project);
+					buffer_free(properties) << project_free(the_project);
 		}
 
-		project_unload(&the_project);
+		project_unload(the_project);
 		--node_count;
 	}
 
 	property_release(properties);
 }
-#endif
