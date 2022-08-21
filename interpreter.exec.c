@@ -368,7 +368,7 @@ uint8_t exec_evaluate_task(
 
 	const void* append_in_a_buffer = buffer_buffer_data(task_arguments, APPEND_POSITION);
 	uint8_t append = (uint8_t)buffer_size(append_in_a_buffer);
-	const uint8_t* value = buffer_data(append_in_a_buffer, 0);
+	const uint8_t* value = buffer_uint8_t_data(append_in_a_buffer, 0);
 
 	if (append && !bool_parse(value, value + append, &append))
 	{
@@ -395,7 +395,7 @@ uint8_t exec_evaluate_task(
 		}
 
 		++size;
-		output_file.start = buffer_data(output_path_in_a_buffer, 0);
+		output_file.start = buffer_uint8_t_data(output_path_in_a_buffer, 0);
 		output_file.finish = output_file.start + size;
 	}
 	else
@@ -427,7 +427,7 @@ uint8_t exec_evaluate_task(
 		}
 
 		void** the_property = (PID_PROPERTY_POSITION == index ? &pid_property : &result_property);
-		value = buffer_data(property_in_a_buffer, 0);
+		value = buffer_uint8_t_data(property_in_a_buffer, 0);
 
 		if (!project_property_set_value(the_project, value,
 										(uint8_t)size, (const uint8_t*)the_property,
@@ -446,7 +446,7 @@ uint8_t exec_evaluate_task(
 
 	const void* spawn_in_a_buffer = buffer_buffer_data(task_arguments, SPAWN_POSITION);
 	uint8_t spawn = (uint8_t)buffer_size(spawn_in_a_buffer);
-	value = buffer_data(spawn_in_a_buffer, 0);
+	value = buffer_uint8_t_data(spawn_in_a_buffer, 0);
 
 	if (spawn && !bool_parse(value, value + spawn, &spawn))
 	{
@@ -465,7 +465,7 @@ uint8_t exec_evaluate_task(
 		}
 
 		++size;
-		working_directory.start = buffer_data(working_dir_in_a_buffer, 0);
+		working_directory.start = buffer_uint8_t_data(working_dir_in_a_buffer, 0);
 		working_directory.finish = working_directory.start + size;
 	}
 	else
@@ -479,7 +479,7 @@ uint8_t exec_evaluate_task(
 
 	if (size)
 	{
-		value = buffer_data(time_out_in_a_buffer, 0);
+		value = buffer_uint8_t_data(time_out_in_a_buffer, 0);
 		time_out = uint64_parse(value, value + size);
 
 		if (1000 < time_out)
@@ -499,7 +499,7 @@ uint8_t exec_evaluate_task(
 
 	if (size)
 	{
-		environment_variables.start = buffer_data(environment_in_a_buffer, 0);
+		environment_variables.start = buffer_uint8_t_data(environment_in_a_buffer, 0);
 		environment_variables.finish = environment_variables.start + size;
 	}
 	else

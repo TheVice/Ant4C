@@ -63,7 +63,7 @@ uint8_t property_evaluate_task(
 	const void* over_write_in_a_buffer = buffer_buffer_data(task_arguments, OVER_WRITE_POSITION);
 	const void* read_only_in_a_buffer = buffer_buffer_data(task_arguments, READ_ONLY_POSITION);
 	/**/
-	const uint8_t* value = buffer_data(dynamic_in_a_buffer, 0);
+	const uint8_t* value = buffer_uint8_t_data(dynamic_in_a_buffer, 0);
 	uint8_t dynamic = (uint8_t)buffer_size(dynamic_in_a_buffer);
 
 	if (dynamic && !bool_parse(value, value + dynamic, &dynamic))
@@ -71,7 +71,7 @@ uint8_t property_evaluate_task(
 		return 0;
 	}
 
-	value = buffer_data(over_write_in_a_buffer, 0);
+	value = buffer_uint8_t_data(over_write_in_a_buffer, 0);
 	uint8_t over_write = (uint8_t)buffer_size(over_write_in_a_buffer);
 
 	if (over_write && !bool_parse(value, value + over_write, &over_write))
@@ -83,7 +83,7 @@ uint8_t property_evaluate_task(
 		over_write = 1;
 	}
 
-	value = buffer_data(read_only_in_a_buffer, 0);
+	value = buffer_uint8_t_data(read_only_in_a_buffer, 0);
 	uint8_t read_only = (uint8_t)buffer_size(read_only_in_a_buffer);
 
 	if (read_only && !bool_parse(value, value + read_only, &read_only))
@@ -92,7 +92,7 @@ uint8_t property_evaluate_task(
 	}
 
 	const void* value_in_a_buffer = buffer_buffer_data(task_arguments, VALUE_POSITION);
-	value = buffer_data(value_in_a_buffer, 0);
+	value = buffer_uint8_t_data(value_in_a_buffer, 0);
 
 	if (NULL == value)
 	{
@@ -103,14 +103,14 @@ uint8_t property_evaluate_task(
 	{
 		return project_property_set_value(
 				   the_project,
-				   buffer_data(name, 0), name_length,
+				   buffer_uint8_t_data(name, 0), name_length,
 				   value, buffer_size(value_in_a_buffer),
 				   dynamic, over_write, read_only, verbose);
 	}
 
 	return property_set_by_name(
 			   properties,
-			   buffer_data(name, 0), name_length,
+			   buffer_uint8_t_data(name, 0), name_length,
 			   value, buffer_size(value_in_a_buffer),
 			   property_value_is_byte_array,
 			   dynamic, over_write, read_only, verbose);

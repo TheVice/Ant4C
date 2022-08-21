@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -28,28 +28,27 @@ static const uint8_t depends_delimiter = ',';
 struct target
 {
 	uint8_t name[UINT8_MAX + 1];
-	uint8_t name_length;
+	uint8_t depends[BUFFER_SIZE_OF];
+	uint8_t tasks[BUFFER_SIZE_OF];
 	/**/
 	struct range attributes;
 	/**/
-	struct buffer depends;
-	struct buffer tasks;
-	/**/
+	uint8_t name_length;
 	uint8_t has_executed;
 };
 
-uint8_t buffer_append_target(struct buffer* targets, const struct target* data, ptrdiff_t data_count)
+uint8_t buffer_append_target(void* targets, const struct target* data, ptrdiff_t data_count)
 {
-	return buffer_append(targets, (const uint8_t*)data, sizeof(struct target) * data_count);
+	return buffer_append(targets, (const void*)data, sizeof(struct target) * data_count);
 }
 
-struct target* buffer_target_data(const struct buffer* targets, ptrdiff_t data_position)
+struct target* buffer_target_data(const void* targets, ptrdiff_t data_position)
 {
 	return (struct target*)buffer_data(targets, sizeof(struct target) * data_position);
 }
 
 uint8_t target_exists(
-	const struct buffer* targets,
+	const void* targets,
 	const uint8_t* name_start, const uint8_t* name_finish, uint8_t verbose)
 {
 	return target_get(targets, name_start, name_finish, NULL, verbose);
@@ -77,7 +76,7 @@ uint8_t target_get_current_target(
 }
 
 uint8_t target_has_executed(
-	const struct buffer* targets,
+	const void* targets,
 	const uint8_t* name_start, const uint8_t* name_finish, uint8_t verbose)
 {
 	void* the_target;
@@ -92,7 +91,7 @@ uint8_t target_has_executed(
 
 uint8_t target_print_description(
 	void* the_project, struct target* the_target,
-	struct buffer* target_description,
+	void* target_description,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
 	const struct range* sub_nodes_names, uint8_t verbose)
 {
@@ -117,7 +116,7 @@ uint8_t target_print_description(
 			return 0;
 		}
 
-		return echo(0, UTF8, NULL, Info, buffer_data(target_description, 0),
+		return echo(0, UTF8, NULL, Info, buffer_uint8_t_data(target_description, 0),
 					buffer_size(target_description), 1, verbose);
 	}
 
@@ -131,7 +130,8 @@ uint8_t target_print_description(
 	sub_node_name.start = description_str;
 	sub_node_name.finish = sub_node_name.start + 12;
 
-	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, &sub_node_name, &the_target->tasks))
+	if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, &sub_node_name,
+									(void*)(&the_target->tasks)))
 	{
 		return echo(0, Default, NULL, Info, n, 1, 0, verbose);
 	}
@@ -141,7 +141,8 @@ uint8_t target_print_description(
 		return 0;
 	}
 
-	return interpreter_evaluate_tasks(the_project, the_target, &the_target->tasks, sub_nodes_names, 1, verbose);
+	return interpreter_evaluate_tasks(the_project, the_target, (void*)(&the_target->tasks), sub_nodes_names, 1,
+									  verbose);
 }
 
 uint8_t target_set_name(struct target* the_target, const uint8_t* name, ptrdiff_t name_length)
@@ -173,10 +174,10 @@ uint8_t target_new(
 	void* the_project,
 	const uint8_t* name_start, const uint8_t* name_finish,
 	const uint8_t* depends_start, const uint8_t* depends_finish,
-	struct buffer* description,
+	void* description,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
-	struct buffer* targets,
+	void* targets,
 	const struct range* sub_nodes_names, uint8_t verbose)
 {
 	(void)verbose;
@@ -196,8 +197,15 @@ uint8_t target_new(
 		return 0;
 	}
 
-	SET_NULL_TO_BUFFER(the_target->depends);
-	SET_NULL_TO_BUFFER(the_target->tasks);
+	if (!buffer_init((void*)(the_target->depends), BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
+
+	if (!buffer_init((void*)(the_target->tasks), BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
 	if (!target_set_name(the_target, name_start, name_finish - name_start))
 	{
@@ -228,7 +236,7 @@ uint8_t target_new(
 
 		pos = (const uint8_t*)buffer_range_data(&the_target->depends, depends_count);
 		const uint8_t* max_ptr =
-			(const uint8_t*)(buffer_data(&the_target->depends, 0) + buffer_size(&the_target->depends));
+			(const uint8_t*)(buffer_uint8_t_data(&the_target->depends, 0) + buffer_size(&the_target->depends));
 
 		if (!buffer_resize(&the_target->depends, depends_count * sizeof(struct range)))
 		{
@@ -274,9 +282,9 @@ uint8_t target_new(
 	}
 	else
 	{
-		if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, &the_target->tasks))
+		if (!xml_get_sub_nodes_elements(attributes_finish, element_finish, NULL, (void*)(&the_target->tasks)))
 		{
-			if (!buffer_resize(&the_target->tasks, 0))
+			if (!buffer_resize((void*)(&the_target->tasks), 0))
 			{
 				return 0;
 			}
@@ -297,7 +305,7 @@ uint8_t target_new(
 }
 
 uint8_t target_get(
-	const struct buffer* targets,
+	const void* targets,
 	const uint8_t* name_start, const uint8_t* name_finish,
 	void** the_target, uint8_t verbose)
 {
@@ -337,10 +345,10 @@ const struct range* target_get_depend(const void* the_target, ptrdiff_t index)
 		return 0;
 	}
 
-	return buffer_range_data(&((const struct target*)the_target)->depends, index);
+	return buffer_range_data((const void*)(&((const struct target*)the_target)->depends), index);
 }
 
-void target_release_inner(struct buffer* targets)
+void target_release_inner(void* targets)
 {
 	if (NULL == targets)
 	{
@@ -352,12 +360,12 @@ void target_release_inner(struct buffer* targets)
 
 	while (NULL != (the_target = buffer_target_data(targets, i++)))
 	{
-		buffer_release(&the_target->depends);
-		buffer_release(&the_target->tasks);
+		buffer_release((void*)(&the_target->depends));
+		buffer_release((void*)(&the_target->tasks));
 	}
 }
 
-void target_release(struct buffer* targets)
+void target_release(void* targets)
 {
 	if (NULL == targets)
 	{
@@ -368,7 +376,7 @@ void target_release(struct buffer* targets)
 	buffer_release(targets);
 }
 
-uint8_t target_is_in_a_stack(const struct buffer* stack, const void* the_target)
+uint8_t target_is_in_a_stack(const void* stack, const void* the_target)
 {
 	if (NULL == stack ||
 		NULL == the_target)
@@ -393,7 +401,7 @@ uint8_t target_is_in_a_stack(const struct buffer* stack, const void* the_target)
 }
 
 uint8_t target_evaluate(
-	void* the_project, void* the_target, struct buffer* stack,
+	void* the_project, void* the_target, void* stack,
 	uint8_t cascade, uint8_t verbose)
 {
 	listener_target_started(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, verbose);
@@ -457,19 +465,25 @@ uint8_t target_evaluate(
 	}
 
 	skip = 0;
-	struct buffer tmp;
-	SET_NULL_TO_BUFFER(tmp);
+	/**/
+	uint8_t tmp_buffer[BUFFER_SIZE_OF];
+	void* tmp = (void*)tmp_buffer;
+
+	if (!buffer_init(tmp, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
 	if (!interpreter_is_xml_tag_should_be_skip_by_if_or_unless(
 			the_project, the_target, the_real_target->attributes.start,
-			the_real_target->attributes.finish, &skip, &tmp, verbose))
+			the_real_target->attributes.finish, &skip, tmp, verbose))
 	{
-		buffer_release_with_inner_buffers(&tmp);
+		buffer_release_with_inner_buffers(tmp);
 		listener_target_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, 0, verbose);
 		return 0;
 	}
 
-	buffer_release_with_inner_buffers(&tmp);
+	buffer_release_with_inner_buffers(tmp);
 
 	if (skip)
 	{
@@ -477,7 +491,7 @@ uint8_t target_evaluate(
 		return 1;
 	}
 
-	if (!interpreter_evaluate_tasks(the_project, the_target, &the_real_target->tasks, NULL, 0, verbose))
+	if (!interpreter_evaluate_tasks(the_project, the_target, (void*)(&the_real_target->tasks), NULL, 0, verbose))
 	{
 		listener_target_finished(NULL, 0, (const uint8_t*)the_project, (const uint8_t*)the_target, 0, verbose);
 		return 0;
@@ -518,16 +532,20 @@ uint8_t target_evaluate_by_name(
 		}
 	}
 
-	struct buffer stack;
+	uint8_t stack_buffer[BUFFER_SIZE_OF];
+	void* stack = (void*)stack_buffer;
 
-	SET_NULL_TO_BUFFER(stack);
-
-	if (!target_evaluate(the_project, the_target, &stack, 1, verbose))
+	if (!buffer_init(stack, BUFFER_SIZE_OF))
 	{
-		buffer_release(&stack);
 		return 0;
 	}
 
-	buffer_release(&stack);
+	if (!target_evaluate(the_project, the_target, stack, 1, verbose))
+	{
+		buffer_release(stack);
+		return 0;
+	}
+
+	buffer_release(stack);
 	return 1;
 }
