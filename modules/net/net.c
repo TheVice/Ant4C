@@ -258,7 +258,8 @@ static uint8_t is_host_fxr_object_initialized = 0;
 static uint8_t host_policy_object[96];
 static uint8_t is_host_policy_object_initialized = 0;
 
-static struct buffer output_data;
+static uint8_t output_data_buffer[BUFFER_SIZE_OF];
+static void* output_data = (void*)output_data_buffer;
 static uint8_t is_buffer_initialized = 0;
 
 uint8_t evaluate_function(
@@ -279,15 +280,15 @@ uint8_t evaluate_function(
 
 	if (is_buffer_initialized)
 	{
-		if (!buffer_resize(&output_data, 0))
+		if (!buffer_resize(output_data, 0))
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		SET_NULL_TO_BUFFER(output_data);
-		is_buffer_initialized = 1;
+		output_data = (void*)output_data_buffer;
+		is_buffer_initialized = buffer_init(output_data, BUFFER_SIZE_OF);
 	}
 
 	const uint8_t* ptr = NULL;
@@ -325,7 +326,7 @@ uint8_t evaluate_function(
 	{
 		case net_result_to_string_:
 			if (1 != values_count ||
-				!net_result_to_string(values[0], values_lengths[0], &output_data))
+				!net_result_to_string(values[0], values_lengths[0], output_data))
 			{
 				return 0;
 			}
@@ -333,7 +334,7 @@ uint8_t evaluate_function(
 			break;
 
 		case net_host_get_hostfxr_path_:
-			if (!net_host_get_hostfxr_path(values, values_lengths, values_count, &output_data))
+			if (!net_host_get_hostfxr_path(values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -362,7 +363,7 @@ uint8_t evaluate_function(
 					values[0],
 					values_lengths[0],
 					host_fx_resolver_is_function_exists,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -383,10 +384,10 @@ uint8_t evaluate_function(
 
 			is_host_fxr_object_initialized = host_fx_resolver_init(
 												 values[0], values_lengths[0],
-												 &output_data, host_fxr_object, sizeof(host_fxr_object));
+												 output_data, host_fxr_object, sizeof(host_fxr_object));
 
-			if (!buffer_resize(&output_data, 0) ||
-				!bool_to_string(is_host_fxr_object_initialized, &output_data))
+			if (!buffer_resize(output_data, 0) ||
+				!bool_to_string(is_host_fxr_object_initialized, output_data))
 			{
 				return 0;
 			}
@@ -402,7 +403,7 @@ uint8_t evaluate_function(
 			if (!is_function_exists(
 					ptr_to_host_fxr_object, name_spaces[2],
 					values[0], values_lengths[0],
-					host_fx_resolver_is_function_exists, &output_data))
+					host_fx_resolver_is_function_exists, output_data))
 			{
 				return 0;
 			}
@@ -411,7 +412,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_close_:
 			if (1 != values_count ||
-				!hostfxr_close(ptr_to_host_fxr_object, values[0], (uint8_t)values_lengths[0], &output_data))
+				!hostfxr_close(ptr_to_host_fxr_object, values[0], (uint8_t)values_lengths[0], output_data))
 			{
 				return 0;
 			}
@@ -427,12 +428,12 @@ uint8_t evaluate_function(
 			if (values_count)
 			{
 				values_count = hostfxr_get_available_sdks(
-								   ptr_to_host_fxr_object, values[0], values_lengths[0], &output_data);
+								   ptr_to_host_fxr_object, values[0], values_lengths[0], output_data);
 			}
 			else
 			{
 				values_count = hostfxr_get_available_sdks(
-								   ptr_to_host_fxr_object, NULL, 0, &output_data);
+								   ptr_to_host_fxr_object, NULL, 0, output_data);
 			}
 
 			if (!values_count)
@@ -444,7 +445,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_get_dotnet_environment_info_:
 			if (!hostfxr_get_dotnet_environment_information(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -453,7 +454,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_get_native_search_directories_:
 			if (!hostfxr_get_native_search_directories(ptr_to_host_fxr_object,
-					values, values_lengths, values_count, &output_data))
+					values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -462,7 +463,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_get_runtime_delegate_:
 			if (!hostfxr_get_runtime_delegate(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -471,7 +472,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_get_runtime_properties_:
 			if (!hostfxr_get_runtime_properties(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -480,7 +481,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_get_runtime_property_value_:
 			if (!hostfxr_get_runtime_property_value(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -489,7 +490,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_initialize_for_dotnet_command_line_:
 			if (!hostfxr_initialize_for_dotnet_command_line(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -498,7 +499,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_initialize_for_runtime_config_:
 			if (!hostfxr_initialize_for_runtime_config(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -507,7 +508,7 @@ uint8_t evaluate_function(
 
 		case host_fxr_main_:
 			if (!hostfxr_main(
-					ptr_to_host_fxr_object, values, values_lengths, values_count, &output_data))
+					ptr_to_host_fxr_object, values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -517,7 +518,7 @@ uint8_t evaluate_function(
 		case host_fxr_main_bundle_startupinfo_:
 			if (!hostfxr_main_bundle_startupinfo(
 					ptr_to_host_fxr_object, values,
-					values_lengths, values_count, &output_data))
+					values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -527,7 +528,7 @@ uint8_t evaluate_function(
 		case host_fxr_main_startupinfo_:
 			if (!hostfxr_main_startupinfo(
 					ptr_to_host_fxr_object, values,
-					values_lengths, values_count, &output_data))
+					values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -537,7 +538,7 @@ uint8_t evaluate_function(
 		case host_fxr_resolve_sdk_:
 			if (!hostfxr_resolve_sdk(
 					ptr_to_host_fxr_object, values,
-					values_lengths, values_count, &output_data))
+					values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -547,7 +548,7 @@ uint8_t evaluate_function(
 		case host_fxr_resolve_sdk2_:
 			if (!hostfxr_resolve_sdk2(
 					ptr_to_host_fxr_object, values,
-					values_lengths, values_count, &output_data))
+					values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -557,7 +558,7 @@ uint8_t evaluate_function(
 		case host_fxr_run_app_:
 			if (1 != values_count ||
 				!hostfxr_run_app(
-					ptr_to_host_fxr_object, values[0], (uint8_t)values_lengths[0], &output_data))
+					ptr_to_host_fxr_object, values[0], (uint8_t)values_lengths[0], output_data))
 			{
 				return 0;
 			}
@@ -570,7 +571,7 @@ uint8_t evaluate_function(
 					ptr_to_host_fxr_object,
 					values_count ? values[0] : NULL,
 					values_count ? values_lengths[0] : 0,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -580,7 +581,7 @@ uint8_t evaluate_function(
 		case host_fxr_set_runtime_property_value_:
 			if (!hostfxr_set_runtime_property_value(ptr_to_host_fxr_object,
 													values, values_lengths,
-													values_count, &output_data))
+													values_count, output_data))
 			{
 				return 0;
 			}
@@ -601,11 +602,11 @@ uint8_t evaluate_function(
 
 			is_host_policy_object_initialized = host_policy_init(
 													values[0], values_lengths[0],
-													&output_data, host_policy_object,
+													output_data, host_policy_object,
 													sizeof(host_policy_object));
 
-			if (!buffer_resize(&output_data, 0) ||
-				!bool_to_string(is_host_policy_object_initialized, &output_data))
+			if (!buffer_resize(output_data, 0) ||
+				!bool_to_string(is_host_policy_object_initialized, output_data))
 			{
 				return 0;
 			}
@@ -623,7 +624,7 @@ uint8_t evaluate_function(
 							   (size_t)uint64_parse(values[0],
 													values[0] + values_lengths[0]));
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -640,7 +641,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -657,7 +658,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -669,7 +670,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -681,7 +682,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -698,7 +699,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -715,7 +716,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -733,7 +734,7 @@ uint8_t evaluate_function(
 							   (size_t)uint64_parse(values[0],
 													values[0] + values_lengths[0]));
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -751,7 +752,7 @@ uint8_t evaluate_function(
 							   (size_t)uint64_parse(values[0],
 													values[0] + values_lengths[0]));
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -763,7 +764,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -780,7 +781,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -792,7 +793,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -809,7 +810,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -821,7 +822,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -833,7 +834,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -850,7 +851,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -867,7 +868,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -884,7 +885,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -901,7 +902,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -919,7 +920,7 @@ uint8_t evaluate_function(
 							   (size_t)uint64_parse(values[0],
 													values[0] + values_lengths[0]));
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -931,7 +932,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values, values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -949,7 +950,7 @@ uint8_t evaluate_function(
 							   (size_t)uint64_parse(values[0],
 													values[0] + values_lengths[0]));
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -966,7 +967,7 @@ uint8_t evaluate_function(
 							   host_interface_get(),
 							   values[0], values_lengths[0]);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -996,7 +997,7 @@ uint8_t evaluate_function(
 					values[0],
 					values_lengths[0],
 					core_host_is_function_exists,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1013,7 +1014,7 @@ uint8_t evaluate_function(
 					ptr_to_host_policy_object,
 					name_spaces[5],
 					values[0], values_lengths[0],
-					core_host_is_function_exists, &output_data))
+					core_host_is_function_exists, output_data))
 			{
 				return 0;
 			}
@@ -1027,7 +1028,7 @@ uint8_t evaluate_function(
 					1 < values_count ? NULL : core_host_initialize_request_get(),
 					core_host_context_contract_get(),
 					values, values_lengths, values_count,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1039,7 +1040,7 @@ uint8_t evaluate_function(
 				!int_to_string(core_host_load(
 								   ptr_to_host_policy_object,
 								   host_interface_get()),
-							   &output_data))
+							   output_data))
 			{
 				return 0;
 			}
@@ -1050,7 +1051,7 @@ uint8_t evaluate_function(
 			if (!core_host_main__(
 					ptr_to_host_policy_object,
 					values, values_lengths, values_count,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1061,7 +1062,7 @@ uint8_t evaluate_function(
 			if (!core_host_main_with_output_buffer__(
 					ptr_to_host_policy_object,
 					values, values_lengths, values_count,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1073,7 +1074,7 @@ uint8_t evaluate_function(
 				!core_host_resolve_component_dependencies__(
 					ptr_to_host_policy_object,
 					values[0], values_lengths[0],
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1086,7 +1087,7 @@ uint8_t evaluate_function(
 					ptr_to_host_policy_object,
 					values_count ? values[0] : NULL,
 					values_count ? values_lengths[0] : 0,
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1097,7 +1098,7 @@ uint8_t evaluate_function(
 			if (values_count ||
 				!int_to_string(
 					core_host_unload(ptr_to_host_policy_object),
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1110,7 +1111,7 @@ uint8_t evaluate_function(
 					core_host_context_contract_init(
 						core_host_context_contract_get(),
 						CORE_HOST_CONTEXT_CONTRACT_SIZE),
-					&output_data))
+					output_data))
 			{
 				return 0;
 			}
@@ -1121,7 +1122,7 @@ uint8_t evaluate_function(
 			if (1 != values_count ||
 				!core_host_context_contract_get_property_value__(
 					core_host_context_contract_get(),
-					values[0], values_lengths[0], &output_data))
+					values[0], values_lengths[0], output_data))
 			{
 				return 0;
 			}
@@ -1131,7 +1132,7 @@ uint8_t evaluate_function(
 		case core_host_context_contract_set_property_value_:
 			if (!core_host_context_contract_set_property_value__(
 					ptr_to_host_policy_object, core_host_context_contract_get(),
-					values, values_lengths, values_count, &output_data))
+					values, values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -1141,7 +1142,7 @@ uint8_t evaluate_function(
 		case core_host_context_contract_get_properties_:
 			if (values_count ||
 				!core_host_context_contract_get_properties__(
-					core_host_context_contract_get(), &output_data))
+					core_host_context_contract_get(), output_data))
 			{
 				return 0;
 			}
@@ -1151,7 +1152,7 @@ uint8_t evaluate_function(
 		case core_host_context_contract_load_runtime_:
 			if (values_count ||
 				!core_host_context_contract_load_runtime__(
-					core_host_context_contract_get(), &output_data))
+					core_host_context_contract_get(), output_data))
 			{
 				return 0;
 			}
@@ -1161,7 +1162,7 @@ uint8_t evaluate_function(
 		case core_host_context_contract_run_app_:
 			if (!core_host_context_contract_run_app__(
 					core_host_context_contract_get(), values,
-					values_lengths, values_count, &output_data))
+					values_lengths, values_count, output_data))
 			{
 				return 0;
 			}
@@ -1172,7 +1173,7 @@ uint8_t evaluate_function(
 			if (1 != values_count ||
 				!core_host_context_contract_get_runtime_delegate__(
 					core_host_context_contract_get(), values[0],
-					values_lengths[0], &output_data))
+					values_lengths[0], output_data))
 			{
 				return 0;
 			}
@@ -1189,7 +1190,7 @@ uint8_t evaluate_function(
 							   core_host_initialize_request_get(),
 							   CORE_HOST_INITIALIZE_REQUEST_SIZE);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -1201,7 +1202,7 @@ uint8_t evaluate_function(
 							   core_host_initialize_request_get(), values,
 							   values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -1213,7 +1214,7 @@ uint8_t evaluate_function(
 							   core_host_initialize_request_get(), values,
 							   values_lengths, values_count);
 
-			if (!bool_to_string(values_count, &output_data))
+			if (!bool_to_string(values_count, output_data))
 			{
 				return 0;
 			}
@@ -1223,7 +1224,7 @@ uint8_t evaluate_function(
 		case file_is_assembly_:
 			if (!file_is_assembly(ptr_to_host_fxr_object,
 								  values, values_lengths,
-								  values_count, &output_data))
+								  values_count, output_data))
 			{
 				return 0;
 			}
@@ -1234,8 +1235,8 @@ uint8_t evaluate_function(
 			return 0;
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data(output_data, 0);
+	*output_length = (uint16_t)buffer_size(output_data);
 	/**/
 	return 1;
 }
@@ -1262,6 +1263,6 @@ void module_release()
 
 	if (is_buffer_initialized)
 	{
-		buffer_release(&output_data);
+		buffer_release(output_data);
 	}
 }

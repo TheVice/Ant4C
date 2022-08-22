@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -28,7 +28,7 @@ typedef uint8_t(delegate_calling_convention* custom_entry_point_fn)(struct assem
 uint8_t file_is_assembly(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -52,7 +52,7 @@ uint8_t file_is_assembly(
 		return 0;
 	}
 
-	const uint8_t* value = buffer_data(output, 0);
+	const uint8_t* value = buffer_uint8_t_data(output, 0);
 	uint8_t is_function_exist = (uint8_t)buffer_size(output);
 
 	if (!bool_parse(value, value + is_function_exist, &is_function_exist))
@@ -107,7 +107,7 @@ uint8_t file_is_assembly(
 			const uint8_t* sub_values[6];
 			sub_values[0] = NULL;
 			sub_values[1] = NULL;
-			sub_values[2] = buffer_data(output, values_count);
+			sub_values[2] = buffer_uint8_t_data(output, values_count);
 			sub_values[3] = NULL;
 			sub_values[4] = NULL;
 			sub_values[5] = NULL;
@@ -116,7 +116,7 @@ uint8_t file_is_assembly(
 			memset(sub_values_lengths, 0, sizeof(sub_values_lengths));
 			sub_values_lengths[2] = (uint16_t)(buffer_size(output) - values_count);
 #else
-			const uint8_t* sub_values[] = { NULL, NULL, buffer_data(output, values_count), NULL, NULL, NULL };
+			const uint8_t* sub_values[] = { NULL, NULL, buffer_uint8_t_data(output, values_count), NULL, NULL, NULL };
 			uint16_t sub_values_lengths[] = { 0, 0, (uint16_t)(buffer_size(output) - values_count), 0, 0, 0 };
 #endif
 
@@ -130,38 +130,42 @@ uint8_t file_is_assembly(
 				return 0;
 			}
 
-			struct buffer sub_output;
+			uint8_t sub_output_buffer[BUFFER_SIZE_OF];
+			void* sub_output = (void*)sub_output_buffer;
 
-			SET_NULL_TO_BUFFER(sub_output);
-
-			if (!hostfxr_initialize_for_runtime_config(
-					ptr_to_host_fxr_object,
-					sub_values, sub_values_lengths, 3, &sub_output))
+			if (!buffer_init(sub_output, BUFFER_SIZE_OF))
 			{
-				buffer_release(&sub_output);
 				return 0;
 			}
 
-			sub_values[0] = buffer_data(&sub_output, 0);
+			if (!hostfxr_initialize_for_runtime_config(
+					ptr_to_host_fxr_object,
+					sub_values, sub_values_lengths, 3, sub_output))
+			{
+				buffer_release(sub_output);
+				return 0;
+			}
+
+			sub_values[0] = buffer_uint8_t_data(sub_output, 0);
 
 			if (!sub_values[0] ||
 				0 == *(sub_values[0]))
 			{
-				buffer_release(&sub_output);
+				buffer_release(sub_output);
 				return 0;
 			}
 
 			const void* context = pointer_parse(sub_values[0]);
 
 			if (!buffer_resize(output, 0) ||
-				!buffer_append_data_from_buffer(output, &sub_output))
+				!buffer_append_data_from_buffer(output, sub_output))
 			{
 				host_fxr_close(ptr_to_host_fxr_object, context);
-				buffer_release(&sub_output);
+				buffer_release(sub_output);
 				return 0;
 			}
 
-			sub_values[0] = buffer_data(output, 0);
+			sub_values[0] = buffer_uint8_t_data(output, 0);
 			sub_values[1] = net_delegate_types_str[net_hdt_load_assembly_and_get_function_pointer];
 			sub_values[2] = ant4c_net_clr;
 			sub_values[3] = (const uint8_t*)"Ant4C.Net.Module.Delegates, ant4c.net.module.clr";
@@ -176,26 +180,26 @@ uint8_t file_is_assembly(
 				sub_values_lengths[i] = (uint16_t)common_count_bytes_until(sub_values[i], 0);
 			}
 
-			if (!buffer_resize(&sub_output, 0) ||
-				!hostfxr_get_runtime_delegate(ptr_to_host_fxr_object, sub_values, sub_values_lengths, 6, &sub_output))
+			if (!buffer_resize(sub_output, 0) ||
+				!hostfxr_get_runtime_delegate(ptr_to_host_fxr_object, sub_values, sub_values_lengths, 6, sub_output))
 			{
 				host_fxr_close(ptr_to_host_fxr_object, context);
-				buffer_release(&sub_output);
+				buffer_release(sub_output);
 				return 0;
 			}
 
-			sub_values[0] = buffer_data(&sub_output, 0);
+			sub_values[0] = buffer_uint8_t_data(sub_output, 0);
 
 			if (!sub_values[0] ||
 				0 == *(sub_values[0]))
 			{
 				host_fxr_close(ptr_to_host_fxr_object, context);
-				buffer_release(&sub_output);
+				buffer_release(sub_output);
 				return 0;
 			}
 
 			the_delegate = pointer_parse(sub_values[0]);
-			buffer_release(&sub_output);
+			buffer_release(sub_output);
 			const int32_t result = host_fxr_close(ptr_to_host_fxr_object, context);
 
 			if (IS_HOST_FAILED(result))
@@ -271,7 +275,7 @@ uint8_t file_is_assembly(
 			argv[4] = (const type_of_element*)buffer_data(output, (ptrdiff_t)1 + values_lengths[0]);
 #else
 			argv[1] = ant4c_net_clr;
-			argv[4] = buffer_data(output, 0);
+			argv[4] = buffer_uint8_t_data(output, 0);
 #endif
 		}
 		else

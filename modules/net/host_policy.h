@@ -13,8 +13,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
-
 typedef void(*corehost_resolve_component_dependencies_result_type)(
 	const type_of_element* assembly_paths,
 	const type_of_element* native_search_paths,
@@ -47,7 +45,7 @@ uint8_t core_host_main_with_output_buffer(
 	const void* ptr_to_host_policy_object,
 	const int32_t argc,
 	const type_of_element** argv,
-	struct buffer* output);
+	void* output);
 int32_t core_host_resolve_component_dependencies(
 	const void* ptr_to_host_policy_object,
 	const type_of_element* component_main_assembly_path,

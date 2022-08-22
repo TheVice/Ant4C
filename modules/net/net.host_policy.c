@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -31,7 +31,7 @@
 uint8_t host_policy_init(
 	const uint8_t* path_to_core_host,
 	uint16_t path_to_core_host_length,
-	struct buffer* tmp,
+	void* tmp,
 	void* ptr_to_core_host_object,
 	ptrdiff_t size)
 {
@@ -45,7 +45,7 @@ uint8_t host_policy_init(
 			   ptr_to_core_host_object, size, host_policy_load);
 }
 
-static struct buffer* dependencies = NULL;
+static void* dependencies = NULL;
 
 void core_host_resolve_component_dependencies_callback(
 	const type_of_element* assembly_paths,
@@ -95,12 +95,12 @@ int32_t core_host_initialize_get_options(const uint8_t* value_start, const uint8
 
 uint8_t core_host_context_contract_get_property_value__(
 	const void* context_contract,
-	const uint8_t* property_name, uint16_t property_name_length, struct buffer* output)
+	const uint8_t* property_name, uint16_t property_name_length, void* output)
 {
 #if defined(_WIN32)
 
 	if (!text_encoding_UTF8_to_UTF16LE(property_name, property_name + property_name_length, output) ||
-		!buffer_push_back_uint16(output, 0))
+		!buffer_push_back_uint16_t(output, 0))
 	{
 		return 0;
 	}
@@ -152,7 +152,7 @@ uint8_t core_host_context_contract_get_property_value__(
 uint8_t core_host_context_contract_set_property_value__(
 	const void* ptr_to_host_policy_object, const void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_policy_object ||
 		!context_contract ||
@@ -167,7 +167,7 @@ uint8_t core_host_context_contract_set_property_value__(
 #if defined(_WIN32)
 
 	if (!text_encoding_UTF8_to_UTF16LE(values[0], values[0] + values_lengths[0], output) ||
-		!buffer_push_back_uint16(output, 0))
+		!buffer_push_back_uint16_t(output, 0))
 #else
 	if (!buffer_append(output, values[0], values_lengths[0]) ||
 		!buffer_push_back(output, 0))
@@ -193,7 +193,7 @@ uint8_t core_host_context_contract_set_property_value__(
 
 #if defined(_WIN32)
 
-	if (!buffer_push_back_uint16(output, 0))
+	if (!buffer_push_back_uint16_t(output, 0))
 #else
 	if (!buffer_push_back(output, 0))
 #endif
@@ -215,7 +215,7 @@ uint8_t core_host_context_contract_set_property_value__(
 	return 1;
 }
 
-uint8_t core_host_context_contract_get_properties__(const void* context_contract, struct buffer* output)
+uint8_t core_host_context_contract_get_properties__(const void* context_contract, void* output)
 {
 	if (!context_contract || !output)
 	{
@@ -321,12 +321,12 @@ uint8_t core_host_context_contract_get_properties__(const void* context_contract
 	if (0 < size && size < buffer_size(output))
 	{
 		const ptrdiff_t new_size = buffer_size(output) - size;
-		const uint8_t* src = buffer_data(output, size);
-		uint8_t* dst = buffer_data(output, 0);
+		const uint8_t* src = buffer_uint8_t_data(output, size);
+		uint8_t* dst = buffer_uint8_t_data(output, 0);
 		/**/
 		MEM_CPY(dst, src, new_size);
 		/**/
-		dst = buffer_data(output, new_size);
+		dst = buffer_uint8_t_data(output, new_size);
 		memset(dst, 0, size);
 		/**/
 		return buffer_resize(output, new_size);
@@ -336,7 +336,7 @@ uint8_t core_host_context_contract_get_properties__(const void* context_contract
 }
 
 uint8_t core_host_context_contract_load_runtime__(
-	const void* context_contract, struct buffer* output)
+	const void* context_contract, void* output)
 {
 	if (!context_contract ||
 		!output)
@@ -350,7 +350,7 @@ uint8_t core_host_context_contract_load_runtime__(
 uint8_t core_host_context_contract_run_app__(
 	const void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!context_contract ||
 		!values ||
@@ -380,7 +380,7 @@ uint8_t core_host_context_contract_run_app__(
 
 uint8_t core_host_context_contract_get_runtime_delegate__(
 	void* context_contract, const uint8_t* delegate_type,
-	uint16_t delegate_type_length, struct buffer* output)
+	uint16_t delegate_type_length, void* output)
 {
 	int32_t type_of_delegate = common_string_to_enum(
 								   delegate_type, delegate_type + delegate_type_length,
@@ -408,7 +408,7 @@ uint8_t core_host_initialize__(
 	const void* ptr_to_host_policy_object,
 	const void* init_request, void* context_contract,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	int32_t options = 0;
 
@@ -432,7 +432,7 @@ uint8_t core_host_initialize__(
 uint8_t core_host_main__(
 	const void* ptr_to_host_policy_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	const type_of_element** argv = NULL;
 
@@ -455,25 +455,31 @@ uint8_t core_host_main__(
 uint8_t core_host_main_with_output_buffer__(
 	const void* ptr_to_host_policy_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
-	struct buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
+	uint8_t arguments_buffer[BUFFER_SIZE_OF];
+	void* arguments = (void*)arguments_buffer;
+
+	if (!buffer_init(arguments, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
+
 	const type_of_element** argv = NULL;
 
-	if (!values_to_arguments(values, values_lengths, values_count, &arguments, &argv))
+	if (!values_to_arguments(values, values_lengths, values_count, arguments, &argv))
 	{
-		buffer_release(&arguments);
+		buffer_release(arguments);
 		return 0;
 	}
 
 	if (!core_host_main_with_output_buffer(ptr_to_host_policy_object, values_count, argv, output))
 	{
-		buffer_release(&arguments);
+		buffer_release(arguments);
 		return 0;
 	}
 
-	buffer_release(&arguments);
+	buffer_release(arguments);
 	return 1;
 }
 
@@ -481,7 +487,7 @@ uint8_t core_host_resolve_component_dependencies__(
 	const void* ptr_to_host_policy_object,
 	const uint8_t* component_main_assembly_path,
 	ptrdiff_t component_main_assembly_path_length,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_policy_object ||
 		!component_main_assembly_path ||
@@ -502,23 +508,28 @@ uint8_t core_host_resolve_component_dependencies__(
 #else
 	const type_of_element* path = (const type_of_element*)buffer_data(output, 0);
 #endif
-	struct buffer sub_output;
-	SET_NULL_TO_BUFFER(sub_output);
-	/**/
-	dependencies = &sub_output;
+	uint8_t sub_output_buffer[BUFFER_SIZE_OF];
+	void* sub_output = (void*)sub_output_buffer;
+
+	if (!buffer_init(sub_output, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
+
+	dependencies = sub_output;
 	const int32_t result = core_host_resolve_component_dependencies(
 							   ptr_to_host_policy_object, path,
 							   core_host_resolve_component_dependencies_callback);
 	dependencies = NULL;
 
 	if (!buffer_resize(output, 0) ||
-		!buffer_append_data_from_buffer(output, &sub_output))
+		!buffer_append_data_from_buffer(output, sub_output))
 	{
-		buffer_release(&sub_output);
+		buffer_release(sub_output);
 		return 0;
 	}
 
-	buffer_release(&sub_output);
+	buffer_release(sub_output);
 
 	if (IS_HOST_FAILED(result))
 	{
@@ -535,7 +546,7 @@ uint8_t core_host_resolve_component_dependencies__(
 uint8_t core_host_set_error_writer__(
 	const void* ptr_to_host_policy_object,
 	const uint8_t* error_writer_file_name, uint16_t error_writer_file_name_length,
-	struct buffer* output)
+	void* output)
 {
 	const type_of_element* path = NULL;
 
@@ -549,7 +560,7 @@ uint8_t core_host_set_error_writer__(
 #if defined(_WIN32)
 		path = (const type_of_element*)buffer_data(output, (ptrdiff_t)1 + error_writer_file_name_length);
 #else
-		path = buffer_data(output, 0);
+		path = buffer_uint8_t_data(output, 0);
 #endif
 	}
 

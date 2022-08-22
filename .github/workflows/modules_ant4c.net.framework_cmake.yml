@@ -1,34 +1,34 @@
 name: modules_ant4c.net.framework_CMake
 
-on: [push, pull_request]
-# on:
-#   push:
-#     branches:
-#     - develop
+# on: [push, pull_request]
+on:
+  push:
+    branches:
+    - develop
 
-#     paths:
-#     - 'tests_ant4c.net.framework.module.cpp'
-#     - 'tests.cmake'
-#     - 'modules/ant4c.net.framework/*.c'
-#     - 'modules/ant4c.net.framework/*.cs'
-#     - 'modules/ant4c.net.framework/*.csproj'
-#     - 'modules/ant4c.net.framework/*.h'
-#     - 'modules/ant4c.net.framework/*.xml'
-#     - 'modules/ant4c.net.framework/CMakeLists.txt'
+    paths:
+    - 'tests_ant4c.net.framework.module.cpp'
+    - 'tests.cmake'
+    - 'modules/ant4c.net.framework/*.c'
+    - 'modules/ant4c.net.framework/*.cs'
+    - 'modules/ant4c.net.framework/*.csproj'
+    - 'modules/ant4c.net.framework/*.h'
+    - 'modules/ant4c.net.framework/*.xml'
+    - 'modules/ant4c.net.framework/CMakeLists.txt'
 
-#   pull_request:
-#     branches:
-#     - develop
+  pull_request:
+    branches:
+    - develop
 
-#     paths:
-#     - 'tests_ant4c.net.framework.module.cpp'
-#     - 'tests.cmake'
-#     - 'modules/ant4c.net.framework/*.c'
-#     - 'modules/ant4c.net.framework/*.cs'
-#     - 'modules/ant4c.net.framework/*.csproj'
-#     - 'modules/ant4c.net.framework/*.h'
-#     - 'modules/ant4c.net.framework/*.xml'
-#     - 'modules/ant4c.net.framework/CMakeLists.txt'
+    paths:
+    - 'tests_ant4c.net.framework.module.cpp'
+    - 'tests.cmake'
+    - 'modules/ant4c.net.framework/*.c'
+    - 'modules/ant4c.net.framework/*.cs'
+    - 'modules/ant4c.net.framework/*.csproj'
+    - 'modules/ant4c.net.framework/*.h'
+    - 'modules/ant4c.net.framework/*.xml'
+    - 'modules/ant4c.net.framework/CMakeLists.txt'
 
 jobs:
   build:

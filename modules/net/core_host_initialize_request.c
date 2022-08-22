@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -22,17 +22,16 @@ struct initialize_request_type
 
 static uint8_t is_buffer_init = 0;
 
-static struct buffer b_config_keys_;
-static struct buffer b_config_values_;
+static uint8_t b_config_keys_[BUFFER_SIZE_OF];
+static uint8_t b_config_values_[BUFFER_SIZE_OF];
 
 void core_host_initialize_request_init_buffers()
 {
 	if (!is_buffer_init)
 	{
-		SET_NULL_TO_BUFFER(b_config_keys_);
-		SET_NULL_TO_BUFFER(b_config_values_);
-		/**/
-		is_buffer_init = 1;
+		is_buffer_init =
+			buffer_init((void*)b_config_keys_, BUFFER_SIZE_OF) &&
+			buffer_init((void*)b_config_values_, BUFFER_SIZE_OF);
 	}
 }
 
@@ -40,8 +39,8 @@ void core_host_initialize_request_release_buffers()
 {
 	if (is_buffer_init)
 	{
-		buffer_release(&b_config_keys_);
-		buffer_release(&b_config_values_);
+		buffer_release((void*)b_config_keys_);
+		buffer_release((void*)b_config_values_);
 	}
 }
 
@@ -70,7 +69,7 @@ uint8_t core_host_initialize_request_set_config_keys(
 		keys_lengths,
 		count,
 		config_keys,
-		&b_config_keys_);
+		(void*)b_config_keys_);
 }
 
 uint8_t core_host_initialize_request_set_config_values(
@@ -86,7 +85,7 @@ uint8_t core_host_initialize_request_set_config_values(
 		values_lengths,
 		count,
 		config_values,
-		&b_config_values_);
+		(void*)b_config_values_);
 }
 
 static uint8_t g_core_host_initialize_request[CORE_HOST_INITIALIZE_REQUEST_SIZE];

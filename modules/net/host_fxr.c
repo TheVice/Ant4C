@@ -50,7 +50,7 @@ typedef int32_t(net_host_calling_convention* get_hostfxr_path_type)(
 
 uint8_t net_host_load(const type_of_element* path_to_net_host_library,
 					  const type_of_element* path_to_assembly, const type_of_element* path_to_dot_net_root,
-					  void** net_host_object, struct buffer* path_to_host_fxr)
+					  void** net_host_object, void* path_to_host_fxr)
 {
 	if (!path_to_net_host_library || !path_to_host_fxr)
 	{
@@ -484,7 +484,7 @@ uint8_t host_fx_resolver_is_function_exists(
 	return 0;
 }
 
-uint8_t int_to_hex_and_byte_representation(int32_t code, struct buffer* output)
+uint8_t int_to_hex_and_byte_representation(int32_t code, void* output)
 {
 #define CODE_IN_STR_LENGTH 32
 
@@ -509,7 +509,7 @@ uint8_t int_to_hex_and_byte_representation(int32_t code, struct buffer* output)
 	return buffer_resize(output, size + (ptrdiff_t)code);
 }
 
-uint8_t result_code_to_string(int32_t code, struct buffer* output)
+uint8_t result_code_to_string(int32_t code, void* output)
 {
 	if (!output)
 	{

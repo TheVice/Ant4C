@@ -16,7 +16,7 @@
 
 #include <string.h>
 
-const void* string_to_pointer(const uint8_t* input, uint8_t length, struct buffer* tmp)
+const void* string_to_pointer(const uint8_t* input, uint8_t length, void* tmp)
 {
 	if (!input || !length || !tmp)
 	{
@@ -36,7 +36,7 @@ const void* string_to_pointer(const uint8_t* input, uint8_t length, struct buffe
 uint8_t convert_function_name(
 	const uint8_t* name_space,
 	const uint8_t* function_name_start, const uint8_t* function_name_finish,
-	struct buffer* output)
+	void* output)
 {
 	if (!name_space ||
 		range_in_parts_is_null_or_empty(function_name_start, function_name_finish) ||
@@ -68,7 +68,7 @@ uint8_t get_exists_functions(
 	const uint8_t* delimiter,
 	uint16_t delimiter_length,
 	const is_function_exists_type is_function_exists,
-	struct buffer* output)
+	void* output)
 {
 #define COUNT_OF_FUNCTION 32
 	static const uint8_t* double_zero = (const uint8_t*)"\0\0";
@@ -154,7 +154,7 @@ uint8_t get_exists_functions(
 
 uint8_t load_library(const uint8_t* path_to_library,
 					 uint16_t path_to_library_length,
-					 struct buffer* tmp,
+					 void* tmp,
 					 void* ptr_to_object,
 					 ptrdiff_t size,
 					 const loader_type loader)
@@ -189,7 +189,7 @@ uint8_t is_function_exists(
 	const void* ptr_to_object, const uint8_t* name_space,
 	const uint8_t* function_name, uint16_t function_name_length,
 	const is_function_exists_type is_exists,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_object ||
 		!name_space ||

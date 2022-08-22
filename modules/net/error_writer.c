@@ -97,36 +97,36 @@ error_writer_type set_error_writer(
 }
 
 #if defined(_WIN32)
-static struct buffer host_fx_resolver_error_writer_win32_content;
+static uint8_t host_fx_resolver_error_writer_win32_content[BUFFER_SIZE_OF];
 static uint8_t is_host_fx_resolver_error_writer_win32_content_initialized = 0;
 
-static struct buffer host_policy_error_writer_win32_content;
+static uint8_t host_policy_error_writer_win32_content[BUFFER_SIZE_OF];
 static uint8_t is_host_policy_error_writer_win32_content_initialized = 0;
 
 #define ERROR_WRITER_WIN32(MESSAGE, CONTENT, IS_CONTENT_INITIALIZED, ERROR_FILE_WRITER)				\
 	\
 	if (IS_CONTENT_INITIALIZED)																		\
 	{																								\
-		if (!buffer_resize(&(CONTENT), 0))															\
+		if (!buffer_resize((void*)(CONTENT), 0))													\
 		{																							\
 			return;																					\
 		}																							\
 	}																								\
 	else																							\
 	{																								\
-		SET_NULL_TO_BUFFER(CONTENT);																\
-		(IS_CONTENT_INITIALIZED) = 1;																\
+		(IS_CONTENT_INITIALIZED) = buffer_init((void*)(CONTENT), BUFFER_SIZE_OF);					\
 	}																								\
 	\
 	if (ERROR_FILE_WRITER)																			\
 	{																								\
-		if (!text_encoding_UTF16LE_to_UTF8((MESSAGE), (MESSAGE) + wcslen(MESSAGE), &(CONTENT)) ||	\
-			!buffer_push_back(&(CONTENT), '\n'))													\
+		if (!text_encoding_UTF16LE_to_UTF8((MESSAGE),												\
+										   (MESSAGE) + wcslen(MESSAGE), (void*)(CONTENT)) ||		\
+			!buffer_push_back((void*)(CONTENT), '\n'))												\
 		{																							\
 			return;																					\
 		}																							\
 		\
-		if (!file_write_with_several_steps(&(CONTENT), (ERROR_FILE_WRITER)))						\
+		if (!file_write_with_several_steps((void*)(CONTENT), (ERROR_FILE_WRITER)))					\
 		{																							\
 			return;																					\
 		}																							\
