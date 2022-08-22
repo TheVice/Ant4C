@@ -133,7 +133,7 @@ uint8_t load_file_get_attributes_and_arguments_for_task(
 			   task_attributes, task_attributes_lengths,
 			   task_attributes_count, task_arguments);
 }
-#if 0
+
 uint8_t load_file_evaluate_task(void* project, void* task_arguments, uint8_t verbose)
 {
 	if (NULL == project ||
@@ -190,4 +190,3 @@ uint8_t load_file_evaluate_task(void* project, void* task_arguments, uint8_t ver
 
 	return property_set_from_file(the_property, file, encoding, dynamic, read_only, verbose);
 }
-#endif

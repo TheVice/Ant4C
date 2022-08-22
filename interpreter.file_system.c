@@ -6,11 +6,13 @@
  */
 
 #include "file_system.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
 #include "date_time.h"
 #include "hash.h"
+#include "interpreter.h"
 #include "path.h"
 #include "range.h"
 
@@ -279,12 +281,10 @@ uint8_t file_exec_function(uint8_t function, const void* arguments, uint8_t argu
 		case file_exists_:
 			return 1 == arguments_count &&
 				   bool_to_string(file_exists(values[0].start), output);
-#if 0
 
 		case file_get_checksum_:
 			return (2 == arguments_count || 3 == arguments_count) &&
 				   file_get_checksum(values[0].start, &values[1], &values[2], output);
-#endif
 
 		case file_get_creation_time_:
 			return 1 == arguments_count &&

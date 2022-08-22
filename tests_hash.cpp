@@ -8,11 +8,12 @@
 #include "tests_base_xml.h"
 
 extern "C" {
+#include "hash.h"
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
 #include "echo.h"
-#include "hash.h"
+#include "interpreter.h"
 #include "path.h"
 #include "range.h"
 #include "text_encoding.h"
@@ -27,7 +28,7 @@ class TestHashAlgorithm : public TestsBaseXml
 {
 };
 
-uint8_t input_generator(buffer* input, ptrdiff_t count)
+uint8_t input_generator(void* input, ptrdiff_t count)
 {
 	if (nullptr == input || count < 1)
 	{
@@ -39,7 +40,7 @@ uint8_t input_generator(buffer* input, ptrdiff_t count)
 		return 0;
 	}
 
-	auto ptr = buffer_data(input, 0);
+	auto ptr = buffer_uint8_t_data(input, 0);
 
 	for (ptrdiff_t i = 0, j = 0; i < count; ++i, j = j < 250 ? j + 1 : 0)
 	{
@@ -120,16 +121,17 @@ TEST(TestHashAlgorithm_, hash_algorithm_bytes_to_string)
 	//
 	const auto input_in_a_range(string_to_range(input));
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 	//
 	ASSERT_TRUE(
 		hash_algorithm_bytes_to_string(
-			input_in_a_range.start, input_in_a_range.finish, &output))
-			<< buffer_free(&output);
+			input_in_a_range.start, input_in_a_range.finish, output))
+			<< buffer_free(output);
 	//
-	const auto returned_output(buffer_to_string(&output));
-	buffer_release(&output);
+	const auto returned_output(buffer_to_string(output));
+	buffer_release(output);
 	ASSERT_EQ(expected_output, returned_output);
 }
 
@@ -140,8 +142,9 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 		20, 32, 48, 64
 	};
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 	uint64_t output_[16];
 
 	for (const auto& node : nodes)
@@ -175,35 +178,35 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 				continue;
 			}
 
-			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
 			//
 			auto returned = hash_algorithm_blake2b(
 								input_in_a_range.start, input_in_a_range.finish,
-								8 * hash_sizes[i], &output);
+								8 * hash_sizes[i], output);
 			ASSERT_EQ(expected_return, returned)
-					<< input << std::endl << static_cast<int>(i) << buffer_free(&output);
+					<< input << std::endl << static_cast<int>(i) << buffer_free(output);
 			//
-			returned = static_cast<uint8_t>(buffer_size(&output));
-			ASSERT_TRUE(buffer_append(&output, nullptr, 2 * returned + 2)) << buffer_free(&output);
-			ASSERT_TRUE(buffer_resize(&output, returned)) << buffer_free(&output);
+			returned = static_cast<uint8_t>(buffer_size(output));
+			ASSERT_TRUE(buffer_append(output, nullptr, 2 * returned + 2)) << buffer_free(output);
+			ASSERT_TRUE(buffer_resize(output, returned)) << buffer_free(output);
 			//
-			input_in_a_range = buffer_to_range(&output);
+			input_in_a_range = buffer_to_range(output);
 			returned = hash_algorithm_bytes_to_string(
-						   input_in_a_range.start, input_in_a_range.finish, &output);
+						   input_in_a_range.start, input_in_a_range.finish, output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
-												 static_cast<int>(i) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(output);
 			//
 			const auto str_output(
-				buffer_to_string(&output).substr(range_size(&input_in_a_range)));
+				buffer_to_string(output).substr(range_size(&input_in_a_range)));
 			ASSERT_EQ(*(outputs[i]), str_output) << input << std::endl <<
-												 static_cast<int>(i) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(output);
 			//
 			ptrdiff_t bytes_compressed = 0;
 			//
-			ASSERT_TRUE(BLAKE2b_init(hash_sizes[i], output_)) << buffer_free(&output);
+			ASSERT_TRUE(BLAKE2b_init(hash_sizes[i], output_)) << buffer_free(output);
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
@@ -214,7 +217,7 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 				//
 				ASSERT_TRUE(BLAKE2b_core(
 								input_in_a_range.start, input_in_a_range.start + bytes_to_compress,
-								&bytes_compressed, output_)) << buffer_free(&output);
+								&bytes_compressed, output_)) << buffer_free(output);
 				//
 				input_in_a_range.start += bytes_to_compress;
 			}
@@ -222,45 +225,49 @@ TEST_F(TestHashAlgorithm, BLAKE2)
 			ASSERT_TRUE(BLAKE2b_final(
 							input_in_a_range.start, &bytes_compressed,
 							static_cast<uint8_t>(range_size(&input_in_a_range)),
-							output_)) << buffer_free(&output);
+							output_)) << buffer_free(output);
 			//
-			ASSERT_EQ(bytes_compressed, static_cast<ptrdiff_t>(input.size())) << buffer_free(&output);
-			ASSERT_TRUE(buffer_resize(&output, hash_sizes[i])) << buffer_free(&output);
+			ASSERT_EQ(bytes_compressed, static_cast<ptrdiff_t>(input.size())) << buffer_free(output);
+			ASSERT_TRUE(buffer_resize(output, hash_sizes[i])) << buffer_free(output);
 			//
 			input_in_a_range.start = reinterpret_cast<const uint8_t*>(output_);
 			input_in_a_range.finish = input_in_a_range.start + hash_sizes[i];
-			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, &output);
+			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
-												 static_cast<int>(i) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(output);
 			//
-			const auto str_output_(buffer_to_string(&output).substr(range_size(&input_in_a_range)));
+			const auto str_output_(buffer_to_string(output).substr(range_size(&input_in_a_range)));
 			ASSERT_EQ(*(outputs[i]), str_output_) << input << std::endl <<
-												  static_cast<int>(i) << buffer_free(&output);
+												  static_cast<int>(i) << buffer_free(output);
 		}
 
-		ASSERT_NE(0, buffer_size(&output)) << buffer_free(&output);
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_NE(0, buffer_size(output)) << buffer_free(output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 {
-	buffer input;
-	SET_NULL_TO_BUFFER(input);
-	ASSERT_TRUE(input_generator(&input, 31745)) << buffer_free(&input);
-	auto ptr = buffer_data(&input, 0);
+	std::string input_buffer(buffer_size_of(), 0);
+	auto input = reinterpret_cast<void*>(&input_buffer[0]);
+	ASSERT_TRUE(buffer_init(input, buffer_size_of()));
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-	ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
+	ASSERT_TRUE(input_generator(input, 31745)) << buffer_free(input);
+	auto ptr = buffer_uint8_t_data(input, 0);
 	//
-	const auto start = buffer_data(&output, 0);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of())) << buffer_free(input);
 	//
-	ASSERT_NE(nullptr, start) << buffer_free(&input) << buffer_free(&output);
+	ASSERT_TRUE(buffer_resize(output, 2 * UINT8_MAX)) << buffer_free(input) << buffer_free(output);
+	//
+	const auto start = buffer_uint8_t_data(output, 0);
+	//
+	ASSERT_NE(nullptr, start) << buffer_free(input) << buffer_free(output);
 
 	for (const auto& node : nodes)
 	{
@@ -272,7 +279,7 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 			static_cast<uint16_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
-		ASSERT_LT(input_length, 31745) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_LT(input_length, 31745) << buffer_free(input) << buffer_free(output);
 		//
 		const std::string hash_length_str(the_node.select_node("hash_length").node().child_value());
 		input_in_a_range = string_to_range(hash_length_str);
@@ -282,23 +289,23 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 		//
 		const auto expected_output(get_data_from_nodes(the_node, "output"));
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
-		auto returned = hash_algorithm_blake3(ptr, ptr + input_length, hash_length, &output);
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(input) << buffer_free(output);
+		auto returned = hash_algorithm_blake3(ptr, ptr + input_length, hash_length, output);
+		ASSERT_TRUE(returned) << buffer_free(input) << buffer_free(output);
 		//
-		const auto finish = buffer_data(&output, 0) + buffer_size(&output);
-		ASSERT_NE(nullptr, finish) << buffer_free(&input) << buffer_free(&output);
-		ASSERT_LT(start, finish) << buffer_free(&input) << buffer_free(&output);
+		const auto finish = buffer_uint8_t_data(output, 0) + buffer_size(output);
+		ASSERT_NE(nullptr, finish) << buffer_free(input) << buffer_free(output);
+		ASSERT_LT(start, finish) << buffer_free(input) << buffer_free(output);
 		//
-		const auto size = buffer_size(&output);
+		const auto size = buffer_size(output);
 		//
-		returned = hash_algorithm_bytes_to_string(start, finish, &output);
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		returned = hash_algorithm_bytes_to_string(start, finish, output);
+		ASSERT_TRUE(returned) << buffer_free(input) << buffer_free(output);
 		//
-		std::string returned_hash(reinterpret_cast<const char*>(finish), buffer_size(&output) - size);
+		std::string returned_hash(reinterpret_cast<const char*>(finish), buffer_size(output) - size);
 		//
 		const auto length = hash_length / sizeof(uint32_t);
-		ASSERT_EQ(expected_output.substr(0, length), returned_hash) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_EQ(expected_output.substr(0, length), returned_hash) << buffer_free(input) << buffer_free(output);
 
 		if (0 == input_length)
 		{
@@ -306,31 +313,32 @@ TEST_F(TestHashAlgorithm, hash_algorithm_blake3)
 			continue;
 		}
 
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
-		returned = hash_algorithm_blake3(ptr + 1, ptr + input_length + 1, hash_length, &output);
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(input) << buffer_free(output);
+		returned = hash_algorithm_blake3(ptr + 1, ptr + input_length + 1, hash_length, output);
+		ASSERT_TRUE(returned) << buffer_free(input) << buffer_free(output);
 		//
-		returned = hash_algorithm_bytes_to_string(start, finish, &output);
-		ASSERT_TRUE(returned) << buffer_free(&input) << buffer_free(&output);
+		returned = hash_algorithm_bytes_to_string(start, finish, output);
+		ASSERT_TRUE(returned) << buffer_free(input) << buffer_free(output);
 		//
 		returned_hash.clear();
-		returned_hash.append(reinterpret_cast<const char*>(finish), buffer_size(&output) - size);
+		returned_hash.append(reinterpret_cast<const char*>(finish), buffer_size(output) - size);
 		//
-		ASSERT_NE(expected_output.substr(0, length), returned_hash) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_NE(expected_output.substr(0, length), returned_hash) << buffer_free(input) << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
-	buffer_release(&input);
+	buffer_release(output);
+	buffer_release(input);
 }
 
 TEST_F(TestHashAlgorithm, crc32)
 {
 	static const std::string empty(sizeof(uint64_t), '0');
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -354,45 +362,45 @@ TEST_F(TestHashAlgorithm, crc32)
 
 		for (uint8_t i = 0, count = COUNT_OF(outputs); i < count; ++i)
 		{
-			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
-			ASSERT_TRUE(buffer_append(&output, NULL, UINT8_MAX)) << buffer_free(&output);
-			auto digit_output = buffer_data(&output, UINT8_MAX - sizeof(uint32_t));
+			ASSERT_TRUE(buffer_append(output, NULL, UINT8_MAX)) << buffer_free(output);
+			auto digit_output = buffer_uint8_t_data(output, UINT8_MAX - sizeof(uint32_t));
 			//
 			auto returned = hash_algorithm_crc32(input_in_a_range.start, input_in_a_range.finish, digit_output, i);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
-												 static_cast<int>(i) << std::endl << buffer_free(&output);
+												 static_cast<int>(i) << std::endl << buffer_free(output);
 			//
-			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-			returned = hash_algorithm_bytes_to_string(digit_output, digit_output + sizeof(uint32_t), &output);
-			ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&output);
-			const auto str_output(buffer_to_string(&output));
+			ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+			returned = hash_algorithm_bytes_to_string(digit_output, digit_output + sizeof(uint32_t), output);
+			ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(output);
+			const auto str_output(buffer_to_string(output));
 
 			if (outputs[i]->empty())
 			{
 				ASSERT_EQ(empty, str_output) <<
 											 input << std::endl <<
-											 static_cast<int>(i) << std::endl << buffer_free(&output);
+											 static_cast<int>(i) << std::endl << buffer_free(output);
 			}
 			else
 			{
 				ASSERT_EQ(*(outputs[i]), str_output) <<
 													 input << std::endl <<
-													 static_cast<int>(i) << std::endl << buffer_free(&output);
+													 static_cast<int>(i) << std::endl << buffer_free(output);
 			}
 		}
 
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 typedef uint8_t(*Keccak)(
 	const uint8_t* start, const uint8_t* finish,
-	uint16_t hash_length, buffer* output);
+	uint16_t hash_length, void* output);
 static const Keccak Keccak_functions[] =
 {
 	&hash_algorithm_keccak, &hash_algorithm_sha3
@@ -402,15 +410,18 @@ TEST_F(TestHashAlgorithm, Keccak)
 {
 	static const uint16_t hash_length[] = { 224, 256, 384, 512, 224, 256, 384, 512 };
 	//
-	buffer input;
-	SET_NULL_TO_BUFFER(input);
-	ASSERT_TRUE(input_generator(&input, 31745)) << buffer_free(&input);
-	auto ptr = buffer_data(&input, 0);
+	std::string input_buffer(buffer_size_of(), 0);
+	auto input = reinterpret_cast<void*>(&input_buffer[0]);
+	ASSERT_TRUE(buffer_init(input, buffer_size_of()));
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	ASSERT_TRUE(input_generator(input, 31745)) << buffer_free(input);
+	auto ptr = buffer_uint8_t_data(input, 0);
 	//
-	ASSERT_TRUE(buffer_resize(&output, 2 * UINT8_MAX)) << buffer_free(&input) << buffer_free(&output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of())) << buffer_free(input);
+	//
+	ASSERT_TRUE(buffer_resize(output, 2 * UINT8_MAX)) << buffer_free(input) << buffer_free(output);
 
 	for (const auto& node : nodes)
 	{
@@ -421,7 +432,7 @@ TEST_F(TestHashAlgorithm, Keccak)
 		const auto input_length =
 			static_cast<uint16_t>(
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
-		ASSERT_LT(input_length, 31745) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_LT(input_length, 31745) << buffer_free(input) << buffer_free(output);
 		//
 		const std::string return_str(the_node.select_node("return").node().child_value());
 		input_in_a_range = string_to_range(return_str);
@@ -452,33 +463,33 @@ TEST_F(TestHashAlgorithm, Keccak)
 				continue;
 			}
 
-			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&input) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(input) << buffer_free(output);
 			//
-			auto returned = (Keccak_functions[3 < i])(ptr, ptr + input_length, hash_length[i], &output);
+			auto returned = (Keccak_functions[3 < i])(ptr, ptr + input_length, hash_length[i], output);
 			//
 			ASSERT_EQ(expected_return, returned) << input_length << std::endl <<
-												 static_cast<int>(i) << buffer_free(&input) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(input) << buffer_free(output);
 			//
 			returned = static_cast<uint8_t>(hash_length[i] / 8);
-			ASSERT_TRUE(buffer_append(&output, nullptr, 2 * returned + 2)) << buffer_free(&input) << buffer_free(&output);
-			ASSERT_TRUE(buffer_resize(&output, returned)) << buffer_free(&input) << buffer_free(&output);
+			ASSERT_TRUE(buffer_append(output, nullptr, 2 * returned + 2)) << buffer_free(input) << buffer_free(output);
+			ASSERT_TRUE(buffer_resize(output, returned)) << buffer_free(input) << buffer_free(output);
 			//
-			input_in_a_range = buffer_to_range(&output);
-			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, &output);
+			input_in_a_range = buffer_to_range(output);
+			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, output);
 			ASSERT_EQ(expected_return, returned) << input_length << std::endl <<
-												 static_cast<int>(i) << buffer_free(&input) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(input) << buffer_free(output);
 			//
-			const auto result(buffer_to_string(&output).substr(range_size(&input_in_a_range)));
+			const auto result(buffer_to_string(output).substr(range_size(&input_in_a_range)));
 			ASSERT_EQ(*(expected_result[i]), result) << input_length << std::endl <<
-					static_cast<int>(i) << buffer_free(&input) << buffer_free(&output);
+					static_cast<int>(i) << buffer_free(input) << buffer_free(output);
 		}
 
-		ASSERT_NE(0, buffer_size(&output)) << buffer_free(&input) << buffer_free(&output);
+		ASSERT_NE(0, buffer_size(output)) << buffer_free(input) << buffer_free(output);
 		--node_count;
 	}
 
-	buffer_release(&output);
-	buffer_release(&input);
+	buffer_release(output);
+	buffer_release(input);
 }
 
 TEST_F(TestHashAlgorithm, sha3)
@@ -489,8 +500,9 @@ TEST_F(TestHashAlgorithm, sha3)
 		224, 256, 384, 512
 	};
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -526,37 +538,37 @@ TEST_F(TestHashAlgorithm, sha3)
 				continue;
 			}
 
-			ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
 			//
 			auto returned = (Keccak_functions[i < (count / 2) ? 0 : 1])(input_in_a_range.start, input_in_a_range.finish,
-							hash_lengths[i], &output);
+							hash_lengths[i], output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
-												 static_cast<int>(i) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(output);
 			//
-			returned = static_cast<uint8_t>(buffer_size(&output));
-			ASSERT_TRUE(buffer_append(&output, nullptr, 2 * returned + 2)) << buffer_free(&output);
-			ASSERT_TRUE(buffer_resize(&output, returned)) << buffer_free(&output);
+			returned = static_cast<uint8_t>(buffer_size(output));
+			ASSERT_TRUE(buffer_append(output, nullptr, 2 * returned + 2)) << buffer_free(output);
+			ASSERT_TRUE(buffer_resize(output, returned)) << buffer_free(output);
 			//
-			input_in_a_range = buffer_to_range(&output);
-			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, &output);
+			input_in_a_range = buffer_to_range(output);
+			returned = hash_algorithm_bytes_to_string(input_in_a_range.start, input_in_a_range.finish, output);
 			ASSERT_EQ(expected_return, returned) << input << std::endl <<
-												 static_cast<int>(i) << buffer_free(&output);
+												 static_cast<int>(i) << buffer_free(output);
 			//
-			const auto result(buffer_to_string(&output).substr(range_size(&input_in_a_range)));
+			const auto result(buffer_to_string(output).substr(range_size(&input_in_a_range)));
 			ASSERT_EQ(*(expected_result[i]), result) << input << std::endl <<
-					static_cast<int>(i) << buffer_free(&output);
+					static_cast<int>(i) << buffer_free(output);
 		}
 
-		ASSERT_NE(0, buffer_size(&output)) << buffer_free(&output);
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_NE(0, buffer_size(output)) << buffer_free(output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestHashAlgorithm, xxHash)
@@ -631,18 +643,19 @@ TEST_F(TestHashAlgorithm, xxHash)
 
 TEST_F(TestHashAlgorithm, file_get_checksum)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 	//
-	ASSERT_TRUE(input_generator(&output, 31744)) << buffer_free(&output);
-	ASSERT_TRUE(buffer_append(&output, nullptr, 3 * 4096)) << buffer_free(&output);
-	ASSERT_TRUE(buffer_resize(&output, 31744)) << buffer_free(&output);
-	ASSERT_TRUE(path_get_temp_file_name(&output)) << buffer_free(&output);
-	ASSERT_TRUE(buffer_push_back(&output, 0)) << buffer_free(&output);
-	const auto size = buffer_size(&output);
+	ASSERT_TRUE(input_generator(output, 31744)) << buffer_free(output);
+	ASSERT_TRUE(buffer_append(output, nullptr, 3 * 4096)) << buffer_free(output);
+	ASSERT_TRUE(buffer_resize(output, 31744)) << buffer_free(output);
+	ASSERT_TRUE(path_get_temp_file_name(output)) << buffer_free(output);
+	ASSERT_TRUE(buffer_push_back(output, 0)) << buffer_free(output);
+	const auto size = buffer_size(output);
 	//
-	const auto input = buffer_data(&output, 0);
-	const auto path = buffer_data(&output, 31744);
+	const auto input = buffer_uint8_t_data(output, 0);
+	const auto path = buffer_uint8_t_data(output, 31744);
 
 	for (const auto& node : nodes)
 	{
@@ -668,21 +681,21 @@ TEST_F(TestHashAlgorithm, file_get_checksum)
 			const auto input_length = static_cast<uint16_t>(algorithm_node.attribute("input").as_uint());
 			const std::string expected_output(algorithm_node.child_value());
 			//
-			ASSERT_LT(input_length, 31745) << buffer_free(&output);
+			ASSERT_LT(input_length, 31745) << buffer_free(output);
 			//
-			ASSERT_TRUE(echo(0, Default, path, Info, input, input_length, 0, 0)) << buffer_free(&output);
+			ASSERT_TRUE(echo(0, Default, path, Info, input, input_length, 0, 0)) << buffer_free(output);
 			//
-			ASSERT_TRUE(buffer_resize(&output, size)) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, size)) << buffer_free(output);
 			ASSERT_TRUE(file_get_checksum(path, &algorithm_in_a_range, &algorithm_parameter,
-										  &output)) << buffer_free(&output);
+										  output)) << buffer_free(output);
 			//
-			const std::string output_str(reinterpret_cast<const char*>(buffer_data(&output, size)),
-										 buffer_size(&output) - size);
-			ASSERT_EQ(expected_output, output_str) << buffer_free(&output);
+			const std::string output_str(reinterpret_cast<const char*>(buffer_uint8_t_data(output, size)),
+										 buffer_size(output) - size);
+			ASSERT_EQ(expected_output, output_str) << buffer_free(output);
 		}
 
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }

@@ -31,7 +31,7 @@ extern "C" {
 class TestFileSystem : public TestsBaseXml
 {
 };
-#if 0
+
 uint8_t get_crc32_of(const int64_t input, void* output)
 {
 	if (nullptr == output)
@@ -137,80 +137,80 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 		std::string the_project_buffer(buffer_size_of(), 0);
 		auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
 		ASSERT_TRUE(buffer_init(the_project, buffer_size_of()))
-				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 		//
-		auto returned = project_new(&the_project);
+		auto returned = project_new(the_project);
 		ASSERT_TRUE(returned)
-				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 		//
-		returned = project_load_from_content(content.start, content.finish, &the_project, 0, verbose);
+		returned = project_load_from_content(content.start, content.finish, the_project, 0, verbose);
 		ASSERT_TRUE(returned)
-				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 
 		for (const auto& output : the_node.select_nodes("output"))
 		{
-			returned = buffer_resize(&property_value, 0);
+			returned = buffer_resize(property_value, 0);
 			ASSERT_TRUE(returned)
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			//
 			returned = project_property_get_by_name(
-						   &the_project,
+						   the_project,
 						   reinterpret_cast<const uint8_t*>(property_name.c_str()),
 						   static_cast<uint8_t>(property_name.size()),
-						   &property_value,
+						   property_value,
 						   verbose);
 			ASSERT_TRUE(returned)
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			//
-			returned = buffer_push_back(&property_value, 0);
+			returned = buffer_push_back(property_value, 0);
 			ASSERT_TRUE(returned)
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			//
 			const auto the_output_node = output.node();
 			const std::string entry_type_str(the_output_node.attribute("entry_type").as_string());
 			ASSERT_TRUE(entry_types.count(entry_type_str))
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			const auto entry_type = entry_types.at(entry_type_str);
 			//
 			const uint8_t recurse = the_output_node.attribute("recurse").as_bool();
 			//
-			returned = buffer_resize(&file_tree, 0);
+			returned = buffer_resize(file_tree, 0);
 			ASSERT_TRUE(returned)
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			//
-			returned = directory_enumerate_file_system_entries(&property_value, entry_type, recurse, &file_tree, 1);
+			returned = directory_enumerate_file_system_entries(property_value, entry_type, recurse, file_tree, 1);
 			ASSERT_TRUE(returned)
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			//
 			ptrdiff_t counter = 0;
-			const auto returned_counter = buffer_size(&file_tree);
-			const auto returned_paths(buffer_to_string(&file_tree));
+			const auto returned_counter = buffer_size(file_tree);
+			const auto returned_paths(buffer_to_string(file_tree));
 			const auto returned_output = string_to_range(returned_paths);
 
 			for (auto& entry : the_output_node)
 			{
 				const std::string entry_str(entry.child_value());
 				//
-				returned = buffer_resize(&file_tree, 0);
+				returned = buffer_resize(file_tree, 0);
 				ASSERT_TRUE(returned)
-						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 				//
 				returned = project_property_get_by_name(
-							   &the_project,
+							   the_project,
 							   reinterpret_cast<const uint8_t*>(entry_str.c_str()),
 							   static_cast<uint8_t>(entry_str.size()),
-							   &file_tree,
+							   file_tree,
 							   verbose);
 				ASSERT_TRUE(returned)
-						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 				//
-				returned = buffer_push_back(&file_tree, 0);
+				returned = buffer_push_back(file_tree, 0);
 				ASSERT_TRUE(returned)
-						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 				//
-				counter += buffer_size(&file_tree);
+				counter += buffer_size(file_tree);
 				//
-				const auto expected_path = buffer_to_range(&file_tree);
+				const auto expected_path = buffer_to_range(file_tree);
 				returned = string_contains(returned_output.start, returned_output.finish, expected_path.start,
 										   expected_path.finish);
 				//
@@ -225,67 +225,67 @@ TEST_F(TestFileSystem, directory_enumerate_file_system_entries)
 
 				ASSERT_TRUE(returned)
 						<< returned_output_str << std::endl << expected_path_str << std::endl
-						<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+						<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 			}
 
 			ASSERT_EQ(counter, returned_counter)
-					<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+					<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 		}
 
-		returned = buffer_resize(&property_value, 0);
+		returned = buffer_resize(property_value, 0);
 		ASSERT_TRUE(returned)
-				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 		//
 		returned = project_property_get_by_name(
-					   &the_project,
+					   the_project,
 					   reinterpret_cast<const uint8_t*>(property_name.c_str()),
 					   static_cast<uint8_t>(property_name.size()),
-					   &property_value,
+					   property_value,
 					   verbose);
 		ASSERT_TRUE(returned)
-				<< project_free(&the_project) << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< project_free(the_project) << buffer_free(property_value) << buffer_free(file_tree);
 		//
-		project_unload(&the_project);
+		project_unload(the_project);
 		//
-		content = buffer_to_range(&property_value);
+		content = buffer_to_range(property_value);
 		//
 		returned = path_get_file_name(&content.start, content.finish);
 		ASSERT_TRUE(returned)
-				<< buffer_free(&property_value) << buffer_free(&file_tree);
+				<< buffer_free(property_value) << buffer_free(file_tree);
 		//
 		static const auto* that = reinterpret_cast<const uint8_t*>("?*");
 
 		if (content.finish != string_find_any_symbol_like_or_not_like_that(
 				content.start, content.finish, that, that + 2, 1, 1))
 		{
-			content = buffer_to_range(&property_value);
+			content = buffer_to_range(property_value);
 			returned = path_get_directory_name(content.start, &content.finish);
 			ASSERT_TRUE(returned)
-					<< buffer_free(&property_value) << buffer_free(&file_tree);
+					<< buffer_free(property_value) << buffer_free(file_tree);
 			//
-			returned = buffer_resize(&property_value, range_size(&content));
+			returned = buffer_resize(property_value, range_size(&content));
 			ASSERT_TRUE(returned)
-					<< buffer_free(&property_value) << buffer_free(&file_tree);
+					<< buffer_free(property_value) << buffer_free(file_tree);
 		}
 
-		returned = buffer_push_back(&property_value, 0);
+		returned = buffer_push_back(property_value, 0);
 		ASSERT_TRUE(returned)
-				<< buffer_free(&property_value) << buffer_free(&file_tree);
+				<< buffer_free(property_value) << buffer_free(file_tree);
 		//
-		code = buffer_to_string(&property_value);
+		code = buffer_to_string(property_value);
 		content = string_to_range(code);
 		//
 		returned = directory_delete(content.start);
 		//
 		ASSERT_TRUE(returned)
 				<< reinterpret_cast<const char*>(content.start)
-				<< std::endl << buffer_free(&property_value) << buffer_free(&file_tree);
+				<< std::endl << buffer_free(property_value) << buffer_free(file_tree);
 		//
 		--node_count;
 	}
 
-	buffer_release(&file_tree);
-	buffer_release(&property_value);
+	buffer_release(file_tree);
+	buffer_release(property_value);
 }
 
 TEST_F(TestFileSystem, directory_exists)
@@ -309,7 +309,7 @@ TEST_F(TestFileSystem, directory_exists)
 		--node_count;
 	}
 }
-#endif
+
 TEST(TestFileSystem_, directory_get_time_attributes)
 {
 	const std::string inputs[] =
@@ -393,7 +393,7 @@ TEST(TestFileSystem_, directory_get_logical_drives)
 #endif
 	buffer_release(drives);
 }
-#if 0
+
 TEST(TestFileSystem_, directory_move)
 {
 	std::string path_buffer(buffer_size_of(), 0);
@@ -455,10 +455,10 @@ TEST(TestFileSystem_, directory_set_current_directory)
 	ASSERT_TRUE(path_get_temp_path(path)) << buffer_free(path);
 	auto path_in_a_range(buffer_to_range(path));
 	//
-	auto returned = path_get_path_root(path_in_a_range.start, path_in_a_range.finish);
+	auto returned = path_get_path_root(path_in_a_range.start, &path_in_a_range.finish);
 	ASSERT_TRUE(returned) << buffer_free(path);
 	//
-	returned = buffer_resize(path, range_size(path_in_a_range));
+	returned = buffer_resize(path, range_size(&path_in_a_range));
 	ASSERT_TRUE(returned) << buffer_free(path);
 	ASSERT_TRUE(buffer_push_back(path, 0)) << buffer_free(path);
 	//
@@ -644,7 +644,7 @@ TEST_F(TestFileSystem, file_read_lines)
 
 	buffer_release(tmp);
 }
-#endif
+
 TEST_F(TestFileSystem, file_get_attributes)
 {
 	for (const auto& node : nodes)
@@ -670,7 +670,7 @@ TEST_F(TestFileSystem, file_get_attributes)
 		break;
 	}
 }
-#if 0
+
 TEST(TestFileSystem_, file_move)
 {
 	std::string path_buffer(buffer_size_of(), 0);
@@ -725,7 +725,7 @@ TEST(TestFileSystem_, file_move)
 
 	buffer_release(path);
 }
-#endif
+
 TEST(TestFileSystem_, file_up_to_date)
 {
 	std::string paths_buffer(buffer_size_of(), 0);
@@ -762,33 +762,33 @@ TEST(TestFileSystem_, file_up_to_date)
 	//
 	buffer_release(paths);
 }
-
-/*TEST_F(TestFileSystem, file_replace)
+#if 0
+TEST_F(TestFileSystem, file_replace)
 {
-		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
-		ASSERT_TRUE(path_get_temp_file_name(output)) << buffer_free(output);
-		//
-		const auto tmp_path(buffer_to_string(output));
-		ASSERT_TRUE(buffer_push_back(output, 0)) << buffer_free(output);
-		//
-		const auto path = buffer_uint8_t_data(output, 0);
-		//
-		returned = echo(0, Default, path, Info,
-						input_in_a_range.start, range_size(&input_in_a_range), 0, 0);
-		//
-		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(output);
-		//
-		returned = file_replace(path,
-								to_be_replaced_in_a_range.start, to_be_replaced_in_a_range.finish,
-								by_replacement_in_a_range.start, by_replacement_in_a_range.finish);
-		//
-		ASSERT_EQ(expected_return, returned) << tmp_path << std::endl << buffer_free(output);
-		//
-		returned = load_file_to_buffer(path, Default, output, 0);
-		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(output);
-		ASSERT_EQ(expected_output, buffer_to_string(output)) << tmp_path << std::endl << buffer_free(output);
-}*/
-
+	ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+	ASSERT_TRUE(path_get_temp_file_name(output)) << buffer_free(output);
+	//
+	const auto tmp_path(buffer_to_string(output));
+	ASSERT_TRUE(buffer_push_back(output, 0)) << buffer_free(output);
+	//
+	const auto path = buffer_uint8_t_data(output, 0);
+	//
+	returned = echo(0, Default, path, Info,
+					input_in_a_range.start, range_size(&input_in_a_range), 0, 0);
+	//
+	ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(output);
+	//
+	returned = file_replace(path,
+							to_be_replaced_in_a_range.start, to_be_replaced_in_a_range.finish,
+							by_replacement_in_a_range.start, by_replacement_in_a_range.finish);
+	//
+	ASSERT_EQ(expected_return, returned) << tmp_path << std::endl << buffer_free(output);
+	//
+	returned = load_file_to_buffer(path, Default, output, 0);
+	ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(output);
+	ASSERT_EQ(expected_output, buffer_to_string(output)) << tmp_path << std::endl << buffer_free(output);
+}
+#endif
 TEST(TestFileSystem_, file_set_attributes)
 {
 	std::string path_buffer(buffer_size_of(), 0);

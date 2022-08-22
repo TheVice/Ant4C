@@ -657,7 +657,7 @@ uint8_t BLAKE3(const uint8_t* start, const uint8_t* finish, uint8_t hash_length,
 }
 
 uint8_t hash_algorithm_blake3(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
-							  struct buffer* output)
+							  void* output)
 {
 	if (hash_length < 8 || 1024 < hash_length)
 	{
@@ -667,6 +667,7 @@ uint8_t hash_algorithm_blake3(const uint8_t* start, const uint8_t* finish, uint1
 	hash_length /= 8;
 	/**/
 	return buffer_append(output, NULL, UINT8_MAX) &&
-		   BLAKE3(start, finish, (uint8_t)hash_length, (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+		   BLAKE3(start, finish, (uint8_t)hash_length, (buffer_uint8_t_data(output,
+				   0) + buffer_size(output) - UINT8_MAX)) &&
 		   buffer_resize(output, buffer_size(output) - (UINT8_MAX - hash_length));
 }

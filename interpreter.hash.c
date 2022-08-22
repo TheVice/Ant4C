@@ -56,8 +56,8 @@ uint8_t hash_algorithm_get_function(const uint8_t* name_start, const uint8_t* na
 	return common_string_to_enum(name_start, name_finish, hash_function_str, UNKNOWN_HASH_FUNCTION);
 }
 
-uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* arguments,
-									 uint8_t arguments_count, struct buffer* output)
+uint8_t hash_algorithm_exec_function(uint8_t function, const void* arguments,
+									 uint8_t arguments_count, void* output)
 {
 	if (UNKNOWN_HASH_FUNCTION <= function ||
 		NULL == arguments ||
@@ -114,7 +114,7 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 				}
 			}
 
-			if (!buffer_push_back_uint32(output, 0))
+			if (!buffer_push_back_uint32_t(output, 0))
 			{
 				break;
 			}
@@ -131,7 +131,7 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 
 		case xxh32:
 		{
-			if (!buffer_push_back_uint32(output, 0))
+			if (!buffer_push_back_uint32_t(output, 0))
 			{
 				return 0;
 			}
@@ -174,7 +174,7 @@ uint8_t hash_algorithm_exec_function(uint8_t function, const struct buffer* argu
 }
 
 uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
-						   const struct range* algorithm_parameter, struct buffer* output)
+						   const struct range* algorithm_parameter, void* output)
 {
 	if (NULL == path ||
 		bytes_to_string == algorithm ||
@@ -581,7 +581,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 }
 
 uint8_t file_get_checksum(const uint8_t* path, const struct range* algorithm,
-						  const struct range* algorithm_parameter, struct buffer* output)
+						  const struct range* algorithm_parameter, void* output)
 {
 	return !range_is_null_or_empty(algorithm) &&
 		   file_get_checksum_(path, common_string_to_enum(algorithm->start, algorithm->finish,

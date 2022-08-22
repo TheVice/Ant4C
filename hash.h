@@ -11,11 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
-struct range;
-
 uint8_t hash_algorithm_bytes_to_string(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output);
+	const uint8_t* start, const uint8_t* finish, void* output);
 
 uint8_t hash_algorithm_uint32_t_array_to_uint8_t_array(
 	const uint32_t* start, const uint32_t* finish, uint8_t* output);
@@ -45,7 +42,7 @@ uint8_t BLAKE2b_final(
 
 uint8_t hash_algorithm_blake2b(
 	const uint8_t* start, const uint8_t* finish,
-	uint16_t hash_length, struct buffer* output);
+	uint16_t hash_length, void* output);
 
 uint8_t BLAKE3_init(
 	uint32_t* h, uint8_t h_length,
@@ -63,7 +60,7 @@ uint8_t BLAKE3_final(
 
 uint8_t hash_algorithm_blake3(
 	const uint8_t* start, const uint8_t* finish,
-	uint16_t hash_length, struct buffer* output);
+	uint16_t hash_length, void* output);
 
 uint8_t hash_algorithm_crc32_init(uint8_t* output);
 uint8_t hash_algorithm_crc32_core(
@@ -88,11 +85,11 @@ uint8_t hash_algorithm_sha3_final(
 
 uint8_t hash_algorithm_keccak(
 	const uint8_t* start, const uint8_t* finish,
-	uint16_t hash_length, struct buffer* output);
+	uint16_t hash_length, void* output);
 
 uint8_t hash_algorithm_sha3(
 	const uint8_t* start, const uint8_t* finish,
-	uint16_t hash_length, struct buffer* output);
+	uint16_t hash_length, void* output);
 
 uint8_t hash_algorithm_XXH32_core(
 	const uint8_t* start, const uint8_t* finish,
@@ -122,15 +119,5 @@ uint8_t hash_algorithm_XXH64_final(
 uint8_t hash_algorithm_XXH64(
 	const uint8_t* start, const uint8_t* finish,
 	uint64_t seed, uint64_t* output);
-
-uint8_t hash_algorithm_get_function(
-	const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t hash_algorithm_exec_function(
-	uint8_t function, const struct buffer* arguments,
-	uint8_t arguments_count, struct buffer* output);
-
-uint8_t file_get_checksum(
-	const uint8_t* path, const struct range* algorithm,
-	const struct range* algorithm_parameter, struct buffer* output);
 
 #endif

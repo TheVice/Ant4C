@@ -89,7 +89,7 @@ uint8_t print_status(int status)
 					 8, 1, 0);
 }
 
-uint8_t print_elapsed_time(int64_t delta, struct buffer* argument_value)
+uint8_t print_elapsed_time(int64_t delta, void* argument_value)
 {
 	if (10 < delta)
 	{
@@ -113,7 +113,9 @@ uint8_t print_elapsed_time(int64_t delta, struct buffer* argument_value)
 			return 0;
 		}
 
-		return echo(0, Default, NULL, Info, buffer_data(argument_value, 0), buffer_size(argument_value), 1, 0);
+		return echo(
+				   0, Default, NULL, Info,
+				   buffer_uint8_t_data(argument_value, 0), buffer_size(argument_value), 1, 0);
 	}
 
 	return 1;
@@ -194,24 +196,36 @@ int main(int argc, char** argv)
 	}
 
 	common_set_module_priority(argument_parser_get_module_priority());
-	struct buffer current_directory;
-	SET_NULL_TO_BUFFER(current_directory);
+	uint8_t current_directory[BUFFER_SIZE_OF];
 
-	if (!path_get_directory_for_current_process(&current_directory))
+	if (!buffer_init((void*)current_directory, BUFFER_SIZE_OF))
 	{
-		buffer_release(&current_directory);
+		buffer_release((void*)current_directory);
+		argument_parser_release();
+		return EXIT_FAILURE;
+	}
+
+	if (!path_get_directory_for_current_process((void*)current_directory))
+	{
+		buffer_release((void*)current_directory);
 		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to get current directory.", 32, 1, 0);
 		argument_parser_release();
 		return EXIT_FAILURE;
 	}
 
-	struct buffer the_project;
+	uint8_t the_project[BUFFER_SIZE_OF];
 
-	SET_NULL_TO_BUFFER(the_project);
+	if (!buffer_init((void*)the_project, BUFFER_SIZE_OF))
+	{
+		buffer_release((void*)current_directory);
+		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to get current directory.", 32, 1, 0);
+		argument_parser_release();
+		return EXIT_FAILURE;
+	}
 
 	struct range current_directory_in_a_range;
 
-	BUFFER_TO_RANGE(current_directory_in_a_range, &current_directory);
+	BUFFER_TO_RANGE(current_directory_in_a_range, (void*)current_directory);
 
 	void* file_stream = NULL;
 
@@ -230,10 +244,10 @@ int main(int argc, char** argv)
 	}
 
 	if (path_in_a_range.start < path_in_a_range.finish &&
-		!program_set_log_file(&path_in_a_range, &current_directory_in_a_range, &the_project, &file_stream))
+		!program_set_log_file(&path_in_a_range, &current_directory_in_a_range, (void*)the_project, &file_stream))
 	{
-		buffer_release(&the_project);
-		buffer_release(&current_directory);
+		buffer_release((void*)the_project);
+		buffer_release((void*)current_directory);
 		/**/
 		argc = echo(0, Default, NULL, Error, (const uint8_t*)"Failed to open log file '", 25, 0, 0);
 
@@ -255,10 +269,10 @@ int main(int argc, char** argv)
 	}
 
 	if (!argument_parser_get_build_file(0) &&
-		!project_get_build_files_from_directory(&current_directory, verbose))
+		!project_get_build_files_from_directory((void*)current_directory, verbose))
 	{
-		buffer_release(&the_project);
-		buffer_release(&current_directory);
+		buffer_release((void*)the_project);
+		buffer_release((void*)current_directory);
 		/**/
 		argc = echo(0, Default, NULL, Warning, (const uint8_t*)"No file(s) specified at the input.", 34, 1, 0);
 		/**/
@@ -269,10 +283,10 @@ int main(int argc, char** argv)
 		return argc ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
-	if (!buffer_resize(&the_project, 0))
+	if (!buffer_resize((void*)the_project, 0))
 	{
-		buffer_release(&the_project);
-		buffer_release(&current_directory);
+		buffer_release((void*)the_project);
+		buffer_release((void*)current_directory);
 		/**/
 		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to resize buffer before check listener argument.", 55,
 			 1, 0);
@@ -298,15 +312,15 @@ int main(int argc, char** argv)
 	}
 
 	if (path_in_a_range.start < path_in_a_range.finish &&
-		!program_set_listener(&path_in_a_range, &current_directory_in_a_range, &the_project, &listener_object))
+		!program_set_listener(&path_in_a_range, &current_directory_in_a_range, (void*)the_project, &listener_object))
 	{
 		if (!echo(0, Default, NULL, Warning, (const uint8_t*)"Listener '", 10, 0, 0) ||
 			!echo(0, Default, NULL, Warning, path_in_a_range.start, range_size(&path_in_a_range), 0, 0) ||
 			!echo(0, Default, NULL, Warning, (const uint8_t*)"' not loaded.", 13, 1, 0))
 		{
-			buffer_release(&the_project);
+			buffer_release((void*)the_project);
 			shared_object_unload(listener_object);
-			buffer_release(&current_directory);
+			buffer_release((void*)current_directory);
 			/**/
 			file_flush(file_stream);
 			file_close(file_stream);
@@ -316,11 +330,11 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (!buffer_resize(&the_project, 0))
+	if (!buffer_resize((void*)the_project, 0))
 	{
-		buffer_release(&the_project);
+		buffer_release((void*)the_project);
 		shared_object_unload(listener_object);
-		buffer_release(&current_directory);
+		buffer_release((void*)current_directory);
 		/**/
 		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to resize buffer before create project.", 46, 1, 0);
 		/**/
@@ -331,11 +345,11 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	if (!project_new(&the_project))
+	if (!project_new((void*)the_project))
 	{
-		project_unload(&the_project);
+		project_unload((void*)the_project);
 		shared_object_unload(listener_object);
-		buffer_release(&current_directory);
+		buffer_release((void*)current_directory);
 		/**/
 		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to create the project.", 29, 1, 0);
 		/**/
@@ -354,7 +368,7 @@ int main(int argc, char** argv)
 
 	while (NULL != (build_file = argument_parser_get_build_file(argc++)))
 	{
-		if (!project_help && !property_add_at_project(&the_project, properties, verbose))
+		if (!project_help && !property_add_at_project((void*)the_project, properties, verbose))
 		{
 			argc = 0;
 			echo(0, Default, NULL, Error, (const uint8_t*)"Failed to set properties at the project.", 40, 1, 0);
@@ -365,7 +379,7 @@ int main(int argc, char** argv)
 		path_in_a_range.finish = build_file + common_count_bytes_until(build_file, 0);
 
 		if (!project_load_and_evaluate_target(
-				&the_project, &path_in_a_range, &current_directory_in_a_range,
+				(void*)the_project, &path_in_a_range, &current_directory_in_a_range,
 				project_help, encoding, verbose))
 		{
 			argc = 0;
@@ -373,17 +387,17 @@ int main(int argc, char** argv)
 			break;
 		}
 
-		project_clear(&the_project);
+		project_clear((void*)the_project);
 	}
 
-	project_unload(&the_project);
+	project_unload((void*)the_project);
 	shared_object_unload(listener_object);
 	/**/
 	time_now = datetime_now() - time_now;
 
-	if (!print_elapsed_time(time_now, &current_directory))
+	if (!print_elapsed_time(time_now, (void*)current_directory))
 	{
-		buffer_release(&current_directory);
+		buffer_release((void*)current_directory);
 		echo(0, Default, NULL, Error, (const uint8_t*)"Failed to print elapsed time.", 29, 1, 0);
 		/**/
 		file_flush(file_stream);
@@ -393,7 +407,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	buffer_release(&current_directory);
+	buffer_release((void*)current_directory);
 	argc = 0 < argc;
 
 	if (!argument_parser_get_no_logo())

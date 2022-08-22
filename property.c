@@ -30,7 +30,7 @@ struct property
 
 uint8_t buffer_append_property(void* properties, const struct property* data, ptrdiff_t data_count)
 {
-	return buffer_append(properties, (const uint8_t*)data, sizeof(struct property) * data_count);
+	return buffer_append(properties, (const void*)data, sizeof(struct property) * data_count);
 }
 
 struct property* buffer_property_data(const void* properties, ptrdiff_t data_position)
@@ -407,7 +407,7 @@ uint8_t property_set_from_stream(
 	prop->read_only = 0 < read_only;
 	return 1;
 }
-#if 0
+
 uint8_t property_add_at_project(
 	void* the_project, const void* properties, uint8_t verbose)
 {
@@ -435,7 +435,7 @@ uint8_t property_add_at_project(
 
 	return 1;
 }
-#endif
+
 void property_release_inner(void* properties)
 {
 	if (NULL == properties)

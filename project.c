@@ -215,7 +215,7 @@ uint8_t project_add_module(
 	void* modules = buffer_buffer_data(the_project, MODULES_POSITION);
 	return buffer_append(modules, (const uint8_t*)the_module, length);
 }
-#if 0
+
 const uint8_t* project_get_task_from_module(
 	const void* the_project, const struct range* task_name,
 	void** the_module_of_task, ptrdiff_t* task_id)
@@ -242,31 +242,7 @@ const uint8_t* project_get_function_from_module(
 	const void* modules = buffer_buffer_data(the_project, MODULES_POSITION);
 	return load_tasks_get_function(modules, name_space, function_name, the_module_of_task, name_space_at_module);
 }
-#else
-const uint8_t* project_get_task_from_module(
-	const void* the_project, const struct range* task_name,
-	void** the_module_of_task, ptrdiff_t* task_id)
-{
-	(void)the_project;
-	(void)task_name;
-	(void)the_module_of_task;
-	(void)task_id;
-	return 0;
-}
 
-const uint8_t* project_get_function_from_module(
-	const void* the_project,
-	const struct range* name_space, const struct range* function_name,
-	void** the_module_of_task, const uint8_t** name_space_at_module)
-{
-	(void)the_project;
-	(void)name_space;
-	(void)function_name;
-	(void)the_module_of_task;
-	(void)name_space_at_module;
-	return 0;
-}
-#endif
 uint8_t project_get_base_directory(
 	const void* the_project, const void** the_property, uint8_t verbose)
 {
@@ -663,9 +639,7 @@ void project_clear(void* the_project)
 	buffer_resize(properties, 0);
 	target_release_inner(targets);
 	buffer_resize(targets, 0);
-#if 0
 	load_tasks_unload(modules);
-#endif
 	buffer_resize(modules, 0);
 }
 
@@ -690,9 +664,7 @@ void project_unload(void* the_project)
 
 	property_release(properties);
 	target_release(targets);
-#if 0
 	load_tasks_unload(modules);
-#endif
 	buffer_release(modules);
 	buffer_release(the_project);
 }
@@ -1564,8 +1536,6 @@ uint8_t program_evaluate_task(
 		}
 	}
 
-#if 0
-
 	if (inherit_modules)
 	{
 		const void* current_project_modules =
@@ -1581,8 +1551,8 @@ uint8_t program_evaluate_task(
 		}
 	}
 
-#endif
 	struct range build_file;
+
 	BUFFER_TO_RANGE(build_file, build_file_in_a_buffer);
 
 	if (!project_get_current_directory(

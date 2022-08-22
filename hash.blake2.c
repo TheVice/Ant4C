@@ -235,7 +235,7 @@ uint8_t BLAKE2b(const uint8_t* start, const uint8_t* finish,
 
 uint8_t hash_algorithm_blake2b(
 	const uint8_t* start, const uint8_t* finish,
-	uint16_t hash_length, struct buffer* output)
+	uint16_t hash_length, void* output)
 {
 	uint64_t out[16];
 

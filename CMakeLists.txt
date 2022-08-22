@@ -41,12 +41,12 @@ set(
   "${CMAKE_SOURCE_DIR}/fail_task.c"
   "${CMAKE_SOURCE_DIR}/file_system.c"
   "${CMAKE_SOURCE_DIR}/for_each.c"
-  # "${CMAKE_SOURCE_DIR}/hash.blake2.c"
-  # "${CMAKE_SOURCE_DIR}/hash.blake3.c"
-  # "${CMAKE_SOURCE_DIR}/hash.c"
-  # "${CMAKE_SOURCE_DIR}/hash.crc32.c"
-  # "${CMAKE_SOURCE_DIR}/hash.sha3.c"
-  # "${CMAKE_SOURCE_DIR}/hash.xxhash.c"
+  "${CMAKE_SOURCE_DIR}/hash.blake2.c"
+  "${CMAKE_SOURCE_DIR}/hash.blake3.c"
+  "${CMAKE_SOURCE_DIR}/hash.c"
+  "${CMAKE_SOURCE_DIR}/hash.crc32.c"
+  "${CMAKE_SOURCE_DIR}/hash.sha3.c"
+  "${CMAKE_SOURCE_DIR}/hash.xxhash.c"
   "${CMAKE_SOURCE_DIR}/if_task.c"
   "${CMAKE_SOURCE_DIR}/interpreter.c"
   "${CMAKE_SOURCE_DIR}/interpreter.conversion.c"
@@ -55,7 +55,7 @@ set(
   "${CMAKE_SOURCE_DIR}/interpreter.environment.c"
   "${CMAKE_SOURCE_DIR}/interpreter.exec.c"
   "${CMAKE_SOURCE_DIR}/interpreter.file_system.c"
-  # "${CMAKE_SOURCE_DIR}/interpreter.hash.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.hash.c"
   "${CMAKE_SOURCE_DIR}/interpreter.load_file.c"
   "${CMAKE_SOURCE_DIR}/interpreter.math_unit.c"
   "${CMAKE_SOURCE_DIR}/interpreter.operating_system.c"
@@ -67,7 +67,7 @@ set(
   "${CMAKE_SOURCE_DIR}/interpreter.version.c"
   "${CMAKE_SOURCE_DIR}/listener.c"
   "${CMAKE_SOURCE_DIR}/load_file.c"
-  # "${CMAKE_SOURCE_DIR}/load_tasks.c"
+  "${CMAKE_SOURCE_DIR}/load_tasks.c"
   "${CMAKE_SOURCE_DIR}/math_unit.c"
   "${CMAKE_SOURCE_DIR}/operating_system.c"
   "${CMAKE_SOURCE_DIR}/path.c"
@@ -99,7 +99,7 @@ set(ANT4C_HEADERS
   "${CMAKE_SOURCE_DIR}/fail_task.h"
   "${CMAKE_SOURCE_DIR}/file_system.h"
   "${CMAKE_SOURCE_DIR}/for_each.h"
-  # "${CMAKE_SOURCE_DIR}/hash.h"
+  "${CMAKE_SOURCE_DIR}/hash.h"
   "${CMAKE_SOURCE_DIR}/if_task.h"
   "${CMAKE_SOURCE_DIR}/interpreter.h"
   "${CMAKE_SOURCE_DIR}/interpreter.exec.h"
@@ -109,7 +109,7 @@ set(ANT4C_HEADERS
   "${CMAKE_SOURCE_DIR}/interpreter.string_unit.h"
   "${CMAKE_SOURCE_DIR}/listener.h"
   "${CMAKE_SOURCE_DIR}/load_file.h"
-  # "${CMAKE_SOURCE_DIR}/load_tasks.h"
+  "${CMAKE_SOURCE_DIR}/load_tasks.h"
   "${CMAKE_SOURCE_DIR}/math_unit.h"
   "${CMAKE_SOURCE_DIR}/operating_system.h"
   "${CMAKE_SOURCE_DIR}/path.h"
@@ -191,8 +191,8 @@ if(DEFINED PROGRAM_VERSION)
 endif()
 
 add_library(Ant4C::ant4c_shared ALIAS ant4c_shared)
+endif()
 
-#endif()
 # ant4c_app
 
 add_executable(
@@ -279,11 +279,10 @@ if(DEFINED PROGRAM_VERSION)
     FILES ${version_file} ${config_file}
     DESTINATION ${cmake_files_install_dir})
 endif()
-
 # Example module
 
 include("${CMAKE_SOURCE_DIR}/modules/example.cmake")
-endif()
+
 # Tests
 
 include("${CMAKE_SOURCE_DIR}/tests.cmake")

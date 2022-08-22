@@ -161,7 +161,7 @@ TEST_F(TestProject, project_property_set_value)
 		--node_count;
 	}
 }
-#if 0
+
 TEST_F(TestProject, project_load_from_content)
 {
 	std::string output_buffer(buffer_size_of(), 0);
@@ -809,7 +809,7 @@ TEST(TestProject_, project_get_build_files_from_directory)
 	ASSERT_TRUE(directory_delete(reinterpret_cast<const uint8_t*>(expected_current_directory.c_str()))) <<
 			expected_current_directory;
 }
-#endif
+
 class TestProgram : public TestsBaseXml
 {
 };

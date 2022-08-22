@@ -320,7 +320,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 
 			if (file_system_get_id_of_file_entry() == entry_type)
 			{
-				finish = buffer_wchar_t_data(pattern, new_index);
+				finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
 				if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
 					!buffer_append_wchar_t(pattern, finish, delta))
@@ -334,7 +334,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		}
 		else if (file_system_get_id_of_directory_entry() == entry_type)
 		{
-			finish = buffer_wchar_t_data(pattern, new_index);
+			finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
 			if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
 				!buffer_append_wchar_t(pattern, finish, delta))
@@ -346,7 +346,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			continue;
 		}
 
-		finish = buffer_wchar_t_data(pattern, new_index);
+		finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
 		if (UTF8 == output_encoding)
 		{
