@@ -84,6 +84,10 @@ if(MSVC)
 
   add_dependencies(tests_ant4c.net.framework.module
     Ant4C::ant4c.net.framework.module)
+
+  add_test(
+    NAME tests_ant4c.net.framework.module
+    COMMAND "$<TARGET_FILE:tests_ant4c.net.framework.module>")
   endif()
 else()
   message(FATAL_ERROR "This module can be build only by MSVC compiler.")

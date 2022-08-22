@@ -1,24 +1,24 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
 #include "runtime_info.h"
-#include "buffer.h"
-#include "text_encoding.h"
 
-#include <wchar.h>
-#include <stddef.h>
-#include <string.h>
+#include "buffer.h"
+#include "common.h"
+#include "text_encoding.h"
 
 #include <metahost.h>
 
-uint8_t runtime_info_get_version_string(void* info, struct buffer* output)
+#include <wchar.h>
+#include <stddef.h>
+
+uint8_t runtime_info_get_version_string(void* info, void* output)
 {
-	if (!info ||
-		!output)
+	if (!info || !output)
 	{
 		return 0;
 	}
@@ -33,12 +33,12 @@ uint8_t runtime_info_get_version_string(void* info, struct buffer* output)
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, (ptrdiff_t)4 * required_size + sizeof(uint32_t)))
+	if (!buffer_append(output, NULL, sizeof(uint32_t) * required_size + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	uint16_t* start = (uint16_t*)buffer_data(output, size + required_size);
+	wchar_t* start = (wchar_t*)buffer_data(output, size + required_size);
 	result = ((struct ICLRRuntimeInfo*)info)->lpVtbl->GetVersionString(info, start, &required_size);
 
 	if (FAILED(result))
@@ -46,10 +46,10 @@ uint8_t runtime_info_get_version_string(void* info, struct buffer* output)
 		return 0;
 	}
 
-	const uint16_t* finish = start + required_size;
+	const wchar_t* finish = start + required_size;
 
 	if (!buffer_resize(output, size) ||
-		!text_encoding_UTF16LE_to_UTF8(start, finish, output))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, output))
 	{
 		return 0;
 	}
@@ -57,10 +57,9 @@ uint8_t runtime_info_get_version_string(void* info, struct buffer* output)
 	return 1;
 }
 
-uint8_t runtime_info_get_runtime_directory(void* info, struct buffer* output)
+uint8_t runtime_info_get_runtime_directory(void* info, void* output)
 {
-	if (!info ||
-		!output)
+	if (!info || !output)
 	{
 		return 0;
 	}
@@ -75,12 +74,12 @@ uint8_t runtime_info_get_runtime_directory(void* info, struct buffer* output)
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, (ptrdiff_t)4 * required_size + sizeof(uint32_t)))
+	if (!buffer_append(output, NULL, sizeof(uint32_t) * required_size + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	uint16_t* start = (uint16_t*)buffer_data(output, size + required_size);
+	wchar_t* start = (wchar_t*)buffer_data(output, size + required_size);
 	result = ((struct ICLRRuntimeInfo*)info)->lpVtbl->GetRuntimeDirectory(info, start, &required_size);
 
 	if (FAILED(result))
@@ -88,10 +87,10 @@ uint8_t runtime_info_get_runtime_directory(void* info, struct buffer* output)
 		return 0;
 	}
 
-	const uint16_t* finish = start + required_size;
+	const wchar_t* finish = start + required_size;
 
 	if (!buffer_resize(output, size) ||
-		!text_encoding_UTF16LE_to_UTF8(start, finish, output))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, output))
 	{
 		return 0;
 	}
@@ -116,8 +115,7 @@ uint8_t runtime_info_is_loaded(void* info, void* process, uint8_t* loaded)
 }
 
 uint8_t runtime_info_load_error_string(
-	void* info, uint32_t resource_id,
-	long locale_id, struct buffer* output)
+	void* info, uint32_t resource_id, long locale_id, void* output)
 {
 	if (!info ||
 		!output)
@@ -136,12 +134,12 @@ uint8_t runtime_info_load_error_string(
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, (ptrdiff_t)4 * required_size + sizeof(uint32_t)))
+	if (!buffer_append(output, NULL, sizeof(uint32_t) * required_size + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	uint16_t* start = (uint16_t*)buffer_data(output, size + required_size);
+	wchar_t* start = (wchar_t*)buffer_data(output, size + required_size);
 	result = ((struct ICLRRuntimeInfo*)info)->lpVtbl->LoadErrorString(
 				 info, resource_id, start, &required_size, locale_id);
 
@@ -150,10 +148,10 @@ uint8_t runtime_info_load_error_string(
 		return 0;
 	}
 
-	const uint16_t* finish = start + required_size;
+	const wchar_t* finish = start + required_size;
 
 	if (!buffer_resize(output, size) ||
-		!text_encoding_UTF16LE_to_UTF8(start, finish, output))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, output))
 	{
 		return 0;
 	}
@@ -299,36 +297,40 @@ uint8_t runtime_info_set_default_startup_flags_wchar_t(
 	return SUCCEEDED(result);
 }
 
-uint8_t runtime_info_set_default_startup_flags(void* info, unsigned long startup_flags,
-		const uint8_t* host_config_file)
+uint8_t runtime_info_set_default_startup_flags(
+	void* info, unsigned long startup_flags, const uint8_t* host_config_file)
 {
-	if (!info ||
-		!host_config_file)
+	if (!info || !host_config_file)
 	{
 		return 0;
 	}
 
-	struct buffer host_config_file_W;
+	uint8_t host_config_file_W_buffer[BUFFER_SIZE_OF];
+	void* host_config_file_W = (void*)host_config_file_W_buffer;
 
-	SET_NULL_TO_BUFFER(host_config_file_W);
-
-	if (!text_encoding_UTF8_to_UTF16LE(host_config_file, host_config_file + strlen((const char*)host_config_file),
-									   &host_config_file_W) ||
-		!buffer_push_back_uint16(&host_config_file_W, 0))
+	if (!buffer_init(host_config_file_W, BUFFER_SIZE_OF))
 	{
-		buffer_release(&host_config_file_W);
+		return 0;
+	}
+
+	if (!text_encoding_UTF8_to_UTF16LE(host_config_file,
+									   host_config_file + common_count_bytes_until(host_config_file, 0),
+									   host_config_file_W) ||
+		!buffer_push_back_uint16_t(host_config_file_W, 0))
+	{
+		buffer_release(host_config_file_W);
 		return 0;
 	}
 
 	const HRESULT result = runtime_info_set_default_startup_flags_wchar_t(
 							   info, startup_flags,
-							   buffer_wchar_t_data(&host_config_file_W, 0));
-	buffer_release(&host_config_file_W);
+							   buffer_wchar_t_data(host_config_file_W, 0));
+	buffer_release(host_config_file_W);
 	/**/
 	return SUCCEEDED(result);
 }
 
-uint8_t runtime_info_get_default_startup_flags(void* info, struct buffer* output)
+uint8_t runtime_info_get_default_startup_flags(void* info, void* output)
 {
 	if (!info ||
 		!output)
@@ -348,12 +350,12 @@ uint8_t runtime_info_get_default_startup_flags(void* info, struct buffer* output
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, (ptrdiff_t)4 * required_size + sizeof(uint32_t)))
+	if (!buffer_append(output, NULL, sizeof(uint32_t) * required_size + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	uint16_t* start = (uint16_t*)buffer_data(output, size + required_size);
+	wchar_t* start = (wchar_t*)buffer_data(output, size + required_size);
 	result = ((struct ICLRRuntimeInfo*)info)->lpVtbl->GetDefaultStartupFlags(
 				 info, &startup_flags, start, &required_size);
 
@@ -362,10 +364,10 @@ uint8_t runtime_info_get_default_startup_flags(void* info, struct buffer* output
 		return 0;
 	}
 
-	const uint16_t* finish = start + required_size;
+	const wchar_t* finish = start + required_size;
 
 	if (!buffer_resize(output, size) ||
-		!text_encoding_UTF16LE_to_UTF8(start, finish, output))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, output))
 	{
 		return 0;
 	}

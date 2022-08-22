@@ -6,7 +6,7 @@
  */
 
 #include "tests_base_xml.h"
-#include "tests_argument_parser.h"
+#include "gtest_argument_parser.h"
 
 extern "C" {
 #include "buffer.h"
@@ -39,10 +39,11 @@ protected:
 	bool is_project_created;
 	std::list<std::string> paths;
 	std::string path_to_module;
-	buffer the_project;
+	uint8_t the_project_buffer[BUFFER_SIZE_OF];
+	void* the_project;
 
 protected:
-	static bool init_current_directory(buffer* tmp)
+	static bool init_current_directory(void* tmp)
 	{
 		if (current_directory.empty())
 		{
@@ -106,23 +107,24 @@ protected:
 		is_project_created(false),
 		paths(),
 		path_to_module(),
-		the_project()
+		the_project_buffer(),
+		the_project((void*)the_project_buffer)
 	{
-		SET_NULL_TO_BUFFER(the_project);
 	}
 
 	virtual void SetUp()
 	{
 		if (!is_project_created)
 		{
-			ASSERT_TRUE(init_current_directory(&the_project)) << buffer_free(&the_project);
-			ASSERT_TRUE(buffer_resize(&the_project, 0)) << buffer_free(&the_project);
-			ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
+			ASSERT_TRUE(buffer_init(the_project, BUFFER_SIZE_OF)) << buffer_free(the_project);
+			ASSERT_TRUE(init_current_directory(the_project)) << buffer_free(the_project);
+			ASSERT_TRUE(buffer_resize(the_project, 0)) << buffer_free(the_project);
+			ASSERT_TRUE(project_new(the_project)) << project_free(the_project);
 			is_project_created = true;
 		}
 		else
 		{
-			project_clear(&the_project);
+			project_clear(the_project);
 		}
 
 		size_t current_directory_size;
@@ -131,16 +133,16 @@ protected:
 		ASSERT_GT(path_to_module.size(), current_directory_size)
 				<< path_to_module << std::endl
 				<< current_directory << std::endl
-				<< project_free(&the_project);
+				<< project_free(the_project);
 		//
 		pugi::xml_document load_tasks;
 		auto node = load_tasks.append_child("loadtasks");
 		//
-		ASSERT_FALSE(node.empty()) << project_free(&the_project);
+		ASSERT_FALSE(node.empty()) << project_free(the_project);
 		//
 		auto attribute = node.append_attribute("module");
-		ASSERT_FALSE(attribute.empty()) << project_free(&the_project);
-		ASSERT_TRUE(attribute.set_value(path_to_module.c_str())) << project_free(&the_project);
+		ASSERT_FALSE(attribute.empty()) << project_free(the_project);
+		ASSERT_TRUE(attribute.set_value(path_to_module.c_str())) << project_free(the_project);
 		//
 		std::ostringstream string_stream;
 		load_tasks.print(string_stream);
@@ -149,19 +151,19 @@ protected:
 		//
 		ASSERT_TRUE(
 			project_load_from_content(
-				code_in_a_range.start, code_in_a_range.finish, &the_project, 0, 0))
-				<< project_free(&the_project);
+				code_in_a_range.start, code_in_a_range.finish, the_project, 0, 0))
+				<< project_free(the_project);
 	}
 
 	virtual ~TestModule()
 	{
 		if (is_project_created)
 		{
-			project_unload(&the_project);
+			project_unload(the_project);
 		}
 		else
 		{
-			buffer_release(&the_project);
+			buffer_release(the_project);
 		}
 	}
 };
@@ -203,7 +205,7 @@ TEST_F(TestNetModule, functions)
 			//
 			ASSERT_TRUE(
 				project_load_from_content(
-					code_in_a_range.start, code_in_a_range.finish, &the_project, 0, 0))
+					code_in_a_range.start, code_in_a_range.finish, the_project, 0, 0))
 					<< command;
 		}
 
@@ -239,14 +241,14 @@ protected:
 		if (!is_project_created)
 		{
 			common_set_module_priority(1);
-			ASSERT_TRUE(init_current_directory(&the_project)) << buffer_free(&the_project);
-			ASSERT_TRUE(buffer_resize(&the_project, 0)) << buffer_free(&the_project);
-			ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
+			ASSERT_TRUE(init_current_directory(the_project)) << buffer_free(the_project);
+			ASSERT_TRUE(buffer_resize(the_project, 0)) << buffer_free(the_project);
+			ASSERT_TRUE(project_new(the_project)) << project_free(the_project);
 			is_project_created = true;
 		}
 		else
 		{
-			project_clear(&the_project);
+			project_clear(the_project);
 		}
 
 		size_t current_directory_size;
@@ -255,14 +257,14 @@ protected:
 		ASSERT_GT(path_to_module.size(), current_directory_size)
 				<< path_to_module << std::endl
 				<< current_directory << std::endl
-				<< project_free(&the_project);
+				<< project_free(the_project);
 		//
-		ASSERT_TRUE(GlobalArgumentParser::get_properties(&the_project, 0))
+		ASSERT_TRUE(GTestArgumentParser::set_to_project_properties(the_project, 0))
 				<< path_to_module << std::endl
 				<< current_directory << std::endl
-				<< project_free(&the_project);
+				<< project_free(the_project);
 		//
-		load_nodes(&the_project);
+		load_nodes(the_project);
 	}
 };
 
@@ -284,10 +286,10 @@ TEST_F(TestNetModuleViaBuildFile, project_load_from_build_file)
 		const std::string target_name(node.node().select_node("target").node().child_value());
 		const auto target_name_in_range(string_to_range(target_name));
 		//
-		project_clear(&the_project);
+		project_clear(the_project);
 		//
 		ASSERT_TRUE(project_property_set_value(
-						&the_project,
+						the_project,
 						property_name,
 						property_name_length,
 						reinterpret_cast<const uint8_t*>(path_to_module.c_str()),
@@ -298,7 +300,7 @@ TEST_F(TestNetModuleViaBuildFile, project_load_from_build_file)
 				<< current_directory << std::endl
 				<< target_name << std::endl;
 		//
-		ASSERT_TRUE(GlobalArgumentParser::get_properties(&the_project, 0))
+		ASSERT_TRUE(GTestArgumentParser::set_to_project_properties(the_project, 0))
 				<< path_to_module << std::endl
 				<< path_to_build_file << std::endl
 				<< current_directory << std::endl
@@ -306,21 +308,21 @@ TEST_F(TestNetModuleViaBuildFile, project_load_from_build_file)
 		//
 		ASSERT_TRUE(project_load_from_build_file(
 						&path_to_build_file_in_range, &current_directory_in_range,
-						Default, &the_project, 0, 0))
+						Default, the_project, 0, 0))
 				<< path_to_module << std::endl
 				<< path_to_build_file << std::endl
 				<< current_directory << std::endl;
 
 		if (range_is_null_or_empty(&target_name_in_range))
 		{
-			ASSERT_TRUE(project_evaluate_default_target(&the_project, 0))
+			ASSERT_TRUE(project_evaluate_default_target(the_project, 0))
 					<< path_to_module << std::endl
 					<< path_to_build_file << std::endl
 					<< current_directory << std::endl;
 		}
 		else
 		{
-			ASSERT_TRUE(target_evaluate_by_name(&the_project,
+			ASSERT_TRUE(target_evaluate_by_name(the_project,
 												target_name_in_range.start,
 												target_name_in_range.finish, 0))
 					<< path_to_module << std::endl
@@ -353,10 +355,11 @@ protected:
 
 	range function;
 	std::string command;
-	buffer the_output;
+	uint8_t the_output_buffer[BUFFER_SIZE_OF];
+	void* the_output;
 	uint8_t verbose;
 
-	/*static void GetHostVersion(struct buffer* tmp)
+	/*static void GetHostVersion(void* tmp)
 	{
 		range function;
 		std::string command;
@@ -410,12 +413,13 @@ protected:
 
 	static void FillHostFxrFiles()
 	{
-		buffer path;
-		SET_NULL_TO_BUFFER(path);
+		std::string path_buffer(buffer_size_of(), 0);
+		auto path = reinterpret_cast<void*>(&path_buffer[0]);
+		ASSERT_TRUE(buffer_init(path, buffer_size_of()));
 		//
-		//GetHostVersion(&path);
+		//GetHostVersion(path);
 		//
-		ASSERT_TRUE(string_to_buffer(dotnet_root, &path)) << buffer_free(&path);
+		ASSERT_TRUE(string_to_buffer(dotnet_root, path)) << buffer_free(path);
 #if defined(_WIN32)
 		static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("\\host\\fxr\0");
 #else
@@ -423,17 +427,18 @@ protected:
 #endif
 		ASSERT_TRUE(
 			path_combine_in_place(
-				&path, buffer_size(&path), sub_path, sub_path + 10)) << buffer_free(&path);
+				path, buffer_size(path), sub_path, sub_path + 10)) << buffer_free(path);
 		//
-		buffer output;
-		SET_NULL_TO_BUFFER(output);
+		std::string output_buffer(buffer_size_of(), 0);
+		auto output = reinterpret_cast<void*>(&output_buffer[0]);
+		ASSERT_TRUE(buffer_init(output, buffer_size_of())) << buffer_free(path);
 		//
-		ASSERT_TRUE(directory_enumerate_file_system_entries(&path, 1, 1, &output, 0))
-				<< buffer_free(&path) << buffer_free(&output);
+		ASSERT_TRUE(directory_enumerate_file_system_entries(path, 1, 1, output, 0))
+				<< buffer_free(path) << buffer_free(output);
 		//
-		buffer_release(&path);
-		auto output_in_a_string = buffer_to_string(&output);
-		buffer_release(&output);
+		buffer_release(path);
+		auto output_in_a_string = buffer_to_string(output);
+		buffer_release(output);
 		//
 		auto position = output_in_a_string.cbegin();
 		auto prev_position = position;
@@ -523,10 +528,11 @@ protected:
 		TestModule(),
 		function(),
 		command(),
-		the_output(),
+		the_output_buffer(),
+		the_output((void*)the_output_buffer),
 		verbose(0)
 	{
-		SET_NULL_TO_BUFFER(the_output);
+		buffer_init(the_output, BUFFER_SIZE_OF);
 #if defined(_WIN32)
 		paths.push_back("ant4c.net.module.dll");
 		paths.push_back("libant4c.net.module.dll");
@@ -563,7 +569,7 @@ protected:
 
 	~TestNetModuleWithParameters()
 	{
-		buffer_release(&the_output);
+		buffer_release(the_output);
 	}
 };
 
@@ -585,10 +591,10 @@ const std::string TestNetModuleWithParameters::Exec("exec");
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 }*/
@@ -603,10 +609,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_functions)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -614,11 +620,11 @@ TEST_F(TestNetModuleWithParameters, hostfxr_functions)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
 	//
-	ASSERT_LT(0, buffer_size(&the_output));
+	ASSERT_LT(0, buffer_size(the_output));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -626,10 +632,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_functions)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 	//
-	ASSERT_LT(0, buffer_size(&the_output));
+	ASSERT_LT(0, buffer_size(the_output));
 	//
 	std::cout << "[       OK ]" << std::endl;
 }
@@ -644,10 +650,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -657,11 +663,11 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
 	//
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	std::cout << "[       OK ]" << std::endl;
 	//
 	command = "hostfxr::main(";
@@ -670,23 +676,23 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
 	//
 	command = "net::result-to-string('";
-	command += buffer_char_data(&the_output, 0);
+	command += buffer_char_data(the_output, 0);
 	command += "')";
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
-	ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"));
+	ASSERT_TRUE(starts_with_(buffer_char_data(the_output, 0), "[net]::Success"));
 	std::cout << "[       OK ]" << std::endl;
 }
 
@@ -700,11 +706,11 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose))
 			<< command << std::endl;
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -714,42 +720,42 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose))
 			<< command << std::endl;
 	//
 	std::cout << "[       OK ]" << std::endl;
 
-	if (True == buffer_to_string(&the_output))
+	if (True == buffer_to_string(the_output))
 	{
 		command = "hostfxr::resolve-sdk('', '')";
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose))
 				<< command << std::endl;
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
 #ifdef WIN32
-		ASSERT_TRUE(directory_exists(buffer_data(&the_output, 0)))
-				<< buffer_to_string(&the_output) << std::endl;
+		ASSERT_TRUE(directory_exists(buffer_uint8_t_data(the_output, 0)))
+				<< buffer_to_string(the_output) << std::endl;
 #else
 		command = "net::result-to-string('";
-		command += buffer_char_data(&the_output, 0);
+		command += buffer_char_data(the_output, 0);
 		command += "')";
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose))
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose))
 				<< command << std::endl;
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
 		std::cout << "[       OK ]" << std::endl;
 		//
-		ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"))
-				<< buffer_to_string(&the_output) << std::endl;
+		ASSERT_TRUE(starts_with_(buffer_char_data(the_output, 0), "[net]::Success"))
+				<< buffer_to_string(the_output) << std::endl;
 		std::cout << "[       OK ]" << std::endl;
 		//
 		std::cerr << "[Warning]: function do not return valid data." << std::endl;
@@ -773,10 +779,10 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk2)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -786,23 +792,23 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk2)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 	//
 	std::cout << "[       OK ]" << std::endl;
 
-	if (True == buffer_to_string(&the_output))
+	if (True == buffer_to_string(the_output))
 	{
 		command = "hostfxr::resolve-sdk2('', '', '1')";
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 		//
-		ASSERT_LT(2, buffer_size(&the_output));
+		ASSERT_LT(2, buffer_size(the_output));
 #ifdef WIN32
-		command = buffer_to_string(&the_output);
+		command = buffer_to_string(the_output);
 		auto prev_position = command.cbegin();
 		auto position = prev_position;
 
@@ -826,17 +832,17 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_resolve_sdk2)
 
 #else
 		command = "net::result-to-string('";
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
-		command += buffer_char_data(&the_output, 0);
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
+		command += buffer_char_data(the_output, 0);
 		command += "')";
 		function = string_to_range(command);
 		std::cerr << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
-		std::cerr << buffer_char_data(&the_output, 0) << std::endl;
+		std::cerr << buffer_char_data(the_output, 0) << std::endl;
 		std::cerr << "[       OK ]" << std::endl;
 		//
 		std::cerr << "[Warning]: function do not return valid data." << std::endl;
@@ -860,10 +866,10 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_available_sdks)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -873,22 +879,22 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_available_sdks)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 	//
 	std::cout << "[       OK ]" << std::endl;
 
-	if (True == buffer_to_string(&the_output))
+	if (True == buffer_to_string(the_output))
 	{
 		command = "hostfxr::get-available-sdks()";
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 		//
 #ifdef WIN32
-		command = buffer_to_string(&the_output);
+		command = buffer_to_string(the_output);
 		auto prev_position = command.cbegin();
 		auto position = prev_position;
 
@@ -907,7 +913,7 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_available_sdks)
 		}
 
 #else
-		ASSERT_EQ(0, buffer_size(&the_output));
+		ASSERT_EQ(0, buffer_size(the_output));
 		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
 		std::cout << "[       OK ]" << std::endl;
@@ -929,10 +935,10 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -942,30 +948,30 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 	//
 	std::cout << "[       OK ]" << std::endl;
 
-	if (True == buffer_to_string(&the_output))
+	if (True == buffer_to_string(the_output))
 	{
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(path_get_temp_file_name(&the_output));
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(path_get_temp_file_name(the_output));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 
-		if (file_exists(buffer_data(&the_output, 0)))
+		if (file_exists(buffer_uint8_t_data(the_output, 0)))
 		{
-			ASSERT_TRUE(file_delete(buffer_data(&the_output, 0)));
+			ASSERT_TRUE(file_delete(buffer_uint8_t_data(the_output, 0)));
 		}
 
-		ASSERT_TRUE(directory_create(buffer_data(&the_output, 0)));
+		ASSERT_TRUE(directory_create(buffer_uint8_t_data(the_output, 0)));
 		//
 		command = Exec;
 		command += " program=\"";
 		command += dotnet_executable;
 		command += "\" commandline=\"new console\"";
 		command += " workingdir=\"";
-		command += buffer_char_data(&the_output, 0);
+		command += buffer_char_data(the_output, 0);
 		command += "\"";
 		command += " />";
 		//
@@ -974,7 +980,7 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 		std::cout << "[ RUN      ]" << " <" << command << std::endl;
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
-						&the_project, nullptr,
+						the_project, nullptr,
 						&function, function.start + command.size(),
 						nullptr, 0, verbose));
 		//
@@ -984,10 +990,10 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 		command += dotnet_executable;
 		command += "\" commandline=\"build\"";
 		command += " workingdir=\"";
-		command += buffer_char_data(&the_output, 0);
+		command += buffer_char_data(the_output, 0);
 		command += "\"";
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, buffer_size(&the_output) - 1));
+		ASSERT_TRUE(buffer_resize(the_output, buffer_size(the_output) - 1));
 		//
 #if defined(_WIN32)
 		static const uint8_t* sub_path = reinterpret_cast<const uint8_t*>("\\1.txt");
@@ -996,13 +1002,13 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 #endif
 		ASSERT_TRUE(
 			path_combine_in_place(
-				&the_output, buffer_size(&the_output),
+				the_output, buffer_size(the_output),
 				sub_path, sub_path + 6));
 		//
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
 		command += " output=\"";
-		command += buffer_char_data(&the_output, 0);
+		command += buffer_char_data(the_output, 0);
 		command += "\"";
 		command += " />";
 		//
@@ -1011,12 +1017,12 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 		std::cout << "[ RUN      ]" << " <" << command << std::endl;
 		//
 		ASSERT_TRUE(interpreter_evaluate_task(
-						&the_project, nullptr,
+						the_project, nullptr,
 						&function, function.start + command.size(),
 						nullptr, 0, verbose));
 		//
 		std::cout << "[       OK ]" << std::endl;
-		std::ifstream file(buffer_char_data(&the_output, 0));
+		std::ifstream file(buffer_char_data(the_output, 0));
 		//
 		ASSERT_TRUE(file.is_open());
 		//
@@ -1035,21 +1041,21 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 		ASSERT_NE(std::string::npos, index);
 		command = command.substr(0, index);
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(string_to_buffer(command, &the_output));
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(string_to_buffer(command, the_output));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
 		command = "hostfxr::get-native-search-directories('exec', '";
-		command += buffer_char_data(&the_output, 0);
+		command += buffer_char_data(the_output, 0);
 		command += "')";
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
 #ifdef WIN32
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 		//
-		command = buffer_to_string(&the_output);
+		command = buffer_to_string(the_output);
 		auto prev_position = command.cbegin();
 		auto position = prev_position;
 
@@ -1075,7 +1081,7 @@ TEST_F(TestNetModuleWithParameters, DISABLED_hostfxr_get_native_search_directori
 		}
 
 #else
-		ASSERT_FALSE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_FALSE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 		std::cerr << "[Warning]: function do not return valid data." << std::endl;
 #endif
 		std::cout << "[       OK ]" << std::endl;
@@ -1098,10 +1104,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main_startupinfo)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -1111,12 +1117,12 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main_startupinfo)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 	//
 	std::cout << "[       OK ]" << std::endl;
 
-	if (True == buffer_to_string(&the_output))
+	if (True == buffer_to_string(the_output))
 	{
 		command = "hostfxr::main-startupinfo('";
 		command += dotnet_executable;
@@ -1133,23 +1139,23 @@ TEST_F(TestNetModuleWithParameters, hostfxr_main_startupinfo)
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
 		command = "net::result-to-string('";
-		command += buffer_char_data(&the_output, 0);
+		command += buffer_char_data(the_output, 0);
 		command += "')";
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-		ASSERT_TRUE(buffer_push_back(&the_output, 0));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+		ASSERT_TRUE(buffer_push_back(the_output, 0));
 		//
 		std::cout << "[       OK ]" << std::endl;
 		//
-		ASSERT_TRUE(starts_with_(buffer_char_data(&the_output, 0), "[net]::Success"));
+		ASSERT_TRUE(starts_with_(buffer_char_data(the_output, 0), "[net]::Success"));
 		std::cout << "[       OK ]" << std::endl;
 	}
 	else
@@ -1179,10 +1185,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_dotnet_environment_info)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
-	ASSERT_TRUE(buffer_push_back(&the_output, 0));
-	ASSERT_STREQ(True.c_str(), buffer_char_data(&the_output, 0));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
+	ASSERT_TRUE(buffer_push_back(the_output, 0));
+	ASSERT_STREQ(True.c_str(), buffer_char_data(the_output, 0));
 	//
 	std::cout << "[       OK ]" << std::endl;
 	//
@@ -1192,12 +1198,12 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_dotnet_environment_info)
 	function = string_to_range(command);
 	std::cout << "[ RUN      ]" << " " << command << std::endl;
 	//
-	ASSERT_TRUE(buffer_resize(&the_output, 0));
-	ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+	ASSERT_TRUE(buffer_resize(the_output, 0));
+	ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 	//
 	std::cout << "[       OK ]" << std::endl;
 
-	if (True == buffer_to_string(&the_output))
+	if (True == buffer_to_string(the_output))
 	{
 		command = "hostfxr::get-dotnet-environment-info('";
 		command += dotnet_root;
@@ -1205,10 +1211,10 @@ TEST_F(TestNetModuleWithParameters, hostfxr_get_dotnet_environment_info)
 		function = string_to_range(command);
 		std::cout << "[ RUN      ]" << " " << command << std::endl;
 		//
-		ASSERT_TRUE(buffer_resize(&the_output, 0));
-		ASSERT_TRUE(interpreter_evaluate_function(&the_project, nullptr, &function, &the_output, verbose));
+		ASSERT_TRUE(buffer_resize(the_output, 0));
+		ASSERT_TRUE(interpreter_evaluate_function(the_project, nullptr, &function, the_output, verbose));
 		//
-		ASSERT_LT(0, buffer_size(&the_output));
+		ASSERT_LT(0, buffer_size(the_output));
 		//
 		std::cout << "[       OK ]" << std::endl;
 	}

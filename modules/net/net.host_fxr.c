@@ -32,7 +32,7 @@ static const type_of_element* zero = (const type_of_element*)"\0";
 #endif
 
 static const uint8_t space = ' ';
-static struct buffer* g_buffer = NULL;
+static void* g_buffer = NULL;
 
 void host_fx_resolver_available_sdks(int32_t count, const type_of_element** directories)
 {
@@ -41,7 +41,7 @@ void host_fx_resolver_available_sdks(int32_t count, const type_of_element** dire
 #if defined(_WIN32)
 
 		if (!buffer_append_wchar_t(g_buffer, directories[i], wcslen(directories[i])) ||
-			!buffer_push_back_uint16(g_buffer, 0))
+			!buffer_push_back_uint16_t(g_buffer, 0))
 #else
 		if (!buffer_append(g_buffer, directories[i], common_count_bytes_until(directories[i], 0)) ||
 			!buffer_push_back(g_buffer, 0))
@@ -64,7 +64,7 @@ void host_fx_resolver_sdk2(int32_t key, const type_of_element* value)
 #if defined(_WIN32)
 
 	if (!text_encoding_UTF16LE_to_UTF8(value, value + wcslen(value), g_buffer) ||
-		!buffer_push_back_uint16(g_buffer, 0))
+		!buffer_push_back_uint16_t(g_buffer, 0))
 #else
 	if (!buffer_append(g_buffer, value, common_count_bytes_until(value, 0)) ||
 		!buffer_push_back(g_buffer, 0))
@@ -77,7 +77,7 @@ void host_fx_resolver_sdk2(int32_t key, const type_of_element* value)
 uint8_t host_fx_resolver_init(
 	const uint8_t* path_to_host_fxr,
 	uint16_t path_to_host_fxr_length,
-	struct buffer* tmp,
+	void* tmp,
 	void* ptr_to_host_fxr_object,
 	ptrdiff_t size)
 {
@@ -93,7 +93,7 @@ uint8_t host_fx_resolver_init(
 
 uint8_t hostfxr_close(
 	const void* ptr_to_host_fxr_object,
-	const uint8_t* context, uint16_t context_length, struct buffer* output)
+	const uint8_t* context, uint16_t context_length, void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!context ||
@@ -118,7 +118,7 @@ uint8_t hostfxr_close(
 uint8_t hostfxr_get_available_sdks(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t* executable_directory, uint16_t executable_directory_length,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!output)
@@ -135,22 +135,28 @@ uint8_t hostfxr_get_available_sdks(
 
 #endif
 	const type_of_element* exe_dir = NULL;
-	struct buffer exe_dir_;
-	SET_NULL_TO_BUFFER(exe_dir_);
+	/**/
+	uint8_t exe_dir_buffer[BUFFER_SIZE_OF];
+	void* exe_dir_ = (void*)exe_dir_buffer;
+
+	if (!buffer_init(exe_dir_, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
 	if (executable_directory)
 	{
-		if (!value_to_system_path(executable_directory, executable_directory_length, &exe_dir_))
+		if (!value_to_system_path(executable_directory, executable_directory_length, exe_dir_))
 		{
-			buffer_release(&exe_dir_);
+			buffer_release(exe_dir_);
 			return 0;
 		}
 
 #if defined(_WIN32)
 		++executable_directory_length;
-		exe_dir = (const type_of_element*)buffer_data(&exe_dir_, executable_directory_length);
+		exe_dir = (const type_of_element*)buffer_data(exe_dir_, executable_directory_length);
 #else
-		exe_dir = (const type_of_element*)buffer_data(&exe_dir_, 0);
+		exe_dir = (const type_of_element*)buffer_data(exe_dir_, 0);
 #endif
 	}
 
@@ -158,7 +164,7 @@ uint8_t hostfxr_get_available_sdks(
 	const int32_t result = host_fxr_get_available_sdks(
 							   ptr_to_host_fxr_object, exe_dir, host_fx_resolver_available_sdks);
 	g_buffer = NULL;
-	buffer_release(&exe_dir_);
+	buffer_release(exe_dir_);
 
 	if (IS_HOST_FAILED(result))
 	{
@@ -185,7 +191,7 @@ uint8_t hostfxr_get_available_sdks(
 		}
 
 		ptr_to_host_fxr_object = buffer_data(output, sizeof(uint32_t));
-		exe_dir = (const type_of_element*)(buffer_data(output, 0) + size);
+		exe_dir = (const type_of_element*)(buffer_uint8_t_data(output, 0) + size);
 
 		if (!buffer_resize(output, 0) ||
 			!text_encoding_UTF16LE_to_UTF8(ptr_to_host_fxr_object, exe_dir, output))
@@ -201,7 +207,7 @@ uint8_t hostfxr_get_available_sdks(
 uint8_t hostfxr_get_native_search_directories(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!output)
@@ -220,15 +226,19 @@ uint8_t hostfxr_get_native_search_directories(
 		return 0;
 	}
 
-	struct buffer arguments;
+	uint8_t arguments_buffer[BUFFER_SIZE_OF];
+	void* arguments = (void*)arguments_buffer;
 
-	SET_NULL_TO_BUFFER(arguments);
+	if (!buffer_init(arguments, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
 	const type_of_element** argv = NULL;
 
-	if (!values_to_arguments(values, values_lengths, values_count, &arguments, &argv))
+	if (!values_to_arguments(values, values_lengths, values_count, arguments, &argv))
 	{
-		buffer_release(&arguments);
+		buffer_release(arguments);
 		return 0;
 	}
 
@@ -247,7 +257,7 @@ uint8_t hostfxr_get_native_search_directories(
 			required_size < FILENAME_MAX ||
 			!buffer_resize(output, required_size * sizeof(type_of_element)))
 		{
-			buffer_release(&arguments);
+			buffer_release(arguments);
 			return 0;
 		}
 
@@ -257,12 +267,12 @@ uint8_t hostfxr_get_native_search_directories(
 
 		if (IS_HOST_FAILED(result))
 		{
-			buffer_release(&arguments);
+			buffer_release(arguments);
 			return 0;
 		}
 	}
 
-	buffer_release(&arguments);
+	buffer_release(arguments);
 #if defined(_WIN32)
 	wchar_t* start = (wchar_t*)buffer_data(output, sizeof(uint32_t));
 	result = (int32_t)wcslen(start);
@@ -279,7 +289,7 @@ uint8_t hostfxr_get_native_search_directories(
 	return buffer_resize(output, 0) &&
 		   text_encoding_UTF16LE_to_UTF8(start, out, output);
 #else
-	result = (int32_t)common_count_bytes_until(buffer_data(output, 0), 0);
+	result = (int32_t)common_count_bytes_until(buffer_uint8_t_data(output, 0), 0);
 	return buffer_resize(output, result);
 #endif
 }
@@ -287,7 +297,7 @@ uint8_t hostfxr_get_native_search_directories(
 uint8_t hostfxr_get_runtime_delegate(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -381,7 +391,7 @@ uint8_t hostfxr_get_runtime_delegate(
 uint8_t hostfxr_get_runtime_properties(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -500,12 +510,12 @@ uint8_t hostfxr_get_runtime_properties(
 	if (0 < size && size < buffer_size(output))
 	{
 		const ptrdiff_t new_size = buffer_size(output) - size;
-		const uint8_t* src = buffer_data(output, size);
-		uint8_t* dst = buffer_data(output, 0);
+		const uint8_t* src = buffer_uint8_t_data(output, size);
+		uint8_t* dst = buffer_uint8_t_data(output, 0);
 		/**/
 		MEM_CPY(dst, src, new_size);
 		/**/
-		dst = buffer_data(output, new_size);
+		dst = buffer_uint8_t_data(output, new_size);
 		memset(dst, 0, size);
 		/**/
 		return buffer_resize(output, new_size);
@@ -517,7 +527,7 @@ uint8_t hostfxr_get_runtime_properties(
 uint8_t hostfxr_get_runtime_property_value(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -539,7 +549,7 @@ uint8_t hostfxr_get_runtime_property_value(
 #if defined(_WIN32)
 
 	if (!text_encoding_UTF8_to_UTF16LE(values[1], values[1] + values_lengths[1], output) ||
-		!buffer_push_back_uint16(output, 0))
+		!buffer_push_back_uint16_t(output, 0))
 	{
 		return 0;
 	}
@@ -592,7 +602,7 @@ uint8_t hostfxr_get_runtime_property_value(
 uint8_t hostfxr_initialize_for_dotnet_command_line(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -660,7 +670,7 @@ uint8_t hostfxr_initialize_for_dotnet_command_line(
 uint8_t hostfxr_initialize_for_runtime_config(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -717,7 +727,7 @@ uint8_t hostfxr_initialize_for_runtime_config(
 uint8_t hostfxr_main_bundle_startupinfo(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -765,7 +775,7 @@ uint8_t hostfxr_main_bundle_startupinfo(
 uint8_t hostfxr_main_startupinfo(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -811,7 +821,7 @@ uint8_t hostfxr_main_startupinfo(
 uint8_t hostfxr_resolve_sdk(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -833,15 +843,19 @@ uint8_t hostfxr_resolve_sdk(
 		return 0;
 	}
 
-	struct buffer arguments;
+	uint8_t arguments_buffer[BUFFER_SIZE_OF];
+	void* arguments = (void*)arguments_buffer;
 
-	SET_NULL_TO_BUFFER(arguments);
+	if (!buffer_init(arguments, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
 	const type_of_element** argv = NULL;
 
-	if (!values_to_arguments(values, values_lengths, values_count, &arguments, &argv))
+	if (!values_to_arguments(values, values_lengths, values_count, arguments, &argv))
 	{
-		buffer_release(&arguments);
+		buffer_release(arguments);
 		return 0;
 	}
 
@@ -866,7 +880,7 @@ uint8_t hostfxr_resolve_sdk(
 
 		if (!buffer_resize(output, size))
 		{
-			buffer_release(&arguments);
+			buffer_release(arguments);
 			return 0;
 		}
 
@@ -882,7 +896,7 @@ uint8_t hostfxr_resolve_sdk(
 					 result);
 	}
 
-	buffer_release(&arguments);
+	buffer_release(arguments);
 
 	if (0 < result)
 	{
@@ -925,7 +939,7 @@ uint8_t hostfxr_resolve_sdk(
 uint8_t hostfxr_resolve_sdk2(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -936,14 +950,20 @@ uint8_t hostfxr_resolve_sdk2(
 		return 0;
 	}
 
+	uint8_t arguments_buffer[BUFFER_SIZE_OF];
+	void* arguments = (void*)arguments_buffer;
+
+	if (!buffer_init(arguments, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
+
 	int32_t flags = int_parse(values[2], values[2] + values_lengths[2]);
-	struct buffer arguments;
-	SET_NULL_TO_BUFFER(arguments);
 	const type_of_element** argv = NULL;
 
-	if (!values_to_arguments(values, values_lengths, values_count - 1, &arguments, &argv))
+	if (!values_to_arguments(values, values_lengths, values_count - 1, arguments, &argv))
 	{
-		buffer_release(&arguments);
+		buffer_release(arguments);
 	}
 
 	g_buffer = output;
@@ -952,7 +972,7 @@ uint8_t hostfxr_resolve_sdk2(
 				argv[0], argv[1],
 				flags, host_fx_resolver_sdk2);
 	g_buffer = NULL;
-	buffer_release(&arguments);
+	buffer_release(arguments);
 
 	if (!buffer_size(output))
 	{
@@ -965,7 +985,7 @@ uint8_t hostfxr_resolve_sdk2(
 uint8_t hostfxr_main(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	const type_of_element** argv = NULL;
 
@@ -987,7 +1007,7 @@ uint8_t hostfxr_main(
 
 uint8_t hostfxr_run_app(
 	const void* ptr_to_host_fxr_object,
-	const uint8_t* context, uint16_t context_length, struct buffer* output)
+	const uint8_t* context, uint16_t context_length, void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!context ||
@@ -1012,7 +1032,7 @@ uint8_t hostfxr_run_app(
 uint8_t hostfxr_set_error_writer(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t* error_writer_file_name, uint16_t error_writer_file_name_length,
-	struct buffer* output)
+	void* output)
 {
 	const type_of_element* path = NULL;
 
@@ -1026,7 +1046,7 @@ uint8_t hostfxr_set_error_writer(
 #if defined(_WIN32)
 		path = (const type_of_element*)buffer_data(output, (ptrdiff_t)1 + error_writer_file_name_length);
 #else
-		path = buffer_data(output, 0);
+		path = buffer_uint8_t_data(output, 0);
 #endif
 	}
 
@@ -1056,7 +1076,7 @@ uint8_t hostfxr_set_error_writer(
 uint8_t hostfxr_set_runtime_property_value(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -1078,7 +1098,7 @@ uint8_t hostfxr_set_runtime_property_value(
 #if defined(_WIN32)
 
 	if (!text_encoding_UTF8_to_UTF16LE(values[1], values[1] + values_lengths[1], output) ||
-		!buffer_push_back_uint16(output, 0))
+		!buffer_push_back_uint16_t(output, 0))
 #else
 	if (!buffer_append(output, values[1], values_lengths[1]) ||
 		!buffer_push_back(output, 0))
@@ -1104,7 +1124,7 @@ uint8_t hostfxr_set_runtime_property_value(
 
 #if defined(_WIN32)
 
-	if (!buffer_push_back_uint16(output, 0))
+	if (!buffer_push_back_uint16_t(output, 0))
 #else
 	if (!buffer_push_back(output, 0))
 #endif
@@ -1135,7 +1155,7 @@ void calling_convention hostfxr_dotnet_environment_information_function(
 		return;
 	}
 
-	struct buffer* output = (struct buffer*)result_context;
+	void* output = result_context;
 
 	if (!buffer_resize(output, 0))
 	{
@@ -1292,7 +1312,7 @@ void calling_convention hostfxr_dotnet_environment_information_function(
 uint8_t hostfxr_get_dotnet_environment_information(
 	const void* ptr_to_host_fxr_object,
 	const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_fxr_object ||
 		!values ||
@@ -1311,7 +1331,7 @@ uint8_t hostfxr_get_dotnet_environment_information(
 #if defined(_WIN32)
 
 	if (!text_encoding_UTF8_to_UTF16LE(values[0], values[0] + values_lengths[0], output) ||
-		!buffer_push_back_uint16(output, 0))
+		!buffer_push_back_uint16_t(output, 0))
 #else
 	if (!buffer_append(output, values[0], values_lengths[0]) ||
 		!buffer_push_back(output, 0))

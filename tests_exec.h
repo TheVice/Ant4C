@@ -53,7 +53,7 @@ protected:
 	uint8_t verbose;
 
 protected:
-	static std::string get_path_to_directory_with_image(buffer* tmp, uint8_t* result);
+	static std::string get_path_to_directory_with_image(void* tmp, uint8_t* result);
 
 protected:
 	TestExec();

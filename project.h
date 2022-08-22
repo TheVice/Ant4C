@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 uint8_t project_property_exists(
@@ -27,13 +26,13 @@ uint8_t project_property_set_value(
 uint8_t project_property_get_by_name(
 	const void* the_project,
 	const uint8_t* property_name, uint8_t property_name_length,
-	struct buffer* output, uint8_t verbose);
+	void* output, uint8_t verbose);
 
 uint8_t project_target_new(
 	void* the_project,
 	const uint8_t* target_name_start, const uint8_t* target_name_finish,
 	const uint8_t* target_depends_start, const uint8_t* target_depends_finish,
-	struct buffer* description,
+	void* description,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
 	const struct range* sub_nodes_names, uint8_t verbose);
@@ -63,7 +62,7 @@ uint8_t project_get_base_directory(
 uint8_t project_get_buildfile_path(
 	const void* the_project, const void** the_property, uint8_t verbose);
 uint8_t project_get_buildfile_uri(
-	const void* the_property, struct buffer* build_file_uri, uint8_t verbose);
+	const void* the_property, void* build_file_uri, uint8_t verbose);
 uint8_t project_get_default_target(
 	const void* the_project, const void** the_property, uint8_t verbose);
 uint8_t project_get_name(
@@ -71,7 +70,7 @@ uint8_t project_get_name(
 
 uint8_t project_get_current_directory(
 	const void* the_project, const void* the_target,
-	struct buffer* output, ptrdiff_t size, uint8_t verbose);
+	void* output, ptrdiff_t size, uint8_t verbose);
 
 uint8_t project_new(void* the_project);
 uint8_t project_load_from_content(
@@ -95,15 +94,15 @@ ptrdiff_t project_get_source_offset(
 uint8_t project_evaluate_target_by_name_from_property(
 	void* the_project, const void* the_target,
 	const uint8_t* property_name, uint8_t property_name_length,
-	struct buffer* argument_value, uint8_t verbose);
+	void* argument_value, uint8_t verbose);
 uint8_t project_on_success(
-	void* the_project, const void* the_target, struct buffer* argument_value,
+	void* the_project, const void* the_target, void* argument_value,
 	uint8_t verbose);
 uint8_t project_on_failure(
-	void* the_project, const void* the_target, struct buffer* argument_value,
+	void* the_project, const void* the_target, void* argument_value,
 	uint8_t verbose);
 uint8_t project_get_build_files_from_directory(
-	struct buffer* directory, uint8_t verbose);
+	void* directory, uint8_t verbose);
 
 uint8_t project_set_listener_project_name(
 	const void* the_project, uint8_t verbose);
@@ -115,39 +114,39 @@ const uint8_t* project_get_listener_task_name(const void* the_project);
 
 uint8_t project_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
+	uint8_t* task_attributes_count, void* task_arguments);
 uint8_t project_evaluate_task(
 	void* the_project,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
 	const struct range* sub_nodes_names, uint8_t project_help,
-	const struct buffer* task_arguments, uint8_t verbose);
+	const void* task_arguments, uint8_t verbose);
 
 uint8_t project_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t project_exec_function(
 	const void* the_project,
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	const void** the_property, struct buffer* output, uint8_t verbose);
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	const void** the_property, void* output, uint8_t verbose);
 
 uint8_t program_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output);
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output);
 
 uint8_t program_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
+	uint8_t* task_attributes_count, void* task_arguments);
 uint8_t program_evaluate_task(
 	const void* the_project, const void* the_target,
-	struct buffer* task_arguments, const uint8_t* attributes_finish,
+	void* task_arguments, const uint8_t* attributes_finish,
 	const uint8_t* element_finish, uint8_t verbose);
 
 uint8_t program_set_log_file(
 	const struct range* path_to_log_file,
 	const struct range* current_directory,
-	struct buffer* tmp, void** file_stream);
+	void* tmp, void** file_stream);
 uint8_t program_set_listener(
 	const struct range* path_to_listener,
 	const struct range* current_directory,
-	struct buffer* tmp, void** listener_object);
+	void* tmp, void** listener_object);
 
 #endif

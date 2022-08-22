@@ -11,10 +11,6 @@ extern "C" {
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
-#include "echo.h"
-#include "file_system.h"
-#include "load_file.h"
-#include "path.h"
 #include "range.h"
 #include "string_unit.h"
 #include "text_encoding.h"
@@ -311,8 +307,9 @@ TEST_F(TestStringUnit, string_pad)
 {
 	static const std::string right("right");
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -341,44 +338,45 @@ TEST_F(TestStringUnit, string_pad)
 		const auto value_in_a_range(string_to_range(value));
 		uint8_t returned = 0;
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 
 		if (side)
 		{
 			returned = string_pad_right(
 						   input_in_a_range.start, input_in_a_range.finish,
 						   value_in_a_range.start, value_in_a_range.finish,
-						   result_length, &output);
+						   result_length, output);
 		}
 		else
 		{
 			returned = string_pad_left(
 						   input_in_a_range.start, input_in_a_range.finish,
 						   value_in_a_range.start, value_in_a_range.finish,
-						   result_length, &output);
+						   result_length, output);
 		}
 
 		ASSERT_EQ(expected_return, returned)
 				<< input << std::endl << value << std::endl
 				<< result_length << std::endl
 				<< "side -> " << static_cast<int>(side) << std::endl
-				<< buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output))
+				<< buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output))
 				<< input << std::endl << value << std::endl
 				<< result_length << std::endl
 				<< "side -> " << static_cast<int>(side) << std::endl
-				<< buffer_free(&output);
+				<< buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestStringUnit, string_quote)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -392,23 +390,24 @@ TEST_F(TestStringUnit, string_quote)
 				int_parse(input_in_a_range.start, input_in_a_range.finish));
 		//
 		input_in_a_range = string_to_range(input);
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
-		const auto returned = string_quote(input_in_a_range.start, input_in_a_range.finish, &output);
+		const auto returned = string_quote(input_in_a_range.start, input_in_a_range.finish, output);
 		//
-		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
+		ASSERT_EQ(expected_return, returned) << input << std::endl << buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output)) << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestStringUnit, string_replace)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -427,41 +426,20 @@ TEST_F(TestStringUnit, string_replace)
 		const auto to_be_replaced_in_a_range(string_to_range(to_be_replaced));
 		const auto by_replacement_in_a_range(string_to_range(by_replacement));
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
 		auto returned = string_replace(
 							input_in_a_range.start, input_in_a_range.finish,
 							to_be_replaced_in_a_range.start, to_be_replaced_in_a_range.finish,
-							by_replacement_in_a_range.start, by_replacement_in_a_range.finish, &output);
+							by_replacement_in_a_range.start, by_replacement_in_a_range.finish, output);
 		//
-		ASSERT_EQ(expected_return, returned) << buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) << buffer_free(&output);
-		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(path_get_temp_file_name(&output)) << buffer_free(&output);
-		//
-		const auto tmp_path(buffer_to_string(&output));
-		ASSERT_TRUE(buffer_push_back(&output, 0)) << buffer_free(&output);
-		//
-		returned = echo(0, Default, buffer_data(&output, 0), Info,
-						input_in_a_range.start, range_size(&input_in_a_range), 0, 0);
-		//
-		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(&output);
-		//
-		returned = file_replace(buffer_data(&output, 0),
-								to_be_replaced_in_a_range.start, to_be_replaced_in_a_range.finish,
-								by_replacement_in_a_range.start, by_replacement_in_a_range.finish);
-		//
-		ASSERT_EQ(expected_return, returned) << tmp_path << std::endl << buffer_free(&output);
-		//
-		returned = load_file_to_buffer(buffer_data(&output, 0), Default, &output, 0);
-		ASSERT_TRUE(returned) << tmp_path << std::endl << buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output)) << tmp_path << std::endl << buffer_free(&output);
+		ASSERT_EQ(expected_return, returned) << buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output)) << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestStringUnit, string_replace_double_char_with_single)
@@ -577,8 +555,9 @@ TEST_F(TestStringUnit, string_transform_to_case)
 {
 	static const std::string lower("lower");
 	//
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -597,40 +576,41 @@ TEST_F(TestStringUnit, string_transform_to_case)
 		input_in_a_range = string_to_range(input);
 		uint8_t returned = 0;
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 
 		if (required_case)
 		{
 			returned = string_to_lower(
-						   input_in_a_range.start, input_in_a_range.finish, &output);
+						   input_in_a_range.start, input_in_a_range.finish, output);
 		}
 		else
 		{
 			returned = string_to_upper(
-						   input_in_a_range.start, input_in_a_range.finish, &output);
+						   input_in_a_range.start, input_in_a_range.finish, output);
 		}
 
 		ASSERT_EQ(expected_return, returned)
 				<< input << std::endl
 				<< "letter case -> " << static_cast<int>(required_case) << std::endl
-				<< buffer_free(&output);
-		ASSERT_EQ(expected_output, buffer_to_string(&output))
+				<< buffer_free(output);
+		ASSERT_EQ(expected_output, buffer_to_string(output))
 				<< input << std::endl
 				<< "letter case -> " << static_cast<int>(required_case) << std::endl
-				<< buffer_free(&output);
+				<< buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestStringUnit, char_to_case)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 	//
-	ASSERT_TRUE(buffer_resize(&output, 16)) << buffer_free(&output);
+	ASSERT_TRUE(buffer_resize(output, 16)) << buffer_free(output);
 
 	for (const auto& node : nodes)
 	{
@@ -640,46 +620,46 @@ TEST_F(TestStringUnit, char_to_case)
 		const auto expected_upper = input_node.attribute("upper").as_uint();
 		const auto expected_lower = input_node.attribute("lower").as_uint();
 		//
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
-		ASSERT_TRUE(text_encoding_encode_UTF8(&input, &input + 1, &output)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		ASSERT_TRUE(text_encoding_encode_UTF8(&input, &input + 1, output)) << buffer_free(output);
 		//
-		const auto input_in_a_range(buffer_to_range(&output));
+		const auto input_in_a_range(buffer_to_range(output));
 		const auto size(range_size(&input_in_a_range));
 
 		for (uint8_t i = 0; i < 2; ++i)
 		{
-			ASSERT_TRUE(buffer_resize(&output, size)) << buffer_free(&output);
+			ASSERT_TRUE(buffer_resize(output, size)) << buffer_free(output);
 
 			if (i)
 			{
 				ASSERT_TRUE(string_to_upper(input_in_a_range.start, input_in_a_range.finish,
-											&output)) << buffer_free(&output);
+											output)) << buffer_free(output);
 			}
 			else
 			{
 				ASSERT_TRUE(string_to_lower(input_in_a_range.start, input_in_a_range.finish,
-											&output)) << buffer_free(&output);
+											output)) << buffer_free(output);
 			}
 
-			auto output_in_a_range(buffer_to_range(&output));
+			auto output_in_a_range(buffer_to_range(output));
 			output_in_a_range.start += size;
 			//
 			ASSERT_TRUE(text_encoding_decode_UTF8(
-							output_in_a_range.start, output_in_a_range.finish, &output)) << buffer_free(&output);
-			const auto output_size = buffer_size(&output) - size - range_size(&output_in_a_range);
-			ASSERT_EQ(static_cast<ptrdiff_t>(sizeof(uint32_t)), output_size) << buffer_free(&output);
+							output_in_a_range.start, output_in_a_range.finish, output)) << buffer_free(output);
+			const auto output_size = buffer_size(output) - size - range_size(&output_in_a_range);
+			ASSERT_EQ(static_cast<ptrdiff_t>(sizeof(uint32_t)), output_size) << buffer_free(output);
 			//
 			const auto returned_output = *(reinterpret_cast<const uint32_t*>(buffer_data(
-											   &output, size + range_size(&output_in_a_range))));
+											   output, size + range_size(&output_in_a_range))));
 			ASSERT_EQ(i ? expected_upper : expected_lower, returned_output)
 					<< (i ? "upper" : "lower") << std::endl
-					<< input << std::endl << buffer_free(&output);
+					<< input << std::endl << buffer_free(output);
 		}
 
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 
 TEST_F(TestStringUnit, string_trim)

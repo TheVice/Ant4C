@@ -60,18 +60,18 @@ static const wchar_t zeroW = L'\0';
 	(CLOSE_RESULT) = FindClose(file_handle);
 
 #define FIND_FILE_OBJECT_DATA_FROM_BUFFER(PATH)												\
-	struct buffer pathW;																	\
-	SET_NULL_TO_BUFFER(pathW);																\
-	\
-	if (!file_system_path_to_pathW((PATH), &pathW))											\
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];													\
+	void* pathW = (void*)pathW_buffer;														\
+	if (!buffer_init(pathW, BUFFER_SIZE_OF) ||												\
+		!file_system_path_to_pathW((PATH), pathW))											\
 	{																						\
-		buffer_release(&pathW);																\
+		buffer_release(pathW);																\
 		return 0;																			\
 	}																						\
 	\
 	WIN32_FIND_DATAW file_data;																\
-	const HANDLE file_handle = FindFirstFileW(buffer_wchar_t_data(&pathW, 0), &file_data);	\
-	buffer_release(&pathW);																	\
+	const HANDLE file_handle = FindFirstFileW(buffer_wchar_t_data(pathW, 0), &file_data);	\
+	buffer_release(pathW);																	\
 	\
 	if (INVALID_HANDLE_VALUE == file_handle)												\
 	{																						\
@@ -87,7 +87,7 @@ static const uint8_t* pre_root_path = (const uint8_t*)"\\\\?\\";
 static const wchar_t* pre_root_path_wchar_t = L"\\\\?\\";
 static const uint8_t pre_root_path_length = 4;
 
-uint8_t _buffer_append_pre(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size)
+uint8_t _buffer_append_pre(void* the_buffer, const uint8_t* data, ptrdiff_t size)
 {
 	if (NULL == the_buffer || size < 0)
 	{
@@ -113,22 +113,22 @@ uint8_t _buffer_append_pre(struct buffer* the_buffer, const uint8_t* data, ptrdi
 
 		if (i < size)
 		{
-			dst = buffer_data(the_buffer, size);
-			src = buffer_data(the_buffer, 0);
+			dst = buffer_uint8_t_data(the_buffer, size);
+			src = buffer_uint8_t_data(the_buffer, 0);
 			MEM_CPY(dst, src, i);
 			/**/
 			break;
 		}
 
-		dst = buffer_data(the_buffer, i);
+		dst = buffer_uint8_t_data(the_buffer, i);
 		i -= size;
-		src = buffer_data(the_buffer, i);
+		src = buffer_uint8_t_data(the_buffer, i);
 		MEM_CPY(dst, src, size);
 	}
 
 	if (NULL != data)
 	{
-		uint8_t* dst = buffer_data(the_buffer, 0);
+		uint8_t* dst = buffer_uint8_t_data(the_buffer, 0);
 #if __STDC_LIB_EXT1__
 
 		if (0 != memcpy_s(dst, size, data, size))
@@ -144,7 +144,7 @@ uint8_t _buffer_append_pre(struct buffer* the_buffer, const uint8_t* data, ptrdi
 	return 1;
 }
 
-uint8_t file_system_append_pre_root(struct buffer* path)
+uint8_t file_system_append_pre_root(void* path)
 {
 	const ptrdiff_t size = buffer_size(path);
 
@@ -153,7 +153,7 @@ uint8_t file_system_append_pre_root(struct buffer* path)
 		return 0;
 	}
 
-	const uint8_t* path_start = buffer_data(path, 0);
+	const uint8_t* path_start = buffer_uint8_t_data(path, 0);
 	const uint8_t* path_finish = path_start + buffer_size(path);
 	uint8_t is_path_rooted;
 
@@ -226,9 +226,9 @@ uint8_t directory_delete_wchar_t(const wchar_t* path)
 }
 
 uint8_t directory_enumerate_file_system_entries_wchar_t(
-	struct buffer* pattern,
+	void* pattern,
 	const uint8_t entry_type, const uint8_t recurse, uint8_t output_encoding,
-	struct buffer* output, uint8_t fail_on_error)
+	void* output, uint8_t fail_on_error)
 {
 	if (NULL == pattern ||
 		file_system_get_id_of_all_entries() < entry_type ||
@@ -291,7 +291,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		}
 
 		if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
-			!buffer_push_back_uint16(pattern, PATH_DELIMITER) ||
+			!buffer_push_back_uint16_t(pattern, PATH_DELIMITER) ||
 			!buffer_append_wchar_t(pattern, file_data.cFileName, name_length))
 		{
 			FindClose(file_handle);
@@ -320,7 +320,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 
 			if (file_system_get_id_of_file_entry() == entry_type)
 			{
-				finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+				finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
 				if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
 					!buffer_append_wchar_t(pattern, finish, delta))
@@ -334,7 +334,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		}
 		else if (file_system_get_id_of_directory_entry() == entry_type)
 		{
-			finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+			finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
 			if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
 				!buffer_append_wchar_t(pattern, finish, delta))
@@ -346,7 +346,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			continue;
 		}
 
-		finish = (const wchar_t*)(buffer_data(pattern, 0) + sizeof(wchar_t) * new_index);
+		finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
 
 		if (UTF8 == output_encoding)
 		{
@@ -362,8 +362,8 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		}
 		else
 		{
-			if (!buffer_append(output, buffer_data(pattern, 0), sizeof(wchar_t) * new_index) ||
-				!buffer_push_back_uint16(output, 0))
+			if (!buffer_append(output, buffer_data(pattern, 0), new_index * sizeof(wchar_t)) ||
+				!buffer_push_back_uint16_t(output, 0))
 			{
 				FindClose(file_handle);
 				return 0;
@@ -398,7 +398,7 @@ uint8_t directory_exists_wchar_t(const wchar_t* path)
 }
 
 uint8_t file_system_path_in_range_to_pathW(
-	const uint8_t* path_start, const uint8_t* path_finish, struct buffer* pathW)
+	const uint8_t* path_start, const uint8_t* path_finish, void* pathW)
 {
 	if (range_in_parts_is_null_or_empty(path_start, path_finish) ||
 		NULL == pathW)
@@ -420,10 +420,10 @@ uint8_t file_system_path_in_range_to_pathW(
 		return 0;
 	}
 
-	return text_encoding_UTF8_to_UTF16LE(path_start, path_finish, pathW) && buffer_push_back_uint16(pathW, 0);
+	return text_encoding_UTF8_to_UTF16LE(path_start, path_finish, pathW) && buffer_push_back_uint16_t(pathW, 0);
 }
 
-uint8_t file_system_path_to_pathW(const uint8_t* path, struct buffer* pathW)
+uint8_t file_system_path_to_pathW(const uint8_t* path, void* pathW)
 {
 	if (NULL == path ||
 		NULL == pathW)
@@ -461,11 +461,11 @@ uint8_t directory_delete_(const char* path)
 }
 
 uint8_t directory_enumerate_file_system_entries_(
-	struct buffer* path,
+	void* path,
 	const uint8_t* wild_card_start,
 	const uint8_t* wild_card_finish,
 	const uint8_t entry_type, const uint8_t recurse,
-	struct buffer* output, uint8_t fail_on_error)
+	void* output, uint8_t fail_on_error)
 {
 	if (NULL == path ||
 		range_in_parts_is_null_or_empty(wild_card_start, wild_card_finish) ||
@@ -546,7 +546,7 @@ uint8_t directory_enumerate_file_system_entries_(
 			continue;
 		}
 
-		const uint8_t* path_start = buffer_data(path, 0);
+		const uint8_t* path_start = buffer_uint8_t_data(path, 0);
 		const uint8_t* path_finish = path_start + buffer_size(path);
 
 		if (!path_glob(path_start, path_finish,
@@ -580,19 +580,24 @@ uint8_t directory_create(const uint8_t* path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	wchar_t* path_start = buffer_wchar_t_data(&pathW, 0);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	wchar_t* path_start = buffer_wchar_t_data(pathW, 0);
 	/**/
 	const wchar_t* start = path_start;
-	const wchar_t* finish = (const wchar_t*)(buffer_data(&pathW, 0) + buffer_size(&pathW));
+	const wchar_t* finish = (const wchar_t*)(buffer_uint8_t_data(pathW, 0) + buffer_size(pathW));
 	/**/
 	file_system_set_position_after_pre_root_wchar_t(&start);
 
@@ -612,7 +617,7 @@ uint8_t directory_create(const uint8_t* path)
 		{
 			if (!directory_create_wchar_t(path_start))
 			{
-				buffer_release(&pathW);
+				buffer_release(pathW);
 				return 0;
 			}
 		}
@@ -621,7 +626,7 @@ uint8_t directory_create(const uint8_t* path)
 	}
 
 	const uint8_t returned = directory_create_wchar_t(path_start);
-	buffer_release(&pathW);
+	buffer_release(pathW);
 	return returned;
 #else
 	static const mode_t mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
@@ -629,13 +634,18 @@ uint8_t directory_create(const uint8_t* path)
 	const uint8_t* start = path;
 	const uint8_t* finish = path + common_count_bytes_until(path, 0);
 	/**/
-	struct buffer current_directory;
-	SET_NULL_TO_BUFFER(current_directory);
+	uint8_t current_directory_buffer[BUFFER_SIZE_OF];
+	void* current_directory = (void*)current_directory_buffer;
 
-	if (!buffer_append(&current_directory, NULL, finish - start) ||
-		!buffer_resize(&current_directory, 0))
+	if (!buffer_init(current_directory, BUFFER_SIZE_OF))
 	{
-		buffer_release(&current_directory);
+		return 0;
+	}
+
+	if (!buffer_append(current_directory, NULL, finish - start) ||
+		!buffer_resize(current_directory, 0))
+	{
+		buffer_release(current_directory);
 		return 0;
 	}
 
@@ -651,27 +661,28 @@ uint8_t directory_create(const uint8_t* path)
 			continue;
 		}
 
-		if (!buffer_resize(&current_directory, 0) ||
-			!buffer_append(&current_directory, path, start - path) ||
-			!buffer_push_back(&current_directory, 0))
+		if (!buffer_resize(current_directory, 0) ||
+			!buffer_append(current_directory, path, start - path) ||
+			!buffer_push_back(current_directory, 0))
 		{
-			buffer_release(&current_directory);
+			buffer_release(current_directory);
 			return 0;
 		}
 
 		start = string_enumerate(start, finish, NULL);
+		const uint8_t* path_ = buffer_uint8_t_data(current_directory, 0);
 
-		if (!directory_exists(buffer_data(&current_directory, 0)))
+		if (!directory_exists(path_))
 		{
-			if (0 != mkdir((const char*)buffer_data(&current_directory, 0), mode))
+			if (0 != mkdir((const char*)path_, mode))
 			{
-				buffer_release(&current_directory);
+				buffer_release(current_directory);
 				return 0;
 			}
 		}
 	}
 
-	buffer_release(&current_directory);
+	buffer_release(current_directory);
 	return 0 == mkdir((const char*)path, mode);
 #endif
 }
@@ -683,66 +694,77 @@ uint8_t directory_delete(const uint8_t* path)
 		return 0;
 	}
 
-	struct buffer pathW;
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	SET_NULL_TO_BUFFER(pathW);
-
-#if defined(_WIN32)
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(&pathW);
+#if defined(_WIN32)
 
-	if (!buffer_resize(&pathW, size - sizeof(wchar_t)) ||
-		!buffer_append_wchar_t(&pathW, L"\\*\0", 3))
+	if (!file_system_path_to_pathW(path, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(pathW);
+
+	if (!buffer_resize(pathW, size - sizeof(wchar_t)) ||
+		!buffer_append_wchar_t(pathW, L"\\*\0", 3))
+	{
+		buffer_release(pathW);
 		return 0;
 	}
 
 #else
 
-	if (!buffer_append(&pathW, path, common_count_bytes_until(path, 0)) ||
-		!buffer_push_back(&pathW, 0))
+	if (!buffer_append(pathW, path, common_count_bytes_until(path, 0)) ||
+		!buffer_push_back(pathW, 0))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
 #endif
-	struct buffer entries;
-	SET_NULL_TO_BUFFER(entries);
+	uint8_t entries_buffer[BUFFER_SIZE_OF];
+	void* entries = (void*)entries_buffer;
+
+	if (!buffer_init(entries, BUFFER_SIZE_OF))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
 
 	for (uint8_t entry = file_system_get_id_of_file_entry(); ; entry = file_system_get_id_of_directory_entry())
 	{
-		if (!buffer_resize(&entries, 0))
+		if (!buffer_resize(entries, 0))
 		{
-			buffer_release(&entries);
-			buffer_release(&pathW);
+			buffer_release(entries);
+			buffer_release(pathW);
 			return 0;
 		}
 
 #if defined(_WIN32)
 
-		if (!directory_enumerate_file_system_entries_wchar_t(&pathW, entry, 1, UTF16LE, &entries, 1))
+		if (!directory_enumerate_file_system_entries_wchar_t(pathW, entry, 1, UTF16LE, entries, 1))
 #else
-		if (!directory_enumerate_file_system_entries(&pathW, entry, 1, &entries, 1))
+		if (!directory_enumerate_file_system_entries(pathW, entry, 1, entries, 1))
 #endif
 		{
-			buffer_release(&entries);
-			buffer_release(&pathW);
+			buffer_release(entries);
+			buffer_release(pathW);
 			return 0;
 		}
 
 #if defined(_WIN32)
-		const wchar_t* start = buffer_wchar_t_data(&entries, 0);
-		const wchar_t* finish = (const wchar_t*)(buffer_data(&entries, 0) + buffer_size(&entries));
+		const wchar_t* start = buffer_wchar_t_data(entries, 0);
+		const wchar_t* finish = (const wchar_t*)(buffer_uint8_t_data(entries, 0) + buffer_size(entries));
 #else
-		const uint8_t* start = buffer_data(&entries, 0);
-		const uint8_t* finish = start + buffer_size(&entries);
+		const uint8_t* start = buffer_uint8_t_data(entries, 0);
+		const uint8_t* finish = start + buffer_size(entries);
 #endif
 
 		if (file_system_get_id_of_file_entry() == entry)
@@ -756,8 +778,8 @@ uint8_t directory_delete(const uint8_t* path)
 				if (0 != remove((const char*)start))
 #endif
 				{
-					buffer_release(&entries);
-					buffer_release(&pathW);
+					buffer_release(entries);
+					buffer_release(pathW);
 					return 0;
 				}
 
@@ -785,8 +807,8 @@ uint8_t directory_delete(const uint8_t* path)
 				if (!directory_delete_((const char*)start))
 #endif
 				{
-					buffer_release(&entries);
-					buffer_release(&pathW);
+					buffer_release(entries);
+					buffer_release(pathW);
 					return 0;
 				}
 
@@ -807,32 +829,32 @@ uint8_t directory_delete(const uint8_t* path)
 		}
 	}
 
-	buffer_release(&entries);
+	buffer_release(entries);
 #if defined(_WIN32)
 
-	if (!buffer_resize(&pathW, size - sizeof(wchar_t)) ||
-		!buffer_push_back_uint16(&pathW, 0))
+	if (!buffer_resize(pathW, size - sizeof(wchar_t)) ||
+		!buffer_push_back_uint16_t(pathW, 0))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	if (!directory_delete_wchar_t(buffer_wchar_t_data(&pathW, 0)))
+	if (!directory_delete_wchar_t(buffer_wchar_t_data(pathW, 0)))
 #else
-	if (!directory_delete_(buffer_char_data(&pathW, 0)))
+	if (!directory_delete_(buffer_char_data(pathW, 0)))
 #endif
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	buffer_release(&pathW);
+	buffer_release(pathW);
 	return 1;
 }
 
 uint8_t directory_enumerate_file_system_entries(
-	struct buffer* path, const uint8_t entry_type, const uint8_t recurse,
-	struct buffer* output, uint8_t fail_on_error)
+	void* path, const uint8_t entry_type, const uint8_t recurse,
+	void* output, uint8_t fail_on_error)
 {
 	if (NULL == path ||
 		file_system_get_id_of_all_entries() < entry_type ||
@@ -857,7 +879,7 @@ uint8_t directory_enumerate_file_system_entries(
 			file_name.start, file_name.finish,
 			question_mark_and_asterisk, question_mark_and_asterisk + 2, 1, 1))
 	{
-		const ptrdiff_t index = file_name.start - buffer_data(path, 0);
+		const ptrdiff_t index = file_name.start - buffer_uint8_t_data(path, 0);
 
 		if (!buffer_resize(path, buffer_size(path) - 1) ||
 			!path_combine_in_place(
@@ -872,19 +894,24 @@ uint8_t directory_enumerate_file_system_entries(
 	}
 
 #if defined(_WIN32)
-	struct buffer patternW;
-	SET_NULL_TO_BUFFER(patternW);
+	uint8_t patternW_buffer[BUFFER_SIZE_OF];
+	void* patternW = (void*)patternW_buffer;
 
-	if (!file_system_path_to_pathW(buffer_data(path, 0), &patternW))
+	if (!buffer_init(patternW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&patternW);
+		return 0;
+	}
+
+	if (!file_system_path_to_pathW(buffer_uint8_t_data(path, 0), patternW))
+	{
+		buffer_release(patternW);
 		return 0;
 	}
 
 	const uint8_t returned = directory_enumerate_file_system_entries_wchar_t(
-								 &patternW, entry_type, recurse, UTF8, output, fail_on_error);
+								 patternW, entry_type, recurse, UTF8, output, fail_on_error);
 	/**/
-	buffer_release(&patternW);
+	buffer_release(patternW);
 	return returned;
 #else
 	BUFFER_TO_RANGE(file_name, path);
@@ -894,13 +921,17 @@ uint8_t directory_enumerate_file_system_entries(
 		return 0;
 	}
 
-	struct buffer wild_card;
+	uint8_t wild_card_buffer[BUFFER_SIZE_OF];
+	void* wild_card = (void*)wild_card_buffer;
 
-	SET_NULL_TO_BUFFER(wild_card);
-
-	if (!buffer_append_data_from_range(&wild_card, &file_name))
+	if (!buffer_init(wild_card, BUFFER_SIZE_OF))
 	{
-		buffer_release(&wild_card);
+		return 0;
+	}
+
+	if (!buffer_append_data_from_range(wild_card, &file_name))
+	{
+		buffer_release(wild_card);
 		return 0;
 	}
 
@@ -910,17 +941,17 @@ uint8_t directory_enumerate_file_system_entries(
 		!buffer_resize(path, range_size(&file_name)) ||
 		!buffer_push_back(path, 0))
 	{
-		buffer_release(&wild_card);
+		buffer_release(wild_card);
 		return 0;
 	}
 
-	const uint8_t* wild_card_start = buffer_data(&wild_card, 0);
-	const uint8_t* wild_card_finish = wild_card_start + buffer_size(&wild_card);
+	const uint8_t* wild_card_start = buffer_uint8_t_data(wild_card, 0);
+	const uint8_t* wild_card_finish = wild_card_start + buffer_size(wild_card);
 	/**/
 	const uint8_t returned = directory_enumerate_file_system_entries_(
 								 path, wild_card_start, wild_card_finish,
 								 entry_type, recurse, output, fail_on_error);
-	buffer_release(&wild_card);
+	buffer_release(wild_card);
 	return returned;
 #endif
 }
@@ -933,17 +964,22 @@ uint8_t directory_exists(const uint8_t* path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t returned = directory_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
-	buffer_release(&pathW);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const uint8_t returned = directory_exists_wchar_t(buffer_wchar_t_data(pathW, 0));
+	buffer_release(pathW);
 	return returned;
 #else
 	DIR* dir = opendir((const char*)path);
@@ -1052,7 +1088,7 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 }
 
 uint8_t directory_get_current_directory(const void* project, const void** the_property,
-										struct buffer* output, uint8_t verbose)
+										void* output, uint8_t verbose)
 {
 	if (!project_get_base_directory(project, the_property, verbose))
 	{
@@ -1125,7 +1161,7 @@ int64_t directory_get_last_write_time_utc(const uint8_t* path)
 #endif
 }
 
-uint8_t directory_get_logical_drives(struct buffer* drives)
+uint8_t directory_get_logical_drives(void* drives)
 {
 #if defined(_WIN32)
 
@@ -1160,7 +1196,7 @@ uint8_t directory_get_logical_drives(struct buffer* drives)
 
 	return buffer_push_back(drives, zero);
 #else
-	return buffer_push_back(drives, PATH_DELIMITER) && buffer_push_back_uint16(drives, 0);
+	return buffer_push_back(drives, PATH_DELIMITER) && buffer_push_back_uint16_t(drives, 0);
 #endif
 }
 
@@ -1179,39 +1215,48 @@ uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(current_path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	if (!directory_exists_wchar_t(buffer_wchar_t_data(&pathW, 0)))
+	if (!file_system_path_to_pathW(current_path, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(&pathW);
+	const wchar_t* current_path_ = buffer_wchar_t_data(pathW, 0);
 
-	if (!file_system_path_to_pathW(new_path, &pathW))
+	if (!directory_exists_wchar_t(current_path_))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	if (file_exists_wchar_t((const wchar_t*)buffer_data(&pathW, size)))
+	const ptrdiff_t size = buffer_size(pathW);
+
+	if (!file_system_path_to_pathW(new_path, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const uint8_t returned = (0 != MoveFileExW(buffer_wchar_t_data(&pathW, 0),
-							  (const wchar_t*)buffer_data(&pathW, size),
+	const wchar_t* new_path_ = (const wchar_t*)buffer_data(pathW, size);
+
+	if (file_exists_wchar_t(new_path_))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+	
+	current_path_ = buffer_wchar_t_data(pathW, 0);
+	const uint8_t returned = (0 != MoveFileExW(current_path_, new_path_,
 							  MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
-	buffer_release(&pathW);
+	buffer_release(pathW);
 	return returned;
 #else
 
@@ -1270,13 +1315,17 @@ uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t func
 		return 0;
 	}
 
-	struct buffer pathW;
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	SET_NULL_TO_BUFFER(pathW);
-
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
 		return 0;
 	}
 
@@ -1285,11 +1334,11 @@ uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t func
 
 	if (0 == time)
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const wchar_t* ptr = buffer_wchar_t_data(&pathW, 0);
+	const wchar_t* ptr = buffer_wchar_t_data(pathW, 0);
 	uint8_t returned = 0;
 
 	if (file_get_id_of_file_set_creation_time_utc_function() == function ||
@@ -1308,7 +1357,7 @@ uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t func
 		returned = file_system_set_time_utc_wchar_t(ptr, NULL, NULL, &win32_time);
 	}
 
-	buffer_release(&pathW);
+	buffer_release(pathW);
 	return returned;
 }
 
@@ -1325,17 +1374,22 @@ uint8_t directory_set_current_directory(const uint8_t* path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t returned = 0 != SetCurrentDirectoryW(buffer_wchar_t_data(&pathW, 0));
-	buffer_release(&pathW);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const uint8_t returned = 0 != SetCurrentDirectoryW(buffer_wchar_t_data(pathW, 0));
+	buffer_release(pathW);
 	return returned;
 #else
 	return -1 != chdir((const char*)path);
@@ -1396,39 +1450,47 @@ uint8_t file_copy(const uint8_t* exists_file, const uint8_t* new_file)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(exists_file, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	if (!file_exists_wchar_t((const wchar_t*)buffer_data(&pathW, 0)))
+	if (!file_system_path_to_pathW(exists_file, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(&pathW);
+	const wchar_t* current_path_ = buffer_wchar_t_data(pathW, 0);
 
-	if (!file_system_path_to_pathW(new_file, &pathW))
+	if (!file_exists_wchar_t(current_path_))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	if (directory_exists_wchar_t(buffer_wchar_t_data(&pathW, size)))
+	const ptrdiff_t size = buffer_size(pathW);
+
+	if (!file_system_path_to_pathW(new_file, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const uint8_t returned =
-		file_copy_wchar_t(buffer_wchar_t_data(&pathW, 0),
-						  (const wchar_t*)buffer_data(&pathW, size));
-	buffer_release(&pathW);
+	const wchar_t* new_path_ = (const wchar_t*)buffer_data(pathW, size);
+
+	if (directory_exists_wchar_t(new_path_))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	current_path_ = buffer_wchar_t_data(pathW, 0);
+	const uint8_t returned = file_copy_wchar_t(current_path_, new_path_);
+	buffer_release(pathW);
 	return returned;
 #else
 
@@ -1449,13 +1511,18 @@ uint8_t file_copy(const uint8_t* exists_file, const uint8_t* new_file)
 		return 0;
 	}
 
-	struct buffer content;
+	uint8_t content_buffer[BUFFER_SIZE_OF];
+	void* content = (void*)content_buffer;
 
-	SET_NULL_TO_BUFFER(content);
-
-	if (!buffer_resize(&content, 4096))
+	if (!buffer_init(content, BUFFER_SIZE_OF))
 	{
-		buffer_release(&content);
+		file_close(input);
+		return 0;
+	}
+
+	if (!buffer_resize(content, 4096))
+	{
+		buffer_release(content);
 		file_close(input);
 		return 0;
 	}
@@ -1464,25 +1531,26 @@ uint8_t file_copy(const uint8_t* exists_file, const uint8_t* new_file)
 
 	if (!file_open(new_file, (const uint8_t*)"wb", &output))
 	{
-		buffer_release(&content);
+		buffer_release(content);
 		file_close(input);
 		return 0;
 	}
 
 	size_t size = 0;
+	void* content_ = buffer_data(content, 0);
 
-	while (0 < (size = file_read(buffer_data(&content, 0), sizeof(uint8_t), 4096, input)))
+	while (0 < (size = file_read(content_, sizeof(uint8_t), 4096, input)))
 	{
-		if (size != file_write(buffer_data(&content, 0), sizeof(uint8_t), size, output))
+		if (size != file_write(content_, sizeof(uint8_t), size, output))
 		{
 			file_close(input);
 			file_close(output);
-			buffer_release(&content);
+			buffer_release(content);
 			return 0;
 		}
 	}
 
-	buffer_release(&content);
+	buffer_release(content);
 	size = file_close(input);
 	size = size && file_close(output);
 	return 0 < size && file_get_length(exists_file) == file_get_length(new_file);
@@ -1509,17 +1577,22 @@ uint8_t file_delete(const uint8_t* path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t returned = (0 != DeleteFileW(buffer_wchar_t_data(&pathW, 0)));
-	buffer_release(&pathW);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const uint8_t returned = (0 != DeleteFileW(buffer_wchar_t_data(pathW, 0)));
+	buffer_release(pathW);
 	return returned;
 #else
 	return 0 == remove((const char*)path);
@@ -1548,17 +1621,22 @@ uint8_t file_exists(const uint8_t* path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t returned = file_exists_wchar_t(buffer_wchar_t_data(&pathW, 0));
-	buffer_release(&pathW);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const uint8_t returned = file_exists_wchar_t(buffer_wchar_t_data(pathW, 0));
+	buffer_release(pathW);
 	return returned;
 #else
 	struct stat file_status;
@@ -1609,17 +1687,22 @@ uint8_t file_get_attributes(const uint8_t* path, unsigned long* attributes)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const uint8_t returned = file_get_attributes_wchar_t(buffer_wchar_t_data(&pathW, 0), attributes);
-	buffer_release(&pathW);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const uint8_t returned = file_get_attributes_wchar_t(buffer_wchar_t_data(pathW, 0), attributes);
+	buffer_release(pathW);
 	return returned;
 #else
 	*attributes = 0;
@@ -1743,39 +1826,48 @@ uint8_t file_move(const uint8_t* current_path, const uint8_t* new_path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(current_path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	if (!file_exists_wchar_t(buffer_wchar_t_data(&pathW, 0)))
+	if (!file_system_path_to_pathW(current_path, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(&pathW);
+	const wchar_t* current_path_ = buffer_wchar_t_data(pathW, 0);
 
-	if (!file_system_path_to_pathW(new_path, &pathW))
+	if (!file_exists_wchar_t(current_path_))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	if (directory_exists_wchar_t((const wchar_t*)buffer_data(&pathW, size)))
+	const ptrdiff_t size = buffer_size(pathW);
+
+	if (!file_system_path_to_pathW(new_path, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
 		return 0;
 	}
 
-	const uint8_t returned = (0 != MoveFileExW(buffer_wchar_t_data(&pathW, 0),
-							  (const wchar_t*)buffer_data(&pathW, size),
+	const wchar_t* new_path_ = (const wchar_t*)buffer_data(pathW, size);
+
+	if (directory_exists_wchar_t(new_path_))
+	{
+		buffer_release(pathW);
+		return 0;
+	}
+
+	current_path_ = buffer_wchar_t_data(pathW, 0);
+	const uint8_t returned = (0 != MoveFileExW(current_path_, new_path_,
 							  MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
-	buffer_release(&pathW);
+	buffer_release(pathW);
 	return returned;
 #else
 
@@ -1799,27 +1891,32 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return 0;
 	}
 
-	const ptrdiff_t size = buffer_size(&pathW);
-
-	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, zero), &pathW) ||
-		!buffer_push_back_uint16(&pathW, 0))
+	if (!file_system_path_to_pathW(path, pathW))
 	{
-		buffer_release(&pathW);
+		buffer_release(pathW);
+		return 0;
+	}
+
+	const ptrdiff_t size = buffer_size(pathW);
+
+	if (!text_encoding_UTF8_to_UTF16LE(mode, mode + common_count_bytes_until(mode, zero), pathW) ||
+		!buffer_push_back_uint16_t(pathW, 0))
+	{
+		buffer_release(pathW);
 		return 0;
 	}
 
 	const uint8_t returned =
-		file_open_wchar_t(buffer_wchar_t_data(&pathW, 0), (const wchar_t*)buffer_data(&pathW, size), output);
-	buffer_release(&pathW);
+		file_open_wchar_t(buffer_wchar_t_data(pathW, 0), (const wchar_t*)buffer_data(pathW, size), output);
+	buffer_release(pathW);
 	return returned;
 #else
 #if __STDC_LIB_EXT1__
@@ -1847,7 +1944,7 @@ size_t file_read(void* content, const size_t size_of_content_element,
 #endif
 }
 
-uint8_t file_read_with_several_steps(void* stream, struct buffer* content)
+uint8_t file_read_with_several_steps(void* stream, void* content)
 {
 	if (NULL == stream ||
 		NULL == content)
@@ -1863,9 +1960,9 @@ uint8_t file_read_with_several_steps(void* stream, struct buffer* content)
 	}
 
 	size_t readed = 0;
-	uint8_t* ptr = buffer_data(content, size);
+	void* content_ = buffer_data(content, size);
 
-	while (0 < (readed = file_read(ptr, sizeof(uint8_t), 4096, stream)))
+	while (0 < (readed = file_read(content_, sizeof(uint8_t), 4096, stream)))
 	{
 		size += (ptrdiff_t)readed;
 
@@ -1875,13 +1972,13 @@ uint8_t file_read_with_several_steps(void* stream, struct buffer* content)
 			return 0;
 		}
 
-		ptr = buffer_data(content, size);
+		content_ = buffer_data(content, size);
 	}
 
 	return buffer_resize(content, size);
 }
 
-uint8_t file_read_all(const uint8_t* path, struct buffer* output)
+uint8_t file_read_all(const uint8_t* path, void* output)
 {
 	if (NULL == path ||
 		NULL == output)
@@ -1905,7 +2002,7 @@ uint8_t file_read_all(const uint8_t* path, struct buffer* output)
 	return file_close(stream);
 }
 
-uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
+uint8_t file_read_lines(const uint8_t* path, void* output)
 {
 	if (NULL == path ||
 		NULL == output)
@@ -1926,13 +2023,13 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 	const uint8_t* start;
 	uint16_t count_of_lines = 1;
 	static const uint8_t n = '\n';
-	uint8_t* ptr = buffer_data(output, 0);
+	uint8_t* content = buffer_uint8_t_data(output, 0);
 
-	while (0 < (readed = (ptrdiff_t)file_read(ptr, sizeof(uint8_t), 4096, stream)))
+	while (0 < (readed = (ptrdiff_t)file_read((void*)content, sizeof(uint8_t), 4096, stream)))
 	{
 		size += readed;
-		path = ptr + readed;
-		start = ptr;
+		path = content + readed;
+		start = content;
 
 		do
 		{
@@ -1981,15 +2078,15 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 		return 0;
 	}
 
-	ptr = buffer_data(output, count_of_lines);
-	path = buffer_data(output, 0) + buffer_size(output);
+	content = buffer_uint8_t_data(output, count_of_lines);
+	path = buffer_uint8_t_data(output, 0) + buffer_size(output);
 
 	if (!buffer_resize(output, count_of_lines))
 	{
 		return 0;
 	}
 
-	start = ptr;
+	start = content;
 	count_of_lines = 0;
 	const uint8_t* finish = start;
 	struct range* range_of_line = NULL;
@@ -2039,7 +2136,7 @@ uint8_t file_read_lines(const uint8_t* path, struct buffer* output)
 			range_of_line = buffer_range_data(output, count_of_lines);
 		}
 
-		range_of_line->start = buffer_data(output, 0) + buffer_size(output);
+		range_of_line->start = buffer_uint8_t_data(output, 0) + buffer_size(output);
 		range_of_line->finish = path;
 	}
 
@@ -2149,18 +2246,23 @@ uint8_t file_set_attributes(const uint8_t* path,
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
+		return 0;
+	}
+
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
 		return 0;
 	}
 
 	const uint8_t returned = file_set_attributes_wchar_t(
-								 buffer_wchar_t_data(&pathW, 0), archive, hidden, normal, readonly, system_attribute);
-	buffer_release(&pathW);
+								 buffer_wchar_t_data(pathW, 0), archive, hidden, normal, readonly, system_attribute);
+	buffer_release(pathW);
 	return returned;
 #else
 	(void)archive;
@@ -2272,26 +2374,26 @@ uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 }
 #endif
 
-uint8_t file_write_with_several_steps(const struct buffer* content, void* stream)
+uint8_t file_write_with_several_steps(const void* content, void* stream)
 {
 	ptrdiff_t size = buffer_size(content);
 
 	if (0 < size)
 	{
 		size_t written;
-		uint8_t* ptr = buffer_data(content, 0);
+		const uint8_t* content_ = buffer_uint8_t_data(content, 0);
 
-		while (0 < (written = file_write(ptr, sizeof(uint8_t), MIN(4096, size), stream)))
+		while (0 < (written = file_write((const void*)content_, sizeof(uint8_t), MIN(4096, size), stream)))
 		{
 			size -= (ptrdiff_t)written;
-			ptr += written;
+			content_ += written;
 		}
 	}
 
 	return 0 == size;
 }
 
-uint8_t file_write_all(const uint8_t* path, const struct buffer* content)
+uint8_t file_write_all(const uint8_t* path, const void* content)
 {
 	if (NULL == path ||
 		NULL == content)
@@ -2328,32 +2430,37 @@ uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, vo
 	}
 	else
 	{
-		struct buffer output;
-		SET_NULL_TO_BUFFER(output);
+		uint8_t output_buffer[BUFFER_SIZE_OF];
+		void* output = (void*)output_buffer;
+
+		if (!buffer_init(output, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
 
 		switch (encoding)
 		{
 			case ASCII:
-				encoding = text_encoding_UTF_to_ASCII(data->start, data->finish, UTF8, &output);
+				encoding = text_encoding_UTF_to_ASCII(data->start, data->finish, UTF8, output);
 				break;
 
 			case BigEndianUnicode:
 			case UTF16BE:
-				encoding = text_encoding_UTF8_to_UTF16BE(data->start, data->finish, &output);
+				encoding = text_encoding_UTF8_to_UTF16BE(data->start, data->finish, output);
 				break;
 
 			case Unicode:
 			case UTF16LE:
-				encoding = text_encoding_UTF8_to_UTF16LE(data->start, data->finish, &output);
+				encoding = text_encoding_UTF8_to_UTF16LE(data->start, data->finish, output);
 				break;
 
 			case UTF32BE:
-				encoding = text_encoding_UTF8_to_UTF32BE(data->start, data->finish, &output);
+				encoding = text_encoding_UTF8_to_UTF32BE(data->start, data->finish, output);
 				break;
 
 			case UTF32:
 			case UTF32LE:
-				encoding = text_encoding_decode_UTF8(data->start, data->finish, &output);
+				encoding = text_encoding_decode_UTF8(data->start, data->finish, output);
 				break;
 
 			case Windows_874:
@@ -2366,7 +2473,7 @@ uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, vo
 			case Windows_1256:
 			case Windows_1257:
 			case Windows_1258:
-				encoding = text_encoding_UTF8_to_code_page(data->start, data->finish, encoding, &output);
+				encoding = text_encoding_UTF8_to_code_page(data->start, data->finish, encoding, output);
 				break;
 
 			default:
@@ -2376,19 +2483,19 @@ uint8_t file_write_with_encoding(const struct range* data, uint16_t encoding, vo
 
 		if (!encoding)
 		{
-			buffer_release(&output);
+			buffer_release(output);
 			return 0;
 		}
 		else
 		{
-			if (!file_write_with_several_steps(&output, stream))
+			if (!file_write_with_several_steps(output, stream))
 			{
-				buffer_release(&output);
+				buffer_release(output);
 				return 0;
 			}
 		}
 
-		buffer_release(&output);
+		buffer_release(output);
 	}
 
 	return 1;
@@ -2479,24 +2586,30 @@ uint8_t file_replace(const uint8_t* path,
 											by_replacement_finish < by_replacement_start) ? -1 : (by_replacement_finish - by_replacement_start);
 	const ptrdiff_t size = MAX(by_replacement_length, MAX(to_be_replaced_length, 4096));
 	/**/
-	struct buffer input;
-	SET_NULL_TO_BUFFER(input);
+	uint8_t input_buffer[BUFFER_SIZE_OF];
+	void* input = (void*)input_buffer;
 
-	if (!buffer_resize(&input, size))
+	if (!buffer_init(input, BUFFER_SIZE_OF))
 	{
-		buffer_release(&input);
 		fclose((FILE*)stream);
 		return 0;
 	}
 
-	uint8_t* content = buffer_data(&input, 0);
+	if (!buffer_resize(input, size))
+	{
+		buffer_release(input);
+		fclose((FILE*)stream);
+		return 0;
+	}
+
+	uint8_t* content = buffer_uint8_t_data(input, 0);
 
 	if (to_be_replaced_length == by_replacement_length)
 	{
 		if (!file_replace_with_same_length(content, size, stream,
 										   to_be_replaced_start, by_replacement_start, to_be_replaced_length))
 		{
-			buffer_release(&input);
+			buffer_release(input);
 			file_close(stream);
 			return 0;
 		}
@@ -2504,63 +2617,68 @@ uint8_t file_replace(const uint8_t* path,
 	else
 	{
 		/*TODO:*/
-		if (!buffer_resize(&input, 0) ||
-			!file_read_with_several_steps(stream, &input))
+		if (!buffer_resize(input, 0) ||
+			!file_read_with_several_steps(stream, input))
 		{
-			buffer_release(&input);
+			buffer_release(input);
 			file_close(stream);
 			return 0;
 		}
 
 		if (!file_close(stream))
 		{
-			buffer_release(&input);
+			buffer_release(input);
 			return 0;
 		}
 
-		struct buffer output;
+		uint8_t output_buffer[BUFFER_SIZE_OF];
+		void* output = (void*)output_buffer;
 
-		SET_NULL_TO_BUFFER(output);
+		if (!buffer_init(output, BUFFER_SIZE_OF))
+		{
+			buffer_release(input);
+			return 0;
+		}
 
 		struct range input_in_range;
 
-		BUFFER_TO_RANGE(input_in_range, &input);
+		BUFFER_TO_RANGE(input_in_range, input);
 
 		if (!string_replace(input_in_range.start, input_in_range.finish,
 							to_be_replaced_start, to_be_replaced_finish,
-							by_replacement_start, by_replacement_finish, &output))
+							by_replacement_start, by_replacement_finish, output))
 		{
-			buffer_release(&input);
-			buffer_release(&output);
+			buffer_release(input);
+			buffer_release(output);
 			return 0;
 		}
 
-		buffer_release(&input);
+		buffer_release(input);
 		stream = NULL;
 
 		if (!file_open(path, (const uint8_t*)"wb", &stream))
 		{
-			buffer_release(&output);
+			buffer_release(output);
 			return 0;
 		}
 
-		if (!file_write_with_several_steps(&output, stream))
+		if (!file_write_with_several_steps(output, stream))
 		{
-			buffer_release(&output);
+			buffer_release(output);
 			file_close(stream);
 			return 0;
 		}
 
-		buffer_release(&output);
+		buffer_release(output);
 		return file_close(stream);
 	}
 
-	buffer_release(&input);
+	buffer_release(input);
 	return file_close(stream);
 }
 
 uint8_t file_get_full_path(
-	const uint8_t* partial_path_start, const uint8_t* partial_path_finish, struct buffer* full_path)
+	const uint8_t* partial_path_start, const uint8_t* partial_path_finish, void* full_path)
 {
 	uint8_t is_path_rooted;
 
@@ -2578,23 +2696,29 @@ uint8_t file_get_full_path(
 	{
 		return buffer_append(full_path, partial_path_start, size_of_partial_path) &&
 			   buffer_push_back(full_path, 0) &&
-			   file_exists(buffer_data(full_path, size));
+			   file_exists(buffer_uint8_t_data(full_path, size));
 	}
 
 	static const uint8_t* path_variable = (const uint8_t*)"PATH";
+	static const uint8_t path_variable_length = 4;
 	/**/
-	struct buffer variable;
-	SET_NULL_TO_BUFFER(variable);
-	/**/
+	uint8_t variable_buffer[BUFFER_SIZE_OF];
+	void* variable = (void*)variable_buffer;
+
+	if (!buffer_init(variable, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
+
 	struct range start_of_path;
 
-	if (environment_get_variable(path_variable, path_variable + 4, &variable))
+	if (environment_get_variable(path_variable, path_variable + path_variable_length, variable))
 	{
-		BUFFER_TO_RANGE(start_of_path, &variable);
+		BUFFER_TO_RANGE(start_of_path, variable);
 
 		if (!buffer_resize(full_path, range_size(&start_of_path) + size_of_partial_path))
 		{
-			buffer_release(&variable);
+			buffer_release(variable);
 			return 0;
 		}
 
@@ -2607,26 +2731,26 @@ uint8_t file_get_full_path(
 		{
 			if (!buffer_resize(full_path, size))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 0;
 			}
 
 			if (!buffer_append(full_path, start_of_path.start, ptr - start_of_path.start))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 0;
 			}
 
 			if (!path_combine_in_place(full_path, size, partial_path_start, partial_path_finish) ||
 				!buffer_push_back(full_path, 0))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 0;
 			}
 
-			if (file_exists(buffer_data(full_path, size)))
+			if (file_exists(buffer_uint8_t_data(full_path, size)))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 1;
 			}
 
@@ -2651,44 +2775,44 @@ uint8_t file_get_full_path(
 
 	for (uint8_t i = 0, count = COUNT_OF(names); i < count; ++i)
 	{
-		if (!buffer_resize(&variable, 0))
+		if (!buffer_resize(variable, 0))
 		{
-			buffer_release(&variable);
+			buffer_release(variable);
 			return 0;
 		}
 
-		if (environment_get_variable(names[i], names[i] + names_lengths[i], &variable))
+		if (environment_get_variable(names[i], names[i] + names_lengths[i], variable))
 		{
 			if (!buffer_resize(full_path, size))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 0;
 			}
 
-			BUFFER_TO_RANGE(start_of_path, &variable);
+			BUFFER_TO_RANGE(start_of_path, variable);
 
 			if (!buffer_append_data_from_range(full_path, &start_of_path))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 0;
 			}
 
 			if (!path_combine_in_place(full_path, size, partial_path_start, partial_path_finish) ||
 				!buffer_push_back(full_path, 0))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 0;
 			}
 
-			if (file_exists(buffer_data(full_path, size)))
+			if (file_exists(buffer_uint8_t_data(full_path, size)))
 			{
-				buffer_release(&variable);
+				buffer_release(variable);
 				return 1;
 			}
 		}
 	}
 
 #endif
-	buffer_release(&variable);
+	buffer_release(variable);
 	return 0;
 }

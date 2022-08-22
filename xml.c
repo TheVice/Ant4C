@@ -1,11 +1,12 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
 #include "xml.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "range.h"
@@ -151,7 +152,7 @@ const uint8_t* xml_get_tag_finish_pos(
 
 uint16_t xml_get_sub_nodes_elements(
 	const uint8_t* start, const uint8_t* finish,
-	const struct range* sub_nodes_names, struct buffer* elements)
+	const struct range* sub_nodes_names, void* elements)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == elements)
@@ -300,7 +301,7 @@ const uint8_t* xml_get_tag_name(const uint8_t* start, const uint8_t* finish)
 }
 
 uint8_t xml_read_ampersand_based_data(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
+	const uint8_t* start, const uint8_t* finish, void* output)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == output)
@@ -316,14 +317,14 @@ uint8_t xml_read_ampersand_based_data(
 		return 0;
 	}
 
-	struct buffer digits;
+	uint8_t digits_buffer[BUFFER_SIZE_OF];
+	void* digits = (void*)digits_buffer;
 
-	SET_NULL_TO_BUFFER(digits);
-
-	if (!buffer_resize(&digits, (finish - start) / 3) ||
-		!buffer_resize(&digits, 0))
+	if (!buffer_init(digits, BUFFER_SIZE_OF) ||
+		!buffer_resize(digits, (finish - start) / 3) ||
+		!buffer_resize(digits, 0))
 	{
-		buffer_release(&digits);
+		buffer_release(digits);
 		return 0;
 	}
 
@@ -333,22 +334,22 @@ uint8_t xml_read_ampersand_based_data(
 	while (finish != (start = string_find_any_symbol_like_or_not_like_that(
 								  start, finish, that, that + 1, 1, 1)))
 	{
-		if (pos < start && buffer_size(&digits))
+		if (pos < start && buffer_size(digits))
 		{
-			const uint16_t* digits_start = buffer_uint16_data(&digits, 0);
-			const uint16_t* digits_finish = (const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits));
+			const uint16_t* digits_start = buffer_uint16_t_data(digits, 0);
+			const uint16_t* digits_finish = (const uint16_t*)(buffer_uint8_t_data(digits, 0) + buffer_size(digits));
 
 			if (!text_encoding_UTF16LE_to_UTF8(digits_start, digits_finish, output) ||
-				!buffer_resize(&digits, 0))
+				!buffer_resize(digits, 0))
 			{
-				buffer_release(&digits);
+				buffer_release(digits);
 				return 0;
 			}
 		}
 
 		if (pos < start && !buffer_append(output, pos, start - pos))
 		{
-			buffer_release(&digits);
+			buffer_release(digits);
 			return 0;
 		}
 
@@ -382,9 +383,9 @@ uint8_t xml_read_ampersand_based_data(
 			const long value = strtol((const char*)start, NULL, 3 == found ? 10 : 16);
 
 			if ((value < 0 || UINT16_MAX < value) ||
-				!buffer_push_back_uint16(&digits, (uint16_t)value))
+				!buffer_push_back_uint16_t(digits, (uint16_t)value))
 			{
-				buffer_release(&digits);
+				buffer_release(digits);
 				return 0;
 			}
 		}
@@ -396,7 +397,7 @@ uint8_t xml_read_ampersand_based_data(
 				{
 					if (!buffer_push_back(output, characters[i]))
 					{
-						buffer_release(&digits);
+						buffer_release(digits);
 						return 0;
 					}
 
@@ -412,7 +413,7 @@ uint8_t xml_read_ampersand_based_data(
 			{
 				if (!buffer_push_back(output, characters[AMPERSAND_POSITION]))
 				{
-					buffer_release(&digits);
+					buffer_release(digits);
 					return 0;
 				}
 
@@ -427,27 +428,27 @@ uint8_t xml_read_ampersand_based_data(
 		pos = start;
 	}
 
-	if (buffer_size(&digits))
+	if (buffer_size(digits))
 	{
-		const uint16_t* digits_start = buffer_uint16_data(&digits, 0);
-		const uint16_t* digits_finish = (const uint16_t*)(buffer_data(&digits, 0) + buffer_size(&digits));
+		const uint16_t* digits_start = buffer_uint16_t_data(digits, 0);
+		const uint16_t* digits_finish = (const uint16_t*)(buffer_uint8_t_data(digits, 0) + buffer_size(digits));
 
 		if (!text_encoding_UTF16LE_to_UTF8(digits_start, digits_finish, output) ||
-			!buffer_resize(&digits, 0))
+			!buffer_resize(digits, 0))
 		{
-			buffer_release(&digits);
+			buffer_release(digits);
 			return 0;
 		}
 	}
 
-	buffer_release(&digits);
+	buffer_release(digits);
 	return pos < finish ? buffer_append(output, pos, finish - pos) : 1;
 }
 
 uint8_t xml_get_attribute_value(
 	const uint8_t* start, const uint8_t* finish,
 	const uint8_t* attribute, ptrdiff_t attribute_length,
-	struct buffer* value)
+	void* value)
 {
 	static const uint8_t* equal_space_tab = (const uint8_t*)"= \t";
 
@@ -533,7 +534,7 @@ uint8_t xml_get_attribute_value(
 }
 
 uint8_t xml_get_element_value(
-	const uint8_t* start, const uint8_t* finish, struct buffer* value)
+	const uint8_t* start, const uint8_t* finish, void* value)
 {
 	if (range_in_parts_is_null_or_empty(start, finish) ||
 		NULL == value)

@@ -73,8 +73,9 @@ TEST_F(TestInterpreter, interpreter_disassemble_function)
 
 TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -89,43 +90,44 @@ TEST_F(TestInterpreter, interpreter_get_values_for_arguments)
 			static_cast<uint8_t>(int_parse(arguments_in_a_range.start, arguments_in_a_range.finish));
 		//
 		arguments_in_a_range = string_to_range(arguments);
-		ASSERT_TRUE(buffer_resize_and_free_inner_buffers(&output)) << buffer_free_with_inner_buffers(&output);
+		ASSERT_TRUE(buffer_resize_and_free_inner_buffers(output)) << buffer_free_with_inner_buffers(output);
 		//
 		uint8_t values_count;
 		ASSERT_TRUE(interpreter_get_values_for_arguments(
 						nullptr, nullptr, &arguments_in_a_range,
-						&output, &values_count, verbose)) << arguments;
-		ASSERT_EQ(expected_return, values_count) << buffer_free_with_inner_buffers(&output) << std::endl
+						output, &values_count, verbose)) << arguments;
+		ASSERT_EQ(expected_return, values_count) << buffer_free_with_inner_buffers(output) << std::endl
 				<< arguments;
 		ptrdiff_t i = 0;
-		buffer* current_output = nullptr;
+		void* current_output = nullptr;
 
 		for (const auto& expected_output : expected_outputs)
 		{
 			const std::string str_expected_output(expected_output.node().child_value());
-			current_output = buffer_buffer_data(&output, i++);
+			current_output = buffer_buffer_data(output, i++);
 			//
-			ASSERT_NE(nullptr, current_output) << buffer_free_with_inner_buffers(&output) << std::endl
+			ASSERT_NE(nullptr, current_output) << buffer_free_with_inner_buffers(output) << std::endl
 											   << arguments;
 			//
 			const auto str_current_output(buffer_to_string(current_output));
-			ASSERT_EQ(str_expected_output, str_current_output) << buffer_free_with_inner_buffers(&output) << std::endl
+			ASSERT_EQ(str_expected_output, str_current_output) << buffer_free_with_inner_buffers(output) << std::endl
 					<< arguments;
 		}
 
-		current_output = buffer_buffer_data(&output, i);
-		ASSERT_EQ(nullptr, current_output) << buffer_free_with_inner_buffers(&output) << std::endl
+		current_output = buffer_buffer_data(output, i);
+		ASSERT_EQ(nullptr, current_output) << buffer_free_with_inner_buffers(output) << std::endl
 										   << arguments;
 		--node_count;
 	}
 
-	buffer_release_with_inner_buffers(&output);
+	buffer_release_with_inner_buffers(output);
 }
 //interpreter_evaluate_function
 TEST_F(TestInterpreter, interpreter_evaluate_code)
 {
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
 
 	for (const auto& node : nodes)
 	{
@@ -140,19 +142,19 @@ TEST_F(TestInterpreter, interpreter_evaluate_code)
 			static_cast<uint8_t>(int_parse(code_in_a_range.start, code_in_a_range.finish));
 		//
 		code_in_a_range = string_to_range(code);
-		ASSERT_TRUE(buffer_resize(&output, 0)) << buffer_free(&output);
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
 		//
 		const auto returned = interpreter_evaluate_code(
-								  nullptr, nullptr, nullptr, &code_in_a_range, &output, verbose);
-		ASSERT_EQ(expected_return, returned) << "'" << code << "'" << std::endl << buffer_free(&output);
+								  nullptr, nullptr, nullptr, &code_in_a_range, output, verbose);
+		ASSERT_EQ(expected_return, returned) << "'" << code << "'" << std::endl << buffer_free(output);
 		//
-		const auto current_output(buffer_to_string(&output));
-		ASSERT_EQ(expected_output, current_output) << "'" << code << "'" << std::endl << buffer_free(&output);
+		const auto current_output(buffer_to_string(output));
+		ASSERT_EQ(expected_output, current_output) << "'" << code << "'" << std::endl << buffer_free(output);
 		//
 		--node_count;
 	}
 
-	buffer_release(&output);
+	buffer_release(output);
 }
 /*interpreter_is_xml_tag_should_be_skip_by_if_or_unless
 interpreter_get_arguments_from_xml_tag_record
@@ -177,12 +179,13 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		const auto expected_return =
 			static_cast<uint8_t>(int_parse(code_in_a_range.start, code_in_a_range.finish));
 		//
-		buffer the_project;
-		SET_NULL_TO_BUFFER(the_project);
+		std::string the_project_buffer(buffer_size_of(), 0);
+		auto the_project = reinterpret_cast<void*>(&the_project_buffer[0]);
+		ASSERT_TRUE(buffer_init(the_project, buffer_size_of()));
 
 		if (the_node.attribute("project").as_bool())
 		{
-			ASSERT_TRUE(project_new(&the_project)) << project_free(&the_project);
+			ASSERT_TRUE(project_new(the_project)) << project_free(the_project);
 		}
 
 		code_in_a_range = string_to_range(code);
@@ -195,10 +198,10 @@ TEST_F(TestInterpreter, interpreter_evaluate_task)
 		code_in_a_range.start = string_enumerate(code_in_a_range.start, code_in_a_range.finish, nullptr);
 		code_in_a_range.start += task_name.size();
 		const auto returned = interpreter_evaluate_task(
-								  &the_project, nullptr, &task_name_in_a_range, code_in_a_range.finish, nullptr, 0, verbose);
+								  the_project, nullptr, &task_name_in_a_range, code_in_a_range.finish, nullptr, 0, verbose);
 		//
-		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(&the_project);
-		project_unload(&the_project);
+		ASSERT_EQ(expected_return, returned) << code << std::endl << project_free(the_project);
+		project_unload(the_project);
 		//
 		--node_count;
 	}

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
@@ -66,7 +66,7 @@ static const uint8_t attributes_lengths[] =
 
 uint8_t load_tasks_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	return common_get_attributes_and_arguments_for_task(
 			   attributes, attributes_lengths,
@@ -95,13 +95,14 @@ typedef void (*module_release)();
 
 struct name_space_in_module
 {
+	uint8_t functions[BUFFER_SIZE_OF];
 	const uint8_t* name_space;
-	struct buffer functions;
 };
 
 struct module_
 {
-	void* object;
+	uint8_t tasks[BUFFER_SIZE_OF];
+	uint8_t name_spaces[BUFFER_SIZE_OF];
 	/**/
 	enumerate_tasks enum_tasks;
 	enumerate_name_spaces enum_name_spaces;
@@ -112,16 +113,15 @@ struct module_
 	evaluate_function _evaluate_function;
 	module_release _module_release;
 	/**/
-	struct buffer tasks;
-	struct buffer name_spaces;
+	void* object;
 };
 
-struct module_* buffer_module_data(const struct buffer* modules, ptrdiff_t data_position)
+struct module_* buffer_module_data(const void* modules, ptrdiff_t data_position)
 {
 	return (struct module_*)buffer_data(modules, sizeof(struct module_) * data_position);
 }
 
-struct name_space_in_module* buffer_name_space_data(const struct buffer* name_spaces, ptrdiff_t data_position)
+struct name_space_in_module* buffer_name_space_data(const void* name_spaces, ptrdiff_t data_position)
 {
 	return (struct name_space_in_module*)buffer_data(name_spaces,
 			sizeof(struct name_space_in_module) * data_position);
@@ -137,7 +137,7 @@ void load_tasks_unload_module(struct module_* the_module)
 	if (the_module->enum_tasks)
 	{
 		the_module->enum_tasks = NULL;
-		buffer_release(&the_module->tasks);
+		buffer_release((void*)the_module->tasks);
 	}
 
 	if (the_module->enum_name_spaces)
@@ -151,14 +151,14 @@ void load_tasks_unload_module(struct module_* the_module)
 			ptrdiff_t i = 0;
 			struct name_space_in_module* name_space_ = NULL;
 
-			while (NULL != (name_space_ = buffer_name_space_data(&the_module->name_spaces, i++)))
+			while (NULL != (name_space_ = buffer_name_space_data((void*)the_module->name_spaces, i++)))
 			{
 				name_space_->name_space = NULL;
-				buffer_release(&name_space_->functions);
+				buffer_release((void*)&name_space_->functions);
 			}
 		}
 
-		buffer_release(&the_module->name_spaces);
+		buffer_release((void*)the_module->name_spaces);
 	}
 
 	the_module->enum_name_spaces = NULL;
@@ -224,12 +224,15 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 	{
 		ptrdiff_t i = 0;
 		const uint8_t* task_str = NULL;
-		/**/
-		SET_NULL_TO_BUFFER(the_module.tasks);
+
+		if (!buffer_init((void*)the_module.tasks, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
 
 		while (NULL != (task_str = the_module.enum_tasks(i++)))
 		{
-			if (!buffer_append(&the_module.tasks, (const uint8_t*)&task_str, sizeof(const uint8_t**)))
+			if (!buffer_append(the_module.tasks, (const uint8_t*)&task_str, sizeof(const uint8_t**)))
 			{
 				return 0;
 			}
@@ -241,8 +244,11 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 	{
 		ptrdiff_t i = 0;
 		const uint8_t* name_space_str = NULL;
-		/**/
-		SET_NULL_TO_BUFFER(the_module.name_spaces);
+
+		if (!buffer_init((void*)the_module.name_spaces, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
 
 		while (NULL != (name_space_str = the_module.enum_name_spaces(i++)))
 		{
@@ -251,17 +257,21 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 			/**/
 			struct name_space_in_module name_space_;
 			name_space_.name_space = name_space_str;
-			SET_NULL_TO_BUFFER(name_space_.functions);
+
+			if (!buffer_init((void*)name_space_.functions, BUFFER_SIZE_OF))
+			{
+				return 0;
+			}
 
 			while (NULL != (function_ = the_module.enum_functions(name_space_str, j++)))
 			{
-				if (!buffer_append(&name_space_.functions, (const uint8_t*)&function_, sizeof(const uint8_t**)))
+				if (!buffer_append((void*)name_space_.functions, (const uint8_t*)&function_, sizeof(const uint8_t**)))
 				{
 					return 0;
 				}
 			}
 
-			if (!buffer_append(&the_module.name_spaces, (const uint8_t*)&name_space_,
+			if (!buffer_append((void*)the_module.name_spaces, (const uint8_t*)&name_space_,
 							   sizeof(const struct name_space_in_module)))
 			{
 				return 0;
@@ -279,7 +289,7 @@ uint8_t load_tasks_load_module(void* the_project, const uint8_t* path, const uin
 }
 
 uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
-								 struct buffer* task_arguments, uint8_t verbose)
+								 void* task_arguments, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -289,7 +299,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 		return 0;
 	}
 
-	struct buffer* path_to_assembly_in_a_buffer = buffer_buffer_data(task_arguments, ASSEMBLY_POSITION);
+	void* path_to_assembly_in_a_buffer = buffer_buffer_data(task_arguments, ASSEMBLY_POSITION);
 
 	if (buffer_size(path_to_assembly_in_a_buffer))
 	{
@@ -300,7 +310,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 
 	for (uint8_t i = ENUMERATE_TASKS_POSITION; i < COUNT_OF_POSITIONS; ++i)
 	{
-		struct buffer* tmp = buffer_buffer_data(task_arguments, i);
+		void* tmp = buffer_buffer_data(task_arguments, i);
 
 		if (buffer_size(tmp))
 		{
@@ -309,7 +319,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 				return 0;
 			}
 
-			functions_names[i - ENUMERATE_TASKS_POSITION] = buffer_data(tmp, 0);
+			functions_names[i - ENUMERATE_TASKS_POSITION] = buffer_uint8_t_data(tmp, 0);
 		}
 		else
 		{
@@ -317,7 +327,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 		}
 	}
 
-	struct buffer* path_to_module_in_a_buffer = buffer_buffer_data(task_arguments, MODULE_POSITION);
+	void* path_to_module_in_a_buffer = buffer_buffer_data(task_arguments, MODULE_POSITION);
 
 	if (buffer_size(path_to_module_in_a_buffer))
 	{
@@ -336,7 +346,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 		}
 	}
 
-	struct buffer* path_in_a_buffer = buffer_buffer_data(task_arguments, PATH_POSITION);
+	void* path_in_a_buffer = buffer_buffer_data(task_arguments, PATH_POSITION);
 
 	if (buffer_size(path_in_a_buffer))
 	{
@@ -362,7 +372,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 		if (buffer_size(path_to_module_in_a_buffer))
 		{
 			static const uint8_t zero = '\0';
-			const uint8_t* start = buffer_data(path_to_module_in_a_buffer, 0);
+			const uint8_t* start = buffer_uint8_t_data(path_to_module_in_a_buffer, 0);
 			const uint8_t* finish = start + buffer_size(path_to_module_in_a_buffer);
 
 			while (finish != (start = string_find_any_symbol_like_or_not_like_that(
@@ -405,7 +415,7 @@ uint8_t load_tasks_evaluate_task(void* the_project, const void* the_target,
 }
 
 uint8_t load_tasks_buffer_to_arguments(
-	struct buffer* task_arguments, uint8_t task_attributes_count,
+	void* task_arguments, uint8_t task_attributes_count,
 	const uint8_t*** arguments, uint16_t** arguments_lengths)
 {
 	if (NULL == task_arguments ||
@@ -445,7 +455,7 @@ uint8_t load_tasks_buffer_to_arguments(
 	}
 
 	ptrdiff_t i = 0;
-	const struct buffer* argument = NULL;
+	const void* argument = NULL;
 
 	while (NULL != (argument = buffer_buffer_data(task_arguments, i++)))
 	{
@@ -454,7 +464,7 @@ uint8_t load_tasks_buffer_to_arguments(
 			return 0;
 		}
 
-		(*arguments)[i - 1] = buffer_data(argument, 0);
+		(*arguments)[i - 1] = buffer_uint8_t_data(argument, 0);
 		(*arguments_lengths)[i - 1] = (uint16_t)buffer_size(argument);
 	}
 
@@ -474,7 +484,7 @@ uint8_t load_tasks_buffer_to_arguments(
 uint8_t load_tasks_evaluate_loaded_task(
 	void* the_project, const void* the_target,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
-	const uint8_t* element_finish, struct buffer* task_arguments,
+	const uint8_t* element_finish, void* task_arguments,
 	const void* the_module, const uint8_t* pointer_to_the_task,
 	uint8_t verbose)
 {
@@ -566,7 +576,7 @@ uint8_t load_tasks_evaluate_loaded_task(
 			}
 		}
 
-		struct buffer* elements = buffer_buffer_data(task_arguments, 0);
+		void* elements = buffer_buffer_data(task_arguments, 0);
 
 		if (!buffer_resize(elements, 0))
 		{
@@ -583,7 +593,7 @@ uint8_t load_tasks_evaluate_loaded_task(
 }
 
 uint8_t load_tasks_evaluate_loaded_function(const void* the_module, const uint8_t* pointer_to_the_function,
-		struct buffer* arguments, uint8_t arguments_count, struct buffer* return_of_function, uint8_t verbose)
+		void* arguments, uint8_t arguments_count, void* return_of_function, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -632,7 +642,7 @@ uint8_t load_tasks_evaluate_loaded_function(const void* the_module, const uint8_
 	return 0;
 }
 
-const uint8_t* load_tasks_get_task(const struct buffer* modules, const struct range* task_name,
+const uint8_t* load_tasks_get_task(const void* modules, const struct range* task_name,
 								   void** the_module_of_task, ptrdiff_t* task_id)
 {
 	if (range_is_null_or_empty(task_name))
@@ -650,14 +660,14 @@ const uint8_t* load_tasks_get_task(const struct buffer* modules, const struct ra
 		if (NULL == the_module->enum_tasks ||
 			NULL == the_module->_get_attribute_and_arguments_for_task ||
 			NULL == the_module->_evaluate_task ||
-			0 == buffer_size(&the_module->tasks))
+			0 == buffer_size((void*)the_module->tasks))
 		{
 			continue;
 		}
 
 		ptrdiff_t j = 0;
 
-		while (NULL != (pointer_to_the_task = (const uint8_t**)buffer_data(&the_module->tasks,
+		while (NULL != (pointer_to_the_task = (const uint8_t**)buffer_data((void*)the_module->tasks,
 											  sizeof(const uint8_t*) * j++)))
 		{
 			if (size != common_count_bytes_until(*pointer_to_the_task, 0))
@@ -686,7 +696,7 @@ const uint8_t* load_tasks_get_task(const struct buffer* modules, const struct ra
 }
 
 const uint8_t* load_tasks_get_function(
-	const struct buffer* modules, const struct range* name_space,
+	const void* modules, const struct range* name_space,
 	const struct range* function_name, void** the_module_of_function, const uint8_t** name_space_at_module)
 {
 	if (NULL == modules)
@@ -710,7 +720,7 @@ const uint8_t* load_tasks_get_function(
 		ptrdiff_t j = 0;
 		struct name_space_in_module* ns_in_module = NULL;
 
-		while (NULL != (ns_in_module = buffer_name_space_data(&the_module->name_spaces, j++)))
+		while (NULL != (ns_in_module = buffer_name_space_data((void*)the_module->name_spaces, j++)))
 		{
 			if (name_space_size != common_count_bytes_until(ns_in_module->name_space, 0))
 			{
@@ -752,7 +762,7 @@ const uint8_t* load_tasks_get_function(
 	return NULL;
 }
 
-void load_tasks_unload(struct buffer* modules)
+void load_tasks_unload(void* modules)
 {
 	ptrdiff_t i = 0;
 	struct module_* the_module = NULL;
@@ -763,8 +773,8 @@ void load_tasks_unload(struct buffer* modules)
 	}
 }
 
-uint8_t load_tasks_copy_modules_with_out_objects(const struct buffer* the_source,
-		struct buffer* the_destination)
+uint8_t load_tasks_copy_modules_with_out_objects(const void* the_source,
+		void* the_destination)
 {
 	if (NULL == the_source ||
 		NULL == the_destination ||
@@ -798,13 +808,16 @@ uint8_t load_tasks_copy_modules_with_out_objects(const struct buffer* the_source
 			return 0;
 		}
 
-		SET_NULL_TO_BUFFER(the_destination_module->tasks);
+		if (!buffer_init((void*)the_destination_module->tasks, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
 
 		if (the_module->enum_tasks)
 		{
 			the_destination_module->enum_tasks = the_module->enum_tasks;
 
-			if (!buffer_append_data_from_buffer(&the_destination_module->tasks, &the_module->tasks))
+			if (!buffer_append_data_from_buffer(&the_destination_module->tasks, (void*)the_module->tasks))
 			{
 				return 0;
 			}

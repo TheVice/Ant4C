@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2020, 2022 TheVice
  *
  */
 
@@ -10,10 +10,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-#ifndef NO_BUFFER_UNIT
-struct buffer;
-#endif
 
 enum TextEncoding { ASCII, UTF7, UTF8, UTF16BE, UTF16LE, UTF32BE, UTF32LE, BigEndianUnicode, Unicode, UTF32, Default };
 
@@ -35,7 +31,7 @@ enum CodePageID
 };
 
 uint8_t text_encoding_get_BOM(
-	uint8_t encoding, struct buffer* output);
+	uint8_t encoding, void* output);
 #endif
 
 uint8_t text_encoding_get_one_of_data_by_BOM(
@@ -43,64 +39,55 @@ uint8_t text_encoding_get_one_of_data_by_BOM(
 
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_UTF_to_ASCII(
-	const uint8_t* data_start, const uint8_t* data_finish,
-	uint8_t encoding, struct buffer* output);
+	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
 uint8_t text_encoding_UTF_from_ASCII(
-	const uint8_t* data_start, const uint8_t* data_finish,
-	uint8_t encoding, struct buffer* output);
+	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
 #ifndef NO_COMMON_UNIT
 uint8_t text_encoding_UTF16LE_from_code_page(
-	const uint8_t* data_start, const uint8_t* data_finish,
-	uint16_t code_page, struct buffer* output);
+	const uint8_t* data_start, const uint8_t* data_finish, uint16_t code_page, void* output);
 #endif
 #endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output);
 uint8_t text_encoding_decode_UTF8_single(
-	const uint8_t* input_start, const uint8_t* input_finish,
-	uint32_t* output);
+	const uint8_t* input_start, const uint8_t* input_finish, uint32_t* output);
 
 #ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF8(
-	const uint32_t* data_start, const uint32_t* data_finish,
-	struct buffer* output);
+	const uint32_t* data_start, const uint32_t* data_finish, void* output);
 uint8_t text_encoding_decode_UTF8(
-	const uint8_t* data_start, const uint8_t* data_finish,
-	struct buffer* output);
+	const uint8_t* data_start, const uint8_t* data_finish, void* output);
 
 uint8_t text_encoding_encode_UTF16(
-	const uint32_t* data_start, const uint32_t* data_finish,
-	uint8_t endian, struct buffer* output);
+	const uint32_t* data_start, const uint32_t* data_finish, uint8_t endian, void* output);
 uint8_t text_encoding_decode_UTF16(
-	const uint16_t* data_start, const uint16_t* data_finish,
-	uint8_t endian, struct buffer* output);
+	const uint16_t* data_start, const uint16_t* data_finish, uint8_t endian, void* output);
 
 uint8_t text_encoding_UTF8_to_code_page(
-	const uint8_t* data_start, const uint8_t* data_finish,
-	uint16_t code_page, struct buffer* output);
+	const uint8_t* data_start, const uint8_t* data_finish, uint16_t code_page, void* output);
 uint8_t text_encoding_UTF8_from_code_page(
-	const uint8_t* data_start, const uint8_t* data_finish,
-	uint16_t code_page, struct buffer* output);
+	const uint8_t* data_start, const uint8_t* data_finish, uint16_t code_page, void* output);
 
-uint8_t text_encoding_UTF8_to_UTF16BE(const uint8_t* data_start, const uint8_t* data_finish,
-									  struct buffer* output);
-uint8_t text_encoding_UTF8_to_UTF16LE(const uint8_t* data_start, const uint8_t* data_finish,
-									  struct buffer* output);
+uint8_t text_encoding_UTF8_to_UTF16BE(
+	const uint8_t* data_start, const uint8_t* data_finish, void* output);
+uint8_t text_encoding_UTF8_to_UTF16LE(
+	const uint8_t* data_start, const uint8_t* data_finish, void* output);
 
-uint8_t text_encoding_UTF16BE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
-									  struct buffer* output);
-uint8_t text_encoding_UTF16LE_to_UTF8(const uint16_t* data_start, const uint16_t* data_finish,
-									  struct buffer* output);
+uint8_t text_encoding_UTF16BE_to_UTF8(
+	const uint16_t* data_start, const uint16_t* data_finish, void* output);
+uint8_t text_encoding_UTF16LE_to_UTF8(
+	const uint16_t* data_start, const uint16_t* data_finish, void* output);
 
-uint8_t text_encoding_UTF8_to_UTF32BE(const uint8_t* data_start, const uint8_t* data_finish,
-									  struct buffer* output);
+uint8_t text_encoding_UTF8_to_UTF32BE(
+	const uint8_t* data_start, const uint8_t* data_finish, void* output);
 
-uint8_t text_encoding_UTF32BE_to_UTF8(const uint32_t* data_start, const uint32_t* data_finish,
-									  struct buffer* output);
+uint8_t text_encoding_UTF32BE_to_UTF8(
+	const uint32_t* data_start, const uint32_t* data_finish, void* output);
 #endif
 
 #ifndef NO_COMMON_UNIT
-uint8_t text_encoding_get_one(const uint8_t* encoding_start, const uint8_t* encoding_finish);
+uint8_t text_encoding_get_one(
+	const uint8_t* encoding_start, const uint8_t* encoding_finish);
 #endif
 
 #endif

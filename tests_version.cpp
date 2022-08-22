@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -170,11 +170,14 @@ TEST(TestVersion_, version_to_string)
 {
 	uint8_t version[VERSION_SIZE];
 	ASSERT_TRUE(version_init(version, VERSION_SIZE, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX));
-	buffer output;
-	SET_NULL_TO_BUFFER(output);
-	ASSERT_TRUE(version_to_string(version, &output)) << buffer_free(&output);
-	const auto returned(buffer_to_string(&output));
-	buffer_release(&output);
+	//
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
+	//
+	ASSERT_TRUE(version_to_string(version, output)) << buffer_free(output);
+	const auto returned(buffer_to_string(output));
+	buffer_release(output);
 	static const std::string expected_return("4294967295.4294967295.4294967295.4294967295");
 	ASSERT_EQ(expected_return, returned);
 }

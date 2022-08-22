@@ -1,11 +1,12 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019, 2021 TheVice
+ * Copyright (c) 2019, 2021 - 2022 TheVice
  *
  */
 
 #include "range.h"
+
 #include "buffer.h"
 
 ptrdiff_t range_size(const struct range* range)
@@ -28,7 +29,7 @@ uint8_t range_in_parts_is_null_or_empty(
 }
 
 uint8_t buffer_append_data_from_range(
-	struct buffer* storage, const struct range* data)
+	void* storage, const struct range* data)
 {
 	return NULL != data && NULL != data->start && NULL != data->finish &&
 		   data->start <= data->finish &&
@@ -36,14 +37,14 @@ uint8_t buffer_append_data_from_range(
 }
 
 uint8_t buffer_append_range(
-	struct buffer* ranges, const struct range* data, ptrdiff_t data_count)
+	void* ranges, const struct range* data, ptrdiff_t data_count)
 {
 	return buffer_append(
-			   ranges, (const uint8_t*)data, sizeof(struct range) * data_count);
+			   ranges, (const void*)data, sizeof(struct range) * data_count);
 }
 
 struct range* buffer_range_data(
-	const struct buffer* ranges, ptrdiff_t data_position)
+	const void* ranges, ptrdiff_t data_position)
 {
 	return (struct range*)buffer_data(
 			   ranges, sizeof(struct range) * data_position);

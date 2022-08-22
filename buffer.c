@@ -15,19 +15,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct buffer
+{
+	void* data;
+	ptrdiff_t size;
+	ptrdiff_t capacity;
+};
+
 static struct buffer pool;
 static uint8_t is_pool_init = 0;
 
-#define CAPACITY_TYPE ptrdiff_t
 #if defined(_WIN64) || defined(__amd64) || defined(__x86_64)
-static const CAPACITY_TYPE maximum_capacity = (CAPACITY_TYPE)(INT32_MAX) + 1;
+static const ptrdiff_t maximum_capacity = (ptrdiff_t)(INT32_MAX) + 1;
 #else
-static const CAPACITY_TYPE maximum_capacity = 1073741824;
+static const ptrdiff_t maximum_capacity = 1073741824;
 #endif
 
-CAPACITY_TYPE get_capacity(ptrdiff_t size)
+ptrdiff_t buffer_calculate_capacity(const ptrdiff_t size)
 {
-	CAPACITY_TYPE capacity = 2;
+	ptrdiff_t capacity = 2;
 
 	while (capacity < size && capacity < maximum_capacity)
 	{
@@ -39,7 +45,7 @@ CAPACITY_TYPE get_capacity(ptrdiff_t size)
 
 struct buffer* buffer_to_real_buffer(const void* the_buffer)
 {
-	struct buffer* real_buffer = NULL;
+	void* real_buffer = NULL;
 	ptrdiff_t i = 0;
 
 	if (NULL == the_buffer)
@@ -55,16 +61,34 @@ struct buffer* buffer_to_real_buffer(const void* the_buffer)
 		}
 	}
 
-	return real_buffer;
+	return (struct buffer*)real_buffer;
 }
 
-ptrdiff_t buffer_size(const struct buffer* the_buffer)
+uint8_t buffer_size_of()
 {
-	return NULL == the_buffer ? 0 : the_buffer->size;
+	return (uint8_t)sizeof(struct buffer);
 }
 
-uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size)
+uint8_t buffer_init(void* the_buffer, uint8_t size_of_buffer)
 {
+	if (NULL == the_buffer || size_of_buffer < sizeof(struct buffer))
+	{
+		return 0;
+	}
+
+	memset(the_buffer, 0, sizeof(struct buffer));
+	return 1;
+}
+
+ptrdiff_t buffer_size(const void* the_buffer)
+{
+	return NULL == the_buffer ? 0 : ((const struct buffer*)the_buffer)->size;
+}
+
+uint8_t buffer_resize(void* the_buffer_, ptrdiff_t size)
+{
+	struct buffer* the_buffer = (struct buffer*)the_buffer_;
+
 	if (NULL == the_buffer || size < 0 || the_buffer->size < 0)
 	{
 		return 0;
@@ -72,7 +96,7 @@ uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size)
 
 	if (the_buffer->capacity < size)
 	{
-		const CAPACITY_TYPE capacity = get_capacity(size);
+		const ptrdiff_t capacity = buffer_calculate_capacity(size);
 
 		if (capacity < size)
 		{
@@ -87,7 +111,7 @@ uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size)
 			the_buffer->capacity = 0;
 		}
 
-		the_buffer->data = (uint8_t*)malloc(capacity);
+		the_buffer->data = malloc(capacity);
 
 		if (NULL == the_buffer->data)
 		{
@@ -101,42 +125,46 @@ uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size)
 	return 1;
 }
 
-void buffer_release(struct buffer* buffer)
+void buffer_release(void* the_buffer_)
 {
-	if (NULL == buffer)
+	struct buffer* the_buffer = (struct buffer*)the_buffer_;
+
+	if (NULL == the_buffer)
 	{
 		return;
 	}
 
-	if (NULL != buffer->data)
+	if (NULL != the_buffer->data)
 	{
-		free(buffer->data);
-		buffer->data = NULL;
+		free(the_buffer->data);
+		the_buffer->data = NULL;
 	}
 
-	buffer->size = 0;
-	buffer->capacity = 0;
+	the_buffer->size = 0;
+	the_buffer->capacity = 0;
 }
 
-void buffer_release_inner_buffers(struct buffer* buffer)
+void buffer_release_inner_buffers(void* the_buffer)
 {
 	ptrdiff_t i = 0;
-	struct buffer* inner_buffer = NULL;
+	void* inner_buffer = NULL;
 
-	while (NULL != (inner_buffer = buffer_buffer_data(buffer, i++)))
+	while (NULL != (inner_buffer = buffer_buffer_data((struct buffer*)the_buffer, i++)))
 	{
 		buffer_release(inner_buffer);
 	}
 }
 
-void buffer_release_with_inner_buffers(struct buffer* buffer)
+void buffer_release_with_inner_buffers(void* the_buffer)
 {
-	buffer_release_inner_buffers(buffer);
-	buffer_release(buffer);
+	buffer_release_inner_buffers(the_buffer);
+	buffer_release(the_buffer);
 }
 
-uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size)
+uint8_t buffer_append(void* the_buffer_, const void* data, ptrdiff_t size)
 {
+	struct buffer* the_buffer = (struct buffer*)the_buffer_;
+
 	if (NULL == the_buffer || size < 0 || the_buffer->size < 0)
 	{
 		return 0;
@@ -155,14 +183,14 @@ uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t 
 		}
 
 		const ptrdiff_t new_size = the_buffer->capacity + size;
-		const CAPACITY_TYPE capacity = get_capacity(new_size);
+		const ptrdiff_t capacity = buffer_calculate_capacity(new_size);
 
 		if (capacity < new_size)
 		{
 			return 0;
 		}
 
-		uint8_t* new_data = (uint8_t*)malloc(capacity);
+		void* new_data = malloc(capacity);
 
 		if (NULL == new_data)
 		{
@@ -197,18 +225,19 @@ uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t 
 	if (NULL != data)
 	{
 #if !defined(_WIN32) && defined(NDEBUG) && defined(__ALPINE_PREVENT_ILLEGAL_INSTRUCTION__)
-		uint8_t* dst = &the_buffer->data[the_buffer->size];
+		uint8_t* dst = (uint8_t*)the_buffer->data + the_buffer->size;
 		MEM_CPY(dst, data, size);
 #else
 #if __STDC_LIB_EXT1__
 
-		if (0 != memcpy_s(&the_buffer->data[the_buffer->size], the_buffer->capacity - the_buffer->size, data, size))
+		if (0 != memcpy_s((uint8_t*)the_buffer->data + the_buffer->size,
+						  the_buffer->capacity - the_buffer->size, data, size))
 		{
 			return 0;
 		}
 
 #else
-		memcpy(&the_buffer->data[the_buffer->size], data, size);
+		memcpy((uint8_t*)the_buffer->data + the_buffer->size, data, size);
 #endif
 #endif
 	}
@@ -217,28 +246,32 @@ uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t 
 	return 1;
 }
 
-uint8_t buffer_append_char(struct buffer* the_buffer, const char* data, ptrdiff_t data_count)
+uint8_t buffer_append_char(void* the_buffer, const char* data, ptrdiff_t data_count)
 {
-	return buffer_append(the_buffer, (const uint8_t*)data, sizeof(char) * data_count);
+	return buffer_append(the_buffer, (const void*)data, sizeof(char) * data_count);
 }
 
-uint8_t buffer_append_wchar_t(struct buffer* the_buffer, const wchar_t* data, ptrdiff_t data_count)
+uint8_t buffer_append_wchar_t(void* the_buffer, const wchar_t* data, ptrdiff_t data_count)
 {
-	return buffer_append(the_buffer, (const uint8_t*)data, sizeof(wchar_t) * data_count);
+	return buffer_append(the_buffer, (const void*)data, sizeof(wchar_t) * data_count);
 }
 
-uint8_t buffer_append_buffer(struct buffer* the_buffer, const struct buffer* data, ptrdiff_t data_count)
+uint8_t buffer_append_buffer(void* the_buffer, const void* data, ptrdiff_t data_count)
 {
-	return buffer_append(the_buffer, (const uint8_t*)data, sizeof(struct buffer) * data_count);
+	return buffer_append(the_buffer, (const void*)data, sizeof(struct buffer) * data_count);
 }
 
-uint8_t buffer_append_data_from_buffer(struct buffer* the_buffer, const struct buffer* data)
+uint8_t buffer_append_data_from_buffer(void* the_buffer, const void* the_source_buffer)
 {
-	return NULL == data ? 0 : buffer_append(the_buffer, data->data, data->size);
+	struct buffer* the_source_buffer_ = (struct buffer*)the_source_buffer;
+	return NULL == the_source_buffer_ ?
+		   0 : buffer_append(the_buffer, the_source_buffer_->data, the_source_buffer_->size);
 }
 
-uint8_t* buffer_data(const struct buffer* the_buffer, ptrdiff_t index)
+void* buffer_data(const void* the_buffer_, ptrdiff_t index)
 {
+	struct buffer* the_buffer = (struct buffer*)the_buffer_;
+
 	if (NULL == the_buffer ||
 		NULL == the_buffer->data ||
 		index < 0 ||
@@ -247,88 +280,68 @@ uint8_t* buffer_data(const struct buffer* the_buffer, ptrdiff_t index)
 		return NULL;
 	}
 
-	return &the_buffer->data[index];
+	return (void*)((uint8_t*)the_buffer->data + index);
 }
 
-char* buffer_char_data(const struct buffer* the_buffer, ptrdiff_t data_position)
+char* buffer_char_data(const void* the_buffer, ptrdiff_t data_position)
 {
 	return (char*)buffer_data(the_buffer, sizeof(char) * data_position);
 }
 
-wchar_t* buffer_wchar_t_data(const struct buffer* the_buffer, ptrdiff_t data_position)
+uint8_t* buffer_uint8_t_data(const void* the_buffer, ptrdiff_t data_position)
+{
+	return (uint8_t*)buffer_data(the_buffer, sizeof(uint8_t) * data_position);
+}
+
+wchar_t* buffer_wchar_t_data(const void* the_buffer, ptrdiff_t data_position)
 {
 	return (wchar_t*)buffer_data(the_buffer, sizeof(wchar_t) * data_position);
 }
 
-uint16_t* buffer_uint16_data(const struct buffer* the_buffer, ptrdiff_t data_position)
+uint16_t* buffer_uint16_t_data(const void* the_buffer, ptrdiff_t data_position)
 {
 	return (uint16_t*)buffer_data(the_buffer, sizeof(uint16_t) * data_position);
 }
 
-uint32_t* buffer_uint32_data(const struct buffer* the_buffer, ptrdiff_t data_position)
+uint32_t* buffer_uint32_t_data(const void* the_buffer, ptrdiff_t data_position)
 {
 	return (uint32_t*)buffer_data(the_buffer, sizeof(uint32_t) * data_position);
 }
 
-struct buffer* buffer_buffer_data(const struct buffer* the_buffer, ptrdiff_t data_position)
+void* buffer_buffer_data(const void* the_buffer, ptrdiff_t data_position)
 {
-	return (struct buffer*)buffer_data(the_buffer, sizeof(struct buffer) * data_position);
+	return buffer_data(the_buffer, sizeof(struct buffer) * data_position);
 }
 
-uint8_t buffer_push_back(struct buffer* the_buffer, uint8_t data)
+uint8_t buffer_push_back(void* the_buffer, uint8_t data)
 {
 	return buffer_append(the_buffer, &data, 1);
 }
 
-uint8_t buffer_push_back_uint16(struct buffer* the_buffer, uint16_t data)
+uint8_t buffer_push_back_uint16_t(void* the_buffer, uint16_t data)
 {
-	return buffer_append(the_buffer, (const uint8_t*)&data, sizeof(uint16_t));
+	return buffer_append(the_buffer, (const void*)&data, sizeof(uint16_t));
 }
 
-uint8_t buffer_push_back_uint32(struct buffer* the_buffer, uint32_t data)
+uint8_t buffer_push_back_uint32_t(void* the_buffer, uint32_t data)
 {
-	return buffer_append(the_buffer, (const uint8_t*)&data, sizeof(uint32_t));
+	return buffer_append(the_buffer, (const void*)&data, sizeof(uint32_t));
 }
 
-uint8_t buffer_assing_to_uint16(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size)
+uint8_t buffer_shrink_to_fit(void* the_buffer_)
 {
-	if (NULL == the_buffer ||
-		NULL == data)
-	{
-		return 0;
-	}
+	struct buffer* the_buffer = (struct buffer*)the_buffer_;
 
-	ptrdiff_t i = buffer_size(the_buffer);
-
-	if (!buffer_append(the_buffer, NULL, sizeof(uint16_t) * size) ||
-		!buffer_resize(the_buffer, i))
-	{
-		return 0;
-	}
-
-	for (i = 0; i < size; ++i)
-	{
-		if (!buffer_push_back_uint16(the_buffer, data[i]))
-		{
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
-uint8_t buffer_shrink_to_fit(struct buffer* the_buffer)
-{
 	if (NULL == the_buffer || the_buffer->size < 0 || the_buffer->capacity < 512)
 	{
 		return 0;
 	}
 
-	const CAPACITY_TYPE capacity = get_capacity(the_buffer->size);
+	const ptrdiff_t capacity = buffer_calculate_capacity(the_buffer->size);
 
 	if (capacity < the_buffer->capacity)
 	{
-		uint8_t* new_data = (uint8_t*)realloc(the_buffer->data, capacity);
+		void* new_data = realloc(the_buffer->data, capacity);
 
 		if (NULL == new_data)
 		{
@@ -344,7 +357,7 @@ uint8_t buffer_shrink_to_fit(struct buffer* the_buffer)
 	return 0;
 }
 
-uint8_t buffer_init(void** the_buffer)
+uint8_t buffer_init_pool(void** the_buffer)
 {
 	static const ptrdiff_t pool_limit = (ptrdiff_t)(sizeof(struct buffer) * UINT8_MAX);
 	struct buffer* current_buffer = NULL;
@@ -359,9 +372,8 @@ uint8_t buffer_init(void** the_buffer)
 
 	if (!is_pool_init)
 	{
-		SET_NULL_TO_BUFFER(pool);
-
-		if (!buffer_append(&pool, NULL, pool_limit) ||
+		if (!buffer_init(&pool, sizeof(struct buffer)) ||
+			!buffer_append(&pool, NULL, pool_limit) ||
 			!buffer_resize(&pool, 0))
 		{
 			buffer_release(&pool);
@@ -388,9 +400,9 @@ uint8_t buffer_init(void** the_buffer)
 	else if (buffer_size(&pool) < pool_limit)
 	{
 		struct buffer new_buffer;
-		SET_NULL_TO_BUFFER(new_buffer);
 
-		if (!buffer_append_buffer(&pool, &new_buffer, 1))
+		if (!buffer_init(&new_buffer, sizeof(struct buffer)) ||
+			!buffer_append_buffer(&pool, &new_buffer, 1))
 		{
 			return 0;
 		}
@@ -424,7 +436,7 @@ uint8_t buffer_release_pool()
 {
 	if (is_pool_init)
 	{
-		struct buffer* current_buffer = NULL;
+		void* current_buffer = NULL;
 		ptrdiff_t i = 0;
 		uint8_t pool_is_free = 1;
 
@@ -439,14 +451,12 @@ uint8_t buffer_release_pool()
 		}
 
 		buffer_release(&pool);
-		SET_NULL_TO_BUFFER(pool);
 		return pool_is_free;
 	}
 	else
 	{
-		SET_NULL_TO_BUFFER(pool);
-		is_pool_init = 1;
+		is_pool_init = buffer_init(&pool, sizeof(struct buffer));
 	}
 
-	return 1;
+	return is_pool_init;
 }

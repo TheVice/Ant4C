@@ -26,6 +26,7 @@ include("${CMAKE_SOURCE_DIR}/tests_base.cmake")
 
 add_executable(ant4c_tests
   "${CMAKE_SOURCE_DIR}/tests.xml"
+  "${CMAKE_SOURCE_DIR}/tests.cmake"
   "${CMAKE_SOURCE_DIR}/tests_argument_parser.cpp"
   "${CMAKE_SOURCE_DIR}/tests_conversion.cpp"
   "${CMAKE_SOURCE_DIR}/tests_date_time.cpp"

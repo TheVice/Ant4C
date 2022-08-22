@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 TheVice
+ * Copyright (c) 2019, 2022 TheVice
  *
  */
 
@@ -10,7 +10,8 @@
 
 #include <stdint.h>
 
-struct buffer;
+static const double math_E = 2.7182818284590451;
+static const double math_PI = 3.1415926535897931;
 
 double math_abs(double value);
 double math_ceiling(double value);
@@ -52,8 +53,6 @@ int64_t math_truncate(double value);
 double math_degrees(double r);
 double math_radians(double d);
 
-uint8_t math_get_function(const uint8_t* name_start, const uint8_t* name_finish);
-uint8_t math_exec_function(uint8_t function, const struct buffer* arguments,
-						   uint8_t arguments_count, struct buffer* output);
+uint8_t math_double_near(double value1, double value2, double epsilon);
 
 #endif

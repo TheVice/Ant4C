@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -66,9 +66,9 @@ uint8_t path_get_function(const uint8_t* name_start, const uint8_t* name_finish)
 	return common_string_to_enum(name_start, name_finish, path_function_str, UNKNOWN_PATH_FUNCTION);
 }
 
-uint8_t path_exec_function(const void* project, uint8_t function, const struct buffer* arguments,
+uint8_t path_exec_function(const void* project, uint8_t function, const void* arguments,
 						   uint8_t arguments_count,
-						   struct buffer* output)
+						   void* output)
 {
 	(void)project;
 
@@ -124,7 +124,7 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 
 		case path_get_temp_file_name_function:
 #if defined(_WIN32)
-			return !arguments_count && path_get_temp_file_name(output) && file_create(buffer_data(output, 0));
+			return !arguments_count && path_get_temp_file_name(output) && file_create(buffer_uint8_t_data(output, 0));
 #else
 			return !arguments_count && path_get_temp_file_name(output);
 #endif
@@ -155,8 +155,8 @@ uint8_t path_exec_function(const void* project, uint8_t function, const struct b
 	return 0;
 }
 
-uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-							  struct buffer* output)
+uint8_t cygpath_exec_function(uint8_t function, const void* arguments, uint8_t arguments_count,
+							  void* output)
 {
 	if (UNKNOWN_PATH_FUNCTION <= function ||
 		NULL == arguments ||
@@ -182,13 +182,13 @@ uint8_t cygpath_exec_function(uint8_t function, const struct buffer* arguments, 
 
 		case cygpath_get_unix_path_function:
 			return buffer_append_data_from_range(output, &argument) &&
-				   cygpath_get_unix_path(buffer_data(output, size),
-										 buffer_data(output, size) + range_size(&argument));
+				   cygpath_get_unix_path(buffer_uint8_t_data(output, size),
+										 buffer_uint8_t_data(output, size) + range_size(&argument));
 
 		case cygpath_get_windows_path_function:
 			return buffer_append_data_from_range(output, &argument) &&
-				   cygpath_get_windows_path(buffer_data(output, size),
-											buffer_data(output, size) + range_size(&argument));
+				   cygpath_get_windows_path(buffer_uint8_t_data(output, size),
+											buffer_uint8_t_data(output, size) + range_size(&argument));
 
 		case UNKNOWN_PATH_FUNCTION:
 		default:

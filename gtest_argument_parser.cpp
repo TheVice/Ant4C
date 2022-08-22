@@ -5,7 +5,7 @@
  *
  */
 
-#include "tests_argument_parser.h"
+#include "gtest_argument_parser.h"
 
 extern "C" {
 #include "argument_parser.h"
@@ -14,12 +14,12 @@ extern "C" {
 
 #include <gtest/gtest.h>
 
-int GlobalArgumentParser::argc = 0;
-std::string GlobalArgumentParser::empty("");
-std::vector<char*> GlobalArgumentParser::argv;
-std::vector<std::string> GlobalArgumentParser::args;
+int GTestArgumentParser::argc = 0;
+std::string GTestArgumentParser::empty("");
+std::vector<char*> GTestArgumentParser::argv;
+std::vector<std::string> GTestArgumentParser::args;
 
-uint8_t GlobalArgumentParser::get_properties(void* the_project, uint8_t verbose)
+uint8_t GTestArgumentParser::set_to_project_properties(void* the_project, uint8_t verbose)
 {
 	if (!the_project)
 	{
@@ -34,7 +34,7 @@ uint8_t GlobalArgumentParser::get_properties(void* the_project, uint8_t verbose)
 
 		for (auto i = 0; i < argc; ++i)
 		{
-			argv[i] = args[i].empty() ? &empty[0] : &(args[i][0]);
+			argv[i] = args[i].empty() ? &empty[0] : &args[i][0];
 		}
 	}
 

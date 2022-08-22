@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -23,8 +23,6 @@ enum PlatformID
 	Unix,
 	macOS
 };
-
-struct buffer;
 
 #if !defined(_WIN32)
 uint8_t operating_system_init(

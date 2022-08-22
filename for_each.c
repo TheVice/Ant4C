@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
+
+#include "for_each.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -15,8 +17,6 @@
 #include "range.h"
 #include "string_unit.h"
 #include "xml.h"
-
-#include <stdint.h>
 
 static const uint8_t* items_str[] =
 {
@@ -79,7 +79,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 						   const uint8_t* property_name, uint8_t property_name_length,
 						   const uint8_t* start, const uint8_t* finish,
 						   const uint8_t* substing_start, const uint8_t* substing_finish,
-						   const struct buffer* elements, uint8_t trim_value, uint8_t verbose)
+						   const void* elements, uint8_t trim_value, uint8_t verbose)
 {
 	while (start < finish)
 	{
@@ -126,7 +126,7 @@ uint8_t for_each_substring(void* the_project, const void* the_target,
 uint8_t for_each_with_trim(void* the_project, const void* the_target,
 						   const uint8_t* property_name, uint8_t property_name_length,
 						   const uint8_t* start, const uint8_t* finish,
-						   const struct buffer* delim, struct buffer* tmp,
+						   const void* delim, void* tmp,
 						   const uint8_t* attributes_finish, const uint8_t* element_finish,
 						   const uint8_t* delimiter, uint8_t trim_value, uint8_t verbose)
 {
@@ -177,7 +177,7 @@ uint8_t for_each_with_trim(void* the_project, const void* the_target,
 
 uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 									 const uint8_t* property_name, uint8_t property_name_length,
-									 struct buffer* input, struct buffer* tmp,
+									 void* input, void* tmp,
 									 const uint8_t* attributes_finish, const uint8_t* element_finish,
 									 uint8_t item_value, uint8_t fail_on_error, uint8_t verbose)
 {
@@ -228,7 +228,7 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(tmp, 0);
+	const uint8_t* start = buffer_uint8_t_data(tmp, 0);
 	const uint8_t* finish = start + buffer_size(tmp);
 	static const uint8_t zero = 0;
 
@@ -246,7 +246,7 @@ uint8_t for_each_file_system_entries(void* the_project, const void* the_target,
 
 uint8_t for_each_line(void* the_project, const void* the_target,
 					  const uint8_t* property_name, uint8_t property_name_length,
-					  struct buffer* input, struct buffer* delim, struct buffer* tmp,
+					  void* input, void* delim, void* tmp,
 					  const uint8_t* attributes_finish, const uint8_t* element_finish,
 					  uint8_t trim_value, uint8_t verbose)
 {
@@ -260,7 +260,7 @@ uint8_t for_each_line(void* the_project, const void* the_target,
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(input, 0);
+	const uint8_t* start = buffer_uint8_t_data(input, 0);
 
 	if (!buffer_resize(input, 0) ||
 		!file_read_all(start, input))
@@ -273,7 +273,7 @@ uint8_t for_each_line(void* the_project, const void* the_target,
 		return 1;
 	}
 
-	start = buffer_data(input, 0);
+	start = buffer_uint8_t_data(input, 0);
 	const uint8_t* finish = start + buffer_size(input);
 	static const uint8_t n = '\n';
 	/**/
@@ -286,7 +286,7 @@ uint8_t for_each_line(void* the_project, const void* the_target,
 
 uint8_t for_each_string(void* the_project, const void* the_target,
 						const uint8_t* property_name, uint8_t property_name_length,
-						const struct buffer* input, const struct buffer* delim, struct buffer* tmp,
+						const void* input, const void* delim, void* tmp,
 						const uint8_t* attributes_finish, const uint8_t* element_finish,
 						uint8_t trim_value, uint8_t verbose)
 {
@@ -295,7 +295,7 @@ uint8_t for_each_string(void* the_project, const void* the_target,
 		return 1;
 	}
 
-	const uint8_t* start = buffer_data(input, 0);
+	const uint8_t* start = buffer_uint8_t_data(input, 0);
 	const uint8_t* finish = start + buffer_size(input);
 	static const uint8_t zero = 0;
 	/**/
@@ -314,7 +314,7 @@ uint8_t for_each_string(void* the_project, const void* the_target,
 
 uint8_t for_each_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* for_each_attributes[] =
 	{
@@ -340,7 +340,7 @@ uint8_t for_each_get_attributes_and_arguments_for_task(
 uint8_t for_each_evaluate_task(
 	void* the_project, const void* the_target,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments,
+	void* task_arguments,
 	uint8_t fail_on_error, uint8_t verbose)
 {
 	if (NULL == task_arguments)
@@ -348,14 +348,14 @@ uint8_t for_each_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* item_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_ITEM_POSITION);
+	void* item_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_ITEM_POSITION);
 
 	if (!buffer_size(item_value_in_a_buffer))
 	{
 		return 0;
 	}
 
-	const uint8_t* start = buffer_data(item_value_in_a_buffer, 0);
+	const uint8_t* start = buffer_uint8_t_data(item_value_in_a_buffer, 0);
 	const uint8_t* finish = start + buffer_size(item_value_in_a_buffer);
 	const uint8_t item_value = common_string_to_enum(start, finish, items_str, UNKNOWN_ITEM);
 
@@ -365,8 +365,8 @@ uint8_t for_each_evaluate_task(
 		return 0;
 	}
 
-	const struct buffer* property_name_in_a_buffer = buffer_buffer_data(task_arguments,
-			FOR_EACH_PROPERTY_POSITION);
+	const void* property_name_in_a_buffer = buffer_buffer_data(task_arguments,
+											FOR_EACH_PROPERTY_POSITION);
 	const uint8_t property_name_length = (uint8_t)buffer_size(property_name_in_a_buffer);
 
 	if (!property_name_length)
@@ -374,7 +374,7 @@ uint8_t for_each_evaluate_task(
 		return 0;
 	}
 
-	const uint8_t* property_name = buffer_data(property_name_in_a_buffer, 0);
+	const uint8_t* property_name = buffer_uint8_t_data(property_name_in_a_buffer, 0);
 	/**/
 	uint8_t dynamic = 0;
 	void* the_property = NULL;
@@ -410,17 +410,14 @@ uint8_t for_each_evaluate_task(
 		}
 	}
 
-	struct buffer* delim_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_DELIM_POSITION);
-
-	struct buffer* in_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_IN_POSITION);
-
+	void* delim_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_DELIM_POSITION);
+	void* in_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_IN_POSITION);
 	uint8_t trim_value = None;
-
-	struct buffer* trim_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_TRIM_POSITION);
+	void* trim_value_in_a_buffer = buffer_buffer_data(task_arguments, FOR_EACH_TRIM_POSITION);
 
 	if (buffer_size(trim_value_in_a_buffer))
 	{
-		start = buffer_data(trim_value_in_a_buffer, 0);
+		start = buffer_uint8_t_data(trim_value_in_a_buffer, 0);
 		finish = start + buffer_size(trim_value_in_a_buffer);
 		trim_value = common_string_to_enum(start, finish, trims_str, UNKNOWN_TRIM);
 
@@ -466,7 +463,7 @@ uint8_t for_each_evaluate_task(
 	if (buffer_size(item_value_in_a_buffer))
 	{
 		if (!project_property_set_value(the_project, property_name, property_name_length,
-										buffer_data(item_value_in_a_buffer, 0), buffer_size(item_value_in_a_buffer),
+										buffer_uint8_t_data(item_value_in_a_buffer, 0), buffer_size(item_value_in_a_buffer),
 										dynamic, 1, 0, verbose))
 		{
 			return 0;
@@ -487,7 +484,7 @@ uint8_t for_each_evaluate_task(
 uint8_t do_evaluate_task(
 	void* the_project, const void* the_target,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	if (NULL == task_arguments)
 	{
@@ -499,7 +496,7 @@ uint8_t do_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* elements = buffer_buffer_data(task_arguments, 0);
+	void* elements = buffer_buffer_data(task_arguments, 0);
 
 	if (!elements)
 	{

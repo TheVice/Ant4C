@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2012 - 2021 TheVice
+ * Copyright (c) 2012 - 2022 TheVice
  *
  */
 
@@ -427,19 +427,19 @@ uint8_t Keccak(const uint8_t* input, ptrdiff_t length, uint8_t is_sha3,
 }
 
 uint8_t hash_algorithm_keccak(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
-							  struct buffer* output)
+							  void* output)
 {
 	return buffer_append(output, NULL, UINT8_MAX) &&
 		   Keccak(start, finish - start, 0, hash_length,
-				  (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+				  (buffer_uint8_t_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
 		   buffer_resize(output, buffer_size(output) - ((ptrdiff_t)UINT8_MAX - hash_length / 8));
 }
 
 uint8_t hash_algorithm_sha3(const uint8_t* start, const uint8_t* finish, uint16_t hash_length,
-							struct buffer* output)
+							void* output)
 {
 	return buffer_append(output, NULL, UINT8_MAX) &&
 		   Keccak(start, finish - start, 1, hash_length,
-				  (buffer_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
+				  (buffer_uint8_t_data(output, 0) + buffer_size(output) - UINT8_MAX)) &&
 		   buffer_resize(output, buffer_size(output) - ((ptrdiff_t)UINT8_MAX - hash_length / 8));
 }

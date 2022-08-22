@@ -45,8 +45,8 @@ static const uint8_t zero = '\0';
 
 uint8_t exec_get_program_full_path(
 	const void* the_project, const void* the_target,
-	struct buffer* path_to_the_program, uint8_t is_path_rooted,
-	const struct range* base_dir, struct buffer* tmp, uint8_t verbose)
+	void* path_to_the_program, uint8_t is_path_rooted,
+	const struct range* base_dir, void* tmp, uint8_t verbose)
 {
 	if (!buffer_size(path_to_the_program) ||
 		!buffer_resize(tmp, 0))
@@ -77,7 +77,7 @@ uint8_t exec_get_program_full_path(
 		const uint8_t* path = path_try_to_get_absolute_path(
 								  the_project, the_target, path_to_the_program, tmp, verbose);
 
-		if (buffer_data(path_to_the_program, 0) != path)
+		if (buffer_uint8_t_data(path_to_the_program, 0) != path)
 		{
 			if (!buffer_resize(path_to_the_program, 0))
 			{
@@ -116,7 +116,7 @@ uint8_t exec_get_program_full_path(
 #if defined(_WIN32)
 
 uint8_t exec_win32_append_command_line(
-	const struct range* command_line, struct buffer* output)
+	const struct range* command_line, void* output)
 {
 	if (!output)
 	{
@@ -124,7 +124,7 @@ uint8_t exec_win32_append_command_line(
 	}
 
 	const ptrdiff_t size = buffer_size(output);
-	const uint8_t* path_start = buffer_data(output, 0);
+	const uint8_t* path_start = buffer_uint8_t_data(output, 0);
 	const uint8_t* path_finish = path_start + size;
 	/**/
 	const uint8_t contains = string_contains(
@@ -137,7 +137,7 @@ uint8_t exec_win32_append_command_line(
 		return 0;
 	}
 
-	path_start = buffer_data(output, 0);
+	path_start = buffer_uint8_t_data(output, 0);
 	path_finish = path_start + size;
 
 	if (!file_system_get_position_after_pre_root(&path_start, path_finish))
@@ -243,7 +243,7 @@ uint8_t exec_win32(const wchar_t* program, wchar_t* cmd,
 
 uint8_t exec_win32_with_redirect(
 	const wchar_t* program, wchar_t* cmd, wchar_t* env, const wchar_t* working_dir,
-	void* pid_property, void* result_property, const uint8_t* file, struct buffer* tmp,
+	void* pid_property, void* result_property, const uint8_t* file, void* tmp,
 	uint32_t time_out, uint8_t verbose)
 {
 	if (NULL == tmp)
@@ -342,7 +342,7 @@ uint8_t exec(
 	const void* the_project,
 	const void* the_target,
 	uint8_t append,
-	struct buffer* program,
+	void* program,
 	const struct range* base_dir,
 	const struct range* command_line,
 	const struct range* output_file,
@@ -380,80 +380,84 @@ uint8_t exec(
 		return 0;
 	}
 
-	struct buffer application;
+	uint8_t application_buffer[BUFFER_SIZE_OF];
+	void* application = (void*)application_buffer;
 
-	SET_NULL_TO_BUFFER(application);
-
-	if (!buffer_resize(&application, spawn ? 1024 : 4096))
+	if (!buffer_init(application, BUFFER_SIZE_OF))
 	{
-		buffer_release(&application);
+		return 0;
+	}
+
+	if (!buffer_resize(application, spawn ? 1024 : 4096))
+	{
+		buffer_release(application);
 		return 0;
 	}
 
 	if (!exec_get_program_full_path(
 			the_project, the_target, program,
-			is_path_rooted, base_dir, &application, verbose) ||
-		!buffer_resize(&application, 0) ||
-		!buffer_append_data_from_buffer(&application, program))
+			is_path_rooted, base_dir, application, verbose) ||
+		!buffer_resize(application, 0) ||
+		!buffer_append_data_from_buffer(application, program))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
-	if (!exec_win32_append_command_line(command_line, &application))
+	if (!exec_win32_append_command_line(command_line, application))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
 	if (!range_is_null_or_empty(working_dir))
 	{
-		if (!path_combine(NULL, NULL, working_dir->start, working_dir->finish, &application))
+		if (!path_combine(NULL, NULL, working_dir->start, working_dir->finish, application))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
-		if (!buffer_push_back(&application, zero))
+		if (!buffer_push_back(application, zero))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 	}
 
 	if (!range_is_null_or_empty(environment_variables))
 	{
-		if (!buffer_append_data_from_range(&application, environment_variables) ||
-			!buffer_push_back(&application, zero))
+		if (!buffer_append_data_from_range(application, environment_variables) ||
+			!buffer_push_back(application, zero))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 	}
 
-	const ptrdiff_t size = buffer_size(&application);
+	const ptrdiff_t size = buffer_size(application);
 
-	if (!buffer_append(&application, NULL, 4 * (size + 1) + sizeof(uint32_t)))
+	if (!buffer_append(application, NULL, 4 * (size + 1) + sizeof(uint32_t)))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
-	if (!buffer_resize(&application, size))
+	if (!buffer_resize(application, size))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
-	if (!text_encoding_UTF8_to_UTF16LE(buffer_data(&application, 0),
-									   buffer_data(&application, 0) + size,
-									   &application))
+	if (!text_encoding_UTF8_to_UTF16LE(buffer_uint8_t_data(application, 0),
+									   buffer_uint8_t_data(application, 0) + size,
+									   application))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
-	const wchar_t* programW = (const wchar_t*)buffer_data(&application, size);
+	const wchar_t* programW = (const wchar_t*)buffer_data(application, size);
 
 	if (!range_is_null_or_empty(base_dir))
 	{
@@ -461,25 +465,25 @@ uint8_t exec(
 
 		if (!path_is_path_rooted(base_dir->start, base_dir->finish, &is_base_dir_rooted))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
 		if (is_base_dir_rooted && !file_exists_wchar_t(programW))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 	}
 
 	if (is_path_rooted && !file_exists_wchar_t(programW))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
 	const wchar_t* start = programW;
-	const wchar_t* finish = (const wchar_t*)(buffer_data(&application, 0) + buffer_size(&application));
+	const wchar_t* finish = (const wchar_t*)(buffer_uint8_t_data(application, 0) + buffer_size(application));
 	/**/
 	ptrdiff_t indices[3];
 	memset(indices, 0, sizeof(indices));
@@ -498,7 +502,7 @@ uint8_t exec(
 		indices[count++] = start - programW;
 	}
 
-	wchar_t* ptr = (wchar_t*)buffer_data(&application, size);
+	wchar_t* ptr = (wchar_t*)buffer_data(application, size);
 	wchar_t* command_lineW = ptr + indices[0];
 	const wchar_t* working_dirW = NULL;
 	wchar_t* environment_variablesW = NULL;
@@ -526,10 +530,10 @@ uint8_t exec(
 	else
 	{
 		spawn = exec_win32_with_redirect(programW, command_lineW, environment_variablesW, working_dirW,
-										 pid_property, result_property, file, &application, time_out, verbose);
+										 pid_property, result_property, file, application, time_out, verbose);
 	}
 
-	buffer_release(&application);
+	buffer_release(application);
 	return spawn;
 }
 
@@ -590,7 +594,7 @@ uint8_t exec_posix_no_redirect(
 
 uint8_t exec_posix_with_redirect(
 	const char* program, char** cmd, char** env, const char* working_dir,
-	const uint8_t* file, struct buffer* tmp, uint32_t time_out, void* result_property, uint8_t verbose)
+	const uint8_t* file, void* tmp, uint32_t time_out, void* result_property, uint8_t verbose)
 {
 	if (NULL == program ||
 		NULL == cmd ||
@@ -649,7 +653,7 @@ uint8_t exec_posix_with_redirect(
 		return 0;
 	}
 
-	uint8_t* ptr = buffer_data(tmp, 0);
+	uint8_t* ptr = buffer_uint8_t_data(tmp, 0);
 	const ptrdiff_t size = buffer_size(tmp) - 1;
 	ssize_t count = 0;
 
@@ -696,7 +700,7 @@ uint8_t exec(
 	const void* the_project,
 	const void* the_target,
 	uint8_t append,
-	struct buffer* program,
+	void* program,
 	const struct range* base_dir,
 	const struct range* command_line,
 	const struct range* output_file,
@@ -731,40 +735,45 @@ uint8_t exec(
 	required_size += 1024;
 	required_size = spawn ? required_size : MAX(required_size, 4096);
 	/**/
-	struct buffer application;
-	SET_NULL_TO_BUFFER(application);
+	uint8_t application_buffer[BUFFER_SIZE_OF];
+	void* application = (void*)application_buffer;
 
-	if (!buffer_append(&application, NULL, required_size))
+	if (!buffer_init(application, BUFFER_SIZE_OF))
 	{
-		buffer_release(&application);
 		return 0;
 	}
 
-	const uint8_t* program_start = buffer_data(program, 0);
+	if (!buffer_append(application, NULL, required_size))
+	{
+		buffer_release(application);
+		return 0;
+	}
+
+	const uint8_t* program_start = buffer_uint8_t_data(program, 0);
 	const uint8_t* program_finish = program_start + buffer_size(program);
 	uint8_t is_path_rooted;
 
 	if (!path_is_path_rooted(program_start, program_finish, &is_path_rooted))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
 	if (!exec_get_program_full_path(
 			the_project, the_target, program,
-			is_path_rooted, base_dir, &application, verbose) ||
-		!buffer_resize(&application, 0) ||
-		!buffer_append_data_from_buffer(&application, program))
+			is_path_rooted, base_dir, application, verbose) ||
+		!buffer_resize(application, 0) ||
+		!buffer_append_data_from_buffer(application, program))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
 	if (!range_is_null_or_empty(command_line))
 	{
-		if (!argument_append_arguments(command_line->start, command_line->finish, &application))
+		if (!argument_append_arguments(command_line->start, command_line->finish, application))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 	}
@@ -772,46 +781,46 @@ uint8_t exec(
 	int argc = 0;
 	char** cmd = NULL;
 
-	if (!argument_create_arguments(&application, &argc, &cmd))
+	if (!argument_create_arguments(application, &argc, &cmd))
 	{
-		buffer_release(&application);
+		buffer_release(application);
 		return 0;
 	}
 
-	const ptrdiff_t cmd_index = (uint8_t*)cmd - buffer_data(&application, 0);
+	const ptrdiff_t cmd_index = (uint8_t*)cmd - buffer_uint8_t_data(application, 0);
 	ptrdiff_t working_dir_index = -1;
 
 	if (!range_is_null_or_empty(working_dir))
 	{
-		working_dir_index = buffer_size(&application);
+		working_dir_index = buffer_size(application);
 
-		if (!path_combine(NULL, NULL, working_dir->start, working_dir->finish, &application))
+		if (!path_combine(NULL, NULL, working_dir->start, working_dir->finish, application))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
-		if (!buffer_push_back(&application, zero))
+		if (!buffer_push_back(application, zero))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
 		struct range work_dir_path;
 
-		work_dir_path.start = buffer_data(&application, working_dir_index);
+		work_dir_path.start = buffer_uint8_t_data(application, working_dir_index);
 
-		work_dir_path.finish = buffer_data(&application, 0) + buffer_size(&application);
+		work_dir_path.finish = buffer_uint8_t_data(application, 0) + buffer_size(application);
 
 		if (!path_is_path_rooted(work_dir_path.start, work_dir_path.finish, &is_path_rooted))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
 		if (is_path_rooted && !directory_exists(work_dir_path.start))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 	}
@@ -821,42 +830,42 @@ uint8_t exec(
 
 	if (!range_is_null_or_empty(environment_variables))
 	{
-		env_index = buffer_size(&application);
+		env_index = buffer_size(application);
 
-		if (!buffer_append_data_from_range(&application, environment_variables))
+		if (!buffer_append_data_from_range(application, environment_variables))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
 		argc = (int)env_index;
 
-		if (!argument_create_arguments(&application, &argc, &env))
+		if (!argument_create_arguments(application, &argc, &env))
 		{
-			buffer_release(&application);
+			buffer_release(application);
 			return 0;
 		}
 
-		env_index = (uint8_t*)env - buffer_data(&application, 0);
+		env_index = (uint8_t*)env - buffer_uint8_t_data(application, 0);
 	}
 
-	cmd = (char**)buffer_data(&application, cmd_index);
-	env = 0 < env_index ? (char**)buffer_data(&application, env_index) : NULL;
+	cmd = (char**)buffer_data(application, cmd_index);
+	env = 0 < env_index ? (char**)buffer_data(application, env_index) : NULL;
 	const char* work = 0 < working_dir_index ?
-					   (const char*)buffer_data(&application, working_dir_index) : NULL;
+					   (const char*)buffer_data(application, working_dir_index) : NULL;
 
 	if (spawn)
 	{
-		spawn = exec_posix_no_redirect((const char*)buffer_data(&application, 0), cmd, env, work,
+		spawn = exec_posix_no_redirect(buffer_char_data(application, 0), cmd, env, work,
 									   pid_property, result_property, verbose);
 	}
 	else
 	{
-		spawn = exec_posix_with_redirect((const char*)buffer_data(&application, 0), cmd, env, work,
-										 file, &application, time_out, result_property, verbose);
+		spawn = exec_posix_with_redirect(buffer_char_data(application, 0), cmd, env, work,
+										 file, application, time_out, result_property, verbose);
 	}
 
-	buffer_release(&application);
+	buffer_release(application);
 	return spawn;
 }
 

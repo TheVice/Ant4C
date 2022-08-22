@@ -1,11 +1,12 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
 #include "string_unit.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
@@ -77,7 +78,7 @@ uint8_t string_get_function(const uint8_t* name_start, const uint8_t* name_finis
 }
 
 uint8_t string_exec_function(uint8_t function,
-							 const struct buffer* arguments, uint8_t arguments_count, struct buffer* output)
+							 const void* arguments, uint8_t arguments_count, void* output)
 {
 	if (UNKNOWN_STRING_FUNCTION <= function || NULL == arguments || 3 < arguments_count || NULL == output)
 	{

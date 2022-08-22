@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -21,7 +21,7 @@
 
 uint8_t target_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* target_attributes[] =
 	{
@@ -40,7 +40,7 @@ uint8_t target_get_attributes_and_arguments_for_task(
 }
 
 uint8_t target_evaluate_task(
-	void* the_project, struct buffer* task_arguments, uint8_t target_help,
+	void* the_project, void* task_arguments, uint8_t target_help,
 	const uint8_t* attributes_start, const uint8_t* attributes_finish,
 	const uint8_t* element_finish,
 	const struct range* sub_nodes_names, uint8_t verbose)
@@ -50,20 +50,20 @@ uint8_t target_evaluate_task(
 		return 0;
 	}
 
-	const struct buffer* name = buffer_buffer_data(task_arguments, NAME_POSITION);
+	const void* name = buffer_buffer_data(task_arguments, NAME_POSITION);
 
 	if (!buffer_size(name))
 	{
 		return 0;
 	}
 
-	const struct buffer* depends = buffer_buffer_data(task_arguments, DEPENDS_POSITION);
-	struct buffer* description = target_help ? buffer_buffer_data(task_arguments, DESCRIPTION_POSITION) : NULL;
+	const void* depends = buffer_buffer_data(task_arguments, DEPENDS_POSITION);
+	void* description = target_help ? buffer_buffer_data(task_arguments, DESCRIPTION_POSITION) : NULL;
 	/**/
-	const uint8_t* target_name_start = buffer_data(name, 0);
+	const uint8_t* target_name_start = buffer_uint8_t_data(name, 0);
 	const uint8_t* target_name_finish = target_name_start + buffer_size(name);
 	/**/
-	const uint8_t* target_depends_start = buffer_data(depends, 0);
+	const uint8_t* target_depends_start = buffer_uint8_t_data(depends, 0);
 	const uint8_t* target_depends_finish = target_depends_start + buffer_size(depends);
 	/**/
 	return project_target_new(
@@ -99,8 +99,8 @@ uint8_t target_get_function(
 
 uint8_t target_exec_function(
 	const void* the_project, const void* the_target,
-	uint8_t function, const struct buffer* arguments,
-	uint8_t arguments_count, struct buffer* output, uint8_t verbose)
+	uint8_t function, const void* arguments,
+	uint8_t arguments_count, void* output, uint8_t verbose)
 {
 	if (UNKNOWN_TARGET_FUNCTION <= function ||
 		NULL == arguments ||
@@ -148,7 +148,7 @@ uint8_t target_exec_function(
 
 uint8_t call_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* call_attributes[] =
 	{
@@ -166,7 +166,7 @@ uint8_t call_get_attributes_and_arguments_for_task(
 }
 
 uint8_t call_evaluate_task(
-	void* the_project, struct buffer* task_arguments, uint8_t verbose)
+	void* the_project, void* task_arguments, uint8_t verbose)
 {
 	if (NULL == the_project ||
 		NULL == task_arguments)
@@ -174,8 +174,8 @@ uint8_t call_evaluate_task(
 		return 0;
 	}
 
-	const struct buffer* target_name_in_a_buffer = buffer_buffer_data(
-				task_arguments, CALL_TARGET_POSITION);
+	const void* target_name_in_a_buffer = buffer_buffer_data(
+			task_arguments, CALL_TARGET_POSITION);
 	uint8_t cascade_value = (uint8_t)buffer_size(target_name_in_a_buffer);
 
 	if (!cascade_value)
@@ -184,7 +184,7 @@ uint8_t call_evaluate_task(
 	}
 
 	void* the_target;
-	const uint8_t* name_start = buffer_data(target_name_in_a_buffer, 0);
+	const uint8_t* name_start = buffer_uint8_t_data(target_name_in_a_buffer, 0);
 	const uint8_t* name_finish = name_start + cascade_value;
 
 	if (!project_target_get(the_project,
@@ -193,14 +193,13 @@ uint8_t call_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* cascade_in_a_buffer = buffer_buffer_data(
-			task_arguments, CALL_CASCADE_POSITION);
-
+	void* cascade_in_a_buffer = buffer_buffer_data(
+									task_arguments, CALL_CASCADE_POSITION);
 	cascade_value = (uint8_t)buffer_size(cascade_in_a_buffer);
 
 	if (cascade_value)
 	{
-		const uint8_t* value = buffer_data(cascade_in_a_buffer, 0);
+		const uint8_t* value = buffer_uint8_t_data(cascade_in_a_buffer, 0);
 
 		if (!bool_parse(value, value + cascade_value, &cascade_value) ||
 			!buffer_resize(cascade_in_a_buffer, 0))

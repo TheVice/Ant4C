@@ -1,11 +1,12 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
 
 #include "if_task.h"
+
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
@@ -18,7 +19,7 @@
 
 uint8_t if_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* test = (const uint8_t*)"test";
 	static const uint8_t test_length = 4;
@@ -29,7 +30,7 @@ uint8_t if_get_attributes_and_arguments_for_task(
 }
 
 uint8_t if_evaluate_task(
-	void* the_project, const void* the_target, struct buffer* task_arguments,
+	void* the_project, const void* the_target, void* task_arguments,
 	const uint8_t* attributes_finish, const uint8_t* element_finish, uint8_t verbose)
 {
 	if (NULL == task_arguments)
@@ -37,14 +38,14 @@ uint8_t if_evaluate_task(
 		return 0;
 	}
 
-	struct buffer* test_in_a_buffer = buffer_buffer_data(task_arguments, IF_TEST_POSITION);
+	void* test_in_a_buffer = buffer_buffer_data(task_arguments, IF_TEST_POSITION);
 
 	if (!buffer_size(test_in_a_buffer))
 	{
 		return 1;
 	}
 
-	const uint8_t* value = buffer_data(test_in_a_buffer, 0);
+	const uint8_t* value = buffer_uint8_t_data(test_in_a_buffer, 0);
 	uint8_t test_value = (uint8_t)buffer_size(test_in_a_buffer);
 
 	if (!bool_parse(value, value + test_value, &test_value))

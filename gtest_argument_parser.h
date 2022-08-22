@@ -5,14 +5,14 @@
  *
  */
 
-#ifndef _GLOBAL_ARGUMENT_PARSER_H_
-#define _GLOBAL_ARGUMENT_PARSER_H_
+#ifndef _GTEST_ARGUMENT_PARSER_H__
+#define _GTEST_ARGUMENT_PARSER_H__
 
 #include <string>
 #include <vector>
 #include <cstdint>
 
-class GlobalArgumentParser
+class GTestArgumentParser
 {
 	static int argc;
 	static std::string empty;
@@ -20,7 +20,7 @@ class GlobalArgumentParser
 	static std::vector<std::string> args;
 
 public:
-	static uint8_t get_properties(void* the_project, uint8_t verbose);
+	static uint8_t set_to_project_properties(void* the_project, uint8_t verbose);
 };
 
 #endif

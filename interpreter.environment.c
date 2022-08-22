@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -40,8 +40,8 @@ uint8_t environment_get_function(const uint8_t* name_start, const uint8_t* name_
 	return common_string_to_enum(name_start, name_finish, environment_str, UNKNOWN_ENVIRONMENT);
 }
 
-uint8_t environment_exec_function(uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-								  struct buffer* output)
+uint8_t environment_exec_function(uint8_t function, const void* arguments, uint8_t arguments_count,
+								  void* output)
 {
 	if (UNKNOWN_ENVIRONMENT <= function || NULL == arguments || 1 < arguments_count || NULL == output)
 	{

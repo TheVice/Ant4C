@@ -72,12 +72,6 @@ jobs:
         ${{ format(
             startsWith(matrix.os, 'windows') && '{0}\{1}\{2}' || '{0}/{1}/{2}',
             github.workspace, 'modules', 'ant4c.net.framework') }}
-      EXECUTABLE: >-
-        ${{ format(
-            startsWith(matrix.os, 'windows') && '{0}\{1}\{2}\{3}' || '{0}/{1}/{2}/{3}',
-              github.workspace, 'build',
-              (matrix.optimized && 'Release' || 'Debug'),
-              'tests_ant4c.net.framework.module.exe') }}
 
     runs-on: ${{ matrix.os }}
 
@@ -137,8 +131,11 @@ jobs:
         --parallel ${{ steps.cpu-cores.outputs.count }}
 
     - name: Run tests
-      working-directory: ${{ env.CMAKE_BUILD_DIR }}
-      run: ${{ env.EXECUTABLE }}
+      run: >-
+        ctest
+        --build-config ${{ env.CMAKE_CONFIG_TYPE }}
+        --test-dir ${{ env.CMAKE_BUILD_DIR }}
+        --output-on-failure
 
     - name: Compress files with zstd
       shell: pwsh
@@ -156,6 +153,4 @@ jobs:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
         retention-days: 1
         path: |
-          ${{ github.workspace }}/modules/ant4c.net.framework/*.csproj
-          ${{ github.workspace }}/modules/ant4c.net.framework/*.cs
           ${{ env.CMAKE_BUILD_DIR }}/**/*.zst

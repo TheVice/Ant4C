@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2022 TheVice
  *
  */
 
@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 uint8_t string_contains(
@@ -50,19 +49,19 @@ ptrdiff_t string_last_index_of_any(
 uint8_t string_pad_left(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* value_start, const uint8_t* value_finish,
-	ptrdiff_t result_length, struct buffer* output);
+	ptrdiff_t result_length, void* output);
 uint8_t string_pad_right(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* value_start, const uint8_t* value_finish,
-	ptrdiff_t result_length, struct buffer* output);
+	ptrdiff_t result_length, void* output);
 uint8_t string_quote(
 	const uint8_t* input_start, const uint8_t* input_finish,
-	struct buffer* output);
+	void* output);
 uint8_t string_replace(
 	const uint8_t* input_start, const uint8_t* input_finish,
 	const uint8_t* to_be_replaced_start, const uint8_t* to_be_replaced_finish,
 	const uint8_t* by_replacement_start, const uint8_t* by_replacement_finish,
-	struct buffer* output);
+	void* output);
 uint8_t string_replace_double_char_with_single(
 	uint8_t* input, ptrdiff_t* size,
 	const uint8_t* to_be_replaced_start,
@@ -76,13 +75,13 @@ uint8_t string_substring(
 uint32_t string_to_case(uint32_t input, uint8_t required_case);
 uint8_t string_to_lower(
 	const uint8_t* input_start, const uint8_t* input_finish,
-	struct buffer* output);
+	void* output);
 uint8_t string_to_upper(
 	const uint8_t* input_start, const uint8_t* input_finish,
-	struct buffer* output);
+	void* output);
 uint8_t string_transform_to_case(
 	const uint8_t* input_start, const uint8_t* input_finish,
-	struct buffer* output, uint8_t required_case);
+	void* output, uint8_t required_case);
 uint8_t string_trim(struct range* input_output);
 uint8_t string_trim_any(
 	struct range* input_output, uint8_t mode, const uint16_t* trim_symbols,
