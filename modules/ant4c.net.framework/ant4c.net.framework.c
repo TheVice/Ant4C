@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
@@ -24,7 +24,7 @@
 
 #include <unknwn.h>
 
-static struct buffer output_data;
+static uint8_t output_data[BUFFER_SIZE_OF];
 static uint8_t is_buffer_initialized = 0;
 
 static void* the_runtime = NULL;
@@ -77,7 +77,7 @@ uint8_t metahost_get_clr_version_from_file(const uint8_t* path, uint16_t length)
 		return 0;
 	}
 
-	return meta_host_get_version_from_file(path, path + length, &output_data);
+	return meta_host_get_version_from_file(path, path + length, (void*)output_data);
 }
 
 uint8_t file_is_assembly(const uint8_t* path, uint16_t length, uint8_t* returned)
@@ -94,15 +94,15 @@ uint8_t file_is_assembly(const uint8_t* path, uint16_t length, uint8_t* returned
 		return 0;
 	}
 
-	*returned = 0 < buffer_size(&output_data);
-	return buffer_resize(&output_data, 0);
+	*returned = 0 < buffer_size((void*)output_data);
+	return buffer_resize((void*)output_data, 0);
 }
 
-#define FRAMEWORK_GET_FRAMEWORK_DIRECTORY() (runtime_init() && runtime_info_get_runtime_directory(the_runtime, &output_data))
+#define FRAMEWORK_GET_FRAMEWORK_DIRECTORY() (runtime_init() && runtime_info_get_runtime_directory(the_runtime, (void*)output_data))
 
-#define FRAMEWORK_GET_FRAMEWORKS() meta_host_enumerate_installed_runtimes(&output_data)
+#define FRAMEWORK_GET_FRAMEWORKS() meta_host_enumerate_installed_runtimes((void*)output_data)
 
-#define FRAMEWORK_GET_CLR_VERSION() (runtime_init() && runtime_info_get_version_string(the_runtime, &output_data))
+#define FRAMEWORK_GET_CLR_VERSION() (runtime_init() && runtime_info_get_version_string(the_runtime, (void*)output_data))
 
 static GUID manager_id;
 static uint8_t is_host_init = 0;
@@ -224,7 +224,7 @@ uint8_t framework_get_function_return(const wchar_t* version)
 
 	if (version)
 	{
-		return buffer_resize(&output_data, 0) && bool_to_string(exists, &output_data);
+		return buffer_resize((void*)output_data, 0) && bool_to_string(exists, (void*)output_data);
 	}
 	else
 	{
@@ -235,9 +235,9 @@ uint8_t framework_get_function_return(const wchar_t* version)
 			++finish;
 		}
 
-		if (!buffer_push_back(&output_data, 'v') ||
-			!text_encoding_UTF16LE_to_UTF8(runtime_framework, finish, &output_data) ||
-			!buffer_push_back(&output_data, 0))
+		if (!buffer_push_back((void*)output_data, 'v') ||
+			!text_encoding_UTF16LE_to_UTF8(runtime_framework, finish, (void*)output_data) ||
+			!buffer_push_back((void*)output_data, 0))
 		{
 			return 0;
 		}
@@ -351,15 +351,14 @@ uint8_t evaluate_function(const uint8_t* function,
 
 	if (is_buffer_initialized)
 	{
-		if (!buffer_resize(&output_data, 0))
+		if (!buffer_resize((void*)output_data, 0))
 		{
 			return 0;
 		}
 	}
 	else
 	{
-		SET_NULL_TO_BUFFER(output_data);
-		is_buffer_initialized = 1;
+		is_buffer_initialized = buffer_init((void*)output_data, BUFFER_SIZE_OF);
 	}
 
 	const uint8_t* ptr = NULL;
@@ -392,7 +391,7 @@ uint8_t evaluate_function(const uint8_t* function,
 		case file_is_assembly_:
 			if (1 != values_count ||
 				!file_is_assembly(values[0], values_lengths[0], &values_count) ||
-				!bool_to_string(values_count, &output_data))
+				!bool_to_string(values_count, (void*)output_data))
 			{
 				return 0;
 			}
@@ -401,8 +400,8 @@ uint8_t evaluate_function(const uint8_t* function,
 
 		case framework_exists_:
 			if (1 != values_count ||
-				!text_encoding_UTF8_to_UTF16LE(values[0], values[0] + values_lengths[0], &output_data) ||
-				!framework_get_function_return(buffer_wchar_t_data(&output_data, 0)))
+				!text_encoding_UTF8_to_UTF16LE(values[0], values[0] + values_lengths[0], (void*)output_data) ||
+				!framework_get_function_return(buffer_wchar_t_data((void*)output_data, 0)))
 			{
 				return 0;
 			}
@@ -448,7 +447,7 @@ uint8_t evaluate_function(const uint8_t* function,
 		case metahost_runtime_:
 			if (1 != values_count ||
 				!metahost_runtime(values[0], (uint8_t)values_lengths[0], &values_count) ||
-				!bool_to_string(values_count, &output_data))
+				!bool_to_string(values_count, (void*)output_data))
 			{
 				return 0;
 			}
@@ -468,8 +467,8 @@ uint8_t evaluate_function(const uint8_t* function,
 			break;
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
+	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
 }
@@ -496,6 +495,6 @@ void module_release()
 
 	if (is_buffer_initialized)
 	{
-		buffer_release(&output_data);
+		buffer_release((void*)output_data);
 	}
 }

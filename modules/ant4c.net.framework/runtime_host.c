@@ -1,19 +1,20 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
 #include "runtime_host.h"
+
 #include "buffer.h"
+#include "common.h"
 #include "text_encoding.h"
+
+#include <metahost.h>
 
 #include <wchar.h>
 #include <stddef.h>
-#include <string.h>
-
-#include <metahost.h>
 
 uint8_t runtime_host_start(void* host)
 {
@@ -181,63 +182,68 @@ uint8_t runtime_host_execute_in_default_app_domain(
 		return 0;
 	}
 
-	ptrdiff_t assembly_path_size = strlen((const char*)assembly_path);
-	ptrdiff_t type_name_size = strlen((const char*)type_name);
-	ptrdiff_t method_name_size = strlen((const char*)method_name);
-	ptrdiff_t argument_size = strlen((const char*)argument);
+	ptrdiff_t assembly_path_size = common_count_bytes_until(assembly_path, 0);
+	ptrdiff_t type_name_size = common_count_bytes_until(type_name, 0);
+	ptrdiff_t method_name_size = common_count_bytes_until(method_name, 0);
+	ptrdiff_t argument_size = common_count_bytes_until(argument, 0);
 	/**/
 	const ptrdiff_t size = assembly_path_size + type_name_size +
 						   method_name_size + argument_size + 4 * sizeof(uint32_t);
 	/**/
-	struct buffer arguments_W;
-	SET_NULL_TO_BUFFER(arguments_W);
+	uint8_t arguments_W_buffer[BUFFER_SIZE_OF];
+	void* arguments_W = (void*)arguments_W_buffer;
 
-	if (!buffer_append_wchar_t(&arguments_W, NULL, size) ||
-		!buffer_resize(&arguments_W, 0))
+	if (!buffer_init(arguments_W, BUFFER_SIZE_OF))
 	{
 		return 0;
 	}
 
-	if (!text_encoding_UTF8_to_UTF16LE(assembly_path, assembly_path + assembly_path_size, &arguments_W) ||
-		!buffer_push_back_uint16(&arguments_W, 0))
+	if (!buffer_append_wchar_t(arguments_W, NULL, size) ||
+		!buffer_resize(arguments_W, 0))
 	{
 		return 0;
 	}
 
-	assembly_path_size = buffer_size(&arguments_W);
-
-	if (!text_encoding_UTF8_to_UTF16LE(type_name, type_name + type_name_size, &arguments_W) ||
-		!buffer_push_back_uint16(&arguments_W, 0))
+	if (!text_encoding_UTF8_to_UTF16LE(assembly_path, assembly_path + assembly_path_size, arguments_W) ||
+		!buffer_push_back_uint16_t(arguments_W, 0))
 	{
 		return 0;
 	}
 
-	type_name_size = buffer_size(&arguments_W);
+	assembly_path_size = buffer_size(arguments_W);
 
-	if (!text_encoding_UTF8_to_UTF16LE(method_name, method_name + method_name_size, &arguments_W) ||
-		!buffer_push_back_uint16(&arguments_W, 0))
+	if (!text_encoding_UTF8_to_UTF16LE(type_name, type_name + type_name_size, arguments_W) ||
+		!buffer_push_back_uint16_t(arguments_W, 0))
 	{
 		return 0;
 	}
 
-	method_name_size = buffer_size(&arguments_W);
+	type_name_size = buffer_size(arguments_W);
 
-	if (!text_encoding_UTF8_to_UTF16LE(argument, argument + argument_size, &arguments_W) ||
-		!buffer_push_back_uint16(&arguments_W, 0))
+	if (!text_encoding_UTF8_to_UTF16LE(method_name, method_name + method_name_size, arguments_W) ||
+		!buffer_push_back_uint16_t(arguments_W, 0))
 	{
 		return 0;
 	}
 
-	const wchar_t* assembly_path_W = buffer_wchar_t_data(&arguments_W, 0);
-	const wchar_t* type_name_W = (const wchar_t*)buffer_data(&arguments_W, assembly_path_size);
-	const wchar_t* method_name_W = (const wchar_t*)buffer_data(&arguments_W, type_name_size);
-	const wchar_t* argument_W = (const wchar_t*)buffer_data(&arguments_W, method_name_size);
+	method_name_size = buffer_size(arguments_W);
+
+	if (!text_encoding_UTF8_to_UTF16LE(argument, argument + argument_size, arguments_W) ||
+		!buffer_push_back_uint16_t(arguments_W, 0))
+	{
+		return 0;
+	}
+
+	const wchar_t* assembly_path_W = buffer_wchar_t_data(arguments_W, 0);
+	const wchar_t* type_name_W = (const wchar_t*)buffer_data(arguments_W, assembly_path_size);
+	const wchar_t* method_name_W = (const wchar_t*)buffer_data(arguments_W, type_name_size);
+	const wchar_t* argument_W = (const wchar_t*)buffer_data(arguments_W, method_name_size);
 	/**/
 	argument_size = runtime_host_execute_in_default_app_domain_wchar_t(
 						host, assembly_path_W, type_name_W,
 						method_name_W, argument_W, return_value);
 	/**/
-	buffer_release(&arguments_W);
+	buffer_release(arguments_W);
 	/**/
 	return 0 < argument_size;
 }

@@ -1,20 +1,22 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
 #include "meta_host.h"
+
 #include "runtime_info.h"
+
 #include "buffer.h"
 #include "file_system.h"
 #include "range.h"
 #include "text_encoding.h"
 
-#include <wchar.h>
-
 #include <metahost.h>
+
+#include <wchar.h>
 
 #pragma comment(lib, "mscoree.lib")
 
@@ -58,20 +60,24 @@ uint8_t meta_host_get_runtime(const uint8_t* version_start, const uint8_t* versi
 		return 0;
 	}
 
-	struct buffer version_W;
+	uint8_t version_W_buffer[BUFFER_SIZE_OF];
+	void* version_W = (void*)version_W_buffer;
 
-	SET_NULL_TO_BUFFER(version_W);
-
-	if (!text_encoding_UTF8_to_UTF16LE(
-			version_start, version_finish, &version_W) ||
-		!buffer_push_back_uint16(&version_W, 0))
+	if (!buffer_init(version_W, BUFFER_SIZE_OF))
 	{
-		buffer_release(&version_W);
 		return 0;
 	}
 
-	const uint8_t result = meta_host_get_runtime_wchar_t(buffer_wchar_t_data(&version_W, 0), the_runtime);
-	buffer_release(&version_W);
+	if (!text_encoding_UTF8_to_UTF16LE(
+			version_start, version_finish, version_W) ||
+		!buffer_push_back_uint16_t(version_W, 0))
+	{
+		buffer_release(version_W);
+		return 0;
+	}
+
+	const uint8_t result = meta_host_get_runtime_wchar_t(buffer_wchar_t_data(version_W, 0), the_runtime);
+	buffer_release(version_W);
 	return result;
 }
 #if 0
@@ -99,7 +105,7 @@ uint8_t meta_host_get_runtime_v4(void** the_runtime)
 	return meta_host_get_runtime_wchar_t(version, the_runtime);
 }
 
-uint8_t meta_host_get_version_from_file_wchar_t(const wchar_t* file_path, struct buffer* output)
+uint8_t meta_host_get_version_from_file_wchar_t(const wchar_t* file_path, void* output)
 {
 	if (!file_path ||
 		!file_exists_wchar_t(file_path) ||
@@ -120,12 +126,12 @@ uint8_t meta_host_get_version_from_file_wchar_t(const wchar_t* file_path, struct
 
 	const ptrdiff_t size = buffer_size(output);
 
-	if (!buffer_append(output, NULL, (ptrdiff_t)4 * required_size + sizeof(uint32_t)))
+	if (!buffer_append(output, NULL, sizeof(uint32_t) * required_size + sizeof(uint32_t)))
 	{
 		return 0;
 	}
 
-	uint16_t* start = (uint16_t*)buffer_data(output, size + required_size);
+	wchar_t* start = (wchar_t*)buffer_data(output, size + required_size);
 	result = meta_host_instance->lpVtbl->GetVersionFromFile(meta_host_instance, file_path, start, &required_size);
 
 	if (FAILED(result))
@@ -133,10 +139,10 @@ uint8_t meta_host_get_version_from_file_wchar_t(const wchar_t* file_path, struct
 		return 0;
 	}
 
-	const uint16_t* finish = start + required_size;
+	const wchar_t* finish = start + required_size;
 
 	if (!buffer_resize(output, size) ||
-		!text_encoding_UTF16LE_to_UTF8(start, finish, output))
+		!text_encoding_UTF16LE_to_UTF8((const uint16_t*)start, (const uint16_t*)finish, output))
 	{
 		return 0;
 	}
@@ -145,7 +151,7 @@ uint8_t meta_host_get_version_from_file_wchar_t(const wchar_t* file_path, struct
 }
 
 uint8_t meta_host_get_version_from_file(
-	const uint8_t* file_path_start, const uint8_t* file_path_finish, struct buffer* output)
+	const uint8_t* file_path_start, const uint8_t* file_path_finish, void* output)
 {
 	if (range_in_parts_is_null_or_empty(file_path_start, file_path_finish) ||
 		!output ||
@@ -162,23 +168,27 @@ uint8_t meta_host_get_version_from_file(
 		return 0;
 	}
 
-	struct buffer pathW;
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	SET_NULL_TO_BUFFER(pathW);
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
-	if (!file_system_path_to_pathW(buffer_data(output, size), &pathW) ||
+	if (!file_system_path_to_pathW(buffer_uint8_t_data(output, size), pathW) ||
 		!buffer_resize(output, size))
 	{
 		return 0;
 	}
 
 	const uint8_t result = meta_host_get_version_from_file_wchar_t(
-							   buffer_wchar_t_data(&pathW, 0), output);
-	buffer_release(&pathW);
+							   buffer_wchar_t_data(pathW, 0), output);
+	buffer_release(pathW);
 	return result;
 }
 
-uint8_t meta_host_enumerate_installed_runtimes(struct buffer* output)
+uint8_t meta_host_enumerate_installed_runtimes(void* output)
 {
 	if (!output ||
 		!meta_host_init())
@@ -221,7 +231,7 @@ uint8_t meta_host_enumerate_installed_runtimes(struct buffer* output)
 	return 1;
 }
 
-uint8_t meta_host_enumerate_loaded_runtimes(void* process, struct buffer* output)
+uint8_t meta_host_enumerate_loaded_runtimes(void* process, void* output)
 {
 	if (!process ||
 		!output ||

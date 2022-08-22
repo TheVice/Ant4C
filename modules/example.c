@@ -181,7 +181,7 @@ uint8_t task_number_one(const uint8_t** arguments, const uint8_t** output, uint1
 		return 0;
 	}
 
-	*output = buffer_data((void*)output_data, 0);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
 	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
@@ -219,7 +219,7 @@ uint8_t task_number_two(const uint8_t** arguments, const uint16_t* arguments_len
 		return 0;
 	}
 
-	*output = buffer_data((void*)output_data, 0);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
 	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
@@ -289,7 +289,7 @@ uint8_t the_function(const uint8_t** output, uint16_t* output_length)
 		return 0;
 	}
 
-	*output = buffer_data((void*)output_data, 0);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
 	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
@@ -322,7 +322,7 @@ uint8_t this_is_the_function_number_one(
 		}
 	}
 
-	*output = buffer_data((void*)output_data, 0);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
 	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
@@ -359,7 +359,7 @@ uint8_t and_this_is_the_function_number_two(const uint8_t** values, const uint16
 		}
 	}
 
-	*output = buffer_data((void*)output_data, 0);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
 	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
@@ -429,6 +429,6 @@ void module_release()
 	}
 	else
 	{
-		is_buffer_initialized = buffer_init(output_data, BUFFER_SIZE_OF);
+		is_buffer_initialized = buffer_init((void*)output_data, BUFFER_SIZE_OF);
 	}
 }
