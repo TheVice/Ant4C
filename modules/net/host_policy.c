@@ -300,7 +300,7 @@ uint8_t core_host_main_with_output_buffer(
 	const void* ptr_to_host_policy_object,
 	const int32_t argc,
 	const type_of_element** argv,
-	struct buffer* output)
+	void* output)
 {
 	if (!ptr_to_host_policy_object ||
 		!output)
@@ -353,7 +353,7 @@ uint8_t core_host_main_with_output_buffer(
 		result = ptr_to_host_policy_object_->corehost_main_with_output_buffer(
 					 argc, argv, out, required_size, &required_size);
 #if defined(_WIN32)
-		const type_of_element* finish = (type_of_element*)(buffer_data(output, 0) + buffer_size(output));
+		const type_of_element* finish = (type_of_element*)(buffer_uint8_t_data(output, 0) + buffer_size(output));
 
 		if (!buffer_resize(output, 0) ||
 			!text_encoding_UTF16LE_to_UTF8(out, finish, output))

@@ -6,11 +6,12 @@
  */
 
 #include "hash.h"
+
 #include "buffer.h"
 #include "conversion.h"
 
 uint8_t hash_algorithm_bytes_to_string(
-	const uint8_t* start, const uint8_t* finish, struct buffer* output)
+	const uint8_t* start, const uint8_t* finish, void* output)
 {
 	if (NULL == start ||
 		NULL == finish ||

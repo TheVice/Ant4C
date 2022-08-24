@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -29,8 +29,6 @@
 #define delegate_calling_convention
 #define net_PATH_DELIMITER ':'
 #endif
-
-struct buffer;
 
 typedef void(calling_convention* error_writer_type)(
 	const type_of_element* message);
@@ -117,13 +115,13 @@ enum net_status_code
 const void* string_to_pointer(
 	const uint8_t* input,
 	uint8_t length,
-	struct buffer* tmp);
+	void* tmp);
 
 uint8_t convert_function_name(
 	const uint8_t* name_space,
 	const uint8_t* function_name_start,
 	const uint8_t* function_name_finish,
-	struct buffer* output);
+	void* output);
 
 uint8_t get_exists_functions(
 	const void* ptr_to_object,
@@ -132,12 +130,12 @@ uint8_t get_exists_functions(
 	const uint8_t* delimiter,
 	uint16_t delimiter_length,
 	const is_function_exists_type is_function_exists,
-	struct buffer* output);
+	void* output);
 
 uint8_t load_library(
 	const uint8_t* path_to_library,
 	uint16_t path_to_library_length,
-	struct buffer* tmp,
+	void* tmp,
 	void* ptr_to_object,
 	ptrdiff_t size,
 	const loader_type loader);
@@ -148,6 +146,6 @@ uint8_t is_function_exists(
 	const uint8_t* function_name,
 	uint16_t function_name_length,
 	const is_function_exists_type is_exists,
-	struct buffer* output);
+	void* output);
 
 #endif

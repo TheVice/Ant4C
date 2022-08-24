@@ -37,7 +37,7 @@
 #include <VersionHelpers.h>
 #endif
 
-uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* path)
+uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 {
 	if (ENVIRONMENT_UNKNOWN_SPECIAL_FOLDER <= folder || NULL == path)
 	{
@@ -232,7 +232,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 
 #include <stdlib.h>
 
-uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* path)
+uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 {
 	switch (folder)
 	{
@@ -328,7 +328,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, struct buffer* pa
 #endif
 #if defined(_WIN32)
 
-uint8_t environment_get_machine_name(struct buffer* name)
+uint8_t environment_get_machine_name(void* name)
 {
 	if (NULL == name)
 	{
@@ -369,7 +369,7 @@ uint8_t environment_get_machine_name(struct buffer* name)
 
 #else
 
-uint8_t environment_get_machine_name(struct buffer* name)
+uint8_t environment_get_machine_name(void* name)
 {
 	if (NULL == name)
 	{
@@ -558,7 +558,7 @@ const void* environment_get_operating_system()
 #endif
 #if defined(_WIN32)
 
-uint8_t environment_get_user_name(struct buffer* name)
+uint8_t environment_get_user_name(void* name)
 {
 	if (NULL == name)
 	{
@@ -599,7 +599,7 @@ uint8_t environment_get_user_name(struct buffer* name)
 
 #else
 
-uint8_t environment_get_user_name(struct buffer* name)
+uint8_t environment_get_user_name(void* name)
 {
 	if (NULL == name)
 	{
@@ -619,12 +619,10 @@ uint8_t environment_get_user_name(struct buffer* name)
 
 #endif
 
-#define LOCAL_OR_ARGUMENT(L, A) (NULL != (A) ? (A) : (L))
-
 #if defined(_WIN32)
 
 uint8_t environment_get_variable(
-	const uint8_t* variable_name_start, const uint8_t* variable_name_finish, struct buffer* variable)
+	const uint8_t* variable_name_start, const uint8_t* variable_name_finish, void* variable)
 {
 	if (range_in_parts_is_null_or_empty(variable_name_start, variable_name_finish))
 	{
@@ -632,30 +630,42 @@ uint8_t environment_get_variable(
 	}
 
 	uint8_t local_variable_was_used = 0;
-	struct buffer l_variable;
-	SET_NULL_TO_BUFFER(l_variable);
+	uint8_t l_variable[BUFFER_SIZE_OF];
 
 	if (!variable)
 	{
 		local_variable_was_used = 1;
-		variable = &l_variable;
+		variable = (void*)l_variable;
+
+		if (!buffer_init(variable, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
 	}
 
 	const ptrdiff_t size = buffer_size(variable);
 
 	if (!text_encoding_UTF8_to_UTF16LE(
 			variable_name_start, variable_name_finish, variable) ||
-		!buffer_push_back_uint16(variable, 0))
+		!buffer_push_back_uint16_t(variable, 0))
 	{
-		buffer_release(&l_variable);
+		if (local_variable_was_used)
+		{
+			buffer_release(variable);
+		}
+
 		return 0;
 	}
 
 	const ptrdiff_t size_with_name = buffer_size(variable);
 
-	if (!buffer_push_back_uint16(variable, 0))
+	if (!buffer_push_back_uint16_t(variable, 0))
 	{
-		buffer_release(&l_variable);
+		if (local_variable_was_used)
+		{
+			buffer_release(variable);
+		}
+
 		return 0;
 	}
 
@@ -664,8 +674,11 @@ uint8_t environment_get_variable(
 	/**/
 	DWORD variable_value_size = GetEnvironmentVariableW(
 									variable_name, variable_value, 1);
-	/**/
-	buffer_release(&l_variable);
+
+	if (local_variable_was_used)
+	{
+		buffer_release(variable);
+	}
 
 	if (!variable_value_size)
 	{
@@ -701,30 +714,48 @@ uint8_t environment_get_variable(
 
 #else
 
-uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8_t* variable_name_finish,
-								 struct buffer* variable)
+uint8_t environment_get_variable(
+	const uint8_t* variable_name_start, const uint8_t* variable_name_finish, void* variable)
 {
 	if (range_in_parts_is_null_or_empty(variable_name_start, variable_name_finish))
 	{
 		return 0;
 	}
 
-	struct buffer l_variable;
+	uint8_t local_variable_was_used = 0;
+	uint8_t l_variable[BUFFER_SIZE_OF];
 
-	SET_NULL_TO_BUFFER(l_variable);
+	if (!variable)
+	{
+		local_variable_was_used = 1;
+		variable = (void*)l_variable;
+
+		if (!buffer_init(variable, BUFFER_SIZE_OF))
+		{
+			return 0;
+		}
+	}
 
 	const ptrdiff_t size = buffer_size(variable);
 
-	if (!buffer_append(LOCAL_OR_ARGUMENT(&l_variable, variable), variable_name_start,
+	if (!buffer_append(variable, variable_name_start,
 					   variable_name_finish - variable_name_start) ||
-		!buffer_push_back(LOCAL_OR_ARGUMENT(&l_variable, variable), 0))
+		!buffer_push_back(variable, 0))
 	{
-		buffer_release(&l_variable);
+		if (local_variable_was_used)
+		{
+			buffer_release(variable);
+		}
+
 		return 0;
 	}
 
-	const char* value = getenv((const char*)buffer_data(LOCAL_OR_ARGUMENT(&l_variable, variable), size));
-	buffer_release(&l_variable);
+	const char* value = getenv((const char*)buffer_data(variable, size));
+
+	if (local_variable_was_used)
+	{
+		buffer_release(variable);
+	}
 
 	if (NULL == value)
 	{
@@ -741,7 +772,7 @@ uint8_t environment_get_variable(const uint8_t* variable_name_start, const uint8
 
 #endif
 
-uint8_t environment_newline(struct buffer* newline)
+uint8_t environment_newline(void* newline)
 {
 	if (NULL == newline)
 	{

@@ -24,8 +24,6 @@ enum PlatformID
 	macOS
 };
 
-struct buffer;
-
 #if !defined(_WIN32)
 uint8_t operating_system_init(
 	uint8_t platformID, const uint8_t* version,

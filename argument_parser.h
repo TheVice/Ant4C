@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
 struct range;
 
 uint8_t argument_parser_char(int i, int argc, char** argv);
@@ -23,10 +22,11 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv);
 #endif
 
 uint8_t argument_append_arguments(
-	const uint8_t* input_start, const uint8_t* input_finish, struct buffer* output);
-uint8_t argument_create_arguments(struct buffer* output, int* argc, char*** argv);
-uint8_t argument_from_char(const char* input_start, const char* input_finish,
-						   struct buffer* output, int* argc, char*** argv);
+	const uint8_t* input_start, const uint8_t* input_finish, void* output);
+uint8_t argument_create_arguments(void* output, int* argc, char*** argv);
+uint8_t argument_from_char(
+	const char* input_start, const char* input_finish,
+	void* output, int* argc, char*** argv);
 
 uint8_t argument_parser_init();
 
@@ -41,7 +41,7 @@ uint8_t argument_parser_get_quiet();
 uint8_t argument_parser_get_verbose();
 uint16_t argument_parser_get_encoding();
 
-const struct buffer* argument_parser_get_properties();
+const void* argument_parser_get_properties();
 
 const uint8_t* argument_parser_get_build_file(int index);
 const uint8_t* argument_parser_get_log_file();

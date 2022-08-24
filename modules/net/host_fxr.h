@@ -13,14 +13,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer;
-
 uint8_t net_host_load(
 	const type_of_element* path_to_net_host_library,
 	const type_of_element* path_to_assembly,
 	const type_of_element* path_to_dot_net_root,
 	void** net_host_object,
-	struct buffer* path_to_host_fxr);
+	void* path_to_host_fxr);
 
 uint8_t host_fx_resolver_load(
 	const type_of_element* path_to_host_fxr,
@@ -33,7 +31,7 @@ uint8_t host_fx_resolver_is_function_exists(
 	const uint8_t* function_name,
 	uint8_t function_name_length);
 
-uint8_t result_code_to_string(int32_t code, struct buffer* output);
+uint8_t result_code_to_string(int32_t code, void* output);
 
 enum hostfxr_resolve_sdk2_result_keys
 {

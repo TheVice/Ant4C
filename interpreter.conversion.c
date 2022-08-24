@@ -32,8 +32,8 @@ uint8_t conversion_get_function(
 
 
 uint8_t bool_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output)
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	if (UNKNOWN_CONVERSION <= function ||
 		!arguments ||
@@ -78,7 +78,7 @@ enum conversion_name_space
 
 uint8_t conversion_exec_function(
 	uint8_t name_space, uint8_t function,
-	const struct buffer* arguments, uint8_t arguments_count, struct buffer* output)
+	const void* arguments, uint8_t arguments_count, void* output)
 {
 	if (UNKNOWN_CONVERSION <= function ||
 		!arguments ||
@@ -129,29 +129,29 @@ uint8_t conversion_exec_function(
 }
 
 uint8_t double_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output)
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	return conversion_exec_function(double_functions, function, arguments, arguments_count, output);
 }
 
 uint8_t int_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output)
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	return conversion_exec_function(int_functions, function, arguments, arguments_count, output);
 }
 
 uint8_t long_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output)
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	return conversion_exec_function(long_functions, function, arguments, arguments_count, output);
 }
 
 uint8_t int64_exec_function(
-	uint8_t function, const struct buffer* arguments, uint8_t arguments_count,
-	struct buffer* output)
+	uint8_t function, const void* arguments, uint8_t arguments_count,
+	void* output)
 {
 	return conversion_exec_function(int64_functions, function, arguments, arguments_count, output);
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
@@ -10,8 +10,6 @@
 
 #include <stdint.h>
 
-struct buffer;
-
 uint8_t meta_host_init();
 
 uint8_t meta_host_get_runtime(
@@ -19,9 +17,9 @@ uint8_t meta_host_get_runtime(
 uint8_t meta_host_get_runtime_v2(void** the_runtime);
 uint8_t meta_host_get_runtime_v4(void** the_runtime);
 uint8_t meta_host_get_version_from_file(
-	const uint8_t* file_path_start, const uint8_t* file_path_finish, struct buffer* output);
-uint8_t meta_host_enumerate_installed_runtimes(struct buffer* output);
-uint8_t meta_host_enumerate_loaded_runtimes(void* process, struct buffer* output);
+	const uint8_t* file_path_start, const uint8_t* file_path_finish, void* output);
+uint8_t meta_host_enumerate_installed_runtimes(void* output);
+uint8_t meta_host_enumerate_loaded_runtimes(void* process, void* output);
 
 uint8_t meta_host_exit_process(int32_t exit_code);
 

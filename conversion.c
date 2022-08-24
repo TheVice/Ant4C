@@ -62,7 +62,7 @@ uint8_t bool_parse(
 	return 1;
 }
 
-uint8_t bool_to_string(uint8_t input, struct buffer* output)
+uint8_t bool_to_string(uint8_t input, void* output)
 {
 	if (!input)
 	{
@@ -89,7 +89,7 @@ uint8_t bool_to_string(uint8_t input, struct buffer* output)
 		return 0;												\
 	}															\
 	\
-	char* out = (char*)buffer_data((OUTPUT), size);
+	char* out = buffer_char_data((OUTPUT), size);
 
 #define DIGIT_TO_STRING(VALUE, EXPECTED_SIZE, FORMAT, OUTPUT)	\
 	DIGIT_TO_STRING_COMMON((EXPECTED_SIZE), (OUTPUT))			\
@@ -163,7 +163,7 @@ double double_parse(const uint8_t* value)
 	return atof((const char*)value);
 }
 
-uint8_t double_to_string(double input, struct buffer* output)
+uint8_t double_to_string(double input, void* output)
 {
 #if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(input, 386, "%.16lf", output);
@@ -177,7 +177,7 @@ int32_t int_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	PARSE(input_start, input_finish, INT32_MAX, INT32_MIN, int32_t);
 }
 
-uint8_t int_to_string(int32_t input, struct buffer* output)
+uint8_t int_to_string(int32_t input, void* output)
 {
 	TO_STRING(input, output);
 }
@@ -187,7 +187,7 @@ long long_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	PARSE(input_start, input_finish, LONG_MAX, LONG_MIN, long);
 }
 
-uint8_t long_to_string(long input, struct buffer* output)
+uint8_t long_to_string(long input, void* output)
 {
 	TO_STRING(input, output);
 }
@@ -197,10 +197,12 @@ int64_t int64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 	PARSE(input_start, input_finish, INT64_MAX, INT64_MIN, int64_t);
 }
 
-uint8_t int64_to_string(int64_t input, struct buffer* output)
+uint8_t int64_to_string(int64_t input, void* output)
 {
 	TO_STRING(input, output);
 }
+
+#define MAXIMUM_STR_LENGTH 21
 
 uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 {
@@ -230,9 +232,9 @@ uint64_t uint64_parse(const uint8_t* input_start, const uint8_t* input_finish)
 					   input_start, input_finish,
 					   digits, digits + count_of_digits, 0, 1);
 	/**/
-	uint32_t output[21];
+	uint32_t output[MAXIMUM_STR_LENGTH];
 	uint32_t* out = output;
-	const uint32_t* out_finish = out + 21;
+	const uint32_t* out_finish = out + MAXIMUM_STR_LENGTH;
 
 	while (NULL != (input_start = string_enumerate(input_start, input_finish, out)))
 	{
@@ -461,7 +463,7 @@ const uint8_t* uint64_to_string_to_byte_array(uint64_t input, uint8_t* a, uint8_
 	return result_start;
 }
 
-uint8_t uint64_to_string(uint64_t input, struct buffer* output)
+uint8_t uint64_to_string(uint64_t input, void* output)
 {
 	const ptrdiff_t size = buffer_size(output);
 
@@ -470,17 +472,17 @@ uint8_t uint64_to_string(uint64_t input, struct buffer* output)
 		return 0;
 	}
 
-	uint8_t* a = buffer_data(output, size);
-	uint8_t* b = a + 21;
+	uint8_t* a = buffer_uint8_t_data(output, size);
+	uint8_t* b = a + MAXIMUM_STR_LENGTH;
 	/**/
-	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, 21);
+	const uint8_t* result_start = uint64_to_string_to_byte_array(input, a, b, MAXIMUM_STR_LENGTH);
 
 	if (!result_start)
 	{
 		return 0;
 	}
 
-	const uint8_t* result_finish = result_start + 21;
+	const uint8_t* result_finish = result_start + MAXIMUM_STR_LENGTH;
 	result_start = string_find_any_symbol_like_or_not_like_that(
 					   result_start, result_finish, &zero, &zero + 1, 0, 1);
 	/**/
@@ -510,7 +512,7 @@ void* pointer_parse(const uint8_t* value)
 	return (void*)(ptrdiff_t)strtoll((const char*)value, &ch, 16);
 }
 
-uint8_t pointer_to_string(const void* input, struct buffer* output)
+uint8_t pointer_to_string(const void* input, void* output)
 {
 #if __STDC_LIB_EXT1__
 	DIGIT_TO_STRING_STDC_SEC_API(input, 32, "%p", output);
@@ -533,7 +535,7 @@ uint8_t single_int_to_hex(uint8_t input)
 	return input;
 }
 
-uint8_t int_to_hex(uint8_t input, struct buffer* output)
+uint8_t int_to_hex(uint8_t input, void* output)
 {
 	const uint8_t rest = input % 16;
 

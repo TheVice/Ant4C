@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -21,7 +21,7 @@
 
 uint8_t sleep_unit_get_attributes_and_arguments_for_task(
 	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments)
+	uint8_t* task_attributes_count, void* task_arguments)
 {
 	static const uint8_t* attributes[] =
 	{
@@ -40,7 +40,7 @@ uint8_t sleep_unit_get_attributes_and_arguments_for_task(
 			   task_attributes_count, task_arguments);
 }
 
-uint8_t sleep_unit_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
+uint8_t sleep_unit_evaluate_task(void* task_arguments, uint8_t verbose)
 {
 	(void)verbose;
 
@@ -51,7 +51,7 @@ uint8_t sleep_unit_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 
 	uint8_t counter = 0;
 	uint64_t milliseconds = 0;
-	struct buffer* argument = NULL;
+	void* argument = NULL;
 
 	while (NULL != (argument = buffer_buffer_data(task_arguments, counter++)))
 	{
@@ -60,7 +60,7 @@ uint8_t sleep_unit_evaluate_task(struct buffer* task_arguments, uint8_t verbose)
 			continue;
 		}
 
-		const uint8_t* start = buffer_data(argument, 0);
+		const uint8_t* start = buffer_uint8_t_data(argument, 0);
 		const uint8_t* finish = start + buffer_size(argument);
 		const uint64_t argument_value = int64_parse(start, finish);
 

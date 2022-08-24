@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2022 TheVice
  *
  */
+
+#include "try_catch.h"
 
 #include "buffer.h"
 #include "common.h"
@@ -17,7 +19,6 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
 #define ELEMENTS_POSITION			0
@@ -25,7 +26,7 @@
 
 #define COUNT						(SUB_ELEMENTS_POSITION + 1)
 
-void* try_catch_create_error_output_stream(struct buffer* tmp)
+void* try_catch_create_error_output_stream(void* tmp)
 {
 	if (NULL == tmp)
 	{
@@ -41,7 +42,7 @@ void* try_catch_create_error_output_stream(struct buffer* tmp)
 
 	void* stream = NULL;
 
-	if (!file_open(buffer_data(tmp, size), (const uint8_t*)"wb+", &stream))
+	if (!file_open(buffer_uint8_t_data(tmp, size), (const uint8_t*)"wb+", &stream))
 	{
 		return NULL;
 	}
@@ -66,7 +67,7 @@ uint8_t try_catch_error_output_stream_read_to_property(void* stream, void* the_p
 }
 
 uint8_t try_catch_copy_property_value(const void* the_source, void* the_destination,
-									  struct buffer* tmp, uint8_t verbose)
+									  void* tmp, uint8_t verbose)
 {
 	if (NULL == the_source ||
 		NULL == the_destination ||
@@ -100,7 +101,7 @@ uint8_t try_catch_copy_property_value(const void* the_source, void* the_destinat
 uint8_t try_catch_evaluate_task(
 	void* the_project, const void* the_target,
 	const uint8_t* attributes_finish, const uint8_t* element_finish,
-	struct buffer* task_arguments, uint8_t verbose)
+	void* task_arguments, uint8_t verbose)
 {
 	static const uint8_t* tags[] =
 	{
@@ -121,18 +122,18 @@ uint8_t try_catch_evaluate_task(
 		return 0;
 	}
 
-	struct buffer tmp;
+	uint8_t tmp_buffer[BUFFER_SIZE_OF];
+	void* tmp = (void*)tmp_buffer;
 
-	SET_NULL_TO_BUFFER(tmp);
+	if (!buffer_init(tmp, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
-	struct buffer* elements = buffer_buffer_data(task_arguments, ELEMENTS_POSITION);
-
-	struct buffer* sub_elements = buffer_buffer_data(task_arguments, SUB_ELEMENTS_POSITION);
-
+	void* elements = buffer_buffer_data(task_arguments, ELEMENTS_POSITION);
+	void* sub_elements = buffer_buffer_data(task_arguments, SUB_ELEMENTS_POSITION);
 	uint8_t result[3] = { 1, 1, 1 };
-
 	void* error_output_stream = NULL;
-
 	void* current_error_output_stream = common_is_error_output_stream_standard() ? NULL :
 										common_get_error_output_stream();
 
@@ -178,7 +179,7 @@ uint8_t try_catch_evaluate_task(
 		{
 			if (xml_get_sub_nodes_elements(element->start, element->finish, NULL, sub_elements) && 1 == i)
 			{
-				if (!buffer_resize(&tmp, 0))
+				if (!buffer_resize(tmp, 0))
 				{
 					i = count;
 					break;
@@ -188,11 +189,11 @@ uint8_t try_catch_evaluate_task(
 				static const uint8_t property_str_length = 8;
 
 				if (xml_get_attribute_value(element->start, element->finish,
-											property_str, property_str_length, &tmp))
+											property_str, property_str_length, tmp))
 				{
 					void* the_property = NULL;
-					const uint8_t* property_name = buffer_data(&tmp, 0);
-					const uint8_t property_name_length = (uint8_t)buffer_size(&tmp);
+					const uint8_t* property_name = buffer_uint8_t_data(tmp, 0);
+					const uint8_t property_name_length = (uint8_t)buffer_size(tmp);
 
 					if (!project_property_set_value(
 							the_project,
@@ -220,9 +221,9 @@ uint8_t try_catch_evaluate_task(
 					}
 					else
 					{
-						if (!buffer_resize(&tmp, 0) ||
+						if (!buffer_resize(tmp, 0) ||
 							!try_catch_copy_property_value(
-								the_first_property, the_property, &tmp, verbose))
+								the_first_property, the_property, tmp, verbose))
 						{
 							i = count;
 							the_first_property = NULL;
@@ -284,7 +285,7 @@ uint8_t try_catch_evaluate_task(
 		++i;
 	}
 
-	buffer_release(&tmp);
+	buffer_release(tmp);
 
 	if (error_output_stream)
 	{

@@ -11,6 +11,10 @@ include("${CMAKE_SOURCE_DIR}/common.cmake")
 append_to_flags_from_outside()
 set_position_independent_code()
 
+if(DEFINED PROGRAM_VERSION)
+  get_compiler_version()
+endif()
+
 find_library(DL_LIB dl)
 find_library(M_LIB m)
 
@@ -47,12 +51,16 @@ set(
   "${CMAKE_SOURCE_DIR}/interpreter.c"
   "${CMAKE_SOURCE_DIR}/interpreter.conversion.c"
   "${CMAKE_SOURCE_DIR}/interpreter.date_time.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.echo.c"
   "${CMAKE_SOURCE_DIR}/interpreter.environment.c"
   "${CMAKE_SOURCE_DIR}/interpreter.exec.c"
   "${CMAKE_SOURCE_DIR}/interpreter.file_system.c"
   "${CMAKE_SOURCE_DIR}/interpreter.hash.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.load_file.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.math_unit.c"
   "${CMAKE_SOURCE_DIR}/interpreter.operating_system.c"
   "${CMAKE_SOURCE_DIR}/interpreter.path.c"
+  "${CMAKE_SOURCE_DIR}/interpreter.property.c"
   "${CMAKE_SOURCE_DIR}/interpreter.sleep_unit.c"
   "${CMAKE_SOURCE_DIR}/interpreter.string_unit.c"
   "${CMAKE_SOURCE_DIR}/interpreter.target.c"
@@ -96,6 +104,8 @@ set(ANT4C_HEADERS
   "${CMAKE_SOURCE_DIR}/interpreter.h"
   "${CMAKE_SOURCE_DIR}/interpreter.exec.h"
   "${CMAKE_SOURCE_DIR}/interpreter.file_system.h"
+  "${CMAKE_SOURCE_DIR}/interpreter.load_file.h"
+  "${CMAKE_SOURCE_DIR}/interpreter.property.h"
   "${CMAKE_SOURCE_DIR}/interpreter.string_unit.h"
   "${CMAKE_SOURCE_DIR}/listener.h"
   "${CMAKE_SOURCE_DIR}/load_file.h"
@@ -122,13 +132,15 @@ set(ANT4C_HEADERS
 
 add_library(ant4c STATIC ${ANT4C_SOURCES} ${ANT4C_HEADERS})
 set_target_properties(ant4c PROPERTIES PUBLIC_HEADER "${ANT4C_HEADERS}")
+target_include_directories(ant4c SYSTEM INTERFACE
+  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
+)
 
 if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -139,6 +151,11 @@ target_compile_options(ant4c PRIVATE
 )
 
 target_link_libraries(ant4c INTERFACE ${DL_LIB} ${M_LIB})
+
+if(DEFINED PROGRAM_VERSION)
+  target_compile_definitions(ant4c PRIVATE PROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
+endif()
+
 add_library(Ant4C::ant4c ALIAS ant4c)
 
 # ant4c_shared
@@ -154,8 +171,7 @@ if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c_shared
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -170,8 +186,13 @@ target_link_libraries(ant4c_shared
   ${M_LIB}
 )
 
+if(DEFINED PROGRAM_VERSION)
+  target_compile_definitions(ant4c_shared PRIVATE PROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
+endif()
+
 add_library(Ant4C::ant4c_shared ALIAS ant4c_shared)
 endif()
+
 # ant4c_app
 
 add_executable(
@@ -193,8 +214,7 @@ if(NOT MSVC)
   if(CMAKE_VERSION VERSION_LESS 3.1 OR ";${CMAKE_C_COMPILE_FEATURES};" MATCHES ";c_std_11;")
   target_compile_features(ant4c_app
     PRIVATE
-    c_std_11
-  )
+    c_std_11)
   endif()
 endif()
 
@@ -204,45 +224,38 @@ target_compile_options(ant4c_app PRIVATE
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
+if(DEFINED PROGRAM_VERSION)
+  target_compile_definitions(ant4c_app PRIVATE PROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
+endif()
+
 add_executable(Ant4C::ant4c_app ALIAS ant4c_app)
 
-# Set ant4c version
+# Listener
 
-if(DEFINED PROGRAM_VERSION)
-  get_compiler_version()
-  target_compile_definitions(ant4c PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
-  target_compile_definitions(ant4c_app PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
-  # target_compile_definitions(ant4c_shared PRIVATE -DPROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
-endif()
+include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 
 # Install ant4c
 
-if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-  set(CMAKE_INSTALL_LIBDIR lib)
-endif()
-if(NOT DEFINED CMAKE_INSTALL_BINDIR)
-  set(CMAKE_INSTALL_BINDIR bin)
-endif()
-if(NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
-  set(CMAKE_INSTALL_INCLUDEDIR include)
-endif()
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(cmake_package_name ant4c)
+set(cmake_files_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${cmake_package_name}")
+set(config_file "${CMAKE_CURRENT_BINARY_DIR}/${cmake_package_name}Config.cmake")
 
 install(
-  TARGETS ant4c ant4c_app
+  TARGETS ant4c ant4c_app default_listener
   EXPORT ant4cTargets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${cmake_package_name}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${cmake_package_name})
 
 install(
   EXPORT ant4cTargets
-  FILE ant4cTargets.cmake
   NAMESPACE Ant4C::
-  DESTINATION lib/cmake/ant4c
-)
+  DESTINATION ${cmake_files_install_dir})
 
 file(
   GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
@@ -255,32 +268,18 @@ endif()
 include(\"\${CMAKE_CURRENT_LIST_DIR}/ant4cTargets.cmake\")"
 )
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
-  DESTINATION lib/cmake/ant4c
-)
+install(FILES ${config_file} DESTINATION ${cmake_files_install_dir})
 
 if(DEFINED PROGRAM_VERSION)
-  include(CMakePackageConfigHelpers)
-
+  set(
+    version_file "${CMAKE_CURRENT_BINARY_DIR}/${cmake_package_name}ConfigVersion.cmake")
   write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
-    VERSION ${PROGRAM_VERSION}
-    COMPATIBILITY SameMajorVersion
-  )
-
+    ${version_file} VERSION ${PROGRAM_VERSION} COMPATIBILITY AnyNewerVersion)
   install(
-    FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/ant4cConfigVersion.cmake"
-    DESTINATION lib/cmake/ant4c
-  )
+    FILES ${version_file} ${config_file}
+    DESTINATION ${cmake_files_install_dir})
 endif()
-
 # Example module
 
 include("${CMAKE_SOURCE_DIR}/modules/example.cmake")
-
-# Listener
-
-include("${CMAKE_SOURCE_DIR}/default_listener.cmake")
 

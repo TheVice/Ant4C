@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021 - 2022 TheVice
  *
  */
 
@@ -55,47 +55,80 @@ static const type_of_element* empty = (const type_of_element*)"";
 
 static uint8_t is_buffer_init = 0;
 
-static struct buffer b_config_keys_;
-static struct buffer b_config_values_;
-static struct buffer b_fx_dir_;
-static struct buffer b_fx_name_;
-static struct buffer b_dependency_file_;
-static struct buffer b_paths_for_probing_;
-static struct buffer b_target_framework_moniker_;
-static struct buffer b_additional_dependency_serialized_;
-static struct buffer b_fx_version_;
-static struct buffer b_fx_names_;
-static struct buffer b_fx_directories_;
-static struct buffer b_fx_requested_versions_;
-static struct buffer b_fx_found_versions_;
-static struct buffer b_host_command_;
-static struct buffer b_host_information_host_path_;
-static struct buffer b_host_information_dotnet_root_;
-static struct buffer b_host_information_application_path_;
+static uint8_t b_config_keys_buffer[BUFFER_SIZE_OF];
+static void* b_config_keys_ = (void*)b_config_keys_buffer;
+static uint8_t b_config_values_buffer[BUFFER_SIZE_OF];
+static void* b_config_values_ = (void*)b_config_values_buffer;
+static uint8_t b_fx_dir_buffer[BUFFER_SIZE_OF];
+static void* b_fx_dir_ = (void*)b_fx_dir_buffer;
+static uint8_t b_fx_name_buffer[BUFFER_SIZE_OF];
+static void* b_fx_name_ = (void*)b_fx_name_buffer;
+static uint8_t b_dependency_file_buffer[BUFFER_SIZE_OF];
+static void* b_dependency_file_ = (void*)b_dependency_file_buffer;
+static uint8_t b_paths_for_probing_buffer[BUFFER_SIZE_OF];
+static void* b_paths_for_probing_ = (void*)b_paths_for_probing_buffer;
+static uint8_t b_target_framework_moniker_buffer[BUFFER_SIZE_OF];
+static void* b_target_framework_moniker_ = (void*)b_target_framework_moniker_buffer;
+static uint8_t b_additional_dependency_serialized_buffer[BUFFER_SIZE_OF];
+static void* b_additional_dependency_serialized_ = (void*)b_additional_dependency_serialized_buffer;
+static uint8_t b_fx_version_buffer[BUFFER_SIZE_OF];
+static void* b_fx_version_ = (void*)b_fx_version_buffer;
+static uint8_t b_fx_names_buffer[BUFFER_SIZE_OF];
+static void* b_fx_names_ = (void*)b_fx_names_buffer;
+static uint8_t b_fx_directories_buffer[BUFFER_SIZE_OF];
+static void* b_fx_directories_ = (void*)b_fx_directories_buffer;
+static uint8_t b_fx_requested_versions_buffer[BUFFER_SIZE_OF];
+static void* b_fx_requested_versions_ = (void*)b_fx_requested_versions_buffer;
+static uint8_t b_fx_found_versions_buffer[BUFFER_SIZE_OF];
+static void* b_fx_found_versions_ = (void*)b_fx_found_versions_buffer;
+static uint8_t b_host_command_buffer[BUFFER_SIZE_OF];
+static void* b_host_command_ = (void*)b_host_command_buffer;
+static uint8_t b_host_information_host_path_buffer[BUFFER_SIZE_OF];
+static void* b_host_information_host_path_ = (void*)b_host_information_host_path_buffer;
+static uint8_t b_host_information_dotnet_root_buffer[BUFFER_SIZE_OF];
+static void* b_host_information_dotnet_root_ = (void*)b_host_information_dotnet_root_buffer;
+static uint8_t b_host_information_application_path_buffer[BUFFER_SIZE_OF];
+static void* b_host_information_application_path_ = (void*)b_host_information_application_path_buffer;
 
 void host_interface_init_buffers()
 {
 	if (!is_buffer_init)
 	{
-		SET_NULL_TO_BUFFER(b_config_keys_);
-		SET_NULL_TO_BUFFER(b_config_values_);
-		SET_NULL_TO_BUFFER(b_fx_dir_);
-		SET_NULL_TO_BUFFER(b_fx_name_);
-		SET_NULL_TO_BUFFER(b_dependency_file_);
-		SET_NULL_TO_BUFFER(b_paths_for_probing_);
-		SET_NULL_TO_BUFFER(b_target_framework_moniker_);
-		SET_NULL_TO_BUFFER(b_additional_dependency_serialized_);
-		SET_NULL_TO_BUFFER(b_fx_version_);
-		SET_NULL_TO_BUFFER(b_fx_names_);
-		SET_NULL_TO_BUFFER(b_fx_directories_);
-		SET_NULL_TO_BUFFER(b_fx_requested_versions_);
-		SET_NULL_TO_BUFFER(b_fx_found_versions_);
-		SET_NULL_TO_BUFFER(b_host_command_);
-		SET_NULL_TO_BUFFER(b_host_information_host_path_);
-		SET_NULL_TO_BUFFER(b_host_information_dotnet_root_);
-		SET_NULL_TO_BUFFER(b_host_information_application_path_);
+		b_config_keys_ = (void*)b_config_keys_buffer;
+		b_config_values_ = (void*)b_config_values_buffer;
+		b_fx_dir_ = (void*)b_fx_dir_buffer;
+		b_fx_name_ = (void*)b_fx_name_buffer;
+		b_dependency_file_ = (void*)b_dependency_file_buffer;
+		b_paths_for_probing_ = (void*)b_paths_for_probing_buffer;
+		b_target_framework_moniker_ = (void*)b_target_framework_moniker_buffer;
+		b_additional_dependency_serialized_ = (void*)b_additional_dependency_serialized_buffer;
+		b_fx_version_ = (void*)b_fx_version_buffer;
+		b_fx_names_ = (void*)b_fx_names_buffer;
+		b_fx_directories_ = (void*)b_fx_directories_buffer;
+		b_fx_requested_versions_ = (void*)b_fx_requested_versions_buffer;
+		b_fx_found_versions_ = (void*)b_fx_found_versions_buffer;
+		b_host_command_ = (void*)b_host_command_buffer;
+		b_host_information_host_path_ = (void*)b_host_information_host_path_buffer;
+		b_host_information_dotnet_root_ = (void*)b_host_information_dotnet_root_buffer;
+		b_host_information_application_path_ = (void*)b_host_information_application_path_buffer;
 		/**/
-		is_buffer_init = 1;
+		is_buffer_init = buffer_init(b_config_keys_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_config_values_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_dir_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_name_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_dependency_file_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_paths_for_probing_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_target_framework_moniker_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_additional_dependency_serialized_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_version_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_names_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_directories_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_requested_versions_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_fx_found_versions_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_host_command_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_host_information_host_path_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_host_information_dotnet_root_, BUFFER_SIZE_OF) &&
+						 buffer_init(b_host_information_application_path_, BUFFER_SIZE_OF);
 	}
 }
 
@@ -103,23 +136,23 @@ void host_interface_release_buffers()
 {
 	if (is_buffer_init)
 	{
-		buffer_release(&b_config_keys_);
-		buffer_release(&b_config_values_);
-		buffer_release(&b_fx_dir_);
-		buffer_release(&b_fx_name_);
-		buffer_release(&b_dependency_file_);
-		buffer_release(&b_paths_for_probing_);
-		buffer_release(&b_target_framework_moniker_);
-		buffer_release(&b_additional_dependency_serialized_);
-		buffer_release(&b_fx_version_);
-		buffer_release(&b_fx_names_);
-		buffer_release(&b_fx_directories_);
-		buffer_release(&b_fx_requested_versions_);
-		buffer_release(&b_fx_found_versions_);
-		buffer_release(&b_host_command_);
-		buffer_release(&b_host_information_host_path_);
-		buffer_release(&b_host_information_dotnet_root_);
-		buffer_release(&b_host_information_application_path_);
+		buffer_release(b_config_keys_);
+		buffer_release(b_config_values_);
+		buffer_release(b_fx_dir_);
+		buffer_release(b_fx_name_);
+		buffer_release(b_dependency_file_);
+		buffer_release(b_paths_for_probing_);
+		buffer_release(b_target_framework_moniker_);
+		buffer_release(b_additional_dependency_serialized_);
+		buffer_release(b_fx_version_);
+		buffer_release(b_fx_names_);
+		buffer_release(b_fx_directories_);
+		buffer_release(b_fx_requested_versions_);
+		buffer_release(b_fx_found_versions_);
+		buffer_release(b_host_command_);
+		buffer_release(b_host_information_host_path_);
+		buffer_release(b_host_information_dotnet_root_);
+		buffer_release(b_host_information_application_path_);
 	}
 }
 
@@ -178,7 +211,7 @@ uint8_t host_interface_init(
 	\
 	THE_INTERFACE_->MEMBER = empty;																		\
 	if (!text_encoding_UTF8_to_UTF16LE(VALUE, VALUE + LENGTH, THE_BUFFER) ||							\
-		!buffer_push_back_uint16(THE_BUFFER, 0))														\
+		!buffer_push_back_uint16_t(THE_BUFFER, 0))														\
 	{																									\
 		return 0;																						\
 	}																									\
@@ -269,7 +302,7 @@ uint8_t host_interface_set_additional_dependency_serialized(
 		additional_dependency_serialized,
 		additional_dependency_serialized_length,
 		additional_dependency_serialized,
-		&b_additional_dependency_serialized_);
+		b_additional_dependency_serialized_);
 }
 
 uint8_t host_interface_set_application_path(
@@ -283,14 +316,14 @@ uint8_t host_interface_set_application_path(
 		application_path,
 		application_path_length,
 		host_information_application_path,
-		&b_host_information_application_path_);
+		b_host_information_application_path_);
 #else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		application_path,
 		application_path_length,
 		host_information_application_path,
-		&b_host_information_application_path_);
+		b_host_information_application_path_);
 #endif
 }
 
@@ -307,7 +340,7 @@ uint8_t host_interface_set_config_keys(
 		keys_lengths,
 		count,
 		config_keys,
-		&b_config_keys_);
+		b_config_keys_);
 }
 
 uint8_t host_interface_set_config_values(
@@ -323,7 +356,7 @@ uint8_t host_interface_set_config_values(
 		values_lengths,
 		count,
 		config_values,
-		&b_config_values_);
+		b_config_values_);
 }
 
 uint8_t host_interface_set_dependency_file(
@@ -337,14 +370,14 @@ uint8_t host_interface_set_dependency_file(
 		dependency_file,
 		dependency_file_length,
 		dependency_file,
-		&b_dependency_file_);
+		b_dependency_file_);
 #else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		dependency_file,
 		dependency_file_length,
 		dependency_file,
-		&b_dependency_file_);
+		b_dependency_file_);
 #endif
 }
 
@@ -359,14 +392,14 @@ uint8_t host_interface_set_dotnet_root(
 		dotnet_root,
 		dotnet_root_length,
 		host_information_dotnet_root,
-		&b_host_information_dotnet_root_);
+		b_host_information_dotnet_root_);
 #else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		dotnet_root,
 		dotnet_root_length,
 		host_information_dotnet_root,
-		&b_host_information_dotnet_root_);
+		b_host_information_dotnet_root_);
 #endif
 }
 
@@ -399,7 +432,7 @@ uint8_t host_interface_set_framework_directories(
 		directories_lengths,
 		count,
 		fx_directories,
-		&b_fx_directories_);
+		b_fx_directories_);
 }
 
 uint8_t host_interface_set_framework_directory(
@@ -411,14 +444,14 @@ uint8_t host_interface_set_framework_directory(
 		directory,
 		directory_length,
 		fx_dir,
-		&b_fx_dir_);
+		b_fx_dir_);
 #else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		directory,
 		directory_length,
 		fx_dir,
-		&b_fx_dir_);
+		b_fx_dir_);
 #endif
 }
 
@@ -435,7 +468,7 @@ uint8_t host_interface_set_framework_found_versions(
 		versions_lengths,
 		count,
 		fx_found_versions,
-		&b_fx_found_versions_);
+		b_fx_found_versions_);
 }
 
 uint8_t host_interface_set_framework_name(
@@ -446,7 +479,7 @@ uint8_t host_interface_set_framework_name(
 		name,
 		name_length,
 		fx_name,
-		&b_fx_name_);
+		b_fx_name_);
 }
 
 uint8_t host_interface_set_framework_names(
@@ -462,7 +495,7 @@ uint8_t host_interface_set_framework_names(
 		names_lengths,
 		count,
 		fx_names,
-		&b_fx_names_);
+		b_fx_names_);
 }
 
 uint8_t host_interface_set_framework_requested_versions(
@@ -478,7 +511,7 @@ uint8_t host_interface_set_framework_requested_versions(
 		versions_lengths,
 		count,
 		fx_requested_versions,
-		&b_fx_requested_versions_);
+		b_fx_requested_versions_);
 }
 
 uint8_t host_interface_set_framework_version(
@@ -490,7 +523,7 @@ uint8_t host_interface_set_framework_version(
 		framework_version,
 		framework_version_length,
 		fx_version,
-		&b_fx_version_);
+		b_fx_version_);
 }
 
 uint8_t host_interface_set_host_command(
@@ -502,7 +535,7 @@ uint8_t host_interface_set_host_command(
 		host_command,
 		host_command_length,
 		host_command,
-		&b_host_command_);
+		b_host_command_);
 }
 
 uint8_t host_interface_set_host_mode(
@@ -543,14 +576,14 @@ uint8_t host_interface_set_host_path(
 		path,
 		path_length,
 		host_information_host_path,
-		&b_host_information_host_path_);
+		b_host_information_host_path_);
 #else
 	HOST_INTERFACE_SET_TYPE_OF_ELEMENT_MEMBER(
 		host_interface,
 		path,
 		path_length,
 		host_information_host_path,
-		&b_host_information_host_path_);
+		b_host_information_host_path_);
 #endif
 }
 
@@ -574,7 +607,7 @@ uint8_t host_interface_set_paths_for_probing(
 		paths_lengths,
 		count,
 		paths_for_probing,
-		&b_paths_for_probing_);
+		b_paths_for_probing_);
 }
 
 uint8_t host_interface_set_prerelease_roll_forward(
@@ -596,7 +629,7 @@ uint8_t host_interface_set_target_framework_moniker(
 		target_framework_moniker,
 		target_framework_moniker_length,
 		target_framework_moniker,
-		&b_target_framework_moniker_);
+		b_target_framework_moniker_);
 }
 
 static uint8_t g_host_interface[HOST_INTERFACE_SIZE];

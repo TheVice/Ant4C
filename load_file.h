@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2020, 2022 TheVice
  *
  */
 
@@ -19,14 +19,6 @@ enum FileEncoding
 
 #define FILE_ENCODING_UNKNOWN (ISO_8859_13 + 1)
 
-struct buffer;
-
-uint8_t load_file_to_buffer(const uint8_t* path, uint16_t encoding, struct buffer* output, uint8_t verbose);
-uint16_t load_file_get_encoding(struct buffer* encoding_name);
-
-uint8_t load_file_get_attributes_and_arguments_for_task(
-	const uint8_t*** task_attributes, const uint8_t** task_attributes_lengths,
-	uint8_t* task_attributes_count, struct buffer* task_arguments);
-uint8_t load_file_evaluate_task(void* project, struct buffer* task_arguments, uint8_t verbose);
+uint8_t load_file(const uint8_t* path, uint16_t encoding, void* output, uint8_t verbose);
 
 #endif

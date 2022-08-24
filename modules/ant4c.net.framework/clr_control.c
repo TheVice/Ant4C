@@ -1,25 +1,24 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
 #include "clr_control.h"
-#include "buffer.h"
-#include "text_encoding.h"
 
-#include <wchar.h>
-#include <stddef.h>
-#include <string.h>
+#include "buffer.h"
+#include "common.h"
+#include "text_encoding.h"
 
 #include <metahost.h>
 
+#include <wchar.h>
+#include <stddef.h>
+
 uint8_t clr_control_get_clr_manager(void* control, const void* idd, void** manager)
 {
-	if (!control ||
-		!idd ||
-		!manager)
+	if (!control || !idd || !manager)
 	{
 		return 0;
 	}
@@ -30,8 +29,7 @@ uint8_t clr_control_get_clr_manager(void* control, const void* idd, void** manag
 
 uint8_t clr_control_get_debug_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -44,8 +42,7 @@ uint8_t clr_control_get_debug_manager(void* control, void** manager)
 
 uint8_t clr_control_get_error_reporting_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -58,8 +55,7 @@ uint8_t clr_control_get_error_reporting_manager(void* control, void** manager)
 
 uint8_t clr_control_get_gc_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -72,8 +68,7 @@ uint8_t clr_control_get_gc_manager(void* control, void** manager)
 
 uint8_t clr_control_get_gc_manager2(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -86,8 +81,7 @@ uint8_t clr_control_get_gc_manager2(void* control, void** manager)
 
 uint8_t clr_control_get_host_protection_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -100,8 +94,7 @@ uint8_t clr_control_get_host_protection_manager(void* control, void** manager)
 
 uint8_t clr_control_get_on_event_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -114,8 +107,7 @@ uint8_t clr_control_get_on_event_manager(void* control, void** manager)
 
 uint8_t clr_control_get_policy_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -128,8 +120,7 @@ uint8_t clr_control_get_policy_manager(void* control, void** manager)
 
 uint8_t clr_control_get_task_manager(void* control, void** manager)
 {
-	if (!control ||
-		!manager)
+	if (!control || !manager)
 	{
 		return 0;
 	}
@@ -165,48 +156,50 @@ uint8_t clr_control_set_app_domain_manager_type(
 		return 0;
 	}
 
-	struct buffer arguments_W;
+	uint8_t arguments_W_buffer[BUFFER_SIZE_OF];
+	void* arguments_W = (void*)arguments_W_buffer;
 
-	SET_NULL_TO_BUFFER(arguments_W);
+	if (!buffer_init(arguments_W, BUFFER_SIZE_OF))
+	{
+		return 0;
+	}
 
-	ptrdiff_t app_domain_manager_assembly_size = strlen((const char*)app_domain_manager_assembly);
-
-	ptrdiff_t app_domain_manager_type_size = strlen((const char*)app_domain_manager_type);
-
+	ptrdiff_t app_domain_manager_assembly_size = common_count_bytes_until(app_domain_manager_assembly, 0);
+	ptrdiff_t app_domain_manager_type_size = common_count_bytes_until(app_domain_manager_type, 0);
 	const ptrdiff_t size = app_domain_manager_assembly_size + app_domain_manager_type_size + 2 * sizeof(uint32_t);
 
-	if (!buffer_append_wchar_t(&arguments_W, NULL, size) ||
-		!buffer_resize(&arguments_W, 0))
+	if (!buffer_append_wchar_t(arguments_W, NULL, size) ||
+		!buffer_resize(arguments_W, 0))
 	{
-		buffer_release(&arguments_W);
+		buffer_release(arguments_W);
 		return 0;
 	}
 
-	if (!text_encoding_UTF8_to_UTF16LE(app_domain_manager_assembly,
-									   app_domain_manager_assembly + app_domain_manager_assembly_size, &arguments_W) ||
-		!buffer_push_back_uint16(&arguments_W, 0))
+	if (!text_encoding_UTF8_to_UTF16LE(
+			app_domain_manager_assembly, app_domain_manager_assembly + app_domain_manager_assembly_size, arguments_W) ||
+		!buffer_push_back_uint16_t(arguments_W, 0))
 	{
-		buffer_release(&arguments_W);
+		buffer_release(arguments_W);
 		return 0;
 	}
 
-	app_domain_manager_assembly_size = buffer_size(&arguments_W);
+	app_domain_manager_assembly_size = buffer_size(arguments_W);
 
-	if (!text_encoding_UTF8_to_UTF16LE(app_domain_manager_type,
-									   app_domain_manager_type + app_domain_manager_type_size, &arguments_W) ||
-		!buffer_push_back_uint16(&arguments_W, 0))
+	if (!text_encoding_UTF8_to_UTF16LE(
+			app_domain_manager_type, app_domain_manager_type + app_domain_manager_type_size, arguments_W) ||
+		!buffer_push_back_uint16_t(arguments_W, 0))
 	{
-		buffer_release(&arguments_W);
+		buffer_release(arguments_W);
 		return 0;
 	}
 
-	const wchar_t* app_domain_manager_assembly_w = buffer_wchar_t_data(&arguments_W, 0);
+	const wchar_t* app_domain_manager_assembly_w = buffer_wchar_t_data(arguments_W, 0);
 	const wchar_t* app_domain_manager_type_w =
-		(const wchar_t*)buffer_data(&arguments_W, app_domain_manager_assembly_size);
+		(const wchar_t*)buffer_data(arguments_W, app_domain_manager_assembly_size);
 	/**/
 	app_domain_manager_type_size = clr_control_set_app_domain_manager_type_wchar_t(
 									   control, app_domain_manager_assembly_w, app_domain_manager_type_w);
 	/**/
-	buffer_release(&arguments_W);
+	buffer_release(arguments_W);
 	return 0 < app_domain_manager_type_size;
 }

@@ -9,6 +9,10 @@
   <property name="pad_level" value="0" />
 
   <choose unless="${property::exists('DOTNET_ROOT')}">
+    <when test="${environment::variable-exists('DOTNET_ROOT')}">
+      <property name="DOTNET_ROOT" value="${environment::get-variable('DOTNET_ROOT')}" />
+    </when>
+
     <when test="${platform::is-unix()}">
       <property name="DOTNET_ROOT" value="/usr/share/dotnet" />
     </when>

@@ -1,14 +1,14 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 TheVice
+ * Copyright (c) 2020, 2022 TheVice
  *
  */
 
 #include "example.h"
 #include "buffer.h"
 
-static struct buffer output_data;
+static uint8_t output_data[BUFFER_SIZE_OF];
 static uint8_t is_buffer_initialized = 0;
 
 static const uint8_t* tasks[] =
@@ -160,29 +160,29 @@ uint8_t task_number_one(const uint8_t** arguments, const uint8_t** output, uint1
 		module_release();
 	}
 
-	if (!buffer_resize(&output_data, 0))
+	if (!buffer_resize((void*)output_data, 0))
 	{
 		return 0;
 	}
 
 	if (!buffer_append_char(
-			&output_data, "<property name=\"content_of_the_task_from_script\" value=\"<![CDATA[", 65))
+			(void*)output_data, "<property name=\"content_of_the_task_from_script\" value=\"<![CDATA[", 65))
 	{
 		return 0;
 	}
 
-	if (!buffer_append(&output_data, start, length))
+	if (!buffer_append((void*)output_data, start, length))
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(&output_data, "]]>\" />", 7))
+	if (!buffer_append_char((void*)output_data, "]]>\" />", 7))
 	{
 		return 0;
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
+	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
 }
@@ -195,32 +195,32 @@ uint8_t task_number_two(const uint8_t** arguments, const uint16_t* arguments_len
 		module_release();
 	}
 
-	if (!buffer_resize(&output_data, 0))
+	if (!buffer_resize((void*)output_data, 0))
 	{
 		return 0;
 	}
 
 	if (!buffer_append_char(
-			&output_data, "<property name=\"property_from_the_task_number_two\" value=\"", 58))
+			(void*)output_data, "<property name=\"property_from_the_task_number_two\" value=\"", 58))
 	{
 		return 0;
 	}
 
 	for (uint8_t i = 0, count = tasks_attributes_count[1]; i < count; ++i)
 	{
-		if (!buffer_append(&output_data, arguments[i], arguments_lengths[i]))
+		if (!buffer_append((void*)output_data, arguments[i], arguments_lengths[i]))
 		{
 			return 0;
 		}
 	}
 
-	if (!buffer_append_char(&output_data, "\" />", 4))
+	if (!buffer_append_char((void*)output_data, "\" />", 4))
 	{
 		return 0;
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
+	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
 }
@@ -279,18 +279,18 @@ uint8_t the_function(const uint8_t** output, uint16_t* output_length)
 		module_release();
 	}
 
-	if (!buffer_resize(&output_data, 0))
+	if (!buffer_resize((void*)output_data, 0))
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(&output_data, "You call function with out arguments.", 37))
+	if (!buffer_append_char((void*)output_data, "You call function with out arguments.", 37))
 	{
 		return 0;
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
+	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
 }
@@ -304,26 +304,26 @@ uint8_t this_is_the_function_number_one(
 		module_release();
 	}
 
-	if (!buffer_resize(&output_data, 0))
+	if (!buffer_resize((void*)output_data, 0))
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(&output_data, "You call function with variable count of the arguments. ", 56))
+	if (!buffer_append_char((void*)output_data, "You call function with variable count of the arguments. ", 56))
 	{
 		return 0;
 	}
 
 	for (uint8_t i = 0; i < values_count; ++i)
 	{
-		if (!buffer_append(&output_data, values[i], values_lengths[i]))
+		if (!buffer_append((void*)output_data, values[i], values_lengths[i]))
 		{
 			return 0;
 		}
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
+	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
 }
@@ -341,26 +341,26 @@ uint8_t and_this_is_the_function_number_two(const uint8_t** values, const uint16
 		module_release();
 	}
 
-	if (!buffer_resize(&output_data, 0))
+	if (!buffer_resize((void*)output_data, 0))
 	{
 		return 0;
 	}
 
-	if (!buffer_append_char(&output_data, "You call function with two arguments. ", 38))
+	if (!buffer_append_char((void*)output_data, "You call function with two arguments. ", 38))
 	{
 		return 0;
 	}
 
 	for (uint8_t i = 0; i < values_count; ++i)
 	{
-		if (!buffer_append(&output_data, values[i], values_lengths[i]))
+		if (!buffer_append((void*)output_data, values[i], values_lengths[i]))
 		{
 			return 0;
 		}
 	}
 
-	*output = buffer_data(&output_data, 0);
-	*output_length = (uint16_t)buffer_size(&output_data);
+	*output = buffer_uint8_t_data((void*)output_data, 0);
+	*output_length = (uint16_t)buffer_size((void*)output_data);
 	/**/
 	return 1;
 }
@@ -425,11 +425,10 @@ void module_release()
 {
 	if (is_buffer_initialized)
 	{
-		buffer_release(&output_data);
+		buffer_release((void*)output_data);
 	}
 	else
 	{
-		SET_NULL_TO_BUFFER(output_data);
-		is_buffer_initialized = 1;
+		is_buffer_initialized = buffer_init((void*)output_data, BUFFER_SIZE_OF);
 	}
 }

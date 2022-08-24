@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020 TheVice
+ * Copyright (c) 2019 - 2020, 2022 TheVice
  *
  */
 
@@ -12,48 +12,40 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer
-{
-	uint8_t* data;
-	ptrdiff_t size;
-	ptrdiff_t capacity;
-};
+#define BUFFER_SIZE_OF (2 * sizeof(ptrdiff_t) + sizeof(void*))
 
-#define SET_NULL_TO_BUFFER(A) \
-	(A).data = NULL; \
-	(A).size = 0; \
-	(A).capacity = 0;
+uint8_t buffer_size_of();
 
-uint8_t buffer_init(void** the_buffer);
+uint8_t buffer_init(void* the_buffer, uint8_t size_of_buffer);
 
-ptrdiff_t buffer_size(const struct buffer* the_buffer);
+ptrdiff_t buffer_size(const void* the_buffer);
 
-uint8_t buffer_resize(struct buffer* the_buffer, ptrdiff_t size);
-void buffer_release(struct buffer* the_buffer);
-void buffer_release_inner_buffers(struct buffer* buffer);
-void buffer_release_with_inner_buffers(struct buffer* the_buffer);
+uint8_t buffer_resize(void* the_buffer, ptrdiff_t size);
+void buffer_release(void* the_buffer);
+void buffer_release_inner_buffers(void* the_buffer);
+void buffer_release_with_inner_buffers(void* the_buffer);
 
-uint8_t buffer_append(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size);
-uint8_t buffer_append_char(struct buffer* the_buffer, const char* data, ptrdiff_t data_count);
-uint8_t buffer_append_wchar_t(struct buffer* the_buffer, const wchar_t* data, ptrdiff_t data_count);
-uint8_t buffer_append_buffer(struct buffer* the_buffer, const struct buffer* data, ptrdiff_t data_count);
-uint8_t buffer_append_data_from_buffer(struct buffer* the_buffer, const struct buffer* data);
+uint8_t buffer_append(void* the_buffer, const void* data, ptrdiff_t size);
+uint8_t buffer_append_char(void* the_buffer, const char* data, ptrdiff_t data_count);
+uint8_t buffer_append_wchar_t(void* the_buffer, const wchar_t* data, ptrdiff_t data_count);
+uint8_t buffer_append_buffer(void* the_buffer, const void* data, ptrdiff_t data_count);
+uint8_t buffer_append_data_from_buffer(void* the_buffer, const void* the_source_buffer);
 
-uint8_t* buffer_data(const struct buffer* the_buffer, ptrdiff_t index);
-char* buffer_char_data(const struct buffer* the_buffer, ptrdiff_t data_position);
-wchar_t* buffer_wchar_t_data(const struct buffer* the_buffer, ptrdiff_t data_position);
-uint16_t* buffer_uint16_data(const struct buffer* the_buffer, ptrdiff_t data_position);
-uint32_t* buffer_uint32_data(const struct buffer* the_buffer, ptrdiff_t data_position);
-struct buffer* buffer_buffer_data(const struct buffer* the_buffer, ptrdiff_t data_position);
+void* buffer_data(const void* the_buffer, ptrdiff_t index);
+char* buffer_char_data(const void* the_buffer, ptrdiff_t data_position);
+uint8_t* buffer_uint8_t_data(const void* the_buffer, ptrdiff_t data_position);
+wchar_t* buffer_wchar_t_data(const void* the_buffer, ptrdiff_t data_position);
+uint16_t* buffer_uint16_t_data(const void* the_buffer, ptrdiff_t data_position);
+uint32_t* buffer_uint32_t_data(const void* the_buffer, ptrdiff_t data_position);
+void* buffer_buffer_data(const void* the_buffer, ptrdiff_t data_position);
 
-uint8_t buffer_push_back(struct buffer* the_buffer, uint8_t data);
-uint8_t buffer_push_back_uint16(struct buffer* the_buffer, uint16_t data);
-uint8_t buffer_push_back_uint32(struct buffer* the_buffer, uint32_t data);
+uint8_t buffer_push_back(void* the_buffer, uint8_t data);
+uint8_t buffer_push_back_uint16_t(void* the_buffer, uint16_t data);
+uint8_t buffer_push_back_uint32_t(void* the_buffer, uint32_t data);
 
-uint8_t buffer_assing_to_uint16(struct buffer* the_buffer, const uint8_t* data, ptrdiff_t size);
+uint8_t buffer_shrink_to_fit(void* the_buffer);
 
-uint8_t buffer_shrink_to_fit(struct buffer* the_buffer);
-
+uint8_t buffer_init_pool(void** the_buffer);
 uint8_t buffer_return_to_pool(void* the_buffer);
 uint8_t buffer_release_pool();
 

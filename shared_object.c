@@ -45,17 +45,22 @@ void* shared_object_load(const uint8_t* path)
 	}
 
 #if defined(_WIN32)
-	struct buffer pathW;
-	SET_NULL_TO_BUFFER(pathW);
+	uint8_t pathW_buffer[BUFFER_SIZE_OF];
+	void* pathW = (void*)pathW_buffer;
 
-	if (!file_system_path_to_pathW(path, &pathW))
+	if (!buffer_init(pathW, BUFFER_SIZE_OF))
 	{
-		buffer_release(&pathW);
 		return NULL;
 	}
 
-	void* object = shared_object_load_wchar_t(buffer_wchar_t_data(&pathW, 0));
-	buffer_release(&pathW);
+	if (!file_system_path_to_pathW(path, pathW))
+	{
+		buffer_release(pathW);
+		return NULL;
+	}
+
+	void* object = shared_object_load_wchar_t(buffer_wchar_t_data(pathW, 0));
+	buffer_release(pathW);
 	/**/
 	return object;
 #else
