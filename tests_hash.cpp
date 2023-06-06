@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2023 TheVice
  *
  */
 
@@ -134,7 +134,64 @@ TEST(TestHashAlgorithm_, hash_algorithm_bytes_to_string)
 	buffer_release(output);
 	ASSERT_EQ(expected_output, returned_output);
 }
-
+#if defined(SHA3_CVE_2022_37454)
+TEST(TestHashAlgorithm_, SHA3_CVE_2022_37454)
+{
+	static const uint16_t hash_length = 224;
+	uint8_t rate_on_w;
+	uint8_t maximum_delta;
+	//
+	ASSERT_TRUE(hash_algorithm_sha3_init(hash_length, &rate_on_w, &maximum_delta));
+	//
+	uint64_t size = 1;
+	std::unique_ptr<uint8_t[]> m1(new uint8_t[size]);
+	auto start = m1.get();
+	memset(start, 0, size * sizeof(uint8_t));
+	auto finish = start + size;
+	//
+	uint8_t queue[192];
+	uint8_t queue_size = 0;
+	uint64_t S[] =
+	{
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0
+	};
+	//
+	ASSERT_TRUE(hash_algorithm_sha3_core(start, finish, queue, &queue_size, maximum_delta, S, rate_on_w));
+	m1.reset(nullptr);
+	//
+	size = 4294967295;//UINT32_MAX
+	std::unique_ptr<uint8_t[]> m2(new uint8_t[size]);
+	start = m2.get();
+	memset(start, 0, size * sizeof(uint8_t));
+	finish = start + size;
+	//
+	ASSERT_TRUE(hash_algorithm_sha3_core(start, finish, queue, &queue_size, maximum_delta, S, rate_on_w));
+	m2.reset(nullptr);
+	//
+	std::string output_s(UINT8_MAX, '\0');
+	auto output = reinterpret_cast<uint8_t*>(&output_s[0]);
+	static const uint8_t is_sha3 = 1;
+	ASSERT_TRUE(hash_algorithm_sha3_final(
+					is_sha3, queue, queue_size, maximum_delta, S,
+					rate_on_w, maximum_delta, output));
+	//
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output_b = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output_b, buffer_size_of()));
+	//
+	ASSERT_TRUE(hash_algorithm_bytes_to_string(output, output + UINT8_MAX, output_b))
+			<< buffer_free(output_b);
+	//
+	const auto returned_output(buffer_to_string(output_b));
+	buffer_release(output_b);
+	//
+	ASSERT_EQ(0, returned_output.find("c5bcc3bc73b5ef45e91d2d7c70b64f196fac08eee4e4acf6e6571ebe", 0));
+}
+#endif
 TEST_F(TestHashAlgorithm, BLAKE2)
 {
 	static const uint8_t hash_sizes[] =
@@ -366,7 +423,7 @@ TEST_F(TestHashAlgorithm, crc32)
 			//
 			input_in_a_range = string_to_range(input);
 			null_range_to_empty(input_in_a_range);
-			ASSERT_TRUE(buffer_append(output, NULL, UINT8_MAX)) << buffer_free(output);
+			ASSERT_TRUE(buffer_append(output, nullptr, UINT8_MAX)) << buffer_free(output);
 			auto digit_output = buffer_uint8_t_data(output, UINT8_MAX - sizeof(uint32_t));
 			//
 			auto returned = hash_algorithm_crc32(input_in_a_range.start, input_in_a_range.finish, digit_output, i);
