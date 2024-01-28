@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -40,7 +40,7 @@ TEST_F(TestXml, xml_get_tag_finish_pos)
 			static const uint8_t less = '<';
 			input_in_a_range.start = string_find_any_symbol_like_or_not_like_that(
 										 input_in_a_range.start, input_in_a_range.finish, &less, &less + 1, 1, 1);
-			input_in_a_range.start = string_enumerate(input_in_a_range.start, input_in_a_range.finish, NULL);
+			input_in_a_range.start = string_enumerate(input_in_a_range.start, input_in_a_range.finish, nullptr);
 		}
 
 		const auto finish = xml_get_tag_finish_pos(input_in_a_range.start, input_in_a_range.finish);

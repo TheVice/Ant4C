@@ -2042,17 +2042,17 @@ Return *true* if environment variable exists.
 ----
 <?xml version="1.0"?>
 <project>
-  <property name="varibles"
+  <property name="variables"
             value="USERNAME, LOGNAME"
             readonly="true" />
   <property name="True" value="exists" readonly="true" />
   <property name="False" value="not exists" readonly="true" />
   <property name="exists"
-            value="${environment::variable-exists(varible)}"
+            value="${environment::variable-exists(variable)}"
             dynamic="true"
             readonly="true" />
-  <foreach item="String" in="${varibles}" delim="," trim="Start" property="varible">
-    <echo>Environment varible '${varible}' is ${property::get-value(exists)}.</echo>
+  <foreach item="String" in="${variables}" delim="," trim="Start" property="variable">
+    <echo>Environment variable '${variable}' is ${property::get-value(exists)}.</echo>
   </foreach>
 </project>
 ----

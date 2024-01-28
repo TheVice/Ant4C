@@ -71,7 +71,7 @@
 	<echo message="${property::get-value('cmake')} ${property::get-value('cmake_arguments')}"
 		  level="Verbose" />
 
-	<echo message="Working directorty - '${property::get-value('cmake_working_dir')}'"
+	<echo message="Working directory - '${property::get-value('cmake_working_dir')}'"
 		  level="Verbose" />
 
 	<exec program="${property::get-value('cmake')}"

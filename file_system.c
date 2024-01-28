@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -1959,15 +1959,15 @@ uint8_t file_read_with_several_steps(void* stream, void* content)
 		return 0;
 	}
 
-	size_t readed = 0;
+	size_t readded = 0;
 	void* content_ = buffer_data(content, size);
 
-	while (0 < (readed = file_read(content_, sizeof(uint8_t), 4096, stream)))
+	while (0 < (readded = file_read(content_, sizeof(uint8_t), 4096, stream)))
 	{
-		size += (ptrdiff_t)readed;
+		size += (ptrdiff_t)readded;
 
 		if (!buffer_resize(content, size) ||
-			(4096 == readed && !buffer_append(content, NULL, 4096)))
+			(4096 == readded && !buffer_append(content, NULL, 4096)))
 		{
 			return 0;
 		}
@@ -2019,16 +2019,16 @@ uint8_t file_read_lines(const uint8_t* path, void* output)
 	}
 
 	ptrdiff_t size = 0;
-	ptrdiff_t readed;
+	ptrdiff_t readded;
 	const uint8_t* start;
 	uint16_t count_of_lines = 1;
 	static const uint8_t n = '\n';
 	uint8_t* content = buffer_uint8_t_data(output, 0);
 
-	while (0 < (readed = (ptrdiff_t)file_read((void*)content, sizeof(uint8_t), 4096, stream)))
+	while (0 < (readded = (ptrdiff_t)file_read((void*)content, sizeof(uint8_t), 4096, stream)))
 	{
-		size += readed;
-		path = content + readed;
+		size += readded;
+		path = content + readded;
 		start = content;
 
 		do
@@ -2505,12 +2505,12 @@ uint8_t file_replace_with_same_length(
 	uint8_t* content, ptrdiff_t size, void* stream,
 	const uint8_t* to_be_replaced, const uint8_t* by_replacement, ptrdiff_t length)
 {
-	ptrdiff_t readed = 0;
+	ptrdiff_t readded = 0;
 
-	while (0 < (readed = file_read(content, sizeof(uint8_t), size, stream)))
+	while (0 < (readded = file_read(content, sizeof(uint8_t), size, stream)))
 	{
 		const uint8_t* start = content;
-		const uint8_t* finish = content + readed;
+		const uint8_t* finish = content + readded;
 
 		while (NULL != start && length <= finish - start)
 		{
@@ -2520,7 +2520,7 @@ uint8_t file_replace_with_same_length(
 				continue;
 			}
 
-			long index = (long)((start - content) - readed);
+			long index = (long)((start - content) - readded);
 
 			if (!file_seek(stream, index, SEEK_CUR))
 			{
@@ -2532,7 +2532,7 @@ uint8_t file_replace_with_same_length(
 				return 0;
 			}
 
-			index = (long)(readed - (start - content) - length);
+			index = (long)(readded - (start - content) - length);
 
 			if (!file_seek(stream, index, SEEK_CUR))
 			{
@@ -2542,7 +2542,7 @@ uint8_t file_replace_with_same_length(
 			start += length;
 		}
 
-		if (readed < size)
+		if (readded < size)
 		{
 			break;
 		}

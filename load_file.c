@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -197,23 +197,23 @@ uint8_t load_file(const uint8_t* path, uint16_t encoding, void* output, uint8_t 
 	}
 
 	uint8_t* data = buffer_uint8_t_data(output, 0);
-	size_t readed = 0;
+	size_t readded = 0;
 
-	if (1 > (readed = file_read(data, sizeof(uint8_t), 4, file)))
+	if (1 > (readded = file_read(data, sizeof(uint8_t), 4, file)))
 	{
 		return file_close(file) && buffer_resize(output, 0);
 	}
 
-	if (!buffer_resize(output, readed))
+	if (!buffer_resize(output, readded))
 	{
 		file_close(file);
 		return 0;
 	}
 
-	readed = text_encoding_get_one_of_data_by_BOM(data, (ptrdiff_t)readed);
-	const uint8_t use_offset = (UTF16BE == readed || UTF16LE == readed);
+	readded = text_encoding_get_one_of_data_by_BOM(data, (ptrdiff_t)readded);
+	const uint8_t use_offset = (UTF16BE == readded || UTF16LE == readded);
 
-	switch (readed)
+	switch (readded)
 	{
 		case UTF8:
 			if (3 < buffer_size(output))
@@ -240,25 +240,25 @@ uint8_t load_file(const uint8_t* path, uint16_t encoding, void* output, uint8_t 
 
 		case UTF16BE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, use_offset, uint16_t, output,
+				file, data, path, readded, use_offset, uint16_t, output,
 				text_encoding_UTF16BE_to_UTF8);
 			return 1;
 
 		case UTF16LE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, use_offset, uint16_t, output,
+				file, data, path, readded, use_offset, uint16_t, output,
 				text_encoding_UTF16LE_to_UTF8);
 			return 1;
 
 		case UTF32BE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, use_offset, uint32_t, output,
+				file, data, path, readded, use_offset, uint32_t, output,
 				text_encoding_UTF32BE_to_UTF8);
 			return 1;
 
 		case UTF32LE:
 			READ_WITH_ENCODING_FROM_BOM_AND_CONVERT_TO_UTF(
-				file, data, path, readed, use_offset, uint32_t, output,
+				file, data, path, readded, use_offset, uint32_t, output,
 				text_encoding_encode_UTF8);
 			return 1;
 
@@ -279,36 +279,36 @@ uint8_t load_file(const uint8_t* path, uint16_t encoding, void* output, uint8_t 
 
 		case BigEndianUnicode:
 		case UTF16BE:
-			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF16BE_to_UTF8, uint16_t);
 			return 1;
 
 		case Unicode:
 		case UTF16LE:
-			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF16LE_to_UTF8, uint16_t);
 			return 1;
 
 		case UTF32BE:
-			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF32BE_to_UTF8, uint32_t);
 			return 1;
 
 		case UTF32:
 		case UTF32LE:
-			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_ENCODING_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_encode_UTF8, uint32_t);
 			return 1;
 
 		case Windows_874:
 		case ISO_8859_11:
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, Windows_874, uint8_t);
 			return 1;
 
 		case Windows_1250:
 		case ISO_8859_2:/*TODO:161...190*/
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, Windows_1250, uint8_t);
 			return 1;
 
@@ -316,36 +316,36 @@ uint8_t load_file(const uint8_t* path, uint16_t encoding, void* output, uint8_t 
 		case Windows_1255:
 		case Windows_1256:
 		case Windows_1258:
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, encoding, uint8_t);
 			return 1;
 
 		case Windows_1252:
 		case ISO_8859_1:
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, Windows_1252, uint8_t);
 			return 1;
 
 		case Windows_1253:
 		case ISO_8859_7:
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, Windows_1253, uint8_t);
 			return 1;
 
 		case Windows_1254:
 		case ISO_8859_9:
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, Windows_1254, uint8_t);
 			return 1;
 
 		case Windows_1257:
 		case ISO_8859_13:/*TODO:...*/
-			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file,
+			READ_WITH_CODE_PAGE_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file,
 					text_encoding_UTF8_from_code_page, Windows_1257, uint8_t);
 			return 1;
 
 		case ASCII:
-			READ_AS_ASCII_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readed, file, UTF8);
+			READ_AS_ASCII_FROM_ARGUMENT_AND_CONVERT_TO_UTF(path, data, output, readded, file, UTF8);
 			return 1;
 
 		default:

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 TheVice
+ * Copyright (c) 2022, 2024 TheVice
  *
  */
 
@@ -239,12 +239,12 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				break;
 			}
 
-			size_t readed = 0;
+			size_t readded = 0;
 			uint8_t* last = NULL;
 			ptrdiff_t bytes_compressed = 0;
 			uint8_t* file_content = buffer_uint8_t_data(output, size + 64 + 128);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			while (0 < (readded = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
 				if (last && !BLAKE2b_core(last, last + 128, &bytes_compressed, out))
 				{
@@ -254,13 +254,13 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 
 				last = NULL;
 
-				if (4096 != readed)
+				if (4096 != readded)
 				{
-					if (128 < readed)
+					if (128 < readded)
 					{
-						uint16_t bytes_to_compress = (uint16_t)(128 * (readed / 128));
+						uint16_t bytes_to_compress = (uint16_t)(128 * (readded / 128));
 
-						if (0 == readed % 128)
+						if (0 == readded % 128)
 						{
 							bytes_to_compress -= 128;
 						}
@@ -271,7 +271,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 							return 0;
 						}
 
-						readed -= bytes_compressed;
+						readded -= bytes_compressed;
 						file_content += bytes_to_compress;
 					}
 
@@ -300,10 +300,10 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 
 			if (last)
 			{
-				if (!readed)
+				if (!readded)
 				{
 					file_content = last;
-					readed = 128;
+					readded = 128;
 				}
 				else
 				{
@@ -314,7 +314,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				}
 			}
 
-			if (!BLAKE2b_final(file_content, &bytes_compressed, (uint8_t)readed, out))
+			if (!BLAKE2b_final(file_content, &bytes_compressed, (uint8_t)readded, out))
 			{
 				break;
 			}
@@ -351,13 +351,13 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 			/**/
 			uint8_t compressed = 0;
 			uint8_t stack_length = 0;
-			size_t readed = 0;
+			size_t readded = 0;
 			/**/
 			uint8_t* file_content = buffer_uint8_t_data(output, size);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			while (0 < (readded = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				if (!BLAKE3_core(file_content, readed, m, &l, h, &compressed, t, stack, &stack_length, d))
+				if (!BLAKE3_core(file_content, readded, m, &l, h, &compressed, t, stack, &stack_length, d))
 				{
 					file_close(file);
 					return 0;
@@ -384,7 +384,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				break;
 			}
 
-			size_t readed = 0;
+			size_t readded = 0;
 			uint8_t* file_content = buffer_uint8_t_data(output, size);
 			uint8_t* out = file_content + 4096;
 
@@ -393,9 +393,9 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				break;
 			}
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			while (0 < (readded = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				if (!hash_algorithm_crc32_core(file_content, file_content + readed, out))
+				if (!hash_algorithm_crc32_core(file_content, file_content + readded, out))
 				{
 					file_close(file);
 					return 0;
@@ -440,15 +440,15 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				0, 0, 0, 0, 0
 			};
 			/**/
-			size_t readed = 0;
+			size_t readded = 0;
 			uint8_t* file_content = buffer_uint8_t_data(output, size);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			while (0 < (readded = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				const uint8_t* finish = file_content + readed;
-				readed = hash_algorithm_sha3_core(file_content, finish, queue, &queue_size, maximum_delta, S, rate_on_w);
+				const uint8_t* finish = file_content + readded;
+				readded = hash_algorithm_sha3_core(file_content, finish, queue, &queue_size, maximum_delta, S, rate_on_w);
 
-				if (!readed)
+				if (!readded)
 				{
 					file_close(file);
 					return 0;
@@ -492,12 +492,12 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				seed = (uint32_t)uint64_parse(algorithm_parameter->start, algorithm_parameter->finish);
 			}
 
-			size_t readed = 0;
+			size_t readded = 0;
 			uint8_t* file_content = buffer_uint8_t_data(output, size);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			while (0 < (readded = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				const uint8_t* finish = file_content + readed;
+				const uint8_t* finish = file_content + readded;
 
 				if (!hash_algorithm_XXH32_core(file_content, finish,
 											   queue, &queue_size, max_queue_size,
@@ -543,12 +543,12 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				seed = uint64_parse(algorithm_parameter->start, algorithm_parameter->finish);
 			}
 
-			size_t readed = 0;
+			size_t readded = 0;
 			uint8_t* file_content = buffer_uint8_t_data(output, size);
 
-			while (0 < (readed = file_read(file_content, sizeof(uint8_t), 4096, file)))
+			while (0 < (readded = file_read(file_content, sizeof(uint8_t), 4096, file)))
 			{
-				const uint8_t* finish = file_content + readed;
+				const uint8_t* finish = file_content + readded;
 
 				if (!hash_algorithm_XXH64_core(file_content, finish,
 											   queue, &queue_size, max_queue_size,

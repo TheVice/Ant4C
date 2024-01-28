@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -276,7 +276,7 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 		}																		\
 		else																	\
 		{																		\
-			if (!buffer_push_back((OUTPUT), (uint8_t)(*OUT)))					\
+			if (!buffer_push_back((OUTPUT), (uint8_t)(*(OUT))))					\
 			{																	\
 				return 0;														\
 			}																	\
@@ -468,7 +468,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 					}
 					else
 					{
-						if (!buffer_push_back_uint16_t(output, codes_874[*data_start - min_non_ASCII_char]))
+						if (!buffer_push_back_uint16_t(output, codes_874[code - min_non_ASCII_char]))
 						{
 							return 0;
 						}
@@ -534,7 +534,7 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 		if (max_ASCII_char < code)
 		{
-			if (!buffer_push_back_uint16_t(output, ptr[*data_start - min_non_ASCII_char]))
+			if (!buffer_push_back_uint16_t(output, ptr[code - min_non_ASCII_char]))
 			{
 				return 0;
 			}
@@ -661,12 +661,12 @@ uint8_t text_encoding_decode_UTF8_single(
 		return 0;
 	}
 
-	(*output) = UTF16LE_UNKNOWN_CHAR;
-	const uint8_t octet_1 = (*input_start);
+	*output = UTF16LE_UNKNOWN_CHAR;
+	const uint8_t octet_1 = *input_start;
 
 	if (octet_1 < 0x80)
 	{
-		(*output) = octet_1;
+		*output = octet_1;
 		return 1;
 	}
 	else if (octet_1 < 0xC0)
@@ -683,7 +683,7 @@ uint8_t text_encoding_decode_UTF8_single(
 
 	while (++input_start < input_finish && count < 2)
 	{
-		const uint8_t input_code = (*input_start);
+		const uint8_t input_code = *input_start;
 
 		if (input_code < 0x80 || 0xBF < input_code)
 		{
@@ -700,14 +700,14 @@ uint8_t text_encoding_decode_UTF8_single(
 			return count;
 		}
 
-		(*output) = 0x1000 * (octet_1 & 0x1F);
-		(*output) += 0x40 * (octet_2 & 0x3F);
-		(*output) += octet_3 & 0x3F;
+		*output = 0x1000 * (octet_1 & 0x1F);
+		*output += 0x40 * (octet_2 & 0x3F);
+		*output += octet_3 & 0x3F;
 	}
 	else if (1 == count && octet_1 < 0xE0)
 	{
-		(*output) = 0x40 * (octet_1 & 0x1F);
-		(*output) += octet_2 & 0x3F;
+		*output = 0x40 * (octet_1 & 0x1F);
+		*output += octet_2 & 0x3F;
 	}
 
 	return 1 + count;
@@ -871,40 +871,40 @@ uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const u
 		return 0;
 	}
 
-	uint16_t input_16LE = (*input_start);
+	uint16_t input_16LE = *input_start;
 	xchange_uint16_t_bytes(&input_16LE);
 
 	if (input_16LE < 0xD800 || 0xDFFF < input_16LE)
 	{
-		(*output) = input_16LE;
+		*output = input_16LE;
 		return 1;
 	}
 	else if (0xDBFF < input_16LE)
 	{
-		(*output) = UTF16LE_UNKNOWN_CHAR;
+		*output = UTF16LE_UNKNOWN_CHAR;
 		return 1;
 	}
 
-	(*output) = input_16LE & 0x3FF;
-	(*output) = (*output) << 10;
+	*output = input_16LE & 0x3FF;
+	*output = (*output) << 10;
 	++input_start;
 
 	if (input_start == input_finish)
 	{
-		(*output) = UTF16LE_UNKNOWN_CHAR;
+		*output = UTF16LE_UNKNOWN_CHAR;
 	}
 	else
 	{
-		input_16LE = (*input_start);
+		input_16LE = *input_start;
 
 		if (input_16LE < 0xDC00 || 0xDFFF < input_16LE)
 		{
-			(*output) = UTF16LE_UNKNOWN_CHAR;
+			*output = UTF16LE_UNKNOWN_CHAR;
 		}
 		else
 		{
-			(*output) += (input_16LE & 0x3FF);
-			(*output) += 0x10000;
+			*output += (input_16LE & 0x3FF);
+			*output += 0x10000;
 		}
 	}
 
@@ -924,33 +924,33 @@ uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const u
 
 	if ((*input_start) < 0xD800 || 0xDFFF < (*input_start))
 	{
-		(*output) = (*input_start);
+		*output = *input_start;
 		return 1;
 	}
 	else if (0xDBFF < (*input_start))
 	{
-		(*output) = UTF16LE_UNKNOWN_CHAR;
+		*output = UTF16LE_UNKNOWN_CHAR;
 		return 1;
 	}
 
-	(*output) = (*input_start) & 0x3FF;
-	(*output) = (*output) << 10;
+	*output = (*input_start) & 0x3FF;
+	*output = (*output) << 10;
 	++input_start;
 
 	if (input_start == input_finish)
 	{
-		(*output) = UTF16LE_UNKNOWN_CHAR;
+		*output = UTF16LE_UNKNOWN_CHAR;
 	}
 	else
 	{
 		if ((*input_start) < 0xDC00 || 0xDFFF < (*input_start))
 		{
-			(*output) = UTF16LE_UNKNOWN_CHAR;
+			*output = UTF16LE_UNKNOWN_CHAR;
 		}
 		else
 		{
-			(*output) += ((*input_start) & 0x3FF);
-			(*output) += 0x10000;
+			*output += ((*input_start) & 0x3FF);
+			*output += 0x10000;
 		}
 	}
 
@@ -1008,7 +1008,7 @@ uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uin
 		return 0;
 	}
 
-	(*output) = (*input_start);
+	*output = *input_start;
 	/**/
 	uint16_t right = (uint16_t)((*output) & 0xFFFF);
 	uint16_t left = (uint16_t)((*output) >> 16);
@@ -1016,8 +1016,8 @@ uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uin
 	xchange_uint16_t_bytes(&right);
 	xchange_uint16_t_bytes(&left);
 	/**/
-	(*output) = (uint32_t)(right << 16);
-	(*output) += left;
+	*output = (uint32_t)(right << 16);
+	*output += left;
 	/**/
 	return 1;
 }
@@ -1033,7 +1033,7 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 		return 0;
 	}
 
-	(*output) = (*input_start);
+	*output = *input_start;
 	/**/
 	return 1;
 }
@@ -1147,7 +1147,7 @@ uint8_t text_encoding_UTF8_to_code_page(
 					return 0;
 				}
 
-				if ((*out) == code)
+				if (*out == code)
 				{
 					if (!buffer_push_back(output, min_non_ASCII_char + i))
 					{
@@ -1247,7 +1247,7 @@ uint8_t text_encoding_UTF8_from_code_page(
 
 	while (data_start < data_finish)
 	{
-		uint8_t code = (*data_start);
+		uint8_t code = *data_start;
 
 		if (code < min_non_ASCII_char)
 		{
@@ -1268,7 +1268,7 @@ uint8_t text_encoding_UTF8_from_code_page(
 					return 0;
 				}
 
-				size = text_encoding_encode_UTF8_single((*out), (uint8_t*)out);
+				size = text_encoding_encode_UTF8_single(*out, (uint8_t*)out);
 
 				if (!size ||
 					!buffer_append(output, (const uint8_t*)out, size))

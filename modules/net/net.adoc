@@ -1052,7 +1052,7 @@ Unload the host policy. After this call it is able to set new data via <<hostint
 
 *string* 'corehost::main-with-output-buffer'(*string*[] arguments)
 
-Indentical to the <<corehost-main,'main'>> function, but output will be returned on success. +
+Identical to the <<corehost-main,'main'>> function, but output will be returned on success. +
 If function is failed - error code after space symbol will be at the output.
 
 ====== Sample using
@@ -1183,7 +1183,7 @@ Some of data will not be used by host according to it version or/and if version 
 | <<hostinterface-set-framework-found-versions,set-framework-found-versions>> | Set found versions.
 | <<hostinterface-set-framework-name,set-framework-name>> | Set framework name.
 | <<hostinterface-set-framework-names,set-framework-names>> | Set framework names.
-| <<hostinterface-set-framework-requested-versions,set-framework-requested-versions>> | Set requsted framework versions.
+| <<hostinterface-set-framework-requested-versions,set-framework-requested-versions>> | Set requested framework versions.
 | <<hostinterface-set-framework-version,set-framework-version>> | Set framework version.
 | <<hostinterface-set-host-command,set-host-command>> | Set host command.
 | <<hostinterface-set-host-mode,set-host-mode>> | Set host mode.
@@ -1366,7 +1366,7 @@ Second argument of 'set-framework-names' should be equal to the argument of 'set
 
 *bool* 'hostinterface::set-framework-requested-versions'(*string*[] versions)
 
-Set requsted framework versions.
+Set requested framework versions.
 
 NOTE: For compatibility reason first argument should be empty.
 

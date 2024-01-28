@@ -10913,7 +10913,7 @@ Approximate round trip times in milli-seconds:
       <output><![CDATA[></tag>]]></output>
     </xml_get_tag_finish_pos>
     <xml_get_tag_finish_pos>
-      <input><![CDATA[<tag comment="just some tag" desription="read the comment"></tag>]]></input>
+      <input><![CDATA[<tag comment="just some tag" description="read the comment"></tag>]]></input>
       <output><![CDATA[></tag>]]></output>
     </xml_get_tag_finish_pos>
     <xml_get_sub_nodes_elements>
