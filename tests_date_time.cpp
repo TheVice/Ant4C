@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019, 2021 - 2022 TheVice
+ * Copyright (c) 2019, 2021 - 2022, 2024 TheVice
  *
  */
 
@@ -51,11 +51,7 @@ TEST_F(TestDateTime, datetime_format_to_string)
 		const auto expected_return = static_cast<uint8_t>(INT_PARSE(
 										 the_node.select_node("return").node().child_value()));
 		const std::string format(the_node.select_node("format").node().child_value());
-#if (defined(_MSC_VER) && (1900 < _MSC_VER) || !defined(_WIN32))
 		const std::string expected_output(the_node.select_node("output").node().child_value());
-#else
-		const std::string expected_output(the_node.select_node("mingw_output").node().child_value());
-#endif
 		const auto date_time = datetime_encode(year, month, day, hour, minute, second);
 		//
 		const auto returned = datetime_format_to_string(

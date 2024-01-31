@@ -115,7 +115,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Fetch prebuild of third-party libraries
       run: git fetch origin ${{ matrix.os }}
@@ -136,7 +136,7 @@ jobs:
         -DCMAKE_INSTALL_PREFIX=${{ env.CMAKE_BUILD_DIR }}/Redist
 
     - name: Get number of CPU cores
-      uses: SimenB/github-actions-cpu-cores@v1
+      uses: SimenB/github-actions-cpu-cores@v2
       id: cpu-cores
 
     - name: Install redist
@@ -180,7 +180,7 @@ jobs:
         }
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
         retention-days: 1

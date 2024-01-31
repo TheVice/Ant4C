@@ -99,7 +99,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Fetch prebuild of third-party libraries
       run: git fetch origin ${{ matrix.os }}
@@ -119,7 +119,7 @@ jobs:
         -DPROGRAM_VERSION="${{ github.event.repository.updated_at }}"
 
     - name: Get number of CPU cores
-      uses: SimenB/github-actions-cpu-cores@v1
+      uses: SimenB/github-actions-cpu-cores@v2
       id: cpu-cores
 
     - name: Build
@@ -135,7 +135,7 @@ jobs:
     - name: Run tests (MinGW)
       if: ${{ 'mingw' == matrix.compiler }}
       run: |
-        $Env:PATH="C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;$Env:SystemRoot\system32;$Env:SystemRoot;$Env:SystemRoot\system32\Wbem;$Env:SystemRoot\system32\WindowsPowerShell\v1.0\;$Env:ProgramFiles\CMake\bin;"
+        $Env:PATH="C:\mingw64\bin;$Env:SystemRoot\system32;$Env:SystemRoot;$Env:SystemRoot\system32\Wbem;$Env:SystemRoot\system32\WindowsPowerShell\v1.0\;$Env:ProgramFiles\CMake\bin;"
         ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.CMAKE_BUILD_DIR }} --output-on-failure
 
     - name: Run tests
@@ -157,7 +157,7 @@ jobs:
         }
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
         retention-days: 1
