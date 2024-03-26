@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2012 - 2022 TheVice
+ * Copyright (c) 2012 - 2021, 2024 TheVice
  *
  */
 
@@ -26,6 +26,7 @@
 #include "stdc_secure_api.h"
 
 #include "hash.h"
+#include "bit_converter.h"
 #include "buffer.h"
 #include "common.h"
 
@@ -199,7 +200,7 @@ uint8_t Keccak_absorption_bytes(const uint8_t* data, uint64_t* S, uint8_t rate_o
 		const uint8_t* start = data + 8 * i;
 		const uint8_t* finish = start + 8;
 
-		if (!hash_algorithm_uint8_t_array_to_uint64_t(start, finish, &data_[i]))
+		if (!bit_converter_to_uint64_t(start, finish, &data_[i]))
 		{
 			return 0;
 		}

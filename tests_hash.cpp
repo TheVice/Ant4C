@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2023 TheVice
+ * Copyright (c) 2019 - 2024 TheVice
  *
  */
 
@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "hash.h"
+#include "bit_converter.h"
 #include "buffer.h"
 #include "common.h"
 #include "conversion.h"
@@ -74,7 +75,7 @@ TEST(TestHashAlgorithm_, hash_algorithm_uint8_t_array_to_uint32_t)
 	for (uint8_t i = 0, count = COUNT_OF(input_array_to); i < count; ++i)
 	{
 		ASSERT_TRUE(
-			hash_algorithm_uint8_t_array_to_uint32_t(
+			bit_converter_to_uint32_t(
 				input_array_to, input_array_to + i, &output));
 	}
 }
@@ -86,7 +87,7 @@ TEST(TestHashAlgorithm_, hash_algorithm_uint8_t_array_to_uint64_t)
 	for (uint8_t i = 0, count = COUNT_OF(input_array_to); i < count; ++i)
 	{
 		ASSERT_TRUE(
-			hash_algorithm_uint8_t_array_to_uint64_t(
+			bit_converter_to_uint64_t(
 				input_array_to, input_array_to + i, &output));
 	}
 }

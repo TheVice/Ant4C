@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -16,18 +16,10 @@ uint8_t hash_algorithm_bytes_to_string(
 
 uint8_t hash_algorithm_uint32_t_array_to_uint8_t_array(
 	const uint32_t* start, const uint32_t* finish, uint8_t* output);
-uint8_t hash_algorithm_uint32_t_to_uint8_t_array(
-	uint32_t input, uint8_t* output);
 uint8_t hash_algorithm_uint64_t_array_to_uint8_t_array(
 	const uint64_t* start, const uint64_t* finish, uint8_t* output);
-uint8_t hash_algorithm_uint64_t_to_uint8_t_array(
-	uint64_t input, uint8_t* output);
-uint8_t hash_algorithm_uint8_t_array_to_uint32_t(
-	const uint8_t* start, const uint8_t* finish, uint32_t* output);
 uint8_t hash_algorithm_uint8_t_array_to_uint32_t_array(
 	const uint8_t* input, ptrdiff_t input_size, uint32_t* output);
-uint8_t hash_algorithm_uint8_t_array_to_uint64_t(
-	const uint8_t* start, const uint8_t* finish, uint64_t* output);
 uint8_t hash_algorithm_uint8_t_array_to_uint64_t_array(
 	const uint8_t* input, ptrdiff_t input_size, uint64_t* output);
 

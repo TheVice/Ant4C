@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2022 TheVice
+ * Copyright (c) 2020 - 2022, 2024 TheVice
  *
  */
 
@@ -14,6 +14,7 @@
 #include "stdc_secure_api.h"
 
 #include "hash.h"
+#include "bit_converter.h"
 #include "buffer.h"
 
 #include <stddef.h>
@@ -342,7 +343,7 @@ uint8_t MERGE(uint8_t* stack, uint8_t* stack_length, const uint32_t* t, uint8_t 
 {
 	uint8_t t_[sizeof(uint32_t)];
 
-	if (!hash_algorithm_uint32_t_to_uint8_t_array(t[0], t_))
+	if (!bit_converter_get_bytes_from_uint32_t(t[0], t_))
 	{
 		return 0;
 	}

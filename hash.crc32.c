@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020, 2022 TheVice
+ * Copyright (c) 2019 - 2020, 2022, 2024 TheVice
  *
  */
 
@@ -12,13 +12,14 @@
  */
 
 #include "hash.h"
+#include "bit_converter.h"
 #include "common.h"
 
 #include <stddef.h>
 
 uint8_t hash_algorithm_crc32_init(uint8_t* output)
 {
-	return hash_algorithm_uint32_t_to_uint8_t_array(UINT32_MAX, output);
+	return bit_converter_get_bytes_from_uint32_t(UINT32_MAX, output);
 }
 
 uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, uint8_t* output)
@@ -101,7 +102,7 @@ uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, u
 	/**/
 	uint32_t out;
 
-	if (!hash_algorithm_uint8_t_array_to_uint32_t(output, output + sizeof(uint32_t), &out))
+	if (!bit_converter_to_uint32_t(output, output + sizeof(uint32_t), &out))
 	{
 		return 0;
 	}
@@ -111,7 +112,7 @@ uint8_t hash_algorithm_crc32_core(const uint8_t* start, const uint8_t* finish, u
 		out = (out >> sizeof(uint64_t)) ^ table[((out ^ (*start)) & 0xFF)];
 	}
 
-	return hash_algorithm_uint32_t_to_uint8_t_array(out, output);
+	return bit_converter_get_bytes_from_uint32_t(out, output);
 }
 
 uint8_t hash_algorithm_crc32_final(uint8_t* output, uint8_t order)
@@ -123,14 +124,14 @@ uint8_t hash_algorithm_crc32_final(uint8_t* output, uint8_t order)
 
 	uint32_t out;
 
-	if (!hash_algorithm_uint8_t_array_to_uint32_t(output, output + sizeof(uint32_t), &out))
+	if (!bit_converter_to_uint32_t(output, output + sizeof(uint32_t), &out))
 	{
 		return 0;
 	}
 
 	out ^= UINT32_MAX;
 
-	if (!hash_algorithm_uint32_t_to_uint8_t_array(out, output))
+	if (!bit_converter_get_bytes_from_uint32_t(out, output))
 	{
 		return 0;
 	}

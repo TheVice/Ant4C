@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 TheVice
+ * Copyright (c) 2021, 2024 TheVice
  *
  */
 
@@ -14,6 +14,7 @@
 #include "stdc_secure_api.h"
 
 #include "hash.h"
+#include "bit_converter.h"
 #include "common.h"
 
 #include <stddef.h>
@@ -76,7 +77,7 @@ static const uint32_t PRIME32_5 = 0x165667B1U;
 		{\
 			uint32_t result;																\
 			\
-			if (!hash_algorithm_uint8_t_array_to_uint32_t((START), (START) + 4, &result))	\
+			if (!bit_converter_to_uint32_t((START), (START) + 4, &result))					\
 			{																				\
 				return 0;																	\
 			}																				\
@@ -99,7 +100,7 @@ static const uint32_t PRIME32_5 = 0x165667B1U;
 	{																					\
 		uint32_t result;																\
 		\
-		if (!hash_algorithm_uint8_t_array_to_uint32_t((START), (START) + 4, &result))	\
+		if (!bit_converter_to_uint32_t((START), (START) + 4, &result))					\
 		{																				\
 			return 0;																	\
 		}																				\
@@ -355,7 +356,7 @@ static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
 		{\
 			uint64_t result;																\
 			\
-			if (!hash_algorithm_uint8_t_array_to_uint64_t((START), (START) + 8, &result))	\
+			if (!bit_converter_to_uint64_t((START), (START) + 8, &result))					\
 			{																				\
 				return 0;																	\
 			}																				\
@@ -384,7 +385,7 @@ static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
 	{																					\
 		uint64_t result;																\
 		\
-		if (!hash_algorithm_uint8_t_array_to_uint64_t((START), (START) + 8, &result))	\
+		if (!bit_converter_to_uint64_t((START), (START) + 8, &result))					\
 		{																				\
 			return 0;																	\
 		}																				\
@@ -399,7 +400,7 @@ static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
 	{																					\
 		uint32_t result;																\
 		\
-		if (!hash_algorithm_uint8_t_array_to_uint32_t((START), (START) + 4, &result))	\
+		if (!bit_converter_to_uint32_t((START), (START) + 4, &result))					\
 		{																				\
 			return 0;																	\
 		}																				\
