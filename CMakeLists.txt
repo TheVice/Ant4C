@@ -29,6 +29,7 @@ endif()
 set(
   ANT4C_SOURCES
   "${CMAKE_SOURCE_DIR}/argument_parser.c"
+  "${CMAKE_SOURCE_DIR}/bit_converter.c"
   "${CMAKE_SOURCE_DIR}/buffer.c"
   "${CMAKE_SOURCE_DIR}/choose_task.c"
   "${CMAKE_SOURCE_DIR}/common.c"
@@ -87,6 +88,7 @@ set(
 
 set(ANT4C_HEADERS
   "${CMAKE_SOURCE_DIR}/argument_parser.h"
+  "${CMAKE_SOURCE_DIR}/bit_converter.h"
   "${CMAKE_SOURCE_DIR}/buffer.h"
   "${CMAKE_SOURCE_DIR}/choose_task.h"
   "${CMAKE_SOURCE_DIR}/common.h"
