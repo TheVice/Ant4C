@@ -1,34 +1,34 @@
 name: modules_net_CMake
 
-# on: [push, pull_request]
-on:
-  push:
-    branches:
-    - develop
+on: [push, pull_request]
+# on:
+#   push:
+#     branches:
+#     - develop
 
-    paths:
-    - 'tests_net.module.cpp'
-    - 'tests.cmake'
-    - 'modules/net/*.c'
-    - 'modules/net/*.cs'
-    - 'modules/net/*.csproj'
-    - 'modules/net/*.h'
-    - 'modules/net/*.xml'
-    - 'modules/net/CMakeLists.txt'
+#     paths:
+#     - 'tests_net.module.cpp'
+#     - 'tests.cmake'
+#     - 'modules/net/*.c'
+#     - 'modules/net/*.cs'
+#     - 'modules/net/*.csproj'
+#     - 'modules/net/*.h'
+#     - 'modules/net/*.xml'
+#     - 'modules/net/CMakeLists.txt'
 
-  pull_request:
-    branches:
-    - develop
+#   pull_request:
+#     branches:
+#     - develop
 
-    paths:
-    - 'tests_net.module.cpp'
-    - 'tests.cmake'
-    - 'modules/net/*.c'
-    - 'modules/net/*.cs'
-    - 'modules/net/*.csproj'
-    - 'modules/net/*.h'
-    - 'modules/net/*.xml'
-    - 'modules/net/CMakeLists.txt'
+#     paths:
+#     - 'tests_net.module.cpp'
+#     - 'tests.cmake'
+#     - 'modules/net/*.c'
+#     - 'modules/net/*.cs'
+#     - 'modules/net/*.csproj'
+#     - 'modules/net/*.h'
+#     - 'modules/net/*.xml'
+#     - 'modules/net/CMakeLists.txt'
 
 jobs:
   build:
@@ -42,8 +42,10 @@ jobs:
     strategy:
       matrix:
 
-        compiler: [clang, gcc, msvc, mingw]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        compiler: [msvc]
+        os: [windows-latest]
+        # compiler: [clang, gcc, msvc, mingw]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
         optimized: [true]
@@ -203,11 +205,13 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [clang, gcc, msvc, mingw]
-        os: [ macos-latest, windows-latest]
+        compiler: [msvc]
+        os: [windows-latest]
+        # compiler: [clang, gcc, msvc, mingw]
+        # os: [macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
-        host_version: [ "6.0" ]
+        host_version: ["6.0"]
 
         optimized: [true]
         target_platform: [x64]
@@ -265,7 +269,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Fetch prebuild of third-party libraries
       run: git fetch origin ${{ matrix.os }}
@@ -273,7 +277,7 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
 
@@ -306,7 +310,7 @@ jobs:
     - name: Run tests (MinGW)
       if: ${{ 'mingw' == matrix.compiler }}
       run: |
-        $Env:PATH="C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin;$Env:SystemRoot\system32;$Env:SystemRoot;$Env:SystemRoot\system32\Wbem;$Env:SystemRoot\system32\WindowsPowerShell\v1.0\;$Env:ProgramFiles\CMake\bin;"
+        $Env:PATH="C:\mingw64\bin;$Env:SystemRoot\system32;$Env:SystemRoot;$Env:SystemRoot\system32\Wbem;$Env:SystemRoot\system32\WindowsPowerShell\v1.0\;$Env:ProgramFiles\CMake\bin;"
         ctest --build-config ${{ env.CMAKE_CONFIG_TYPE }} --test-dir ${{ env.CMAKE_BUILD_DIR }} --output-on-failure
 
     - name: Run Tests
