@@ -203,13 +203,11 @@ jobs:
 
     strategy:
       matrix:
-        # compiler: [msvc]
-        # os: [windows-latest]
         compiler: [clang, gcc, msvc, mingw]
         os: [macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
-        host_version: ["8.0"]
+        host_version: ["7.0"]
 
         optimized: [true]
         target_platform: [x64]
