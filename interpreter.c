@@ -1637,6 +1637,7 @@ uint8_t interpreter_evaluate_task(
 			task_attributes_count = do_evaluate_task(
 										the_project, the_target, attributes_finish, element_finish, task_arguments, verbose);
 			break;
+#ifdef ENABLED
 
 		case echo_task:
 			if (!echo_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,
@@ -1670,6 +1671,7 @@ uint8_t interpreter_evaluate_task(
 
 			task_attributes_count = echo_evaluate_task(task_arguments, verbose);
 			break;
+#endif
 
 		case exec_task:
 			if (!exec_get_attributes_and_arguments_for_task(&task_attributes, &task_attributes_lengths,

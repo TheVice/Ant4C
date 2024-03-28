@@ -17,7 +17,23 @@
 #endif*/
 
 #include <stddef.h>
-
+#ifndef ENABLED
+void* shared_object_load(const uint8_t* path)
+{
+	(void)path;
+	return NULL;
+}
+void* shared_object_get_procedure_address(void* object, const uint8_t* procedure_name)
+{
+	(void)object;
+	(void)procedure_name;
+	return NULL;
+}
+void shared_object_unload(void* object)
+{
+	(void)object;
+}
+#else
 #if defined(_WIN32)
 #include "buffer.h"
 #include "file_system.h"
@@ -116,3 +132,4 @@ void shared_object_unload(void* object)
 #endif
 	}
 }
+#endif
