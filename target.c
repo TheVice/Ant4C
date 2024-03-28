@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -155,7 +155,7 @@ uint8_t target_set_name(struct target* the_target, const uint8_t* name, ptrdiff_
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 	if (0 != memcpy_s(the_target->name, UINT8_MAX, name, name_length))
 	{

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -172,7 +172,7 @@ uint8_t BLAKE2b_final(const uint8_t* start, ptrdiff_t* bytes_compressed, uint8_t
 
 	if (0 < bytes_remaining)
 	{
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 		if (0 != memcpy_s(chunk, 128, start, bytes_remaining))
 		{
@@ -260,6 +260,6 @@ uint8_t hash_algorithm_blake2b(
 		return 0;
 	}
 
-	return hash_algorithm_uint64_t_array_to_uint8_t_array(out, out + 16, buffer_data(output, size)) &&
+	return hash_algorithm_uint64_t_array_to_uint8_t_array(out, out + 16, buffer_uint8_t_data(output, size)) &&
 		   buffer_resize(output, buffer_size(output) - (128 - hash_length));
 }

@@ -129,7 +129,7 @@ uint8_t _buffer_append_pre(void* the_buffer, const uint8_t* data, ptrdiff_t size
 	if (NULL != data)
 	{
 		uint8_t* dst = buffer_uint8_t_data(the_buffer, 0);
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 		if (0 != memcpy_s(dst, size, data, size))
 		{
@@ -1252,7 +1252,7 @@ uint8_t directory_move(const uint8_t* current_path, const uint8_t* new_path)
 		buffer_release(pathW);
 		return 0;
 	}
-	
+
 	current_path_ = buffer_wchar_t_data(pathW, 0);
 	const uint8_t returned = (0 != MoveFileExW(current_path_, new_path_,
 							  MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH));
@@ -1809,7 +1809,7 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != *output);
 #else
 	*output = (void*)_wfopen(path, mode);
@@ -1919,7 +1919,7 @@ uint8_t file_open(const uint8_t* path, const uint8_t* mode, void** output)
 	buffer_release(pathW);
 	return returned;
 #else
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	return (0 == fopen_s((FILE**)output, (const char*)path, (const char*)mode) && NULL != *output);
 #else
 	*output = (void*)fopen((const char*)path, (const char*)mode);
@@ -1937,7 +1937,7 @@ size_t file_read(void* content, const size_t size_of_content_element,
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__ && defined(_MSC_VER)
+#if defined(__STDC_LIB_EXT1__) && defined(_MSC_VER)
 	return fread_s(content, count_of_elements, size_of_content_element, count_of_elements, (FILE*)stream);
 #else
 	return fread(content, size_of_content_element, count_of_elements, (FILE*)stream);

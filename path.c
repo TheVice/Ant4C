@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -1059,7 +1059,7 @@ uint8_t path_get_directory_for_current_process(void* path)
 			return 0;
 		}
 
-		const uint8_t* path_ = buffer_uint8_t_data(path, size);
+		uint8_t* path_ = buffer_uint8_t_data(path, size);
 		const ptrdiff_t length = buffer_size(path) - size;
 
 		if (!getcwd((char*)path_, (int)length))

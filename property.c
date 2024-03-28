@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -101,7 +101,7 @@ uint8_t property_new(
 
 	struct property the_property;
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	if (0 != memcpy_s(the_property.name, UINT8_MAX, property_name, property_name_length))
 	{
 		return 0;

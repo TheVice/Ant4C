@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2021 TheVice
+ * Copyright (c) 2019 - 2021, 2024 TheVice
  *
  */
 
@@ -66,7 +66,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 
 	if (version)
 	{
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 		if (0 != memcpy_s(operating_system->version, VERSION_SIZE, version, VERSION_SIZE))
 		{
@@ -88,7 +88,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 
 			for (uint8_t i = 0, count = COUNT_OF(labels); i < count; ++i)
 			{
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 				if (0 != memcpy_s(description, size, labels[i], labels_lengths[i]))
 				{
@@ -135,7 +135,7 @@ uint8_t operating_system_init(uint8_t platformID, uint8_t is_server,
 					continue;
 				}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 				if (0 != memcpy_s(description, size, version_string[i], length))
 				{
@@ -195,7 +195,7 @@ uint8_t operating_system_parse(const uint8_t* start, const uint8_t* finish, ptrd
 	}
 
 	size = finish - start;
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 	if (0 != memcpy_s(operating_system->description, sizeof(operating_system->description),
 					  start, MIN((ptrdiff_t)sizeof(operating_system->description), size)))

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -73,7 +73,7 @@ const uint8_t* common_get_string_at(
 		++(SRC);												\
 	}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 #define MEM_CPY_C(DST, SRC, LENGTH)								\
 	if (0 != memcpy_s((DST), (LENGTH), (SRC), (LENGTH)))		\
 	{															\

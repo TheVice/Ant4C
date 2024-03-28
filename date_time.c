@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -23,25 +23,25 @@
 #define TIME_T	((time_t)-1)
 
 #define LOCAL_TIME(T)												\
-	struct tm* tm_ = localtime((const time_t* const)(T));
+	struct tm* tm_ = localtime((T));
 
 #define LOCAL_TIME_STDC_SEC_API(T)									\
 	struct tm tm__;													\
 	struct tm* tm_ = &tm__;											\
 	\
-	if (0 != localtime_s(tm_, (const time_t* const)(T)))			\
+	if (0 != localtime_s(tm_, (T)))									\
 	{																\
 		return 0;													\
 	}
 
 #define UTC_TIME(T)													\
-	struct tm* tm_u = gmtime((const time_t* const)(T));
+	struct tm* tm_u = gmtime((T));
 
 #define UTC_TIME_STDC_SEC_API(T)									\
 	struct tm tm__u;												\
 	struct tm* tm_u = &tm__u;										\
 	\
-	if (0 != gmtime_s(tm_u, (const time_t* const)(T)))				\
+	if (0 != gmtime_s(tm_u, (T)))									\
 	{																\
 		return 0;													\
 	}
@@ -506,7 +506,7 @@ int64_t datetime_now_utc()
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	UTC_TIME_STDC_SEC_API(&now);
 #else
 	UTC_TIME(&now);
@@ -524,7 +524,7 @@ int64_t datetime_now()
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	LOCAL_TIME_STDC_SEC_API(&now);
 #else
 	LOCAL_TIME(&now);
@@ -643,12 +643,12 @@ long datetime_get_bias()
 		return 0;
 	}
 
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	LOCAL_TIME_STDC_SEC_API(&now);
 #else
 	LOCAL_TIME(&now);
 #endif
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	UTC_TIME_STDC_SEC_API(&now);
 #else
 	UTC_TIME(&now);

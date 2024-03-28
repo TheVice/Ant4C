@@ -285,7 +285,7 @@ uint8_t file_get_checksum_(const uint8_t* path, uint8_t algorithm,
 				}
 
 				last = file_content + 4096;
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 				if (0 != memcpy_s(last, 128, file_content + 4096 - 128, 128))
 				{

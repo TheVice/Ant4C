@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2022 TheVice
+ * Copyright (c) 2020 - 2022, 2024 TheVice
  *
  */
 
@@ -817,7 +817,7 @@ uint8_t load_tasks_copy_modules_with_out_objects(const void* the_source,
 		{
 			the_destination_module->enum_tasks = the_module->enum_tasks;
 
-			if (!buffer_append_data_from_buffer(&the_destination_module->tasks, (void*)the_module->tasks))
+			if (!buffer_append_data_from_buffer(&the_destination_module->tasks, (const void*)the_module->tasks))
 			{
 				return 0;
 			}

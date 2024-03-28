@@ -1,4 +1,4 @@
-﻿/*
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2020 - 2021 TheVice

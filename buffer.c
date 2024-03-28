@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -50,7 +50,7 @@ struct buffer* buffer_to_real_buffer(const void* the_buffer)
 
 	if (NULL == the_buffer)
 	{
-		return real_buffer;
+		return (struct buffer*)real_buffer;
 	}
 
 	while (NULL != (real_buffer = buffer_buffer_data(&pool, i++)))
@@ -199,7 +199,7 @@ uint8_t buffer_append(void* the_buffer_, const void* data, ptrdiff_t size)
 
 		if (0 < the_buffer->size && NULL != the_buffer->data)
 		{
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 			if (0 != memcpy_s(new_data, capacity, the_buffer->data, the_buffer->size))
 			{
@@ -228,7 +228,7 @@ uint8_t buffer_append(void* the_buffer_, const void* data, ptrdiff_t size)
 		uint8_t* dst = (uint8_t*)the_buffer->data + the_buffer->size;
 		MEM_CPY(dst, data, size);
 #else
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 
 		if (0 != memcpy_s((uint8_t*)the_buffer->data + the_buffer->size,
 						  the_buffer->capacity - the_buffer->size, data, size))
@@ -263,14 +263,14 @@ uint8_t buffer_append_buffer(void* the_buffer, const void* data, ptrdiff_t data_
 
 uint8_t buffer_append_data_from_buffer(void* the_buffer, const void* the_source_buffer)
 {
-	struct buffer* the_source_buffer_ = (struct buffer*)the_source_buffer;
+	const struct buffer* the_source_buffer_ = (const struct buffer*)the_source_buffer;
 	return NULL == the_source_buffer_ ?
 		   0 : buffer_append(the_buffer, the_source_buffer_->data, the_source_buffer_->size);
 }
 
 void* buffer_data(const void* the_buffer_, ptrdiff_t index)
 {
-	struct buffer* the_buffer = (struct buffer*)the_buffer_;
+	const struct buffer* the_buffer = (const struct buffer*)the_buffer_;
 
 	if (NULL == the_buffer ||
 		NULL == the_buffer->data ||
@@ -383,7 +383,7 @@ uint8_t buffer_init_pool(void** the_buffer)
 		is_pool_init = 1;
 	}
 
-	while (NULL != (current_buffer = buffer_buffer_data(&pool, i++)))
+	while (NULL != (current_buffer = (struct buffer*)buffer_buffer_data(&pool, i++)))
 	{
 		if (buffer_size(current_buffer) < 0 && capacity < current_buffer->capacity)
 		{

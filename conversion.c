@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -165,7 +165,7 @@ double double_parse(const uint8_t* value)
 
 uint8_t double_to_string(double input, void* output)
 {
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	DIGIT_TO_STRING_STDC_SEC_API(input, 386, "%.16lf", output);
 #else
 	DIGIT_TO_STRING(input, 386, "%.16lf", output);
@@ -514,7 +514,7 @@ void* pointer_parse(const uint8_t* value)
 
 uint8_t pointer_to_string(const void* input, void* output)
 {
-#if __STDC_LIB_EXT1__
+#if defined(__STDC_LIB_EXT1__)
 	DIGIT_TO_STRING_STDC_SEC_API(input, 32, "%p", output);
 #else
 	DIGIT_TO_STRING(input, 32, "%p", output);

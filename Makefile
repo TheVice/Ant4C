@@ -11,6 +11,8 @@ argument_parser.c: range.h
 argument_parser.c: string_unit.h
 argument_parser.c: text_encoding.h
 
+bit_converter.c: bit_converter.h
+
 buffer.c: buffer.h
 
 common.c: common.h
@@ -343,6 +345,9 @@ xml.c: text_encoding.h
 argument_parser.obj: argument_parser.c
 	$(CC) $(CFLAGS) -c argument_parser.c -o $@
 
+bit_converter.obj: bit_converter.c
+	$(CC) $(CFLAGS) -c bit_converter.c -o $@
+
 buffer.obj: buffer.c
 	$(CC) $(CFLAGS) -c buffer.c -o $@
 
@@ -515,6 +520,7 @@ xml.obj: xml.c
 	$(CC) $(CFLAGS) -c xml.c -o $@
 
 libant4c.a: argument_parser.obj
+libant4c.a: bit_converter.obj
 libant4c.a: buffer.obj
 libant4c.a: choose_task.obj
 libant4c.a: common.obj
@@ -571,6 +577,7 @@ libant4c.a: version.obj
 libant4c.a: xml.obj
 	ar qc $@ \
 	argument_parser.obj \
+	bit_converter.obj \
 	buffer.obj \
 	choose_task.obj \
 	common.obj \
@@ -641,7 +648,9 @@ clean:
 	libant4c.a \
 	main.obj \
 	libdefault_listener.so \
+	default_listener.obj \
 	argument_parser.obj \
+	bit_converter.obj \
 	buffer.obj \
 	choose_task.obj \
 	common.obj \
