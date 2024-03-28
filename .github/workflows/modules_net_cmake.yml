@@ -43,8 +43,7 @@ jobs:
       matrix:
 
         compiler: [clang, gcc, msvc, mingw]
-        # os: [ubuntu-latest, macos-latest, windows-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
         optimized: [true]
@@ -205,8 +204,7 @@ jobs:
     strategy:
       matrix:
         compiler: [clang, gcc, msvc, mingw]
-        # os: [macos-latest, windows-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         # optimized: [true, false]
         # target_platform: [x64, Win32]
         optimized: [true]
