@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -220,22 +220,22 @@ void common_set_error_output_stream(void* stream)
 	error_output_stream = stream;
 }
 
-void* common_get_output_stream()
+void* common_get_output_stream(void)
 {
 	return NULL == output_stream ? stdout : output_stream;
 }
 
-void* common_get_error_output_stream()
+void* common_get_error_output_stream(void)
 {
 	return NULL == error_output_stream ? stderr : error_output_stream;
 }
 
-uint8_t common_is_output_stream_standard()
+uint8_t common_is_output_stream_standard(void)
 {
 	return NULL == output_stream;
 }
 
-uint8_t common_is_error_output_stream_standard()
+uint8_t common_is_error_output_stream_standard(void)
 {
 	return NULL == error_output_stream;
 }
@@ -247,7 +247,7 @@ void common_set_module_priority(uint8_t priority)
 	module_priority = 0 < priority;
 }
 
-uint8_t common_get_module_priority()
+uint8_t common_get_module_priority(void)
 {
 	return module_priority;
 }

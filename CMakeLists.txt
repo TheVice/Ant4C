@@ -147,8 +147,8 @@ if(NOT MSVC)
 endif()
 
 target_compile_options(ant4c PRIVATE
-  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
@@ -178,8 +178,8 @@ if(NOT MSVC)
 endif()
 
 target_compile_options(ant4c_shared PRIVATE
-  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
@@ -221,8 +221,8 @@ if(NOT MSVC)
 endif()
 
 target_compile_options(ant4c_app PRIVATE
-  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 

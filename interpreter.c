@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -2029,7 +2029,7 @@ uint8_t interpreter_evaluate_tasks(
 	return returned;
 }
 
-uint8_t interpreter_get_unknown_task_id()
+uint8_t interpreter_get_unknown_task_id(void)
 {
 	return UNKNOWN_TASK;
 }

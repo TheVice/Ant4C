@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 TheVice
+ * Copyright (c) 2022, 2024 TheVice
  *
  */
 
@@ -125,7 +125,7 @@ enum property_function
 	UNKNOWN_PROPERTY_FUNCTION
 };
 
-uint8_t property_get_id_of_get_value_function()
+uint8_t property_get_id_of_get_value_function(void)
 {
 	return property_get_value_function;
 }

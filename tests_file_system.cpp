@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -819,7 +819,7 @@ TEST(TestFileSystem_, file_set_attributes)
 					{
 						ASSERT_TRUE(file_set_attributes(
 										path_, archive, hidden, normal, readonly, system_attribute)) << buffer_free(path);
-#if TODO
+#if defined(TODO)
 						unsigned long attributes = 0;
 						ASSERT_TRUE(file_get_attributes(path_, &attributes)) << buffer_free(path);
 						//

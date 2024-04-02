@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-uint8_t bit_converter_is_little_endian();
+uint8_t bit_converter_is_little_endian(void);
 
 uint8_t bit_converter_get_bytes_from_uint16_t(uint16_t input, uint8_t* output);
 uint8_t bit_converter_get_bytes_from_uint32_t(uint32_t input, uint8_t* output);

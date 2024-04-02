@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -42,10 +42,10 @@ const uint8_t* operating_system_to_string(const void* os);
 uint8_t operating_system_is_windows_server(const void* os);
 const uint8_t* operating_system_get_platform_name(const void* os);
 
-const uint8_t* platform_get_name();
-uint8_t platform_is_macos();
-uint8_t platform_is_unix();
-uint8_t platform_is_windows();
-uint8_t platform_is_windows_server();
+const uint8_t* platform_get_name(void);
+uint8_t platform_is_macos(void);
+uint8_t platform_is_unix(void);
+uint8_t platform_is_windows(void);
+uint8_t platform_is_windows_server(void);
 
 #endif

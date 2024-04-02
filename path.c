@@ -721,7 +721,7 @@ uint8_t path_get_temp_file_name(void* temp_file_name)
 		return 0;
 	}
 
-	wchar_t* prefix_string = L"file";
+	const wchar_t* prefix_string = L"file";
 	static const UINT unique = 0;
 
 	if (unique == GetTempFileNameW(path_name, prefix_string, unique, temp_file_name_))

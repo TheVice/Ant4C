@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -679,11 +679,14 @@ uint8_t exec_posix_with_redirect(
 
 	close(file_des[0]);
 	count = 0;
+	int count_ = 0;
 
-	if (-1 == wait((int*)&count))
+	if (-1 == wait(&count_))
 	{
 		return 0;
 	}
+
+	count = (ssize_t)count_;
 
 	if (NULL != result_property)
 	{

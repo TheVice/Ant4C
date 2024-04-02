@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -84,7 +84,7 @@ uint8_t platform_exec_function(
 	void* output);
 
 /*path*/
-uint8_t path_get_id_of_get_full_path_function();
+uint8_t path_get_id_of_get_full_path_function(void);
 uint8_t path_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t path_exec_function(
@@ -185,6 +185,6 @@ uint8_t interpreter_evaluate_tasks(
 	void* the_project, const void* the_target,
 	const void* elements, const struct range* sub_nodes_names,
 	uint8_t target_help, uint8_t verbose);
-uint8_t interpreter_get_unknown_task_id();
+uint8_t interpreter_get_unknown_task_id(void);
 
 #endif

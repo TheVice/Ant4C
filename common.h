@@ -46,13 +46,13 @@ uint8_t common_get_attributes_and_arguments_for_task(
 
 void common_set_output_stream(void* stream);
 void common_set_error_output_stream(void* stream);
-void* common_get_output_stream();
-void* common_get_error_output_stream();
-uint8_t common_is_output_stream_standard();
-uint8_t common_is_error_output_stream_standard();
+void* common_get_output_stream(void);
+void* common_get_error_output_stream(void);
+uint8_t common_is_output_stream_standard(void);
+uint8_t common_is_error_output_stream_standard(void);
 
 void common_set_module_priority(uint8_t priority);
-uint8_t common_get_module_priority();
+uint8_t common_get_module_priority(void);
 
 const uint8_t* common_get_string_at(
 	const uint8_t* start, const uint8_t* finish,

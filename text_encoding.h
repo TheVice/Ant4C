@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2020, 2022 TheVice
+ * Copyright (c) 2019 - 2020, 2022, 2024 TheVice
  *
  */
 
@@ -37,15 +37,13 @@ uint8_t text_encoding_get_BOM(
 uint8_t text_encoding_get_one_of_data_by_BOM(
 	const uint8_t* data, ptrdiff_t data_length);
 
-#ifndef NO_BUFFER_UNIT
+#if !defined(NO_BUFFER_UNIT) && !defined(NO_COMMON_UNIT)
 uint8_t text_encoding_UTF_to_ASCII(
 	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
 uint8_t text_encoding_UTF_from_ASCII(
 	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
-#ifndef NO_COMMON_UNIT
 uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish, uint16_t code_page, void* output);
-#endif
 #endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output);
@@ -83,6 +81,9 @@ uint8_t text_encoding_UTF8_to_UTF32BE(
 
 uint8_t text_encoding_UTF32BE_to_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish, void* output);
+
+uint8_t text_encoding_UTF_to_UTF8(
+	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
 #endif
 
 #ifndef NO_COMMON_UNIT

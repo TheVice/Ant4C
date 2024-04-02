@@ -276,28 +276,28 @@ const uint8_t* operating_system_get_platform_name(const void* os)
 	return IDs_str[count];
 }
 
-const uint8_t* platform_get_name()
+const uint8_t* platform_get_name(void)
 {
 	return operating_system_get_platform_name(environment_get_operating_system());
 }
 
-uint8_t platform_is_macos()
+uint8_t platform_is_macos(void)
 {
 	return macOS == operating_system_get_platform(environment_get_operating_system());
 }
 
-uint8_t platform_is_unix()
+uint8_t platform_is_unix(void)
 {
 	const enum PlatformID platformID = operating_system_get_platform(environment_get_operating_system());
 	return Unix == platformID || macOS == platformID;
 }
 
-uint8_t platform_is_windows()
+uint8_t platform_is_windows(void)
 {
 	return Win32 == operating_system_get_platform(environment_get_operating_system());
 }
 
-uint8_t platform_is_windows_server()
+uint8_t platform_is_windows_server(void)
 {
 #if defined(_WIN32)
 	const struct OperatingSystem* os = (const struct OperatingSystem*)environment_get_operating_system();

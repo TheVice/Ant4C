@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -318,6 +318,41 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 			return common_append_string_to_buffer((const uint8_t*)user_info->pw_dir, path);
 		}
 
+		case Programs:
+		case Favorites:
+		case Startup:
+		case Recent:
+		case SendTo:
+		case StartMenu:
+		case MyComputer:
+		case NetworkShortcuts:
+		case Fonts:
+		case CommonStartMenu:
+		case CommonPrograms:
+		case CommonStartup:
+		case CommonDesktopDirectory:
+		case PrinterShortcuts:
+		case InternetCache:
+		case Cookies:
+		case History:
+		case Windows:
+		case System:
+		case ProgramFiles:
+		case SystemX86:
+		case ProgramFilesX86:
+		case CommonProgramFiles:
+		case CommonProgramFilesX86:
+		case CommonTemplates:
+		case CommonDocuments:
+		case CommonAdminTools:
+		case AdminTools:
+		case CommonMusic:
+		case CommonPictures:
+		case CommonVideos:
+		case Resources:
+		case LocalizedResources:
+		case CommonOemLinks:
+		case CDBurning:
 		default:
 			break;
 	}
@@ -467,7 +502,7 @@ uint8_t environment_get_windows_version(void* version)
 #if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #else
 
-uint8_t IsWindowsServer()
+uint8_t IsWindowsServer(void)
 {
 	OSVERSIONINFOEXW osvi;
 	memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
@@ -483,7 +518,7 @@ uint8_t IsWindowsServer()
 static uint8_t operating_system[UINT8_MAX];
 static uint8_t is_data_of_operating_system_filled = 0;
 
-const void* environment_get_operating_system()
+const void* environment_get_operating_system(void)
 {
 	if (!is_data_of_operating_system_filled)
 	{
@@ -512,7 +547,7 @@ const void* environment_get_operating_system()
 static uint8_t operating_system[sizeof(struct utsname) + INT8_MAX];
 static uint8_t is_data_of_operating_system_filled = 0;
 
-const void* environment_get_operating_system()
+const void* environment_get_operating_system(void)
 {
 	if (!is_data_of_operating_system_filled)
 	{
@@ -791,7 +826,7 @@ uint8_t environment_variable_exists(const uint8_t* variable_name_start, const ui
 	return environment_get_variable(variable_name_start, variable_name_finish, NULL);
 }
 
-uint8_t environment_is64bit_process()
+uint8_t environment_is64bit_process(void)
 {
 #if defined(_WIN64) || defined(__amd64) || defined(__x86_64) || defined(__aarch64__)
 	return 1;
@@ -800,7 +835,7 @@ uint8_t environment_is64bit_process()
 #endif
 }
 
-uint8_t environment_is64bit_operating_system()
+uint8_t environment_is64bit_operating_system(void)
 {
 #if defined(_WIN64) || defined(__amd64) || defined(__x86_64) || defined(__aarch64__)
 	return 1;
@@ -870,7 +905,7 @@ uint8_t environment_is64bit_operating_system()
 #endif
 }
 
-uint16_t environment_processor_count()
+uint16_t environment_processor_count(void)
 {
 #if defined(_WIN32)
 	SYSTEM_INFO system_info;

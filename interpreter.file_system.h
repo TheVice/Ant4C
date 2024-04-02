@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 - 2022 TheVice
+ * Copyright (c) 2021 - 2022, 2024 TheVice
  *
  */
 
@@ -10,18 +10,18 @@
 
 #include <stdint.h>
 
-uint8_t file_get_id_of_file_set_creation_time_function();
-uint8_t file_get_id_of_file_set_creation_time_utc_function();
-uint8_t file_get_id_of_file_set_last_access_time_function();
-uint8_t file_get_id_of_file_set_last_access_time_utc_function();
-uint8_t file_get_id_of_file_set_last_write_time_function();
-uint8_t file_get_id_of_file_set_last_write_time_utc_function();
+uint8_t file_get_id_of_file_set_creation_time_function(void);
+uint8_t file_get_id_of_file_set_creation_time_utc_function(void);
+uint8_t file_get_id_of_file_set_last_access_time_function(void);
+uint8_t file_get_id_of_file_set_last_access_time_utc_function(void);
+uint8_t file_get_id_of_file_set_last_write_time_function(void);
+uint8_t file_get_id_of_file_set_last_write_time_utc_function(void);
 
-uint8_t dir_get_id_of_get_current_directory_function();
+uint8_t dir_get_id_of_get_current_directory_function(void);
 
-uint8_t file_system_get_id_of_directory_entry();
-uint8_t file_system_get_id_of_file_entry();
-uint8_t file_system_get_id_of_all_entries();
+uint8_t file_system_get_id_of_directory_entry(void);
+uint8_t file_system_get_id_of_file_entry(void);
+uint8_t file_system_get_id_of_all_entries(void);
 
 uint8_t dir_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019, 2022 TheVice
+ * Copyright (c) 2019, 2022, 2024 TheVice
  *
  */
 
@@ -14,7 +14,7 @@
 
 #define BUFFER_SIZE_OF (2 * sizeof(ptrdiff_t) + sizeof(void*))
 
-uint8_t buffer_size_of();
+uint8_t buffer_size_of(void);
 
 uint8_t buffer_init(void* the_buffer, uint8_t size_of_buffer);
 
@@ -32,6 +32,7 @@ uint8_t buffer_append_buffer(void* the_buffer, const void* data, ptrdiff_t data_
 uint8_t buffer_append_data_from_buffer(void* the_buffer, const void* the_source_buffer);
 
 void* buffer_data(const void* the_buffer, ptrdiff_t index);
+void* buffer_data_finish(const void* the_buffer);
 char* buffer_char_data(const void* the_buffer, ptrdiff_t data_position);
 uint8_t* buffer_uint8_t_data(const void* the_buffer, ptrdiff_t data_position);
 wchar_t* buffer_wchar_t_data(const void* the_buffer, ptrdiff_t data_position);
@@ -47,6 +48,6 @@ uint8_t buffer_shrink_to_fit(void* the_buffer);
 
 uint8_t buffer_init_pool(void** the_buffer);
 uint8_t buffer_return_to_pool(void* the_buffer);
-uint8_t buffer_release_pool();
+uint8_t buffer_release_pool(void);
 
 #endif

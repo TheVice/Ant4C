@@ -1,9 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
+
+#include "stdc_secure_api.h"
 
 #include "version.h"
 
@@ -12,6 +14,8 @@
 #include "conversion.h"
 #include "range.h"
 #include "string_unit.h"
+
+#include <string.h>
 
 struct version_
 {
@@ -118,8 +122,17 @@ uint8_t version_parse(
 			break;
 		}
 
-		uint32_t char_set;
-		*((uint32_t*)version) = (uint32_t)int64_parse(input_start, input_finish);
+		uint32_t char_set = (uint32_t)int64_parse(input_start, input_finish);
+#if defined(__STDC_LIB_EXT1__)
+
+		if (0 != memcpy_s(version, sizeof(uint32_t), &char_set, sizeof(uint32_t)))
+		{
+			return 0;
+		}
+
+#else
+		memcpy(version, &char_set, sizeof(uint32_t));
+#endif
 		const uint8_t* start = input_start;
 		input_start = string_find_any_symbol_like_or_not_like_that(
 						  input_start, input_finish,

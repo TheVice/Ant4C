@@ -220,7 +220,7 @@ uint8_t property_set_by_name(
 	uint8_t dynamic, uint8_t over_write,
 	uint8_t read_only, uint8_t verbose)
 {
-	struct property* prop = NULL;
+	void* prop = NULL;
 
 	if (NULL == properties ||
 		!property_is_name_valid(name, name_length) ||
@@ -229,7 +229,7 @@ uint8_t property_set_by_name(
 		return 0;
 	}
 
-	if (property_exists(properties, name, name_length, (void**)&prop))
+	if (property_exists(properties, name, name_length, &prop))
 	{
 		if (!over_write)
 		{

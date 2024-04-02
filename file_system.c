@@ -1023,7 +1023,7 @@ int64_t file_system_datetime_to_win32_time(int64_t input)
 	(O).dwHighDateTime = (I) >> 32;						\
 	(O).dwLowDateTime = (int32_t)(I);/* && INT32_MAX;*/
 
-long file_system_get_bias()
+long file_system_get_bias(void)
 {
 	static uint8_t loaded = 0;
 	static long result = 0;

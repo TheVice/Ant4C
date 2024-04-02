@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 - 2022 TheVice
+ * Copyright (c) 2021 - 2022, 2024 TheVice
  *
  */
 
@@ -10,11 +10,11 @@
 
 #include <stdint.h>
 
-uint8_t string_get_id_of_to_lower_function();
-uint8_t string_get_id_of_to_upper_function();
-uint8_t string_get_id_of_trim_function();
-uint8_t string_get_id_of_trim_end_function();
-uint8_t string_get_id_of_trim_start_function();
+uint8_t string_get_id_of_to_lower_function(void);
+uint8_t string_get_id_of_to_upper_function(void);
+uint8_t string_get_id_of_trim_function(void);
+uint8_t string_get_id_of_trim_end_function(void);
+uint8_t string_get_id_of_trim_start_function(void);
 uint8_t string_get_function(
 	const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t string_exec_function(

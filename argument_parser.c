@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -553,7 +553,7 @@ uint8_t argument_parser_wchar_t(int i, int argc, wchar_t** argv)
 	return 1;
 }
 #endif
-uint8_t argument_parser_init()
+uint8_t argument_parser_init(void)
 {
 	if (!is_init)
 	{
@@ -802,57 +802,57 @@ const uint8_t* argument_parser_get_null_terminated_by_index(
 	return finish != start ? start : NULL;
 }
 
-uint8_t argument_parser_get_debug()
+uint8_t argument_parser_get_debug(void)
 {
 	return parameters_.debug;
 }
 
-uint8_t argument_parser_get_indent()
+uint8_t argument_parser_get_indent(void)
 {
 	return parameters_.indent;
 }
 
-uint8_t argument_parser_get_module_priority()
+uint8_t argument_parser_get_module_priority(void)
 {
 	return parameters_.module_priority;
 }
 
-uint8_t argument_parser_get_no_logo()
+uint8_t argument_parser_get_no_logo(void)
 {
 	return parameters_.no_logo;
 }
 
-uint8_t argument_parser_get_pause()
+uint8_t argument_parser_get_pause(void)
 {
 	return parameters_.pause;
 }
 
-uint8_t argument_parser_get_program_help()
+uint8_t argument_parser_get_program_help(void)
 {
 	return parameters_.program_help;
 }
 
-uint8_t argument_parser_get_project_help()
+uint8_t argument_parser_get_project_help(void)
 {
 	return parameters_.project_help;
 }
 
-uint8_t argument_parser_get_quiet()
+uint8_t argument_parser_get_quiet(void)
 {
 	return parameters_.quiet;
 }
 
-uint8_t argument_parser_get_verbose()
+uint8_t argument_parser_get_verbose(void)
 {
 	return parameters_.verbose;
 }
 
-uint16_t argument_parser_get_encoding()
+uint16_t argument_parser_get_encoding(void)
 {
 	return parameters_.encoding;
 }
 
-const void* argument_parser_get_properties()
+const void* argument_parser_get_properties(void)
 {
 	return (const void*)(&parameters_.properties);
 }
@@ -862,7 +862,7 @@ const uint8_t* argument_parser_get_build_file(int index)
 	return argument_parser_get_null_terminated_by_index((void*)(&parameters_.build_file), index);
 }
 
-const uint8_t* argument_parser_get_log_file()
+const uint8_t* argument_parser_get_log_file(void)
 {
 	return buffer_uint8_t_data((void*)(&parameters_.log_file), 0);
 }
@@ -872,12 +872,12 @@ const uint8_t* argument_parser_get_target(int index)
 	return argument_parser_get_null_terminated_by_index((void*)(&parameters_.target), index);
 }
 
-const uint8_t* argument_parser_get_listener()
+const uint8_t* argument_parser_get_listener(void)
 {
 	return buffer_uint8_t_data((void*)(&parameters_.listener), 0);
 }
 
-void argument_parser_release()
+void argument_parser_release(void)
 {
 	if (is_init)
 	{

@@ -43,7 +43,7 @@
 	\
 	return 1;
 
-uint8_t bit_converter_is_little_endian()
+uint8_t bit_converter_is_little_endian(void)
 {
 	union endian_union
 	{

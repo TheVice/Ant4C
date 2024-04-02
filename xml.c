@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -337,7 +337,7 @@ uint8_t xml_read_ampersand_based_data(
 		if (pos < start && buffer_size(digits))
 		{
 			const uint16_t* digits_start = buffer_uint16_t_data(digits, 0);
-			const uint16_t* digits_finish = (const uint16_t*)(buffer_uint8_t_data(digits, 0) + buffer_size(digits));
+			const uint16_t* digits_finish = (const uint16_t*)buffer_data_finish(digits);
 
 			if (!text_encoding_UTF16LE_to_UTF8(digits_start, digits_finish, output) ||
 				!buffer_resize(digits, 0))
@@ -431,7 +431,7 @@ uint8_t xml_read_ampersand_based_data(
 	if (buffer_size(digits))
 	{
 		const uint16_t* digits_start = buffer_uint16_t_data(digits, 0);
-		const uint16_t* digits_finish = (const uint16_t*)(buffer_uint8_t_data(digits, 0) + buffer_size(digits));
+		const uint16_t* digits_finish = (const uint16_t*)buffer_data_finish(digits);
 
 		if (!text_encoding_UTF16LE_to_UTF8(digits_start, digits_finish, output) ||
 			!buffer_resize(digits, 0))

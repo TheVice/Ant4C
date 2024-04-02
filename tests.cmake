@@ -5,8 +5,8 @@ add_executable(tests_exec_app
 )
 
 target_compile_options(tests_exec_app PRIVATE
-  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
-  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wstrict-prototypes -Wundef>
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
@@ -50,8 +50,8 @@ add_executable(ant4c_tests
 )
 
 target_compile_options(ant4c_tests PRIVATE
-  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror>
-  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wundef>
+  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Werror -Wcast-qual -Wcast-align -Wshadow -Wstrict-aliasing=1 -Wswitch-enum -Wundef>
   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
 )
 

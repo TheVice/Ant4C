@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -75,15 +75,15 @@ enum SpecialFolder
 
 uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path);
 uint8_t environment_get_machine_name(void* name);
-const void* environment_get_operating_system();
+const void* environment_get_operating_system(void);
 uint8_t environment_get_user_name(void* name);
 uint8_t environment_get_variable(
 	const uint8_t* variable_name_start, const uint8_t* variable_name_finish, void* variable);
 uint8_t environment_newline(void* newline);
 uint8_t environment_variable_exists(
 	const uint8_t* variable_name_start, const uint8_t* variable_name_finish);
-uint8_t environment_is64bit_process();
-uint8_t environment_is64bit_operating_system();
-uint16_t environment_processor_count();
+uint8_t environment_is64bit_process(void);
+uint8_t environment_is64bit_operating_system(void);
+uint16_t environment_processor_count(void);
 
 #endif

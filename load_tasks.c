@@ -91,7 +91,7 @@ typedef uint8_t(*evaluate_task)(const uint8_t* task,
 typedef uint8_t(*evaluate_function)(const uint8_t* function,
 									const uint8_t** values, const uint16_t* values_lengths, uint8_t values_count,
 									const uint8_t** output, uint16_t* output_length);
-typedef void (*module_release)();
+typedef void (*module_release)(void);
 
 struct name_space_in_module
 {
@@ -538,13 +538,15 @@ uint8_t load_tasks_evaluate_loaded_task(
 	}
 	else
 	{
+		static uint16_t task_attributes_count_ = 0;
+
 		if (!buffer_resize(task_arguments, 2 * sizeof(uint8_t**)))
 		{
 			return 0;
 		}
 
 		arguments = (const uint8_t**)buffer_data(task_arguments, 0);
-		arguments_lengths = (uint16_t*)&task_attributes_count;
+		arguments_lengths = &task_attributes_count_;
 
 		if (!buffer_resize(task_arguments, 0))
 		{
@@ -626,8 +628,11 @@ uint8_t load_tasks_evaluate_loaded_function(const void* the_module, const uint8_
 	}
 	else
 	{
-		values = (const uint8_t**)&arguments_count;
-		values_lengths = (uint16_t*)&arguments_count;
+		static const uint8_t value_ = 0;
+		static const uint8_t* values_ = &value_;
+		static uint16_t values_lengths_ = 0;
+		values = &values_;
+		values_lengths = &values_lengths_;
 	}
 
 	const uint8_t* output = NULL;

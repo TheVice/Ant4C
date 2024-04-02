@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 - 2022 TheVice
+ * Copyright (c) 2021 - 2022, 2024 TheVice
  *
  */
 
@@ -36,7 +36,7 @@ enum path_function
 	UNKNOWN_PATH_FUNCTION
 };
 
-uint8_t path_get_id_of_get_full_path_function()
+uint8_t path_get_id_of_get_full_path_function(void)
 {
 	return path_get_full_path_function;
 }

@@ -64,7 +64,7 @@ struct buffer* buffer_to_real_buffer(const void* the_buffer)
 	return (struct buffer*)real_buffer;
 }
 
-uint8_t buffer_size_of()
+uint8_t buffer_size_of(void)
 {
 	return (uint8_t)sizeof(struct buffer);
 }
@@ -283,6 +283,19 @@ void* buffer_data(const void* the_buffer_, ptrdiff_t index)
 	return (void*)((uint8_t*)the_buffer->data + index);
 }
 
+void* buffer_data_finish(const void* the_buffer_)
+{
+	const struct buffer* the_buffer = (const struct buffer*)the_buffer_;
+
+	if (NULL == the_buffer ||
+		NULL == the_buffer->data)
+	{
+		return NULL;
+	}
+
+	return (void*)((uint8_t*)the_buffer->data + the_buffer->size);
+}
+
 char* buffer_char_data(const void* the_buffer, ptrdiff_t data_position)
 {
 	return (char*)buffer_data(the_buffer, sizeof(char) * data_position);
@@ -432,7 +445,7 @@ uint8_t buffer_return_to_pool(void* the_buffer)
 	return 1;
 }
 
-uint8_t buffer_release_pool()
+uint8_t buffer_release_pool(void)
 {
 	if (is_pool_init)
 	{

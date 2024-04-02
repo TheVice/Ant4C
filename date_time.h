@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -40,9 +40,9 @@ uint32_t datetime_get_year(int64_t input);
 
 uint8_t datetime_is_leap_year(uint32_t year);
 
-int64_t datetime_ticks();
-int64_t datetime_now_utc();
-int64_t datetime_now();
+int64_t datetime_ticks(void);
+int64_t datetime_now_utc(void);
+int64_t datetime_now(void);
 
 int64_t datetime_encode(
 	uint32_t year, uint8_t month, uint8_t day,
@@ -52,7 +52,7 @@ uint8_t datetime_decode(
 	uint8_t* hour, uint8_t* minute, uint8_t* second, uint16_t* year_day);
 
 #if !defined(_WIN32)
-long datetime_get_bias();
+long datetime_get_bias(void);
 #endif
 int64_t date_time_millisecond_to_second(uint64_t millisecond);
 

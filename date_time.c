@@ -485,7 +485,7 @@ uint8_t datetime_is_leap_year(uint32_t year)
 	return ((!(year % 400)) || ((year % 100) && (!(year % 4))));
 }
 
-int64_t datetime_ticks()
+int64_t datetime_ticks(void)
 {
 	const clock_t ticks = clock();
 
@@ -497,7 +497,7 @@ int64_t datetime_ticks()
 	return ticks;
 }
 
-int64_t datetime_now_utc()
+int64_t datetime_now_utc(void)
 {
 	time_t now = 0;
 
@@ -515,7 +515,7 @@ int64_t datetime_now_utc()
 						   (uint8_t)tm_u->tm_hour, (uint8_t)tm_u->tm_min, (uint8_t)tm_u->tm_sec);
 }
 
-int64_t datetime_now()
+int64_t datetime_now(void)
 {
 	time_t now = 0;
 
@@ -634,7 +634,7 @@ uint8_t datetime_decode(
 	return 1;
 }
 #if !defined(_WIN32)
-long datetime_get_bias()
+long datetime_get_bias(void)
 {
 	time_t now = 0;
 

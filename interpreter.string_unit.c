@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 - 2022 TheVice
+ * Copyright (c) 2021 - 2022, 2024 TheVice
  *
  */
 
@@ -22,27 +22,27 @@ enum string_function
 	UNKNOWN_STRING_FUNCTION
 };
 
-uint8_t string_get_id_of_to_lower_function()
+uint8_t string_get_id_of_to_lower_function(void)
 {
 	return to_lower;
 }
 
-uint8_t string_get_id_of_to_upper_function()
+uint8_t string_get_id_of_to_upper_function(void)
 {
 	return to_upper;
 }
 
-uint8_t string_get_id_of_trim_function()
+uint8_t string_get_id_of_trim_function(void)
 {
 	return trim;
 }
 
-uint8_t string_get_id_of_trim_end_function()
+uint8_t string_get_id_of_trim_end_function(void)
 {
 	return trim_end;
 }
 
-uint8_t string_get_id_of_trim_start_function()
+uint8_t string_get_id_of_trim_start_function(void)
 {
 	return trim_start;
 }

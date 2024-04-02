@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 TheVice
+ * Copyright (c) 2022, 2024 TheVice
  *
  */
 
@@ -16,7 +16,7 @@ uint8_t property_get_attributes_and_arguments_for_task(
 uint8_t property_evaluate_task(
 	void* the_project, void* properties, const void* task_arguments, uint8_t verbose);
 
-uint8_t property_get_id_of_get_value_function();
+uint8_t property_get_id_of_get_value_function(void);
 uint8_t property_get_function(const uint8_t* name_start, const uint8_t* name_finish);
 uint8_t property_exec_function(
 	const void* the_project, uint8_t function, const void* arguments,

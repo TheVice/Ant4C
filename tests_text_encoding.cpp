@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -15,12 +15,14 @@ extern "C" {
 #include "text_encoding.h"
 }
 
+#include <map>
 #include <limits>
 #include <string>
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <utility>
 #include <ostream>
 
 class TestTextEncoding : public TestsBaseXml
@@ -1038,7 +1040,7 @@ TEST_F(TestTextEncoding, text_encoding_encode_UTF16)
 	buffer_release(output);
 }
 
-uint16_t fill_uint16_t(uint16_t max, uint16_t* result)
+static uint16_t fill_uint16_t(uint16_t max, uint16_t* result)
 {
 	if (nullptr == result)
 	{
@@ -1047,7 +1049,7 @@ uint16_t fill_uint16_t(uint16_t max, uint16_t* result)
 
 	for (uint16_t i = 0, j = 0; i < max; ++i)
 	{
-		if (127 < j)
+		if (INT8_MAX < j)
 		{
 			j = 0;
 		}
@@ -1115,5 +1117,83 @@ text_encoding_UTF8_to_UTF16BE
 text_encoding_UTF16BE_to_UTF8
 text_encoding_UTF8_to_UTF32BE
 text_encoding_UTF32BE_to_UTF8
-text_encoding_get_one
 */
+
+TEST_F(TestTextEncoding, text_encoding_UTF_to_UTF8)
+{
+	std::string output_buffer(buffer_size_of(), 0);
+	auto output = reinterpret_cast<void*>(&output_buffer[0]);
+	ASSERT_TRUE(buffer_init(output, buffer_size_of()));
+	//
+	std::vector<uint8_t> input;
+	std::vector<uint8_t> expected_output;
+
+	for (const auto& node : nodes)
+	{
+		const auto the_node = node.node();
+		ASSERT_TRUE(buffer_resize(output, 0)) << buffer_free(output);
+		//
+		const auto input_hex(get_data_from_nodes(the_node, "input"));
+		input.clear();
+		string_hex_parse(input_hex.c_str(), input);
+		//
+		const std::string encoding_str(the_node.select_node("encoding").node().child_value());
+		const auto encoding_in_a_range(string_to_range(encoding_str));
+		const auto encoding = text_encoding_get_one(encoding_in_a_range.start, encoding_in_a_range.finish);
+		ASSERT_NE(TEXT_ENCODING_UNKNOWN, encoding) << encoding_str << std::endl << buffer_free(output);
+		//
+		const auto output_hex(get_data_from_nodes(the_node, "output"));
+		expected_output.clear();
+		string_hex_parse(output_hex.c_str(), expected_output);
+		//
+		const std::string return_str(
+			the_node.select_node("return").node().child_value());
+		const auto return_in_a_range(string_to_range(return_str));
+		const auto expected_return =
+			static_cast<uint8_t>(
+				int_parse(return_in_a_range.start, return_in_a_range.finish));
+		//
+		ASSERT_EQ(expected_return, text_encoding_UTF_to_UTF8(
+					  input.data(), input.data() + input.size(),
+					  encoding, output)) << input_hex << std::endl << buffer_free(output);
+		//
+		ASSERT_EQ(expected_output.size(),
+				  static_cast<size_t>(buffer_size(output))) << input_hex << std::endl << buffer_free(output);
+		const uint8_t* returned_output = buffer_uint8_t_data(output, 0);
+
+		for (size_t i = 0, count = expected_output.size(); i < count; ++i, ++returned_output)
+		{
+			ASSERT_EQ(expected_output[i], *returned_output)
+					<< input_hex << std::endl << i << std::endl << buffer_free(output);
+		}
+
+		--node_count;
+	}
+
+	buffer_release(output);
+}
+
+TEST(TestTextEncoding_, text_encoding_get_one)
+{
+	static const std::map<std::string, std::uint8_t> inputs =
+	{
+		std::make_pair("ASCII", ASCII),
+		std::make_pair("UTF7", UTF7),
+		std::make_pair("UTF8", UTF8),
+		std::make_pair("UTF16BE", UTF16BE),
+		std::make_pair("UTF16LE", UTF16LE),
+		std::make_pair("UTF32BE", UTF32BE),
+		std::make_pair("UTF32LE", UTF32LE),
+		std::make_pair("BigEndianUnicode", BigEndianUnicode),
+		std::make_pair("Unicode", Unicode),
+		std::make_pair("UTF32", UTF32),
+		std::make_pair("Default", Default),
+		std::make_pair("Unknown", TEXT_ENCODING_UNKNOWN),
+	};
+
+	for (const auto& input : inputs)
+	{
+		const auto input_in_a_range(string_to_range(std::get<0>(input)));
+		ASSERT_EQ(std::get<1>(input), text_encoding_get_one(input_in_a_range.start, input_in_a_range.finish));
+	}
+}

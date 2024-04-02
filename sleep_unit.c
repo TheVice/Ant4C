@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 - 2021 TheVice
+ * Copyright (c) 2020 - 2021, 2024 TheVice
  *
  */
 
@@ -20,6 +20,6 @@ uint8_t sleep_for(uint32_t milliseconds)
 #if defined(_WIN32)
 	return 0 == SleepEx(milliseconds, FALSE);
 #else
-	return 0 == sleep(date_time_millisecond_to_second(milliseconds));
+	return 0 == sleep((uint32_t)date_time_millisecond_to_second(milliseconds));
 #endif
 }
