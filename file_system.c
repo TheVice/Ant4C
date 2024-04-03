@@ -1810,7 +1810,8 @@ uint8_t file_open_wchar_t(const wchar_t* path, const wchar_t* mode, void** outpu
 	}
 
 #if defined(__STDC_LIB_EXT1__)
-	return (0 == _wfopen_s((FILE**)output, path, mode) && NULL != *output);
+	FILE* output_ = NULL;
+	return 0 == _wfopen_s(&output_, path, mode) && NULL != (*output = output_) && NULL != *output;
 #else
 	*output = (void*)_wfopen(path, mode);
 	return NULL != *output;
