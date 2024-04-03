@@ -42,8 +42,11 @@
 #include <sys/types.h>
 #endif
 
+#ifdef ENABLED
 static const uint8_t zero = '\0';
+#endif
 #if defined(_WIN32)
+static const uint8_t zero = '\0';
 static const wchar_t zeroW = L'\0';
 #endif
 
@@ -224,7 +227,21 @@ uint8_t directory_delete_wchar_t(const wchar_t* path)
 {
 	return 0 != RemoveDirectoryW(path);
 }
-
+#ifndef ENABLED
+uint8_t directory_enumerate_file_system_entries_wchar_t(
+	void* pattern,
+	const uint8_t entry_type, const uint8_t recurse, uint8_t output_encoding,
+	void* output, uint8_t fail_on_error)
+{
+	(void)pattern;
+	(void)entry_type;
+	(void)recurse;
+	(void)output_encoding;
+	(void)output;
+	(void)fail_on_error;
+	return 0;
+}
+#else
 uint8_t directory_enumerate_file_system_entries_wchar_t(
 	void* pattern,
 	const uint8_t entry_type, const uint8_t recurse, uint8_t output_encoding,
@@ -382,7 +399,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 	FindClose(file_handle);
 	return result;
 }
-
+#endif
 uint8_t directory_exists_wchar_t(const wchar_t* path)
 {
 	if (NULL == path)
@@ -459,7 +476,24 @@ uint8_t directory_delete_(const char* path)
 {
 	return 0 == rmdir(path);
 }
-
+#ifndef ENABLED
+uint8_t directory_enumerate_file_system_entries_(
+	void* path,
+	const uint8_t* wild_card_start,
+	const uint8_t* wild_card_finish,
+	const uint8_t entry_type, const uint8_t recurse,
+	void* output, uint8_t fail_on_error)
+{
+	(void)path;
+	(void)wild_card_start;
+	(void)wild_card_finish;
+	(void)entry_type;
+	(void)recurse;
+	(void)output;
+	(void)fail_on_error;
+	return 0;
+}
+#else
 uint8_t directory_enumerate_file_system_entries_(
 	void* path,
 	const uint8_t* wild_card_start,
@@ -571,6 +605,7 @@ uint8_t directory_enumerate_file_system_entries_(
 
 	return result;
 }
+#endif
 #endif
 uint8_t directory_create(const uint8_t* path)
 {
@@ -686,7 +721,13 @@ uint8_t directory_create(const uint8_t* path)
 	return 0 == mkdir((const char*)path, mode);
 #endif
 }
-
+#ifndef ENABLED
+uint8_t directory_delete(const uint8_t* path)
+{
+	(void)path;
+	return 0;
+}
+#else
 uint8_t directory_delete(const uint8_t* path)
 {
 	if (NULL == path)
@@ -851,7 +892,20 @@ uint8_t directory_delete(const uint8_t* path)
 	buffer_release(pathW);
 	return 1;
 }
-
+#endif
+#ifndef ENABLED
+uint8_t directory_enumerate_file_system_entries(
+	void* path, const uint8_t entry_type, const uint8_t recurse,
+	void* output, uint8_t fail_on_error)
+{
+	(void)path;
+	(void)entry_type;
+	(void)recurse;
+	(void)output;
+	(void)fail_on_error;
+	return 0;
+}
+#else
 uint8_t directory_enumerate_file_system_entries(
 	void* path, const uint8_t entry_type, const uint8_t recurse,
 	void* output, uint8_t fail_on_error)
@@ -955,7 +1009,7 @@ uint8_t directory_enumerate_file_system_entries(
 	return returned;
 #endif
 }
-
+#endif
 uint8_t directory_exists(const uint8_t* path)
 {
 	if (NULL == path)
@@ -1022,7 +1076,12 @@ int64_t file_system_datetime_to_win32_time(int64_t input)
 	(I) = file_system_datetime_to_win32_time(I);		\
 	(O).dwHighDateTime = (I) >> 32;						\
 	(O).dwLowDateTime = (int32_t)(I);/* && INT32_MAX;*/
-
+#ifndef ENABLED
+long file_system_get_bias(void)
+{
+	return 0;
+}
+#else
 long file_system_get_bias(void)
 {
 	static uint8_t loaded = 0;
@@ -1054,7 +1113,7 @@ long file_system_get_bias(void)
 
 	return result;
 }
-
+#endif
 int64_t directory_get_creation_time(const uint8_t* path)
 {
 	return directory_get_creation_time_utc(path) - (int64_t)60 * file_system_get_bias();
@@ -1086,7 +1145,17 @@ int64_t directory_get_creation_time_utc(const uint8_t* path)
 	return result;
 #endif
 }
-
+#ifndef ENABLED
+uint8_t directory_get_current_directory(const void* project, const void** the_property,
+										void* output, uint8_t verbose)
+{
+	(void)project;
+	(void)the_property;
+	(void)output;
+	(void)verbose;
+	return 0;
+}
+#else
 uint8_t directory_get_current_directory(const void* project, const void** the_property,
 										void* output, uint8_t verbose)
 {
@@ -1102,7 +1171,7 @@ uint8_t directory_get_current_directory(const void* project, const void** the_pr
 
 	return property_get_by_pointer(*the_property, output);
 }
-
+#endif
 int64_t directory_get_last_access_time(const uint8_t* path)
 {
 	return directory_get_last_access_time_utc(path) - (int64_t)60 * file_system_get_bias();
@@ -1308,6 +1377,15 @@ uint8_t file_system_set_time_utc_wchar_t(const wchar_t* path, const FILETIME* cr
 	return 0 != CloseHandle(file_handle);
 }
 
+#ifndef ENABLED
+uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
+{
+	(void)path;
+	(void)time;
+	(void)function;
+	return 0;
+}
+#else
 uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t function)
 {
 	if (NULL == path)
@@ -1360,7 +1438,7 @@ uint8_t file_system_set_time_utc(const uint8_t* path, int64_t time, uint8_t func
 	buffer_release(pathW);
 	return returned;
 }
-
+#endif
 uint8_t file_system_set_time(const uint8_t* path, int64_t time, uint8_t function)
 {
 	return file_system_set_time_utc(path, time + (int64_t)60 * file_system_get_bias(), function);
@@ -2274,6 +2352,53 @@ uint8_t file_set_attributes(const uint8_t* path,
 	return 1;
 #endif
 }
+
+#ifndef ENABLED
+
+uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
+{
+	(void)path;
+	(void)time;
+	return 0;
+}
+
+uint8_t file_set_creation_time_utc(const uint8_t* path, int64_t time)
+{
+	(void)path;
+	(void)time;
+	return 0;
+}
+
+uint8_t file_set_last_access_time(const uint8_t* path, int64_t time)
+{
+	(void)path;
+	(void)time;
+	return 0;
+}
+
+uint8_t file_set_last_access_time_utc(const uint8_t* path, int64_t time)
+{
+	(void)path;
+	(void)time;
+	return 0;
+}
+
+uint8_t file_set_last_write_time(const uint8_t* path, int64_t time)
+{
+	(void)path;
+	(void)time;
+	return 0;
+}
+
+uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
+{
+	(void)path;
+	(void)time;
+	return 0;
+}
+
+#else
+
 #if defined(_WIN32)
 uint8_t file_set_creation_time(const uint8_t* path, int64_t time)
 {
@@ -2374,7 +2499,7 @@ uint8_t file_set_last_write_time_utc(const uint8_t* path, int64_t time)
 	return file_set_time_utc(path, time, file_get_id_of_file_set_last_write_time_utc_function());
 }
 #endif
-
+#endif
 uint8_t file_write_with_several_steps(const void* content, void* stream)
 {
 	ptrdiff_t size = buffer_size(content);

@@ -301,7 +301,21 @@ ptrdiff_t string_last_index_of_any(const uint8_t* input_start, const uint8_t* in
 }
 
 enum string_pad_side { string_pad_left_function = 0, string_pad_right_function };
-
+#ifndef ENABLED
+uint8_t string_pad(const uint8_t* input_start, const uint8_t* input_finish,
+				   const uint8_t* value_start, const uint8_t* value_finish,
+				   ptrdiff_t result_length, void* output, enum string_pad_side side)
+{
+	(void)input_start;
+	(void)input_finish;
+	(void)value_start;
+	(void)value_finish;
+	(void)result_length;
+	(void)output;
+	(void)side;
+	return 0;
+}
+#else
 uint8_t string_pad(const uint8_t* input_start, const uint8_t* input_finish,
 				   const uint8_t* value_start, const uint8_t* value_finish,
 				   ptrdiff_t result_length, void* output, enum string_pad_side side)
@@ -374,7 +388,7 @@ uint8_t string_pad(const uint8_t* input_start, const uint8_t* input_finish,
 
 	return 1;
 }
-
+#endif
 uint8_t string_pad_left(const uint8_t* input_start, const uint8_t* input_finish,
 						const uint8_t* value_start, const uint8_t* value_finish,
 						ptrdiff_t result_length, void* output)
@@ -608,6 +622,14 @@ uint8_t string_substring(const uint8_t* input_start, const uint8_t* input_finish
 		}						\
 	}
 
+#ifndef ENABLED
+uint32_t string_to_case(uint32_t input, uint8_t required_case)
+{
+	(void)input;
+	(void)required_case;
+	return 0;
+}
+#else
 uint32_t string_to_case(uint32_t input, uint8_t required_case)
 {
 	static const uint16_t upper[][2] =
@@ -852,7 +874,18 @@ uint32_t string_to_case(uint32_t input, uint8_t required_case)
 
 	return input;
 }
-
+#endif
+#ifndef ENABLED
+uint8_t string_transform_to_case(const uint8_t* input_start, const uint8_t* input_finish,
+								 void* output, uint8_t required_case)
+{
+	(void)input_start;
+	(void)input_finish;
+	(void)output;
+	(void)required_case;
+	return 0;
+}
+#else
 uint8_t string_transform_to_case(const uint8_t* input_start, const uint8_t* input_finish,
 								 void* output, uint8_t required_case)
 {
@@ -891,7 +924,52 @@ uint8_t string_transform_to_case(const uint8_t* input_start, const uint8_t* inpu
 
 	return 1;
 }
+#endif
+#ifndef ENABLED
+uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, void* output)
+{
+	(void)input_start;
+	(void)input_finish;
+	(void)output;
+	return 0;
+}
 
+uint8_t string_to_upper(const uint8_t* input_start, const uint8_t* input_finish, void* output)
+{
+	(void)input_start;
+	(void)input_finish;
+	(void)output;
+	return 0;
+}
+
+uint8_t string_trim_any(struct range* input_output, uint8_t mode, const uint16_t* trim_symbols,
+						uint8_t count_of_symbols)
+{
+	(void)input_output;
+	(void)mode;
+	(void)trim_symbols;
+	(void)count_of_symbols;
+	return 0;
+}
+
+uint8_t string_trim(struct range* input_output)
+{
+	(void)input_output;
+	return 0;
+}
+
+uint8_t string_trim_end(struct range* input_output)
+{
+	(void)input_output;
+	return 0;
+}
+
+uint8_t string_trim_start(struct range* input_output)
+{
+	(void)input_output;
+	return 0;
+}
+#else
 uint8_t string_to_lower(const uint8_t* input_start, const uint8_t* input_finish, void* output)
 {
 	return string_transform_to_case(input_start, input_finish, output, string_get_id_of_to_lower_function());
@@ -1025,7 +1103,7 @@ uint8_t string_trim_start(struct range* input_output)
 {
 	return string_trim_any(input_output, string_get_id_of_trim_start_function(), NULL, 0);
 }
-
+#endif
 uint8_t string_quote(const uint8_t* input_start, const uint8_t* input_finish,
 					 void* output)
 {

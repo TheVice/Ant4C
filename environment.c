@@ -36,7 +36,14 @@
 #if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #include <VersionHelpers.h>
 #endif
-
+#ifndef ENABLED
+uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
+{
+	(void)folder;
+	(void)path;
+	return 0;
+}
+#else
 uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 {
 	if (ENVIRONMENT_UNKNOWN_SPECIAL_FOLDER <= folder || NULL == path)
@@ -55,7 +62,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 	wchar_t* finishW = NULL;
 #if defined(_WIN32_WINNT_VISTA) && defined(_WIN32_WINNT) && (_WIN32_WINNT_VISTA <= _WIN32_WINNT)
 #if defined(_MSC_VER) && (_MSC_VER >= 1920)
-	const GUID folderIDs[] =
+	const KNOWNFOLDERID folderIDs[] =
 	{
 		FOLDERID_Desktop, FOLDERID_Programs, FOLDERID_Documents, FOLDERID_Documents,
 		FOLDERID_Favorites, FOLDERID_Startup, FOLDERID_Recent, FOLDERID_SendTo,
@@ -72,7 +79,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 		FOLDERID_CommonOEMLinks, FOLDERID_CDBurning
 	};
 #else
-	GUID folderIDs[47];
+	KNOWNFOLDERID folderIDs[47];
 	folderIDs[0] = FOLDERID_Desktop;
 	folderIDs[1] = FOLDERID_Programs;
 	folderIDs[2] = FOLDERID_Documents;
@@ -135,7 +142,9 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 		return 0;
 	}
 
-	if (S_OK == fnSHGetKnownFolderPath(&folderIDs[folder], KF_FLAG_DEFAULT, NULL, &startW))
+	const KNOWNFOLDERID known_folder = folderIDs[folder];
+
+	if (S_OK == fnSHGetKnownFolderPath(known_folder, KF_FLAG_DEFAULT, NULL, &startW))
 	{
 		finishW = startW;
 
@@ -212,7 +221,7 @@ uint8_t environment_get_folder_path(enum SpecialFolder folder, void* path)
 	return buffer_resize(path, size) &&
 		   text_encoding_UTF16LE_to_UTF8((const uint16_t*)startW, (const uint16_t*)finishW, path);
 }
-
+#endif
 #else
 
 #include "string_unit.h"
@@ -431,7 +440,13 @@ uint8_t environment_get_machine_name(void* name)
 
 #endif
 #if defined(_WIN32)
-
+#ifndef ENABLED
+uint8_t environment_get_windows_version(void* version)
+{
+	(void)version;
+	return 0;
+}
+#else
 uint8_t environment_get_windows_version(void* version)
 {
 	if (!version)
@@ -498,7 +513,7 @@ uint8_t environment_get_windows_version(void* version)
 #endif
 	return version_init(version, VERSION_SIZE, the_version[0], the_version[1], 0, 0);
 }
-
+#endif
 #if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #else
 
@@ -515,6 +530,12 @@ uint8_t IsWindowsServer(void)
 
 #endif
 
+#ifndef ENABLED
+const void* environment_get_operating_system(void)
+{
+	return NULL;
+}
+#else
 static uint8_t operating_system[UINT8_MAX];
 static uint8_t is_data_of_operating_system_filled = 0;
 
@@ -541,7 +562,14 @@ const void* environment_get_operating_system(void)
 
 	return operating_system;
 }
+#endif
+#else
 
+#ifndef ENABLED
+const void* environment_get_operating_system(void)
+{
+	return NULL;
+}
 #else
 
 static uint8_t operating_system[sizeof(struct utsname) + INT8_MAX];
@@ -589,7 +617,7 @@ const void* environment_get_operating_system(void)
 
 	return operating_system;
 }
-
+#endif
 #endif
 #if defined(_WIN32)
 
@@ -835,6 +863,12 @@ uint8_t environment_is64bit_process(void)
 #endif
 }
 
+#ifndef ENABLED
+uint8_t environment_is64bit_operating_system(void)
+{
+	return 0;
+}
+#else
 uint8_t environment_is64bit_operating_system(void)
 {
 #if defined(_WIN64) || defined(__amd64) || defined(__x86_64) || defined(__aarch64__)
@@ -904,6 +938,7 @@ uint8_t environment_is64bit_operating_system(void)
 #endif
 #endif
 }
+#endif
 
 uint16_t environment_processor_count(void)
 {
