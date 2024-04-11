@@ -10841,6 +10841,169 @@ Approximate round trip times in milli-seconds:
       <expected_size>2</expected_size>
       <output>65023</output>
     </text_encoding_encode_UTF16>
+    <text_encoding_encode_UTF8_single>
+      <return>1</return>
+      <output>0x00</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x79</input>
+      <return>1</return>
+      <output>0x79</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>121</input>
+      <return>1</return>
+      <output>0x79</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x80</input>
+      <return>2</return>
+      <output>0xC2 0x80</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x799</input>
+      <return>2</return>
+      <output>0xDE 0x99</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x800</input>
+      <return>3</return>
+      <output>0xE0 0xA0 0x80</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xD7FF</input>
+      <return>3</return>
+      <output>0xED 0x9F 0xBF</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xD800</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBD</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xD801</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBD</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xDFFE</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBD</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xDFFF</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBD</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xE000</input>
+      <return>3</return>
+      <output>0xEE 0x80 0x80</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0xFFFF</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBF</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x10000</input>
+      <return>4</return>
+      <output>0xF0 0x90 0x80 0x80</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x10001</input>
+      <return>4</return>
+      <output>0xF0 0x90 0x80 0x81</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x10FFFF</input>
+      <return>4</return>
+      <output>0xF4 0x8F 0xBF 0xBF</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x110000</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBD</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_encode_UTF8_single>
+      <input>0x110001</input>
+      <return>3</return>
+      <output>0xEF 0xBF 0xBD</output>
+    </text_encoding_encode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0x00</input>
+      <return>1</return>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0x79</input>
+      <return>1</return>
+      <output>0x79</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xC2 0x80</input>
+      <return>2</return>
+      <output>0x80</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xDE 0x99</input>
+      <return>2</return>
+      <output>0x799</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xE0 0xA0 0x80</input>
+      <return>3</return>
+      <output>0x800</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xED 0x9F 0xBF</input>
+      <return>3</return>
+      <output>0xD7FF</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xEF 0xBF 0xBD</input>
+      <return>3</return>
+      <output>0xFFFD</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xEF 0xBF 0xBD</input>
+      <return>3</return>
+      <output>0xFFFD</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xEF 0xBF 0xBD</input>
+      <return>3</return>
+      <output>0xFFFD</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xEF 0xBF 0xBD</input>
+      <return>3</return>
+      <output>0xFFFD</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xEE 0x80 0x80</input>
+      <return>3</return>
+      <output>0xE000</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xEF 0xBF 0xBF</input>
+      <return>3</return>
+      <output>0xFFFF</output>
+    </text_encoding_decode_UTF8_single>
+    <!--text_encoding_decode_UTF8_single>
+      <input>0xF0 0x90 0x80 0x80</input>
+      <return>4</return>
+      <output>0x10000</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xF0 0x90 0x80 0x81</input>
+      <return>4</return>
+      <output>0x10001</output>
+    </text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
+      <input>0xF4 0x8F 0xBF 0xBF</input>
+      <return>4</return>
+      <output>0x10FFFF</output>
+    </text_encoding_decode_UTF8_single-->
     <text_encoding_UTF_to_UTF8>
       <encoding>UTF7</encoding>
     </text_encoding_UTF_to_UTF8>
@@ -10961,10 +11124,40 @@ Approximate round trip times in milli-seconds:
       <output>0x64 0x6F 0x67 0x2E </output>
     </text_encoding_UTF_to_UTF8>
     <text_encoding_UTF_to_UTF8>
-      <input>0x30 0x53 0x74 0x30 0x30 0x2C 0x30 0x79 0x0A 0xD8 0x42 0xDF </input>
+      <input>0x30 0x53 0x74 0x30 0x30 0x2C 0x30 0x79 0x0A 0xD8 0x42 0xDF</input>
       <encoding>UTF16LE</encoding>
       <return>1</return>
-      <output>0xE5 0x8C 0xB0 0xE3 0x81 0xB4 0xE2 0xB0 0xB0 0xE7 0xA4 0xB0 0xEF 0xBF 0xBD </output>
+      <output>0xE5 0x8C 0xB0 0xE3 0x81 0xB4 0xE2 0xB0 0xB0 0xE7 0xA4 0xB0 0xF0 0x92 0xAD 0x82</output>
+    </text_encoding_UTF_to_UTF8>
+    <text_encoding_UTF_to_UTF8>
+      <input>0x00 0x00 0x00 0x41 0x00 0x00 0x03 0xA9 0x00 0x00 0x8A 0x9E 0x00 0x01 0x03 0x84</input>
+      <encoding>UTF32BE</encoding>
+      <return>1</return>
+      <output>0x41 0xCE 0xA9 0xE8 0xAA 0x9E 0xF0 0x90 0x8E 0x84</output>
+    </text_encoding_UTF_to_UTF8>
+    <text_encoding_UTF_to_UTF8>
+      <input>0x41 0x00 0x00 0x00 0xA9 0x03 0x00 0x00 0x9E 0x8A 0x00 0x00 0x84 0x03 0x01 0x00</input>
+      <encoding>UTF32LE</encoding>
+      <return>1</return>
+      <output>0x41 0xCE 0xA9 0xE8 0xAA 0x9E 0xF0 0x90 0x8E 0x84</output>
+    </text_encoding_UTF_to_UTF8>
+    <text_encoding_UTF_to_UTF8>
+      <input>0x00 0x41 0x03 0xA9 0x8A 0x9E 0xD8 0x00 0xDF 0x84</input>
+      <encoding>UTF16BE</encoding>
+      <return>1</return>
+      <output>0x41 0xCE 0xA9 0xE8 0xAA 0x9E 0xF0 0x90 0x8E 0x84</output>
+    </text_encoding_UTF_to_UTF8>
+    <text_encoding_UTF_to_UTF8>
+      <input>0x41 0x00 0xA9 0x03 0x9E 0x8A 0x00 0xD8 0x84 0xDF</input>
+      <encoding>UTF16LE</encoding>
+      <return>1</return>
+      <output>0x41 0xCE 0xA9 0xE8 0xAA 0x9E 0xF0 0x90 0x8E 0x84</output>
+    </text_encoding_UTF_to_UTF8>
+    <text_encoding_UTF_to_UTF8>
+      <input>0x41 0xCE 0xA9 0xE8 0xAA 0x9E 0xF0 0x90 0x8E 0x84</input>
+      <encoding>UTF8</encoding>
+      <return>1</return>
+      <output>0x41 0xCE 0xA9 0xE8 0xAA 0x9E 0xF0 0x90 0x8E 0x84</output>
     </text_encoding_UTF_to_UTF8>
   </TestTextEncoding>
   <TestVersion>

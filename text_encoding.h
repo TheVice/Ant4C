@@ -15,7 +15,6 @@ enum TextEncoding { ASCII, UTF7, UTF8, UTF16BE, UTF16LE, UTF32BE, UTF32LE, BigEn
 
 #define TEXT_ENCODING_UNKNOWN (Default + 1)
 
-#ifndef NO_BUFFER_UNIT
 enum CodePageID
 {
 	Windows_874 = 874,
@@ -32,25 +31,21 @@ enum CodePageID
 
 uint8_t text_encoding_get_BOM(
 	uint8_t encoding, void* output);
-#endif
 
 uint8_t text_encoding_get_one_of_data_by_BOM(
 	const uint8_t* data, ptrdiff_t data_length);
 
-#if !defined(NO_BUFFER_UNIT) && !defined(NO_COMMON_UNIT)
 uint8_t text_encoding_UTF_to_ASCII(
 	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
 uint8_t text_encoding_UTF_from_ASCII(
 	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
 uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish, uint16_t code_page, void* output);
-#endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output);
 uint8_t text_encoding_decode_UTF8_single(
 	const uint8_t* input_start, const uint8_t* input_finish, uint32_t* output);
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish, void* output);
 uint8_t text_encoding_decode_UTF8(
@@ -84,11 +79,8 @@ uint8_t text_encoding_UTF32BE_to_UTF8(
 
 uint8_t text_encoding_UTF_to_UTF8(
 	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output);
-#endif
 
-#ifndef NO_COMMON_UNIT
 uint8_t text_encoding_get_one(
-	const uint8_t* encoding_start, const uint8_t* encoding_finish);
-#endif
+	const uint8_t* data_start, const uint8_t* data_finish);
 
 #endif

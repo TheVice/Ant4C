@@ -5,17 +5,11 @@
  *
  */
 
-#ifndef NO_COMMON_UNIT
 #include "stdc_secure_api.h"
-#endif
 
 #include "text_encoding.h"
-#ifndef NO_BUFFER_UNIT
 #include "buffer.h"
-#endif
-#ifndef NO_COMMON_UNIT
 #include "common.h"
-#endif
 
 #include <string.h>
 
@@ -29,7 +23,6 @@ static const uint8_t UTF8_UNKNOWN_CHAR[] = { 0xEF, 0xBF, 0xBD };
 static const uint16_t UTF16BE_UNKNOWN_CHAR = 0xFDFF;
 static const uint16_t UTF16LE_UNKNOWN_CHAR = 0xFFFD;
 
-#ifndef NO_BUFFER_UNIT
 static const uint8_t unknown_ASCII_char = 0x3F;
 static const uint8_t max_ASCII_char = 0x7f;
 static const uint8_t min_non_ASCII_char = 0x80;
@@ -149,7 +142,6 @@ static const uint16_t codes_1258[] =
 };
 
 enum Endian { Little, Big };
-#endif
 
 void xchange_uint16_t_bytes(uint16_t* input)
 {
@@ -167,7 +159,6 @@ void xchange_uint16_t_bytes(uint16_t* input)
 	*input += left;
 }*/
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_get_BOM(
 	uint8_t encoding, void* output)
 {
@@ -183,18 +174,18 @@ uint8_t text_encoding_get_BOM(
 
 		case BigEndianUnicode:
 		case UTF16BE:
-			return buffer_append(output, UTF16BE_BOM, 2);
+			return buffer_append(output, UTF16BE_BOM, sizeof(UTF16BE_BOM));
 
 		case Unicode:
 		case UTF16LE:
-			return buffer_append(output, UTF16LE_BOM, 2);
+			return buffer_append(output, UTF16LE_BOM, sizeof(UTF16LE_BOM));
 
 		case UTF32BE:
-			return buffer_append(output, UTF32BE_BOM, 4);
+			return buffer_append(output, UTF32BE_BOM, sizeof(UTF32BE_BOM));
 
 		case UTF32:
 		case UTF32LE:
-			return buffer_append(output, UTF32LE_BOM, 4);
+			return buffer_append(output, UTF32LE_BOM, sizeof(UTF32LE_BOM));
 
 		case Default:
 		case ASCII:
@@ -207,7 +198,6 @@ uint8_t text_encoding_get_BOM(
 
 	return 1;
 }
-#endif
 
 uint8_t text_encoding_get_one_of_data_by_BOM(const uint8_t* data, ptrdiff_t data_length)
 {
@@ -220,12 +210,12 @@ uint8_t text_encoding_get_one_of_data_by_BOM(const uint8_t* data, ptrdiff_t data
 	/*TODO: UTF7*/
 	if (3 < data_length)
 	{
-		if (0 == memcmp(data, UTF32BE_BOM, 4))
+		if (0 == memcmp(data, UTF32BE_BOM, sizeof(UTF32BE_BOM)))
 		{
 			return UTF32BE;
 		}
 
-		if (0 == memcmp(data, UTF32LE_BOM, 4))
+		if (0 == memcmp(data, UTF32LE_BOM, sizeof(UTF32LE_BOM)))
 		{
 			return UTF32LE;
 		}
@@ -233,18 +223,18 @@ uint8_t text_encoding_get_one_of_data_by_BOM(const uint8_t* data, ptrdiff_t data
 
 	if (2 < data_length)
 	{
-		if (0 == memcmp(data, UTF8_BOM, 3))
+		if (0 == memcmp(data, UTF8_BOM, sizeof(UTF8_BOM)))
 		{
 			return UTF8;
 		}
 	}
 
-	if (0 == memcmp(data, UTF16BE_BOM, 2))
+	if (0 == memcmp(data, UTF16BE_BOM, sizeof(UTF16BE_BOM)))
 	{
 		return UTF16BE;
 	}
 
-	if (0 == memcmp(data, UTF16LE_BOM, 2))
+	if (0 == memcmp(data, UTF16LE_BOM, sizeof(UTF16LE_BOM)))
 	{
 		return UTF16LE;
 	}
@@ -260,7 +250,7 @@ uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uin
 		uint32_t* output);
 uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const uint32_t* input_finish,
 		uint32_t* output);
-#if !defined(NO_BUFFER_UNIT) && !defined(NO_COMMON_UNIT)
+
 #define UTF8_TO_ASCII(START, FINISH, SIZE, DECODE, TYPE, OUT, OUTPUT)			\
 	while ((const TYPE*)(START) < (const TYPE*)(FINISH))						\
 	{																			\
@@ -290,7 +280,7 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 	}
 
 uint8_t text_encoding_UTF16_to_ASCII(const uint8_t* data_start, const uint8_t* data_finish, uint32_t* out,
-									 uint8_t big_endian, void* output)
+									 enum Endian endian, void* output)
 {
 	while (data_start < data_finish)
 	{
@@ -303,31 +293,35 @@ uint8_t text_encoding_UTF16_to_ASCII(const uint8_t* data_start, const uint8_t* d
 			return 0;
 		}
 
-		if (big_endian)
+		if (Big == endian)
 		{
-			if (2 * sizeof(uint16_t) <= (size_t)size)
+			if (sizeof(uint32_t) <= (size_t)size)
 			{
-				MEM_CPY_C(data, data_start, 2 * sizeof(uint16_t));
-				size = text_encoding_decode_UTF16BE_single(data, data + 2, out);
+				MEM_CPY_C(data, data_start, sizeof(uint32_t));
+				size = 2;
 			}
 			else
 			{
 				MEM_CPY_C(data, data_start, sizeof(uint16_t));
-				size = text_encoding_decode_UTF16BE_single(data, data + 1, out);
+				size = 1;
 			}
+
+			size = text_encoding_decode_UTF16BE_single(data, data + size, out);
 		}
 		else
 		{
-			if (2 * sizeof(uint16_t) <= (size_t)size)
+			if (sizeof(uint32_t) <= (size_t)size)
 			{
-				MEM_CPY_C(data, data_start, 2 * sizeof(uint16_t));
-				size = text_encoding_decode_UTF16LE_single(data, data + 2, out);
+				MEM_CPY_C(data, data_start, sizeof(uint32_t));
+				size = 2;
 			}
 			else
 			{
 				MEM_CPY_C(data, data_start, sizeof(uint16_t));
-				size = text_encoding_decode_UTF16LE_single(data, data + 1, out);
+				size = 1;
 			}
+
+			size = text_encoding_decode_UTF16LE_single(data, data + size, out);
 		}
 
 		if (!size)
@@ -356,7 +350,7 @@ uint8_t text_encoding_UTF16_to_ASCII(const uint8_t* data_start, const uint8_t* d
 }
 
 uint8_t text_encoding_UTF32_to_ASCII(const uint8_t* data_start, const uint8_t* data_finish, uint32_t* out,
-									 uint8_t big_endian, void* output)
+									 enum Endian endian, void* output)
 {
 	while (data_start < data_finish)
 	{
@@ -371,7 +365,7 @@ uint8_t text_encoding_UTF32_to_ASCII(const uint8_t* data_start, const uint8_t* d
 
 		MEM_CPY_C(&data, data_start, sizeof(uint32_t));
 
-		if (big_endian)
+		if (Big == endian)
 		{
 			size = text_encoding_change_UTF32_endian(&data, &data + 1, out);
 		}
@@ -444,18 +438,18 @@ uint8_t text_encoding_UTF_to_ASCII(
 
 		case BigEndianUnicode:
 		case UTF16BE:
-			return text_encoding_UTF16_to_ASCII(data_start, data_finish, out, 1, output);
+			return text_encoding_UTF16_to_ASCII(data_start, data_finish, out, Big, output);
 
 		case Unicode:
 		case UTF16LE:
-			return text_encoding_UTF16_to_ASCII(data_start, data_finish, out, 0, output);
+			return text_encoding_UTF16_to_ASCII(data_start, data_finish, out, Little, output);
 
 		case UTF32BE:
-			return text_encoding_UTF32_to_ASCII(data_start, data_finish, out, 1, output);
+			return text_encoding_UTF32_to_ASCII(data_start, data_finish, out, Big, output);
 
 		case UTF32:
 		case UTF32LE:
-			return text_encoding_UTF32_to_ASCII(data_start, data_finish, out, 0, output);
+			return text_encoding_UTF32_to_ASCII(data_start, data_finish, out, Little, output);
 
 		default:
 			return 0;
@@ -538,7 +532,7 @@ uint8_t text_encoding_UTF_from_ASCII(
 
 	return 1;
 }
-#ifndef NO_COMMON_UNIT
+
 uint8_t text_encoding_UTF16LE_from_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	uint16_t code_page, void* output)
@@ -669,8 +663,6 @@ uint8_t text_encoding_UTF16LE_from_code_page(
 
 	return 1;
 }
-#endif
-#endif
 
 uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
 {
@@ -695,7 +687,10 @@ uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
 		/**/
 		return 2;
 	}
-	else if (input < 0x10000 && (input < 0xD800 || 0xDFFF < input))
+	else if (0xD7FF < input && input < 0xE000)
+	{
+	}
+	else if (input < 0x10000)
 	{
 		output[2] = input & 0x3F;
 		input = input >> 6;
@@ -709,16 +704,28 @@ uint8_t text_encoding_encode_UTF8_single(uint32_t input, uint8_t* output)
 		/**/
 		return 3;
 	}
-
-	for (input = 0; input < 3; ++input)
+	else if (input < 0x110000)
 	{
-		output[input] = UTF8_UNKNOWN_CHAR[input];
+		output[3] = input & 0x3F;
+		input = input >> 6;
+		output[2] = input & 0x3F;
+		input = input >> 6;
+		output[1] = input & 0x3F;
+		input = input >> 6;
+		output[0] = input & 0x1F;
+		/**/
+		output[0] += 0xF0;
+		output[1] += 0x80;
+		output[2] += 0x80;
+		output[3] += 0x80;
+		/**/
+		return 4;
 	}
 
+	MEM_CPY_C(output, UTF8_UNKNOWN_CHAR, sizeof(UTF8_UNKNOWN_CHAR));
 	return 3;
 }
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF8(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	void* output)
@@ -759,7 +766,6 @@ uint8_t text_encoding_encode_UTF8(
 
 	return 1;
 }
-#endif
 
 uint8_t text_encoding_is_valid_octet_(uint8_t input)
 {
@@ -829,7 +835,6 @@ uint8_t text_encoding_decode_UTF8_single(
 	return 1 + count;
 }
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_decode_UTF8(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	void* output)
@@ -864,7 +869,6 @@ uint8_t text_encoding_decode_UTF8(
 
 	return 1;
 }
-#endif
 
 uint8_t text_encoding_encode_UTF16BE_single(uint32_t input_32LE, uint16_t* output)
 {
@@ -931,7 +935,6 @@ uint8_t text_encoding_encode_UTF16LE_single(uint32_t input, uint16_t* output)
 	return 2;
 }
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_encode_UTF16(
 	const uint32_t* data_start, const uint32_t* data_finish,
 	uint8_t endian, void* output)
@@ -974,7 +977,6 @@ uint8_t text_encoding_encode_UTF16(
 
 	return 1;
 }
-#endif
 
 uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const uint16_t* input_finish,
 		uint32_t* output)
@@ -1012,6 +1014,7 @@ uint8_t text_encoding_decode_UTF16BE_single(const uint16_t* input_start, const u
 	else
 	{
 		input_16LE = *input_start;
+		xchange_uint16_t_bytes(&input_16LE);
 
 		if (input_16LE < 0xDC00 || 0xDFFF < input_16LE)
 		{
@@ -1073,7 +1076,6 @@ uint8_t text_encoding_decode_UTF16LE_single(const uint16_t* input_start, const u
 	return 2;
 }
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_decode_UTF16(
 	const uint16_t* data_start, const uint16_t* data_finish,
 	uint8_t endian, void* output)
@@ -1110,7 +1112,6 @@ uint8_t text_encoding_decode_UTF16(
 
 	return 1;
 }
-#endif
 
 uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uint32_t* input_finish,
 		uint32_t* output)
@@ -1118,8 +1119,7 @@ uint8_t text_encoding_change_UTF32_endian(const uint32_t* input_start, const uin
 	if (NULL == input_start ||
 		NULL == input_finish ||
 		NULL == output ||
-		input_finish <= input_start/* ||
-		1 < input_finish - input_start*/)
+		input_finish <= input_start)
 	{
 		return 0;
 	}
@@ -1154,7 +1154,6 @@ uint8_t text_encoding_decode_UTF32LE_single(const uint32_t* input_start, const u
 	return 1;
 }
 
-#ifndef NO_BUFFER_UNIT
 uint8_t text_encoding_UTF8_to_code_page(
 	const uint8_t* data_start, const uint8_t* data_finish,
 	uint16_t code_page, void* output)
@@ -1168,7 +1167,7 @@ uint8_t text_encoding_UTF8_to_code_page(
 	}
 
 	const uint16_t* ptr = NULL;
-	const uint8_t max_index = Windows_874 == code_page ? 32 : 128;
+	const uint8_t max_index = Windows_874 == code_page ? 32 : min_non_ASCII_char;
 
 	switch (code_page)
 	{
@@ -1303,7 +1302,7 @@ uint8_t text_encoding_UTF8_from_code_page(
 	}
 
 	const uint16_t* ptr = NULL;
-	const uint8_t max_index = Windows_874 == code_page ? 32 : 128;
+	const uint8_t max_index = Windows_874 == code_page ? 32 : min_non_ASCII_char;
 
 	switch (code_page)
 	{
@@ -1685,8 +1684,8 @@ uint8_t text_encoding_UTF32BE_to_UTF8(const uint32_t* data_start, const uint32_t
 	return 1;
 }
 
-uint8_t text_encoding_UTF16_to_UTF8(const uint8_t* data_start, const uint8_t* data_finish, uint8_t big_endian,
-									void* output)
+uint8_t text_encoding_UTF16_to_UTF8(const uint8_t* data_start, const uint8_t* data_finish,
+									enum Endian endian, void* output)
 {
 	while (data_start < data_finish)
 	{
@@ -1700,31 +1699,35 @@ uint8_t text_encoding_UTF16_to_UTF8(const uint8_t* data_start, const uint8_t* da
 			return 0;
 		}
 
-		if (big_endian)
+		if (Big == endian)
 		{
-			if (2 * sizeof(uint16_t) <= (size_t)size)
+			if (sizeof(uint32_t) <= (size_t)size)
 			{
-				MEM_CPY_C(data, data_start, 2 * sizeof(uint16_t));
-				size = text_encoding_decode_UTF16BE_single(data, data + 2, &decoded);
+				MEM_CPY_C(data, data_start, sizeof(uint32_t));
+				size = 2;
 			}
 			else
 			{
 				MEM_CPY_C(data, data_start, sizeof(uint16_t));
-				size = text_encoding_decode_UTF16BE_single(data, data + 1, &decoded);
+				size = 1;
 			}
+
+			size = text_encoding_decode_UTF16BE_single(data, data + size, &decoded);
 		}
 		else
 		{
-			if (2 * sizeof(uint16_t) <= (size_t)size)
+			if (sizeof(uint32_t) <= (size_t)size)
 			{
-				MEM_CPY_C(data, data_start, 2 * sizeof(uint16_t));
-				size = text_encoding_decode_UTF16LE_single(data, data + 2, &decoded);
+				MEM_CPY_C(data, data_start, sizeof(uint32_t));
+				size = 2;
 			}
 			else
 			{
 				MEM_CPY_C(data, data_start, sizeof(uint16_t));
-				size = text_encoding_decode_UTF16LE_single(data, data + 1, &decoded);
+				size = 1;
 			}
+
+			size = text_encoding_decode_UTF16LE_single(data, data + size, &decoded);
 		}
 
 		if (!size)
@@ -1787,7 +1790,6 @@ uint8_t text_encoding_UTF32_to_UTF8(const uint8_t* data_start, const uint8_t* da
 	return 1;
 }
 
-
 uint8_t text_encoding_UTF_to_UTF8(
 	const uint8_t* data_start, const uint8_t* data_finish, uint8_t encoding, void* output)
 {
@@ -1814,18 +1816,18 @@ uint8_t text_encoding_UTF_to_UTF8(
 
 		case BigEndianUnicode:
 		case UTF16BE:
-			return text_encoding_UTF16_to_UTF8(data_start, data_finish, 1, output);
+			return text_encoding_UTF16_to_UTF8(data_start, data_finish, Big, output);
 
 		case Unicode:
 		case UTF16LE:
-			return text_encoding_UTF16_to_UTF8(data_start, data_finish, 0, output);
+			return text_encoding_UTF16_to_UTF8(data_start, data_finish, Little, output);
 
 		case UTF32BE:
-			return text_encoding_UTF32_to_UTF8(data_start, data_finish, 1, output);
+			return text_encoding_UTF32_to_UTF8(data_start, data_finish, Big, output);
 
 		case UTF32:
 		case UTF32LE:
-			return text_encoding_UTF32_to_UTF8(data_start, data_finish, 0, output);
+			return text_encoding_UTF32_to_UTF8(data_start, data_finish, Little, output);
 
 		default:
 			break;
@@ -1834,25 +1836,22 @@ uint8_t text_encoding_UTF_to_UTF8(
 	return 0;
 }
 
-#endif
-#ifndef NO_COMMON_UNIT
-static const uint8_t* text_encoding_str[] =
+uint8_t text_encoding_get_one(const uint8_t* data_start, const uint8_t* data_finish)
 {
-	(const uint8_t*)"ASCII",
-	(const uint8_t*)"UTF7",
-	(const uint8_t*)"UTF8",
-	(const uint8_t*)"UTF16BE",
-	(const uint8_t*)"UTF16LE",
-	(const uint8_t*)"UTF32BE",
-	(const uint8_t*)"UTF32LE",
-	(const uint8_t*)"BigEndianUnicode",
-	(const uint8_t*)"Unicode",
-	(const uint8_t*)"UTF32",
-	(const uint8_t*)"Default"
-};
-
-uint8_t text_encoding_get_one(const uint8_t* encoding_start, const uint8_t* encoding_finish)
-{
-	return common_string_to_enum(encoding_start, encoding_finish, text_encoding_str, TEXT_ENCODING_UNKNOWN);
+	static const uint8_t* text_encoding_str[] =
+	{
+		(const uint8_t*)"ASCII",
+		(const uint8_t*)"UTF7",
+		(const uint8_t*)"UTF8",
+		(const uint8_t*)"UTF16BE",
+		(const uint8_t*)"UTF16LE",
+		(const uint8_t*)"UTF32BE",
+		(const uint8_t*)"UTF32LE",
+		(const uint8_t*)"BigEndianUnicode",
+		(const uint8_t*)"Unicode",
+		(const uint8_t*)"UTF32",
+		(const uint8_t*)"Default"
+	};
+	/**/
+	return common_string_to_enum(data_start, data_finish, text_encoding_str, TEXT_ENCODING_UNKNOWN);
 }
-#endif

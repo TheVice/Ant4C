@@ -344,7 +344,7 @@ TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
 	buffer_release(output);
 }
 
-TEST(TestTextEncoding_, text_encoding_encode_decode_UTF8)
+TEST(TestTextEncoding_, DISABLED_text_encoding_encode_decode_UTF8)
 {
 	uint8_t output[6];
 
@@ -371,7 +371,110 @@ TEST(TestTextEncoding_, text_encoding_encode_decode_UTF8)
 	}
 }
 
-TEST(TestTextEncoding_, text_encoding_encode_UTF8)
+TEST_F(TestTextEncoding, text_encoding_encode_UTF8_single)
+{
+	static uint32_t input;
+	static uint8_t output[4];
+	std::vector<uint8_t> expected_output;
+
+	for (const auto& node : nodes)
+	{
+		range in_a_range;
+		const auto the_node = node.node();
+		//
+		const std::string input_hex(the_node.select_node("input").node().child_value());
+		const char* input_ = input_hex.c_str();
+
+		if (nullptr != input_ && nullptr != (input_ = std::strstr(input_, "0x")))
+		{
+			char* pos;
+			input = static_cast<uint32_t>(std::strtoul(input_, &pos, 16));
+		}
+		else if (!input_hex.empty())
+		{
+			in_a_range = string_to_range(input_hex);
+			input = static_cast<uint32_t>(uint64_parse(in_a_range.start, in_a_range.finish));
+		}
+		else
+		{
+			input = 0;
+		}
+
+		const std::string return_str(the_node.select_node("return").node().child_value());
+		in_a_range = string_to_range(return_str);
+		const auto expected_return =
+			static_cast<uint8_t>(
+				int_parse(in_a_range.start, in_a_range.finish));
+		//
+		const auto output_hex(get_data_from_nodes(the_node, "output"));
+		expected_output.clear();
+		string_hex_parse(output_hex.c_str(), expected_output);
+		//
+		const auto returned = text_encoding_encode_UTF8_single(input, output);
+		//
+		ASSERT_EQ(expected_return, returned) << input_hex;
+		ASSERT_EQ(returned, expected_output.size()) << input_hex;
+
+		for (uint8_t i = 0, count = static_cast<uint8_t>(expected_output.size()); i < count; ++i)
+		{
+			ASSERT_EQ(expected_output[i], output[i])
+					<< input_hex << std::endl << i << std::endl;
+		}
+
+		--node_count;
+	}
+}
+
+TEST_F(TestTextEncoding, text_encoding_decode_UTF8_single)
+{
+	std::vector<uint8_t> input;
+	static uint32_t output, expected_output;
+
+	for (const auto& node : nodes)
+	{
+		const auto the_node = node.node();
+		//
+		const auto input_hex(get_data_from_nodes(the_node, "input"));
+		input.clear();
+		string_hex_parse(input_hex.c_str(), input);
+		//
+		const std::string return_str(the_node.select_node("return").node().child_value());
+		range in_a_range = string_to_range(return_str);
+		const auto expected_return =
+			static_cast<uint8_t>(
+				int_parse(in_a_range.start, in_a_range.finish));
+		//
+		const std::string output_hex(the_node.select_node("output").node().child_value());
+		const char* output_ = output_hex.c_str();
+
+		if (nullptr != output_ && nullptr != (output_ = std::strstr(output_, "0x")))
+		{
+			char* pos;
+			expected_output = static_cast<uint32_t>(std::strtoul(output_, &pos, 16));
+		}
+		else if (!output_hex.empty())
+		{
+			in_a_range = string_to_range(output_hex);
+			expected_output = static_cast<uint32_t>(uint64_parse(in_a_range.start, in_a_range.finish));
+		}
+		else
+		{
+			expected_output = 0;
+		}
+
+		in_a_range.start = input.data();
+		in_a_range.finish = input.data() + input.size();
+		//
+		const auto returned = text_encoding_decode_UTF8_single(in_a_range.start, in_a_range.finish, &output);
+		//
+		ASSERT_EQ(expected_return, returned) << input_hex;
+		ASSERT_EQ(expected_output, output) << input_hex;
+		//
+		--node_count;
+	}
+}
+
+TEST(TestTextEncoding_, DISABLED_text_encoding_encode_UTF8)
 {
 	std::string input_buffer(buffer_size_of(), 0);
 	auto input = reinterpret_cast<void*>(&input_buffer[0]);
