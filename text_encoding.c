@@ -1689,7 +1689,7 @@ uint8_t text_encoding_UTF16_to_UTF8(const uint8_t* data_start, const uint8_t* da
 {
 	while (data_start < data_finish)
 	{
-		static uint8_t out[3];
+		static uint8_t out[4];
 		static uint16_t data[2];
 		static uint32_t decoded;
 		ptrdiff_t size = data_finish - data_start;
@@ -1752,7 +1752,7 @@ uint8_t text_encoding_UTF32_to_UTF8(const uint8_t* data_start, const uint8_t* da
 {
 	while (data_start < data_finish)
 	{
-		static uint8_t out[3];
+		static uint8_t out[4];
 		static uint32_t data;
 		static uint32_t decoded;
 		ptrdiff_t size = data_finish - data_start;
