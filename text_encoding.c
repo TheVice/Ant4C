@@ -772,6 +772,11 @@ uint8_t text_encoding_is_valid_octet_(uint8_t input)
 	return 0x9F < input && input < 0xC0;
 }
 
+uint8_t text_encoding_is_valid_octet(uint8_t input)
+{
+	return 0x7F < input && input < 0xC0;
+}
+
 uint8_t text_encoding_decode_UTF8_single(
 	const uint8_t* input_start, const uint8_t* input_finish, uint32_t* output)
 {
@@ -783,7 +788,82 @@ uint8_t text_encoding_decode_UTF8_single(
 		return 0;
 	}
 
+#ifdef TODO
+	uint8_t input[5];
+	input[0] = *input_start;
 	*output = UTF16LE_UNKNOWN_CHAR;
+
+	if (input[0] < 0x80)
+	{
+		*output = input[0];
+		return 1;
+	}
+	else if (input[0] < 0xC0 || 0xF7 < input[0])
+	{
+		return 1;
+	}
+
+	if (0xEF < input[0])
+	{
+		input[4] = 4;
+	}
+	else if (0xDF < input[0])
+	{
+		input[4] = 3;
+	}
+	else if (0xBF < input[0])
+	{
+		input[4] = 2;
+	}
+	else
+	{
+		return 1;
+	}
+
+	input[1] = (uint8_t)(input_finish - input_start);
+
+	if (input[1] < input[4])
+	{
+		return 1;
+	}
+
+	const uint8_t* start = input_start;
+	const uint8_t* finish = input_start + input[4];
+
+	while (++start < finish)
+	{
+		if (!text_encoding_is_valid_octet(*start))
+		{
+			return (uint8_t)(start - input_start);
+		}
+
+		input[start - input_start] = *start;
+	}
+
+	input[0] <<= input[4];
+	input[0] >>= input[4];
+	/*
+	--count;*/
+
+	while (start < input_finish)
+	{
+		if (!text_encoding_is_valid_octet_(*start))
+		{
+			break;
+		}
+
+		--count;
+	}
+
+	if (0 < count)
+	{
+		*output = UTF16LE_UNKNOWN_CHAR;
+		return start - input_start;
+	}
+
+	return 1;
+#else
+	* output = UTF16LE_UNKNOWN_CHAR;
 	const uint8_t octet_1 = *input_start;
 
 	if (octet_1 < 0x80)
@@ -796,14 +876,22 @@ uint8_t text_encoding_decode_UTF8_single(
 		return 1;
 	}
 
-	uint8_t octet_2 = 0;
-	uint8_t octet_3 = 0;
-	uint8_t* octets[2];
+	uint8_t octet_2, octet_3, octet_4, count = 0, max_count;
+	uint8_t* octets[3];
 	octets[0] = &octet_2;
 	octets[1] = &octet_3;
-	uint8_t count = 0;
+	octets[2] = &octet_4;
 
-	while (++input_start < input_finish && count < 2)
+	if (0xEF < octet_1)
+	{
+		max_count = 3;
+	}
+	else
+	{
+		max_count = 2;
+	}
+
+	while (++input_start < input_finish && count < max_count)
 	{
 		const uint8_t input_code = *input_start;
 
@@ -815,7 +903,21 @@ uint8_t text_encoding_decode_UTF8_single(
 		*(octets[count++]) = input_code;
 	}
 
-	if (2 == count && (0xDF < octet_1 && octet_1 < 0xF0))
+	if (3 == count && (0xEF < octet_1 && octet_1 < 0xF8))
+	{
+		if (!text_encoding_is_valid_octet(octet_2) ||
+			!text_encoding_is_valid_octet(octet_3) ||
+			!text_encoding_is_valid_octet(octet_4))
+		{
+			return count;
+		}
+
+		*output = 0x40000 * (octet_1 & 0x07);
+		*output += 0x1000 * (octet_2 & 0x3F);
+		*output += 0x40 * (octet_3 & 0x3F);
+		*output += octet_4 & 0x3F;
+	}
+	else if (2 == count && (0xDF < octet_1 && octet_1 < 0xF0))
 	{
 		if (octet_1 < 0xE1 && !text_encoding_is_valid_octet_(octet_2))
 		{
@@ -833,6 +935,7 @@ uint8_t text_encoding_decode_UTF8_single(
 	}
 
 	return 1 + count;
+#endif
 }
 
 uint8_t text_encoding_decode_UTF8(

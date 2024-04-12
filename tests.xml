@@ -10989,7 +10989,7 @@ Approximate round trip times in milli-seconds:
       <return>3</return>
       <output>0xFFFF</output>
     </text_encoding_decode_UTF8_single>
-    <!--text_encoding_decode_UTF8_single>
+    <text_encoding_decode_UTF8_single>
       <input>0xF0 0x90 0x80 0x80</input>
       <return>4</return>
       <output>0x10000</output>
@@ -11003,7 +11003,7 @@ Approximate round trip times in milli-seconds:
       <input>0xF4 0x8F 0xBF 0xBF</input>
       <return>4</return>
       <output>0x10FFFF</output>
-    </text_encoding_decode_UTF8_single-->
+    </text_encoding_decode_UTF8_single>
     <text_encoding_UTF_to_UTF8>
       <encoding>UTF7</encoding>
     </text_encoding_UTF_to_UTF8>

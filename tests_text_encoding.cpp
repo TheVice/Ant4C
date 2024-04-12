@@ -344,7 +344,7 @@ TEST_F(TestTextEncoding, text_encoding_UTF16LE_from_code_page)
 	buffer_release(output);
 }
 
-TEST(TestTextEncoding_, DISABLED_text_encoding_encode_decode_UTF8)
+TEST(TestTextEncoding_, text_encoding_encode_decode_UTF8)
 {
 	uint8_t output[6];
 
@@ -358,15 +358,22 @@ TEST(TestTextEncoding_, DISABLED_text_encoding_encode_decode_UTF8)
 		{
 			const auto stored_o = text_encoding_decode_UTF8_single(
 									  output, output + stored, &o);
-			ASSERT_EQ(stored, stored_o);
-			ASSERT_EQ(i, o);
+			ASSERT_EQ(stored, stored_o) << i;
+			ASSERT_EQ(i, o) << i;
 		}
 		else
 		{
-			ASSERT_EQ(3, stored);
-			ASSERT_EQ(0xEF, output[0]);
-			ASSERT_EQ(0xBF, output[1]);
-			ASSERT_EQ(0xBD, output[2]);
+			if (0xEF < output[0])
+			{
+				ASSERT_EQ(4, stored) << i;
+			}
+			else
+			{
+				ASSERT_EQ(3, stored) << i;
+				ASSERT_EQ(0xEF, output[0]) << i;
+				ASSERT_EQ(0xBF, output[1]) << i;
+				ASSERT_EQ(0xBD, output[2]) << i;
+			}
 		}
 	}
 }
@@ -474,7 +481,7 @@ TEST_F(TestTextEncoding, text_encoding_decode_UTF8_single)
 	}
 }
 
-TEST(TestTextEncoding_, DISABLED_text_encoding_encode_UTF8)
+TEST(TestTextEncoding_, text_encoding_encode_UTF8)
 {
 	std::string input_buffer(buffer_size_of(), 0);
 	auto input = reinterpret_cast<void*>(&input_buffer[0]);
