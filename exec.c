@@ -483,7 +483,7 @@ uint8_t exec(
 	}
 
 	const wchar_t* start = programW;
-	const wchar_t* finish = (const wchar_t*)(buffer_uint8_t_data(application, 0) + buffer_size(application));
+	const wchar_t* finish = (const wchar_t*)buffer_data_finish(application);
 	/**/
 	ptrdiff_t indices[3];
 	memset(indices, 0, sizeof(indices));

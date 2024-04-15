@@ -320,7 +320,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 
 			if (file_system_get_id_of_file_entry() == entry_type)
 			{
-				finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
+				finish = buffer_wchar_t_data(pattern, 0) + (sizeof(wchar_t) * new_index) / sizeof(wchar_t);
 
 				if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
 					!buffer_append_wchar_t(pattern, finish, delta))
@@ -334,7 +334,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 		}
 		else if (file_system_get_id_of_directory_entry() == entry_type)
 		{
-			finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
+			finish = buffer_wchar_t_data(pattern, 0) + (sizeof(wchar_t) * new_index) / sizeof(wchar_t);
 
 			if (!buffer_resize(pattern, index * sizeof(wchar_t)) ||
 				!buffer_append_wchar_t(pattern, finish, delta))
@@ -346,7 +346,7 @@ uint8_t directory_enumerate_file_system_entries_wchar_t(
 			continue;
 		}
 
-		finish = (const wchar_t*)(buffer_uint8_t_data(pattern, 0) + sizeof(wchar_t) * new_index);
+		finish = buffer_wchar_t_data(pattern, 0) + (sizeof(wchar_t) * new_index) / sizeof(wchar_t);
 
 		if (UTF8 == output_encoding)
 		{
@@ -597,7 +597,7 @@ uint8_t directory_create(const uint8_t* path)
 	wchar_t* path_start = buffer_wchar_t_data(pathW, 0);
 	/**/
 	const wchar_t* start = path_start;
-	const wchar_t* finish = (const wchar_t*)(buffer_uint8_t_data(pathW, 0) + buffer_size(pathW));
+	const wchar_t* finish = (const wchar_t*)buffer_data_finish(pathW);
 	/**/
 	file_system_set_position_after_pre_root_wchar_t(&start);
 
@@ -761,7 +761,7 @@ uint8_t directory_delete(const uint8_t* path)
 
 #if defined(_WIN32)
 		const wchar_t* start = buffer_wchar_t_data(entries, 0);
-		const wchar_t* finish = (const wchar_t*)(buffer_uint8_t_data(entries, 0) + buffer_size(entries));
+		const wchar_t* finish = (const wchar_t*)buffer_data_finish(entries);
 #else
 		const uint8_t* start = buffer_uint8_t_data(entries, 0);
 		const uint8_t* finish = start + buffer_size(entries);

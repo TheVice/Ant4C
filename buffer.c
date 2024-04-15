@@ -288,7 +288,8 @@ void* buffer_data_finish(const void* the_buffer_)
 	const struct buffer* the_buffer = (const struct buffer*)the_buffer_;
 
 	if (NULL == the_buffer ||
-		NULL == the_buffer->data)
+		NULL == the_buffer->data ||
+		the_buffer->size <= 0)
 	{
 		return NULL;
 	}

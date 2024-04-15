@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 - 2022 TheVice
+ * Copyright (c) 2019 - 2022, 2024 TheVice
  *
  */
 
@@ -181,9 +181,17 @@ uint8_t echo(
 			else
 			{
 #if defined(_WIN32)
-				result = (is_output_standard && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding)) ?
-						 echo_win32(echo_get_win32_console_output(level), (const uint16_t*)message, (uint16_t)message_length) :
-						 (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+
+				if (is_output_standard && REQUIRED_UNICODE_CONSOLE_AT_WINDOWS(encoding))
+				{
+					result = echo_win32(echo_get_win32_console_output(level), (const uint16_t*)buffer_data(new_message, 0),
+										(uint16_t)message_length);
+				}
+				else
+				{
+					result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
+				}
+
 #else
 				result = (message_length == (ptrdiff_t)file_write(message, sizeof(uint8_t), message_length, file_stream));
 #endif
