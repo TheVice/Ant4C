@@ -152,7 +152,13 @@ target_compile_options(ant4c PRIVATE
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
-target_link_libraries(ant4c INTERFACE ${DL_LIB} ${M_LIB})
+if(MSYS)
+  set(LIBS ole32 uuid)
+else()
+  set(LIBS "")
+endif()
+
+target_link_libraries(ant4c INTERFACE ${DL_LIB} ${M_LIB} ${LIBS})
 
 if(DEFINED PROGRAM_VERSION)
   target_compile_definitions(ant4c PRIVATE PROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")
@@ -183,10 +189,7 @@ target_compile_options(ant4c_shared PRIVATE
   $<$<C_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
-target_link_libraries(ant4c_shared
-  ${DL_LIB}
-  ${M_LIB}
-)
+target_link_libraries(ant4c_shared ${DL_LIB} ${M_LIB} ${LIBS})
 
 if(DEFINED PROGRAM_VERSION)
   target_compile_definitions(ant4c_shared PRIVATE PROGRAM_VERSION="${PROGRAM_VERSION} ${COMPILER_VERSION}")

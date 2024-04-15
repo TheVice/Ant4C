@@ -767,11 +767,6 @@ uint8_t text_encoding_encode_UTF8(
 	return 1;
 }
 
-uint8_t text_encoding_is_valid_octet_(uint8_t input)
-{
-	return 0x9F < input && input < 0xC0;
-}
-
 uint8_t text_encoding_is_valid_octet(uint8_t input)
 {
 	return 0x7F < input && input < 0xC0;
@@ -788,154 +783,66 @@ uint8_t text_encoding_decode_UTF8_single(
 		return 0;
 	}
 
-#ifdef TODO
-	uint8_t input[5];
-	input[0] = *input_start;
+	uint8_t index = *input_start;
+
+	if (index < 0x80)
+	{
+		*output = index;
+		return 1;
+	}
+
 	*output = UTF16LE_UNKNOWN_CHAR;
 
-	if (input[0] < 0x80)
-	{
-		*output = input[0];
-		return 1;
-	}
-	else if (input[0] < 0xC0 || 0xF7 < input[0])
+	if (index < 0xC0 || 0xF7 < index)
 	{
 		return 1;
 	}
 
-	if (0xEF < input[0])
+	if (0xEF < index)
 	{
-		input[4] = 4;
+		index = 0;
 	}
-	else if (0xDF < input[0])
+	else if (0xDF < index && index < 0xF0)
 	{
-		input[4] = 3;
+		index = 1;
 	}
-	else if (0xBF < input[0])
+	else if (index < 0xE0)
 	{
-		input[4] = 2;
+		index = 2;
 	}
 	else
 	{
 		return 1;
 	}
 
-	input[1] = (uint8_t)(input_finish - input_start);
+	const uint8_t mask_index = index;
+	static const uint32_t multi[] = { 0x40000, 0x1000, 0x40, 1 };
+	static const uint8_t mask[][1] = { { 0x07 }, { 0x0F }, { 0x1F } };
+	/**/
+	*output = 0;
 
-	if (input[1] < input[4])
+	while (input_start < input_finish && index < COUNT_OF(multi))
 	{
-		return 1;
-	}
+		const uint8_t octet = *input_start;
 
-	const uint8_t* start = input_start;
-	const uint8_t* finish = input_start + input[4];
-
-	while (++start < finish)
-	{
-		if (!text_encoding_is_valid_octet(*start))
+		if ((mask_index != index) && !text_encoding_is_valid_octet(octet))
 		{
-			return (uint8_t)(start - input_start);
-		}
-
-		input[start - input_start] = *start;
-	}
-
-	input[0] <<= input[4];
-	input[0] >>= input[4];
-	/*
-	--count;*/
-
-	while (start < input_finish)
-	{
-		if (!text_encoding_is_valid_octet_(*start))
-		{
+			index = mask_index;
 			break;
 		}
 
-		--count;
+		*output += multi[index] * (octet & (index - mask_index ? 0x3F : mask[mask_index][0]));
+		++input_start;
+		++index;
 	}
 
-	if (0 < count)
+	if (index != COUNT_OF(multi))
 	{
 		*output = UTF16LE_UNKNOWN_CHAR;
-		return start - input_start;
-	}
-
-	return 1;
-#else
-	* output = UTF16LE_UNKNOWN_CHAR;
-	const uint8_t octet_1 = *input_start;
-
-	if (octet_1 < 0x80)
-	{
-		*output = octet_1;
-		return 1;
-	}
-	else if (octet_1 < 0xC0)
-	{
 		return 1;
 	}
 
-	uint8_t octet_2, octet_3, octet_4, count = 0, max_count;
-	uint8_t* octets[3];
-	octets[0] = &octet_2;
-	octets[1] = &octet_3;
-	octets[2] = &octet_4;
-
-	if (0xEF < octet_1)
-	{
-		max_count = 3;
-	}
-	else
-	{
-		max_count = 2;
-	}
-
-	while (++input_start < input_finish && count < max_count)
-	{
-		const uint8_t input_code = *input_start;
-
-		if (input_code < 0x80 || 0xBF < input_code)
-		{
-			break;
-		}
-
-		*(octets[count++]) = input_code;
-	}
-
-	if (3 == count && (0xEF < octet_1 && octet_1 < 0xF8))
-	{
-		if (!text_encoding_is_valid_octet(octet_2) ||
-			!text_encoding_is_valid_octet(octet_3) ||
-			!text_encoding_is_valid_octet(octet_4))
-		{
-			return count;
-		}
-
-		*output = 0x40000 * (octet_1 & 0x07);
-		*output += 0x1000 * (octet_2 & 0x3F);
-		*output += 0x40 * (octet_3 & 0x3F);
-		*output += octet_4 & 0x3F;
-	}
-	else if (2 == count && (0xDF < octet_1 && octet_1 < 0xF0))
-	{
-		if (octet_1 < 0xE1 && !text_encoding_is_valid_octet_(octet_2))
-		{
-			return count;
-		}
-
-		*output = 0x1000 * (octet_1 & 0x1F);
-		*output += 0x40 * (octet_2 & 0x3F);
-		*output += octet_3 & 0x3F;
-	}
-	else if (1 == count && octet_1 < 0xE0)
-	{
-		*output = 0x40 * (octet_1 & 0x1F);
-		*output += octet_2 & 0x3F;
-	}
-
-	return 1 + count;
-#endif
+	return 4 - mask_index;
 }
 
 uint8_t text_encoding_decode_UTF8(
