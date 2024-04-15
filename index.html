@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
@@ -435,7 +436,7 @@ thead, p.table.header {
 p.table {
   margin-top: 0;
 }
-
+/* Because the table frame attribute is overridden by CSS in most browsers. */
 div.tableblock > table[frame="void"] {
   border-style: none;
 }
@@ -602,7 +603,7 @@ body.manpage div.sectionbody {
 <div class="ulist"><ul>
 <li>
 <p>
-<strong>v2020.09</strong>
+<a href="https://github.com/TheVice/Ant4C/releases/tag/v2020.09">v2020.09</a>
 </p>
 </li>
 <li>
@@ -651,27 +652,27 @@ For packages - install program using the system package manager.
 <div class="ulist"><ul>
 <li>
 <p>
-Alpine Linux: <em>apk add --allow-untrusted *.apk</em>.
+Alpine Linux: <strong>apk add --allow-untrusted \</strong>.apk*.
 </p>
 </li>
 <li>
 <p>
-Debian based: <em>dpkg --install *.deb</em>.
+Debian based: <strong>dpkg --install \</strong>.deb*.
 </p>
 </li>
 <li>
 <p>
-RPM based: <em>rpm -Uvh *.rpm</em>.
+FreeBSD: <strong>pkg install \</strong>.txz*.
 </p>
 </li>
 <li>
 <p>
-FreeBSD: <em>pkg install *.txz</em>.
+OpenBSD: <strong>pkg_add -Dunsigned \</strong>.tgz*.
 </p>
 </li>
 <li>
 <p>
-OpenBSD: <em>pkg_add -Dunsigned *.tgz</em>.
+RPM based: <strong>rpm -Uvh \</strong>.rpm*.
 </p>
 </li>
 </ul></div>
@@ -682,7 +683,36 @@ OpenBSD: <em>pkg_add -Dunsigned *.tgz</em>.
 </div>
 <div class="sect2">
 <h3 id="_build_from_source">Build from source</h3>
-<div class="paragraph"><p>Before chose this way, make sure you have <a href="https://www.cmake.org/download/">CMake</a> tool and C compiler.<br />
+<div class="sect3">
+<h4 id="_supported_platforms">Supported Platforms</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+Apple macOS
+</p>
+</li>
+<li>
+<p>
+FreeBSD
+</p>
+</li>
+<li>
+<p>
+Linux
+</p>
+</li>
+<li>
+<p>
+Microsoft Windows
+</p>
+</li>
+<li>
+<p>
+OpenBSD
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Before choose this way, make sure you have <a href="https://www.cmake.org/download/">CMake</a> tool and C compiler.<br />
 Optional, if you have previous version of Ant4C, you can use build script file to build new one directly, otherwise addition work in command prompt will be required.</p></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
@@ -755,6 +785,8 @@ If no one of steps below not failed - Ant4C is ready to use.
 </p>
 </li>
 </ol></div>
+<div class="paragraph"><p>Alternative <em>make</em> tool or <em>meson</em> can be used to build from source.</p></div>
+</div>
 </div>
 </div>
 </div>
@@ -895,38 +927,41 @@ Property will be read only at the script file.</p></div>
 </div>
 <div class="sect3">
 <h4 id="_sample_using">Sample using</h4>
+<div class="listingblock">
+<div class="content">
+<pre><code>ant4c
+ant4c -buildfile:project_file.build
+ant4c build
+ant4c -D:version="2020.05" build publish
+ant4c -listener:"default_listener.dll"</code></pre>
+</div></div>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-ant4c
+Run program. It search all files with <em>.build</em> extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed.
 </p>
 </li>
 <li>
 <p>
-ant4c -buildfile:project_file.build
+Run project from <em>project_file.build</em> file.
 </p>
 </li>
 <li>
 <p>
-ant4c build
+Run <em>build</em> target at all <em>.build</em> file from current directory.
 </p>
 </li>
 <li>
 <p>
-ant4c -D:version="2020.05" build publish
+Set to the property <em>version</em> value equal to the <em>2020.05</em> and run targets <em>build</em> and <em>publish</em>.
 </p>
 </li>
 <li>
 <p>
-ant4c -listener:"default_listener.dll"
+Set path to the listener while run at the Windows platform.
 </p>
 </li>
 </ol></div>
-<div class="paragraph"><p>1) Run program. It search all files with <em>.build</em> extension and run they with default target(s). If project(s) do not specify such, global task(s) will be executed.<br />
-2) Run project from <em>project_file.build</em> file.<br />
-3) Run <em>build</em> target at all <em>.build</em> file from current directory.<br />
-4) Set to the property <em>version</em> value equal to the <em>2020.05</em> and run targets <em>build</em> and <em>publish</em>.
-5) Set path to the listener while run at the Windows platform.</p></div>
 </div>
 </div>
 <div class="sect2">
@@ -1027,7 +1062,7 @@ To define dynamic property set dynamic parameter to the true value.</p></div>
     message="The property value is '${property::get-value('property')}'." /&gt;
 &lt;/project&gt;</code></pre>
 </div></div>
-<div class="paragraph"><p>At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL data base world.</p></div>
+<div class="paragraph"><p>At the example above time will be displayed of the moment of the accessing. In some sense this similar to the stored procedures from the SQL database world.</p></div>
 <div class="paragraph"><p>More complex example is calculating determinate and roots of quadratic polynomial: three properties (D, X1 and X2) can be dynamic and input values (a, b, c) can be static.</p></div>
 <div class="listingblock">
 <div class="content">
@@ -1074,10 +1109,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">failonerror</p></td>
@@ -1087,17 +1122,16 @@ cellspacing="0" cellpadding="4">
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">if</p></td>
-<td align="left" valign="top"><p class="table">true</p></td>
+<td align="left" valign="top"><p class="table"><strong>true</strong></p></td>
 <td align="left" valign="top"><p class="table">If value of this parameter evaluated to the <strong>false</strong>, task will be skip.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">unless</p></td>
-<td align="left" valign="top"><p class="table">false</p></td>
+<td rowspan="2" align="center" valign="middle"><p class="table"><strong>false</strong></p></td>
 <td align="left" valign="top"><p class="table">Opposite of <em>if</em> attribute. If value of this parameter evaluated to the <strong>true</strong>, task will be skip.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">verbose</p></td>
-<td align="left" valign="top"><p class="table">false</p></td>
 <td align="left" valign="top"><p class="table">RESERVED. If this parameter set to <strong>true</strong> task logging addition details.</p></td>
 </tr>
 </tbody>
@@ -1114,8 +1148,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Task</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Task</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#attrib_task">attrib</a></p></td>
@@ -1223,10 +1257,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">archive</p></td>
@@ -1299,11 +1333,11 @@ cellspacing="0" cellpadding="4">
 <col width="20%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>target</strong></p></td>
@@ -1378,10 +1412,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="center" valign="middle"><p class="table"><strong>test</strong></p></td>
@@ -1440,10 +1474,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">dir</p></td>
@@ -1587,7 +1621,9 @@ Copy content of folder with empty sub folder too. Move files and non empty sub f
 </div>
 <div class="sect2">
 <h3 id="delete_task">&lt;delete&gt;</h3>
-<div class="paragraph"><p>Will delete file or/and directory. If no path set to directory or/and file - task will fail. If at file or directory set path to directory or file, in other word by deleting one thing requested opposite, task will fail. If file or/and directory not exists task will finish with out any error.</p></div>
+<div class="paragraph"><p>Will delete file or/and directory. If no path set to directory or/and file - task will fail.<br />
+If at file or directory set path to directory or file, in other word by deleting one thing requested opposite, task will fail.<br />
+If file or/and directory not exists task will finish with out any error.</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
@@ -1599,9 +1635,9 @@ cellspacing="0" cellpadding="4">
 <col width="33%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">dir</p></td>
@@ -1672,10 +1708,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">append</p></td>
@@ -1687,7 +1723,7 @@ cellspacing="0" cellpadding="4">
 <td align="left" valign="top"><p class="table">encoding</p></td>
 <td align="left" valign="top"><p class="table"><a href="#encoding_type">Encoding</a></p></td>
 <td align="left" valign="top"><p class="table">UTF8</p></td>
-<td align="left" valign="top"><p class="table">Set <a href="#encoding_type">encoding</a> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <a href="#UTF8_encoding_member">UTF8</a> if encoding non <a href="#Default_encoding_member">Default</a> and <a href="#ASCII_encoding_member">ASCII</a>.</p></td>
+<td align="left" valign="top"><p class="table">Set <a href="#encoding_type">encoding</a> for the output file. Ignored if no file used, except Windows platform where task will change console text mode to <a href="#UTF-8_encoding_member">UTF-8</a> if encoding non <a href="#Default_encoding_member">Default</a> and <a href="#ASCII_encoding_member">ASCII</a>.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">file</p></td>
@@ -1712,7 +1748,7 @@ cellspacing="0" cellpadding="4">
 </div>
 <div class="sect3">
 <h4 id="encoding_type">Encoding</h4>
-<div class="paragraph"><p>Internally program evaluate all string as encoded in UTF8, except some of system calls on Windows platform where converting to UTF16LE used.</p></div>
+<div class="paragraph"><p>Internally program evaluate all string as encoded in UTF-8, except some of system calls on Windows platform where converting to UTF-16LE used.</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
@@ -1722,8 +1758,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Encoding name.</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Encoding name.</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a id="ASCII_encoding_member"></a>ASCII</p></td>
@@ -1734,7 +1770,7 @@ cellspacing="0" cellpadding="4">
 <td align="left" valign="top"><p class="table">RESERVED. Encoding represent UNICODE string using only 7-bit values.</p></td>
 </tr>
 <tr>
-<td align="left" valign="top"><p class="table"><a id="UTF8_encoding_member"></a>UTF8</p></td>
+<td align="left" valign="top"><p class="table"><a id="UTF-8_encoding_member"></a>UTF8</p></td>
 <td align="left" valign="top"><p class="table">UNICODE string encoded with 8-bit values.</p></td>
 </tr>
 <tr>
@@ -1789,8 +1825,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Level name.</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Level name.</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">Debug</p></td>
@@ -1846,11 +1882,11 @@ cellspacing="0" cellpadding="4">
 <col width="20%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>program</strong></p></td>
@@ -1915,13 +1951,14 @@ cellspacing="0" cellpadding="4">
 <h4 id="_sub_element_lt_environment_gt">Sub element &lt;environment&gt;</h4>
 <div class="paragraph"><p>This element also have sub element named <em>&lt;variable&gt;</em><br />
 that represent the variable that should be using at by program to execute.<br />
-If no environment set, program got same environment that ant4c have.<br /></p></div>
+If no environment set, program got same environment that ant4c have.<br />
+Otherwise only variable(s) at the this element will be used.</p></div>
 <div class="tableblock">
 <table rules="all"
 width="100%"
 frame="border"
 cellspacing="0" cellpadding="4">
-<caption class="title">Table 10. Parameter of <em>environment</em> element of <em>exec</em> task.</caption>
+<caption class="title">Table 10. Parameter of <em>variable</em> element.</caption>
 <col width="20%" />
 <col width="20%" />
 <col width="20%" />
@@ -1929,11 +1966,11 @@ cellspacing="0" cellpadding="4">
 <col width="20%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">name</p></td>
@@ -1945,18 +1982,51 @@ cellspacing="0" cellpadding="4">
 <tr>
 <td align="left" valign="top"><p class="table">value</p></td>
 <td align="left" valign="top"><p class="table">Value of environment variable.</p></td>
-<td align="left" valign="top"><p class="table">No</p></td>
+<td rowspan="3" align="center" valign="middle"><p class="table">No</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">if</p></td>
+<td rowspan="2" align="center" valign="middle"><p class="table">bool</p></td>
+<td align="left" valign="top"><p class="table"><strong>true</strong></p></td>
+<td align="left" valign="top"><p class="table">If value of this parameter evaluated to the <strong>false</strong>, task will be skip.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">unless</p></td>
+<td align="left" valign="top"><p class="table"><strong>false</strong></p></td>
+<td align="left" valign="top"><p class="table">Opposite of <em>if</em> attribute. If value of this parameter evaluated to the <strong>true</strong>, task will be skip.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<div class="paragraph"><p>Processing order of <em>if</em> and <em>unless</em> parameters same like at <a href="#common_parameters">other tasks</a>.</p></div>
 </div>
 <div class="sect3">
 <h4 id="_sample_using_10">Sample using</h4>
 <div class="listingblock">
 <div class="content">
+<pre><code>&lt;exec
+  program="${property::get-value('cmake')}"
+  commandline="${property::get-value('cmake_arguments')}" /&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
 <pre><code>&lt;exec program="${property::get-value('cmake')}"
-          commandline="${property::get-value('cmake_arguments')}" /&gt;</code></pre>
+  commandline="-S ${string::quote(property::get-value('source'))} -B ${string::quote(property::get-value('build'))}"&gt;
+  &lt;environment&gt;
+    &lt;variable name="CMAKE_BUILD_TYPE" value="Debug" /&gt;
+  &lt;/environment&gt;
+&lt;/exec&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;exec program="${property::get-value('cmake')}"&gt;
+  &lt;environment&gt;
+    &lt;variable
+      name="PATH"
+      value="${environment::get-variable('PATH')}"
+      if="${environment::variable-exists('PATH')}" /&gt;
+  &lt;/environment&gt;
+&lt;/exec&gt;</code></pre>
 </div></div>
 </div>
 </div>
@@ -1974,9 +2044,9 @@ cellspacing="0" cellpadding="4">
 <col width="33%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">message</p></td>
@@ -2045,11 +2115,11 @@ cellspacing="0" cellpadding="4">
 <col width="20%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>item</strong></p></td>
@@ -2065,7 +2135,7 @@ cellspacing="0" cellpadding="4">
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">delim</p></td>
-<td align="left" valign="top"><p class="table">UTF8 chars that should be use as delimiter between loop&#8217;s item. If any chars not set, used zero char (<em>'\0</em>').</p></td>
+<td align="left" valign="top"><p class="table">UTF-8 chars that should be use as delimiter between loop&#8217;s item. If any chars not set, used zero char (<em>'\0</em>').</p></td>
 <td rowspan="3" align="center" valign="middle"><p class="table">No</p></td>
 </tr>
 <tr>
@@ -2136,10 +2206,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">test</p></td>
@@ -2176,10 +2246,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>file</strong></p></td>
@@ -2195,7 +2265,7 @@ cellspacing="0" cellpadding="4">
 <tr>
 <td align="left" valign="top"><p class="table">encoding</p></td>
 <td align="left" valign="top"><p class="table"><a href="#encoding_type">Encoding</a></p></td>
-<td align="left" valign="top"><p class="table">Expected encoding of the input file. Will be used while converting file to the UTF8. Task support <a href="#program_options">extension list of encoding</a>. File with UTF based byte order mark can be recognized.</p></td>
+<td align="left" valign="top"><p class="table">Expected encoding of the input file. Will be used while converting file to the UTF-8. Task support <a href="#program_options">extension list of encoding</a>. File with UTF based byte order mark can be recognized.</p></td>
 <td align="center" valign="top"><p class="table">No</p></td>
 </tr>
 </tbody>
@@ -2210,7 +2280,7 @@ cellspacing="0" cellpadding="4">
   &lt;property name="file" value="1.txt" /&gt;
   &lt;property name="content" value="" /&gt;
   &lt;loadfile file="${file}" property="content" if="${math::less(file::get-length(file), '1073741824')}" /&gt;
-  &lt;echo&gt;Count of UTF8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.&lt;/echo&gt;
+  &lt;echo&gt;Count of UTF-8 chars is '${string::get-length(content)}' at the file '${file}' with length '${file::get-length(file)}' bytes.&lt;/echo&gt;
 &lt;/project&gt;</code></pre>
 </div></div>
 </div>
@@ -2270,10 +2340,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>assembly</strong></p></td>
@@ -2364,10 +2434,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>dir</strong></p></td>
@@ -2403,10 +2473,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">buildfile</p></td>
@@ -2480,9 +2550,9 @@ cellspacing="0" cellpadding="4">
 <col width="33%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">name</p></td>
@@ -2540,11 +2610,11 @@ cellspacing="0" cellpadding="4">
 <col width="20%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Default value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Default value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>name</strong></p></td>
@@ -2582,17 +2652,17 @@ cellspacing="0" cellpadding="4">
 <div class="ulist"><ul>
 <li>
 <p>
-Can contain any valid UTF8 letters, digits, under scope characters, dash and dot characters.
+Can contain any valid UTF-8 letters, digits, under scope characters, dash and dot characters.
 </p>
 </li>
 <li>
 <p>
-Should start from UTF8 letter or under scope symbol and end with letter, digit or an under scope symbol.
+Should start from UTF-8 letter or under scope symbol and end with letter, digit or an under scope symbol.
 </p>
 </li>
 <li>
 <p>
-Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF8 chars with 3 bytes per char that mean 85 chars for the name.
+Length of name should not be more than UINT8_MAX bytes. Usually that macros equal to the 255. For example if name contain only UTF-8 chars with 3 bytes per char that mean 85 chars for the name.
 </p>
 </li>
 </ul></div>
@@ -2619,9 +2689,9 @@ cellspacing="0" cellpadding="4">
 <col width="33%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">hours</p></td>
@@ -2677,10 +2747,10 @@ cellspacing="0" cellpadding="4">
 <col width="25%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Mandatory</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
+<td align="left" valign="top"><p class="table">Mandatory</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>name</strong></p></td>
@@ -2764,9 +2834,9 @@ cellspacing="0" cellpadding="4">
 <col width="33%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">file</p></td>
@@ -2827,9 +2897,9 @@ cellspacing="0" cellpadding="4">
 <col width="33%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Argument name</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Type</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Argument name</p></td>
+<td align="left" valign="top"><p class="table">Type</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">property</p></td>
@@ -3028,8 +3098,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">bool::parse</p></td>
@@ -3121,8 +3191,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#date_time-format_to_string">datetime::format-to-string</a></p></td>
@@ -3206,15 +3276,15 @@ cellspacing="0" cellpadding="4">
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#timespan-from_minutes">timespan::from-minutes</a></p></td>
-<td align="left" valign="top"><p class="table">Create timespan from minutes days.</p></td>
+<td align="left" valign="top"><p class="table">Create timespan from minutes.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#timespan-from_seconds">timespan::from-seconds</a></p></td>
-<td align="left" valign="top"><p class="table">Create timespan from seconds days.</p></td>
+<td align="left" valign="top"><p class="table">Create timespan from seconds.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#timespan-from_ticks">timespan::from-ticks</a></p></td>
-<td align="left" valign="top"><p class="table">Create timespan from ticks days.</p></td>
+<td align="left" valign="top"><p class="table">Create timespan from ticks.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#timespan-get_days">timespan::get-days</a></p></td>
@@ -3290,7 +3360,7 @@ In general recent versions of compilers support formats described at the next re
 </li>
 <li>
 <p>
-<a href="https://en.cppreference.com/w/c/chrono/strftime/">Date and time utilities &#8594; strftime</a>
+<a href="https://en.cppreference.com/w/c/chrono/strftime">Date and time utilities &#8594; strftime</a>
 </p>
 </li>
 </ul></div>
@@ -3529,7 +3599,7 @@ String should be in format <em>DD.MM.YYYY HH.MM.SS</em>.</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><code>&lt;echo&gt;
-  ${datetime::now-ticks()}
+  ${datetime::ticks()}
 &lt;/echo&gt;</code></pre>
 </div></div>
 </div>
@@ -3814,8 +3884,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#environment-get_folder_path">get-folder-path</a></p></td>
@@ -3839,11 +3909,11 @@ cellspacing="0" cellpadding="4">
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#environment-is64bit_operating_system">is64bit-operating-system</a></p></td>
-<td align="left" valign="top"><p class="table">Is operation system x86-64.</p></td>
+<td align="left" valign="top"><p class="table">Is operation system run on 64-bit computer architecture.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#environment-is64bit_process">is64bit-process</a></p></td>
-<td align="left" valign="top"><p class="table">Is current process x86-64.</p></td>
+<td align="left" valign="top"><p class="table">Is current process run on 64-bit computer architecture.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#environment-newline">newline</a></p></td>
@@ -3877,8 +3947,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Available at POSIX systems</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Available at POSIX systems</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">Desktop</p></td>
@@ -4093,12 +4163,12 @@ cellspacing="0" cellpadding="4">
 <div class="sect3">
 <h4 id="environment-is64bit_operating_system">is64bit-operating-system</h4>
 <div class="paragraph"><p><strong>bool</strong> <em>environment::is64bit-operating-system</em>()</p></div>
-<div class="paragraph"><p>Return <strong>true</strong> on x86-64 operation systems.</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if operation systems run on 64-bit computer architecture.</p></div>
 </div>
 <div class="sect3">
 <h4 id="environment-is64bit_process">is64bit-process</h4>
 <div class="paragraph"><p><strong>bool</strong> <em>environment::is64bit-process</em>()</p></div>
-<div class="paragraph"><p>Return true if process is x86-64.</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if process run on 64-bit computer architecture.</p></div>
 </div>
 <div class="sect3">
 <h4 id="environment-newline">newline</h4>
@@ -4120,17 +4190,17 @@ cellspacing="0" cellpadding="4">
 <div class="content">
 <pre><code>&lt;?xml version="1.0"?&gt;
 &lt;project&gt;
-  &lt;property name="varibles"
+  &lt;property name="variables"
             value="USERNAME, LOGNAME"
             readonly="true" /&gt;
   &lt;property name="True" value="exists" readonly="true" /&gt;
   &lt;property name="False" value="not exists" readonly="true" /&gt;
   &lt;property name="exists"
-            value="${environment::variable-exists(varible)}"
+            value="${environment::variable-exists(variable)}"
             dynamic="true"
             readonly="true" /&gt;
-  &lt;foreach item="String" in="${varibles}" delim="," trim="Start" property="varible"&gt;
-    &lt;echo&gt;Environment varible '${varible}' is ${property::get-value(exists)}.&lt;/echo&gt;
+  &lt;foreach item="String" in="${variables}" delim="," trim="Start" property="variable"&gt;
+    &lt;echo&gt;Environment variable '${variable}' is ${property::get-value(exists)}.&lt;/echo&gt;
   &lt;/foreach&gt;
 &lt;/project&gt;</code></pre>
 </div></div>
@@ -4149,8 +4219,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#directory-enumerate_file_system_entries">directory::enumerate-file-system-entries</a></p></td>
@@ -4262,8 +4332,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">directory</p></td>
@@ -4415,8 +4485,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">crc32</p></td>
@@ -4430,6 +4500,14 @@ cellspacing="0" cellpadding="4">
 <td align="left" valign="top"><p class="table">blake3</p></td>
 <td align="center" valign="top"><p class="table">Calculate hash with BLAKE3 algorithm.</p></td>
 </tr>
+<!--tr>
+<td align="left" valign="top"><p class="table">xxh32</p></td>
+<td align="center" valign="top"><p class="table">Calculate hash with xxHash32 algorithm.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">xxh64</p></td>
+<td align="center" valign="top"><p class="table">Calculate hash with xxHash64 algorithm.</p></td>
+</tr-->
 </tbody>
 </table>
 </div>
@@ -4438,6 +4516,7 @@ For <em>crc32</em> it can be <a href="#hash-crc32">decreasing or increasing</a>.
 For <em>blake2b</em> - 160, 256, 384 or 512.
 For <em>blake3</em> - 256, 384 or 512.
 For <em>keccak</em> and <em>sha3</em> - 224, 256, 384 or 512.
+<!--For <em>xxh32</em> and <em>xxh64</em> - seed value, by default equal to the 0. For 32 version - any value from range of uint32_t values, for 64 - from uint64_t.-->
 Return from first version of function equal to the return of second if increasing or 256 was used as argument parameter.</p></div>
 <div class="sect4">
 <h5 id="_sample_using_65">Sample using</h5>
@@ -4458,6 +4537,14 @@ Return from first version of function equal to the return of second if increasin
   &lt;/foreach&gt;
 &lt;/project&gt;</code></pre>
 </div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">Current implementation (v2020.09) of Keccak/SHA3 algorithm request that all file content should be loaded into memory.</td>
+</tr></table>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -4551,8 +4638,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#hash-blake2b">blake2b</a></p></td>
@@ -4577,6 +4664,14 @@ cellspacing="0" cellpadding="4">
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#hash-sha3">sha3</a></p></td>
 </tr>
+<!--tr>
+<td align="left" valign="top"><p class="table"><a href="#hash-xxh32">xxh32</a></p></td>
+<td align="left" valign="top"><p class="table">Calculate hash sum with xxHash32 algorithm.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><a href="#hash-xxh64">xxh64</a></p></td>
+<td align="left" valign="top"><p class="table">Calculate hash sum with xxHash64 algorithm.</p></td>
+</tr-->
 </tbody>
 </table>
 </div>
@@ -4595,8 +4690,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">160</p></td>
@@ -4663,8 +4758,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">decreasing</p></td>
@@ -4727,8 +4822,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">224</p></td>
@@ -4759,6 +4854,20 @@ cellspacing="0" cellpadding="4">
 Possible length values same as for <a href="#hash-keccak">Keccak</a>.
 Return from first version of function equal to the return of second if 256 was used as length.</p></div>
 </div>
+<!--div class="sect3">
+<h4 id="hash-xxh32">xxh32</h4>
+<div class="paragraph"><p><strong>byte array</strong> <em>hash::xxh32</em>(<strong>string</strong> input)<br />
+<strong>byte array</strong> <em>hash::xxh32</em>(<strong>string</strong> input, <strong>uint32_t</strong> seed)</p></div>
+<div class="paragraph"><p>Calculate hash sum with xxHash32 algorithm.<br />
+First version of function equal to the second for case when seed parameter equal to the <em>0</em>.</p></div>
+</div>
+<div class="sect3">
+<h4 id="hash-xxh64">xxh64</h4>
+<div class="paragraph"><p><strong>byte array</strong> <em>hash::xxh64</em>(<strong>string</strong> input)<br />
+<strong>byte array</strong> <em>hash::xxh64</em>(<strong>string</strong> input, <strong>uint64_t</strong> seed)</p></div>
+<div class="paragraph"><p>Calculate hash sum with xxHash64 algorithm.<br />
+First version of function equal to the second for case when seed parameter equal to the <em>0</em>.</p></div>
+</div-->
 </div>
 <div class="sect2">
 <h3 id="_math_unit">Math unit</h3>
@@ -4772,8 +4881,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#math-abs">abs</a></p></td>
@@ -5126,8 +5235,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#operating_system-get_platform">operating-system::get-platform</a></p></td>
@@ -5149,6 +5258,10 @@ cellspacing="0" cellpadding="4">
 <td align="left" valign="top"><p class="table"><a href="#platform-get_name">platform::get-name</a></p></td>
 <td align="left" valign="top"><p class="table">Get name of current platform.</p></td>
 </tr>
+<!--tr>
+<td align="left" valign="top"><p class="table"><a href="#platform-is_macos">platform::is-macos</a></p></td>
+<td align="left" valign="top"><p class="table">Check is current platform macOS.</p></td>
+</tr-->
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#platform-is_unix">platform::is-unix</a></p></td>
 <td align="left" valign="top"><p class="table">Check is current platform UNIX like.</p></td>
@@ -5178,8 +5291,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Value</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Value</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">Win32</p></td>
@@ -5189,6 +5302,10 @@ cellspacing="0" cellpadding="4">
 <td align="left" valign="top"><p class="table">Unix</p></td>
 <td align="left" valign="top"><p class="table">Platform is UNIX like.</p></td>
 </tr>
+<!--tr>
+<td align="left" valign="top"><p class="table">macOS</p></td>
+<td align="left" valign="top"><p class="table">Platform is macOS.</p></td>
+</tr-->
 </tbody>
 </table>
 </div>
@@ -5211,22 +5328,43 @@ cellspacing="0" cellpadding="4">
 <div class="sect3">
 <h4 id="platform-get_name">get-name</h4>
 <div class="paragraph"><p><strong>string</strong> <em>platform::get-name</em>()</p></div>
-<div class="paragraph"><p>Get name of the platform..</p></div>
+<div class="paragraph"><p>Get name of the platform.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">version up to and including 2020.09 return string representation of operation system instead name of platform name.</td>
+</tr></table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="platform-is_macos">is-macos</h4>
+<div class="paragraph"><p><strong>bool</strong> <em>platform::is-macos</em>()</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if current platform is macOS.</p></div>
 </div>
 <div class="sect3">
 <h4 id="platform-is_unix">is-unix</h4>
 <div class="paragraph"><p><strong>bool</strong> <em>platform::is-unix</em>()</p></div>
-<div class="paragraph"><p>Return <strong>true</strong> if current platform UNIX like.</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if current platform is UNIX like.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">macOS is UNIX like OS, so this function return <strong>true</strong> if platform is first one.</td>
+</tr></table>
+</div>
 </div>
 <div class="sect3">
 <h4 id="platform-is_windows">is-windows</h4>
 <div class="paragraph"><p><strong>bool</strong> <em>platform::is-windows</em>()</p></div>
-<div class="paragraph"><p>Return <strong>true</strong> if current platform from Windows family.</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if current platform is from Windows family.</p></div>
 </div>
 <div class="sect3">
 <h4 id="platform-is_windows_server">is-windows-server</h4>
 <div class="paragraph"><p><strong>bool</strong> <em>platform::is-windows-server</em>()</p></div>
-<div class="paragraph"><p>Return <strong>true</strong> if current platform from Windows Server family.</p></div>
+<div class="paragraph"><p>Return <strong>true</strong> if current platform is from Windows Server family.</p></div>
 </div>
 </div>
 <div class="sect2">
@@ -5241,8 +5379,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#path-change_extension">path::change-extension</a></p></td>
@@ -5435,8 +5573,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#project-get_base_directory">project::get-base-directory</a></p></td>
@@ -5520,8 +5658,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#property-exists">exists</a></p></td>
@@ -5565,7 +5703,7 @@ cellspacing="0" cellpadding="4">
 </div>
 <div class="sect2">
 <h3 id="_string_unit">String unit</h3>
-<div class="paragraph"><p>All strings operated at this unit at the UTF8 encoding.</p></div>
+<div class="paragraph"><p>All strings operated at this unit at the UTF-8 encoding.</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
@@ -5584,8 +5722,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#string-contains">contains</a></p></td>
@@ -5812,8 +5950,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#target-exists">exists</a></p></td>
@@ -5859,8 +5997,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#task-exists">exists</a></p></td>
@@ -5887,8 +6025,8 @@ cellspacing="0" cellpadding="4">
 <col width="50%" />
 <tbody>
 <tr>
-<td align="left" valign="top"><p class="table"><strong>Script function</strong></p></td>
-<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table">Script function</p></td>
+<td align="left" valign="top"><p class="table">Description</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><a href="#version-get_build">get-build</a></p></td>
@@ -6011,22 +6149,41 @@ Functions from other units will call they internally, if they need such transfor
 <div class="sect1">
 <h2 id="_modules_">Modules</h2>
 <div class="sectionbody">
+<div class="paragraph"><p>If internal functions and tasks not enough, and even if put it all together can not be used to create required functional, - may be modules can be used to resolved requests, because starting from version 2020.09 program support they - binary files that increase functional by adding functions and/or tasks to the program.</p></div>
 <div class="ulist">
 <ul>
-<li><p><a href="./v2020.09_ant4c.dns.html">Ant4C.Dns</a></p></li>
-<li><p><a href="./v2020.09_ant4c.net.framework.module.html">Ant4C.Net.Framework</a></p></li>
-<li><p><a href="./v2020.09.202107_ant4c.net.module.html">Ant4C.Net</a></p></li>
-<li><p><a href="./v2020.09_ant4c.regex.html">Ant4C.Regex</a></p></li>
-</ul>
+<li>
+<p>
+<a href="https://github.com/TheVice/Ant4C/releases/tag/v2020.09">Dns</a>. Module with <strong>dns</strong> name space that contain function <strong>get-host-name</strong>.
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/TheVice/Ant4C/releases/tag/v2020.09">Regex</a>. Module that increase functional by adding <strong><strong>regex</strong></strong> task.
+</p>
+</li>
+<li>
+<p>
+<a href="https://www.nuget.org/packages/ant4c.net.framework.module/">ant4c.net.framework.module</a>. Module with name spaces <strong>framework</strong>, <strong>metahost</strong> and added to exists one <strong>file</strong> function <strong>is-assembly</strong>. Available only for Windows platform.
+</p>
+</li>
+<li>
+<p>
+<a href="https://www.nuget.org/packages/ant4c.net.module/">ant4c.net.module</a>. Module to interact with installed .NET Core via name spaces <strong>nethost</strong>, <strong>hostfxr</strong> and function <strong>is-assembly</strong> from <strong>file</strong> name space.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>See module documentation to understand it possibility.</p></div>
+</div>
 </div>
 </div>
 
 </div>
-<div id="footnotes"></div>
+<div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2021-08-10
+ 2024-01-28
 </div>
 </div>
 </body>
