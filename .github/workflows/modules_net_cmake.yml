@@ -273,7 +273,7 @@ jobs:
     - name: Checkout third-party libraries
       run: git checkout origin/${{ matrix.os }} -- .
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.optimized && 'release' || 'debug' }}-${{ matrix.target_platform }}
 
